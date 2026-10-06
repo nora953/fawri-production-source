@@ -535,7 +535,7 @@ export async function listCashierLicensedStationsAuthoritative(
 ): Promise<CashierLicensedStationView[]> {
   assertAuthority();
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    await subscriptionWithScheduledDowngradeInTransaction(client, merchantId, new Date());
+    await subscriptionWithScheduledDowngradeInTransaction(client, merchantId, true);
     const rows = await operationalQueryRows<{
       station_id: string;
       station_name: string;
@@ -635,7 +635,7 @@ export async function assignCashierStationSeatInTransaction(input: {
     `SELECT count(*)::int AS assigned
        FROM cashier_station_seat_assignments
       WHERE merchant_id = $1
-        AND (status = 'active' OR (status = 'release_scheduled' AND release_effective_at > now()))`,
+        AND status IN ('active','release_scheduled')`,
     [input.merchantId],
   );
   const assigned = Number(counts[0]?.assigned || 0);
@@ -711,7 +711,7 @@ export async function assertCashierStationLicensedInTransaction(input: {
     await subscriptionWithScheduledDowngradeInTransaction(
       input.target,
       input.merchantId,
-      now,
+      true,
     ),
     now,
   );
@@ -737,9 +737,7 @@ export async function assertCashierStationLicensedInTransaction(input: {
   const releaseAt = assignment ? instant(assignment.release_effective_at) : null;
   const licensed =
     assignment?.status === "active" ||
-    (assignment?.status === "release_scheduled" &&
-      releaseAt !== null &&
-      releaseAt.getTime() > Date.now());
+    (assignment?.status === "release_scheduled" && releaseAt !== null);
   if (!licensed) {
     throw new CashierEntitlementError(
       "CASHIER_STATION_LICENSE_REQUIRED",
