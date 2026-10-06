@@ -292,6 +292,30 @@ export async function recordCashierOperationTimelineInTransaction(input: {
         };
   }
 
+  const latestSequenceRows = await operationalQueryRows<{
+    device_sequence: number | string;
+  }>(
+    input.target,
+    `SELECT device_sequence
+       FROM cashier_device_operation_timeline
+      WHERE merchant_id = $1
+        AND device_id = $2
+      ORDER BY device_sequence DESC
+      LIMIT 1
+      FOR SHARE`,
+    [input.merchantId, input.deviceId],
+  );
+  if (
+    latestSequenceRows[0] &&
+    input.deviceSequence <= Number(latestSequenceRows[0].device_sequence)
+  ) {
+    return {
+      allowed: false,
+      code: "CASHIER_OPERATION_SEQUENCE_CONFLICT",
+      reason: "cashier device sequence moved backwards or was reset",
+    };
+  }
+
   const previous = await operationalQueryRows<{
     device_sequence: number | string;
     occurred_at: DbInstant;
