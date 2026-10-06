@@ -917,9 +917,9 @@ export default function CashierPosPage() {
                           <p className="text-sm font-semibold" dir="ltr">{formatMoney(activeUnit, activeLine.item.currency_code, activeLine.item.currency_fraction_digits, lang)}</p>
                         </div>
                         <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm" dir="ltr">
-                          <button type="button" onClick={() => updateQuantity(activeKey, activeLine.quantity - 1)} className="h-10 w-12 text-xl hover:bg-slate-50">−</button>
+                          <button type="button" aria-label={extra.decreaseQuantity} onClick={() => updateQuantity(activeKey, activeLine.quantity - 1)} className="h-10 w-12 text-xl hover:bg-slate-50">−</button>
                           <span className="min-w-12 text-center text-base font-bold">{activeLine.quantity}</span>
-                          <button type="button" onClick={() => updateQuantity(activeKey, activeLine.quantity + 1)} className="h-10 w-12 text-xl hover:bg-slate-50">+</button>
+                          <button type="button" aria-label={extra.increaseQuantity} onClick={() => updateQuantity(activeKey, activeLine.quantity + 1)} className="h-10 w-12 text-xl hover:bg-slate-50">+</button>
                         </div>
                       </div>
                     </div>
@@ -932,7 +932,7 @@ export default function CashierPosPage() {
                         </div>
                         <div className="flex items-stretch gap-1.5">
                           {compactPageCount > 1 ? (
-                            <button type="button" onClick={() => setCompactPage(page => (page - 1 + compactPageCount) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">‹</button>
+                            <button type="button" aria-label={extra.previousCartItems} onClick={() => setCompactPage(page => (page - 1 + compactPageCount) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">‹</button>
                           ) : null}
                           <div className="cashier-cart-compact-grid grid min-w-0 flex-1 grid-cols-2 gap-1.5 sm:grid-cols-4">
                             {visibleCompactLines.map(line => {
@@ -952,7 +952,7 @@ export default function CashierPosPage() {
                             })}
                           </div>
                           {compactPageCount > 1 ? (
-                            <button type="button" onClick={() => setCompactPage(page => (page + 1) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">›</button>
+                            <button type="button" aria-label={extra.nextCartItems} onClick={() => setCompactPage(page => (page + 1) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">›</button>
                           ) : null}
                         </div>
                       </div>
@@ -963,7 +963,7 @@ export default function CashierPosPage() {
             </div>
 
             <div className="shrink-0 border-t border-slate-100 bg-white p-3">
-              {quoteError ? <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div> : null}
+              {quoteError ? <div role="alert" className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div> : null}
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between text-slate-500"><span>{labels.subtotal}</span><span dir="ltr">{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits, lang) : '—'}</span></div>
                 <div className="flex justify-between text-emerald-700"><span>{labels.discount}</span><span dir="ltr">{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits, lang)}` : '—'}</span></div>
