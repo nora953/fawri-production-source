@@ -508,6 +508,26 @@ export async function createCashierBillingCheckout(input: {
     }
 
     const subscription = await loadSubscription(client, merchantId, true);
+    if (input.operation === "activate" && subscription?.status === "cancelled") {
+      const assignmentRows = await operationalQueryRows<{ assigned: number | string }>(
+        client,
+        `SELECT count(*)::int AS assigned
+           FROM cashier_station_seat_assignments
+          WHERE merchant_id = $1
+            AND subscription_id = $2
+            AND status IN ('active','release_scheduled')`,
+        [merchantId, subscription.id],
+      );
+      const assignedSeats = Number(assignmentRows[0]?.assigned || 0);
+      if (requestedSeats < assignedSeats) {
+        fail(
+          "CASHIER_REACTIVATION_SEATS_BELOW_ASSIGNED",
+          "reactivation seats cannot be lower than currently assigned cashier stations",
+          409,
+          { assigned_stations: assignedSeats, requested_seats: requestedSeats },
+        );
+      }
+    }
     const plan = plannedOrder({ operation: input.operation, requestedSeats, subscription, now });
 
     if (duplicateRows[0]) {
