@@ -450,11 +450,12 @@ export default function SignupPage() {
                 onChange={handleChange}
                 onBlur={handlePasswordBlur}
                 aria-invalid={!!passwordInlineError}
+                aria-describedby={passwordInlineError ? "password-error" : undefined}
                 className={`${fieldInputClass} ${passwordInlineError ? fieldInvalidInputClass : ''}`}
                 data-testid="input-password"
               />
                 {passwordInlineError && (
-                  <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert">
+                  <p id="password-error" className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert">
                     {passwordInlineError}
                   </p>
                 )}
@@ -472,11 +473,12 @@ export default function SignupPage() {
                 onChange={handleChange}
                 onBlur={handleConfirmPasswordBlur}
                 aria-invalid={!!confirmPasswordInlineError}
+                aria-describedby={confirmPasswordInlineError ? "confirm-password-error" : undefined}
                 className={`${fieldInputClass} ${confirmPasswordInlineError ? fieldInvalidInputClass : ''}`}
                 data-testid="input-confirm-password"
               />
                 {confirmPasswordInlineError && (
-                  <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert">
+                  <p id="confirm-password-error" className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert">
                     {confirmPasswordInlineError}
                   </p>
                 )}
