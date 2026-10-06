@@ -1,0 +1,11 @@
+{
+  "index": 27,
+  "name": "cashier_subscription_licensing",
+  "when": 1791244800000,
+  "mode": "reviewed_sql",
+  "preimage_files": [
+    "cashier-subscription.ts",
+    "index.ts"
+  ],
+  "sql_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+}
