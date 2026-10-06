@@ -5,6 +5,7 @@ import {
   requireSecureMerchantSession,
 } from "../middleware/authSession";
 import {
+  getCashierEntitlementContext,
   getCashierOperatorContext,
   getCashierStationContext,
   requireCashierOperatorSession,
@@ -32,6 +33,7 @@ import {
 } from "../services/cashierStationConfigurationAuthority";
 import { buildCashierCentralActivityAuthoritative } from "../services/postgresCashierCentralActivityAuthority";
 import { enforceCashierDiscountOverrideRoleInvariant } from "../services/cashierStaffDiscountRoleHardening";
+import { CashierEntitlementError } from "../services/cashierEntitlementAuthority";
 
 const router = Router();
 
@@ -68,7 +70,7 @@ function mapCashierRuntimeUniqueConflict(
 function sendError(res: Response, error: unknown): void {
   res.setHeader("Cache-Control", "no-store");
   const mapped =
-    error instanceof CashierStaffAuthorityError
+    error instanceof CashierStaffAuthorityError || error instanceof CashierEntitlementError
       ? error
       : mapCashierRuntimeUniqueConflict(error);
   if (mapped) {
@@ -301,7 +303,11 @@ router.patch(
         ),
       });
       res.setHeader("Cache-Control", "no-store");
-      res.json({ ok: true, station });
+      res.json({
+      ok: true,
+      station,
+      cashier_entitlement: getCashierEntitlementContext(res),
+    });
     } catch (error) {
       sendError(res, error);
     }
@@ -428,7 +434,11 @@ router.post(
         pin: req.body?.pin,
       });
       res.setHeader("Cache-Control", "no-store");
-      res.json({ ok: true, ...result });
+      res.json({
+        ok: true,
+        ...result,
+        cashier_entitlement: getCashierEntitlementContext(res),
+      });
     } catch (error) {
       sendError(res, error);
     }
@@ -441,7 +451,11 @@ router.get(
   (_req: Request, res: Response) => {
     const operator = getCashierOperatorContext(res);
     res.setHeader("Cache-Control", "no-store");
-    res.json({ ok: true, operator });
+    res.json({
+      ok: true,
+      operator,
+      cashier_entitlement: getCashierEntitlementContext(res),
+    });
   },
 );
 
