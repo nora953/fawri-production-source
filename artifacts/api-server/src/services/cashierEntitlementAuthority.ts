@@ -258,13 +258,265 @@ async function subscriptionRow(
   return rows[0] || null;
 }
 
+async function reconcileScheduledDowngradeInTransaction(
+  target: OperationalQueryTarget,
+  merchantId: string,
+  now = new Date(),
+): Promise<CashierSubscriptionRow | null> {
+  let row = await subscriptionRow(target, merchantId, true);
+  if (!row || row.scheduled_licensed_seats === null || row.scheduled_change_at === null) {
+    return row;
+  }
+  const effectiveAt = instant(row.scheduled_change_at);
+  if (!effectiveAt || effectiveAt.getTime() > now.getTime()) return row;
+
+  const targetSeats = safeInt(row.scheduled_licensed_seats, "scheduled_licensed_seats", 1);
+  const currentSeats = safeInt(row.licensed_seats, "licensed_seats", 1);
+  if (targetSeats >= currentSeats) {
+    throw new CashierEntitlementError(
+      "CASHIER_DOWNGRADE_STATE_INVALID",
+      "scheduled cashier downgrade is invalid",
+      500,
+    );
+  }
+
+  const assignments = await operationalQueryRows<{ station_id: string; status: string }>(
+    target,
+    `SELECT station_id, status
+       FROM cashier_station_seat_assignments
+      WHERE merchant_id = $1
+        AND subscription_id = $2
+        AND status IN ('active','release_scheduled')
+      ORDER BY station_id
+      FOR UPDATE`,
+    [merchantId, row.id],
+  );
+  const keepCount = assignments.filter((assignment) => assignment.status === "active").length;
+  const scheduledReleaseCount = assignments.filter(
+    (assignment) => assignment.status === "release_scheduled",
+  ).length;
+  if (keepCount !== targetSeats || keepCount + scheduledReleaseCount > currentSeats) {
+    throw new CashierEntitlementError(
+      "CASHIER_DOWNGRADE_ASSIGNMENTS_INVALID",
+      "scheduled cashier downgrade station selection is inconsistent",
+      409,
+      {
+        current_seats: currentSeats,
+        target_seats: targetSeats,
+        kept_assignments: keepCount,
+        scheduled_releases: scheduledReleaseCount,
+      },
+    );
+  }
+
+  await target.query(
+    `UPDATE cashier_station_seat_assignments
+        SET status = 'released', released_at = $3, updated_at = $3
+      WHERE merchant_id = $1
+        AND subscription_id = $2
+        AND status = 'release_scheduled'
+        AND release_effective_at <= $3`,
+    [merchantId, row.id, now],
+  );
+  const nextVersion = safeInt(row.version, "version", 1) + 1;
+  const updated = await operationalQueryRows<CashierSubscriptionRow>(
+    target,
+    `UPDATE merchant_cashier_subscriptions
+        SET licensed_seats = $3,
+            scheduled_licensed_seats = NULL,
+            scheduled_change_at = NULL,
+            version = $4,
+            updated_at = $5
+      WHERE merchant_id = $1 AND id = $2 AND version = $6
+      RETURNING id, merchant_id, status, licensed_seats, price_per_seat_iqd,
+                billing_period_start, billing_period_end, grace_duration_seconds,
+                scheduled_licensed_seats, scheduled_change_at, version`,
+    [merchantId, row.id, targetSeats, nextVersion, now, row.version],
+  );
+  if (updated.length !== 1) {
+    throw new CashierEntitlementError(
+      "CASHIER_SUBSCRIPTION_VERSION_CONFLICT",
+      "cashier subscription changed concurrently",
+      409,
+    );
+  }
+  await target.query(
+    `INSERT INTO cashier_entitlement_audit_events
+       (id, merchant_id, subscription_id, action, actor_type,
+        from_seats, to_seats, from_version, to_version, metadata, created_at)
+     VALUES ($1,$2,$3,'apply_downgrade','system',$4,$5,$6,$7,'{}'::jsonb,$8)`,
+    [
+      `cashier_audit_${crypto.randomUUID()}`,
+      merchantId,
+      row.id,
+      currentSeats,
+      targetSeats,
+      safeInt(row.version, "version", 1),
+      nextVersion,
+      now,
+    ],
+  );
+  row = updated[0];
+  return row;
+}
+
+export async function scheduleCashierDowngradeAuthoritative(input: {
+  merchantId: string;
+  targetSeats: number;
+  keepStationIds: string[];
+  expectedVersion?: number;
+}): Promise<CashierEntitlementSnapshot> {
+  assertAuthority();
+  if (!Number.isSafeInteger(input.targetSeats) || input.targetSeats <= 0) {
+    throw new CashierEntitlementError(
+      "CASHIER_DOWNGRADE_TARGET_INVALID",
+      "cashier downgrade target must be at least one seat",
+      400,
+    );
+  }
+  const keepStationIds = [...new Set(input.keepStationIds.map((value) => String(value || "").trim()))]
+    .filter(Boolean);
+  if (keepStationIds.length !== input.targetSeats) {
+    throw new CashierEntitlementError(
+      "CASHIER_DOWNGRADE_SELECTION_INVALID",
+      "select exactly the cashier stations that should remain licensed",
+      400,
+    );
+  }
+
+  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
+    const now = new Date();
+    const current = await reconcileScheduledDowngradeInTransaction(
+      client,
+      input.merchantId,
+      now,
+    );
+    const snapshot = evaluateCashierEntitlement(current, now);
+    assertCashierEntitlementState(snapshot, ["active"], "CASHIER_ACTIVE_SUBSCRIPTION_REQUIRED");
+    if (input.targetSeats >= snapshot.licensed_seats) {
+      throw new CashierEntitlementError(
+        "CASHIER_DOWNGRADE_TARGET_INVALID",
+        "cashier downgrade target must be lower than current licensed seats",
+        400,
+      );
+    }
+    if (input.expectedVersion !== undefined && input.expectedVersion !== snapshot.version) {
+      throw new CashierEntitlementError(
+        "CASHIER_SUBSCRIPTION_VERSION_CONFLICT",
+        "cashier subscription changed before downgrade scheduling",
+        409,
+        { current_version: snapshot.version },
+      );
+    }
+    if (!snapshot.billing_period_end) {
+      throw new CashierEntitlementError(
+        "CASHIER_ENTITLEMENT_STATE_INVALID",
+        "cashier billing period is unavailable",
+        500,
+      );
+    }
+
+    const assignments = await operationalQueryRows<{ station_id: string }>(
+      client,
+      `SELECT station_id
+         FROM cashier_station_seat_assignments
+        WHERE merchant_id = $1
+          AND subscription_id = $2
+          AND status IN ('active','release_scheduled')
+        ORDER BY station_id
+        FOR UPDATE`,
+      [input.merchantId, snapshot.subscription_id],
+    );
+    const assignedIds = new Set(assignments.map((row) => row.station_id));
+    if (
+      assignedIds.size !== snapshot.licensed_seats ||
+      keepStationIds.some((stationId) => !assignedIds.has(stationId))
+    ) {
+      throw new CashierEntitlementError(
+        "CASHIER_DOWNGRADE_SELECTION_INVALID",
+        "cashier station selection does not match current licensed assignments",
+        409,
+        { assigned_station_count: assignedIds.size },
+      );
+    }
+
+    await client.query(
+      `UPDATE cashier_station_seat_assignments
+          SET status = CASE WHEN station_id = ANY($3::text[]) THEN 'active' ELSE 'release_scheduled' END,
+              release_effective_at = CASE WHEN station_id = ANY($3::text[]) THEN NULL ELSE $4 END,
+              released_at = NULL,
+              updated_at = $5
+        WHERE merchant_id = $1
+          AND subscription_id = $2
+          AND status IN ('active','release_scheduled')`,
+      [
+        input.merchantId,
+        snapshot.subscription_id,
+        keepStationIds,
+        new Date(snapshot.billing_period_end),
+        now,
+      ],
+    );
+    const nextVersion = snapshot.version + 1;
+    const rows = await operationalQueryRows<CashierSubscriptionRow>(
+      client,
+      `UPDATE merchant_cashier_subscriptions
+          SET scheduled_licensed_seats = $3,
+              scheduled_change_at = billing_period_end,
+              version = $4,
+              updated_at = $5
+        WHERE merchant_id = $1 AND id = $2 AND version = $6
+        RETURNING id, merchant_id, status, licensed_seats, price_per_seat_iqd,
+                  billing_period_start, billing_period_end, grace_duration_seconds,
+                  scheduled_licensed_seats, scheduled_change_at, version`,
+      [
+        input.merchantId,
+        snapshot.subscription_id,
+        input.targetSeats,
+        nextVersion,
+        now,
+        snapshot.version,
+      ],
+    );
+    if (rows.length !== 1) {
+      throw new CashierEntitlementError(
+        "CASHIER_SUBSCRIPTION_VERSION_CONFLICT",
+        "cashier subscription changed before downgrade scheduling",
+        409,
+      );
+    }
+    await client.query(
+      `INSERT INTO cashier_entitlement_audit_events
+         (id, merchant_id, subscription_id, action, actor_type, actor_ref,
+          from_seats, to_seats, from_version, to_version, metadata, created_at)
+       VALUES ($1,$2,$3,'schedule_downgrade','merchant',$2,$4,$5,$6,$7,$8::jsonb,$9)`,
+      [
+        `cashier_audit_${crypto.randomUUID()}`,
+        input.merchantId,
+        snapshot.subscription_id,
+        snapshot.licensed_seats,
+        input.targetSeats,
+        snapshot.version,
+        nextVersion,
+        JSON.stringify({ keep_station_ids: keepStationIds.join(",") }),
+        now,
+      ],
+    );
+    return evaluateCashierEntitlement(rows[0], now)!;
+  });
+}
+
 export async function getCashierEntitlementAuthoritative(
   merchantId: string,
 ): Promise<CashierEntitlementSnapshot | null> {
   assertAuthority();
-  return withMerchantOperationalTransaction(merchantId, async (client) =>
-    evaluateCashierEntitlement(await subscriptionRow(client, merchantId), new Date()),
-  );
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    const now = new Date();
+    return evaluateCashierEntitlement(
+      await reconcileScheduledDowngradeInTransaction(client, merchantId, now),
+      now,
+    );
+  });
 }
 
 export function assertCashierEntitlementState(
@@ -292,8 +544,13 @@ export async function assignCashierStationSeatInTransaction(input: {
   stationId: string;
   actorRef?: string;
 }): Promise<CashierEntitlementSnapshot> {
-  const row = await subscriptionRow(input.target, input.merchantId, true);
-  const snapshot = evaluateCashierEntitlement(row, new Date());
+  const now = new Date();
+  const row = await reconcileScheduledDowngradeInTransaction(
+    input.target,
+    input.merchantId,
+    now,
+  );
+  const snapshot = evaluateCashierEntitlement(row, now);
   assertCashierEntitlementState(snapshot, ["active"], "CASHIER_ACTIVE_SUBSCRIPTION_REQUIRED");
 
   await input.target.query(
@@ -393,9 +650,14 @@ export async function assertCashierStationLicensedInTransaction(input: {
   stationId: string;
   allowGrace?: boolean;
 }): Promise<CashierEntitlementSnapshot> {
+  const now = new Date();
   const snapshot = evaluateCashierEntitlement(
-    await subscriptionRow(input.target, input.merchantId),
-    new Date(),
+    await reconcileScheduledDowngradeInTransaction(
+      input.target,
+      input.merchantId,
+      now,
+    ),
+    now,
   );
   assertCashierEntitlementState(
     snapshot,
