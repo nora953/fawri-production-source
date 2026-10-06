@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, RotateCcw } from 'lucide-react';
+import { ShieldCheck, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -18,6 +18,7 @@ import {
   validateInternationalPhone,
 } from '@/lib/internationalPhone';
 import { MERCHANT_REGION_BY_COUNTRY } from '@/lib/merchantRegions';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 type ForgotPasswordModalProps = {
   open: boolean;
@@ -72,8 +73,6 @@ export default function ForgotPasswordModal({
   const [recoveryChallenge, setRecoveryChallenge] = useState<RecoveryChallenge | null>(null);
   const selectedRegion = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
     || MERCHANT_REGION_BY_COUNTRY.get('IQ');
-
-  if (!open) return null;
 
   const updateField = (field: keyof typeof initialState, value: string) => {
     setForm(current => ({
@@ -229,11 +228,20 @@ export default function ForgotPasswordModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-4 pb-4 pt-10 backdrop-blur-[2px] md:items-center md:p-4"
-      dir={isRTL ? 'rtl' : 'ltr'}
-    >
-      <div className="w-full max-w-md overflow-hidden rounded-[2rem] border bg-background shadow-2xl">
+    <Dialog open={open} onOpenChange={nextOpen => {
+      if (!nextOpen) resetAndClose();
+    }}>
+      <DialogContent
+        dir={isRTL ? 'rtl' : 'ltr'}
+        className="w-[calc(100vw-2rem)] max-w-md overflow-hidden rounded-[2rem] p-0 shadow-2xl"
+        closeButtonClassName={isRTL ? 'left-4 right-auto top-4' : 'right-4 top-4'}
+        onEscapeKeyDown={event => {
+          if (isLoading) event.preventDefault();
+        }}
+        onPointerDownOutside={event => {
+          if (isLoading) event.preventDefault();
+        }}
+      >
         <div className={`flex items-start justify-between gap-4 border-b px-5 ${step !== 'phone' ? 'py-3' : 'py-5'}`}>
           <div className="flex items-start gap-3">
             <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
@@ -244,29 +252,19 @@ export default function ForgotPasswordModal({
               )}
             </div>
 
-            <div>
-              <h2 className="text-xl font-extrabold text-foreground">
+            <div className="pe-12">
+              <DialogTitle className="text-xl font-extrabold text-foreground">
                 {t.forgot_reset_title}
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-sm leading-6 text-muted-foreground">
                 {step === 'phone'
                   ? t.forgot_phone_subtitle
                   : step === 'verify'
                     ? t.forgot_verify_subtitle
                     : t.forgot_password_subtitle}
-              </p>
+              </DialogDescription>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={resetAndClose}
-            disabled={isLoading}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-card text-muted-foreground shadow-sm transition hover:bg-muted disabled:opacity-60"
-            aria-label={t.forgot_close}
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         <div className={`px-5 ${step !== 'phone' ? 'space-y-3 py-3' : 'space-y-5 py-5'}`}>
@@ -413,7 +411,7 @@ export default function ForgotPasswordModal({
             </>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -4,7 +4,10 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
-import { useI18n } from '@/lib/i18n';type ChangePasswordModalProps = {
+import { useI18n } from '@/lib/i18n';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+
+type ChangePasswordModalProps = {
   open: boolean;
   onClose: () => void;
   phone: string;
@@ -16,8 +19,6 @@ export default function ChangePasswordModal({ open, onClose, phone }: ChangePass
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  if (!open) return null;
 
   const closeModal = () => {
     if (isLoading) return;
@@ -70,13 +71,22 @@ export default function ChangePasswordModal({ open, onClose, phone }: ChangePass
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 py-8 backdrop-blur-sm" dir={isRTL ? 'rtl' : 'ltr'}>
-      <button type="button" className="absolute inset-0 cursor-default" onClick={closeModal} aria-label={t.change_password_modal_close} />
-
-      <div className="relative max-h-[88vh] w-full max-w-md overflow-y-auto rounded-3xl border bg-background p-5 shadow-2xl">
+    <Dialog open={open} onOpenChange={nextOpen => {
+      if (!nextOpen) closeModal();
+    }}>
+      <DialogContent
+        dir={isRTL ? 'rtl' : 'ltr'}
+        className="max-h-[88vh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-3xl p-5 shadow-2xl"
+        onEscapeKeyDown={event => {
+          if (isLoading) event.preventDefault();
+        }}
+        onPointerDownOutside={event => {
+          if (isLoading) event.preventDefault();
+        }}
+      >
         <div className="mb-5 text-center">
-          <h2 className="text-2xl font-extrabold text-foreground">{t.change_password_modal_title}</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.change_password_modal_desc}</p>
+          <DialogTitle className="text-2xl font-extrabold text-foreground">{t.change_password_modal_title}</DialogTitle>
+          <DialogDescription className="mt-2 text-sm leading-6 text-muted-foreground">{t.change_password_modal_desc}</DialogDescription>
         </div>
 
         <div className="space-y-4">
@@ -123,7 +133,7 @@ export default function ChangePasswordModal({ open, onClose, phone }: ChangePass
             {isLoading ? t.change_password_modal_saving : t.change_password_modal_save_password}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
