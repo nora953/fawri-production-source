@@ -5,6 +5,7 @@ import {
   type CashierManagementCopy as Copy,
 } from '@/lib/translations/features/pages/dashboard/CashierManagementPage';
 import { normalizeCashierPairingCode } from '@/lib/cashierPairingCode';
+import { cashierStationCreationBody } from '@/lib/cashierStationCreation';
 import {
   Select,
   SelectContent,
@@ -146,6 +147,7 @@ export default function CashierManagementPage() {
   const [staff, setStaff] = useState<StaffView[]>([]);
   const [stations, setStations] = useState<StationView[]>([]);
   const [locations, setLocations] = useState<LocationView[]>([]);
+  const [locationsLoaded, setLocationsLoaded] = useState(false);
   const [cashierEntitlement, setCashierEntitlement] = useState<CashierEntitlementSummary>({
     state: 'inactive',
     licensed_seats: 0,
@@ -179,6 +181,7 @@ export default function CashierManagementPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLocationsLoaded(false);
     setError('');
     try {
       const [staffPayload, stationPayload, locationPayload, entitlementPayload] = await Promise.all([
@@ -190,6 +193,7 @@ export default function CashierManagementPage() {
       setStaff(Array.isArray(staffPayload.staff) ? staffPayload.staff as StaffView[] : []);
       setStations(Array.isArray(stationPayload.stations) ? stationPayload.stations as StationView[] : []);
       setLocations(Array.isArray(locationPayload.locations) ? locationPayload.locations as LocationView[] : []);
+      setLocationsLoaded(Array.isArray(locationPayload.locations));
       const authority = record(entitlementPayload.entitlement);
       setCashierEntitlement({
         state: ['active', 'grace', 'restricted', 'suspended'].includes(String(authority.state))
@@ -370,18 +374,22 @@ export default function CashierManagementPage() {
     setAddStationOpen(false);
   };
 
+  const stationCreateBody = cashierStationCreationBody({
+    name: stationName,
+    locationId: stationLocationId,
+    locations,
+    locationsLoaded,
+    offlineAuthority,
+  });
+
   const addStation = async () => {
-    if (!stationName.trim() || !stationLocationId) return;
+    if (!stationCreateBody) return;
     setBusy(true);
     setError('');
     try {
       await api('/api/cashier/management/stations', {
         method: 'POST',
-        body: JSON.stringify({
-          name: stationName.trim(),
-          location_id: stationLocationId,
-          offline_inventory_authority: offlineAuthority,
-        }),
+        body: JSON.stringify(stationCreateBody),
       });
       resetAddStation();
       setAddStationOpen(false);
@@ -668,7 +676,7 @@ export default function CashierManagementPage() {
                 <h2 className="text-lg font-bold">{l.stations}</h2>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{stations.length}</span>
               </div>
-              <button type="button" onClick={openAddStation} disabled={locations.length === 0 || !cashierManagementActive} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
+              <button type="button" onClick={openAddStation} disabled={!locationsLoaded || !cashierManagementActive} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
                 {l.addStation}
               </button>
             </div>
@@ -831,22 +839,25 @@ export default function CashierManagementPage() {
             <label className="text-sm font-semibold">{l.stationName}<input value={stationName} onChange={event => setStationName(event.target.value)} autoComplete="off" className="mt-1.5 h-11 w-full rounded-lg border bg-background px-3 font-normal outline-none focus:border-primary" /></label>
             <div className="text-sm font-semibold">
               <span>{l.location}</span>
-              <Select value={stationLocationId} onValueChange={setStationLocationId}>
-                <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg bg-background"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {locations.map(location => (
-                    <SelectItem key={location.id} value={location.id}>{locationLabel(location.id)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {locations.length === 0 ? (
+                <p className="mt-1.5">{l.mainLocation}</p>
+              ) : (
+                <Select value={stationLocationId} onValueChange={setStationLocationId}>
+                  <SelectTrigger aria-label={l.location} className="mt-1.5 h-11 w-full rounded-lg bg-background"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {locations.map(location => (
+                      <SelectItem key={location.id} value={location.id}>{locationLabel(location.id)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
-          {locations.length === 0 ? <p className="mt-3 text-sm font-semibold text-destructive">{l.noLocations}</p> : null}
           <label className="mt-4 flex items-start gap-3 rounded-xl border p-3">
             <input type="checkbox" checked={offlineAuthority} onChange={event => setOfflineAuthority(event.target.checked)} className="mt-1 h-4 w-4" />
             <span><strong className="block text-sm">{l.offlineAuthority}</strong><span className="mt-1 block text-xs text-muted-foreground">{l.offlineHint}</span></span>
           </label>
-          <button type="button" disabled={busy || !stationName.trim() || !stationLocationId} onClick={() => void addStation()} className="mt-4 h-11 w-full rounded-lg bg-primary font-bold text-primary-foreground disabled:opacity-50">
+          <button type="button" disabled={busy || !stationCreateBody} onClick={() => void addStation()} className="mt-4 h-11 w-full rounded-lg bg-primary font-bold text-primary-foreground disabled:opacity-50">
             {busy ? l.saving : l.saveStation}
           </button>
         </Modal>
