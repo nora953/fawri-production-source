@@ -42,7 +42,7 @@ export const CASHIER_SUBSCRIPTION_PANEL_COPY = {
     exactServerAmount: 'هذا المبلغ محسوب من السيرفر حسب الأيام/الوقت المتبقي فعليًا.',
     seatLimitHint: 'لا يمكن تشغيل محطات مرخصة أكثر من عدد المقاعد.',
     currencyIqd: 'IQD',
-    seatUnit: 'seats',
+    seatUnit: 'مقاعد',
   },
   ku: {
     title: 'بەشداری کاشێر',
@@ -87,7 +87,7 @@ export const CASHIER_SUBSCRIPTION_PANEL_COPY = {
     exactServerAmount: 'ئەم بڕە لە سێرڤەرەوە بە پێی ماوەی ماوە حساب کراوە.',
     seatLimitHint: 'ژمارەی وێستگەی چالاک نابێت لە شوێنە مۆڵەتپێدراوەکان زیاتر بێت.',
     currencyIqd: 'IQD',
-    seatUnit: 'seats',
+    seatUnit: 'شوێن',
   },
   en: {
     title: 'Cashier subscription',
