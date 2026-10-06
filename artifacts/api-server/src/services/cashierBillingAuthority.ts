@@ -394,6 +394,62 @@ export function getCashierBillingCatalog() {
   };
 }
 
+export async function quoteCashierBillingChange(input: {
+  merchantId: string;
+  operation: CashierBillingOperation;
+  requestedSeats: number;
+  now?: Date;
+}): Promise<{
+  operation: CashierBillingOperation;
+  current_seats: number;
+  requested_seats: number;
+  resulting_seats: number;
+  unit_price_iqd: number;
+  amount_iqd: number;
+  currency: "IQD";
+  billing_period_start: string;
+  billing_period_end: string;
+  subscription_version: number;
+  next_full_renewal_amount_iqd: number;
+  quoted_at: string;
+}> {
+  if (!operationalPostgresAuthorityRequired()) {
+    fail(
+      "CASHIER_BILLING_ENTITLEMENT_AUTHORITY_NOT_ACTIVE",
+      "PostgreSQL cashier entitlement authority is required before quoting",
+      503,
+    );
+  }
+  const merchantId = requiredText(input.merchantId, "merchant_id", 200);
+  const requestedSeats = positiveInt(input.requestedSeats, "requested_seats");
+  const now = input.now || new Date();
+
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await assertApprovedMerchant(client, merchantId);
+    const subscription = await loadSubscription(client, merchantId, true);
+    const plan = plannedOrder({
+      operation: input.operation,
+      requestedSeats,
+      subscription,
+      now,
+    });
+    return {
+      operation: input.operation,
+      current_seats: plan.currentSeats,
+      requested_seats: requestedSeats,
+      resulting_seats: plan.resultingSeats,
+      unit_price_iqd: plan.unitPriceIqd,
+      amount_iqd: plan.amountIqd,
+      currency: "IQD" as const,
+      billing_period_start: plan.periodStart.toISOString(),
+      billing_period_end: plan.periodEnd.toISOString(),
+      subscription_version: plan.subscriptionVersion,
+      next_full_renewal_amount_iqd: plan.nextFullRenewalAmountIqd,
+      quoted_at: now.toISOString(),
+    };
+  });
+}
+
 export async function createCashierBillingCheckout(input: {
   merchantId: string;
   operation: CashierBillingOperation;
