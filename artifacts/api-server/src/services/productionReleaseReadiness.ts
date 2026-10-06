@@ -176,60 +176,6 @@ export function getProductionRuntimeConfigurationIssues(
     issues.push(issue("http", "HTTP_ALLOWED_ORIGINS_REQUIRED"));
   }
 
-  if (text(env.FAWRI_META_CUTOVER_READY) !== "1") {
-    issues.push(issue("meta", "META_CUTOVER_READY_REQUIRED"));
-  }
-  if (text(env.FAWRI_META_REPLY_TRANSPORT).toLowerCase() !== "live") {
-    issues.push(issue("meta", "META_LIVE_REPLY_TRANSPORT_REQUIRED"));
-  }
-  if (text(env.FAWRI_DISABLE_JOB_WORKERS) === "1") {
-    issues.push(issue("meta", "META_JOB_WORKERS_REQUIRED"));
-  }
-  if (text(env.FAWRI_META_CREDENTIAL_PROVIDER).toLowerCase() !== "aws-kms") {
-    issues.push(issue("kms", "META_AWS_KMS_PROVIDER_REQUIRED"));
-  }
-  if (!text(env.FAWRI_META_AWS_REGION)) {
-    issues.push(issue("kms", "META_AWS_REGION_REQUIRED"));
-  }
-  if (!AWS_KMS_KEY_ARN.test(text(env.FAWRI_META_AWS_KMS_KEY_ARN))) {
-    issues.push(issue("kms", "META_AWS_KMS_KEY_ARN_REQUIRED"));
-  }
-  if (!wrappedDekManifestValid(env)) {
-    issues.push(issue("kms", "META_AWS_WRAPPED_DEK_MANIFEST_REQUIRED"));
-  }
-
-  if (!text(env.META_APP_ID)) {
-    issues.push(issue("meta", "META_APP_ID_REQUIRED"));
-  }
-  if (text(env.META_APP_SECRET).length < 16) {
-    issues.push(issue("meta", "META_APP_SECRET_REQUIRED"));
-  }
-  if (!text(env.META_CONFIG_ID)) {
-    issues.push(issue("meta", "META_CONFIG_ID_REQUIRED"));
-  }
-  if (!isSafeProductionRedirect(env.META_REDIRECT_URI)) {
-    issues.push(issue("meta", "META_REDIRECT_URI_REQUIRED"));
-  }
-  if (text(env.META_VERIFY_TOKEN).length < 32) {
-    issues.push(issue("meta", "META_VERIFY_TOKEN_REQUIRED"));
-  }
-
-  if (text(env.FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER).toLowerCase() !== "openai") {
-    issues.push(issue("knowledge", "KNOWLEDGE_OPENAI_PROVIDER_REQUIRED"));
-  }
-  if (text(env.FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER).toLowerCase() !== "openai") {
-    issues.push(issue("knowledge", "KNOWLEDGE_TRANSLATION_OPENAI_PROVIDER_REQUIRED"));
-  }
-  if (text(env.FAWRI_KNOWLEDGE_AI_PROVIDER).toLowerCase() !== "openai") {
-    issues.push(issue("knowledge", "KNOWLEDGE_AI_OPENAI_PROVIDER_REQUIRED"));
-  }
-  if (text(env.OPENAI_API_KEY).length < 20) {
-    issues.push(issue("knowledge", "OPENAI_API_KEY_REQUIRED"));
-  }
-  if (!text(env.FAWRI_OPENAI_MODEL)) {
-    issues.push(issue("knowledge", "FAWRI_OPENAI_MODEL_REQUIRED"));
-  }
-
   const serviceVersion = text(env.FAWRI_SERVICE_VERSION);
   if (!serviceVersion || serviceVersion === "unknown" || !SAFE_SERVICE_VERSION.test(serviceVersion)) {
     issues.push(issue("observability", "SERVICE_VERSION_REQUIRED"));
@@ -278,6 +224,8 @@ export function metaConnectionActivationConfigured(
 
 export function getProductionExternalLaunchBlockers(): ProductionReleaseIssue[] {
   return [
+    issue("meta", "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED"),
+    issue("knowledge", "AI_PRODUCTION_INTEGRATION_NOT_ACTIVATED"),
     issue("billing", "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE"),
     issue("backup", "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED"),
     issue("storage", "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED"),
