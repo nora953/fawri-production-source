@@ -360,6 +360,114 @@ async function reconcileScheduledDowngradeInTransaction(
   return row;
 }
 
+export async function changeCashierSubscriptionAdministrativeState(input: {
+  merchantId: string;
+  action: "suspend" | "resume" | "cancel";
+  actorRef: string;
+  expectedVersion?: number;
+}): Promise<CashierEntitlementSnapshot> {
+  assertAuthority();
+  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
+    const now = new Date();
+    const row = await subscriptionRow(client, input.merchantId, true);
+    if (!row) {
+      throw new CashierEntitlementError(
+        "CASHIER_SUBSCRIPTION_NOT_FOUND",
+        "cashier subscription was not found",
+        404,
+      );
+    }
+    const currentVersion = safeInt(row.version, "version", 1);
+    if (
+      input.expectedVersion !== undefined &&
+      input.expectedVersion !== currentVersion
+    ) {
+      throw new CashierEntitlementError(
+        "CASHIER_SUBSCRIPTION_VERSION_CONFLICT",
+        "cashier subscription changed before the administrative action",
+        409,
+        { current_version: currentVersion },
+      );
+    }
+
+    let nextStatus: "active" | "suspended" | "cancelled";
+    if (input.action === "suspend") {
+      if (row.status !== "active") {
+        throw new CashierEntitlementError(
+          "CASHIER_SUBSCRIPTION_SUSPEND_INVALID",
+          "only an active cashier subscription can be suspended",
+          409,
+          { current_status: row.status },
+        );
+      }
+      nextStatus = "suspended";
+    } else if (input.action === "resume") {
+      if (row.status !== "suspended") {
+        throw new CashierEntitlementError(
+          "CASHIER_SUBSCRIPTION_RESUME_INVALID",
+          "only a suspended cashier subscription can be resumed",
+          409,
+          { current_status: row.status },
+        );
+      }
+      nextStatus = "active";
+    } else {
+      if (row.status === "cancelled" || row.status === "inactive") {
+        throw new CashierEntitlementError(
+          "CASHIER_SUBSCRIPTION_CANCEL_INVALID",
+          "cashier subscription is already inactive or cancelled",
+          409,
+          { current_status: row.status },
+        );
+      }
+      nextStatus = "cancelled";
+    }
+
+    const nextVersion = currentVersion + 1;
+    const rows = await operationalQueryRows<CashierSubscriptionRow>(
+      client,
+      `UPDATE merchant_cashier_subscriptions
+          SET status = $3,
+              scheduled_licensed_seats = CASE WHEN $3 = 'cancelled' THEN NULL ELSE scheduled_licensed_seats END,
+              scheduled_change_at = CASE WHEN $3 = 'cancelled' THEN NULL ELSE scheduled_change_at END,
+              version = $4,
+              updated_at = $5
+        WHERE merchant_id = $1 AND id = $2 AND version = $6
+        RETURNING id, merchant_id, status, licensed_seats, price_per_seat_iqd,
+                  billing_period_start, billing_period_end, grace_duration_seconds,
+                  scheduled_licensed_seats, scheduled_change_at, version`,
+      [input.merchantId, row.id, nextStatus, nextVersion, now, currentVersion],
+    );
+    if (rows.length !== 1) {
+      throw new CashierEntitlementError(
+        "CASHIER_SUBSCRIPTION_VERSION_CONFLICT",
+        "cashier subscription changed concurrently",
+        409,
+      );
+    }
+
+    await client.query(
+      `INSERT INTO cashier_entitlement_audit_events (
+         id, merchant_id, subscription_id, action, actor_type, actor_ref,
+         from_seats, to_seats, from_version, to_version, metadata, created_at
+       ) VALUES ($1,$2,$3,$4,'admin',$5,$6,$6,$7,$8,$9::jsonb,$10)`,
+      [
+        `cashier_audit_${crypto.randomUUID()}`,
+        input.merchantId,
+        row.id,
+        input.action,
+        input.actorRef,
+        safeInt(row.licensed_seats, "licensed_seats"),
+        currentVersion,
+        nextVersion,
+        JSON.stringify({ previous_status: row.status, resulting_status: nextStatus }),
+        now,
+      ],
+    );
+    return evaluateCashierEntitlement(rows[0], now)!;
+  });
+}
+
 export async function scheduleCashierDowngradeAuthoritative(input: {
   merchantId: string;
   targetSeats: number;
