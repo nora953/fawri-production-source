@@ -839,10 +839,23 @@ async function applyPaidOrder(
           409,
         );
       }
+      await target.query(
+        `UPDATE cashier_station_seat_assignments
+            SET status = 'active',
+                release_effective_at = NULL,
+                released_at = NULL,
+                updated_at = $3
+          WHERE merchant_id = $1
+            AND subscription_id = $2
+            AND status = 'release_scheduled'`,
+        [order.merchant_id, subscriptionId, occurredAt],
+      );
       const rows = await operationalQueryRows<{ version: number | string }>(
         target,
         `UPDATE merchant_cashier_subscriptions
             SET licensed_seats = $3,
+                scheduled_licensed_seats = NULL,
+                scheduled_change_at = NULL,
                 version = version + 1,
                 updated_at = $4
           WHERE merchant_id = $1 AND id = $2 AND version = $5
