@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f lib/db/drizzle/meta/0027_snapshot.json
-          if git diff --quiet -- lib/db/drizzle/meta/0027_snapshot.json; then
+          if [ -z "$(git status --porcelain -- lib/db/drizzle/meta/0027_snapshot.json)" ]; then
             echo "0027 snapshot already canonical"
             exit 0
           fi
