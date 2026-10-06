@@ -120,7 +120,10 @@ export const requireCashierStationCredential =
 
 export function requireCashierOperatorSession(
   requiredPermission?: CashierStaffPermission,
-  options: { allowRestricted?: boolean } = {},
+  options: {
+    allowRestricted?: boolean;
+    historicalSync?: boolean;
+  } = {},
 ) {
   return async (
     req: Request,
@@ -140,14 +143,19 @@ export function requireCashierOperatorSession(
         deviceId,
         ...(requiredPermission ? { requiredPermission } : {}),
       });
-      const entitlement = await assertCashierStationLicensedAuthoritative({
-        merchantId: context.merchant_id,
-        stationId: context.station_id,
-        allowGrace: true,
-        allowRestricted: options.allowRestricted === true,
-      });
+      const entitlement =
+        options.historicalSync === true
+          ? null
+          : await assertCashierStationLicensedAuthoritative({
+              merchantId: context.merchant_id,
+              stationId: context.station_id,
+              allowGrace: true,
+              allowRestricted: options.allowRestricted === true,
+            });
       (res as CashierResponse).locals.cashierOperator = context;
-      (res as CashierResponse).locals.cashierEntitlement = entitlement;
+      if (entitlement) {
+        (res as CashierResponse).locals.cashierEntitlement = entitlement;
+      }
       (res as CashierResponse).locals.cashierStation = context;
       res.setHeader("Cache-Control", "no-store");
       next();
