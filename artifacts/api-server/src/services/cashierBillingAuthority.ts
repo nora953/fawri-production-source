@@ -1054,6 +1054,27 @@ export async function applyVerifiedCashierBillingProviderEvent(
     if (!paymentRef) {
       fail("CASHIER_BILLING_PAYMENT_REFERENCE_REQUIRED", "cashier billing payment reference is required", 409);
     }
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+      `${input.provider}:cashier-payment:${paymentRef}`,
+    ]);
+    const paymentRefCollision = await operationalQueryRows<{ id: string }>(
+      client,
+      `SELECT id
+         FROM cashier_billing_orders
+        WHERE provider = $1
+          AND provider_payment_ref = $2
+          AND id <> $3
+        LIMIT 1`,
+      [input.provider, paymentRef, order.id],
+    );
+    if (paymentRefCollision[0]) {
+      fail(
+        "CASHIER_BILLING_PAYMENT_REPLAY",
+        "cashier payment reference was already used by another billing order",
+        409,
+        { existing_order_id: paymentRefCollision[0].id },
+      );
+    }
     if (input.amountIqd !== order.amount_iqd) {
       await client.query(
         `UPDATE cashier_billing_orders
