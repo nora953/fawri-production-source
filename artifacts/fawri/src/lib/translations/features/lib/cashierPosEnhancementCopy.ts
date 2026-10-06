@@ -53,6 +53,10 @@ export const CASHIER_POS_ENHANCEMENT_COPY = {
     managerApprovalManagerLimitExceeded: 'هذا الخصم يتجاوز حد صلاحية المدير لهذا النوع من الخصم.',
     managerApprovalFailed: 'تعذر اعتماد الخصم. تحقق من المدير والصلاحية ثم حاول مرة أخرى.',
     finalTotal: 'الإجمالي بعد الخصم',
+    decreaseQuantity: 'تقليل الكمية',
+    increaseQuantity: 'زيادة الكمية',
+    previousCartItems: 'عناصر السلة السابقة',
+    nextCartItems: 'عناصر السلة التالية',
   },
   ku: {
     checkout: 'پارەدان',
@@ -106,6 +110,10 @@ export const CASHIER_POS_ENHANCEMENT_COPY = {
     managerApprovalManagerLimitExceeded: 'ئەم داشکاندنە لە سنووری دەسەڵاتی ئەم بەڕێوەبەرە بۆ ئەم جۆرە داشکاندنە زیاترە.',
     managerApprovalFailed: 'پەسەندکردنی داشکاندن سەرکەوتوو نەبوو. بەڕێوەبەر و دەسەڵاتەکە بپشکنە و دووبارە هەوڵ بدە.',
     finalTotal: 'کۆی دوای داشکاندن',
+    decreaseQuantity: 'کەمکردنەوەی بڕ',
+    increaseQuantity: 'زیادکردنی بڕ',
+    previousCartItems: 'دانەکانی پێشووی سەبەتە',
+    nextCartItems: 'دانەکانی دواتری سەبەتە',
   },
   en: {
     checkout: 'Pay',
@@ -159,5 +167,9 @@ export const CASHIER_POS_ENHANCEMENT_COPY = {
     managerApprovalManagerLimitExceeded: 'This discount exceeds this manager’s allowed limit for this discount type.',
     managerApprovalFailed: 'The discount could not be approved. Check the manager and authority, then try again.',
     finalTotal: 'Total after discount',
+    decreaseQuantity: 'Decrease quantity',
+    increaseQuantity: 'Increase quantity',
+    previousCartItems: 'Previous cart items',
+    nextCartItems: 'Next cart items',
   },
 } as const satisfies Record<Lang, Record<string, string>>;
