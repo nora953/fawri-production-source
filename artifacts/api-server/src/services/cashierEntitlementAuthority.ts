@@ -459,7 +459,10 @@ export async function scheduleCashierDowngradeAuthoritative(input: {
     await client.query(
       `UPDATE cashier_station_seat_assignments
           SET status = CASE WHEN station_id = ANY($3::text[]) THEN 'active' ELSE 'release_scheduled' END,
-              release_effective_at = CASE WHEN station_id = ANY($3::text[]) THEN NULL ELSE $4 END,
+              release_effective_at = CASE
+                WHEN station_id = ANY($3::text[]) THEN NULL::timestamptz
+                ELSE $4::timestamptz
+              END,
               released_at = NULL,
               updated_at = $5
         WHERE merchant_id = $1
