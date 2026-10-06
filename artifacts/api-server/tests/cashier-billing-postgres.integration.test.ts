@@ -294,6 +294,12 @@ test(
       provider: "test_fake",
       now: graceRenewalTime,
     });
+    assert.equal(renewal.order.unit_price_iqd, 3900);
+    assert.equal(renewal.order.grace_duration_seconds, 7 * 24 * 60 * 60);
+
+    // A configuration change after checkout must not mutate already-paid terms.
+    process.env.FAWRI_CASHIER_SEAT_PRICE_IQD = "9900";
+    process.env.FAWRI_CASHIER_GRACE_SECONDS = String(3 * 24 * 60 * 60);
 
     // Reusing an old provider payment reference on this new order is a replay.
     await assert.rejects(
@@ -329,13 +335,19 @@ test(
     });
     assert.equal(renewed.status, "applied");
     row = await pool.query(
-      `SELECT licensed_seats, billing_period_start, billing_period_end, version
+      `SELECT licensed_seats, price_per_seat_iqd, grace_duration_seconds,
+              billing_period_start, billing_period_end, version
          FROM merchant_cashier_subscriptions WHERE merchant_id = $1`,
       [merchantId],
     );
     assert.equal(Number(row.rows[0].licensed_seats), 4);
+    assert.equal(Number(row.rows[0].price_per_seat_iqd), 3900);
+    assert.equal(Number(row.rows[0].grace_duration_seconds), 7 * 24 * 60 * 60);
     assert.equal(new Date(row.rows[0].billing_period_start).toISOString(), "2026-11-01T00:00:00.000Z");
     assert.equal(new Date(row.rows[0].billing_period_end).toISOString(), "2026-12-01T00:00:00.000Z");
+
+    process.env.FAWRI_CASHIER_SEAT_PRICE_IQD = "3900";
+    process.env.FAWRI_CASHIER_GRACE_SECONDS = String(7 * 24 * 60 * 60);
 
     // A stale quote/order cannot overwrite a newer entitlement version after payment.
     const staleCheckout = await billing.createCashierBillingCheckout({
