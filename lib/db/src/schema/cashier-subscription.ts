@@ -59,7 +59,7 @@ export const merchantCashierSubscriptions = pgTable(
     ),
     scheduledChangeCheck: check(
       "merchant_cashier_subscriptions_scheduled_change_check",
-      sql`(${table.scheduledLicensedSeats} IS NULL AND ${table.scheduledChangeAt} IS NULL) OR (${table.scheduledLicensedSeats} IS NOT NULL AND ${table.scheduledLicensedSeats} >= 0 AND ${table.scheduledLicensedSeats} < ${table.licensedSeats} AND ${table.scheduledChangeAt} IS NOT NULL AND ${table.billingPeriodEnd} IS NOT NULL AND ${table.scheduledChangeAt} = ${table.billingPeriodEnd})`,
+      sql`(${table.scheduledLicensedSeats} IS NULL AND ${table.scheduledChangeAt} IS NULL) OR (${table.scheduledLicensedSeats} IS NOT NULL AND ${table.scheduledLicensedSeats} > 0 AND ${table.scheduledLicensedSeats} < ${table.licensedSeats} AND ${table.scheduledChangeAt} IS NOT NULL AND ${table.billingPeriodEnd} IS NOT NULL AND ${table.scheduledChangeAt} = ${table.billingPeriodEnd})`,
     ),
     timestampCheck: check(
       "merchant_cashier_subscriptions_timestamp_check",
