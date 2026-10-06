@@ -61,6 +61,7 @@ export default function InternationalPhoneField({
   equalColumns = false,
 }: InternationalPhoneFieldProps) {
   const displayNames = useMemo(() => countryDisplayNames(lang), [lang]);
+  const phoneErrorId = `${phoneTestId}-error`;
   const selected = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
     || MERCHANT_REGION_BY_COUNTRY.get('IQ')
     || MERCHANT_REGION_OPTIONS[0];
@@ -134,6 +135,7 @@ export default function InternationalPhoneField({
             onBlur={onPhoneBlur}
             placeholder={phonePlaceholder}
             aria-invalid={!!phoneError}
+            aria-describedby={phoneError ? phoneErrorId : undefined}
             className={`h-full min-w-0 flex-1 rounded-none border-0 shadow-none focus-visible:ring-0 ${
               phoneInput.replace(/\\D/g, '').length >= 13
                 ? 'text-xs tracking-tight'
@@ -144,6 +146,7 @@ export default function InternationalPhoneField({
         </div>
         {phoneError ? (
           <p
+            id={phoneErrorId}
             className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
             role="alert"
           >
