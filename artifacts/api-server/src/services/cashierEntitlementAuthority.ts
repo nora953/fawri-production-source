@@ -286,91 +286,105 @@ export function assertCashierEntitlementState(
   }
 }
 
+export async function assignCashierStationSeatInTransaction(input: {
+  target: OperationalQueryTarget;
+  merchantId: string;
+  stationId: string;
+  actorRef?: string;
+}): Promise<CashierEntitlementSnapshot> {
+  const row = await subscriptionRow(input.target, input.merchantId, true);
+  const snapshot = evaluateCashierEntitlement(row, new Date());
+  assertCashierEntitlementState(snapshot, ["active"], "CASHIER_ACTIVE_SUBSCRIPTION_REQUIRED");
+
+  await input.target.query(
+    `UPDATE cashier_station_seat_assignments
+        SET status = 'released', released_at = now(), updated_at = now()
+      WHERE merchant_id = $1
+        AND status = 'release_scheduled'
+        AND release_effective_at <= now()`,
+    [input.merchantId],
+  );
+
+  const existing = await operationalQueryRows<{ status: string }>(
+    input.target,
+    `SELECT status
+       FROM cashier_station_seat_assignments
+      WHERE merchant_id = $1 AND station_id = $2
+      LIMIT 1
+      FOR UPDATE`,
+    [input.merchantId, input.stationId],
+  );
+  if (existing[0]?.status === "active" || existing[0]?.status === "release_scheduled") {
+    return snapshot;
+  }
+
+  const counts = await operationalQueryRows<{ assigned: number | string }>(
+    input.target,
+    `SELECT count(*)::int AS assigned
+       FROM cashier_station_seat_assignments
+      WHERE merchant_id = $1
+        AND (status = 'active' OR (status = 'release_scheduled' AND release_effective_at > now()))`,
+    [input.merchantId],
+  );
+  const assigned = Number(counts[0]?.assigned || 0);
+  if (assigned >= snapshot.licensed_seats) {
+    throw new CashierEntitlementError(
+      "CASHIER_LICENSED_SEAT_LIMIT_REACHED",
+      "all licensed cashier seats are already assigned",
+      409,
+      { licensed_seats: snapshot.licensed_seats, assigned_seats: assigned },
+    );
+  }
+
+  const id = `cashier_seat_${crypto.randomUUID()}`;
+  if (existing[0]) {
+    await input.target.query(
+      `UPDATE cashier_station_seat_assignments
+          SET subscription_id = $3, status = 'active', assigned_at = now(),
+              release_effective_at = NULL, released_at = NULL, updated_at = now()
+        WHERE merchant_id = $1 AND station_id = $2`,
+      [input.merchantId, input.stationId, snapshot.subscription_id],
+    );
+  } else {
+    await input.target.query(
+      `INSERT INTO cashier_station_seat_assignments
+         (id, merchant_id, subscription_id, station_id, status, assigned_at, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,'active',now(),now(),now())`,
+      [id, input.merchantId, snapshot.subscription_id, input.stationId],
+    );
+  }
+  await input.target.query(
+    `INSERT INTO cashier_entitlement_audit_events
+       (id, merchant_id, subscription_id, action, actor_type, actor_ref,
+        from_seats, to_seats, from_version, to_version, metadata, created_at)
+     VALUES ($1,$2,$3,'seat_assign','merchant',$4,$5,$5,$6,$6,$7::jsonb,now())`,
+    [
+      `cashier_audit_${crypto.randomUUID()}`,
+      input.merchantId,
+      snapshot.subscription_id,
+      input.actorRef || null,
+      snapshot.licensed_seats,
+      snapshot.version,
+      JSON.stringify({ station_id: input.stationId }),
+    ],
+  );
+  return snapshot;
+}
+
 export async function assignCashierStationSeatAuthoritative(input: {
   merchantId: string;
   stationId: string;
   actorRef?: string;
 }): Promise<CashierEntitlementSnapshot> {
   assertAuthority();
-  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
-    const row = await subscriptionRow(client, input.merchantId, true);
-    const snapshot = evaluateCashierEntitlement(row, new Date());
-    assertCashierEntitlementState(snapshot, ["active"], "CASHIER_ACTIVE_SUBSCRIPTION_REQUIRED");
-
-    await client.query(
-      `UPDATE cashier_station_seat_assignments
-          SET status = 'released', released_at = now(), updated_at = now()
-        WHERE merchant_id = $1
-          AND status = 'release_scheduled'
-          AND release_effective_at <= now()`,
-      [input.merchantId],
-    );
-
-    const existing = await operationalQueryRows<{ status: string }>(
-      client,
-      `SELECT status
-         FROM cashier_station_seat_assignments
-        WHERE merchant_id = $1 AND station_id = $2
-        LIMIT 1
-        FOR UPDATE`,
-      [input.merchantId, input.stationId],
-    );
-    if (existing[0]?.status === "active" || existing[0]?.status === "release_scheduled") {
-      return snapshot;
-    }
-
-    const counts = await operationalQueryRows<{ assigned: number | string }>(
-      client,
-      `SELECT count(*)::int AS assigned
-         FROM cashier_station_seat_assignments
-        WHERE merchant_id = $1
-          AND (status = 'active' OR (status = 'release_scheduled' AND release_effective_at > now()))`,
-      [input.merchantId],
-    );
-    const assigned = Number(counts[0]?.assigned || 0);
-    if (assigned >= snapshot.licensed_seats) {
-      throw new CashierEntitlementError(
-        "CASHIER_LICENSED_SEAT_LIMIT_REACHED",
-        "all licensed cashier seats are already assigned",
-        409,
-        { licensed_seats: snapshot.licensed_seats, assigned_seats: assigned },
-      );
-    }
-
-    const id = `cashier_seat_${crypto.randomUUID()}`;
-    if (existing[0]) {
-      await client.query(
-        `UPDATE cashier_station_seat_assignments
-            SET subscription_id = $3, status = 'active', assigned_at = now(),
-                release_effective_at = NULL, released_at = NULL, updated_at = now()
-          WHERE merchant_id = $1 AND station_id = $2`,
-        [input.merchantId, input.stationId, snapshot.subscription_id],
-      );
-    } else {
-      await client.query(
-        `INSERT INTO cashier_station_seat_assignments
-           (id, merchant_id, subscription_id, station_id, status, assigned_at, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,'active',now(),now(),now())`,
-        [id, input.merchantId, snapshot.subscription_id, input.stationId],
-      );
-    }
-    await client.query(
-      `INSERT INTO cashier_entitlement_audit_events
-         (id, merchant_id, subscription_id, action, actor_type, actor_ref,
-          from_seats, to_seats, from_version, to_version, metadata, created_at)
-       VALUES ($1,$2,$3,'seat_assign','merchant',$4,$5,$5,$6,$6,$7::jsonb,now())`,
-      [
-        `cashier_audit_${crypto.randomUUID()}`,
-        input.merchantId,
-        snapshot.subscription_id,
-        input.actorRef || null,
-        snapshot.licensed_seats,
-        snapshot.version,
-        JSON.stringify({ station_id: input.stationId }),
-      ],
-    );
-    return snapshot;
-  });
+  return withMerchantOperationalTransaction(input.merchantId, async (client) =>
+    assignCashierStationSeatInTransaction({
+      target: client,
+      merchantId: input.merchantId,
+      stationId: input.stationId,
+      actorRef: input.actorRef,
+    }),
+  );
 }
 
 export async function assertCashierStationLicensedAuthoritative(input: {
