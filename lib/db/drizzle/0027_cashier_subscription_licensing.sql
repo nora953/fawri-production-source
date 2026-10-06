@@ -177,6 +177,37 @@ ALTER TABLE "cashier_entitlement_audit_events" ADD CONSTRAINT "cashier_entitleme
 CREATE INDEX "cashier_entitlement_audit_events_merchant_created_idx" ON "cashier_entitlement_audit_events" USING btree ("merchant_id","created_at");
 --> statement-breakpoint
 
+CREATE TABLE "cashier_device_operation_timeline" (
+  "id" text PRIMARY KEY NOT NULL,
+  "merchant_id" text NOT NULL,
+  "subscription_id" text NOT NULL,
+  "billing_order_id" text NOT NULL,
+  "station_id" text NOT NULL,
+  "device_id" text NOT NULL,
+  "device_sequence" bigint NOT NULL,
+  "operation_id" text NOT NULL,
+  "operation_kind" text NOT NULL,
+  "occurred_at" timestamp with time zone NOT NULL,
+  "accepted_at" timestamp with time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "cashier_device_operation_timeline_sequence_check" CHECK ("device_sequence" > 0),
+  CONSTRAINT "cashier_device_operation_timeline_operation_kind_check" CHECK ("operation_kind" IN ('sale','return','void'))
+);
+--> statement-breakpoint
+ALTER TABLE "cashier_device_operation_timeline" ADD CONSTRAINT "cashier_device_operation_timeline_merchant_id_merchants_id_fk" FOREIGN KEY ("merchant_id") REFERENCES "public"."merchants"("id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "cashier_device_operation_timeline" ADD CONSTRAINT "cashier_device_operation_timeline_subscription_merchant_fk" FOREIGN KEY ("subscription_id","merchant_id") REFERENCES "public"."merchant_cashier_subscriptions"("id","merchant_id") ON DELETE restrict ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "cashier_device_operation_timeline" ADD CONSTRAINT "cashier_device_operation_timeline_billing_order_merchant_fk" FOREIGN KEY ("billing_order_id","merchant_id") REFERENCES "public"."cashier_billing_orders"("id","merchant_id") ON DELETE restrict ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "cashier_device_operation_timeline" ADD CONSTRAINT "cashier_device_operation_timeline_station_merchant_fk" FOREIGN KEY ("station_id","merchant_id") REFERENCES "public"."merchant_cashier_stations"("id","merchant_id") ON DELETE restrict ON UPDATE no action;
+--> statement-breakpoint
+CREATE UNIQUE INDEX "cashier_device_operation_timeline_device_sequence_unique" ON "cashier_device_operation_timeline" USING btree ("merchant_id","device_id","device_sequence");
+--> statement-breakpoint
+CREATE UNIQUE INDEX "cashier_device_operation_timeline_operation_unique" ON "cashier_device_operation_timeline" USING btree ("merchant_id","operation_id");
+--> statement-breakpoint
+CREATE INDEX "cashier_device_operation_timeline_device_occurred_idx" ON "cashier_device_operation_timeline" USING btree ("merchant_id","device_id","occurred_at");
+--> statement-breakpoint
+
 ALTER TABLE "merchant_cashier_subscriptions" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 ALTER TABLE "cashier_station_seat_assignments" ENABLE ROW LEVEL SECURITY;
@@ -188,6 +219,8 @@ ALTER TABLE "cashier_billing_events" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "cashier_entitlement_applications" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 ALTER TABLE "cashier_entitlement_audit_events" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
+ALTER TABLE "cashier_device_operation_timeline" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 
 CREATE POLICY "merchant_cashier_subscriptions_tenant_boundary" ON "merchant_cashier_subscriptions"
@@ -213,3 +246,7 @@ CREATE POLICY "cashier_entitlement_applications_tenant_boundary" ON "cashier_ent
 CREATE POLICY "cashier_entitlement_audit_events_tenant_boundary" ON "cashier_entitlement_audit_events"
   TO public USING (public.fawri_tenant_or_audited_admin("cashier_entitlement_audit_events"."merchant_id"))
   WITH CHECK (public.fawri_tenant_or_audited_admin("cashier_entitlement_audit_events"."merchant_id"));
+--> statement-breakpoint
+CREATE POLICY "cashier_device_operation_timeline_tenant_boundary" ON "cashier_device_operation_timeline"
+  TO public USING (public.fawri_tenant_or_audited_admin("cashier_device_operation_timeline"."merchant_id"))
+  WITH CHECK (public.fawri_tenant_or_audited_admin("cashier_device_operation_timeline"."merchant_id"));
