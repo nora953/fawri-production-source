@@ -37,7 +37,6 @@ CREATE TABLE "cashier_station_seat_assignments" (
   "released_at" timestamp with time zone,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-  CONSTRAINT "cashier_station_seat_assignments_station_unique" UNIQUE("merchant_id","station_id"),
   CONSTRAINT "cashier_station_seat_assignments_status_check" CHECK ("status" IN ('active','release_scheduled','released')),
   CONSTRAINT "cashier_station_seat_assignments_lifecycle_check" CHECK (("status" = 'active' AND "release_effective_at" IS NULL AND "released_at" IS NULL) OR ("status" = 'release_scheduled' AND "release_effective_at" IS NOT NULL AND "released_at" IS NULL) OR ("status" = 'released' AND "released_at" IS NOT NULL)),
   CONSTRAINT "cashier_station_seat_assignments_timestamp_check" CHECK ("updated_at" >= "created_at")
@@ -48,6 +47,8 @@ ALTER TABLE "cashier_station_seat_assignments" ADD CONSTRAINT "cashier_station_s
 ALTER TABLE "cashier_station_seat_assignments" ADD CONSTRAINT "cashier_station_seat_assignments_subscription_merchant_fk" FOREIGN KEY ("subscription_id","merchant_id") REFERENCES "public"."merchant_cashier_subscriptions"("id","merchant_id") ON DELETE cascade ON UPDATE no action;
 --> statement-breakpoint
 ALTER TABLE "cashier_station_seat_assignments" ADD CONSTRAINT "cashier_station_seat_assignments_station_merchant_fk" FOREIGN KEY ("station_id","merchant_id") REFERENCES "public"."merchant_cashier_stations"("id","merchant_id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
+CREATE UNIQUE INDEX "cashier_station_seat_assignments_station_unique" ON "cashier_station_seat_assignments" USING btree ("merchant_id","station_id") WHERE "status" IN ('active','release_scheduled');
 --> statement-breakpoint
 CREATE INDEX "cashier_station_seat_assignments_subscription_status_idx" ON "cashier_station_seat_assignments" USING btree ("merchant_id","subscription_id","status");
 --> statement-breakpoint
