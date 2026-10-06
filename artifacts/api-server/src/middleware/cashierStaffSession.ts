@@ -11,6 +11,7 @@ import { refreshDurableCashierStationCredentialAuthoritative } from "../services
 import {
   CashierEntitlementError,
   assertCashierStationLicensedAuthoritative,
+  type CashierEntitlementSnapshot,
 } from "../services/cashierEntitlementAuthority";
 
 export const CASHIER_STATION_TOKEN_HEADER = "x-fawri-cashier-station-token";
@@ -21,6 +22,7 @@ type CashierResponse = Response & {
   locals: Response["locals"] & {
     cashierStation?: CashierStationContext;
     cashierOperator?: CashierOperatorContext;
+    cashierEntitlement?: CashierEntitlementSnapshot;
   };
 };
 
@@ -46,6 +48,12 @@ export function getCashierStationContext(res: Response): CashierStationContext |
 
 export function getCashierOperatorContext(res: Response): CashierOperatorContext | null {
   return (res as CashierResponse).locals.cashierOperator || null;
+}
+
+export function getCashierEntitlementContext(
+  res: Response,
+): CashierEntitlementSnapshot | null {
+  return (res as CashierResponse).locals.cashierEntitlement || null;
 }
 
 function sendError(res: Response, error: unknown): void {
@@ -88,12 +96,13 @@ export async function requireCashierStationCredential(
       stationToken,
       deviceId,
     });
-    await assertCashierStationLicensedAuthoritative({
+    const entitlement = await assertCashierStationLicensedAuthoritative({
       merchantId: context.merchant_id,
       stationId: context.station_id,
       allowGrace: true,
     });
     (res as CashierResponse).locals.cashierStation = context;
+    (res as CashierResponse).locals.cashierEntitlement = entitlement;
     res.setHeader("Cache-Control", "no-store");
     next();
   } catch (error) {
@@ -122,12 +131,13 @@ export function requireCashierOperatorSession(
         deviceId,
         ...(requiredPermission ? { requiredPermission } : {}),
       });
-      await assertCashierStationLicensedAuthoritative({
+      const entitlement = await assertCashierStationLicensedAuthoritative({
         merchantId: context.merchant_id,
         stationId: context.station_id,
         allowGrace: true,
       });
       (res as CashierResponse).locals.cashierOperator = context;
+      (res as CashierResponse).locals.cashierEntitlement = entitlement;
       (res as CashierResponse).locals.cashierStation = context;
       res.setHeader("Cache-Control", "no-store");
       next();
