@@ -223,6 +223,21 @@ test(
         });
         assert.deepEqual(duplicateTimeline, { allowed: true, replayed: true });
 
+        const resetSequence = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 1,
+          operationId: "history-reset-sequence-1",
+          operationKind: "sale",
+          occurredAt: validGraceAt.toISOString(),
+          authority: valid,
+        });
+        assert.equal(resetSequence.allowed, false);
+        if (!resetSequence.allowed) {
+          assert.equal(resetSequence.code, "CASHIER_OPERATION_SEQUENCE_CONFLICT");
+        }
+
         const rollbackAt = new Date(validGraceAt.getTime() - 24 * 60 * 60 * 1000);
         const rollbackAuthority =
           await historical.evaluateCashierHistoricalOperationAuthorityInTransaction({
