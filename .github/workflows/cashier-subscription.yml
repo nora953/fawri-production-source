@@ -19,6 +19,7 @@ on:
       - "artifacts/api-server/tests/cashier-subscription-policy.test.ts"
       - "artifacts/api-server/tests/cashier-subscription-postgres.integration.test.ts"
       - "artifacts/api-server/tests/cashier-billing-postgres.integration.test.ts"
+      - "artifacts/api-server/tests/cashier-downgrade-grace-postgres.integration.test.ts"
       - "artifacts/fawri/src/components/CashierSubscriptionPanel.tsx"
       - "artifacts/fawri/src/components/admin/AdminCashierSubscriptionControls.tsx"
       - "artifacts/fawri/src/pages/dashboard/SubscriptionPage.tsx"
