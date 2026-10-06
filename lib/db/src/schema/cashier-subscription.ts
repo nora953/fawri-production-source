@@ -95,10 +95,9 @@ export const cashierStationSeatAssignments = pgTable(
       columns: [table.stationId, table.merchantId],
       foreignColumns: [merchantCashierStations.id, merchantCashierStations.merchantId],
     }).onDelete("cascade"),
-    stationUnique: uniqueIndex("cashier_station_seat_assignments_station_unique").on(
-      table.merchantId,
-      table.stationId,
-    ),
+    stationUnique: uniqueIndex("cashier_station_seat_assignments_station_unique")
+      .on(table.merchantId, table.stationId)
+      .where(sql`${table.status} IN ('active','release_scheduled')`),
     subscriptionStatusIndex: index("cashier_station_seat_assignments_subscription_status_idx").on(
       table.merchantId,
       table.subscriptionId,
