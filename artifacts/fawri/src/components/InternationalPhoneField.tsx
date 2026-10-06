@@ -61,7 +61,7 @@ export default function InternationalPhoneField({
   equalColumns = false,
 }: InternationalPhoneFieldProps) {
   const displayNames = useMemo(() => countryDisplayNames(lang), [lang]);
-  const selected = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
+  const phoneErrorId = `${phoneTestId}-error`;\n  const selected = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
     || MERCHANT_REGION_BY_COUNTRY.get('IQ')
     || MERCHANT_REGION_OPTIONS[0];
 
