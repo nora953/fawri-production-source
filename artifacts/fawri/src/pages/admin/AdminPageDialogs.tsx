@@ -59,6 +59,7 @@ import DeleteMerchantDialog from "@/components/DeleteMerchantDialog";
 import AdministratorsTab from "@/components/admin/AdministratorsTab";
 import RequiredAdminPasswordChangeDialog from "@/components/admin/RequiredAdminPasswordChangeDialog";
 import AdminSupportTab, { getAdminSupportText } from "@/components/admin/AdminSupportTab";
+import { AdminCashierSubscriptionControls } from "@/components/admin/AdminCashierSubscriptionControls";
 import {
   LogOut,
   Search,
@@ -861,6 +862,9 @@ export function DetailsModal({
                 {adminText.detailsNoActiveSubscription}
               </p>
             ))}
+          {activeTab === "subscription" && canManageSubscriptions ? (
+            <AdminCashierSubscriptionControls merchantId={merchant.id} />
+          ) : null}
           {activeTab === "channels" && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {channels.map(({ key, label, icon: Icon, editable, fixedStatus }) => (
