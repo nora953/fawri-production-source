@@ -620,6 +620,54 @@ export async function scheduleCashierDowngradeAuthoritative(input: {
   });
 }
 
+export type CashierLicensedStationView = {
+  station_id: string;
+  station_name: string;
+  station_status: string;
+  assignment_status: "active" | "release_scheduled";
+  release_effective_at?: string;
+};
+
+export async function listCashierLicensedStationsAuthoritative(
+  merchantId: string,
+): Promise<CashierLicensedStationView[]> {
+  assertAuthority();
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await reconcileScheduledDowngradeInTransaction(client, merchantId, new Date());
+    const rows = await operationalQueryRows<{
+      station_id: string;
+      station_name: string;
+      station_status: string;
+      assignment_status: "active" | "release_scheduled";
+      release_effective_at: DbInstant | null;
+    }>(
+      client,
+      `SELECT assignment.station_id,
+              station.name AS station_name,
+              station.status AS station_status,
+              assignment.status AS assignment_status,
+              assignment.release_effective_at
+         FROM cashier_station_seat_assignments assignment
+         JOIN merchant_cashier_stations station
+           ON station.id = assignment.station_id
+          AND station.merchant_id = assignment.merchant_id
+        WHERE assignment.merchant_id = $1
+          AND assignment.status IN ('active','release_scheduled')
+        ORDER BY station.name, station.id`,
+      [merchantId],
+    );
+    return rows.map((row) => ({
+      station_id: row.station_id,
+      station_name: row.station_name,
+      station_status: row.station_status,
+      assignment_status: row.assignment_status,
+      ...(row.release_effective_at
+        ? { release_effective_at: instant(row.release_effective_at)!.toISOString() }
+        : {}),
+    }));
+  });
+}
+
 export async function getCashierEntitlementAuthoritative(
   merchantId: string,
 ): Promise<CashierEntitlementSnapshot | null> {
