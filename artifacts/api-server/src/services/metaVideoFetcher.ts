@@ -72,30 +72,66 @@ export class SecureMetaVideoFetcher {
     }));
   }
   async fetchVideo(input:{url:string}):Promise<MetaFetchedVideo>{
-    const u=safeUrl(input.url),host=u.hostname.replace(/^\[|\]$/g,"");
+    const u=safeUrl(input.url),host=u.hostname.replace(/^\\[|\\]$/g,"");
     const literal=isIP(host);
-    let addresses:Address[];
-    try{addresses=literal?[{address:host,family:literal}]:await this.resolveHost(host);}
-    catch{throw error("META_VIDEO_DESTINATION_UNVERIFIED","Meta video destination could not be verified");}
-    if(!addresses.length||addresses.some(x=>(x.family!==4&&x.family!==6)||isIP(x.address)!==x.family))
-      throw error("META_VIDEO_DESTINATION_UNVERIFIED","Meta video destination could not be verified");
-    if(addresses.some(x=>forbidden(x.address)))throw error("META_VIDEO_DESTINATION_FORBIDDEN","Meta video destination is forbidden");
-    const verified=addresses[0],controller=new AbortController();
+    const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),this.timeoutMs);timer.unref?.();
     try{
+      let addresses:Address[];
+      try{
+        addresses=literal?[{address:host,family:literal}]:await (async()=>{
+          let onDnsAbort:(()=>void)|undefined;
+          try{
+            const timeoutPromise=new Promise<never>((_,reject)=>{
+              onDnsAbort=()=>reject(error("META_VIDEO_TIMEOUT","Meta video request timed out"));
+              if(controller.signal.aborted){onDnsAbort();return;}
+              controller.signal.addEventListener("abort",onDnsAbort,{once:true});
+            });
+            return await Promise.race([this.resolveHost(host),timeoutPromise]);
+          }finally{
+            if(onDnsAbort)controller.signal.removeEventListener("abort",onDnsAbort);
+          }
+        })();
+      }catch(cause){
+        if((cause as {code?:unknown})?.code==="META_VIDEO_TIMEOUT"||controller.signal.aborted)
+          throw error("META_VIDEO_TIMEOUT","Meta video request timed out");
+        throw error("META_VIDEO_DESTINATION_UNVERIFIED","Meta video destination could not be verified");
+      }
+      if(!addresses.length||addresses.some(x=>(x.family!==4&&x.family!==6)||isIP(x.address)!==x.family))
+        throw error("META_VIDEO_DESTINATION_UNVERIFIED","Meta video destination could not be verified");
+      if(addresses.some(x=>forbidden(x.address)))throw error("META_VIDEO_DESTINATION_FORBIDDEN","Meta video destination is forbidden");
+      const verified=addresses[0];
       let response:Response;
       try{response=await this.transport({url:u.toString(),hostname:host,address:verified.address,family:verified.family,signal:controller.signal});}
       catch{if(controller.signal.aborted)throw error("META_VIDEO_TIMEOUT","Meta video request timed out");throw error("META_VIDEO_FETCH_FAILED","Meta video request failed");}
       if(response.status>=300&&response.status<400){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_REDIRECT_REJECTED","Meta video redirect rejected");}
-      if(!response.ok)throw error("META_VIDEO_FETCH_FAILED","Meta video request failed");
+      if(!response.ok){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_FETCH_FAILED","Meta video request failed");}
       const mime=String(response.headers.get("content-type")||"").split(";",1)[0].trim().toLowerCase();
-      if(!ALLOWED.has(mime))throw error("META_VIDEO_MIME_INVALID","Meta video MIME is invalid");
+      if(!ALLOWED.has(mime)){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_MIME_INVALID","Meta video MIME is invalid");}
       const raw=response.headers.get("content-length");
-      if(raw!==null){if(!/^\d+$/.test(raw.trim()))throw error("META_VIDEO_FETCH_FAILED","Meta video length invalid");if(Number(raw)>META_VIDEO_MAX_BYTES)throw error("META_VIDEO_TOO_LARGE","Meta video too large");}
+      if(raw!==null){
+        if(!/^\d+$/.test(raw.trim())){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_FETCH_FAILED","Meta video length invalid");}
+        const length=Number(raw);
+        if(!Number.isSafeInteger(length)||length<0){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_FETCH_FAILED","Meta video length invalid");}
+        if(length>META_VIDEO_MAX_BYTES){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_TOO_LARGE","Meta video too large");}
+      }
       if(!response.body)throw error("META_VIDEO_FETCH_FAILED","Meta video body unavailable");
       const reader=response.body.getReader(),chunks:Uint8Array[]=[];let size=0;
-      try{while(true){const {done,value}=await reader.read();if(done)break;if(!value)continue;size+=value.byteLength;if(size>META_VIDEO_MAX_BYTES){await reader.cancel().catch(()=>undefined);throw error("META_VIDEO_TOO_LARGE","Meta video too large");}chunks.push(value);}}
-      finally{reader.releaseLock();}
+      try{
+        try{
+          while(true){
+            const {done,value}=await reader.read();
+            if(done)break;
+            if(!value)continue;
+            size+=value.byteLength;
+            if(size>META_VIDEO_MAX_BYTES){await reader.cancel().catch(()=>undefined);throw error("META_VIDEO_TOO_LARGE","Meta video too large");}
+            chunks.push(value);
+          }
+        }catch(cause){
+          if(controller.signal.aborted)throw error("META_VIDEO_TIMEOUT","Meta video request timed out");
+          throw cause;
+        }
+      }finally{reader.releaseLock();}
       const buffer=Buffer.concat(chunks.map(x=>Buffer.from(x.buffer,x.byteOffset,x.byteLength)),size);
       if(!size||!validContainer(buffer,mime))throw error("META_VIDEO_CONTENT_INVALID","Meta video content invalid");
       return {buffer,mimeType:mime,sizeBytes:size,sha256:createHash("sha256").update(buffer).digest("hex")};

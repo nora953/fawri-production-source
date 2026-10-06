@@ -174,28 +174,50 @@ export class SecureMetaAudioFetcher {
     const url = safeUrl(input.url);
     const host = url.hostname.replace(/^\[|\]$/g, "");
     const literalFamily = isIP(host);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    timer.unref?.();
+
     let addresses: ResolvedAddress[];
     try {
       addresses = literalFamily
         ? [{ address: host, family: literalFamily }]
-        : await this.resolveHost(host);
-    } catch {
+        : await (async () => {
+            let onDnsAbort: (() => void) | undefined;
+            try {
+              const timeoutPromise = new Promise<never>((_, reject) => {
+                onDnsAbort = () => {
+                  reject(coded("Meta audio request timed out", "META_AUDIO_TIMEOUT"));
+                };
+                if (controller.signal.aborted) {
+                  onDnsAbort();
+                  return;
+                }
+                controller.signal.addEventListener("abort", onDnsAbort, { once: true });
+              });
+              return await Promise.race([this.resolveHost(host), timeoutPromise]);
+            } finally {
+              if (onDnsAbort) controller.signal.removeEventListener("abort", onDnsAbort);
+            }
+          })();
+    } catch (error) {
+      clearTimeout(timer);
+      if ((error as { code?: unknown })?.code === "META_AUDIO_TIMEOUT" || controller.signal.aborted) {
+        throw coded("Meta audio request timed out", "META_AUDIO_TIMEOUT");
+      }
       throw coded("Meta audio destination could not be verified", "META_AUDIO_DESTINATION_UNVERIFIED");
     }
-    if (!addresses.length || addresses.some((entry) =>
-      (entry.family !== 4 && entry.family !== 6) ||
-      isIP(entry.address) !== entry.family)) {
-      throw coded("Meta audio destination could not be verified", "META_AUDIO_DESTINATION_UNVERIFIED");
-    }
-    if (addresses.some((entry) => forbidden(entry.address))) {
-      throw coded("Meta audio destination is forbidden", "META_AUDIO_DESTINATION_FORBIDDEN");
-    }
-
-    const verified = addresses[0];
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-    timer.unref?.();
     try {
+      if (!addresses.length || addresses.some((entry) =>
+        (entry.family !== 4 && entry.family !== 6) ||
+        isIP(entry.address) !== entry.family)) {
+        throw coded("Meta audio destination could not be verified", "META_AUDIO_DESTINATION_UNVERIFIED");
+      }
+      if (addresses.some((entry) => forbidden(entry.address))) {
+        throw coded("Meta audio destination is forbidden", "META_AUDIO_DESTINATION_FORBIDDEN");
+      }
+
+      const verified = addresses[0];
       let response: Response;
       try {
         response = await this.transportImpl({
@@ -230,7 +252,10 @@ export class SecureMetaAudioFetcher {
           throw coded("Meta audio content length is invalid", "META_AUDIO_FETCH_FAILED");
         }
         const length = Number(rawLength);
-        if (!Number.isSafeInteger(length) || length < 0) throw coded("Meta audio content length is invalid", "META_AUDIO_FETCH_FAILED");
+        if (!Number.isSafeInteger(length) || length < 0) {
+          await response.body?.cancel().catch(() => undefined);
+          throw coded("Meta audio content length is invalid", "META_AUDIO_FETCH_FAILED");
+        }
         if (length > META_AUDIO_MAX_BYTES) {
           await response.body?.cancel().catch(() => undefined);
           throw coded("Meta audio exceeds the allowed size", "META_AUDIO_TOO_LARGE");
@@ -241,16 +266,23 @@ export class SecureMetaAudioFetcher {
       const chunks: Uint8Array[] = [];
       let sizeBytes = 0;
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (!value) continue;
-          sizeBytes += value.byteLength;
-          if (sizeBytes > META_AUDIO_MAX_BYTES) {
-            await reader.cancel().catch(() => undefined);
-            throw coded("Meta audio exceeds the allowed size", "META_AUDIO_TOO_LARGE");
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (!value) continue;
+            sizeBytes += value.byteLength;
+            if (sizeBytes > META_AUDIO_MAX_BYTES) {
+              await reader.cancel().catch(() => undefined);
+              throw coded("Meta audio exceeds the allowed size", "META_AUDIO_TOO_LARGE");
+            }
+            chunks.push(value);
           }
-          chunks.push(value);
+        } catch (error) {
+          if (controller.signal.aborted) {
+            throw coded("Meta audio request timed out", "META_AUDIO_TIMEOUT");
+          }
+          throw error;
         }
       } finally {
         reader.releaseLock();

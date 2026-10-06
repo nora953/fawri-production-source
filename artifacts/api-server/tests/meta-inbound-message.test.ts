@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   parseMetaInboundMessage,
+  isMetaInboundReplyHandled,
   selectMetaInboundImageUrl,
   selectMetaInboundAudioUrl,
   selectMetaInboundVideoUrl,
+  selectMetaInboundSafeMediaManifest,
 } from "../src/services/metaInboundMessage";
 
 test("preserves the existing text message contract", () => {
@@ -18,6 +20,7 @@ test("preserves the existing text message contract", () => {
     text: "hello",
     storageText: "hello",
     attachments: [],
+    replyToMessageId: null,
   });
 });
 
@@ -72,9 +75,10 @@ test("normalizes a shared post as shared content, not merchant knowledge", () =>
   assert.equal(parsed?.kind, "shared_post");
   assert.equal(parsed?.storageText, "[shared_post]");
   assert.equal(parsed?.attachments[0]?.title, "Shared post");
+  assert.equal(isMetaInboundReplyHandled(parsed), false);
 });
 
-test("keeps caption text authoritative as text while retaining attachments", () => {
+test("keeps caption text authoritative while retaining its image for safe processing", () => {
   const parsed = parseMetaInboundMessage({
     text: "Do you have this?",
     attachments: [
@@ -89,6 +93,22 @@ test("keeps caption text authoritative as text while retaining attachments", () 
   assert.equal(parsed?.text, "Do you have this?");
   assert.equal(parsed?.storageText, "Do you have this?");
   assert.equal(parsed?.attachments.length, 1);
+});
+
+test("classifies document, location, and sticker without inventing meaning", () => {
+  const cases = [
+    { type: "document", kind: "document", marker: "[document]" },
+    { type: "location", kind: "location", marker: "[location]" },
+    { type: "sticker", kind: "sticker", marker: "[sticker]" },
+  ] as const;
+
+  for (const item of cases) {
+    const parsed = parseMetaInboundMessage({
+      attachments: [{ type: item.type, payload: {} }],
+    });
+    assert.equal(parsed?.kind, item.kind);
+    assert.equal(parsed?.storageText, item.marker);
+  }
 });
 
 test("unknown attachments fail closed instead of pretending to understand them", () => {
@@ -292,7 +312,7 @@ test("audio URL selection fails closed for non-HTTPS, mixed, or ambiguous attach
   }
 });
 
-test("explicit text wins and is never replaced by an attached audio transcript", () => {
+test("explicit text stays authoritative while one safe attached audio can be transcribed", () => {
   const inbound = parseMetaInboundMessage({
     mid: "text-with-audio",
     text: "هذا هو سؤالي المكتوب",
@@ -307,7 +327,10 @@ test("explicit text wins and is never replaced by an attached audio transcript",
   assert.ok(inbound);
   assert.equal(inbound.kind, "text");
   assert.equal(inbound.text, "هذا هو سؤالي المكتوب");
-  assert.equal(selectMetaInboundAudioUrl(inbound), null);
+  assert.equal(
+    selectMetaInboundAudioUrl(inbound),
+    "https://cdn.example.test/question.mp3",
+  );
 });
 
 test("selects exactly one explicit HTTPS video URL for bounded analysis", () => {
@@ -325,12 +348,19 @@ test("selects exactly one explicit HTTPS video URL for bounded analysis", () => 
   );
 });
 
-test("video URL selection fails closed for captions, mixed attachments, HTTP, or ambiguity", () => {
+test("selects one safe captioned video while preserving explicit text authority", () => {
+  const inbound = parseMetaInboundMessage({
+    text: "هل هذا متوفر؟",
+    attachments: [{ type: "video", payload: { url: "https://cdn.example.test/a.mp4" } }],
+  });
+  assert.ok(inbound);
+  assert.equal(inbound.kind, "text");
+  assert.equal(inbound.text, "هل هذا متوفر؟");
+  assert.equal(selectMetaInboundVideoUrl(inbound), "https://cdn.example.test/a.mp4");
+});
+
+test("video URL selection fails closed for mixed attachments, HTTP, or ambiguity", () => {
   const cases = [
-    {
-      text: "caption wins",
-      attachments: [{ type: "video", payload: { url: "https://cdn.example.test/a.mp4" } }],
-    },
     {
       attachments: [
         { type: "video", payload: { url: "https://cdn.example.test/a.mp4" } },
@@ -352,4 +382,74 @@ test("video URL selection fails closed for captions, mixed attachments, HTTP, or
     assert.ok(inbound);
     assert.equal(selectMetaInboundVideoUrl(inbound), null);
   }
+});
+
+
+test("preserves reply-to message id without treating quoted content as trusted text", () => {
+  const parsed = parseMetaInboundMessage({
+    mid: "message-reply",
+    text: "هذا شكد سعره؟",
+    reply_to: { mid: "prior-media-message" },
+  });
+
+  assert.ok(parsed);
+  assert.equal(parsed.kind, "text");
+  assert.equal(parsed.text, "هذا شكد سعره؟");
+  assert.equal(parsed.replyToMessageId, "prior-media-message");
+});
+
+
+test("rejects duplicate media attachments and unsupported companions", () => {
+  const duplicateImages = parseMetaInboundMessage({
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.com/a.jpg" } },
+      { type: "image", payload: { url: "https://cdn.example.com/b.jpg" } },
+    ],
+  });
+  assert.ok(duplicateImages);
+  assert.equal(selectMetaInboundImageUrl(duplicateImages), null);
+
+  const imageWithDocument = parseMetaInboundMessage({
+    text: "راجع هذا",
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.com/a.jpg" } },
+      { type: "document", payload: { url: "https://cdn.example.com/a.pdf" } },
+    ],
+  });
+  assert.ok(imageWithDocument);
+  assert.equal(selectMetaInboundImageUrl(imageWithDocument), null);
+});
+
+test("builds one atomic manifest for distinct supported media and rejects partial interpretation", () => {
+  const mixed = parseMetaInboundMessage({
+    text: "هذا المنتج، وهذا سؤالي الصوتي",
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.test/product.jpg" } },
+      { type: "audio", payload: { url: "https://cdn.example.test/question.mp3" } },
+    ],
+  });
+  assert.ok(mixed);
+  assert.deepEqual(selectMetaInboundSafeMediaManifest(mixed), {
+    imageUrl: "https://cdn.example.test/product.jpg",
+    audioUrl: "https://cdn.example.test/question.mp3",
+    videoUrl: null,
+  });
+
+  const duplicate = parseMetaInboundMessage({
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.test/a.jpg" } },
+      { type: "image", payload: { url: "https://cdn.example.test/b.jpg" } },
+    ],
+  });
+  assert.ok(duplicate);
+  assert.equal(selectMetaInboundSafeMediaManifest(duplicate), null);
+
+  const unsupportedCompanion = parseMetaInboundMessage({
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.test/a.jpg" } },
+      { type: "document", payload: { url: "https://cdn.example.test/a.pdf" } },
+    ],
+  });
+  assert.ok(unsupportedCompanion);
+  assert.equal(selectMetaInboundSafeMediaManifest(unsupportedCompanion), null);
 });

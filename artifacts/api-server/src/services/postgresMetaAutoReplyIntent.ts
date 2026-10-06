@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { DurableJob } from "./durableJobQueue";
-import { getKnowledgeDecisionEngine } from "./ai/knowledgeDecisionEngine";
+import { decideMetaKnowledgeReply } from "./metaKnowledgeDecisionBoundary";
+
 import {
   withMerchantOperationalTransaction,
   type OperationalSqlClient,
@@ -11,6 +12,7 @@ import {
   selectMetaInboundImageUrl,
   selectMetaInboundAudioUrl,
   selectMetaInboundVideoUrl,
+  selectMetaInboundSafeMediaManifest,
 } from "./metaInboundMessage";
 import {
   getMetaImageUnderstandingService,
@@ -56,12 +58,18 @@ type ParsedMetaJob = {
   externalMessageId: string;
   customerText: string | null;
   storageText: string;
-  contentKind: "text" | "image" | "audio" | "video" | "shared_post";
+  contentKind: "text" | "image" | "audio" | "video" | "shared_post" | "document" | "location" | "sticker";
   attachmentCount: number;
   contentIdentityHash: string | null;
   imageUrl: string | null;
   audioUrl: string | null;
   videoUrl: string | null;
+  mediaManifest: {
+    imageUrl: string | null;
+    audioUrl: string | null;
+    videoUrl: string | null;
+  } | null;
+  replyToMessageId: string | null;
   webhookBody: Record<string, unknown>;
   createdAt: string;
 };
@@ -80,7 +88,7 @@ type ReplyMessageRow = {
   metadata: Record<string, unknown> | null;
 };
 
-type ConversationContextRow = {
+export type ConversationContextRow = {
   sender: "customer" | "fawri" | "merchant";
   text: string;
   created_at: Date | string;
@@ -149,6 +157,9 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     ? selectMetaInboundAudioUrl(inbound)
     : null;
   const videoUrl = inbound ? selectMetaInboundVideoUrl(inbound) : null;
+  const mediaManifest = inbound
+    ? selectMetaInboundSafeMediaManifest(inbound)
+    : null;
   const contentIdentityHash =
     inbound && inbound.attachments.length > 0
       ? digest(
@@ -172,7 +183,14 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     !senderId ||
     !externalMessageId ||
     !inbound ||
-    contentKind === "unsupported" ||
+    (contentKind === "unsupported" ||
+      contentKind === "shared_post" ||
+      contentKind === "document" ||
+      contentKind === "location" ||
+      contentKind === "sticker") ||
+    inbound.attachments.some((attachment) =>
+      !["image", "audio", "video"].includes(attachment.type.toLowerCase()),
+    ) ||
     !storageText ||
     storageText.length > 2_000 ||
     (customerText !== null && customerText.length > 2_000) ||
@@ -199,6 +217,8 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     imageUrl,
     audioUrl,
     videoUrl,
+    mediaManifest,
+    replyToMessageId: inbound.replyToMessageId,
     webhookBody,
     createdAt: eventTimestamp(event.timestamp),
   };
@@ -253,6 +273,7 @@ async function ensureInboundState(
   customerInserted: boolean;
   existingReply: ReplyMessageRow | null;
   sourceCustomerMessageId: string;
+  repliedToInternalMessageId: string | null;
 }> {
   return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
     const channelResult = await client.query<{ id: string }>(
@@ -347,6 +368,25 @@ async function ensureInboundState(
       });
     }
 
+    let repliedToInternalMessageId: string | null = null;
+    if (parsed.replyToMessageId) {
+      const repliedTo = await client.query<{ id: string }>(
+        `SELECT id
+           FROM messages
+          WHERE merchant_id = $1
+            AND conversation_id = $2
+            AND external_message_id = $3
+          LIMIT 2`,
+        [parsed.merchantId, conversation.id, parsed.replyToMessageId],
+      );
+      if (repliedTo.rows.length !== 1) {
+        throw Object.assign(new Error("Meta replied-to message is unavailable"), {
+          code: "META_REPLY_CONTEXT_UNAVAILABLE",
+        });
+      }
+      repliedToInternalMessageId = repliedTo.rows[0].id;
+    }
+
     if (conversation.status === "closed") {
       const reopened = await client.query<ConversationRow>(
         `UPDATE conversations
@@ -391,9 +431,8 @@ async function ensureInboundState(
           parsed.externalMessageId,
           parsed.eventId,
           parsed.storageText,
-          JSON.stringify(
-            parsed.contentKind === "text" &&
-              parsed.attachmentCount === 0
+          JSON.stringify({
+            ...(parsed.contentKind === "text" && parsed.attachmentCount === 0
               ? {}
               : {
                   media: {
@@ -402,8 +441,11 @@ async function ensureInboundState(
                     has_attachment: parsed.attachmentCount > 0,
                     content_identity_hash: parsed.contentIdentityHash,
                   },
-                },
-          ),
+                }),
+            ...(parsed.replyToMessageId
+              ? { reply_to_external_message_id: parsed.replyToMessageId }
+              : {}),
+          }),
           parsed.createdAt,
         ],
       );
@@ -421,11 +463,16 @@ async function ensureInboundState(
         typeof existingMedia?.content_identity_hash === "string"
           ? existingMedia.content_identity_hash
           : null;
+      const existingReplyToMessageId =
+        typeof existingCustomer.rows[0].metadata?.reply_to_external_message_id === "string"
+          ? existingCustomer.rows[0].metadata.reply_to_external_message_id
+          : null;
 
       if (
         existingCustomer.rows[0].conversation_id !== conversation.id ||
         existingCustomer.rows[0].text !== parsed.storageText ||
-        existingContentIdentityHash !== parsed.contentIdentityHash
+        existingContentIdentityHash !== parsed.contentIdentityHash ||
+        existingReplyToMessageId !== parsed.replyToMessageId
       ) {
         throw Object.assign(new Error("Meta message identity collision detected"), {
           code: "META_MESSAGE_IDENTITY_COLLISION",
@@ -463,30 +510,12 @@ async function ensureInboundState(
       customerInserted,
       existingReply: await findReplyMessage(client, parsed.merchantId, parsed.eventId),
       sourceCustomerMessageId,
+      repliedToInternalMessageId,
     };
   });
 }
 
-async function loadRecentConversationContext(
-  merchantId: string,
-  conversationIdValue: string,
-  currentCustomerMessageId: string,
-): Promise<KnowledgeConversationMessage[]> {
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const result = await client.query<ConversationContextRow>(
-      `SELECT sender::text AS sender, text, created_at, metadata
-         FROM messages
-        WHERE merchant_id = $1
-          AND conversation_id = $2
-          AND id <> $3
-          AND sender IN ('customer', 'fawri', 'merchant')
-          AND status IN ('received', 'sent')
-        ORDER BY created_at DESC, id DESC
-        LIMIT 8`,
-      [merchantId, conversationIdValue, currentCustomerMessageId],
-    );
-
-    return result.rows.reverse().map((row) => {
+export function mapConversationContextRow(row: ConversationContextRow): KnowledgeConversationMessage {
       const metadata =
         row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
           ? row.metadata
@@ -529,17 +558,6 @@ async function loadRecentConversationContext(
           ? media.audio_transcript.trim()
           : "";
 
-      const videoObservation =
-        row.sender === "customer" &&
-        media &&
-        typeof media.video_observation === "string" &&
-        media.video_observation.trim().length > 0 &&
-        media.video_observation.trim().length <= 2_000 &&
-        typeof media.video_sha256 === "string" &&
-        /^[a-f0-9]{64}$/i.test(media.video_sha256)
-          ? media.video_observation.trim()
-          : "";
-
       const videoSha256 =
         media && typeof media.video_sha256 === "string"
           ? media.video_sha256.trim()
@@ -575,13 +593,37 @@ async function loadRecentConversationContext(
       const createdAt = new Date(row.created_at).toISOString();
       return {
         sender: row.sender,
-        text: audioTranscript || videoObservation || text(row.text),
+        // Audio transcripts are customer-authored speech. Video observations are
+        // model-generated visual evidence and must never masquerade as customer text.
+        text: audioTranscript || text(row.text),
         createdAt,
         ...(matchedRecordId ? { matchedRecordId } : {}),
         ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
         ...(reasonCode ? { reasonCode } : {}),
       };
-    });
+
+}
+
+async function loadRecentConversationContext(
+  merchantId: string,
+  conversationIdValue: string,
+  currentCustomerMessageId: string,
+): Promise<KnowledgeConversationMessage[]> {
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    const result = await client.query<ConversationContextRow>(
+      `SELECT sender::text AS sender, text, created_at, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND conversation_id = $2
+          AND id <> $3
+          AND sender IN ('customer', 'fawri', 'merchant')
+          AND status IN ('received', 'sent')
+        ORDER BY created_at DESC, id DESC
+        LIMIT 8`,
+      [merchantId, conversationIdValue, currentCustomerMessageId],
+    );
+
+    return result.rows.reverse().map(mapConversationContextRow);
   });
 }
 
@@ -654,14 +696,31 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const mixedMediaRequested = parsed.attachmentCount > 1;
+  if (mixedMediaRequested && !parsed.mediaManifest) {
+    return {
+      action: "suppress",
+      eventId: parsed.eventId,
+      merchantId: parsed.merchantId,
+      conversationId: inbound.conversationId,
+      code: "META_MEDIA_MANIFEST_INVALID",
+    };
+  }
+
+  const processingImageUrl =
+    parsed.mediaManifest?.imageUrl ?? parsed.imageUrl;
+  const processingAudioUrl =
+    parsed.mediaManifest?.audioUrl ?? parsed.audioUrl;
+  const processingVideoUrl =
+    parsed.mediaManifest?.videoUrl ?? parsed.videoUrl;
+
   const trustedVideo = await understandTrustedMetaVideoForReply({
     merchantId: parsed.merchantId,
     conversationId: inbound.conversationId,
     sourceCustomerMessageId: inbound.sourceCustomerMessageId,
-    videoUrl: parsed.videoUrl,
+    videoUrl: processingVideoUrl,
     contentIdentityHash: parsed.contentIdentityHash,
   });
-  const trustedVideoText = trustedVideo.text;
   const trustedVideoUnderstood = trustedVideo.understood;
   const trustedVideoMatchedRecordId = trustedVideo.matchedRecordId;
   const trustedVideoAlternatives = trustedVideo.alternatives;
@@ -669,7 +728,7 @@ export async function preparePostgresMetaAutoReply(
   let trustedAudioTranscript: string | null = null;
   let trustedAudioUnderstood = false;
 
-  if (parsed.audioUrl) {
+  if (processingAudioUrl) {
     const persistedAudio =
       await withMerchantOperationalTransaction(
         parsed.merchantId,
@@ -744,10 +803,23 @@ export async function preparePostgresMetaAutoReply(
     } else {
       const audioService = getMetaAudioUnderstandingService();
       if (audioService) {
-        const understood = await audioService.understand({
-          merchantId: parsed.merchantId,
-          audioUrl: parsed.audioUrl,
-        });
+        let understood = null;
+        try {
+          understood = await audioService.understand({
+            merchantId: parsed.merchantId,
+            audioUrl: processingAudioUrl,
+          });
+        } catch {
+          console.error("Meta audio understanding failed", {
+            code: "META_MEDIA_PROVIDER_UNAVAILABLE",
+            media_kind: "audio",
+            merchant_id: parsed.merchantId,
+            conversation_id: inbound.conversationId,
+            source_message_id: inbound.sourceCustomerMessageId,
+          });
+          // Provider/network/transcription failure is not trusted evidence.
+          // Fail closed below instead of crashing the durable reply worker.
+        }
         const transcript = understood?.transcript?.trim() || "";
         const hasSafeProvenance =
           transcript.length > 0 &&
@@ -840,7 +912,8 @@ export async function preparePostgresMetaAutoReply(
     confidence: number;
   }> = [];
 
-  if (parsed.imageUrl) {
+  const safeProcessingImageUrl = processingImageUrl;
+  if (safeProcessingImageUrl) {
     const persistedImageResult =
       await withMerchantOperationalTransaction(
         parsed.merchantId,
@@ -1096,18 +1169,31 @@ export async function preparePostgresMetaAutoReply(
     if (imageService) {
       const imageInput = {
         merchantId: parsed.merchantId,
-        imageUrl: parsed.imageUrl,
+        imageUrl: safeProcessingImageUrl,
       };
 
-      const understoodWithAlternatives =
-        typeof imageService.understandWithAlternatives === "function"
-          ? await imageService.understandWithAlternatives(imageInput)
-          : null;
-
-      const legacyUnderstood =
-        typeof imageService.understandWithAlternatives === "function"
-          ? null
-          : await imageService.understand(imageInput);
+      let understoodWithAlternatives = null;
+      let legacyUnderstood = null;
+      try {
+        understoodWithAlternatives =
+          typeof imageService.understandWithAlternatives === "function"
+            ? await imageService.understandWithAlternatives(imageInput)
+            : null;
+        legacyUnderstood =
+          typeof imageService.understandWithAlternatives === "function"
+            ? null
+            : await imageService.understand(imageInput);
+      } catch {
+        console.error("Meta image understanding failed", {
+          code: "META_MEDIA_PROVIDER_UNAVAILABLE",
+          media_kind: "image",
+          merchant_id: parsed.merchantId,
+          conversation_id: inbound.conversationId,
+          source_message_id: inbound.sourceCustomerMessageId,
+        });
+        // Provider/network/decoder failure is not trusted media evidence.
+        // Fail closed below instead of crashing the durable reply worker.
+      }
 
       const understood =
         understoodWithAlternatives?.exactMatch ?? legacyUnderstood ?? null;
@@ -1376,12 +1462,37 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  if (mixedMediaRequested && !parsed.customerText) {
+    return {
+      action: "suppress",
+      eventId: parsed.eventId,
+      merchantId: parsed.merchantId,
+      conversationId: inbound.conversationId,
+      code: "META_MEDIA_PROCESSING_UNAVAILABLE",
+    };
+  }
+
+  // Only actual customer-authored or customer-spoken language belongs in the
+  // customer intent. Video text is grounded visual observation produced by the
+  // vision pipeline, not a transcript of words the customer said.
+  const trustedIntentParts = [
+    parsed.customerText,
+    trustedAudioUnderstood ? trustedAudioTranscript : null,
+  ].filter((part): part is string => Boolean(part?.trim()));
+
   const effectiveCustomerText =
-    trustedAudioUnderstood && trustedAudioTranscript
-      ? trustedAudioTranscript
-      : trustedVideoUnderstood && trustedVideoText
-        ? trustedVideoText
-        : parsed.customerText;
+    trustedIntentParts.length > 0
+      ? [...new Set(trustedIntentParts.map((part) => part.trim()))].join("\n")
+      : null;
+
+  const atomicMediaUnderstood =
+    !mixedMediaRequested ||
+    Boolean(
+      parsed.mediaManifest &&
+      (!parsed.mediaManifest.imageUrl || trustedImageUnderstood) &&
+      (!parsed.mediaManifest.audioUrl || trustedAudioUnderstood) &&
+      (!parsed.mediaManifest.videoUrl || trustedVideoUnderstood),
+    );
 
   const trustedImageTextMessage =
     parsed.contentKind === "text" &&
@@ -1392,6 +1503,7 @@ export async function preparePostgresMetaAutoReply(
       trustedImageAlternatives.length > 0);
 
   if (
+    !atomicMediaUnderstood ||
     (parsed.contentKind !== "text" &&
       !trustedAudioUnderstood &&
       !trustedVideoUnderstood) ||
@@ -1431,6 +1543,34 @@ export async function preparePostgresMetaAutoReply(
     inbound.sourceCustomerMessageId,
   );
 
+  if (inbound.repliedToInternalMessageId) {
+    const repliedTo = await withMerchantOperationalTransaction(
+      parsed.merchantId,
+      async (client) => client.query<ConversationContextRow>(
+        `SELECT sender::text AS sender, text, created_at, metadata
+           FROM messages
+          WHERE merchant_id = $1 AND conversation_id = $2 AND id = $3
+            AND sender IN ('customer', 'fawri', 'merchant')
+            AND status IN ('received', 'sent')
+          LIMIT 1`,
+        [parsed.merchantId, inbound.conversationId, inbound.repliedToInternalMessageId],
+      ),
+    );
+    const target = repliedTo.rows[0];
+    if (target) {
+      const mappedTarget = mapConversationContextRow(target);
+      const alreadyPresent = recentMessages.some(
+        (message) =>
+          message.createdAt === mappedTarget.createdAt &&
+          message.sender === mappedTarget.sender &&
+          message.text === mappedTarget.text,
+      );
+      if (!alreadyPresent) {
+        recentMessages.unshift(mappedTarget);
+      }
+    }
+  }
+
   if (trustedImageTextMessage && trustedImageMatchedRecordId) {
     recentMessages.push({
       sender: "customer",
@@ -1451,9 +1591,7 @@ export async function preparePostgresMetaAutoReply(
     });
   }
 
-  let decision;
-  try {
-    decision = await getKnowledgeDecisionEngine().decide({
+  const decision = await decideMetaKnowledgeReply({
       merchantId: parsed.merchantId,
       customerText: effectiveCustomerText,
       requestId: parsed.eventId,
@@ -1474,11 +1612,6 @@ export async function preparePostgresMetaAutoReply(
           }
         : {}),
     });
-  } catch {
-    throw Object.assign(new Error("Knowledge reply decision is unavailable"), {
-      code: "META_REPLY_DECISION_UNAVAILABLE",
-    });
-  }
 
   const answerText = text(decision.answerText);
   if (decision.action === "no_answer" || !answerText) {

@@ -4,6 +4,9 @@ export type MetaInboundContentKind =
   | "audio"
   | "video"
   | "shared_post"
+  | "document"
+  | "location"
+  | "sticker"
   | "unsupported";
 
 export type MetaInboundAttachment = {
@@ -18,6 +21,7 @@ export type MetaInboundMessage = {
   text: string | null;
   storageText: string;
   attachments: MetaInboundAttachment[];
+  replyToMessageId: string | null;
 };
 
 function record(value: unknown): Record<string, unknown> {
@@ -41,6 +45,12 @@ function classifyAttachment(type: string): MetaInboundContentKind {
     case "share":
     case "shared_post":
       return "shared_post";
+    case "document":
+      return "document";
+    case "location":
+      return "location";
+    case "sticker":
+      return "sticker";
     default:
       return "unsupported";
   }
@@ -56,6 +66,12 @@ function storageMarker(kind: MetaInboundContentKind): string {
       return "[video]";
     case "shared_post":
       return "[shared_post]";
+    case "document":
+      return "[document]";
+    case "location":
+      return "[location]";
+    case "sticker":
+      return "[sticker]";
     case "unsupported":
       return "[unsupported_attachment]";
     case "text":
@@ -68,6 +84,8 @@ export function parseMetaInboundMessage(
 ): MetaInboundMessage | null {
   const message = record(value);
   const messageText = cleanText(message.text);
+  const replyTo = record(message.reply_to);
+  const replyToMessageId = cleanText(replyTo.mid) || null;
   const rawAttachments = Array.isArray(message.attachments)
     ? message.attachments
     : [];
@@ -100,6 +118,7 @@ export function parseMetaInboundMessage(
       text: messageText,
       storageText: messageText,
       attachments,
+      replyToMessageId,
     };
   }
 
@@ -113,108 +132,105 @@ export function parseMetaInboundMessage(
     text: null,
     storageText: storageMarker(kind),
     attachments,
+    replyToMessageId,
   };
 }
 
 
-export function selectMetaInboundImageUrl(
-  inbound: MetaInboundMessage,
-): string | null {
-  if (
-    !inbound ||
-    !Array.isArray(inbound.attachments)
-  ) {
-    return null;
-  }
+export function isMetaInboundReplyHandled(inbound: MetaInboundMessage | null): boolean {
+  return Boolean(
+    inbound &&
+      (inbound.kind === "text" ||
+        inbound.kind === "image" ||
+        inbound.kind === "audio" ||
+        inbound.kind === "video"),
+  );
+}
 
-  if (inbound.attachments.length !== 1) {
-    return null;
-  }
-
-  const image = inbound.attachments[0];
-
-  if (image?.type.toLowerCase() !== "image") {
-    return null;
-  }
-
-  const url = image.url?.trim();
-  if (!url) {
-    return null;
-  }
-
+function safeAttachmentUrl(attachment: MetaInboundAttachment): string | null {
+  const url = attachment.url?.trim();
+  if (!url) return null;
   try {
     const parsed = new URL(url);
-
     if (
       parsed.protocol !== "https:" ||
       !parsed.hostname ||
       parsed.username ||
       parsed.password
-    ) {
-      return null;
-    }
-
+    ) return null;
     return parsed.href;
   } catch {
     return null;
   }
+}
+
+function selectSingleSafeAttachmentUrl(
+  inbound: MetaInboundMessage,
+  type: "image" | "audio" | "video",
+): string | null {
+  if (!inbound || !Array.isArray(inbound.attachments)) return null;
+
+  const candidates = inbound.attachments.filter(
+    (attachment) => attachment.type.toLowerCase() === type,
+  );
+  if (candidates.length !== 1 || inbound.attachments.length !== 1) return null;
+  return safeAttachmentUrl(candidates[0]);
+}
+
+export type MetaInboundSafeMediaManifest = {
+  imageUrl: string | null;
+  audioUrl: string | null;
+  videoUrl: string | null;
+};
+
+/**
+ * Builds an atomic manifest only when every attachment is a supported media
+ * type, has one bounded HTTPS URL, and no media type is duplicated.
+ * Consumers must process the whole manifest or none of it.
+ */
+export function selectMetaInboundSafeMediaManifest(
+  inbound: MetaInboundMessage,
+): MetaInboundSafeMediaManifest | null {
+  if (!inbound || !Array.isArray(inbound.attachments) || inbound.attachments.length === 0) {
+    return null;
+  }
+
+  const manifest: MetaInboundSafeMediaManifest = {
+    imageUrl: null,
+    audioUrl: null,
+    videoUrl: null,
+  };
+  const seen = new Set<string>();
+
+  for (const attachment of inbound.attachments) {
+    const type = attachment.type.toLowerCase();
+    if (type !== "image" && type !== "audio" && type !== "video") return null;
+    if (seen.has(type)) return null;
+    const url = safeAttachmentUrl(attachment);
+    if (!url) return null;
+    seen.add(type);
+    if (type === "image") manifest.imageUrl = url;
+    if (type === "audio") manifest.audioUrl = url;
+    if (type === "video") manifest.videoUrl = url;
+  }
+
+  return manifest;
+}
+
+export function selectMetaInboundImageUrl(
+  inbound: MetaInboundMessage,
+): string | null {
+  return selectSingleSafeAttachmentUrl(inbound, "image");
 }
 
 export function selectMetaInboundAudioUrl(
   inbound: MetaInboundMessage,
 ): string | null {
-  if (!inbound || inbound.kind !== "audio" || !Array.isArray(inbound.attachments)) {
-    return null;
-  }
-  if (inbound.attachments.length !== 1) return null;
-
-  const audio = inbound.attachments[0];
-  if (audio?.type.toLowerCase() !== "audio") return null;
-
-  const url = audio.url?.trim();
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url);
-    if (
-      parsed.protocol !== "https:" ||
-      !parsed.hostname ||
-      parsed.username ||
-      parsed.password
-    ) {
-      return null;
-    }
-    return parsed.href;
-  } catch {
-    return null;
-  }
+  return selectSingleSafeAttachmentUrl(inbound, "audio");
 }
 
 export function selectMetaInboundVideoUrl(
   inbound: MetaInboundMessage,
 ): string | null {
-  if (!inbound || inbound.kind !== "video" || !Array.isArray(inbound.attachments)) {
-    return null;
-  }
-  if (inbound.attachments.length !== 1) return null;
-
-  const video = inbound.attachments[0];
-  if (video?.type.toLowerCase() !== "video") return null;
-  const url = video.url?.trim();
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url);
-    if (
-      parsed.protocol !== "https:" ||
-      !parsed.hostname ||
-      parsed.username ||
-      parsed.password
-    ) {
-      return null;
-    }
-    return parsed.href;
-  } catch {
-    return null;
-  }
+  return selectSingleSafeAttachmentUrl(inbound, "video");
 }

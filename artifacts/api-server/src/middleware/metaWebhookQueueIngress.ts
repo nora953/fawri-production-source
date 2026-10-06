@@ -11,7 +11,7 @@ import {
   readMetaPageMerchantMapAuthoritative,
 } from "../services/metaPageDirectory";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
-import { parseMetaInboundMessage } from "../services/metaInboundMessage";
+import { isMetaInboundReplyHandled, parseMetaInboundMessage } from "../services/metaInboundMessage";
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -27,8 +27,7 @@ function replyEligible(event: unknown): boolean {
 
   return Boolean(
     message.is_echo !== true &&
-      inbound &&
-      inbound.kind !== "unsupported" &&
+      isMetaInboundReplyHandled(inbound) &&
       String(message.mid || "").trim() &&
       String(sender.id || "").trim(),
   );

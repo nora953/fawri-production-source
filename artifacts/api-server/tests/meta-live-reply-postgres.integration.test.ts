@@ -37,6 +37,9 @@ const imageRuntime = await import(
 const audioRuntime = await import(
   "../src/services/metaAudioUnderstandingRuntime.js"
 );
+const videoRuntime = await import(
+  "../src/services/metaVideoUnderstandingRuntime.js"
+);
 const liveTransport = await import("../src/services/postgresMetaWebhookReplyTransport.js");
 const workerCore = await import("../src/services/metaWebhookWorkerCore.js");
 const manualConversations = await import(
@@ -1276,6 +1279,65 @@ await test("uncertain provider outcome blocks automatic resend", async () => {
     eventId: `event-live-uncertain-1-${runId}`,
   });
   assert.equal(state?.status, "uncertain");
+});
+
+await test("expired Meta reply claims reconcile without risking duplicate delivery", async () => {
+  const senderId = `customer-live-reconcile-${runId}`;
+  const eventId = `event-live-reconcile-${runId}`;
+  const queued = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId,
+    eventId,
+    mid: `mid-live-reconcile-${runId}`,
+  });
+  const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+  assert.equal(prepared.action, "send");
+  if (prepared.action !== "send") return;
+
+  const notStarted = await liveTransport.reconcilePostgresMetaReplyJob(queued.job);
+  assert.equal(notStarted.action, "retry");
+  if (notStarted.action === "retry") assert.equal(notStarted.code, "META_REPLY_NOT_STARTED");
+
+  const transport = await liveTransport.createPostgresMetaWebhookReplyTransport({
+    prepared,
+    sendText: async () => ({
+      status: "sent",
+      providerMessageId: `provider-reconcile-${runId}`,
+    }),
+  });
+  const delivered = await workerCore.processMetaReplyJob(queued.job, { transport });
+  assert.equal(delivered.delivery_status, "sent");
+
+  const recovered = await liveTransport.reconcilePostgresMetaReplyJob(queued.job);
+  assert.equal(recovered.action, "complete");
+  if (recovered.action === "complete") {
+    assert.equal(recovered.result?.delivery_status, "sent");
+    assert.equal(recovered.result?.recovered_after_worker_crash, true);
+  }
+
+  const uncertainEventId = `event-live-reconcile-uncertain-${runId}`;
+  const uncertainQueued = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId: `customer-live-reconcile-uncertain-${runId}`,
+    eventId: uncertainEventId,
+    mid: `mid-live-reconcile-uncertain-${runId}`,
+  });
+  const uncertainPrepared = await intents.preparePostgresMetaAutoReply(uncertainQueued.job);
+  assert.equal(uncertainPrepared.action, "send");
+  if (uncertainPrepared.action !== "send") return;
+  const uncertainTransport = await liveTransport.createPostgresMetaWebhookReplyTransport({
+    prepared: uncertainPrepared,
+    sendText: async () => ({ status: "uncertain", code: "META_GRAPH_TRANSPORT_UNCERTAIN" }),
+  });
+  await assert.rejects(
+    () => workerCore.processMetaReplyJob(uncertainQueued.job, { transport: uncertainTransport }),
+    (error: unknown) => (error as { code?: string }).code === "META_REPLY_OUTCOME_UNCERTAIN",
+  );
+  const blocked = await liveTransport.reconcilePostgresMetaReplyJob(uncertainQueued.job);
+  assert.equal(blocked.action, "dead_letter");
+  if (blocked.action === "dead_letter") assert.equal(blocked.code, "META_REPLY_OUTCOME_UNCERTAIN");
 });
 
 await test("stable knowledge gap hands off and notifies only the owning merchant", async () => {
@@ -4521,6 +4583,1144 @@ await test("ranked visual alternatives fall back to a fulfillable merchant produ
 });
 
 
+await test("mixed image and audio with explicit text requires every attachment to be understood", async () => {
+  const senderId = `customer-live-mixed-image-audio-${runId}`;
+  const eventId = `event-live-mixed-image-audio-${runId}`;
+  const mid = `mid-live-mixed-image-audio-${runId}`;
+  const imageUrl = "https://example.invalid/mixed-product.jpg";
+  const audioUrl = "https://example.invalid/mixed-question.mp3";
+  let imageCalls = 0;
+  let audioCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      imageCalls += 1;
+      return null;
+    },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      audioCalls += 1;
+      return {
+        transcript: "هل هذا متوفر؟",
+        audioSha256: "b".repeat(64),
+        transcriptionProviderId: "test-mixed-audio",
+        transcriptionModel: "test-mixed-audio-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: "أريد هذا المنتج",
+                attachments: [
+                  { type: "image", payload: { url: imageUrl } },
+                  { type: "audio", payload: { url: audioUrl } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(prepared.action, "suppress");
+    if (prepared.action !== "suppress") return;
+    assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    assert.equal(imageCalls, 1);
+    assert.equal(audioCalls, 1);
+
+    const stored = await raw(
+      `SELECT metadata FROM messages
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+    assert.equal(stored.rows.length, 1);
+    const serialized = JSON.stringify(stored.rows[0].metadata);
+    assert.equal(serialized.includes(imageUrl), false);
+    assert.equal(serialized.includes(audioUrl), false);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  }
+});
+
+await test("text plus trusted audio composes the transcript into the knowledge intent", async () => {
+  const senderId = `customer-live-text-audio-compose-${runId}`;
+  const eventId = `event-live-text-audio-compose-${runId}`;
+  const mid = `mid-live-text-audio-compose-${runId}`;
+  const audioUrl = "https://example.invalid/compose-question.mp3";
+
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      return {
+        transcript: "كم سعره؟",
+        audioSha256: "e".repeat(64),
+        transcriptionProviderId: "test-compose-audio",
+        transcriptionModel: "test-compose-audio-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: "عن هذا المنتج",
+                attachments: [
+                  { type: "audio", payload: { url: audioUrl } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.notEqual(prepared.action, "suppress");
+
+    const stored = await raw(
+      `SELECT metadata FROM messages
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].metadata?.media?.audio_transcript, "كم سعره؟");
+    assert.equal(JSON.stringify(stored.rows[0].metadata).includes(audioUrl), false);
+  } finally {
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  }
+});
+
+await test("video visual observation is not flattened into customer-authored intent", async () => {
+  const senderId = `customer-live-video-intent-boundary-${runId}`;
+  const eventId = `event-live-video-intent-boundary-${runId}`;
+  const mid = `mid-live-video-intent-boundary-${runId}`;
+  const videoUrl = "https://example.invalid/visual-only-question.mp4";
+  const customerText = "أريد معلومات عن هذا المنتج";
+  const visualDescription = "كم سعره؟";
+
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      return {
+        videoSha256: "f".repeat(64),
+        frameCount: 1,
+        observation: {
+          productType: "shirt",
+          colors: ["black"],
+          attributes: [],
+          description: visualDescription,
+          confidence: 0.9,
+          providerId: "test-video-intent-boundary",
+          model: "test-video-intent-boundary-model",
+        },
+        exactMatch: null,
+        alternatives: [],
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: customerText,
+                attachments: [
+                  { type: "video", payload: { url: videoUrl } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    await intents.preparePostgresMetaAutoReply(queued.job);
+
+    const stored = await raw(
+      `SELECT text, metadata FROM messages
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].text, customerText);
+    assert.match(
+      String(stored.rows[0].metadata?.media?.video_observation || ""),
+      /كم سعره؟/,
+    );
+    assert.equal(JSON.stringify(stored.rows[0].metadata).includes(videoUrl), false);
+  } finally {
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
+await test("persisted video observation without complete provenance is not trusted", async () => {
+  const senderId = `customer-live-video-provenance-${runId}`;
+  const eventId = `event-live-video-provenance-${runId}`;
+  const mid = `mid-live-video-provenance-${runId}`;
+  const videoUrl = "https://example.invalid/persisted-provenance.mp4";
+  let videoCalls = 0;
+
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      videoCalls += 1;
+      return null;
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{ id: pageA, messaging: [{
+            sender: { id: senderId }, recipient: { id: pageA }, timestamp: Date.now(),
+            message: { mid, attachments: [{ type: "video", payload: { url: videoUrl } }] },
+          }] }],
+        },
+      },
+    });
+
+    const first = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(first.action, "suppress");
+    assert.equal(videoCalls, 1);
+
+    await raw(
+      `UPDATE messages
+          SET metadata = jsonb_set(
+            jsonb_set(metadata, '{media,video_observation}', to_jsonb($3::text), true),
+            '{media,video_sha256}', to_jsonb($4::text), true
+          )
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'`,
+      [merchantA.account.id, mid, "وصف مرئي قديم بلا مصدر موثوق", "a".repeat(64)],
+    );
+
+    const replay = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(replay.action, "suppress");
+    if (replay.action === "suppress") assert.equal(replay.code, "CONVERSATION_NEEDS_REPLY");
+    assert.equal(videoCalls, 2);
+  } finally {
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
+
+
+await test("text plus image audio and video fails closed when any attachment is not understood", async () => {
+  const senderId = `customer-live-all-media-partial-${runId}`;
+  const eventId = `event-live-all-media-partial-${runId}`;
+  const mid = `mid-live-all-media-partial-${runId}`;
+  const imageUrl = "https://example.invalid/all-media.jpg";
+  const audioUrl = "https://example.invalid/all-media.mp3";
+  const videoUrl = "https://example.invalid/all-media.mp4";
+  let imageCalls = 0;
+  let audioCalls = 0;
+  let videoCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      imageCalls += 1;
+      return null;
+    },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      audioCalls += 1;
+      return {
+        transcript: "كم سعره؟",
+        audioSha256: "1".repeat(64),
+        transcriptionProviderId: "test-all-media-audio",
+        transcriptionModel: "test-all-media-audio-model",
+      };
+    },
+  });
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      videoCalls += 1;
+      return {
+        videoSha256: "2".repeat(64),
+        frameCount: 1,
+        observation: {
+          productType: "shirt",
+          colors: ["black"],
+          attributes: [],
+          description: "black shirt",
+          confidence: 0.9,
+          providerId: "test-all-media-video",
+          model: "test-all-media-video-model",
+        },
+        exactMatch: null,
+        alternatives: [],
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: "أريد هذا المنتج وهذا سؤالي",
+                attachments: [
+                  { type: "image", payload: { url: imageUrl } },
+                  { type: "audio", payload: { url: audioUrl } },
+                  { type: "video", payload: { url: videoUrl } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(prepared.action, "suppress");
+    if (prepared.action !== "suppress") return;
+    assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    assert.equal(imageCalls, 1);
+    assert.equal(audioCalls, 1);
+    assert.equal(videoCalls, 1);
+
+    const stored = await raw(
+      `SELECT metadata FROM messages
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+    assert.equal(stored.rows.length, 1);
+    const serialized = JSON.stringify(stored.rows[0].metadata);
+    assert.equal(serialized.includes(imageUrl), false);
+    assert.equal(serialized.includes(audioUrl), false);
+    assert.equal(serialized.includes(videoUrl), false);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
+await test("duplicate media type is rejected before any partial media understanding", async () => {
+  const senderId = `customer-live-duplicate-media-${runId}`;
+  const eventId = `event-live-duplicate-media-${runId}`;
+  const mid = `mid-live-duplicate-media-${runId}`;
+  let imageCalls = 0;
+  let audioCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      imageCalls += 1;
+      return null;
+    },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      audioCalls += 1;
+      return null;
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: "راجع هذه المرفقات",
+                attachments: [
+                  { type: "image", payload: { url: "https://example.invalid/one.jpg" } },
+                  { type: "image", payload: { url: "https://example.invalid/two.jpg" } },
+                  { type: "audio", payload: { url: "https://example.invalid/question.mp3" } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(prepared.action, "suppress");
+    if (prepared.action !== "suppress") return;
+    assert.equal(prepared.code, "META_MEDIA_MANIFEST_INVALID");
+    assert.equal(imageCalls, 0);
+    assert.equal(audioCalls, 0);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  }
+});
+
+await test("unsupported inbound attachment kinds are rejected before reply preparation", async () => {
+  const cases = [
+    { label: "shared-post", attachment: { type: "share", payload: { url: "https://example.invalid/post" } } },
+    { label: "document", attachment: { type: "document", payload: { url: "https://example.invalid/file.pdf" } } },
+    { label: "location", attachment: { type: "location", payload: { coordinates: { lat: 33.3, long: 44.4 } } } },
+    { label: "sticker", attachment: { type: "sticker", payload: { sticker_id: 1 } } },
+    { label: "unknown", attachment: { type: "file", payload: { url: "https://example.invalid/file.bin" } } },
+  ];
+
+  for (const testCase of cases) {
+    const senderId = `customer-live-unsupported-${testCase.label}-${runId}`;
+    const eventId = `event-live-unsupported-${testCase.label}-${runId}`;
+    const mid = `mid-live-unsupported-${testCase.label}-${runId}`;
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: { mid, text: "راجع هذا", attachments: [testCase.attachment] },
+            }],
+          }],
+        },
+      },
+    });
+
+    await assert.rejects(
+      intents.preparePostgresMetaAutoReply(queued.job),
+      (error: unknown) =>
+        (error as { code?: string } | null)?.code === "META_JOB_PAYLOAD_INVALID",
+      testCase.label,
+    );
+  }
+});
+
+await test("reply context must resolve uniquely inside the same merchant conversation", async () => {
+  const senderId = `customer-live-reply-context-${runId}`;
+  const missingEventId = `event-live-reply-context-missing-${runId}`;
+  const missingMid = `mid-live-reply-context-missing-${runId}`;
+
+  const missing = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: missingEventId,
+    merchantId: merchantA.account.id,
+    maxAttempts: 5,
+    payload: {
+      event_id: missingEventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: missingMid,
+      sender_id: senderId,
+      webhook_body: {
+        object: "page",
+        entry: [{
+          id: pageA,
+          messaging: [{
+            sender: { id: senderId },
+            recipient: { id: pageA },
+            timestamp: Date.now(),
+            message: {
+              mid: missingMid,
+              text: "هذا المقصود",
+              reply_to: { mid: `missing-reply-target-${runId}` },
+            },
+          }],
+        }],
+      },
+    },
+  });
+
+  await assert.rejects(
+    intents.preparePostgresMetaAutoReply(missing.job),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_REPLY_CONTEXT_UNAVAILABLE",
+  );
+
+  const otherSenderId = `customer-live-reply-other-${runId}`;
+  const seedEventId = `event-live-reply-other-${runId}`;
+  const seedMid = `mid-live-reply-other-${runId}`;
+  const seed = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId: otherSenderId,
+    eventId: seedEventId,
+    mid: seedMid,
+    message: "رسالة في محادثة أخرى",
+  });
+  await intents.preparePostgresMetaAutoReply(seed.job);
+
+  const crossEventId = `event-live-reply-cross-conversation-${runId}`;
+  const crossMid = `mid-live-reply-cross-conversation-${runId}`;
+  const crossConversation = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: crossEventId,
+    merchantId: merchantA.account.id,
+    maxAttempts: 5,
+    payload: {
+      event_id: crossEventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: crossMid,
+      sender_id: senderId,
+      webhook_body: {
+        object: "page",
+        entry: [{
+          id: pageA,
+          messaging: [{
+            sender: { id: senderId },
+            recipient: { id: pageA },
+            timestamp: Date.now(),
+            message: {
+              mid: crossMid,
+              text: "اعتمد على الرسالة السابقة",
+              reply_to: { mid: seedMid },
+            },
+          }],
+        }],
+      },
+    },
+  });
+
+  await assert.rejects(
+    intents.preparePostgresMetaAutoReply(crossConversation.job),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_REPLY_CONTEXT_UNAVAILABLE",
+  );
+});
+
+await test("same external message id cannot be replayed with a different reply target", async () => {
+  const senderId = `customer-live-reply-replay-${runId}`;
+  const targetOneEvent = `event-live-reply-target-one-${runId}`;
+  const targetOneMid = `mid-live-reply-target-one-${runId}`;
+  const targetTwoEvent = `event-live-reply-target-two-${runId}`;
+  const targetTwoMid = `mid-live-reply-target-two-${runId}`;
+
+  const targetOne = await enqueueReply({
+    merchantId: merchantA.account.id, pageId: pageA, senderId,
+    eventId: targetOneEvent, mid: targetOneMid, message: "الرسالة الأولى",
+  });
+  await intents.preparePostgresMetaAutoReply(targetOne.job);
+  const targetTwo = await enqueueReply({
+    merchantId: merchantA.account.id, pageId: pageA, senderId,
+    eventId: targetTwoEvent, mid: targetTwoMid, message: "الرسالة الثانية",
+  });
+  await intents.preparePostgresMetaAutoReply(targetTwo.job);
+
+  const replayMid = `mid-live-reply-replay-${runId}`;
+  const makeJob = async (eventId: string, replyToMid: string) => jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply", dedupeKey: eventId,
+    merchantId: merchantA.account.id, maxAttempts: 5,
+    payload: {
+      event_id: eventId, page_id: pageA, merchant_id: merchantA.account.id,
+      external_message_id: replayMid, sender_id: senderId,
+      webhook_body: { object: "page", entry: [{ id: pageA, messaging: [{
+        sender: { id: senderId }, recipient: { id: pageA }, timestamp: Date.now(),
+        message: { mid: replayMid, text: "نفس الرسالة", reply_to: { mid: replyToMid } },
+      }] }] },
+    },
+  });
+
+  const first = await makeJob(`event-live-reply-replay-first-${runId}`, targetOneMid);
+  await intents.preparePostgresMetaAutoReply(first.job);
+  const alteredReplay = await makeJob(`event-live-reply-replay-altered-${runId}`, targetTwoMid);
+  await assert.rejects(
+    intents.preparePostgresMetaAutoReply(alteredReplay.job),
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_MESSAGE_IDENTITY_COLLISION",
+  );
+});
+
+await test("unsafe single-media URLs fail closed before any understanding service", async () => {
+  const cases = [
+    { label: "http-image", attachment: { type: "image", payload: { url: "http://example.invalid/unsafe-single.jpg" } } },
+    { label: "credentialed-audio", attachment: { type: "audio", payload: { url: "https://user:secret@example.invalid/unsafe-single.mp3" } } },
+    { label: "credentialed-video", attachment: { type: "video", payload: { url: "https://user:secret@example.invalid/unsafe-single.mp4" } } },
+  ];
+  let imageCalls = 0;
+  let audioCalls = 0;
+  let videoCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() { imageCalls += 1; return null; },
+    async understandWithAlternatives() { imageCalls += 1; return null; },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() { audioCalls += 1; return null; },
+  });
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() { videoCalls += 1; return null; },
+  });
+
+  try {
+    for (const testCase of cases) {
+      const senderId = `customer-live-unsafe-single-${testCase.label}-${runId}`;
+      const eventId = `event-live-unsafe-single-${testCase.label}-${runId}`;
+      const mid = `mid-live-unsafe-single-${testCase.label}-${runId}`;
+      const queued = await jobs.enqueueDurableJobAuthoritative({
+        type: "meta.webhook.reply",
+        dedupeKey: eventId,
+        merchantId: merchantA.account.id,
+        maxAttempts: 5,
+        payload: {
+          event_id: eventId,
+          page_id: pageA,
+          merchant_id: merchantA.account.id,
+          external_message_id: mid,
+          sender_id: senderId,
+          webhook_body: {
+            object: "page",
+            entry: [{
+              id: pageA,
+              messaging: [{
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "راجع هذا المرفق",
+                  attachments: [testCase.attachment],
+                },
+              }],
+            }],
+          },
+        },
+      });
+
+      const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+      assert.equal(prepared.action, "suppress");
+      if (prepared.action !== "suppress") continue;
+      assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    }
+
+    assert.equal(imageCalls, 0);
+    assert.equal(audioCalls, 0);
+    assert.equal(videoCalls, 0);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
+await test("unsafe mixed-media URLs are rejected before any understanding service", async () => {
+  const cases = [
+    {
+      label: "http-image",
+      attachments: [
+        { type: "image", payload: { url: "http://example.invalid/unsafe.jpg" } },
+        { type: "audio", payload: { url: "https://example.invalid/safe.mp3" } },
+      ],
+    },
+    {
+      label: "credentialed-audio",
+      attachments: [
+        { type: "image", payload: { url: "https://example.invalid/safe.jpg" } },
+        { type: "audio", payload: { url: "https://user:secret@example.invalid/unsafe.mp3" } },
+      ],
+    },
+    {
+      label: "credentialed-video",
+      attachments: [
+        { type: "audio", payload: { url: "https://example.invalid/safe.mp3" } },
+        { type: "video", payload: { url: "https://user:secret@example.invalid/unsafe.mp4" } },
+      ],
+    },
+  ];
+  let imageCalls = 0;
+  let audioCalls = 0;
+  let videoCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      imageCalls += 1;
+      return null;
+    },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      audioCalls += 1;
+      return null;
+    },
+  });
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      videoCalls += 1;
+      return null;
+    },
+  });
+
+  try {
+    for (const testCase of cases) {
+      const senderId = `customer-live-unsafe-url-${testCase.label}-${runId}`;
+      const eventId = `event-live-unsafe-url-${testCase.label}-${runId}`;
+      const mid = `mid-live-unsafe-url-${testCase.label}-${runId}`;
+
+      const queued = await jobs.enqueueDurableJobAuthoritative({
+        type: "meta.webhook.reply",
+        dedupeKey: eventId,
+        merchantId: merchantA.account.id,
+        maxAttempts: 5,
+        payload: {
+          event_id: eventId,
+          page_id: pageA,
+          merchant_id: merchantA.account.id,
+          external_message_id: mid,
+          sender_id: senderId,
+          webhook_body: {
+            object: "page",
+            entry: [{
+              id: pageA,
+              messaging: [{
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "راجع هذه المرفقات",
+                  attachments: testCase.attachments,
+                },
+              }],
+            }],
+          },
+        },
+      });
+
+      const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+      assert.equal(prepared.action, "suppress");
+      if (prepared.action !== "suppress") continue;
+      assert.equal(prepared.code, "META_MEDIA_MANIFEST_INVALID");
+    }
+
+    assert.equal(imageCalls, 0);
+    assert.equal(audioCalls, 0);
+    assert.equal(videoCalls, 0);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
+await test("media provider exceptions fail closed without crashing the reply preparation", async () => {
+  const cases = [
+    { label: "image", attachment: { type: "image", payload: { url: "https://example.invalid/provider-error.jpg" } } },
+    { label: "audio", attachment: { type: "audio", payload: { url: "https://example.invalid/provider-error.mp3" } } },
+    { label: "video", attachment: { type: "video", payload: { url: "https://example.invalid/provider-error.mp4" } } },
+  ];
+
+  for (const testCase of cases) {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+    imageRuntime.configureMetaImageUnderstandingService({
+      async understand() { throw new Error("synthetic image provider failure"); },
+      async understandWithAlternatives() { throw new Error("synthetic image alternatives provider failure"); },
+    });
+    audioRuntime.configureMetaAudioUnderstandingService({
+      async understand() { throw new Error("synthetic audio provider failure"); },
+    });
+    videoRuntime.configureMetaVideoUnderstandingService({
+      async understand() { throw new Error("synthetic video provider failure"); },
+    });
+
+    try {
+      const senderId = `customer-live-provider-error-${testCase.label}-${runId}`;
+      const eventId = `event-live-provider-error-${testCase.label}-${runId}`;
+      const mid = `mid-live-provider-error-${testCase.label}-${runId}`;
+      const queued = await jobs.enqueueDurableJobAuthoritative({
+        type: "meta.webhook.reply",
+        dedupeKey: eventId,
+        merchantId: merchantA.account.id,
+        maxAttempts: 5,
+        payload: {
+          event_id: eventId,
+          page_id: pageA,
+          merchant_id: merchantA.account.id,
+          external_message_id: mid,
+          sender_id: senderId,
+          webhook_body: {
+            object: "page",
+            entry: [{
+              id: pageA,
+              messaging: [{
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "راجع هذا المرفق",
+                  attachments: [testCase.attachment],
+                },
+              }],
+            }],
+          },
+        },
+      });
+
+      const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+      assert.equal(prepared.action, "suppress");
+      if (prepared.action !== "suppress") continue;
+      assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    } finally {
+      imageRuntime.resetMetaImageUnderstandingServiceForTests();
+      audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+      videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+    }
+  }
+});
+
+await test("mixed media provider failure is atomic when sibling providers succeed", async () => {
+  const failingKinds = ["image", "audio", "video"] as const;
+
+  for (const failingKind of failingKinds) {
+    let imageCalls = 0;
+    let audioCalls = 0;
+    let videoCalls = 0;
+
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+
+    imageRuntime.configureMetaImageUnderstandingService({
+      async understand() {
+        imageCalls += 1;
+        if (failingKind === "image") throw new Error("synthetic mixed image failure");
+        return {
+          matchedRecordId: null,
+          productId: null,
+          confidence: 0.9,
+          imageSha256: "1".repeat(64),
+          visionProviderId: "test-mixed-image-provider",
+          visionModel: "test-mixed-image-model",
+        };
+      },
+      async understandWithAlternatives() {
+        imageCalls += 1;
+        if (failingKind === "image") throw new Error("synthetic mixed image alternatives failure");
+        return {
+          primary: {
+            matchedRecordId: null,
+            productId: null,
+            confidence: 0.9,
+            imageSha256: "1".repeat(64),
+            visionProviderId: "test-mixed-image-provider",
+            visionModel: "test-mixed-image-model",
+          },
+          alternatives: [],
+        };
+      },
+    });
+    audioRuntime.configureMetaAudioUnderstandingService({
+      async understand() {
+        audioCalls += 1;
+        if (failingKind === "audio") throw new Error("synthetic mixed audio failure");
+        return {
+          transcript: "هل هذا متوفر؟",
+          audioSha256: "2".repeat(64),
+          transcriptionProviderId: "test-mixed-audio-provider",
+          transcriptionModel: "test-mixed-audio-model",
+        };
+      },
+    });
+    videoRuntime.configureMetaVideoUnderstandingService({
+      async understand() {
+        videoCalls += 1;
+        if (failingKind === "video") throw new Error("synthetic mixed video failure");
+        return {
+          videoSha256: "3".repeat(64),
+          frameCount: 1,
+          observation: {
+            productType: "shirt",
+            colors: ["black"],
+            attributes: [],
+            description: "black shirt",
+            confidence: 0.9,
+            providerId: "test-mixed-video-provider",
+            model: "test-mixed-video-model",
+          },
+          exactMatch: null,
+          alternatives: [],
+        };
+      },
+    });
+
+    try {
+      const senderId = `customer-live-mixed-provider-error-${failingKind}-${runId}`;
+      const eventId = `event-live-mixed-provider-error-${failingKind}-${runId}`;
+      const mid = `mid-live-mixed-provider-error-${failingKind}-${runId}`;
+      const imageUrl = `https://example.invalid/mixed-provider-error-${failingKind}.jpg`;
+      const audioUrl = `https://example.invalid/mixed-provider-error-${failingKind}.mp3`;
+      const videoUrl = `https://example.invalid/mixed-provider-error-${failingKind}.mp4`;
+
+      const queued = await jobs.enqueueDurableJobAuthoritative({
+        type: "meta.webhook.reply",
+        dedupeKey: eventId,
+        merchantId: merchantA.account.id,
+        maxAttempts: 5,
+        payload: {
+          event_id: eventId,
+          page_id: pageA,
+          merchant_id: merchantA.account.id,
+          external_message_id: mid,
+          sender_id: senderId,
+          webhook_body: {
+            object: "page",
+            entry: [{
+              id: pageA,
+              messaging: [{
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "راجع كل المرفقات",
+                  attachments: [
+                    { type: "image", payload: { url: imageUrl } },
+                    { type: "audio", payload: { url: audioUrl } },
+                    { type: "video", payload: { url: videoUrl } },
+                  ],
+                },
+              }],
+            }],
+          },
+        },
+      });
+
+      const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+      assert.equal(prepared.action, "suppress");
+      if (prepared.action !== "suppress") continue;
+      assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+
+      assert.equal(videoCalls, 1);
+      assert.equal(audioCalls, 1);
+      assert.ok(imageCalls >= 1);
+
+      const stored = await raw(
+        `SELECT metadata FROM messages
+          WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+          LIMIT 1`,
+        [merchantA.account.id, mid],
+      );
+      assert.equal(stored.rows.length, 1);
+      const serialized = JSON.stringify(stored.rows[0].metadata);
+      assert.equal(serialized.includes(imageUrl), false);
+      assert.equal(serialized.includes(audioUrl), false);
+      assert.equal(serialized.includes(videoUrl), false);
+    } finally {
+      imageRuntime.resetMetaImageUnderstandingServiceForTests();
+      audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+      videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+    }
+  }
+});
+
+await test("mixed media without explicit text remains fail closed", async () => {
+  const senderId = `customer-live-mixed-no-text-${runId}`;
+  const eventId = `event-live-mixed-no-text-${runId}`;
+  const mid = `mid-live-mixed-no-text-${runId}`;
+  let audioCalls = 0;
+  let videoCalls = 0;
+
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      audioCalls += 1;
+      return {
+        transcript: "كم سعره؟",
+        audioSha256: "c".repeat(64),
+        transcriptionProviderId: "test-mixed-audio",
+        transcriptionModel: "test-mixed-audio-model",
+      };
+    },
+  });
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      videoCalls += 1;
+      return {
+        videoSha256: "d".repeat(64),
+        frameCount: 1,
+        observation: {
+          productType: "shirt",
+          colors: ["black"],
+          attributes: [],
+          description: "black shirt",
+          confidence: 0.9,
+          providerId: "test-mixed-video",
+          model: "test-mixed-video-model",
+        },
+        exactMatch: null,
+        alternatives: [],
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                attachments: [
+                  { type: "audio", payload: { url: "https://example.invalid/mixed.mp3" } },
+                  { type: "video", payload: { url: "https://example.invalid/mixed.mp4" } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(prepared.action, "suppress");
+    if (prepared.action !== "suppress") return;
+    assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    assert.equal(audioCalls, 1);
+    assert.equal(videoCalls, 1);
+  } finally {
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
 await test("audio-only Meta reply persists trusted transcript, hides media URL, and reuses transcription on same message", async () => {
   const senderId = `customer-live-audio-${runId}`;
   const firstEventId = `event-live-audio-first-${runId}`;
@@ -4697,6 +5897,55 @@ await test("manual takeover never sends inbound audio to transcription", async (
     audioRuntime.resetMetaAudioUnderstandingServiceForTests();
   }
 });
+
+await test("missing connected Messenger channel fails closed before conversation creation", async () => {
+  const senderId = `customer-missing-channel-${runId}`;
+  const eventId = `event-missing-channel-${runId}`;
+  const mid = `mid-missing-channel-${runId}`;
+  const missingPage = `page-missing-${runId}`;
+  const queued = await enqueueReply({ merchantId: merchantA.account.id, pageId: missingPage, senderId, eventId, mid });
+
+  await assert.rejects(
+    () => intents.preparePostgresMetaAutoReply(queued.job),
+    (error: unknown) => (error as { code?: string }).code === "META_CHANNEL_UNAVAILABLE",
+  );
+
+  const conversations = await raw(
+    `SELECT COUNT(*)::int AS count FROM conversations WHERE merchant_id = $1 AND customer_external_id = $2`,
+    [merchantA.account.id, senderId],
+  );
+  assert.equal(Number(conversations.rows[0].count), 0);
+});
+
+await test("same provider event id with changed payload fails closed as identity collision", async () => {
+  const senderId = `customer-event-collision-${runId}`;
+  const eventId = `event-collision-${runId}`;
+  const firstMid = `mid-event-collision-a-${runId}`;
+  const secondMid = `mid-event-collision-b-${runId}`;
+  const first = await enqueueReply({ merchantId: merchantA.account.id, pageId: pageA, senderId, eventId, mid: firstMid, message: "first payload" });
+  await intents.preparePostgresMetaAutoReply(first.job);
+
+  const second = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: `${eventId}-changed`,
+    merchantId: merchantA.account.id,
+    maxAttempts: 5,
+    payload: {
+      event_id: eventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: secondMid,
+      sender_id: senderId,
+      webhook_body: webhookBody(pageA, senderId, secondMid, "changed payload"),
+    },
+  });
+
+  await assert.rejects(
+    () => intents.preparePostgresMetaAutoReply(second.job),
+    (error: unknown) => (error as { code?: string }).code === "META_EVENT_IDENTITY_COLLISION",
+  );
+});
+
 
 test.after(async () => {
   await pool.end();
