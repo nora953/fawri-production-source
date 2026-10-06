@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { SaasBillingPanel } from '@/components/SaasBillingPanel';
+import { CashierSubscriptionPanel } from '@/components/CashierSubscriptionPanel';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
@@ -157,6 +158,7 @@ export default function SubscriptionPage() {
           )}
 
           <SaasBillingPanel subscription={subscription} />
+          <CashierSubscriptionPanel />
         </>
       )}
     </div>
