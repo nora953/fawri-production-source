@@ -303,11 +303,7 @@ router.patch(
         ),
       });
       res.setHeader("Cache-Control", "no-store");
-      res.json({
-      ok: true,
-      station,
-      cashier_entitlement: getCashierEntitlementContext(res),
-    });
+      res.json({ ok: true, station });
     } catch (error) {
       sendError(res, error);
     }
@@ -383,7 +379,11 @@ router.get(
   (_req: Request, res: Response) => {
     const station = getCashierStationContext(res);
     res.setHeader("Cache-Control", "no-store");
-    res.json({ ok: true, station });
+    res.json({
+      ok: true,
+      station,
+      cashier_entitlement: getCashierEntitlementContext(res),
+    });
   },
 );
 
