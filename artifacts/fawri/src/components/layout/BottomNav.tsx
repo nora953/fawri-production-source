@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { useI18n } from "@/lib/i18n";
 import { clearSession } from "@/lib/store";
+import { useMerchantFeatureEntitlements } from "@/hooks/useMerchantFeatureEntitlements";
 import {
   useUnreadMerchantNotificationCount,
   type MerchantNotificationCountState,
@@ -95,6 +96,7 @@ export function BottomNav() {
   const [location, setLocation] = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const unreadNotifications = useUnreadMerchantNotificationCount();
+  const features = useMerchantFeatureEntitlements();
   const cashierLabel =
     lang === "en" ? "Cashier" : lang === "ku" ? "کاشێر" : "الكاشير";
   const cashierManagementLabel =
@@ -117,11 +119,13 @@ export function BottomNav() {
       icon: LayoutDashboard,
       exact: true,
     },
-    {
-      href: "/dashboard/conversations",
-      label: t.conversations,
-      icon: MessageSquare,
-    },
+    ...(features.botVisible
+      ? [{
+          href: "/dashboard/conversations",
+          label: t.conversations,
+          icon: MessageSquare,
+        }]
+      : []),
     {
       href: "/dashboard/products",
       label: t.products,
@@ -135,44 +139,52 @@ export function BottomNav() {
   ];
 
   const moreItems: NavItem[] = [
-    {
-      href: "/dashboard/cashiers",
-      label: cashierManagementLabel,
-      icon: Users,
-      exact: true,
-    },
+    ...(features.cashierManagementVisible
+      ? [{
+          href: "/dashboard/cashiers",
+          label: cashierManagementLabel,
+          icon: Users,
+          exact: true,
+        }]
+      : []),
     {
       href: "/dashboard/reports",
       label: reportsLabel,
       icon: BarChart3,
     },
-    {
-      href: "/cashier.html",
-      label: cashierLabel,
-      icon: Calculator,
-      fullPage: true,
-    },
+    ...(features.cashierRuntimeVisible
+      ? [{
+          href: "/cashier.html",
+          label: cashierLabel,
+          icon: Calculator,
+          fullPage: true,
+        }]
+      : []),
     {
       href: "/dashboard/notifications",
       label: t.notifications_title,
       icon: Bell,
       badge: unreadNotifications,
     },
-    {
-      href: "/dashboard/saved-answers",
-      label: t.saved_answers,
-      icon: BookOpen,
-    },
-    {
-      href: "/dashboard/bot-training",
-      label: t.sidebar_bot_training,
-      icon: Brain,
-    },
-    {
-      href: "/dashboard/channels",
-      label: t.channels,
-      icon: Radio,
-    },
+    ...(features.botVisible
+      ? [
+          {
+            href: "/dashboard/saved-answers",
+            label: t.saved_answers,
+            icon: BookOpen,
+          },
+          {
+            href: "/dashboard/bot-training",
+            label: t.sidebar_bot_training,
+            icon: Brain,
+          },
+          {
+            href: "/dashboard/channels",
+            label: t.channels,
+            icon: Radio,
+          },
+        ]
+      : []),
     {
       href: "/dashboard/subscription",
       label: t.subscription,
