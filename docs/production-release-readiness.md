@@ -29,23 +29,19 @@ FAWRI_DEPLOYMENT_MODE=production
 
 Production is fail-closed by default: API startup stops before application traffic if required runtime configuration is incomplete. Staging and development must opt out explicitly with `FAWRI_DEPLOYMENT_MODE=staging` or `development`. `FAWRI_PRODUCTION_RELEASE_GATE=required` remains a legacy compatibility marker but production safety no longer depends on it.
 
-Required runtime selections include:
+Required **Fawri Core runtime** selections include:
 
 - PostgreSQL operational authority: `FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required`
 - a dedicated PostgreSQL runtime role that is not `SUPERUSER`, does not have `BYPASSRLS`, and does not own tenant-protected tables; startup verifies these properties and verifies RLS is enabled on the production tenant-table contract
 - PostgreSQL subscription authority: `FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required`
 - PostgreSQL merchant Auth sessions: `FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required`
 - strong `FAWRI_AUTH_SECURITY_SECRET`
-- Meta cutover: `FAWRI_META_CUTOVER_READY=1`
-- Meta live replies: `FAWRI_META_REPLY_TRANSPORT=live`
-- job workers enabled
-- Meta credential provider: `FAWRI_META_CREDENTIAL_PROVIDER=aws-kms`
-- complete AWS KMS region/key/wrapped-DEK configuration
-- explicit Meta app/config/webhook values and HTTPS `META_REDIRECT_URI`
-- Knowledge embedding provider: `FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER=openai`
-- `OPENAI_API_KEY`
+- safe HTTPS `FAWRI_ALLOWED_ORIGINS`
 - `FAWRI_SERVICE_VERSION`
 - strong `FAWRI_OBSERVABILITY_BEARER_TOKEN`
+- core background workers enabled
+
+Meta, AI/Knowledge providers, AWS KMS for Meta credentials, SaaS billing, production backup/restore, and durable support-image storage are **external launch integrations/blockers**, not prerequisites for starting the provider-neutral Fawri Core. Until Meta is intentionally activated, keep `FAWRI_META_CUTOVER_READY=0`, `FAWRI_META_REPLY_TRANSPORT=disabled`, and `FAWRI_META_CREDENTIAL_PROVIDER=disabled`. When an external integration is activated, its own fail-closed readiness contract applies.
 
 The release gate reports only safe error codes. Secret values must never be returned in readiness responses or startup logs.
 
@@ -68,7 +64,7 @@ Do not validate these by committing credentials or sending test traffic from CI.
 
 ## Knowledge production activation
 
-The OpenAI embedding provider is startup-wired. Production requires `FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER=openai` and a deployment secret for `OPENAI_API_KEY`. Repository tests use non-real/injected values only.
+The OpenAI-backed Knowledge providers are optional external integrations and are not required for provider-neutral Fawri Core startup. When AI/Knowledge is intentionally activated, configure the selected `FAWRI_KNOWLEDGE_*_PROVIDER` values and provide `OPENAI_API_KEY` through the deployment secret store. Repository tests use non-real/injected values only.
 
 ## SaaS subscription billing blocker
 
@@ -121,7 +117,7 @@ Support images are currently stored through a filesystem-backed storage path. Pr
 
 ## Current readiness interpretation
 
-At current `main` (documentation sync after runtime merge `5f402a332ef6b9d145aeec326f7800a4e8147ffb`), repository validation establishes **production-release code readiness** for the integrated tree.
+Repository validation establishes **Fawri Core production-runtime code readiness** for the integrated tree. This document intentionally avoids pinning that statement to an obsolete historical `main` SHA; the current branch/commit and required CI evidence are the release source of truth.
 
 It must not claim **production launch readiness** while any of the following remain unresolved:
 
