@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: cashier-migration-metadata-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   complete-snapshot:
