@@ -8,6 +8,10 @@ import {
 } from "../services/postgresCashierStaffAuthority";
 import type { CashierStaffPermission } from "../services/cashierStaffPolicy";
 import { refreshDurableCashierStationCredentialAuthoritative } from "../services/cashierRuntimeExpiryReconciliation";
+import {
+  CashierEntitlementError,
+  assertCashierStationLicensedAuthoritative,
+} from "../services/cashierEntitlementAuthority";
 
 export const CASHIER_STATION_TOKEN_HEADER = "x-fawri-cashier-station-token";
 export const CASHIER_OPERATOR_TOKEN_HEADER = "x-fawri-cashier-operator-token";
@@ -46,7 +50,7 @@ export function getCashierOperatorContext(res: Response): CashierOperatorContext
 
 function sendError(res: Response, error: unknown): void {
   res.setHeader("Cache-Control", "no-store");
-  if (error instanceof CashierStaffAuthorityError) {
+  if (error instanceof CashierStaffAuthorityError || error instanceof CashierEntitlementError) {
     if (error.status === 429 && error.details?.retry_after_seconds) {
       res.setHeader("Retry-After", String(error.details.retry_after_seconds));
     }
@@ -84,6 +88,11 @@ export async function requireCashierStationCredential(
       stationToken,
       deviceId,
     });
+    await assertCashierStationLicensedAuthoritative({
+      merchantId: context.merchant_id,
+      stationId: context.station_id,
+      allowGrace: true,
+    });
     (res as CashierResponse).locals.cashierStation = context;
     res.setHeader("Cache-Control", "no-store");
     next();
@@ -112,6 +121,11 @@ export function requireCashierOperatorSession(
         operatorToken: cashierOperatorToken(req),
         deviceId,
         ...(requiredPermission ? { requiredPermission } : {}),
+      });
+      await assertCashierStationLicensedAuthoritative({
+        merchantId: context.merchant_id,
+        stationId: context.station_id,
+        allowGrace: true,
       });
       (res as CashierResponse).locals.cashierOperator = context;
       (res as CashierResponse).locals.cashierStation = context;
