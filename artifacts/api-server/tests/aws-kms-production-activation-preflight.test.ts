@@ -25,7 +25,7 @@ function config(): AwsKmsMetaCredentialConfig {
   };
 }
 
-test("production startup requires an explicit AWS KMS Meta credential provider selection", async () => {
+test("production Meta cutover requires an explicit AWS KMS Meta credential provider selection", async () => {
   let bootstrapCalled = false;
   let metaConfigured = false;
 
@@ -34,6 +34,7 @@ test("production startup requires an explicit AWS KMS Meta credential provider s
       initializeRuntimeProviders({
         env: {
           NODE_ENV: "production",
+          FAWRI_META_CUTOVER_READY: "1",
           FAWRI_META_TOKEN_KEY_ID: "legacy-environment-key",
           FAWRI_META_TOKEN_KEY_BASE64: Buffer.alloc(32, 7).toString("base64"),
         } as NodeJS.ProcessEnv,
