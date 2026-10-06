@@ -2,7 +2,8 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
-import { cn } from "@/lib/utils"\nimport { useI18n } from "@/lib/i18n"
+import { cn } from "@/lib/utils"
+import { useI18n } from "@/lib/i18n"
 
 const Dialog = DialogPrimitive.Root
 
@@ -38,7 +39,10 @@ function hasExplicitVerticalPosition(className?: string): boolean {
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, closeButtonClassName, ...props }, ref) => {\n  const { t } = useI18n()\n\n  return (
+>(({ className, children, closeButtonClassName, ...props }, ref) => {
+  const { t } = useI18n()
+
+  return (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
