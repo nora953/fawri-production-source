@@ -46,7 +46,7 @@ import {
 } from "./metaAudioUnderstandingRuntime.js";
 import { configureMetaVideoUnderstandingService, createOpenAiMetaVideoUnderstandingService, releaseMetaVideoUnderstandingService, type MetaVideoUnderstandingRuntimeService } from "./metaVideoUnderstandingRuntime.js";
 
-export type MetaCredentialProviderSelection = "environment" | "aws-kms";
+export type MetaCredentialProviderSelection = "disabled" | "environment" | "aws-kms";
 export type KnowledgeEmbeddingProviderSelection = "disabled" | "openai";
 export type KnowledgeTranslationProviderSelection = "disabled" | "openai";
 export type KnowledgeAiProviderSelection = "disabled" | "openai";
@@ -130,16 +130,20 @@ function readMetaCredentialProviderSelection(
 ): MetaCredentialProviderSelection {
   const selected = text(env.FAWRI_META_CREDENTIAL_PROVIDER).toLowerCase();
   const production = text(env.NODE_ENV).toLowerCase() === "production";
-  if (!selected) {
-    if (production) {
+  const metaCutoverReady = text(env.FAWRI_META_CUTOVER_READY) === "1";
+
+  if (!selected || selected === "disabled") {
+    if (production && metaCutoverReady) {
       throw fail(
         "META_CREDENTIAL_PROVIDER_REQUIRED",
-        "AWS KMS Meta credential provider selection is required in production",
+        "AWS KMS Meta credential provider selection is required when Meta production cutover is active",
       );
     }
-    return "environment";
+    return production ? "disabled" : selected === "disabled" ? "disabled" : "environment";
   }
+
   if (selected === "aws-kms") return "aws-kms";
+  if (selected === "environment" && !production) return "environment";
   throw fail(
     "META_CREDENTIAL_PROVIDER_CONFIG_INVALID",
     "Meta credential provider selection is invalid",

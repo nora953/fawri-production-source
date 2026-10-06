@@ -103,6 +103,52 @@ function tempDataDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "fawri-provider-wiring-"));
 }
 
+test("production core can bootstrap with Meta disabled before cutover", async () => {
+  let awsBootstrapCalled = false;
+  const result = await bootstrapRuntimeAndLoadApplication({
+    env: {
+      NODE_ENV: "production",
+      FAWRI_META_CUTOVER_READY: "0",
+      FAWRI_META_CREDENTIAL_PROVIDER: "disabled",
+    } as NodeJS.ProcessEnv,
+    dependencies: {
+      bootstrapAwsKms: async () => {
+        awsBootstrapCalled = true;
+        return fakeAwsProvider().provider;
+      },
+    },
+    loadApplication: async () => "core-app",
+  });
+
+  assert.equal(result.application, "core-app");
+  assert.equal(result.runtime.selections.metaCredentialProvider, "disabled");
+  assert.equal(awsBootstrapCalled, false);
+  result.runtime.dispose();
+});
+
+test("production Meta cutover fails closed without AWS KMS credential provider", async () => {
+  let applicationLoaded = false;
+  await assert.rejects(
+    () =>
+      bootstrapRuntimeAndLoadApplication({
+        env: {
+          NODE_ENV: "production",
+          FAWRI_META_CUTOVER_READY: "1",
+          FAWRI_META_CREDENTIAL_PROVIDER: "disabled",
+        } as NodeJS.ProcessEnv,
+        loadApplication: async () => {
+          applicationLoaded = true;
+          return "app";
+        },
+      }),
+    (error: unknown) => {
+      assert.equal(errorCode(error), "META_CREDENTIAL_PROVIDER_REQUIRED");
+      return true;
+    },
+  );
+  assert.equal(applicationLoaded, false);
+});
+
 test("aws-kms selection injects the cached provider before application load and Meta token persistence/read", async () => {
   const dir = tempDataDir();
   const aws = fakeAwsProvider();
