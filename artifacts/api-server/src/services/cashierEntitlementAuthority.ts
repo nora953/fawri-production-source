@@ -621,14 +621,14 @@ export async function assignCashierStationSeatInTransaction(input: {
     input.target,
     `SELECT status
        FROM cashier_station_seat_assignments
-      WHERE merchant_id = $1 AND station_id = $2
+      WHERE merchant_id = $1
+        AND station_id = $2
+        AND status IN ('active','release_scheduled')
       LIMIT 1
       FOR UPDATE`,
     [input.merchantId, input.stationId],
   );
-  if (existing[0]?.status === "active" || existing[0]?.status === "release_scheduled") {
-    return snapshot;
-  }
+  if (existing[0]) return snapshot;
 
   const counts = await operationalQueryRows<{ assigned: number | string }>(
     input.target,
@@ -649,22 +649,12 @@ export async function assignCashierStationSeatInTransaction(input: {
   }
 
   const id = `cashier_seat_${crypto.randomUUID()}`;
-  if (existing[0]) {
-    await input.target.query(
-      `UPDATE cashier_station_seat_assignments
-          SET subscription_id = $3, status = 'active', assigned_at = now(),
-              release_effective_at = NULL, released_at = NULL, updated_at = now()
-        WHERE merchant_id = $1 AND station_id = $2`,
-      [input.merchantId, input.stationId, snapshot.subscription_id],
-    );
-  } else {
-    await input.target.query(
-      `INSERT INTO cashier_station_seat_assignments
-         (id, merchant_id, subscription_id, station_id, status, assigned_at, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,'active',now(),now(),now())`,
-      [id, input.merchantId, snapshot.subscription_id, input.stationId],
-    );
-  }
+  await input.target.query(
+    `INSERT INTO cashier_station_seat_assignments
+       (id, merchant_id, subscription_id, station_id, status, assigned_at, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,'active',now(),now(),now())`,
+    [id, input.merchantId, snapshot.subscription_id, input.stationId],
+  );
   await input.target.query(
     `INSERT INTO cashier_entitlement_audit_events
        (id, merchant_id, subscription_id, action, actor_type, actor_ref,
