@@ -136,6 +136,7 @@ export const cashierBillingOrders = pgTable(
     currency: text("currency").notNull().default("IQD"),
     billingPeriodStart: timestamp("billing_period_start", { withTimezone: true }).notNull(),
     billingPeriodEnd: timestamp("billing_period_end", { withTimezone: true }).notNull(),
+    graceDurationSeconds: integer("grace_duration_seconds").notNull().default(604800),
     status: text("status").notNull().default("pending"),
     idempotencyKey: text("idempotency_key").notNull(),
     provider: text("provider").notNull(),
@@ -192,7 +193,7 @@ export const cashierBillingOrders = pgTable(
     ),
     periodCheck: check(
       "cashier_billing_orders_period_check",
-      sql`${table.billingPeriodEnd} > ${table.billingPeriodStart} AND ${table.requestExpiresAt} > ${table.createdAt} AND ${table.updatedAt} >= ${table.createdAt}`,
+      sql`${table.billingPeriodEnd} > ${table.billingPeriodStart} AND ${table.graceDurationSeconds} > 0 AND ${table.requestExpiresAt} > ${table.createdAt} AND ${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
 ).enableRLS();
