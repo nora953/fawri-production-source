@@ -65,6 +65,7 @@ CREATE TABLE "cashier_billing_orders" (
   "currency" text DEFAULT 'IQD' NOT NULL,
   "billing_period_start" timestamp with time zone NOT NULL,
   "billing_period_end" timestamp with time zone NOT NULL,
+  "grace_duration_seconds" integer DEFAULT 604800 NOT NULL,
   "status" text DEFAULT 'pending' NOT NULL,
   "idempotency_key" text NOT NULL,
   "provider" text NOT NULL,
@@ -83,7 +84,7 @@ CREATE TABLE "cashier_billing_orders" (
   CONSTRAINT "cashier_billing_orders_status_check" CHECK ("status" IN ('pending','paid','applied','failed','cancelled','expired','paid_reconciliation_required')),
   CONSTRAINT "cashier_billing_orders_monetary_check" CHECK ("unit_price_iqd" > 0 AND "amount_iqd" > 0 AND "currency" = 'IQD'),
   CONSTRAINT "cashier_billing_orders_seats_check" CHECK ("current_seats" >= 0 AND "requested_seats" > 0 AND "resulting_seats" > 0),
-  CONSTRAINT "cashier_billing_orders_period_check" CHECK ("billing_period_end" > "billing_period_start" AND "request_expires_at" > "created_at" AND "updated_at" >= "created_at")
+  CONSTRAINT "cashier_billing_orders_period_check" CHECK ("billing_period_end" > "billing_period_start" AND "grace_duration_seconds" > 0 AND "request_expires_at" > "created_at" AND "updated_at" >= "created_at")
 );
 --> statement-breakpoint
 ALTER TABLE "cashier_billing_orders" ADD CONSTRAINT "cashier_billing_orders_merchant_id_merchants_id_fk" FOREIGN KEY ("merchant_id") REFERENCES "public"."merchants"("id") ON DELETE cascade ON UPDATE no action;
