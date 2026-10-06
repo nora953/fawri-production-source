@@ -29,16 +29,16 @@ jobs:
         env:
           POSTGRES_USER: fawri_clean
           POSTGRES_PASSWORD: fawri_clean
-          POSTGRES_DB: fawri_clean_ci
+          POSTGRES_DB: fawri_ci
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U fawri_clean -d fawri_clean_ci"
+          --health-cmd "pg_isready -U fawri_clean -d fawri_ci"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://fawri_clean:fawri_clean@127.0.0.1:5432/fawri_clean_ci
+      DATABASE_URL: postgresql://fawri_clean:fawri_clean@127.0.0.1:5432/fawri_ci
 
     steps:
       - name: Checkout fresh repository state
@@ -71,7 +71,7 @@ jobs:
           const connectionString = String(process.env.DATABASE_URL || '').trim();
           const parsed = new URL(connectionString);
           assert.ok(['127.0.0.1', 'localhost'].includes(parsed.hostname));
-          assert.equal(parsed.pathname.slice(1), 'fawri_clean_ci');
+          assert.equal(parsed.pathname.slice(1), 'fawri_ci');
           const root = path.resolve('drizzle');
           const journal = JSON.parse(fs.readFileSync(path.join(root, 'meta', '_journal.json'), 'utf8'));
           const migrationsFolder = createStabilizedMigrationFolder(root);
@@ -86,7 +86,7 @@ jobs:
             fs.rmSync(migrationsFolder, { recursive: true, force: true });
           }
           NODE
-      - name: Run connected merchant golden journey on migrated schema
-        run: pnpm --filter @workspace/api-server run test:global-merchant-journey
+      - name: Run PostgreSQL-only merchant and cashier journey on migrated schema
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/global-merchant-postgres-http-journey.integration.test.ts
       - name: Final marker
         run: echo "CLEAN_DEPLOYMENT_GOLDEN_GATE_PASS"
