@@ -1,0 +1,61 @@
+name: PostgreSQL outage recovery proof
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/**"
+      - "lib/db/src/**"
+      - "artifacts/api-server/tests/postgres-outage-recovery.integration.test.mjs"
+      - ".github/workflows/postgres-outage-recovery.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgres-outage-recovery-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  outage-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://fawri_recovery:fawri_recovery@127.0.0.1:55433/fawri_recovery_test
+      FAWRI_POSTGRES_RECOVERY_CONTAINER: fawri-postgres-recovery
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - run: corepack enable
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Start disposable PostgreSQL 16
+        run: |
+          docker run -d --name "$FAWRI_POSTGRES_RECOVERY_CONTAINER"             -e POSTGRES_USER=fawri_recovery             -e POSTGRES_PASSWORD=fawri_recovery             -e POSTGRES_DB=fawri_recovery_test             -p 55433:5432 postgres:16-alpine
+          for i in $(seq 1 60); do
+            if docker exec "$FAWRI_POSTGRES_RECOVERY_CONTAINER" pg_isready -U fawri_recovery -d fawri_recovery_test; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+
+      - name: Type-check API and database
+        run: |
+          pnpm --filter @workspace/db run typecheck
+          pnpm --filter @workspace/api-server run typecheck
+
+      - name: Prove fail-closed outage and same-process recovery
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/postgres-outage-recovery.integration.test.mjs
+
+      - name: Cleanup disposable PostgreSQL
+        if: always()
+        run: docker rm -f "$FAWRI_POSTGRES_RECOVERY_CONTAINER" >/dev/null 2>&1 || true
