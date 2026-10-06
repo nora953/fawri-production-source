@@ -48,10 +48,15 @@ test("API readiness and PostgreSQL pool recover after a database outage without 
     import("../src/app.ts"),
     import("@workspace/db"),
   ]);
+  const expectedPoolErrors = [];
+  const onPoolError = (error) => expectedPoolErrors.push(error);
+  pool.on("error", onPoolError);
+
   const server = app.listen(0, "127.0.0.1");
   await once(server, "listening");
   t.after(async () => {
     await docker("start", container).catch(() => undefined);
+    pool.off("error", onPoolError);
     await pool.end().catch(() => undefined);
     await new Promise((resolve) => server.close(() => resolve()));
   });
@@ -93,4 +98,5 @@ test("API readiness and PostgreSQL pool recover after a database outage without 
   }, "API readiness did not recover after PostgreSQL restart");
 
   assert.equal((await readyAfter.json()).status, "ready");
+  assert.ok(expectedPoolErrors.length >= 1, "database stop should surface a handled pool error");
 });
