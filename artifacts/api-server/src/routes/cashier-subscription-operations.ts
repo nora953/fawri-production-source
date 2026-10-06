@@ -1,6 +1,7 @@
 import { Router, type Response } from "express";
 import {
   getAuthContext,
+  requireSecureAdminPermission,
   requireSecureMerchantSession,
   sendAuthError,
 } from "../middleware/authSession";
@@ -13,6 +14,7 @@ import {
 } from "../services/cashierBillingAuthority";
 import {
   CashierEntitlementError,
+  changeCashierSubscriptionAdministrativeState,
   getCashierEntitlementAuthoritative,
   scheduleCashierDowngradeAuthoritative,
 } from "../services/cashierEntitlementAuthority";
@@ -162,5 +164,48 @@ router.post(
     }
   },
 );
+
+
+router.get(
+  "/admin/merchants/:merchantId/cashier/subscription",
+  requireSecureAdminPermission("manage_subscriptions"),
+  async (req, res) => {
+    try {
+      const entitlement = await getCashierEntitlementAuthoritative(
+        String(req.params.merchantId || "").trim(),
+      );
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, entitlement });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+for (const action of ["suspend", "resume", "cancel"] as const) {
+  router.post(
+    `/admin/merchants/:merchantId/cashier/subscription/${action}`,
+    requireSecureAdminPermission("manage_subscriptions"),
+    async (req, res) => {
+      try {
+        const actorRef = getAuthContext(res)?.account.id || "";
+        const expectedVersion =
+          req.body?.expected_version === undefined
+            ? undefined
+            : Number(req.body.expected_version);
+        const entitlement = await changeCashierSubscriptionAdministrativeState({
+          merchantId: String(req.params.merchantId || "").trim(),
+          action,
+          actorRef,
+          ...(Number.isSafeInteger(expectedVersion) ? { expectedVersion } : {}),
+        });
+        res.setHeader("Cache-Control", "no-store");
+        res.json({ ok: true, entitlement });
+      } catch (error) {
+        sendError(res, error);
+      }
+    },
+  );
+}
 
 export default router;
