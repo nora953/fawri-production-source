@@ -253,11 +253,12 @@ export async function handleSuperQiSandboxWebhook(input: {
   await attachProviderPaymentReference(order, confirmed.paymentId);
 
   const settledAmount = confirmed.confirmedAmount ?? confirmed.amount;
-  const eventType = confirmed.canceled
-    ? "payment_cancelled"
-    : confirmed.status === "SUCCESS"
-      ? "payment_succeeded"
-      : "payment_failed";
+  const eventType: "payment_succeeded" | "payment_failed" | "payment_cancelled" =
+    confirmed.canceled
+      ? "payment_cancelled"
+      : confirmed.status === "SUCCESS"
+        ? "payment_succeeded"
+        : "payment_failed";
   const commonEvent = {
     provider: SUPERQI_SANDBOX_PROVIDER,
     providerEventId: providerEventId(confirmed),
