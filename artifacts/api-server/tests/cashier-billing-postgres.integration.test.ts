@@ -195,7 +195,19 @@ test(
     assert.equal(Number(row.rows[0].licensed_seats), 3);
     assert.equal(new Date(row.rows[0].billing_period_end).toISOString(), "2026-11-01T00:00:00.000Z");
 
-    // Failed payment must not increase entitlement.
+    // A paid upgrade supersedes an older scheduled downgrade, but a failed
+    // upgrade must leave that downgrade untouched.
+    await pool.query(
+      `UPDATE merchant_cashier_subscriptions
+          SET scheduled_licensed_seats = 2,
+              scheduled_change_at = billing_period_end,
+              version = version + 1,
+              updated_at = now()
+        WHERE merchant_id = $1`,
+      [merchantId],
+    );
+
+    // Failed payment must not increase entitlement or cancel the downgrade.
     const failedCheckout = await billing.createCashierBillingCheckout({
       merchantId,
       operation: "add_seats",
@@ -222,8 +234,15 @@ test(
       [merchantId],
     );
     assert.equal(Number(row.rows[0].licensed_seats), 3);
+    const scheduledAfterFailure = await pool.query(
+      `SELECT scheduled_licensed_seats
+         FROM merchant_cashier_subscriptions
+        WHERE merchant_id = $1`,
+      [merchantId],
+    );
+    assert.equal(Number(scheduledAfterFailure.rows[0].scheduled_licensed_seats), 2);
 
-    // A later valid payment can add the seat.
+    // A later valid payment can add the seat and supersede the downgrade.
     const addFour = await billing.createCashierBillingCheckout({
       merchantId,
       operation: "add_seats",
@@ -244,6 +263,16 @@ test(
       currency: "IQD",
       providerPaymentRef: "payment-add-four",
     });
+
+    const upgradedState = await pool.query(
+      `SELECT licensed_seats, scheduled_licensed_seats, scheduled_change_at
+         FROM merchant_cashier_subscriptions
+        WHERE merchant_id = $1`,
+      [merchantId],
+    );
+    assert.equal(Number(upgradedState.rows[0].licensed_seats), 4);
+    assert.equal(upgradedState.rows[0].scheduled_licensed_seats, null);
+    assert.equal(upgradedState.rows[0].scheduled_change_at, null);
 
     // During grace renewal is for all four seats and retains the shared cycle anchor.
     const graceRenewalTime = new Date("2026-11-02T00:00:00.000Z");
