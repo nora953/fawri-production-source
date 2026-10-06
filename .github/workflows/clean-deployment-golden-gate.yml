@@ -1,0 +1,92 @@
+name: Clean deployment golden gate
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/**"
+      - "artifacts/fawri/**"
+      - "lib/db/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/clean-deployment-golden-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clean-deployment-golden-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clean-deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_clean
+          POSTGRES_PASSWORD: fawri_clean
+          POSTGRES_DB: fawri_clean_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_clean -d fawri_clean_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_clean:fawri_clean@127.0.0.1:5432/fawri_clean_ci
+
+    steps:
+      - name: Checkout fresh repository state
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label clean-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build repository from clean checkout
+        run: node scripts/ci-run-redacted.mjs --label clean-build -- pnpm -r --if-present run build
+      - name: Apply every committed migration to empty PostgreSQL
+        working-directory: lib/db
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { drizzle } from 'drizzle-orm/node-postgres';
+          import { migrate } from 'drizzle-orm/node-postgres/migrator';
+          import pg from 'pg';
+          import { createStabilizedMigrationFolder } from './scripts/lib/migration-sql-order.mjs';
+          const connectionString = String(process.env.DATABASE_URL || '').trim();
+          const parsed = new URL(connectionString);
+          assert.ok(['127.0.0.1', 'localhost'].includes(parsed.hostname));
+          assert.equal(parsed.pathname.slice(1), 'fawri_clean_ci');
+          const root = path.resolve('drizzle');
+          const journal = JSON.parse(fs.readFileSync(path.join(root, 'meta', '_journal.json'), 'utf8'));
+          const migrationsFolder = createStabilizedMigrationFolder(root);
+          const pool = new pg.Pool({ connectionString, max: 1 });
+          try {
+            await migrate(drizzle(pool), { migrationsFolder });
+            const history = await pool.query('SELECT COUNT(*)::int AS count FROM "drizzle"."__drizzle_migrations"');
+            assert.equal(Number(history.rows[0].count), journal.entries.length);
+            process.stdout.write('CLEAN_MIGRATION_CHAIN_PASS\n');
+          } finally {
+            await pool.end();
+            fs.rmSync(migrationsFolder, { recursive: true, force: true });
+          }
+          NODE
+      - name: Run connected merchant golden journey on migrated schema
+        run: pnpm --filter @workspace/api-server run test:global-merchant-journey
+      - name: Final marker
+        run: echo "CLEAN_DEPLOYMENT_GOLDEN_GATE_PASS"
