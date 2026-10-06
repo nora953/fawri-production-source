@@ -691,6 +691,44 @@ export async function assertCashierStationLicensedInTransaction(input: {
   return snapshot;
 }
 
+export async function assertCashierDeviceLicensedInTransaction(input: {
+  target: OperationalQueryTarget;
+  merchantId: string;
+  deviceId: string;
+  allowGrace?: boolean;
+}): Promise<{ stationId: string; entitlement: CashierEntitlementSnapshot }> {
+  const rows = await operationalQueryRows<{ id: string }>(
+    input.target,
+    `SELECT id
+       FROM merchant_cashier_stations
+      WHERE merchant_id = $1
+        AND paired_device_id = $2
+        AND status = 'active'
+      ORDER BY id
+      LIMIT 2
+      FOR UPDATE`,
+    [input.merchantId, input.deviceId],
+  );
+  if (rows.length !== 1) {
+    throw new CashierEntitlementError(
+      rows.length > 1
+        ? "CASHIER_DEVICE_STATION_AMBIGUOUS"
+        : "CASHIER_DEVICE_STATION_REQUIRED",
+      rows.length > 1
+        ? "cashier device maps to multiple active stations"
+        : "cashier device is not paired to an active station",
+      rows.length > 1 ? 503 : 403,
+    );
+  }
+  const entitlement = await assertCashierStationLicensedInTransaction({
+    target: input.target,
+    merchantId: input.merchantId,
+    stationId: rows[0].id,
+    allowGrace: input.allowGrace,
+  });
+  return { stationId: rows[0].id, entitlement };
+}
+
 export async function assertCashierStationLicensedAuthoritative(input: {
   merchantId: string;
   stationId: string;
