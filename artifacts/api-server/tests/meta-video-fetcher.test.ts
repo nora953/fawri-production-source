@@ -4,6 +4,23 @@ import { META_VIDEO_MAX_BYTES, SecureMetaVideoFetcher } from "../src/services/me
 
 const PUBLIC = async () => [{ address: "93.184.216.34", family: 4 }];
 
+test("video fetcher accepts public IPv6 literals without resolving bracketed DNS names", async () => {
+  const bytes = mp4();
+  let dnsCalls = 0;
+  const fetcher = new SecureMetaVideoFetcher({
+    resolveHost: async () => { dnsCalls++; throw new Error("literal must bypass DNS"); },
+    transportImpl: async (request) => {
+      assert.equal(request.address, "2606:4700:4700::1111");
+      assert.equal(request.family, 6);
+      return new Response(stream(bytes), { headers: { "content-type": "video/mp4" } });
+    },
+  });
+  assert.equal((await fetcher.fetchVideo({url: "https://[2606:4700:4700::1111]/v.mp4"})).sizeBytes, bytes.length);
+  assert.equal(dnsCalls, 0);
+  await assert.rejects(fetcher.fetchVideo({url: "https://[::1]/v.mp4"}),
+    (e: unknown) => (e as {code?: string})?.code === "META_VIDEO_DESTINATION_FORBIDDEN");
+});
+
 test("video fetcher rejects equivalent private IPv6 DNS forms before transport", async () => {
   for (const address of [
     "::ffff:127.0.0.1", "0:0:0:0:0:ffff:7f00:1",
