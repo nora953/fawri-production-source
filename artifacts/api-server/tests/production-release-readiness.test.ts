@@ -87,10 +87,8 @@ test("required production release gate fails closed with safe issue codes", () =
     FAWRI_AUTH_SECURITY_SECRET: "do-not-leak-this-value",
   } as NodeJS.ProcessEnv;
   const issues = getProductionRuntimeConfigurationIssues(env);
-  assert.ok(issues.length > 8);
+  assert.ok(issues.length >= 5);
   assert.ok(issues.some((item) => item.code === "PRODUCTION_DATABASE_URL_REQUIRED"));
-  assert.ok(issues.some((item) => item.code === "META_AWS_KMS_PROVIDER_REQUIRED"));
-  assert.ok(issues.some((item) => item.code === "META_REDIRECT_URI_REQUIRED"));
   assert.ok(issues.some((item) => item.code === "HTTP_ALLOWED_ORIGINS_REQUIRED"));
 
   assert.throws(
@@ -105,11 +103,29 @@ test("required production release gate fails closed with safe issue codes", () =
   );
 });
 
-test("synthetic complete runtime configuration passes code-level release readiness", () => {
-  const env = productionEnv();
+test("core production runtime is provider-neutral while external launch stays blocked", () => {
+  const env = productionEnv({
+    FAWRI_META_CUTOVER_READY: "",
+    FAWRI_META_REPLY_TRANSPORT: "",
+    FAWRI_META_CREDENTIAL_PROVIDER: "",
+    FAWRI_META_AWS_REGION: "",
+    FAWRI_META_AWS_KMS_KEY_ARN: "",
+    FAWRI_META_AWS_CURRENT_DEK_ID: "",
+    FAWRI_META_AWS_KMS_WRAPPED_DEKS_JSON: "",
+    META_APP_ID: "",
+    META_APP_SECRET: "",
+    META_CONFIG_ID: "",
+    META_REDIRECT_URI: "",
+    META_VERIFY_TOKEN: "",
+    FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER: "",
+    FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER: "",
+    FAWRI_KNOWLEDGE_AI_PROVIDER: "",
+    OPENAI_API_KEY: "",
+    FAWRI_OPENAI_MODEL: "",
+  });
   assert.deepEqual(getProductionRuntimeConfigurationIssues(env), []);
   assert.doesNotThrow(() => assertProductionRuntimeConfiguration(env));
-  assert.equal(metaConnectionActivationConfigured(env), true);
+  assert.equal(metaConnectionActivationConfigured(env), false);
 
   const readiness = getProductionLaunchReadiness(env);
   assert.equal(readiness.runtime_ready, true);
@@ -117,6 +133,8 @@ test("synthetic complete runtime configuration passes code-level release readine
   assert.deepEqual(
     readiness.external_blockers.map((item) => item.code).sort(),
     [
+      "AI_PRODUCTION_INTEGRATION_NOT_ACTIVATED",
+      "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED",
       "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED",
       "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE",
       "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
@@ -132,10 +150,12 @@ test("Meta OAuth never activates with a Replit or insecure redirect", () => {
   ]) {
     const env = productionEnv({ META_REDIRECT_URI: redirect });
     assert.equal(metaConnectionActivationConfigured(env), false);
-    assert.ok(
-      getProductionRuntimeConfigurationIssues(env).some(
-        (item) => item.code === "META_REDIRECT_URI_REQUIRED",
+    assert.deepEqual(getProductionRuntimeConfigurationIssues(env), []);
+    assert.equal(
+      getProductionLaunchReadiness(env).external_blockers.some(
+        (item) => item.code === "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED",
       ),
+      true,
     );
   }
 });
@@ -220,13 +240,7 @@ test("production env example stays aligned with the runtime release gate", () =>
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
     FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
-    FAWRI_META_CUTOVER_READY: "1",
-    FAWRI_META_REPLY_TRANSPORT: "live",
     FAWRI_DISABLE_JOB_WORKERS: "0",
-    FAWRI_META_CREDENTIAL_PROVIDER: "aws-kms",
-    FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER: "openai",
-    FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER: "openai",
-    FAWRI_KNOWLEDGE_AI_PROVIDER: "openai",
   };
 
   for (const [name, expected] of Object.entries(expectedFixedValues)) {
