@@ -740,8 +740,10 @@ async function applyPaidOrder(
     };
   }
 
-  const graceSeconds = cashierGraceSeconds();
-  const configuredPrice = cashierSeatPriceIqd();
+  const graceSeconds = positiveInt(
+    order.grace_duration_seconds,
+    "grace_duration_seconds",
+  );
   let previousSeats = subscription ? Number(subscription.licensed_seats) : 0;
   let previousVersion = subscription ? Number(subscription.version) : 0;
   let subscriptionId = subscription?.id || `cashier-subscription-${crypto.randomUUID()}`;
@@ -907,7 +909,7 @@ async function applyPaidOrder(
           order.merchant_id,
           subscriptionId,
           order.resulting_seats,
-          configuredPrice,
+          order.unit_price_iqd,
           new Date(order.billing_period_start),
           new Date(order.billing_period_end),
           graceSeconds,
