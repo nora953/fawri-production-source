@@ -166,6 +166,9 @@ export const cashierBillingOrders = pgTable(
     providerPaymentUnique: uniqueIndex("cashier_billing_orders_provider_payment_unique")
       .on(table.provider, table.providerPaymentRef)
       .where(sql`${table.providerPaymentRef} IS NOT NULL`),
+    merchantPendingUnique: uniqueIndex("cashier_billing_orders_merchant_pending_unique")
+      .on(table.merchantId)
+      .where(sql`${table.status} = 'pending'`),
     merchantStatusIndex: index("cashier_billing_orders_merchant_status_idx").on(
       table.merchantId,
       table.status,
