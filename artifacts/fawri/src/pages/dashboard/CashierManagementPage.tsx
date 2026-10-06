@@ -211,8 +211,7 @@ export default function CashierManagementPage() {
   useEffect(() => { void load(); }, [load]);
 
   const cashierManagementActive = cashierEntitlement.state === 'active';
-  const cashierRuntimeAllowed =
-    cashierEntitlement.state === 'active' || cashierEntitlement.state === 'grace';
+  const cashierRuntimeAllowed = cashierEntitlement.state === 'active';
 
   const permissionOptions = useMemo(() => [
     ['sale.view_all', l.allSales],
