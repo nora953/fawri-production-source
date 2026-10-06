@@ -295,7 +295,13 @@ async function reconcileScheduledDowngradeInTransaction(
   const scheduledReleaseCount = assignments.filter(
     (assignment) => assignment.status === "release_scheduled",
   ).length;
-  if (keepCount !== targetSeats || keepCount + scheduledReleaseCount > currentSeats) {
+  const assignedCount = keepCount + scheduledReleaseCount;
+  const expectedKeepCount = Math.min(targetSeats, assignedCount);
+  if (
+    assignedCount > currentSeats ||
+    keepCount !== expectedKeepCount ||
+    scheduledReleaseCount !== assignedCount - expectedKeepCount
+  ) {
     throw new CashierEntitlementError(
       "CASHIER_DOWNGRADE_ASSIGNMENTS_INVALID",
       "scheduled cashier downgrade station selection is inconsistent",
@@ -303,6 +309,7 @@ async function reconcileScheduledDowngradeInTransaction(
       {
         current_seats: currentSeats,
         target_seats: targetSeats,
+        assigned_stations: assignedCount,
         kept_assignments: keepCount,
         scheduled_releases: scheduledReleaseCount,
       },
@@ -484,13 +491,6 @@ export async function scheduleCashierDowngradeAuthoritative(input: {
   }
   const keepStationIds = [...new Set(input.keepStationIds.map((value) => String(value || "").trim()))]
     .filter(Boolean);
-  if (keepStationIds.length !== input.targetSeats) {
-    throw new CashierEntitlementError(
-      "CASHIER_DOWNGRADE_SELECTION_INVALID",
-      "select exactly the cashier stations that should remain licensed",
-      400,
-    );
-  }
 
   return withMerchantOperationalTransaction(input.merchantId, async (client) => {
     const now = new Date();
@@ -536,15 +536,21 @@ export async function scheduleCashierDowngradeAuthoritative(input: {
       [input.merchantId, snapshot.subscription_id],
     );
     const assignedIds = new Set(assignments.map((row) => row.station_id));
+    const expectedKeepCount = Math.min(input.targetSeats, assignedIds.size);
     if (
-      assignedIds.size !== snapshot.licensed_seats ||
+      assignedIds.size > snapshot.licensed_seats ||
+      keepStationIds.length !== expectedKeepCount ||
       keepStationIds.some((stationId) => !assignedIds.has(stationId))
     ) {
       throw new CashierEntitlementError(
         "CASHIER_DOWNGRADE_SELECTION_INVALID",
-        "cashier station selection does not match current licensed assignments",
+        "cashier station selection does not match the stations that can remain licensed",
         409,
-        { assigned_station_count: assignedIds.size },
+        {
+          licensed_seats: snapshot.licensed_seats,
+          assigned_station_count: assignedIds.size,
+          required_keep_station_count: expectedKeepCount,
+        },
       );
     }
 
