@@ -10,6 +10,7 @@ import {
   createCashierBillingCheckout,
   getCashierBillingCatalog,
   listMerchantCashierBillingOrders,
+  quoteCashierBillingChange,
   type CashierBillingOperation,
 } from "../services/cashierBillingAuthority";
 import {
@@ -87,6 +88,44 @@ router.get(
       const orders = await listMerchantCashierBillingOrders(merchantId(res));
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, orders });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/cashier/billing/quote",
+  requireSecureMerchantSession,
+  async (req, res) => {
+    const operation = String(req.body?.operation || "").trim() as CashierBillingOperation;
+    if (!["activate", "renew", "add_seats"].includes(operation)) {
+      sendAuthError(
+        res,
+        400,
+        "CASHIER_BILLING_OPERATION_INVALID",
+        "invalid cashier billing operation",
+      );
+      return;
+    }
+    const requestedSeats = Number(req.body?.requested_seats);
+    if (!Number.isSafeInteger(requestedSeats) || requestedSeats <= 0) {
+      sendAuthError(
+        res,
+        400,
+        "CASHIER_BILLING_SEATS_INVALID",
+        "requested cashier seats must be a positive integer",
+      );
+      return;
+    }
+    try {
+      const quote = await quoteCashierBillingChange({
+        merchantId: merchantId(res),
+        operation,
+        requestedSeats,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, quote });
     } catch (error) {
       sendError(res, error);
     }
