@@ -272,8 +272,17 @@ function plannedOrder(input: {
   const snapshot = evaluateCashierEntitlement(input.subscription, input.now);
 
   if (input.operation === "activate") {
-    if (snapshot && snapshot.state !== "inactive" && snapshot.state !== "restricted") {
-      fail("CASHIER_SUBSCRIPTION_ALREADY_EXISTS", "cashier subscription already exists");
+    if (
+      input.subscription &&
+      input.subscription.status !== "inactive" &&
+      input.subscription.status !== "cancelled"
+    ) {
+      fail(
+        "CASHIER_SUBSCRIPTION_RENEWAL_REQUIRED",
+        "existing cashier subscription must be renewed instead of activated again",
+        409,
+        { cashier_state: snapshot?.state || "inactive" },
+      );
     }
     const start = input.now;
     const end = addCashierBillingMonth(start);
