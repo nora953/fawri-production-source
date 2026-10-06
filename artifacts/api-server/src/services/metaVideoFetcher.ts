@@ -72,7 +72,7 @@ export class SecureMetaVideoFetcher {
     }));
   }
   async fetchVideo(input:{url:string}):Promise<MetaFetchedVideo>{
-    const u=safeUrl(input.url),host=u.hostname.replace(/^\\[|\\]$/g,"");
+    const u=safeUrl(input.url),host=u.hostname.replace(/^\[|\]$/g,"");
     const literal=isIP(host);
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),this.timeoutMs);timer.unref?.();
