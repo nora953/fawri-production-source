@@ -16,6 +16,7 @@ import {
   CashierEntitlementError,
   changeCashierSubscriptionAdministrativeState,
   getCashierEntitlementAuthoritative,
+  listCashierLicensedStationsAuthoritative,
   scheduleCashierDowngradeAuthoritative,
 } from "../services/cashierEntitlementAuthority";
 import { SuperQiSandboxProviderError } from "../services/superQiSandboxTransport";
@@ -57,7 +58,11 @@ router.get(
   requireSecureMerchantSession,
   async (_req, res) => {
     try {
-      const entitlement = await getCashierEntitlementAuthoritative(merchantId(res));
+      const merchant = merchantId(res);
+      const [entitlement, licensedStations] = await Promise.all([
+        getCashierEntitlementAuthoritative(merchant),
+        listCashierLicensedStationsAuthoritative(merchant),
+      ]);
       res.setHeader("Cache-Control", "no-store");
       res.json({
         ok: true,
@@ -66,6 +71,7 @@ router.get(
           licensed_seats: 0,
           server_time: new Date().toISOString(),
         },
+        licensed_stations: licensedStations,
       });
     } catch (error) {
       sendError(res, error);
