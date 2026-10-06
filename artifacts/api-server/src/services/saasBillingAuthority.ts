@@ -17,6 +17,10 @@ import {
   type SubscriptionPlanCycleTransaction,
 } from "./subscriptionPlanCycleAuthority";
 import { subscriptionPostgresAuthorityRequired } from "./postgresSubscriptionEntitlement";
+import {
+  getFastPayProductionReadiness,
+  type FastPayProductionReadiness,
+} from "./fastPayProductionReadiness";
 
 export const SAAS_BILLING_PROVIDER_ENV = "FAWRI_SAAS_BILLING_PROVIDER";
 export const SAAS_BILLING_PROVIDERS_ENV = "FAWRI_SAAS_BILLING_PROVIDERS";
@@ -29,6 +33,7 @@ export type SaasBillingProviderState = {
   checkout_available: boolean;
   production_ready: boolean;
   test_only: boolean;
+  readiness?: FastPayProductionReadiness;
   status:
     | "available"
     | "disabled"
@@ -234,13 +239,17 @@ function providerStateFor(
     };
   }
   if (provider === "fastpay") {
+    const readiness = getFastPayProductionReadiness();
     return {
       provider: "fastpay",
       display_name: "FastPay",
       checkout_available: false,
-      production_ready: false,
+      production_ready: readiness.production_ready,
       test_only: false,
-      status: "merchant_setup_required",
+      status: readiness.merchant_credentials_configured
+        ? "configuration_incomplete"
+        : "merchant_setup_required",
+      readiness,
     };
   }
   return {
