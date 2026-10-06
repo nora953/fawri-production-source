@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useI18n } from '@/lib/i18n';
+import { CASHIER_SUBSCRIPTION_PANEL_COPY } from '@/lib/translations/features/components/CashierSubscriptionPanel';
 
 type EntitlementState = 'inactive' | 'active' | 'grace' | 'restricted' | 'suspended';
 
@@ -81,137 +82,7 @@ type SubscriptionPayload = {
   licensed_stations: LicensedStation[];
 };
 
-const COPY = {
-  ar: {
-    title: 'اشتراك الكاشير',
-    subtitle: 'اشتراك مستقل عن البوت. كل المقاعد تتجدد في نفس التاريخ.',
-    active: 'نشط',
-    grace: 'مهلة 7 أيام',
-    restricted: 'منتهي — التجديد مطلوب',
-    suspended: 'موقوف',
-    inactive: 'غير مفعّل',
-    seats: 'المقاعد المرخّصة',
-    seatPrice: 'سعر المقعد الشهري',
-    renewalDate: 'موعد التجديد',
-    graceEnds: 'تنتهي المهلة',
-    scheduledSeats: 'المقاعد بعد التجديد القادم',
-    activate: 'تفعيل الكاشير',
-    addSeats: 'إضافة مقاعد',
-    renew: 'تجديد الاشتراك',
-    downgrade: 'تخفيض المقاعد',
-    requestedSeats: 'عدد المقاعد المطلوب',
-    quote: 'احسب المبلغ',
-    dueNow: 'المبلغ المستحق الآن',
-    nextRenewal: 'التجديد الكامل القادم',
-    periodEnd: 'نهاية الدورة الحالية',
-    confirmPayment: 'المتابعة إلى الدفع',
-    cancelQuote: 'إلغاء',
-    loading: 'جارٍ تحميل اشتراك الكاشير...',
-    unavailable: 'تعذر تحميل سلطة اشتراك الكاشير من السيرفر.',
-    retry: 'إعادة المحاولة',
-    providerUnavailable: 'بوابة الدفع غير متاحة حاليًا.',
-    pendingOrders: 'طلبات الدفع الأخيرة',
-    noOrders: 'لا توجد طلبات دفع حتى الآن.',
-    graceWarning: 'انتهت الدورة المدفوعة. الكاشير يعمل مؤقتًا ضمن مهلة 7 أيام. لا يمكن إضافة مقاعد جديدة حتى التجديد.',
-    restrictedWarning: 'انتهت مهلة الكاشير. المبيعات الجديدة متوقفة، والبيانات المحلية محفوظة. جدّد الاشتراك لإعادة التشغيل.',
-    suspendedWarning: 'اشتراك الكاشير موقوف إداريًا.',
-    inactiveHint: 'يمكن تفعيل الكاشير بدون تفعيل البوت.',
-    downgradeTarget: 'عدد المقاعد في الدورة القادمة',
-    keepStations: 'المحطات التي ستستمر بعد التخفيض',
-    applyDowngrade: 'جدولة التخفيض',
-    downgradeScheduled: 'تمت جدولة التخفيض للدورة القادمة.',
-    paymentStarted: 'تم إنشاء طلب الدفع.',
-    paidTestHint: 'تم إنشاء طلب تجريبي. لا تتغير التراخيص إلا بعد نجاح حدث الدفع الموثوق.',
-    exactServerAmount: 'هذا المبلغ محسوب من السيرفر حسب الأيام/الوقت المتبقي فعليًا.',
-    seatLimitHint: 'لا يمكن تشغيل محطات مرخصة أكثر من عدد المقاعد.',
-  },
-  ku: {
-    title: 'بەشداری کاشێر',
-    subtitle: 'بەشدارییەکی سەربەخۆیە لە بۆت. هەموو شوێنەکان لە هەمان ڕۆژ نوێ دەبنەوە.',
-    active: 'چالاک',
-    grace: 'ماوەی 7 ڕۆژ',
-    restricted: 'کۆتایی هاتووە — نوێکردنەوە پێویستە',
-    suspended: 'ڕاگیراو',
-    inactive: 'ناچالاک',
-    seats: 'شوێنە مۆڵەتپێدراوەکان',
-    seatPrice: 'نرخی مانگانەی هەر شوێن',
-    renewalDate: 'ڕۆژی نوێکردنەوە',
-    graceEnds: 'کۆتایی ماوە',
-    scheduledSeats: 'شوێنەکان لە نوێکردنەوەی داهاتوو',
-    activate: 'چالاککردنی کاشێر',
-    addSeats: 'زیادکردنی شوێن',
-    renew: 'نوێکردنەوە',
-    downgrade: 'کەمکردنەوەی شوێن',
-    requestedSeats: 'ژمارەی شوێنی داواکراو',
-    quote: 'حسابکردنی بڕ',
-    dueNow: 'بڕی ئێستا',
-    nextRenewal: 'نوێکردنەوەی تەواوی داهاتوو',
-    periodEnd: 'کۆتایی خولی ئێستا',
-    confirmPayment: 'بەردەوامبوون بۆ پارەدان',
-    cancelQuote: 'پاشگەزبوونەوە',
-    loading: 'بەشداری کاشێر بار دەکرێت...',
-    unavailable: 'نەتوانرا دەسەڵاتی بەشداری کاشێر لە سێرڤەرەوە بار بکرێت.',
-    retry: 'دووبارە هەوڵدان',
-    providerUnavailable: 'دەروازەی پارەدان ئێستا بەردەست نییە.',
-    pendingOrders: 'داواکارییەکانی پارەدانی دوا',
-    noOrders: 'هێشتا هیچ داواکاری پارەدان نییە.',
-    graceWarning: 'خولی پارەدراو کۆتایی هاتووە. کاشێر بۆ 7 ڕۆژ بە کاتی کار دەکات. تا نوێکردنەوە شوێنی نوێ زیاد ناکرێت.',
-    restrictedWarning: 'ماوەی کاشێر کۆتایی هاتووە. فرۆشتنی نوێ ڕاگیراوە و داتای ناوخۆ پارێزراوە. بەشداری نوێ بکەرەوە.',
-    suspendedWarning: 'بەشداری کاشێر بە شێوەی بەڕێوەبردن ڕاگیراوە.',
-    inactiveHint: 'دەتوانیت کاشێر چالاک بکەیت بەبێ چالاککردنی بۆت.',
-    downgradeTarget: 'ژمارەی شوێن لە خولی داهاتوو',
-    keepStations: 'ئەو وێستگانەی دوای کەمکردنەوە دەمێننەوە',
-    applyDowngrade: 'خشتەکردنی کەمکردنەوە',
-    downgradeScheduled: 'کەمکردنەوە بۆ خولی داهاتوو خشتەکرا.',
-    paymentStarted: 'داواکاری پارەدان دروستکرا.',
-    paidTestHint: 'داواکاری تاقیکردنەوە دروستکرا. مۆڵەتەکان تەنها دوای سەرکەوتنی پارەدان دەگۆڕێن.',
-    exactServerAmount: 'ئەم بڕە لە سێرڤەرەوە بە پێی ماوەی ماوە حساب کراوە.',
-    seatLimitHint: 'ژمارەی وێستگەی چالاک نابێت لە شوێنە مۆڵەتپێدراوەکان زیاتر بێت.',
-  },
-  en: {
-    title: 'Cashier subscription',
-    subtitle: 'Independent from Bot. All licensed seats renew on one shared date.',
-    active: 'Active',
-    grace: '7-day grace',
-    restricted: 'Expired — renewal required',
-    suspended: 'Suspended',
-    inactive: 'Not activated',
-    seats: 'Licensed seats',
-    seatPrice: 'Monthly seat price',
-    renewalDate: 'Renewal date',
-    graceEnds: 'Grace ends',
-    scheduledSeats: 'Seats next renewal',
-    activate: 'Activate Cashier',
-    addSeats: 'Add seats',
-    renew: 'Renew subscription',
-    downgrade: 'Reduce seats',
-    requestedSeats: 'Requested seats',
-    quote: 'Calculate amount',
-    dueNow: 'Due now',
-    nextRenewal: 'Next full renewal',
-    periodEnd: 'Current period end',
-    confirmPayment: 'Continue to payment',
-    cancelQuote: 'Cancel',
-    loading: 'Loading Cashier subscription...',
-    unavailable: 'Cashier subscription authority could not be loaded from the server.',
-    retry: 'Retry',
-    providerUnavailable: 'Payment provider is currently unavailable.',
-    pendingOrders: 'Recent billing orders',
-    noOrders: 'No billing orders yet.',
-    graceWarning: 'The paid period ended. Existing Cashier stations are temporarily operating within the 7-day grace period. New seats cannot be added until renewal.',
-    restrictedWarning: 'Cashier grace has ended. New sales are blocked while local data remains preserved. Renew to restore operation.',
-    suspendedWarning: 'Cashier subscription is administratively suspended.',
-    inactiveHint: 'Cashier can be activated without activating Bot.',
-    downgradeTarget: 'Seats for the next billing cycle',
-    keepStations: 'Stations that will remain licensed',
-    applyDowngrade: 'Schedule downgrade',
-    downgradeScheduled: 'Seat downgrade was scheduled for the next cycle.',
-    paymentStarted: 'Payment order created.',
-    paidTestHint: 'A test order was created. Licensed seats change only after a verified payment event succeeds.',
-    exactServerAmount: 'This amount is calculated by the server from the actual remaining billing period.',
-    seatLimitHint: 'The number of active licensed stations cannot exceed licensed seats.',
-  },
-} as const;
+
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -265,7 +136,7 @@ function statusTone(state: EntitlementState) {
 
 export function CashierSubscriptionPanel() {
   const { lang } = useI18n();
-  const text = COPY[lang];
+  const text = CASHIER_SUBSCRIPTION_PANEL_COPY[lang];
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
 
   const [catalog, setCatalog] = React.useState<Catalog | null>(null);
@@ -494,7 +365,7 @@ export function CashierSubscriptionPanel() {
           </div>
           <div className="rounded-xl border p-3">
             <p className="text-xs font-semibold text-muted-foreground">{text.seatPrice}</p>
-            <p className="mt-1 text-xl font-black">{configuredPrice.toLocaleString(locale)} IQD</p>
+            <p className="mt-1 text-xl font-black">{configuredPrice.toLocaleString(locale)} {text.currencyIqd}</p>
           </div>
           <div className="rounded-xl border p-3">
             <p className="text-xs font-semibold text-muted-foreground">{text.renewalDate}</p>
@@ -544,7 +415,7 @@ export function CashierSubscriptionPanel() {
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div>
                     <p className="text-xs text-muted-foreground">{text.dueNow}</p>
-                    <p className="font-black">{quote.amount_iqd.toLocaleString(locale)} IQD</p>
+                    <p className="font-black">{quote.amount_iqd.toLocaleString(locale)} {text.currencyIqd}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">{text.periodEnd}</p>
@@ -552,7 +423,7 @@ export function CashierSubscriptionPanel() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">{text.nextRenewal}</p>
-                    <p className="font-black">{quote.next_full_renewal_amount_iqd.toLocaleString(locale)} IQD</p>
+                    <p className="font-black">{quote.next_full_renewal_amount_iqd.toLocaleString(locale)} {text.currencyIqd}</p>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">{text.exactServerAmount}</p>
@@ -634,8 +505,8 @@ export function CashierSubscriptionPanel() {
             <div className="space-y-2">
               {orders.slice(0, 5).map((order) => (
                 <div key={order.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
-                  <span className="font-semibold">{order.operation} · {order.resulting_seats} seats</span>
-                  <span>{order.amount_iqd.toLocaleString(locale)} IQD · {order.status}</span>
+                  <span className="font-semibold">{order.operation} · {order.resulting_seats} {text.seatUnit}</span>
+                  <span>{order.amount_iqd.toLocaleString(locale)} {text.currencyIqd} · {order.status}</span>
                 </div>
               ))}
             </div>
