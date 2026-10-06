@@ -95,6 +95,31 @@ CREATE UNIQUE INDEX "cashier_billing_orders_provider_payment_unique" ON "cashier
 CREATE INDEX "cashier_billing_orders_merchant_status_idx" ON "cashier_billing_orders" USING btree ("merchant_id","status","created_at");
 --> statement-breakpoint
 
+CREATE TABLE "cashier_billing_events" (
+  "id" text PRIMARY KEY NOT NULL,
+  "merchant_id" text NOT NULL,
+  "order_id" text NOT NULL,
+  "provider" text NOT NULL,
+  "provider_event_id" text NOT NULL,
+  "event_type" text NOT NULL,
+  "payload_hash" text NOT NULL,
+  "status" text DEFAULT 'received' NOT NULL,
+  "occurred_at" timestamp with time zone NOT NULL,
+  "applied_at" timestamp with time zone,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "cashier_billing_events_provider_event_unique" UNIQUE("provider","provider_event_id"),
+  CONSTRAINT "cashier_billing_events_event_check" CHECK ("event_type" IN ('payment_succeeded','payment_failed','payment_cancelled')),
+  CONSTRAINT "cashier_billing_events_status_check" CHECK ("status" IN ('received','applied','rejected')),
+  CONSTRAINT "cashier_billing_events_payload_hash_check" CHECK (char_length("payload_hash") BETWEEN 32 AND 128)
+);
+--> statement-breakpoint
+ALTER TABLE "cashier_billing_events" ADD CONSTRAINT "cashier_billing_events_merchant_id_merchants_id_fk" FOREIGN KEY ("merchant_id") REFERENCES "public"."merchants"("id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "cashier_billing_events" ADD CONSTRAINT "cashier_billing_events_order_merchant_fk" FOREIGN KEY ("order_id","merchant_id") REFERENCES "public"."cashier_billing_orders"("id","merchant_id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
+CREATE INDEX "cashier_billing_events_merchant_created_idx" ON "cashier_billing_events" USING btree ("merchant_id","created_at");
+--> statement-breakpoint
+
 CREATE TABLE "cashier_entitlement_applications" (
   "id" text PRIMARY KEY NOT NULL,
   "merchant_id" text NOT NULL,
@@ -154,6 +179,8 @@ ALTER TABLE "cashier_station_seat_assignments" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 ALTER TABLE "cashier_billing_orders" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
+ALTER TABLE "cashier_billing_events" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
 ALTER TABLE "cashier_entitlement_applications" ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 ALTER TABLE "cashier_entitlement_audit_events" ENABLE ROW LEVEL SECURITY;
@@ -170,6 +197,10 @@ CREATE POLICY "cashier_station_seat_assignments_tenant_boundary" ON "cashier_sta
 CREATE POLICY "cashier_billing_orders_tenant_boundary" ON "cashier_billing_orders"
   TO public USING (public.fawri_tenant_or_audited_admin("cashier_billing_orders"."merchant_id"))
   WITH CHECK (public.fawri_tenant_or_audited_admin("cashier_billing_orders"."merchant_id"));
+--> statement-breakpoint
+CREATE POLICY "cashier_billing_events_tenant_boundary" ON "cashier_billing_events"
+  TO public USING (public.fawri_tenant_or_audited_admin("cashier_billing_events"."merchant_id"))
+  WITH CHECK (public.fawri_tenant_or_audited_admin("cashier_billing_events"."merchant_id"));
 --> statement-breakpoint
 CREATE POLICY "cashier_entitlement_applications_tenant_boundary" ON "cashier_entitlement_applications"
   TO public USING (public.fawri_tenant_or_audited_admin("cashier_entitlement_applications"."merchant_id"))
