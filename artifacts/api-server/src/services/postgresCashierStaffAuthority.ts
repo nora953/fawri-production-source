@@ -1166,7 +1166,7 @@ export async function beginCashierStationPairingAuthoritative(input: {
       target: client,
       merchantId,
       stationId,
-      allowGrace: true,
+      allowGrace: false,
     });
     await client.query(
       `UPDATE cashier_station_pairing_challenges
@@ -1256,7 +1256,7 @@ export async function redeemCashierStationPairingAuthoritative(input: {
       target: client,
       merchantId,
       stationId: station.id,
-      allowGrace: true,
+      allowGrace: false,
     });
 
     await revokeStationRuntime(
