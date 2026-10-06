@@ -40,6 +40,7 @@ export type CashierBillingOrderRecord = {
   currency: "IQD";
   billing_period_start: string;
   billing_period_end: string;
+  grace_duration_seconds: number;
   status:
     | "pending"
     | "paid"
@@ -192,6 +193,7 @@ function orderFromRow(row: Record<string, unknown>): CashierBillingOrderRecord {
     currency: "IQD",
     billing_period_start: timestamp(row.billing_period_start).toISOString(),
     billing_period_end: timestamp(row.billing_period_end).toISOString(),
+    grace_duration_seconds: Number(row.grace_duration_seconds),
     status,
     idempotency_key: requiredText(row.idempotency_key, "idempotency_key", 200),
     provider: requiredText(row.provider, "provider", 100),
@@ -209,7 +211,7 @@ function orderFromRow(row: Record<string, unknown>): CashierBillingOrderRecord {
 
 const ORDER_SELECT = `SELECT id, merchant_id, subscription_id, operation,
   current_seats, requested_seats, resulting_seats, unit_price_iqd, amount_iqd,
-  currency, billing_period_start, billing_period_end, status, idempotency_key,
+  currency, billing_period_start, billing_period_end, grace_duration_seconds, status, idempotency_key,
   provider, provider_checkout_ref, provider_payment_ref, request_expires_at,
   paid_at, applied_at, failed_at, metadata, created_at, updated_at
   FROM cashier_billing_orders`;
@@ -587,10 +589,10 @@ export async function createCashierBillingCheckout(input: {
       `INSERT INTO cashier_billing_orders (
          id, merchant_id, subscription_id, operation, current_seats, requested_seats,
          resulting_seats, unit_price_iqd, amount_iqd, currency, billing_period_start,
-         billing_period_end, status, idempotency_key, provider, provider_checkout_ref,
-         request_expires_at, metadata, created_at, updated_at
+         billing_period_end, grace_duration_seconds, status, idempotency_key, provider,
+         provider_checkout_ref, request_expires_at, metadata, created_at, updated_at
        ) VALUES (
-         $1,$2,$3,$4,$5,$6,$7,$8,$9,'IQD',$10,$11,'pending',$12,$13,$14,$15,$16::jsonb,$17,$17
+         $1,$2,$3,$4,$5,$6,$7,$8,$9,'IQD',$10,$11,$12,'pending',$13,$14,$15,$16,$17::jsonb,$18,$18
        )`,
       [
         orderId,
@@ -604,6 +606,7 @@ export async function createCashierBillingCheckout(input: {
         plan.amountIqd,
         plan.periodStart,
         plan.periodEnd,
+        cashierGraceSeconds(),
         idempotencyKey,
         provider.provider,
         checkoutRef,
