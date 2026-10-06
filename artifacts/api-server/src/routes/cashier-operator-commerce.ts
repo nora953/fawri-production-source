@@ -100,7 +100,7 @@ router.get(
 
 router.get(
   "/cashier/operator/report",
-  requireCashierOperatorSession("reports.sales"),
+  requireCashierOperatorSession("reports.sales", { allowRestricted: true }),
   async (req: Request, res: Response) => {
     try {
       const result = await buildCashierOperatorReportAuthoritative({
