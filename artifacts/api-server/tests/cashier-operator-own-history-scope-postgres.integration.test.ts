@@ -36,12 +36,13 @@ test(
         "cashier-own-history-test-password-salt-over-thirty-two-characters",
     });
 
-    const [{ pool }, { hashPassword }, merchants, cashier, reports] = await Promise.all([
+    const [{ pool }, { hashPassword }, merchants, cashier, reports, commerce] = await Promise.all([
       import("@workspace/db"),
       import("../src/services/authPasswordService.js"),
       import("../src/services/postgresMerchantAccountAuthority.js"),
       import("../src/services/postgresCashierStaffAuthority.js"),
       import("../src/services/postgresCashierOperatorReportAuthority.js"),
+      import("../src/services/cashierOperatorCommerceAuthority.js"),
     ]);
 
     const key = suffix();
@@ -74,6 +75,14 @@ test(
               updated_at = now()
         WHERE id = $1`,
       [merchantId],
+    );
+    await pool.query(
+      `INSERT INTO merchant_cashier_subscriptions (
+         id, merchant_id, status, licensed_seats, price_per_seat_iqd,
+         billing_period_start, billing_period_end, grace_duration_seconds,
+         version, created_at, updated_at
+       ) VALUES ($1,$2,'active',1,3900,now(),now() + interval '1 month',604800,1,now(),now())`,
+      [`cashier-own-history-sub-${key}`, merchantId],
     );
 
     const own = await cashier.createCashierStaffAuthoritative({
@@ -211,6 +220,7 @@ test(
       staffId: own.id,
       pin: "2468",
     });
+    const shiftOneOccurredAt = new Date().toISOString();
     await insertSaleEvidence({
       orderId: `order-own-shift-one-${key}`,
       operationId: `op-own-shift-one-${key}`,
@@ -250,6 +260,23 @@ test(
       pin: "2468",
     });
     assert.notEqual(current.context.shift_id, shiftOne.context.shift_id);
+
+    const historicalContext =
+      await commerce.resolveHistoricalOperatorAttributionContext({
+        merchantId,
+        deviceId,
+        occurredAt: shiftOneOccurredAt,
+      });
+    assert.equal(historicalContext.staff_id, own.id);
+    assert.equal(historicalContext.shift_id, shiftOne.context.shift_id);
+    assert.equal(
+      historicalContext.operator_session_id,
+      shiftOne.context.operator_session_id,
+    );
+    assert.notEqual(
+      historicalContext.operator_session_id,
+      current.context.operator_session_id,
+    );
 
     const report = await reports.buildCashierOperatorReportAuthoritative({
       context: current.context,
