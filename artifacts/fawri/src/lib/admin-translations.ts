@@ -182,11 +182,11 @@ const adminTranslations = {
     actionDeleteAccount: "حذف الحساب",
     actionDetailsShort: "تفاصيل",
 
-    merchantLoadError: "تعذر جلب حالة التجار من السيرفر.",
+    merchantLoadError: "تعذر جلب حالة التجار من الخادم.",
     merchantOtpRequired:
       "لا يمكن تفعيل المتجر قبل تحقق رقم الهاتف عبر OTP.",
     merchantStatusUpdateError:
-      "تعذر تحديث حالة التاجر في السيرفر.",
+      "تعذر تحديث حالة التاجر في الخادم.",
 
     logPlanLabel: "خطة {plan}",
     logMerchantApproved: "تم قبول حساب المتجر",
@@ -208,7 +208,7 @@ const adminTranslations = {
 
     noSubscriptionError: "لا يوجد اشتراك",
     subscriptionOperationError:
-      "تعذر حفظ عملية الاشتراك في السيرفر.",
+      "تعذر حفظ عملية الاشتراك في الخادم.",
     planCycleStartBlocked:
       "لا يمكن تجديد أو تغيير الخطة قبل نفاد الرصيد الأساسي أو انتهاء صلاحية الاشتراك.",
 
@@ -230,18 +230,18 @@ const adminTranslations = {
     logPlanActivated: "تم تفعيل الاشتراك المدفوع — خطة {plan}",
     toastPlanActivated: "تم تفعيل الاشتراك المدفوع بخطة {plan}",
     planActivationSaveError:
-      "تعذر تفعيل الاشتراك المدفوع في السيرفر.",
+      "تعذر تفعيل الاشتراك المدفوع في الخادم.",
 
     logPlanChanged: "خطة {plan}",
     toastPlanChanged: "تم تغيير الخطة إلى {plan}",
     planChangeSaveError:
-      "تعذر حفظ الخطة الجديدة في السيرفر.",
+      "تعذر حفظ الخطة الجديدة في الخادم.",
 
     emergencyDeduction:
       " (خصم طارئ: {amount})",
     toastPlanRenewed: "تم تجديد خطة {plan}",
     planRenewSaveError:
-      "تعذر حفظ تجديد الاشتراك في السيرفر.",
+      "تعذر حفظ تجديد الاشتراك في الخادم.",
 
     logInternalNoteSaved: "ملاحظة داخلية محفوظة",
     logAssistantAdminPasswordReset:
@@ -290,7 +290,7 @@ const adminTranslations = {
     deletionMustBeSuspended: "يجب تعليق التاجر قبل إرسال طلب الحذف.",
     deletionRequestExists: "يوجد طلب حذف قيد المراجعة لهذا التاجر.",
     deletionOperationError: "تعذر تنفيذ العملية. حاول مرة أخرى.",
-    deletionConnectionError: "تعذر الاتصال بالسيرفر.",
+    deletionConnectionError: "تعذر الاتصال بالخادم.",
 
     mainTabAll: "الكل",
     mainTabPending: "قيد المراجعة",
@@ -342,7 +342,7 @@ const adminTranslations = {
     administratorsPasswordInvalid: "يجب أن تكون كلمة المرور 8 خانات على الأقل وتحتوي على حرف إنجليزي كبير ورقم.",
     administratorsPhoneExists: "رقم الهاتف مسجل مسبقًا.",
     administratorsCreateError: "تعذّر إنشاء حساب المدير.",
-    administratorsConnectionError: "تعذّر الاتصال بالسيرفر.",
+    administratorsConnectionError: "تعذّر الاتصال بالخادم.",
 
 
     mainAdminTitle: "لوحة الإدارة",
