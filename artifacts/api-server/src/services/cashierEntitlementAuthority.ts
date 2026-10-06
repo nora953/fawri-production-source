@@ -757,6 +757,7 @@ export async function assertCashierStationLicensedInTransaction(input: {
   merchantId: string;
   stationId: string;
   allowGrace?: boolean;
+  allowRestricted?: boolean;
 }): Promise<CashierEntitlementSnapshot> {
   const now = new Date();
   const snapshot = evaluateCashierEntitlement(
@@ -767,9 +768,12 @@ export async function assertCashierStationLicensedInTransaction(input: {
     ),
     now,
   );
+  const allowedStates: CashierEntitlementState[] = ["active"];
+  if (input.allowGrace !== false) allowedStates.push("grace");
+  if (input.allowRestricted === true) allowedStates.push("restricted");
   assertCashierEntitlementState(
     snapshot,
-    input.allowGrace === false ? ["active"] : ["active", "grace"],
+    allowedStates,
     "CASHIER_STATION_ENTITLEMENT_REQUIRED",
   );
   const rows = await operationalQueryRows<{ status: string; release_effective_at: DbInstant | null }>(
@@ -841,6 +845,7 @@ export async function assertCashierStationLicensedAuthoritative(input: {
   merchantId: string;
   stationId: string;
   allowGrace?: boolean;
+  allowRestricted?: boolean;
 }): Promise<CashierEntitlementSnapshot> {
   assertAuthority();
   return withMerchantOperationalTransaction(input.merchantId, async (client) =>
@@ -849,6 +854,7 @@ export async function assertCashierStationLicensedAuthoritative(input: {
       merchantId: input.merchantId,
       stationId: input.stationId,
       allowGrace: input.allowGrace,
+      allowRestricted: input.allowRestricted,
     }),
   );
 }
