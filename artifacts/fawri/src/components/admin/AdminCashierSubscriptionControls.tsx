@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getAdminAuthHeaders } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
+import { ADMIN_CASHIER_SUBSCRIPTION_COPY } from '@/lib/translations/features/admin/AdminCashierSubscriptionControls';
 
 type Entitlement = {
   state: 'inactive' | 'active' | 'grace' | 'restricted' | 'suspended';
@@ -13,53 +14,7 @@ type Entitlement = {
   version?: number;
 };
 
-const COPY = {
-  ar: {
-    title: 'اشتراك الكاشير المستقل',
-    seats: 'المقاعد المرخصة',
-    state: 'الحالة',
-    renewal: 'نهاية الدورة',
-    grace: 'نهاية المهلة',
-    suspend: 'إيقاف الكاشير',
-    resume: 'استئناف الكاشير',
-    cancel: 'إلغاء الاشتراك',
-    refresh: 'تحديث',
-    unavailable: 'تعذر تحميل اشتراك الكاشير.',
-    confirmCancel: 'إلغاء اشتراك الكاشير سيوقف صلاحية التشغيل. هل تريد المتابعة؟',
-    confirmSuspend: 'إيقاف اشتراك الكاشير يمنع التشغيل فورًا. هل تريد المتابعة؟',
-    updated: 'تم تحديث حالة اشتراك الكاشير.',
-  },
-  ku: {
-    title: 'بەشداری سەربەخۆی کاشێر',
-    seats: 'شوێنە مۆڵەتپێدراوەکان',
-    state: 'دۆخ',
-    renewal: 'کۆتایی خول',
-    grace: 'کۆتایی ماوە',
-    suspend: 'ڕاگرتنی کاشێر',
-    resume: 'دەستپێکردنەوەی کاشێر',
-    cancel: 'هەڵوەشاندنەوەی بەشداری',
-    refresh: 'نوێکردنەوە',
-    unavailable: 'نەتوانرا بەشداری کاشێر بار بکرێت.',
-    confirmCancel: 'هەڵوەشاندنەوەی بەشداری کاشێر دەسەڵاتی کارکردن ڕادەگرێت. بەردەوام بیت؟',
-    confirmSuspend: 'ڕاگرتنی بەشداری کاشێر کارکردن دەوەستێنێت. بەردەوام بیت؟',
-    updated: 'دۆخی بەشداری کاشێر نوێکرایەوە.',
-  },
-  en: {
-    title: 'Independent Cashier subscription',
-    seats: 'Licensed seats',
-    state: 'State',
-    renewal: 'Billing period end',
-    grace: 'Grace ends',
-    suspend: 'Suspend Cashier',
-    resume: 'Resume Cashier',
-    cancel: 'Cancel subscription',
-    refresh: 'Refresh',
-    unavailable: 'Could not load Cashier subscription.',
-    confirmCancel: 'Cancelling the Cashier subscription removes runtime authority. Continue?',
-    confirmSuspend: 'Suspending the Cashier subscription blocks runtime authority immediately. Continue?',
-    updated: 'Cashier subscription state updated.',
-  },
-} as const;
+
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -73,7 +28,7 @@ export function AdminCashierSubscriptionControls({
   merchantId: string;
 }) {
   const { lang } = useI18n();
-  const text = COPY[lang];
+  const text = ADMIN_CASHIER_SUBSCRIPTION_COPY[lang];
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
   const [entitlement, setEntitlement] = React.useState<Entitlement | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -157,7 +112,7 @@ export function AdminCashierSubscriptionControls({
       ) : failed ? (
         <p className="mt-3 text-xs text-destructive">{text.unavailable}</p>
       ) : !entitlement ? (
-        <p className="mt-3 text-xs text-muted-foreground">{text.state}: inactive</p>
+        <p className="mt-3 text-xs text-muted-foreground">{text.state}: {text.inactive}</p>
       ) : (
         <>
           <div className="mt-3 grid gap-2 sm:grid-cols-4">
