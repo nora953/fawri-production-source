@@ -150,10 +150,12 @@ test("Meta OAuth never activates with a Replit or insecure redirect", () => {
   ]) {
     const env = productionEnv({ META_REDIRECT_URI: redirect });
     assert.equal(metaConnectionActivationConfigured(env), false);
-    assert.ok(
-      getProductionRuntimeConfigurationIssues(env).some(
-        (item) => item.code === "META_REDIRECT_URI_REQUIRED",
+    assert.deepEqual(getProductionRuntimeConfigurationIssues(env), []);
+    assert.equal(
+      getProductionLaunchReadiness(env).external_blockers.some(
+        (item) => item.code === "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED",
       ),
+      true,
     );
   }
 });
