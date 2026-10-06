@@ -92,6 +92,8 @@ ALTER TABLE "cashier_billing_orders" ADD CONSTRAINT "cashier_billing_orders_subs
 --> statement-breakpoint
 CREATE UNIQUE INDEX "cashier_billing_orders_provider_payment_unique" ON "cashier_billing_orders" USING btree ("provider","provider_payment_ref") WHERE "provider_payment_ref" IS NOT NULL;
 --> statement-breakpoint
+CREATE UNIQUE INDEX "cashier_billing_orders_merchant_pending_unique" ON "cashier_billing_orders" USING btree ("merchant_id") WHERE "status" = 'pending';
+--> statement-breakpoint
 CREATE INDEX "cashier_billing_orders_merchant_status_idx" ON "cashier_billing_orders" USING btree ("merchant_id","status","created_at");
 --> statement-breakpoint
 
