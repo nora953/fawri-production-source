@@ -5,10 +5,12 @@ import {
   requireSecureMerchantSession,
 } from "../middleware/authSession";
 import {
+  getCashierEntitlementContext,
   getCashierOperatorContext,
   getCashierStationContext,
   requireCashierOperatorSession,
   requireCashierStationCredential,
+  requireCashierStationCredentialWithPolicy,
 } from "../middleware/cashierStaffSession";
 import {
   CashierStaffAuthorityError,
@@ -32,6 +34,11 @@ import {
 } from "../services/cashierStationConfigurationAuthority";
 import { buildCashierCentralActivityAuthoritative } from "../services/postgresCashierCentralActivityAuthority";
 import { enforceCashierDiscountOverrideRoleInvariant } from "../services/cashierStaffDiscountRoleHardening";
+import {
+  CashierEntitlementError,
+  assertCashierEntitlementState,
+  getCashierEntitlementAuthoritative,
+} from "../services/cashierEntitlementAuthority";
 
 const router = Router();
 
@@ -68,7 +75,7 @@ function mapCashierRuntimeUniqueConflict(
 function sendError(res: Response, error: unknown): void {
   res.setHeader("Cache-Control", "no-store");
   const mapped =
-    error instanceof CashierStaffAuthorityError
+    error instanceof CashierStaffAuthorityError || error instanceof CashierEntitlementError
       ? error
       : mapCashierRuntimeUniqueConflict(error);
   if (mapped) {
@@ -107,6 +114,15 @@ function requireMerchantAuthority(
 
 function merchantId(res: Response): string {
   return getMerchantIdFromSecureSession(res);
+}
+
+async function requireActiveCashierMerchant(merchant: string): Promise<void> {
+  const entitlement = await getCashierEntitlementAuthoritative(merchant);
+  assertCashierEntitlementState(
+    entitlement,
+    ["active"],
+    "CASHIER_ACTIVE_SUBSCRIPTION_REQUIRED",
+  );
 }
 
 function optionalBoolean(value: unknown, field: string): boolean | undefined {
@@ -188,6 +204,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const merchant = merchantId(res);
+      await requireActiveCashierMerchant(merchant);
       const created = await createCashierStaffAuthoritative({
         merchantId: merchant,
         displayName: req.body?.display_name,
@@ -210,6 +227,7 @@ router.patch(
   async (req: Request, res: Response) => {
     try {
       const merchant = merchantId(res);
+      await requireActiveCashierMerchant(merchant);
       const updated = await updateCashierStaffAuthoritative({
         merchantId: merchant,
         staffId: req.params.staffId,
@@ -288,8 +306,10 @@ router.patch(
   requireMerchantAuthority,
   async (req: Request, res: Response) => {
     try {
+      const merchant = merchantId(res);
+      await requireActiveCashierMerchant(merchant);
       const station = await updateCashierStationConfigurationAuthoritative({
-        merchantId: merchantId(res),
+        merchantId: merchant,
         stationId: req.params.stationId,
         expectedConfigurationEtag: req.body?.expected_configuration_etag,
         name: req.body?.name,
@@ -325,8 +345,10 @@ router.patch(
           409,
         );
       }
+      const merchant = merchantId(res);
+      await requireActiveCashierMerchant(merchant);
       const station = await updateCashierStationAuthoritative({
-        merchantId: merchantId(res),
+        merchantId: merchant,
         stationId: req.params.stationId,
         status: req.body?.status,
       });
@@ -373,17 +395,21 @@ router.post(
 
 router.get(
   "/cashier/station/me",
-  requireCashierStationCredential,
+  requireCashierStationCredentialWithPolicy({ allowRestricted: true }),
   (_req: Request, res: Response) => {
     const station = getCashierStationContext(res);
     res.setHeader("Cache-Control", "no-store");
-    res.json({ ok: true, station });
+    res.json({
+      ok: true,
+      station,
+      cashier_entitlement: getCashierEntitlementContext(res),
+    });
   },
 );
 
 router.get(
   "/cashier/station/staff",
-  requireCashierStationCredential,
+  requireCashierStationCredentialWithPolicy({ allowRestricted: true }),
   async (_req: Request, res: Response) => {
     try {
       const station = getCashierStationContext(res);
@@ -428,7 +454,11 @@ router.post(
         pin: req.body?.pin,
       });
       res.setHeader("Cache-Control", "no-store");
-      res.json({ ok: true, ...result });
+      res.json({
+        ok: true,
+        ...result,
+        cashier_entitlement: getCashierEntitlementContext(res),
+      });
     } catch (error) {
       sendError(res, error);
     }
@@ -437,17 +467,21 @@ router.post(
 
 router.get(
   "/cashier/operator/me",
-  requireCashierOperatorSession(),
+  requireCashierOperatorSession(undefined, { allowRestricted: true }),
   (_req: Request, res: Response) => {
     const operator = getCashierOperatorContext(res);
     res.setHeader("Cache-Control", "no-store");
-    res.json({ ok: true, operator });
+    res.json({
+      ok: true,
+      operator,
+      cashier_entitlement: getCashierEntitlementContext(res),
+    });
   },
 );
 
 router.post(
   "/cashier/operator/logout",
-  requireCashierOperatorSession(),
+  requireCashierOperatorSession(undefined, { allowRestricted: true }),
   async (req: Request, res: Response) => {
     try {
       const operator = getCashierOperatorContext(res);

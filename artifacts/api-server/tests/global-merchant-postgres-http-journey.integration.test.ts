@@ -199,6 +199,54 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     ],
   );
 
+  const cashierSubscriptionId = `golden-cashier-sub-a-${proofId}`;
+  const cashierBillingOrderId = `golden-cashier-billing-a-${proofId}`;
+  await pool.query(
+    `INSERT INTO merchant_cashier_subscriptions (
+       id, merchant_id, status, licensed_seats, price_per_seat_iqd,
+       billing_period_start, billing_period_end, grace_duration_seconds,
+       version, created_at, updated_at
+     ) VALUES ($1,$2,'active',1,3900,now(),now() + interval '1 month',604800,1,now(),now())`,
+    [cashierSubscriptionId, merchantAId],
+  );
+  await pool.query(
+    `INSERT INTO cashier_billing_orders (
+       id, merchant_id, subscription_id, operation, current_seats, requested_seats,
+       resulting_seats, unit_price_iqd, amount_iqd, currency,
+       billing_period_start, billing_period_end, grace_duration_seconds,
+       status, idempotency_key, provider, provider_checkout_ref,
+       provider_payment_ref, request_expires_at, paid_at, applied_at,
+       metadata, created_at, updated_at
+     ) VALUES (
+       $1,$2,$3,'activate',0,1,1,3900,3900,'IQD',
+       now(),now() + interval '1 month',604800,
+       'applied',$4,'test_fixture',$5,$6,
+       now() + interval '30 minutes',now(),now(),'{}'::jsonb,now(),now()
+     )`,
+    [
+      cashierBillingOrderId,
+      merchantAId,
+      cashierSubscriptionId,
+      `golden-cashier-idem-a-${proofId}`,
+      `golden-cashier-checkout-a-${proofId}`,
+      `golden-cashier-payment-a-${proofId}`,
+    ],
+  );
+  await pool.query(
+    `INSERT INTO cashier_entitlement_applications (
+       id, merchant_id, subscription_id, order_id, operation,
+       previous_seats, resulting_seats, previous_version, resulting_version,
+       amount_iqd, provider, provider_payment_ref, applied_at
+     ) VALUES ($1,$2,$3,$4,'activate',0,1,0,1,3900,'test_fixture',$5,now())`,
+    [
+      `golden-cashier-application-a-${proofId}`,
+      merchantAId,
+      cashierSubscriptionId,
+      cashierBillingOrderId,
+      `golden-cashier-payment-a-${proofId}`,
+    ],
+  );
+
   const { default: app } = await import("../src/app.js");
   server = await new Promise<Server>((resolve, reject) => {
     const listening = app.listen(0, "127.0.0.1", () => resolve(listening));

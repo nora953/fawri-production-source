@@ -1,6 +1,7 @@
 import {
   IndexedDbCashierAuthority,
 } from './cashierIndexedDbAuthority';
+import { assertCashierSaleEntitlementFromCache } from './cashierOfflineEntitlementAuthority';
 import {
   cashierDiscountLimitMinor,
   loadCurrentCashierDiscountPolicy,
@@ -156,6 +157,10 @@ export async function createCashierOperatorPosRuntime(options?: {
       const flightKey = `${currentSession.context.merchant_id}\u0000${effectiveInput.operation_id}`;
 
       return cashierSaleCommitSingleFlight.run(flightKey, async () => {
+        await assertCashierSaleEntitlementFromCache({
+          merchantId: currentSession.context.merchant_id,
+          stationId: currentSession.context.station_id,
+        });
         await ensureCashierOperatorLocalDatabaseReady();
         await assertOfflineInventoryPermission(base, effectiveInput, currentSession);
         await assertManualDiscountPermission(base, effectiveInput);

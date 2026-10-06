@@ -1,4 +1,8 @@
 import {
+  persistCashierEntitlementAuthority,
+  type CashierServerEntitlementSnapshot,
+} from './cashierOfflineEntitlementAuthority';
+import {
   bindCashierOperation,
   getCashierPendingEnvelopeCountForIdentity,
   scrubCashierRawCostsForIdentity,
@@ -277,6 +281,37 @@ async function responsePayload(
     : {};
 }
 
+async function persistEntitlementFromPayload(
+  payload: Record<string, unknown>,
+  stationId: string,
+): Promise<void> {
+  const raw = payload.cashier_entitlement;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new CashierOperatorSessionClientError(
+      'CASHIER_ENTITLEMENT_RESPONSE_INVALID',
+      'Cashier subscription authority is missing from the server response',
+      502,
+    );
+  }
+  const snapshot = raw as CashierServerEntitlementSnapshot;
+  try {
+    await persistCashierEntitlementAuthority({
+      snapshot,
+      stationId,
+    });
+  } catch (error) {
+    throw new CashierOperatorSessionClientError(
+      error instanceof Error && 'code' in error
+        ? String((error as { code?: unknown }).code || 'CASHIER_ENTITLEMENT_CACHE_FAILED')
+        : 'CASHIER_ENTITLEMENT_CACHE_FAILED',
+      error instanceof Error
+        ? error.message
+        : 'Cashier subscription authority could not be cached safely',
+      503,
+    );
+  }
+}
+
 function apiError(
   response: Response,
   payload: Record<string, unknown>,
@@ -524,6 +559,7 @@ export async function loginCashierOperator(
     operator_token: operatorToken,
     context,
   };
+  await persistEntitlementFromPayload(payload, context.station_id);
   if (typeof sessionStorage === 'undefined') {
     throw new CashierOperatorSessionClientError(
       'CASHIER_OPERATOR_STORAGE_UNAVAILABLE',
@@ -573,6 +609,7 @@ export async function validateCashierOperatorSession(): Promise<CashierOperatorS
       'Could not validate cashier operator session',
     );
   }
+  await persistEntitlementFromPayload(payload, session.context.station_id);
   return session;
 }
 

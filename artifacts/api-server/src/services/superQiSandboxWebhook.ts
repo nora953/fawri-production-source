@@ -5,6 +5,10 @@ import {
   type SaasBillingApplicationOutcome,
 } from "./saasBillingAuthority";
 import {
+  applyVerifiedCashierBillingProviderEvent,
+  discoverCashierBillingOrderByProviderReference,
+} from "./cashierBillingAuthority";
+import {
   getSuperQiSandboxPaymentStatus,
   getSuperQiSandboxPublicState,
   SUPERQI_SANDBOX_PROVIDER,
@@ -15,9 +19,17 @@ import {
   verifySuperQiSandboxWebhookSignature,
 } from "./superQiSandboxTransport";
 
+type CashierBillingOutcome = Awaited<
+  ReturnType<typeof applyVerifiedCashierBillingProviderEvent>
+>;
+
 export type SuperQiSandboxWebhookResult =
   | { status: "ignored"; reason: "non_terminal" | "order_not_found" }
-  | { status: "processed"; outcome: SaasBillingApplicationOutcome };
+  | {
+      status: "processed";
+      authority: "bot_subscription" | "cashier_subscription";
+      outcome: SaasBillingApplicationOutcome | CashierBillingOutcome;
+    };
 
 function required(value: unknown, max = 300): string {
   const normalized = String(value ?? "").trim();
@@ -43,11 +55,17 @@ function amount(value: unknown): number {
   return parsed;
 }
 
+type BillingOrderMatch = {
+  authority: "bot_subscription" | "cashier_subscription";
+  id: string;
+  amount_iqd: number;
+};
+
 async function findBillingOrder(input: {
   paymentId: string;
   requestId: string;
-}): Promise<{ id: string; amount_iqd: number } | null> {
-  const result = await pool.query(
+}): Promise<BillingOrderMatch | null> {
+  const saasResult = await pool.query(
     `SELECT id, amount_iqd
        FROM saas_billing_orders
       WHERE provider = $1
@@ -59,29 +77,61 @@ async function findBillingOrder(input: {
       LIMIT 2`,
     [SUPERQI_SANDBOX_PROVIDER, input.paymentId, input.requestId],
   );
-  if (result.rows.length > 1) {
+  if (saasResult.rows.length > 1) {
     throw new SuperQiSandboxProviderError(
       "SUPERQI_SANDBOX_ORDER_AMBIGUOUS",
-      "SuperQi sandbox payment maps to more than one Fawri billing order",
+      "SuperQi sandbox payment maps to more than one Fawri SaaS billing order",
       503,
     );
   }
-  if (!result.rows[0]) return null;
-  return {
-    id: required(result.rows[0].id, 180),
-    amount_iqd: amount(result.rows[0].amount_iqd),
-  };
+
+  const cashier = await discoverCashierBillingOrderByProviderReference({
+    provider: SUPERQI_SANDBOX_PROVIDER,
+    paymentId: input.paymentId,
+    requestId: input.requestId,
+  });
+
+  if (saasResult.rows[0] && cashier) {
+    throw new SuperQiSandboxProviderError(
+      "SUPERQI_SANDBOX_ORDER_AUTHORITY_COLLISION",
+      "SuperQi sandbox payment maps to more than one Fawri billing authority",
+      503,
+    );
+  }
+  if (saasResult.rows[0]) {
+    return {
+      authority: "bot_subscription",
+      id: required(saasResult.rows[0].id, 180),
+      amount_iqd: amount(saasResult.rows[0].amount_iqd),
+    };
+  }
+  if (cashier) {
+    return {
+      authority: "cashier_subscription",
+      id: required(cashier.id, 180),
+      amount_iqd: amount(cashier.amount_iqd),
+    };
+  }
+  return null;
 }
 
-async function attachProviderPaymentReference(orderId: string, paymentId: string): Promise<void> {
+async function attachProviderPaymentReference(
+  order: BillingOrderMatch,
+  paymentId: string,
+): Promise<void> {
+  const table =
+    order.authority === "cashier_subscription"
+      ? "cashier_billing_orders"
+      : "saas_billing_orders";
+
   const collision = await pool.query(
     `SELECT id
-       FROM saas_billing_orders
+       FROM ${table}
       WHERE provider = $1
         AND provider_checkout_ref = $2
         AND id <> $3
       LIMIT 1`,
-    [SUPERQI_SANDBOX_PROVIDER, paymentId, orderId],
+    [SUPERQI_SANDBOX_PROVIDER, paymentId, order.id],
   );
   if (collision.rows.length > 0) {
     throw new SuperQiSandboxProviderError(
@@ -91,14 +141,14 @@ async function attachProviderPaymentReference(orderId: string, paymentId: string
     );
   }
   const updated = await pool.query(
-    `UPDATE saas_billing_orders
+    `UPDATE ${table}
         SET provider_checkout_ref = $2,
             updated_at = NOW()
       WHERE id = $1
         AND provider = $3
         AND (provider_checkout_ref IS NULL OR provider_checkout_ref = $2)
       RETURNING id`,
-    [orderId, paymentId, SUPERQI_SANDBOX_PROVIDER],
+    [order.id, paymentId, SUPERQI_SANDBOX_PROVIDER],
   );
   if (updated.rows.length !== 1) {
     throw new SuperQiSandboxProviderError(
@@ -200,30 +250,37 @@ export async function handleSuperQiSandboxWebhook(input: {
   if (!order) {
     return { status: "ignored", reason: "order_not_found" };
   }
-  await attachProviderPaymentReference(order.id, confirmed.paymentId);
+  await attachProviderPaymentReference(order, confirmed.paymentId);
 
   const settledAmount = confirmed.confirmedAmount ?? confirmed.amount;
-  const eventType = confirmed.canceled
-    ? "payment_cancelled"
-    : confirmed.status === "SUCCESS"
-      ? "payment_succeeded"
-      : "payment_failed";
-
-  const outcome = await applyVerifiedSaasBillingProviderEvent({
+  const eventType: "payment_succeeded" | "payment_failed" | "payment_cancelled" =
+    confirmed.canceled
+      ? "payment_cancelled"
+      : confirmed.status === "SUCCESS"
+        ? "payment_succeeded"
+        : "payment_failed";
+  const commonEvent = {
     provider: SUPERQI_SANDBOX_PROVIDER,
     providerEventId: providerEventId(confirmed),
     orderId: order.id,
     eventType,
-    signatureVerified: true,
+    signatureVerified: true as const,
     payloadHash: superQiWebhookPayloadHash(input.payload),
     occurredAt: input.receivedAt || new Date(),
     amountIqd: amount(settledAmount),
-    currency: "IQD",
+    currency: "IQD" as const,
     providerPaymentRef: confirmed.paymentId,
-    ...(eventType === "payment_failed"
-      ? { reasonCode: confirmed.status }
-      : {}),
-  });
+    ...(eventType === "payment_failed" ? { reasonCode: confirmed.status } : {}),
+  };
 
-  return { status: "processed", outcome };
+  const outcome =
+    order.authority === "cashier_subscription"
+      ? await applyVerifiedCashierBillingProviderEvent(commonEvent)
+      : await applyVerifiedSaasBillingProviderEvent(commonEvent);
+
+  return {
+    status: "processed",
+    authority: order.authority,
+    outcome,
+  };
 }

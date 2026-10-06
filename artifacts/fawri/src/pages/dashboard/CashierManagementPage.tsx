@@ -63,6 +63,13 @@ type PairingState = {
   expiresAt: string;
 };
 
+type CashierEntitlementSummary = {
+  state: 'inactive' | 'active' | 'grace' | 'restricted' | 'suspended';
+  licensed_seats: number;
+  billing_period_end?: string;
+  grace_until?: string;
+};
+
 class ManagementApiError extends Error {
   code: string;
   constructor(code: string, message: string) { super(message); this.code = code; }
@@ -139,6 +146,10 @@ export default function CashierManagementPage() {
   const [staff, setStaff] = useState<StaffView[]>([]);
   const [stations, setStations] = useState<StationView[]>([]);
   const [locations, setLocations] = useState<LocationView[]>([]);
+  const [cashierEntitlement, setCashierEntitlement] = useState<CashierEntitlementSummary>({
+    state: 'inactive',
+    licensed_seats: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -170,14 +181,26 @@ export default function CashierManagementPage() {
     setLoading(true);
     setError('');
     try {
-      const [staffPayload, stationPayload, locationPayload] = await Promise.all([
+      const [staffPayload, stationPayload, locationPayload, entitlementPayload] = await Promise.all([
         api('/api/cashier/management/staff'),
         api('/api/cashier/management/stations'),
         api('/api/cashier/management/locations'),
+        api('/api/cashier/subscription'),
       ]);
       setStaff(Array.isArray(staffPayload.staff) ? staffPayload.staff as StaffView[] : []);
       setStations(Array.isArray(stationPayload.stations) ? stationPayload.stations as StationView[] : []);
       setLocations(Array.isArray(locationPayload.locations) ? locationPayload.locations as LocationView[] : []);
+      const authority = record(entitlementPayload.entitlement);
+      setCashierEntitlement({
+        state: ['active', 'grace', 'restricted', 'suspended'].includes(String(authority.state))
+          ? String(authority.state) as CashierEntitlementSummary['state']
+          : 'inactive',
+        licensed_seats: Number.isSafeInteger(Number(authority.licensed_seats))
+          ? Number(authority.licensed_seats)
+          : 0,
+        ...(authority.billing_period_end ? { billing_period_end: String(authority.billing_period_end) } : {}),
+        ...(authority.grace_until ? { grace_until: String(authority.grace_until) } : {}),
+      });
     } catch (cause) {
       setError(localizedError(cause, l));
     } finally {
@@ -186,6 +209,9 @@ export default function CashierManagementPage() {
   }, [l]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const cashierManagementActive = cashierEntitlement.state === 'active';
+  const cashierRuntimeAllowed = cashierEntitlement.state === 'active';
 
   const permissionOptions = useMemo(() => [
     ['sale.view_all', l.allSales],
@@ -536,6 +562,39 @@ export default function CashierManagementPage() {
         <p className="mt-1 text-sm text-muted-foreground">{l.subtitle}</p>
       </div>
 
+      <div className={`shrink-0 rounded-xl border px-4 py-3 text-sm ${
+        cashierEntitlement.state === 'active'
+          ? 'border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/20'
+          : cashierEntitlement.state === 'grace'
+            ? 'border-amber-300 bg-amber-50/70 dark:bg-amber-950/20'
+            : 'border-red-300 bg-red-50/60 dark:bg-red-950/20'
+      }`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-bold">
+              {cashierEntitlement.state === 'active'
+                ? l.subscriptionActive
+                : cashierEntitlement.state === 'grace'
+                  ? l.subscriptionGrace
+                  : cashierEntitlement.state === 'restricted'
+                    ? l.subscriptionRestricted
+                    : cashierEntitlement.state === 'suspended'
+                      ? l.subscriptionSuspended
+                      : l.subscriptionInactive}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {l.licensedSeats}: {cashierEntitlement.licensed_seats}
+              {cashierEntitlement.state === 'grace' && cashierEntitlement.grace_until
+                ? ` · ${l.graceEnds}: ${new Date(cashierEntitlement.grace_until).toLocaleString(lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ')}`
+                : ''}
+            </p>
+          </div>
+          <a href="/dashboard/subscription" className="rounded-lg border bg-background px-3 py-2 text-xs font-bold hover:bg-accent">
+            {l.manageSubscription}
+          </a>
+        </div>
+      </div>
+
       {error ? (
         <div className="shrink-0 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive">
           {error}
@@ -556,7 +615,7 @@ export default function CashierManagementPage() {
                 <a href="/dashboard/cashiers/discounts" className="rounded-lg border px-3 py-2 text-sm font-bold hover:bg-accent">
                   {l.discountPolicies}
                 </a>
-                <button type="button" onClick={openAddStaff} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground">
+                <button type="button" onClick={openAddStaff} disabled={!cashierManagementActive} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground disabled:opacity-40">
                   {l.addStaff}
                 </button>
               </div>
@@ -576,12 +635,12 @@ export default function CashierManagementPage() {
                     </div>
                     <div className="flex shrink-0 gap-2">
                       {member.status !== 'revoked' ? (
-                        <button type="button" disabled={busy} onClick={() => startEdit(member)} className="rounded-lg border px-3 py-1.5 text-xs font-bold hover:bg-accent disabled:opacity-50">
+                        <button type="button" disabled={busy || !cashierManagementActive} onClick={() => startEdit(member)} className="rounded-lg border px-3 py-1.5 text-xs font-bold hover:bg-accent disabled:opacity-50">
                           {l.edit}
                         </button>
                       ) : null}
                       {member.status !== 'revoked' ? (
-                        <button type="button" disabled={busy} onClick={() => void toggleStaffStatus(member)} className="rounded-lg border px-3 py-1.5 text-xs font-bold hover:bg-accent disabled:opacity-50">
+                        <button type="button" disabled={busy || !cashierManagementActive} onClick={() => void toggleStaffStatus(member)} className="rounded-lg border px-3 py-1.5 text-xs font-bold hover:bg-accent disabled:opacity-50">
                           {member.status === 'active' ? l.disable : l.enable}
                         </button>
                       ) : null}
@@ -609,7 +668,7 @@ export default function CashierManagementPage() {
                 <h2 className="text-lg font-bold">{l.stations}</h2>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{stations.length}</span>
               </div>
-              <button type="button" onClick={openAddStation} disabled={locations.length === 0} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
+              <button type="button" onClick={openAddStation} disabled={locations.length === 0 || !cashierManagementActive} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
                 {l.addStation}
               </button>
             </div>
@@ -628,11 +687,11 @@ export default function CashierManagementPage() {
                     </div>
                     <div className="flex shrink-0 gap-2">
                       {station.status !== 'revoked' ? (
-                        <button type="button" disabled={busy} onClick={() => startStationEdit(station)} className="rounded-lg border px-3 py-2 text-xs font-bold hover:bg-accent disabled:opacity-50">
+                        <button type="button" disabled={busy || !cashierManagementActive} onClick={() => startStationEdit(station)} className="rounded-lg border px-3 py-2 text-xs font-bold hover:bg-accent disabled:opacity-50">
                           {l.edit}
                         </button>
                       ) : null}
-                      <button type="button" disabled={busy || station.status !== 'active'} onClick={() => void createPairing(station)} className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
+                      <button type="button" disabled={busy || station.status !== 'active' || !cashierRuntimeAllowed} onClick={() => void createPairing(station)} className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
                         {l.pair}
                       </button>
                     </div>

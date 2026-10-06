@@ -1,4 +1,8 @@
 import {
+  evaluateCashierHistoricalOperationAuthorityInTransaction,
+  recordCashierOperationTimelineInTransaction,
+} from "./cashierHistoricalOperationAuthority";
+import {
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
   withMerchantOperationalTransaction,
@@ -1117,6 +1121,33 @@ export async function syncCashierCompensationAuthoritative(params: {
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       [`cashier-device:${merchantId}:${bundle.deviceId}`],
     );
+    const historicalAuthority =
+      await evaluateCashierHistoricalOperationAuthorityInTransaction({
+        target: client,
+        merchantId,
+        deviceId: bundle.deviceId,
+        occurredAt: bundle.occurredAt,
+      });
+    if (!historicalAuthority.allowed) {
+      throw new CashierSyncError(
+        historicalAuthority.code,
+        historicalAuthority.reason,
+        403,
+      );
+    }
+    const timeline = await recordCashierOperationTimelineInTransaction({
+      target: client,
+      merchantId,
+      deviceId: bundle.deviceId,
+      deviceSequence: bundle.deviceSequence,
+      operationId: bundle.operationId,
+      operationKind: bundle.kind,
+      occurredAt: bundle.occurredAt,
+      authority: historicalAuthority,
+    });
+    if (!timeline.allowed) {
+      throw new CashierSyncError(timeline.code, timeline.reason, 409);
+    }
 
     const operationUsage = await findOperationUsage(
       client,

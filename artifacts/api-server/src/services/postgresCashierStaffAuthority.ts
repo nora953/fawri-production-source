@@ -1,5 +1,9 @@
 import crypto from "node:crypto";
 import { hashPassword, verifyPassword } from "./authPasswordService";
+import {
+  assignCashierStationSeatInTransaction,
+  assertCashierStationLicensedInTransaction,
+} from "./cashierEntitlementAuthority";
 import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
 import {
   resolveCashierLocationById,
@@ -955,6 +959,12 @@ export async function createCashierStationAuthoritative(input: {
         offlineInventoryAuthority,
       ],
     );
+    await assignCashierStationSeatInTransaction({
+      target: client,
+      merchantId,
+      stationId,
+      actorRef: merchantId,
+    });
     const row = await getStationRow(client, merchantId, stationId);
     if (!row) {
       throw new CashierStaffAuthorityError(
@@ -1152,6 +1162,12 @@ export async function beginCashierStationPairingAuthoritative(input: {
         409,
       );
     }
+    await assertCashierStationLicensedInTransaction({
+      target: client,
+      merchantId,
+      stationId,
+      allowGrace: false,
+    });
     await client.query(
       `UPDATE cashier_station_pairing_challenges
           SET status = 'revoked', revoked_at = now()
@@ -1236,6 +1252,12 @@ export async function redeemCashierStationPairingAuthoritative(input: {
         409,
       );
     }
+    await assertCashierStationLicensedInTransaction({
+      target: client,
+      merchantId,
+      stationId: station.id,
+      allowGrace: false,
+    });
 
     await revokeStationRuntime(
       client,

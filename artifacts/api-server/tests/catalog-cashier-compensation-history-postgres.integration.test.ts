@@ -39,6 +39,87 @@ async function createMerchant(suffix: string) {
   return merchant.account.id;
 }
 
+async function provisionCashierHistoryAuthority(input: {
+  merchantId: string;
+  stationId: string;
+  deviceId: string;
+  suffix: string;
+}) {
+  const subscriptionId = `cashier-history-sub-${input.suffix}`;
+  const billingOrderId = `cashier-history-billing-${input.suffix}`;
+  const paymentRef = `cashier-history-payment-${input.suffix}`;
+  await pool.query(
+    `INSERT INTO merchant_cashier_subscriptions (
+       id, merchant_id, status, licensed_seats, price_per_seat_iqd,
+       billing_period_start, billing_period_end, grace_duration_seconds,
+       version, created_at, updated_at
+     ) VALUES ($1,$2,'active',1,3900,now(),now() + interval '1 month',604800,1,now(),now())`,
+    [subscriptionId, input.merchantId],
+  );
+  await pool.query(
+    `INSERT INTO cashier_billing_orders (
+       id, merchant_id, subscription_id, operation, current_seats, requested_seats,
+       resulting_seats, unit_price_iqd, amount_iqd, currency,
+       billing_period_start, billing_period_end, grace_duration_seconds,
+       status, idempotency_key, provider, provider_checkout_ref,
+       provider_payment_ref, request_expires_at, paid_at, applied_at,
+       metadata, created_at, updated_at
+     ) VALUES (
+       $1,$2,$3,'activate',0,1,1,3900,3900,'IQD',
+       now(),now() + interval '1 month',604800,
+       'applied',$4,'test_fixture',$5,$6,
+       now() + interval '30 minutes',now(),now(),'{}'::jsonb,now(),now()
+     )`,
+    [
+      billingOrderId,
+      input.merchantId,
+      subscriptionId,
+      `cashier-history-idem-${input.suffix}`,
+      `cashier-history-checkout-${input.suffix}`,
+      paymentRef,
+    ],
+  );
+  await pool.query(
+    `INSERT INTO cashier_entitlement_applications (
+       id, merchant_id, subscription_id, order_id, operation,
+       previous_seats, resulting_seats, previous_version, resulting_version,
+       amount_iqd, provider, provider_payment_ref, applied_at
+     ) VALUES ($1,$2,$3,$4,'activate',0,1,0,1,3900,'test_fixture',$5,now())`,
+    [
+      `cashier-history-application-${input.suffix}`,
+      input.merchantId,
+      subscriptionId,
+      billingOrderId,
+      paymentRef,
+    ],
+  );
+  await pool.query(
+    `INSERT INTO cashier_station_seat_assignments (
+       id, merchant_id, subscription_id, station_id, status,
+       assigned_at, created_at, updated_at
+     ) VALUES ($1,$2,$3,$4,'active',now(),now(),now())`,
+    [
+      `cashier-history-seat-${input.suffix}`,
+      input.merchantId,
+      subscriptionId,
+      input.stationId,
+    ],
+  );
+  await pool.query(
+    `INSERT INTO cashier_station_credentials (
+       id, merchant_id, station_id, device_id, token_hash, version,
+       status, issued_at, expires_at
+     ) VALUES ($1,$2,$3,$4,$5,1,'active',now(),now() + interval '1 month')`,
+    [
+      `cashier-history-credential-${input.suffix}`,
+      input.merchantId,
+      input.stationId,
+      input.deviceId,
+      crypto.createHash("sha256").update(`credential-${input.suffix}`).digest("hex"),
+    ],
+  );
+}
+
 test("cashier variant return remains compensatable after an ordinary catalog rebuild", async () => {
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
   const merchantId = await createMerchant(suffix);
@@ -89,6 +170,12 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
      ) VALUES ($1,$2,'Compensation Station','main',$3,'active',$4,FALSE,1,now(),now(),now())`,
     [stationId, merchantId, locationId, deviceId],
   );
+  await provisionCashierHistoryAuthority({
+    merchantId,
+    stationId,
+    deviceId,
+    suffix,
+  });
   await pool.query(
     `INSERT INTO location_inventory_levels (
        id, merchant_id, location_id, product_id, variant_id,
@@ -422,6 +509,12 @@ test("cashier full void restores stock to the original sale location even after 
      ) VALUES ($1,$2,'Void Station','origin',$3,'active',$4,FALSE,1,now(),now(),now())`,
     [stationId, merchantId, originalLocationId, deviceId],
   );
+  await provisionCashierHistoryAuthority({
+    merchantId,
+    stationId,
+    deviceId,
+    suffix,
+  });
   await pool.query(
     `INSERT INTO location_inventory_levels (
        id, merchant_id, location_id, product_id, variant_id,

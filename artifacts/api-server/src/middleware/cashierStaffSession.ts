@@ -8,6 +8,11 @@ import {
 } from "../services/postgresCashierStaffAuthority";
 import type { CashierStaffPermission } from "../services/cashierStaffPolicy";
 import { refreshDurableCashierStationCredentialAuthoritative } from "../services/cashierRuntimeExpiryReconciliation";
+import {
+  CashierEntitlementError,
+  assertCashierStationLicensedAuthoritative,
+  type CashierEntitlementSnapshot,
+} from "../services/cashierEntitlementAuthority";
 
 export const CASHIER_STATION_TOKEN_HEADER = "x-fawri-cashier-station-token";
 export const CASHIER_OPERATOR_TOKEN_HEADER = "x-fawri-cashier-operator-token";
@@ -17,6 +22,7 @@ type CashierResponse = Response & {
   locals: Response["locals"] & {
     cashierStation?: CashierStationContext;
     cashierOperator?: CashierOperatorContext;
+    cashierEntitlement?: CashierEntitlementSnapshot;
   };
 };
 
@@ -44,9 +50,15 @@ export function getCashierOperatorContext(res: Response): CashierOperatorContext
   return (res as CashierResponse).locals.cashierOperator || null;
 }
 
+export function getCashierEntitlementContext(
+  res: Response,
+): CashierEntitlementSnapshot | null {
+  return (res as CashierResponse).locals.cashierEntitlement || null;
+}
+
 function sendError(res: Response, error: unknown): void {
   res.setHeader("Cache-Control", "no-store");
-  if (error instanceof CashierStaffAuthorityError) {
+  if (error instanceof CashierStaffAuthorityError || error instanceof CashierEntitlementError) {
     if (error.status === 429 && error.details?.retry_after_seconds) {
       res.setHeader("Retry-After", String(error.details.retry_after_seconds));
     }
@@ -68,11 +80,14 @@ function sendError(res: Response, error: unknown): void {
   });
 }
 
-export async function requireCashierStationCredential(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+export function requireCashierStationCredentialWithPolicy(options: {
+  allowRestricted?: boolean;
+} = {}) {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
   try {
     const stationToken = cashierStationToken(req);
     const deviceId = cashierDeviceId(req);
@@ -84,16 +99,31 @@ export async function requireCashierStationCredential(
       stationToken,
       deviceId,
     });
+    const entitlement = await assertCashierStationLicensedAuthoritative({
+      merchantId: context.merchant_id,
+      stationId: context.station_id,
+      allowGrace: true,
+      allowRestricted: options.allowRestricted === true,
+    });
     (res as CashierResponse).locals.cashierStation = context;
+    (res as CashierResponse).locals.cashierEntitlement = entitlement;
     res.setHeader("Cache-Control", "no-store");
     next();
   } catch (error) {
     sendError(res, error);
   }
+  };
 }
+
+export const requireCashierStationCredential =
+  requireCashierStationCredentialWithPolicy();
 
 export function requireCashierOperatorSession(
   requiredPermission?: CashierStaffPermission,
+  options: {
+    allowRestricted?: boolean;
+    historicalSync?: boolean;
+  } = {},
 ) {
   return async (
     req: Request,
@@ -113,7 +143,19 @@ export function requireCashierOperatorSession(
         deviceId,
         ...(requiredPermission ? { requiredPermission } : {}),
       });
+      const entitlement =
+        options.historicalSync === true
+          ? null
+          : await assertCashierStationLicensedAuthoritative({
+              merchantId: context.merchant_id,
+              stationId: context.station_id,
+              allowGrace: true,
+              allowRestricted: options.allowRestricted === true,
+            });
       (res as CashierResponse).locals.cashierOperator = context;
+      if (entitlement) {
+        (res as CashierResponse).locals.cashierEntitlement = entitlement;
+      }
       (res as CashierResponse).locals.cashierStation = context;
       res.setHeader("Cache-Control", "no-store");
       next();

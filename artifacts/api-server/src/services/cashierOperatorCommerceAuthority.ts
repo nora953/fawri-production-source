@@ -186,6 +186,75 @@ function assertOperatorIdentity(
   }
 }
 
+type HistoricalOperatorAttributionContext = {
+  merchant_id: string;
+  station_id: string;
+  location_id: string;
+  staff_id: string;
+  shift_id: string;
+  device_id: string;
+  credential_id: string;
+  operator_session_id: string;
+};
+
+export async function resolveHistoricalOperatorAttributionContext(input: {
+  merchantId: string;
+  deviceId: string;
+  occurredAt: string;
+}): Promise<HistoricalOperatorAttributionContext> {
+  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
+    const rows = await operationalQueryRows<HistoricalOperatorAttributionContext>(
+      client,
+      `SELECT
+         session.merchant_id,
+         session.station_id,
+         station.location_id,
+         session.staff_id,
+         session.shift_id,
+         credential.device_id,
+         credential.id AS credential_id,
+         session.id AS operator_session_id
+       FROM cashier_operator_sessions session
+       JOIN cashier_shifts shift
+         ON shift.id = session.shift_id
+        AND shift.merchant_id = session.merchant_id
+        AND shift.station_id = session.station_id
+        AND shift.staff_id = session.staff_id
+       JOIN merchant_cashier_stations station
+         ON station.id = session.station_id
+        AND station.merchant_id = session.merchant_id
+       JOIN cashier_station_credentials credential
+         ON credential.station_id = session.station_id
+        AND credential.merchant_id = session.merchant_id
+        AND credential.device_id = $2
+        AND credential.issued_at <= $3
+        AND credential.expires_at > $3
+        AND (credential.revoked_at IS NULL OR credential.revoked_at > $3)
+      WHERE session.merchant_id = $1
+        AND session.issued_at <= $3
+        AND session.expires_at > $3
+        AND (session.revoked_at IS NULL OR session.revoked_at > $3)
+        AND shift.started_at <= $3
+        AND (shift.ended_at IS NULL OR shift.ended_at >= $3)
+      ORDER BY session.issued_at DESC, credential.issued_at DESC
+      LIMIT 2`,
+      [input.merchantId, input.deviceId, new Date(input.occurredAt)],
+    );
+    if (rows.length !== 1) {
+      throw new CashierSyncError(
+        rows.length === 0
+          ? "CASHIER_OPERATOR_HISTORICAL_SESSION_REQUIRED"
+          : "CASHIER_OPERATOR_HISTORICAL_SESSION_AMBIGUOUS",
+        rows.length === 0
+          ? "cashier operation has no valid historical operator session"
+          : "cashier operation maps to multiple historical operator sessions",
+        403,
+      );
+    }
+    return rows[0];
+  });
+}
+
 function rawOptionalCost(value: unknown): number | undefined {
   if (value === undefined || value === null || value === "") return undefined;
   const parsed = Number(value);
@@ -337,7 +406,7 @@ function prepareOperatorSaleBody(
 async function recordAttribution(
   target: OperationalQueryTarget,
   input: {
-    context: CashierOperatorContext;
+    context: HistoricalOperatorAttributionContext;
     identity: BundleIdentity;
     saleId: string;
     kind: CashierOperatorOperationKind;
@@ -409,7 +478,7 @@ async function recordAttribution(
 }
 
 async function persistOperatorAttribution(input: {
-  context: CashierOperatorContext;
+  context: HistoricalOperatorAttributionContext;
   identity: BundleIdentity;
   saleId: string;
   kind: CashierOperatorOperationKind;
@@ -425,17 +494,22 @@ export async function syncCashierOperatorSaleAuthoritative(input: {
 }) {
   const identity = cashierOperatorBundleIdentity(input.body, "sale");
   assertOperatorIdentity(input.context, identity);
+  const historicalContext = await resolveHistoricalOperatorAttributionContext({
+    merchantId: input.context.merchant_id,
+    deviceId: identity.deviceId,
+    occurredAt: identity.occurredAt,
+  });
   const verifiedBody = prepareOperatorSaleBody(input.context, input.body);
   const result = await syncCashierSaleAuthoritative({
     merchantId: input.context.merchant_id,
-    locationId: input.context.location_id,
+    locationId: historicalContext.location_id,
     body: verifiedBody,
   });
   // Attribution is deliberately idempotent and repairable. If this write fails
   // after the core sale transaction commits, the client receives no success and
   // keeps its outbox. A retry replays the sale and repairs the missing attribution.
   await persistOperatorAttribution({
-    context: input.context,
+    context: historicalContext,
     identity,
     saleId: result.order_id,
     kind: "sale",
@@ -450,6 +524,11 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
 }) {
   const identity = cashierOperatorBundleIdentity(input.body, input.kind);
   assertOperatorIdentity(input.context, identity);
+  const historicalContext = await resolveHistoricalOperatorAttributionContext({
+    merchantId: input.context.merchant_id,
+    deviceId: identity.deviceId,
+    occurredAt: identity.occurredAt,
+  });
   const result = await syncCashierCompensationAuthoritative({
     merchantId: input.context.merchant_id,
     body: input.body,
@@ -462,7 +541,7 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
     );
   }
   await persistOperatorAttribution({
-    context: input.context,
+    context: historicalContext,
     identity,
     saleId: result.order_id,
     kind: input.kind,

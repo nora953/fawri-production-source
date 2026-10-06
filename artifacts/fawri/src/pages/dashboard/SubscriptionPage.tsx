@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { SaasBillingPanel } from '@/components/SaasBillingPanel';
+import { CashierSubscriptionPanel } from '@/components/CashierSubscriptionPanel';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
@@ -100,19 +101,15 @@ export default function SubscriptionPage() {
     }
   };
 
-  if (authorityStatus === 'loading') {
-    return (
-      <div className="mx-auto max-w-3xl p-8 text-center text-muted-foreground">
-        {t.overview_loading}
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold">{t.subscription}</h1>
 
-      {authorityStatus === 'unavailable' ? (
+      {authorityStatus === 'loading' ? (
+        <div className="rounded-xl border p-4 text-sm text-muted-foreground">
+          {t.overview_loading}
+        </div>
+      ) : authorityStatus === 'unavailable' ? (
         <div
           className="flex flex-col gap-4 rounded-xl border border-orange-500/70 p-4 sm:flex-row sm:items-center sm:justify-between"
           role="alert"
@@ -159,6 +156,8 @@ export default function SubscriptionPage() {
           <SaasBillingPanel subscription={subscription} />
         </>
       )}
+
+      <CashierSubscriptionPanel />
     </div>
   );
 }

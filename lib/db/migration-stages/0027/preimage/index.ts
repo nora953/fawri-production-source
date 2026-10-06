@@ -11,7 +11,6 @@ export * from "./provider-costs";
 export * from "./catalog";
 export * from "./commerce-promotions";
 export * from "./cashier-staff";
-export * from "./cashier-subscription";
 export * from "./cashier-discount";
 export * from "./cashier-operation-attribution";
 export * from "./channels";

@@ -26,6 +26,11 @@ import {
   operationalQueryRows,
   withMerchantOperationalTransaction,
 } from '../services/operationalPostgresAuthority';
+import {
+  CashierEntitlementError,
+  assertCashierEntitlementState,
+  getCashierEntitlementAuthoritative,
+} from '../services/cashierEntitlementAuthority';
 
 const router = Router();
 
@@ -49,7 +54,7 @@ function merchantId(res: Response): string {
 
 function sendError(res: Response, error: unknown): void {
   res.setHeader('Cache-Control', 'no-store');
-  if (error instanceof CashierDiscountPolicyAuthorityError) {
+  if (error instanceof CashierDiscountPolicyAuthorityError || error instanceof CashierEntitlementError) {
     res.status(error.status).json({ ok: false, code: error.code, error: error.message });
     return;
   }
@@ -74,6 +79,15 @@ function sendError(res: Response, error: unknown): void {
 
 function requireMerchant(req: Request, res: Response, next: NextFunction): void {
   requireSecureMerchantSession(req, res, next);
+}
+
+async function requireActiveCashierSubscription(merchantId: string): Promise<void> {
+  const entitlement = await getCashierEntitlementAuthoritative(merchantId);
+  assertCashierEntitlementState(
+    entitlement,
+    ['active'],
+    'CASHIER_ACTIVE_SUBSCRIPTION_REQUIRED',
+  );
 }
 
 router.get(
@@ -118,6 +132,7 @@ router.put(
   async (req, res) => {
     try {
       const id = merchantId(res);
+      await requireActiveCashierSubscription(id);
       const discountSetting = await withMerchantOperationalTransaction(
         id,
         (client) => updateMerchantCashierDiscountSetting(client, {
@@ -140,6 +155,7 @@ router.put(
   async (req, res) => {
     try {
       const id = merchantId(res);
+      await requireActiveCashierSubscription(id);
       const staffId = String(req.params.staffId || '').trim();
       const expectedVersion = Number(req.body?.expected_version);
       if (!staffId || !Number.isSafeInteger(expectedVersion) || expectedVersion < 1) {

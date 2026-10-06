@@ -998,6 +998,52 @@ async function purgeMerchantOperationalData(
     [merchantId],
   );
 
+  // Independent Cashier subscription authority is retired before any retained
+  // POS/accounting anchors are anonymized. Paid billing/application history is
+  // retained as non-PII financial proof; no active seat/runtime authority survives.
+  await target.query(
+    `UPDATE cashier_billing_orders
+        SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
+            metadata = '{}'::jsonb,
+            updated_at = now()
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE merchant_cashier_subscriptions
+        SET status = 'cancelled',
+            scheduled_licensed_seats = NULL,
+            scheduled_change_at = NULL,
+            version = version + 1,
+            updated_at = now()
+      WHERE merchant_id = $1
+        AND status <> 'cancelled'`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE cashier_station_seat_assignments
+        SET status = 'released',
+            release_effective_at = COALESCE(release_effective_at, now()),
+            released_at = COALESCE(released_at, now()),
+            updated_at = now()
+      WHERE merchant_id = $1
+        AND status IN ('active','release_scheduled')`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE cashier_device_operation_timeline
+        SET device_id = '[deleted device:' || id || ']'
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE cashier_entitlement_audit_events
+        SET actor_ref = NULL,
+            metadata = '{}'::jsonb
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
+
   // Cashier/POS retained rows keep only the minimum non-PII accounting anchors.
   // Live authentication state is removed before retained shift/staff/station rows
   // are closed and anonymized so tombstoned merchants cannot leave reusable POS

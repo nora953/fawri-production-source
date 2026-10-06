@@ -6,6 +6,7 @@ import { useI18n } from '@/lib/i18n';
 import MerchantAccountSecurityPanel from './MerchantAccountSecurityPanel';
 import MerchantCurrencySettingsCard from './MerchantCurrencySettingsCard';
 import ServerSettingsPage from './ServerSettingsPage';
+import { useMerchantFeatureEntitlements } from '@/hooks/useMerchantFeatureEntitlements';
 
 type UiLanguage = 'ar' | 'ku' | 'en';
 type ThemePreference = 'light' | 'dark' | 'auto';
@@ -29,6 +30,7 @@ const UI_COPY: Record<UiLanguage, UiCopy> = MERCHANT_SETTINGS_PAGE_UI_COPY;
 export default function MerchantSettingsPage() {
   const { lang, setLang, dir } = useI18n();
   const { theme, setTheme } = useTheme();
+  const features = useMerchantFeatureEntitlements();
   const copy = UI_COPY[lang as UiLanguage] || UI_COPY.ar;
 
   return (
@@ -90,7 +92,7 @@ export default function MerchantSettingsPage() {
         <MerchantAccountSecurityPanel />
       </div>
 
-      <ServerSettingsPage />
+      {features.botVisible ? <ServerSettingsPage /> : null}
     </div>
   );
 }

@@ -87,6 +87,18 @@ test(
         WHERE id = $1`,
       [merchantId],
     );
+    await pool.query(
+      `INSERT INTO merchant_cashier_subscriptions (
+         id, merchant_id, status, licensed_seats, price_per_seat_iqd,
+         billing_period_start, billing_period_end, grace_duration_seconds,
+         version, created_at, updated_at
+       ) VALUES (
+         $1,$2,'active',1,3900,
+         now() - interval '1 day', now() + interval '30 days', 604800,
+         1,now(),now()
+       )`,
+      [`cashier-subscription-${suffix}`, merchantId],
+    );
 
     const staff = await cashier.createCashierStaffAuthoritative({
       merchantId,
