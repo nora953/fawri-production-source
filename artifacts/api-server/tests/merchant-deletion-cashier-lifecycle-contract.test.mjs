@@ -61,6 +61,22 @@ test("irreversible merchant deletion retires cashier auth state while retaining 
     );
   }
 
+  assert.match(
+    purge,
+    /UPDATE merchant_cashier_subscriptions[\s\S]*status = 'cancelled'[\s\S]*scheduled_licensed_seats = NULL[\s\S]*scheduled_change_at = NULL[\s\S]*WHERE merchant_id = \$1/,
+    "merchant deletion must retire independent Cashier subscription authority",
+  );
+  assert.match(
+    purge,
+    /UPDATE cashier_station_seat_assignments[\s\S]*status = 'released'[\s\S]*released_at = COALESCE\(released_at, now\(\)\)[\s\S]*WHERE merchant_id = \$1/,
+    "merchant deletion must release every current Cashier seat",
+  );
+  assert.match(
+    purge,
+    /UPDATE cashier_device_operation_timeline[\s\S]*device_id = '\[deleted device:' \|\| id \|\| '\]'[\s\S]*WHERE merchant_id = \$1/,
+    "merchant deletion must anonymize historical device identifiers",
+  );
+
   for (const table of [
     "cashier_operator_sessions",
     "cashier_station_credentials",
