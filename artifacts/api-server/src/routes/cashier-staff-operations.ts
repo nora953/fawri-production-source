@@ -10,6 +10,7 @@ import {
   getCashierStationContext,
   requireCashierOperatorSession,
   requireCashierStationCredential,
+  requireCashierStationCredentialWithPolicy,
 } from "../middleware/cashierStaffSession";
 import {
   CashierStaffAuthorityError,
@@ -33,7 +34,11 @@ import {
 } from "../services/cashierStationConfigurationAuthority";
 import { buildCashierCentralActivityAuthoritative } from "../services/postgresCashierCentralActivityAuthority";
 import { enforceCashierDiscountOverrideRoleInvariant } from "../services/cashierStaffDiscountRoleHardening";
-import { CashierEntitlementError } from "../services/cashierEntitlementAuthority";
+import {
+  CashierEntitlementError,
+  assertCashierEntitlementState,
+  getCashierEntitlementAuthoritative,
+} from "../services/cashierEntitlementAuthority";
 
 const router = Router();
 
@@ -109,6 +114,15 @@ function requireMerchantAuthority(
 
 function merchantId(res: Response): string {
   return getMerchantIdFromSecureSession(res);
+}
+
+async function requireActiveCashierMerchant(merchant: string): Promise<void> {
+  const entitlement = await getCashierEntitlementAuthoritative(merchant);
+  assertCashierEntitlementState(
+    entitlement,
+    ["active"],
+    "CASHIER_ACTIVE_SUBSCRIPTION_REQUIRED",
+  );
 }
 
 function optionalBoolean(value: unknown, field: string): boolean | undefined {
@@ -190,6 +204,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const merchant = merchantId(res);
+      await requireActiveCashierMerchant(merchant);
       const created = await createCashierStaffAuthoritative({
         merchantId: merchant,
         displayName: req.body?.display_name,
@@ -212,6 +227,7 @@ router.patch(
   async (req: Request, res: Response) => {
     try {
       const merchant = merchantId(res);
+      await requireActiveCashierMerchant(merchant);
       const updated = await updateCashierStaffAuthoritative({
         merchantId: merchant,
         staffId: req.params.staffId,
@@ -290,8 +306,10 @@ router.patch(
   requireMerchantAuthority,
   async (req: Request, res: Response) => {
     try {
+      const merchant = merchantId(res);
+      await requireActiveCashierMerchant(merchant);
       const station = await updateCashierStationConfigurationAuthoritative({
-        merchantId: merchantId(res),
+        merchantId: merchant,
         stationId: req.params.stationId,
         expectedConfigurationEtag: req.body?.expected_configuration_etag,
         name: req.body?.name,
@@ -327,8 +345,10 @@ router.patch(
           409,
         );
       }
+      const merchant = merchantId(res);
+      await requireActiveCashierMerchant(merchant);
       const station = await updateCashierStationAuthoritative({
-        merchantId: merchantId(res),
+        merchantId: merchant,
         stationId: req.params.stationId,
         status: req.body?.status,
       });
@@ -375,7 +395,7 @@ router.post(
 
 router.get(
   "/cashier/station/me",
-  requireCashierStationCredential,
+  requireCashierStationCredentialWithPolicy({ allowRestricted: true }),
   (_req: Request, res: Response) => {
     const station = getCashierStationContext(res);
     res.setHeader("Cache-Control", "no-store");
@@ -389,7 +409,7 @@ router.get(
 
 router.get(
   "/cashier/station/staff",
-  requireCashierStationCredential,
+  requireCashierStationCredentialWithPolicy({ allowRestricted: true }),
   async (_req: Request, res: Response) => {
     try {
       const station = getCashierStationContext(res);
@@ -447,7 +467,7 @@ router.post(
 
 router.get(
   "/cashier/operator/me",
-  requireCashierOperatorSession(),
+  requireCashierOperatorSession(undefined, { allowRestricted: true }),
   (_req: Request, res: Response) => {
     const operator = getCashierOperatorContext(res);
     res.setHeader("Cache-Control", "no-store");
@@ -461,7 +481,7 @@ router.get(
 
 router.post(
   "/cashier/operator/logout",
-  requireCashierOperatorSession(),
+  requireCashierOperatorSession(undefined, { allowRestricted: true }),
   async (req: Request, res: Response) => {
     try {
       const operator = getCashierOperatorContext(res);
