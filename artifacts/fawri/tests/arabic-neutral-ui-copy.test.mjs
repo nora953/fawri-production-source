@@ -7,6 +7,11 @@ const arabic = fs.readFileSync(
   "utf8",
 );
 
+const adminArabic = fs.readFileSync(
+  new URL("../src/lib/admin-translations.ts", import.meta.url),
+  "utf8",
+);
+
 test("Arabic system UI stays region-neutral and avoids Iraqi-only defaults", () => {
   const forbidden = [
     "السيرفر",
@@ -19,7 +24,7 @@ test("Arabic system UI stays region-neutral and avoids Iraqi-only defaults", () 
 
   for (const term of forbidden) {
     assert.equal(
-      arabic.includes(term),
+      (arabic + adminArabic).includes(term),
       false,
       `Arabic UI dictionary must not contain region-specific/default wording: ${term}`,
     );
