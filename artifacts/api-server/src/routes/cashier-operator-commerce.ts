@@ -157,7 +157,7 @@ router.post(
 
 router.post(
   "/cashier/operator/sync/sale",
-  requireCashierOperatorSession("sale.create"),
+  requireCashierOperatorSession("sale.create", { historicalSync: true }),
   async (req: Request, res: Response) => {
     try {
       const context = operatorContext(res);
@@ -181,7 +181,7 @@ router.post(
 
 router.post(
   "/cashier/operator/sync/return",
-  requireCashierOperatorSession("sale.return"),
+  requireCashierOperatorSession("sale.return", { historicalSync: true }),
   async (req: Request, res: Response) => {
     try {
       const context = operatorContext(res);
@@ -205,7 +205,7 @@ router.post(
 
 router.post(
   "/cashier/operator/sync/void",
-  requireCashierOperatorSession("sale.void"),
+  requireCashierOperatorSession("sale.void", { historicalSync: true }),
   async (req: Request, res: Response) => {
     try {
       const context = operatorContext(res);
