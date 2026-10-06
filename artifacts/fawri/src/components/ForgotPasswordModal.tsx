@@ -233,7 +233,7 @@ export default function ForgotPasswordModal({
     }}>
       <DialogContent
         dir={isRTL ? 'rtl' : 'ltr'}
-        className="max-h-[92dvh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-[2rem] p-0 shadow-2xl"
+        className="w-[calc(100vw-2rem)] max-w-md overflow-hidden rounded-[2rem] p-0 shadow-2xl"
         closeButtonClassName={isRTL ? 'left-4 right-auto top-4' : 'right-4 top-4'}
         onEscapeKeyDown={event => {
           if (isLoading) event.preventDefault();
