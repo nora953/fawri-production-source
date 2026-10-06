@@ -137,6 +137,8 @@ export default function OTPPage() {
             }}
             dir="ltr"
             disabled={!signupChallenge}
+            aria-invalid={!!displayedError}
+            aria-describedby={displayedError ? "signup-otp-error" : undefined}
           >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
@@ -179,7 +181,7 @@ export default function OTPPage() {
           )}
 
           {displayedError && (
-            <p className="text-sm font-medium text-destructive">{displayedError}</p>
+            <p id="signup-otp-error" className="text-sm font-medium text-destructive" role="alert">{displayedError}</p>
           )}
 
           {!signupChallenge && (

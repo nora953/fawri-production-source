@@ -343,6 +343,8 @@ export default function LoginPage() {
                   setOwnerOtpError('');
                 }}
                 dir="ltr"
+                aria-invalid={!!ownerOtpError}
+                aria-describedby={ownerOtpError ? "owner-device-otp-error" : undefined}
               >
                 <InputOTPGroup>
                   <InputOTPSlot index={0} />
@@ -373,7 +375,7 @@ export default function LoginPage() {
               />
 
               {ownerOtpError && (
-                <p className="text-sm font-medium text-destructive">
+                <p id="owner-device-otp-error" className="text-sm font-medium text-destructive" role="alert">
                   {ownerOtpError}
                 </p>
               )}
