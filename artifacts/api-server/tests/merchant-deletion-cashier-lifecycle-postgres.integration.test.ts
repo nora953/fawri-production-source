@@ -129,6 +129,17 @@ test(
         WHERE id = $1`,
       [merchantId],
     );
+    await pool.query(
+      `INSERT INTO merchant_cashier_subscriptions (
+         id, merchant_id, status, licensed_seats, price_per_seat_iqd,
+         billing_period_start, billing_period_end, grace_duration_seconds,
+         version, created_at, updated_at
+       ) VALUES (
+         $1,$2,'active',2,3900,now(),now() + interval '1 month',
+         604800,1,now(),now()
+       )`,
+      [`cashier-delete-sub-${proof}`, merchantId],
+    );
 
     const staff = await cashier.createCashierStaffAuthoritative({
       merchantId,
@@ -351,6 +362,28 @@ test(
       station_credential_id: "[deleted credential]",
       operator_session_id: "[deleted operator session]",
     });
+
+    const cashierSubscriptionAfter = await pool.query<{
+      status: string;
+      scheduled_licensed_seats: number | null;
+    }>(
+      `SELECT status, scheduled_licensed_seats
+         FROM merchant_cashier_subscriptions
+        WHERE merchant_id = $1`,
+      [merchantId],
+    );
+    assert.equal(cashierSubscriptionAfter.rowCount, 1);
+    assert.equal(cashierSubscriptionAfter.rows[0]?.status, "cancelled");
+    assert.equal(cashierSubscriptionAfter.rows[0]?.scheduled_licensed_seats, null);
+
+    const liveSeatAfter = await pool.query<{ count: number }>(
+      `SELECT COUNT(*)::int AS count
+         FROM cashier_station_seat_assignments
+        WHERE merchant_id = $1
+          AND status IN ('active','release_scheduled')`,
+      [merchantId],
+    );
+    assert.equal(Number(liveSeatAfter.rows[0]?.count), 0);
 
     const tombstone = await pool.query<{
       retention_status: string;
