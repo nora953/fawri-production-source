@@ -80,11 +80,14 @@ function sendError(res: Response, error: unknown): void {
   });
 }
 
-export async function requireCashierStationCredential(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+export function requireCashierStationCredentialWithPolicy(options: {
+  allowRestricted?: boolean;
+} = {}) {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
   try {
     const stationToken = cashierStationToken(req);
     const deviceId = cashierDeviceId(req);
@@ -100,6 +103,7 @@ export async function requireCashierStationCredential(
       merchantId: context.merchant_id,
       stationId: context.station_id,
       allowGrace: true,
+      allowRestricted: options.allowRestricted === true,
     });
     (res as CashierResponse).locals.cashierStation = context;
     (res as CashierResponse).locals.cashierEntitlement = entitlement;
@@ -108,10 +112,15 @@ export async function requireCashierStationCredential(
   } catch (error) {
     sendError(res, error);
   }
+  };
 }
+
+export const requireCashierStationCredential =
+  requireCashierStationCredentialWithPolicy();
 
 export function requireCashierOperatorSession(
   requiredPermission?: CashierStaffPermission,
+  options: { allowRestricted?: boolean } = {},
 ) {
   return async (
     req: Request,
@@ -135,6 +144,7 @@ export function requireCashierOperatorSession(
         merchantId: context.merchant_id,
         stationId: context.station_id,
         allowGrace: true,
+        allowRestricted: options.allowRestricted === true,
       });
       (res as CashierResponse).locals.cashierOperator = context;
       (res as CashierResponse).locals.cashierEntitlement = entitlement;
