@@ -73,7 +73,10 @@ test("mounted cashier staff router owns management, station, login and logout li
 
   assert.match(staffRouteSource, /requireSecureMerchantSession/);
   assert.match(staffRouteSource, /requireCashierStationCredential/);
-  assert.match(staffRouteSource, /requireCashierOperatorSession\(\)/);
+  assert.match(
+    staffRouteSource,
+    /requireCashierOperatorSession\(undefined, \{ allowRestricted: true \}\)/,
+  );
 });
 
 test("mounted operator commerce router owns live catalog, reporting and compensation surfaces", () => {
@@ -87,7 +90,16 @@ test("mounted operator commerce router owns live catalog, reporting and compensa
     assert.ok(operatorCommerceSource.includes(`"${route}"`), `missing operator commerce route ${route}`);
   }
 
-  assert.match(operatorCommerceSource, /requireCashierOperatorSession\("sale\.create"\)/);
-  assert.match(operatorCommerceSource, /requireCashierOperatorSession\("sale\.return"\)/);
-  assert.match(operatorCommerceSource, /requireCashierOperatorSession\("sale\.void"\)/);
+  assert.match(
+    operatorCommerceSource,
+    /requireCashierOperatorSession\("sale\.create", \{ historicalSync: true \}\)/,
+  );
+  assert.match(
+    operatorCommerceSource,
+    /requireCashierOperatorSession\("sale\.return", \{ historicalSync: true \}\)/,
+  );
+  assert.match(
+    operatorCommerceSource,
+    /requireCashierOperatorSession\("sale\.void", \{ historicalSync: true \}\)/,
+  );
 });
