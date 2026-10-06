@@ -7,6 +7,11 @@ import {
 import { normalizeCashierPairingCode } from '@/lib/cashierPairingCode';
 import { cashierStationCreationBody } from '@/lib/cashierStationCreation';
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -130,14 +135,32 @@ function localizedError(cause: unknown, l: Copy): string {
   return l.failed;
 }
 
-function Modal({ children, dir, onClose, closeLabel }: { children: ReactNode; dir: 'rtl' | 'ltr'; onClose: () => void; closeLabel: string }) {
+function Modal({
+  children,
+  dir,
+  onClose,
+  title,
+  busy = false,
+}: {
+  children: ReactNode;
+  dir: 'rtl' | 'ltr';
+  onClose: () => void;
+  title: string;
+  busy?: boolean;
+}) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4" dir={dir} role="dialog" aria-modal="true">
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-2xl">
+    <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
+      <DialogContent
+        dir={dir}
+        className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl p-5"
+        onEscapeKeyDown={(event) => { if (busy) event.preventDefault(); }}
+        onPointerDownOutside={(event) => { if (busy) event.preventDefault(); }}
+        onInteractOutside={(event) => { if (busy) event.preventDefault(); }}
+      >
+        <DialogTitle className="sr-only">{title}</DialogTitle>
         {children}
-        <button type="button" aria-label={closeLabel} onClick={onClose} className="sr-only">×</button>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -715,7 +738,7 @@ export default function CashierManagementPage() {
       )}
 
       {addStaffOpen ? (
-        <Modal dir={dir} onClose={closeAddStaff} closeLabel={l.close}>
+        <Modal dir={dir} onClose={closeAddStaff} title={l.addStaff} busy={busy}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-bold">{l.addStaff}</h3>
             <button type="button" onClick={closeAddStaff} disabled={busy} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
@@ -771,7 +794,7 @@ export default function CashierManagementPage() {
       ) : null}
 
       {editingMember ? (
-        <Modal dir={dir} onClose={cancelEdit} closeLabel={l.close}>
+        <Modal dir={dir} onClose={cancelEdit} title={l.editStaff} busy={busy}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-bold">{l.editStaff}</h3>
             <button type="button" onClick={cancelEdit} disabled={busy} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
@@ -830,7 +853,7 @@ export default function CashierManagementPage() {
       ) : null}
 
       {addStationOpen ? (
-        <Modal dir={dir} onClose={closeAddStation} closeLabel={l.close}>
+        <Modal dir={dir} onClose={closeAddStation} title={l.addStation} busy={busy}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-bold">{l.addStation}</h3>
             <button type="button" onClick={closeAddStation} disabled={busy} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
@@ -864,7 +887,7 @@ export default function CashierManagementPage() {
       ) : null}
 
       {editingStation ? (
-        <Modal dir={dir} onClose={cancelStationEdit} closeLabel={l.close}>
+        <Modal dir={dir} onClose={cancelStationEdit} title={l.editStation} busy={busy}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-bold">{l.editStation}</h3>
             <button type="button" onClick={cancelStationEdit} disabled={busy} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
@@ -914,7 +937,7 @@ export default function CashierManagementPage() {
       ) : null}
 
       {pairing ? (
-        <Modal dir={dir} onClose={() => { if (!busy) setPairing(null); }} closeLabel={l.close}>
+        <Modal dir={dir} onClose={() => setPairing(null)} title={l.pairingTitle} busy={busy}>
           <div className="flex items-start justify-between gap-3">
             <div><h3 className="text-lg font-bold">{l.pairingTitle}</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">{pairing.stationName}</p></div>
             <button type="button" onClick={() => setPairing(null)} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
