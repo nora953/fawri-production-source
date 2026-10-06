@@ -197,7 +197,7 @@ type HistoricalOperatorAttributionContext = {
   operator_session_id: string;
 };
 
-async function resolveHistoricalOperatorAttributionContext(input: {
+export async function resolveHistoricalOperatorAttributionContext(input: {
   merchantId: string;
   deviceId: string;
   occurredAt: string;
