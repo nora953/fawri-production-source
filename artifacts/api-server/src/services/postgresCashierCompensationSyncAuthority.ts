@@ -1,4 +1,7 @@
-import { evaluateCashierHistoricalOperationAuthorityInTransaction } from "./cashierHistoricalOperationAuthority";
+import {
+  evaluateCashierHistoricalOperationAuthorityInTransaction,
+  recordCashierOperationTimelineInTransaction,
+} from "./cashierHistoricalOperationAuthority";
 import {
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
@@ -1131,6 +1134,19 @@ export async function syncCashierCompensationAuthoritative(params: {
         historicalAuthority.reason,
         403,
       );
+    }
+    const timeline = await recordCashierOperationTimelineInTransaction({
+      target: client,
+      merchantId,
+      deviceId: bundle.deviceId,
+      deviceSequence: bundle.deviceSequence,
+      operationId: bundle.operationId,
+      operationKind: bundle.kind,
+      occurredAt: bundle.occurredAt,
+      authority: historicalAuthority,
+    });
+    if (!timeline.allowed) {
+      throw new CashierSyncError(timeline.code, timeline.reason, 409);
     }
 
     const operationUsage = await findOperationUsage(
