@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import {
   operationalQueryRows,
   type OperationalQueryTarget,
@@ -206,4 +207,170 @@ export async function evaluateCashierHistoricalOperationAuthorityInTransaction(i
     subscriptionId,
     billingOrderId: cycle.id,
   };
+}
+
+export type CashierOperationTimelineDecision =
+  | { allowed: true; replayed: boolean }
+  | {
+      allowed: false;
+      code:
+        | "CASHIER_OPERATION_SEQUENCE_CONFLICT"
+        | "CASHIER_OPERATION_CLOCK_ROLLBACK"
+        | "CASHIER_OPERATION_CLOCK_AHEAD";
+      reason: string;
+    };
+
+const CASHIER_CLOCK_ROLLBACK_TOLERANCE_MS = 2 * 60 * 1000;
+const CASHIER_CLOCK_AHEAD_TOLERANCE_MS = 5 * 60 * 1000;
+
+export async function recordCashierOperationTimelineInTransaction(input: {
+  target: OperationalQueryTarget;
+  merchantId: string;
+  deviceId: string;
+  deviceSequence: number;
+  operationId: string;
+  operationKind: "sale" | "return" | "void";
+  occurredAt: string;
+  authority: Extract<CashierHistoricalOperationDecision, { allowed: true }>;
+  now?: Date;
+}): Promise<CashierOperationTimelineDecision> {
+  const occurredAt = toDate(input.occurredAt);
+  const now = input.now || new Date();
+  if (
+    !occurredAt ||
+    !Number.isSafeInteger(input.deviceSequence) ||
+    input.deviceSequence <= 0
+  ) {
+    return {
+      allowed: false,
+      code: "CASHIER_OPERATION_SEQUENCE_CONFLICT",
+      reason: "cashier operation sequence or timestamp is invalid",
+    };
+  }
+  if (occurredAt.getTime() > now.getTime() + CASHIER_CLOCK_AHEAD_TOLERANCE_MS) {
+    return {
+      allowed: false,
+      code: "CASHIER_OPERATION_CLOCK_AHEAD",
+      reason: "cashier operation timestamp is too far ahead of server time",
+    };
+  }
+
+  const existing = await operationalQueryRows<{
+    operation_id: string;
+    operation_kind: string;
+    station_id: string;
+    subscription_id: string;
+    billing_order_id: string;
+    occurred_at: DbInstant;
+  }>(
+    input.target,
+    `SELECT operation_id, operation_kind, station_id, subscription_id,
+            billing_order_id, occurred_at
+       FROM cashier_device_operation_timeline
+      WHERE merchant_id = $1
+        AND device_id = $2
+        AND device_sequence = $3
+      LIMIT 1
+      FOR UPDATE`,
+    [input.merchantId, input.deviceId, input.deviceSequence],
+  );
+  if (existing[0]) {
+    const existingOccurredAt = toDate(existing[0].occurred_at);
+    const same =
+      existing[0].operation_id === input.operationId &&
+      existing[0].operation_kind === input.operationKind &&
+      existing[0].station_id === input.authority.stationId &&
+      existing[0].subscription_id === input.authority.subscriptionId &&
+      existing[0].billing_order_id === input.authority.billingOrderId &&
+      existingOccurredAt?.toISOString() === occurredAt.toISOString();
+    return same
+      ? { allowed: true, replayed: true }
+      : {
+          allowed: false,
+          code: "CASHIER_OPERATION_SEQUENCE_CONFLICT",
+          reason: "cashier device sequence was already used by another operation",
+        };
+  }
+
+  const previous = await operationalQueryRows<{
+    device_sequence: number | string;
+    occurred_at: DbInstant;
+  }>(
+    input.target,
+    `SELECT device_sequence, occurred_at
+       FROM cashier_device_operation_timeline
+      WHERE merchant_id = $1
+        AND device_id = $2
+        AND device_sequence < $3
+      ORDER BY device_sequence DESC
+      LIMIT 1
+      FOR SHARE`,
+    [input.merchantId, input.deviceId, input.deviceSequence],
+  );
+  if (previous[0]) {
+    const previousAt = toDate(previous[0].occurred_at);
+    if (
+      previousAt &&
+      occurredAt.getTime() + CASHIER_CLOCK_ROLLBACK_TOLERANCE_MS <
+        previousAt.getTime()
+    ) {
+      return {
+        allowed: false,
+        code: "CASHIER_OPERATION_CLOCK_ROLLBACK",
+        reason: "cashier operation clock moved backwards relative to device sequence",
+      };
+    }
+  }
+
+  const next = await operationalQueryRows<{
+    device_sequence: number | string;
+    occurred_at: DbInstant;
+  }>(
+    input.target,
+    `SELECT device_sequence, occurred_at
+       FROM cashier_device_operation_timeline
+      WHERE merchant_id = $1
+        AND device_id = $2
+        AND device_sequence > $3
+      ORDER BY device_sequence ASC
+      LIMIT 1
+      FOR SHARE`,
+    [input.merchantId, input.deviceId, input.deviceSequence],
+  );
+  if (next[0]) {
+    const nextAt = toDate(next[0].occurred_at);
+    if (
+      nextAt &&
+      occurredAt.getTime() >
+        nextAt.getTime() + CASHIER_CLOCK_ROLLBACK_TOLERANCE_MS
+    ) {
+      return {
+        allowed: false,
+        code: "CASHIER_OPERATION_CLOCK_ROLLBACK",
+        reason: "cashier operation timestamp conflicts with a later device sequence",
+      };
+    }
+  }
+
+  await input.target.query(
+    `INSERT INTO cashier_device_operation_timeline (
+       id, merchant_id, subscription_id, billing_order_id, station_id,
+       device_id, device_sequence, operation_id, operation_kind,
+       occurred_at, accepted_at
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+    [
+      `cashier_timeline_${crypto.randomUUID()}`,
+      input.merchantId,
+      input.authority.subscriptionId,
+      input.authority.billingOrderId,
+      input.authority.stationId,
+      input.deviceId,
+      input.deviceSequence,
+      input.operationId,
+      input.operationKind,
+      occurredAt,
+      now,
+    ],
+  );
+  return { allowed: true, replayed: false };
 }
