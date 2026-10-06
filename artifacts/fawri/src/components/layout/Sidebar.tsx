@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { clearSession } from "@/lib/store";
+import { useMerchantFeatureEntitlements } from "@/hooks/useMerchantFeatureEntitlements";
 import {
   useUnreadMerchantNotificationCount,
   type MerchantNotificationCountState,
@@ -87,6 +88,7 @@ export function Sidebar() {
   const { t, isRTL, lang } = useI18n();
   const [location, setLocation] = useLocation();
   const unreadNotifications = useUnreadMerchantNotificationCount();
+  const features = useMerchantFeatureEntitlements();
   const notificationsActive = isActiveRoute(
     location,
     "/dashboard/notifications",
@@ -114,41 +116,51 @@ export function Sidebar() {
       icon: LayoutDashboard,
       exact: true,
     },
-    {
-      href: "/dashboard/conversations",
-      label: t.conversations,
-      icon: MessageSquare,
-    },
+    ...(features.botVisible
+      ? [{
+          href: "/dashboard/conversations",
+          label: t.conversations,
+          icon: MessageSquare,
+        }]
+      : []),
     { href: "/dashboard/products", label: t.products, icon: Package },
     { href: "/dashboard/orders", label: t.orders, icon: ShoppingBag },
-    {
-      href: "/dashboard/cashiers",
-      label: cashierManagementLabel,
-      icon: Users,
-      exact: true,
-    },
+    ...(features.cashierManagementVisible
+      ? [{
+          href: "/dashboard/cashiers",
+          label: cashierManagementLabel,
+          icon: Users,
+          exact: true,
+        }]
+      : []),
     {
       href: "/dashboard/reports",
       label: reportsLabel,
       icon: BarChart3,
     },
-    {
-      href: "/cashier.html",
-      label: cashierLabel,
-      icon: Calculator,
-      fullPage: true,
-    },
-    {
-      href: "/dashboard/saved-answers",
-      label: t.saved_answers,
-      icon: BookOpen,
-    },
-    {
-      href: "/dashboard/bot-training",
-      label: t.sidebar_bot_training,
-      icon: Brain,
-    },
-    { href: "/dashboard/channels", label: t.channels, icon: Radio },
+    ...(features.cashierRuntimeVisible
+      ? [{
+          href: "/cashier.html",
+          label: cashierLabel,
+          icon: Calculator,
+          fullPage: true,
+        }]
+      : []),
+    ...(features.botVisible
+      ? [
+          {
+            href: "/dashboard/saved-answers",
+            label: t.saved_answers,
+            icon: BookOpen,
+          },
+          {
+            href: "/dashboard/bot-training",
+            label: t.sidebar_bot_training,
+            icon: Brain,
+          },
+          { href: "/dashboard/channels", label: t.channels, icon: Radio },
+        ]
+      : []),
     {
       href: "/dashboard/subscription",
       label: t.subscription,
