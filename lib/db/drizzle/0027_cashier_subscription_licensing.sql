@@ -17,7 +17,7 @@ CREATE TABLE "merchant_cashier_subscriptions" (
   CONSTRAINT "merchant_cashier_subscriptions_status_check" CHECK ("status" IN ('inactive','active','suspended','cancelled')),
   CONSTRAINT "merchant_cashier_subscriptions_counters_check" CHECK ("licensed_seats" >= 0 AND "price_per_seat_iqd" > 0 AND "grace_duration_seconds" > 0 AND "version" > 0),
   CONSTRAINT "merchant_cashier_subscriptions_lifecycle_check" CHECK (("status" = 'inactive' AND "licensed_seats" = 0 AND "billing_period_start" IS NULL AND "billing_period_end" IS NULL) OR ("status" <> 'inactive' AND "licensed_seats" > 0 AND "billing_period_start" IS NOT NULL AND "billing_period_end" IS NOT NULL AND "billing_period_end" > "billing_period_start")),
-  CONSTRAINT "merchant_cashier_subscriptions_scheduled_change_check" CHECK (("scheduled_licensed_seats" IS NULL AND "scheduled_change_at" IS NULL) OR ("scheduled_licensed_seats" IS NOT NULL AND "scheduled_licensed_seats" >= 0 AND "scheduled_licensed_seats" < "licensed_seats" AND "scheduled_change_at" IS NOT NULL AND "billing_period_end" IS NOT NULL AND "scheduled_change_at" = "billing_period_end")),
+  CONSTRAINT "merchant_cashier_subscriptions_scheduled_change_check" CHECK (("scheduled_licensed_seats" IS NULL AND "scheduled_change_at" IS NULL) OR ("scheduled_licensed_seats" IS NOT NULL AND "scheduled_licensed_seats" > 0 AND "scheduled_licensed_seats" < "licensed_seats" AND "scheduled_change_at" IS NOT NULL AND "billing_period_end" IS NOT NULL AND "scheduled_change_at" = "billing_period_end")),
   CONSTRAINT "merchant_cashier_subscriptions_timestamp_check" CHECK ("updated_at" >= "created_at")
 );
 --> statement-breakpoint
