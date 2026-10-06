@@ -1,4 +1,4 @@
-import { assertCashierDeviceLicensedInTransaction } from "./cashierEntitlementAuthority";
+import { evaluateCashierHistoricalOperationAuthorityInTransaction } from "./cashierHistoricalOperationAuthority";
 import crypto from "node:crypto";
 import { catalogCommerceFromMetadata } from "./catalogCommerceMetadata";
 import {
@@ -710,11 +710,11 @@ async function loadExistingOrder(
   return rows[0] || null;
 }
 
-async function requireCashierDeviceLocation(
+async function requireCashierStationLocation(
   target: OperationalQueryTarget,
   params: {
     merchantId: string;
-    deviceId: string;
+    stationId: string;
     requestedLocationId?: string;
   },
 ): Promise<string> {
@@ -723,17 +723,17 @@ async function requireCashierDeviceLocation(
     `SELECT location_id
        FROM merchant_cashier_stations
       WHERE merchant_id = $1
-        AND paired_device_id = $2
+        AND id = $2
         AND status = 'active'
       LIMIT 1
       FOR UPDATE`,
-    [params.merchantId, params.deviceId],
+    [params.merchantId, params.stationId],
   );
   const locationId = rows[0]?.location_id || "";
   if (!locationId) {
     throw new CashierSyncError(
       "CASHIER_LOCATION_BINDING_REQUIRED",
-      "cashier device is not bound to an active merchant location",
+      "cashier station is not bound to an active merchant location",
       409,
     );
   }
@@ -743,7 +743,7 @@ async function requireCashierDeviceLocation(
   ) {
     throw new CashierSyncError(
       "CASHIER_LOCATION_BINDING_MISMATCH",
-      "cashier location does not match the paired device",
+      "cashier location does not match the authorized station",
       409,
       {
         requested_location_id: params.requestedLocationId,
@@ -1253,15 +1253,23 @@ export async function syncCashierSaleAuthoritative(params: {
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       [`cashier-device:${merchantId}:${bundle.deviceId}`],
     );
-    await assertCashierDeviceLicensedInTransaction({
-      target: client,
+    const historicalAuthority =
+      await evaluateCashierHistoricalOperationAuthorityInTransaction({
+        target: client,
+        merchantId,
+        deviceId: bundle.deviceId,
+        occurredAt: bundle.sale.occurred_at,
+      });
+    if (!historicalAuthority.allowed) {
+      throw new CashierSyncError(
+        historicalAuthority.code,
+        historicalAuthority.reason,
+        403,
+      );
+    }
+    const locationId = await requireCashierStationLocation(client, {
       merchantId,
-      deviceId: bundle.deviceId,
-      allowGrace: true,
-    });
-    const locationId = await requireCashierDeviceLocation(client, {
-      merchantId,
-      deviceId: bundle.deviceId,
+      stationId: historicalAuthority.stationId,
       ...(requestedLocationId ? { requestedLocationId } : {}),
     });
     const existing = await loadExistingOrder(client, merchantId, bundle.sale.sale_id);
