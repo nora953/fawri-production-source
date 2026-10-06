@@ -387,46 +387,61 @@ export async function assignCashierStationSeatAuthoritative(input: {
   );
 }
 
+export async function assertCashierStationLicensedInTransaction(input: {
+  target: OperationalQueryTarget;
+  merchantId: string;
+  stationId: string;
+  allowGrace?: boolean;
+}): Promise<CashierEntitlementSnapshot> {
+  const snapshot = evaluateCashierEntitlement(
+    await subscriptionRow(input.target, input.merchantId),
+    new Date(),
+  );
+  assertCashierEntitlementState(
+    snapshot,
+    input.allowGrace === false ? ["active"] : ["active", "grace"],
+    "CASHIER_STATION_ENTITLEMENT_REQUIRED",
+  );
+  const rows = await operationalQueryRows<{ status: string; release_effective_at: DbInstant | null }>(
+    input.target,
+    `SELECT status, release_effective_at
+       FROM cashier_station_seat_assignments
+      WHERE merchant_id = $1
+        AND subscription_id = $2
+        AND station_id = $3
+      LIMIT 1`,
+    [input.merchantId, snapshot.subscription_id, input.stationId],
+  );
+  const assignment = rows[0];
+  const releaseAt = assignment ? instant(assignment.release_effective_at) : null;
+  const licensed =
+    assignment?.status === "active" ||
+    (assignment?.status === "release_scheduled" &&
+      releaseAt !== null &&
+      releaseAt.getTime() > Date.now());
+  if (!licensed) {
+    throw new CashierEntitlementError(
+      "CASHIER_STATION_LICENSE_REQUIRED",
+      "cashier station does not have an assigned licensed seat",
+      403,
+    );
+  }
+  return snapshot;
+}
+
 export async function assertCashierStationLicensedAuthoritative(input: {
   merchantId: string;
   stationId: string;
   allowGrace?: boolean;
 }): Promise<CashierEntitlementSnapshot> {
   assertAuthority();
-  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
-    const snapshot = evaluateCashierEntitlement(
-      await subscriptionRow(client, input.merchantId),
-      new Date(),
-    );
-    assertCashierEntitlementState(
-      snapshot,
-      input.allowGrace === false ? ["active"] : ["active", "grace"],
-      "CASHIER_STATION_ENTITLEMENT_REQUIRED",
-    );
-    const rows = await operationalQueryRows<{ status: string; release_effective_at: DbInstant | null }>(
-      client,
-      `SELECT status, release_effective_at
-         FROM cashier_station_seat_assignments
-        WHERE merchant_id = $1
-          AND subscription_id = $2
-          AND station_id = $3
-        LIMIT 1`,
-      [input.merchantId, snapshot.subscription_id, input.stationId],
-    );
-    const assignment = rows[0];
-    const releaseAt = assignment ? instant(assignment.release_effective_at) : null;
-    const licensed =
-      assignment?.status === "active" ||
-      (assignment?.status === "release_scheduled" &&
-        releaseAt !== null &&
-        releaseAt.getTime() > Date.now());
-    if (!licensed) {
-      throw new CashierEntitlementError(
-        "CASHIER_STATION_LICENSE_REQUIRED",
-        "cashier station does not have an assigned licensed seat",
-        403,
-      );
-    }
-    return snapshot;
-  });
+  return withMerchantOperationalTransaction(input.merchantId, async (client) =>
+    assertCashierStationLicensedInTransaction({
+      target: client,
+      merchantId: input.merchantId,
+      stationId: input.stationId,
+      allowGrace: input.allowGrace,
+    }),
+  );
 }
+
