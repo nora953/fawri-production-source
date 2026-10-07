@@ -9,7 +9,7 @@ import {
   issueMerchantOtpChallengeAuthoritative,
   revokeMerchantOtpChallengeAuthoritative,
 } from "../services/postgresMerchantAuthSecurityAuthority";
-import { deliverAuthOtp } from "../services/authOtpDelivery";
+import { deliverAuthOtp, stagingOtpBypassAllowed } from "../services/authOtpDelivery";
 import { getAuthContext, requestIp, sendAuthError } from "../middleware/authSession";
 
 function legacySafeProfile(account: AuthAccount) {
@@ -86,10 +86,10 @@ export function genericRecovery() {
 }
 
 export function devCode(code: string) {
-  return process.env.NODE_ENV !== "production" &&
-    process.env.AUTH_INCLUDE_DEV_CODE === "true"
-    ? { devCode: code }
-    : {};
+  const previewCodeAllowed =
+    process.env.AUTH_INCLUDE_DEV_CODE === "true" &&
+    (process.env.NODE_ENV !== "production" || stagingOtpBypassAllowed());
+  return previewCodeAllowed ? { devCode: code } : {};
 }
 
 export async function issueOtp(req: Request, target: string, purpose: OtpPurpose) {
