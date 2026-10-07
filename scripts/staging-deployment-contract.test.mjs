@@ -28,6 +28,8 @@ test('staging environment template keeps PostgreSQL authority required and exter
   assert.equal(values.get('FAWRI_OPERATIONAL_POSTGRES_AUTHORITY'), 'required');
   assert.equal(values.get('FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY'), 'required');
   assert.equal(values.get('FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY'), 'required');
+  assert.equal(values.get('FAWRI_STAGING_OTP_BYPASS'), '1');
+  assert.equal(values.get('AUTH_INCLUDE_DEV_CODE'), 'true');
   assert.match(values.get('FAWRI_AUTH_SECURITY_SECRET') || '', /at-least-32-characters/);
   assert.match(values.get('FAWRI_PASSWORD_SALT') || '', /at-least-32-characters/);
   assert.notEqual(values.get('FAWRI_PASSWORD_SALT'), values.get('FAWRI_AUTH_SECURITY_SECRET'));
