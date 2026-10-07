@@ -81,6 +81,8 @@ Do not provide real Meta, OpenAI, billing, or production KMS credentials to this
 
 When the hosting provider's generated login role has broader attributes than the application is allowed to use, connect through a restricted effective role and set `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE` to that role. Readiness then fails closed if the effective `current_user` drifts away from the restricted role.
 
+For Neon staging specifically, a generated login role may carry provider-managed attributes that cannot be altered directly. In that case, use a separate `NOLOGIN NOBYPASSRLS` application role, grant only the required schema/table/sequence/function privileges to it, grant that role to the Neon login role with `SET`, and connect through the **direct/unpooled** Neon endpoint with the startup option `role=<restricted-role>`. Neon pooled endpoints reject the `role` startup option. Keep `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE` set to the restricted role so `/ops/readiness` proves the effective role rather than merely proving that PostgreSQL is reachable.
+
 For manual QA only, `FAWRI_STAGING_OTP_BYPASS=1` may be enabled together with `AUTH_INCLUDE_DEV_CODE=true`. The runtime accepts this bypass only when `NODE_ENV=production`, `FAWRI_DEPLOYMENT_MODE=staging`, and the production release gate is not required. It allows the owner new-device OTP to be returned to the staging login UI without configuring a real WhatsApp/Meta sender. Production deployment mode never accepts this bypass.
 
 `FAWRI_PASSWORD_SALT` must be independent from `FAWRI_AUTH_SECURITY_SECRET`. It is part of password hashing/verification and must not reuse the Auth v2 session secret.
