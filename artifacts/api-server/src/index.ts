@@ -53,7 +53,59 @@ async function main(): Promise<void> {
       }
 
       await loadStartupModule(
-        "STARTUP_ROUTE_INDEX_PART1_LOAD_FAILED",
+        "STARTUP_PART1_HEALTH_ROUTE_LOAD_FAILED",
+        () => import("./routes/health"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_BOT_TRAINING_ROUTE_LOAD_FAILED",
+        () => import("./routes/bot-training"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_DELIVERY_PRICING_LOAD_FAILED",
+        () => import("./services/deliveryPricing"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_MERCHANT_SETTINGS_RUNTIME_LOAD_FAILED",
+        () => import("./services/merchantSettingsRuntime"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_MERCHANT_RUNTIME_LOAD_FAILED",
+        () => import("./services/merchantRuntime"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_META_CHANNEL_RUNTIME_LOAD_FAILED",
+        () => import("./services/metaChannelRuntime"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_POSTGRES_META_CHANNEL_LOAD_FAILED",
+        () => import("./services/postgresMetaChannelAuthority"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_MERCHANT_OPERATIONAL_ACCESS_LOAD_FAILED",
+        () => import("./services/merchantOperationalAccess"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_OPERATIONAL_POSTGRES_LOAD_FAILED",
+        () => import("./services/operationalPostgresAuthority"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_BOT_CATALOG_AUTHORITY_LOAD_FAILED",
+        () => import("./services/botCatalogAuthority"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_AUTH_ROUTE_LOAD_FAILED",
+        () => import("./routes/auth"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_SAVED_ANSWERS_ROUTE_LOAD_FAILED",
+        () => import("./routes/saved-answers"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_META_WEBHOOK_SECURITY_LOAD_FAILED",
+        () => import("./middleware/metaWebhookSecurity"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_INDEX_PART1_ASSEMBLY_LOAD_FAILED",
         () => import("./routes/indexModulePart1"),
       );
       await loadStartupModule(
