@@ -31,10 +31,9 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
     timeoutMs: 2_000,
     async check() {
       const { pool } = await import("@workspace/db");
-      const result = await pool.query<{ role_name: string }>(
-        "select current_user as role_name",
-      );
-      assertExpectedPostgresRuntimeRole(String(result.rows[0]?.role_name || ""));
+      const result = await pool.query("select current_user as role_name");
+      const row = result.rows[0] as { role_name?: unknown } | undefined;
+      assertExpectedPostgresRuntimeRole(String(row?.role_name || ""));
     },
   };
 }
