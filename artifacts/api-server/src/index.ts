@@ -52,8 +52,73 @@ async function main(): Promise<void> {
         }
       }
 
+      await loadStartupModule(
+        "STARTUP_ROUTES_GROUP_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./routes"),
+            import("./routes/auth-security"),
+            import("./routes/channel-operations"),
+            import("./routes/channel-durable-job-admin"),
+            import("./routes/catalog-operations"),
+            import("./routes/knowledge-operations"),
+            import("./routes/conversation-operations"),
+            import("./routes/order-operations"),
+            import("./routes/reports-operations"),
+            import("./routes/cashier-staff-operations"),
+            import("./routes/cashier-discount-policy-operations"),
+            import("./routes/cashier-operator-commerce"),
+            import("./routes/cashier-sync-operations"),
+            import("./routes/cashier-subscription-operations"),
+            import("./routes/merchant-settings"),
+            import("./routes/merchant-regional"),
+            import("./routes/retention-guard"),
+            import("./routes/support-preview"),
+            import("./routes/support-images"),
+            import("./routes/emergency-owner-snapshot"),
+            import("./routes/emergency-read-access"),
+            import("./routes/emergency-read-directory"),
+            import("./routes/emergency-merchant-notices"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_OBSERVABILITY_GROUP_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./observability/router"),
+            import("./observability/requestTelemetry"),
+            import("./observability/runtime"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_MIDDLEWARE_GROUP_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./middleware/authCutoverCompatibility"),
+            import("./middleware/legacyProductionFallbackGuard"),
+            import("./middleware/authSession"),
+            import("./middleware/merchantRetentionAccess"),
+            import("./middleware/merchantOperationalAccess"),
+            import("./middleware/merchantWebhookAccess"),
+            import("./middleware/manualConversationWebhookAccess"),
+            import("./middleware/merchantWebhookSubscriptionAccess"),
+            import("./middleware/metaWebhookQueueIngress"),
+            import("./middleware/metaWebhookPath"),
+            import("./middleware/metaWebhookSecurity"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_APP_SERVICES_GROUP_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./services/authPolicy"),
+            import("./services/merchantRetentionPolicy"),
+            import("./services/productionReleaseReadiness"),
+            import("./services/manualConversationDeletion"),
+          ]),
+      );
       const { default: app } = await loadStartupModule(
-        "STARTUP_APP_MODULE_LOAD_FAILED",
+        "STARTUP_APP_ASSEMBLY_LOAD_FAILED",
         () => import("./app"),
       );
       const { startMetaWebhookWorker } = await loadStartupModule(
