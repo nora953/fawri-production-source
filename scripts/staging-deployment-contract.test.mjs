@@ -83,6 +83,9 @@ test('staging documentation preserves same-origin manual-QA boundary', async () 
   assert.match(contract, /FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required/);
   assert.match(contract, /FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required/);
   assert.match(contract, /FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required/);
+  assert.match(contract, /FAWRI_STAGING_OTP_BYPASS=1/);
+  assert.match(contract, /AUTH_INCLUDE_DEV_CODE=true/);
+  assert.match(contract, /Production deployment mode never accepts this bypass/);
   assert.match(contract, /FAWRI_PASSWORD_SALT=<independent strong staging password salt, at least 32 characters>/);
   assert.match(contract, /must be independent from `FAWRI_AUTH_SECURITY_SECRET`/);
   assert.match(contract, /drizzle\.__drizzle_migrations/);
