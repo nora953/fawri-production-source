@@ -191,7 +191,7 @@ router.post("/signup", async (req, res) => {
       challenge_id: issued.challengeId,
       expires_at: issued.expiresAt,
       retry_after_seconds: issued.retryAfterSeconds,
-      ...devCode(issued.code),
+      ...devCode(issued.code, "signup"),
     });
   } catch (error) {
     if (error instanceof Error && error.message === "PHONE_ALREADY_EXISTS") {
@@ -234,7 +234,7 @@ router.post("/otp/resend", async (req, res) => {
       challenge_id: issued.challengeId,
       expires_at: issued.expiresAt,
       retry_after_seconds: issued.retryAfterSeconds,
-      ...devCode(issued.code),
+      ...devCode(issued.code, purpose),
     });
   } catch (error) {
     otpError(res, error, purpose === "password_reset");
@@ -347,7 +347,7 @@ router.post("/admin/device-otp/resend", async (req, res) => {
       challenge_id: issued.challengeId,
       expires_at: issued.expiresAt,
       retry_after_seconds: issued.retryAfterSeconds,
-      ...devCode(issued.code),
+      ...devCode(issued.code, "admin_device_verification"),
     });
   } catch (error) {
     otpError(res, error);
@@ -474,7 +474,7 @@ router.post("/password-reset/request", async (req, res) => {
       challenge_id: issued.challengeId,
       expires_at: issued.expiresAt,
       retry_after_seconds: issued.retryAfterSeconds,
-      ...devCode(issued.code),
+      ...devCode(issued.code, "password_reset"),
     });
   } catch (error) {
     otpError(res, error, true);
