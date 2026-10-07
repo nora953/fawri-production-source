@@ -13,38 +13,41 @@ This file separates repository-owned blockers from external launch blockers. A b
 
 ## Current repository checkpoint
 
-- Current integrated main SHA: `5f402a332ef6b9d145aeec326f7800a4e8147ffb`
-- Repository-hardening final branch head: `01dac67d58f46051910da6b9114bfc70d384f193`
+- Current frozen Fawri Core main SHA: `85cf9dceab0493d8475e1023a3efc42943db453a`
+- Final Core freeze PR: #464
+- Final Core freeze PR head: `e27e62f6d98d08ef25449d778a16fab96628190e`
+- Core freeze audit: `docs/fawri-core-freeze-audit-2026-10-07.md`
+- Core freeze severity: BLOCKER 0 / HIGH 0 / MEDIUM 0
+- Final freeze PR head passed all eight required branch-protection checks before squash merge.
 - Original validated release-candidate tree: `92290d3f97e3ece81525a0b92d668d129e9df5ed`
-- Latest repository-hardening checkpoint: `checkpoint/repository-hardening-complete-2026-09-24`
-- Earlier full-integration safety checkpoint: `checkpoint/main-integrated-green-2026-09-20`
-- Documentation-sync checkpoint: `checkpoint/main-release-docs-synced-2026-09-20`
-- Final repository-hardening PR: #281
-- Earlier full integration PR: #256
-- Original release-candidate CI result: 38/38 PASS, 0 FAIL
-- PR #281 subsequently reorganized translation authority and split the critical cashier-compensation validation module without intentional behavior changes; its final head passed the repository audits, focused typechecks/contracts, and all 13 GitHub Actions workflows.
+- Repository-hardening checkpoint remains preserved at `checkpoint/repository-hardening-complete-2026-09-24`.
 
-## Open code/release blockers
+## Open repository-owned blockers
 
-### UI/UX final polish and manual browser QA
+None at the frozen Fawri Core checkpoint.
 
-Severity: MEDIUM
+The final Core audit closed the repository-owned architecture, database/RLS, merchant and cashier journey, authentication/security, localization/translation, UX/accessibility, performance, failure/recovery, observability, privacy, production-configuration, external-boundary, clean-deployment, rollback-policy, and final-regression phases.
+
+Full-stack staging browser smoke validation and controlled production smoke validation remain launch/deployment evidence below; they are not unresolved Core defects.
+
+## External production blockers
+
+### Full-stack staging and manual browser validation
+
+Severity: EXTERNAL / MEDIUM
 
 Status: OPEN
 
-Repository CI proves the integrated code and authority contracts, but final manual release QA still must cover:
+The frozen Core has repository-level UX/accessibility and performance regression evidence. Before public launch, the deployed staging stack must still be validated in real browsers against the selected hosting/runtime configuration, including:
 
 - desktop/tablet/mobile responsive behavior,
-- Arabic/Kurdish/English visual parity,
-- RTL/LTR presentation,
-- forms, overflow, loading, empty and error states,
-- accessibility/keyboard behavior,
-- final performance and large-bundle review,
-- full-stack staging browser smoke validation.
+- Arabic/Sorani Kurdish/English visual parity and RTL/LTR presentation,
+- forms plus loading/empty/error states,
+- keyboard/focus behavior in the deployed build,
+- production-like network/runtime behavior and final performance review,
+- end-to-end browser smoke flows against the staging API/database.
 
-Existing build sourcemap/chunk advisories remain non-fatal unless final performance review shows a user-facing issue.
-
-## External production blockers
+A staging-only defect discovered here reopens Core only if it proves a genuine source-code regression.
 
 ### Production PostgreSQL deployment
 
@@ -169,7 +172,7 @@ Severity: EXTERNAL / CRITICAL
 
 Status: OPEN
 
-The production deployment environment still must provide all required secrets and explicitly enable the release gate only after provider readiness is proven.
+The production deployment environment still must provide all required secrets and start in explicit production deployment mode only after the relevant provider readiness is proven. Production startup is fail-closed; the legacy release-gate marker may remain for compatibility but is not the safety authority.
 
 Required launch-time evidence includes:
 
@@ -180,8 +183,9 @@ Required launch-time evidence includes:
 - Meta/KMS/OpenAI configuration,
 - job worker policy,
 - `FAWRI_SERVICE_VERSION`,
-- `FAWRI_PRODUCTION_RELEASE_GATE=required`,
-- successful `/ops/readiness` before routing customer traffic.
+- `NODE_ENV=production` and `FAWRI_DEPLOYMENT_MODE=production`,
+- provider-neutral Core authorities and workers configured as required,
+- successful production startup and `/ops/readiness` before routing customer traffic.
 
 ## Closed repository-owned blockers
 
@@ -285,6 +289,6 @@ It must not be described as **production launch ready** until:
 4. production provider/secrets readiness is proven,
 5. production backup/restore proof exists,
 6. durable support-image storage proof exists,
-7. `FAWRI_PRODUCTION_RELEASE_GATE=required` starts successfully,
+7. explicit production mode starts successfully with fail-closed readiness checks,
 8. `/ops/readiness` is ready before traffic,
 9. controlled production smoke tests and queue/DLQ/alert observation pass.
