@@ -53,6 +53,7 @@ jobs:
           'test -f /app/artifacts/api-server/dist/index.mjs &&
           test -d /app/artifacts/fawri/dist/public &&
           test "$PORT" = "8080" &&
+          test "$FAWRI_DEPLOYMENT_MODE" = "staging" &&
           test "$FAWRI_WEB_DIST_DIR" = "/app/artifacts/fawri/dist/public" &&
           test "$FAWRI_DISABLE_JOB_WORKERS" = "1" &&
           test "$FAWRI_META_CUTOVER_READY" = "0" &&
