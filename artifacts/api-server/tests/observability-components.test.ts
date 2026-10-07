@@ -7,6 +7,7 @@ import { createHealthSnapshot } from "../src/observability/health";
 import { FAWRI_METRICS, MetricsRegistry } from "../src/observability/metrics";
 import { createReadinessSnapshot } from "../src/observability/readiness";
 import { createObservabilityRouter } from "../src/observability/router";
+import { assertExpectedPostgresRuntimeRole } from "../src/observability/runtime";
 
 const fixedNow = () => new Date("2026-08-08T00:00:00.000Z");
 
@@ -86,6 +87,24 @@ test("readiness invalid or duplicate names fail closed without echoing them", as
   );
   assert.equal(snapshot.status, "not_ready");
   assert.equal(snapshot.checks[0]?.name, "readiness_configuration");
+});
+
+test("expected PostgreSQL runtime role check is opt-in and fail-closed", () => {
+  assert.doesNotThrow(() =>
+    assertExpectedPostgresRuntimeRole("fawri_runtime", {}),
+  );
+  assert.doesNotThrow(() =>
+    assertExpectedPostgresRuntimeRole("fawri_runtime", {
+      FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_runtime",
+    }),
+  );
+  assert.throws(
+    () =>
+      assertExpectedPostgresRuntimeRole("unexpected_role", {
+        FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_runtime",
+      }),
+    /POSTGRES_RUNTIME_ROLE_MISMATCH/,
+  );
 });
 
 test("readiness timeouts fail closed", async () => {
