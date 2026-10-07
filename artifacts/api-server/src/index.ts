@@ -137,13 +137,16 @@ async function main(): Promise<void> {
         () => import("./services/postgresSupportRuntimeCutover"),
       );
       await loadStartupModule(
-        "STARTUP_AUTH_SECURITY_MIDDLEWARE_LOAD_FAILED",
-        () =>
-          Promise.all([
-            import("./middleware/authSession"),
-            import("./middleware/ownerRecoveryReauth"),
-            import("./services/adminAuthPostgresCutover"),
-          ]),
+        "STARTUP_AUTH_SESSION_MIDDLEWARE_LOAD_FAILED",
+        () => import("./middleware/authSession"),
+      );
+      await loadStartupModule(
+        "STARTUP_OWNER_RECOVERY_REAUTH_LOAD_FAILED",
+        () => import("./middleware/ownerRecoveryReauth"),
+      );
+      await loadStartupModule(
+        "STARTUP_ADMIN_AUTH_POSTGRES_CUTOVER_LOAD_FAILED",
+        () => import("./services/adminAuthPostgresCutover"),
       );
       await loadStartupModule(
         "STARTUP_AUTH_SECURITY_CORE_ROUTES_LOAD_FAILED",
