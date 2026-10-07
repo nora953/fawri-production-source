@@ -63,6 +63,7 @@ FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required
 FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required
 FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required
 FAWRI_AUTH_SECURITY_SECRET=<strong staging secret, at least 32 characters>
+FAWRI_PASSWORD_SALT=<independent strong staging password salt, at least 32 characters>
 FAWRI_ALLOWED_ORIGINS=<exact staging HTTPS origin>
 FAWRI_DISABLE_JOB_WORKERS=1
 FAWRI_META_CUTOVER_READY=0
@@ -74,6 +75,8 @@ FAWRI_SERVICE_VERSION=<safe staging version>
 Set `FAWRI_DEPLOYMENT_MODE=staging` explicitly. Do **not** rely on omitting a production safety variable: `NODE_ENV=production` is used for the built application, while the explicit staging deployment mode is what prevents production-only provider requirements from activating. Do **not** set `FAWRI_PRODUCTION_RELEASE_GATE=required` in this QA staging environment.
 
 Do not provide real Meta, OpenAI, billing, or production KMS credentials to this staging contract.
+
+`FAWRI_PASSWORD_SALT` must be independent from `FAWRI_AUTH_SECURITY_SECRET`. It is part of password hashing/verification and must not reuse the Auth v2 session secret.
 
 ## Owner administrator bootstrap
 
@@ -96,6 +99,8 @@ The staging database must be created before application startup and must receive
 The existing migration/cutover runbook explicitly does not authorize a real production legacy-data cutover. Therefore this staging contract must not reinterpret the protected production migration writer as a general-purpose production migration command.
 
 For staging bootstrap, use only the committed schema/migration tooling that is explicitly safe for the target environment and verify the resulting schema before inserting the owner account.
+
+The Drizzle migration ledger must also match the committed journal before staging is considered prepared. `drizzle.__drizzle_migrations` must contain one exact `(hash, created_at)` row for every committed journal entry; do not mark migrations applied with wall-clock timestamps or omit the ledger after manual SQL bootstrap.
 
 ## Disabled external surfaces
 
