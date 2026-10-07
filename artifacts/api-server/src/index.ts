@@ -53,7 +53,7 @@ async function main(): Promise<void> {
       }
 
       await loadStartupModule(
-        "STARTUP_ROUTES_GROUP_LOAD_FAILED",
+        "STARTUP_ROUTES_CORE_GROUP_LOAD_FAILED",
         () =>
           Promise.all([
             import("./routes"),
@@ -62,18 +62,36 @@ async function main(): Promise<void> {
             import("./routes/channel-durable-job-admin"),
             import("./routes/catalog-operations"),
             import("./routes/knowledge-operations"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTES_COMMERCE_GROUP_LOAD_FAILED",
+        () =>
+          Promise.all([
             import("./routes/conversation-operations"),
             import("./routes/order-operations"),
             import("./routes/reports-operations"),
             import("./routes/cashier-staff-operations"),
             import("./routes/cashier-discount-policy-operations"),
             import("./routes/cashier-operator-commerce"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTES_CASHIER_MERCHANT_GROUP_LOAD_FAILED",
+        () =>
+          Promise.all([
             import("./routes/cashier-sync-operations"),
             import("./routes/cashier-subscription-operations"),
             import("./routes/merchant-settings"),
             import("./routes/merchant-regional"),
             import("./routes/retention-guard"),
             import("./routes/support-preview"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTES_SUPPORT_EMERGENCY_GROUP_LOAD_FAILED",
+        () =>
+          Promise.all([
             import("./routes/support-images"),
             import("./routes/emergency-owner-snapshot"),
             import("./routes/emergency-read-access"),
