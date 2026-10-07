@@ -183,7 +183,8 @@ function formatDate(value: string, language: SupportedLanguage): string {
 
   return new Intl.DateTimeFormat(locale, {
     year: "numeric",
-    month: "short",
+    // Some browsers fall back to English month names for ckb-IQ.
+    month: language === "ku" ? "numeric" : "short",
     day: "numeric",
   }).format(date);
 }
