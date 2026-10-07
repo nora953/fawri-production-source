@@ -14,13 +14,27 @@ export function observabilityVersion(): string {
   return configured && SAFE_VERSION.test(configured) ? configured : "unknown";
 }
 
+export function assertExpectedPostgresRuntimeRole(
+  actualRole: string,
+  env: NodeJS.ProcessEnv = process.env,
+): void {
+  const expected = String(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim();
+  if (!expected) return;
+  if (actualRole.trim() !== expected) {
+    throw new Error("POSTGRES_RUNTIME_ROLE_MISMATCH");
+  }
+}
+
 export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
   return {
     name: "postgresql_authority",
     timeoutMs: 2_000,
     async check() {
       const { pool } = await import("@workspace/db");
-      await pool.query("select 1");
+      const result = await pool.query<{ role_name: string }>(
+        "select current_user as role_name",
+      );
+      assertExpectedPostgresRuntimeRole(String(result.rows[0]?.role_name || ""));
     },
   };
 }
