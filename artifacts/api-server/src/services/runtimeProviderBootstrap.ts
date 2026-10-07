@@ -154,7 +154,7 @@ function readKnowledgeEmbeddingProviderSelection(
   env: NodeJS.ProcessEnv,
 ): KnowledgeEmbeddingProviderSelection {
   const selected = text(env.FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER).toLowerCase();
-  if (!selected) return "disabled";
+  if (!selected || selected === "disabled") return "disabled";
   if (selected === "openai") return "openai";
   throw fail(
     "KNOWLEDGE_VECTOR_PROVIDER_CONFIG_INVALID",
