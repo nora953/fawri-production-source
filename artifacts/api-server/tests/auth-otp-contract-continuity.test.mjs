@@ -21,10 +21,11 @@ test("server preview-code guards stay fail-closed outside development or explici
   const legacy = await source("src/routes/authRuntimePart2.ts");
 
   assert.match(common, /AUTH_INCLUDE_DEV_CODE === "true"/);
-  assert.match(common, /stagingOtpBypassAllowed\(\)/);
+  assert.match(common, /stagingOtpBypassAllowed/);
 
   assert.match(delivery, /process\.env\.NODE_ENV === "production"/);
   assert.match(delivery, /process\.env\.FAWRI_DEPLOYMENT_MODE === "staging"/);
+  assert.match(delivery, /purpose === "admin_device_verification"/);
   assert.match(delivery, /process\.env\.FAWRI_STAGING_OTP_BYPASS === "1"/);
   assert.match(delivery, /!productionReleaseGateRequired\(\)/);
 
@@ -43,7 +44,7 @@ test("server preview-code guards stay fail-closed outside development or explici
     const endpointStart = routes.indexOf(`router.post("${endpoint}"`);
     assert.ok(endpointStart >= 0);
     const next = routes.indexOf("router.post(", endpointStart + 1);
-    assert.match(routes.slice(endpointStart, next < 0 ? undefined : next), /\.\.\.devCode\(issued\.code\)/);
+    assert.match(routes.slice(endpointStart, next < 0 ? undefined : next), /\.\.\.devCode\(issued\.code,/);
   }
 });
 
@@ -139,7 +140,7 @@ test("preview runtime remains singleton and login UI accepts guarded preview OTP
   const delivery = await source("src/services/authOtpDelivery.ts");
   const common = await source("src/routes/auth-route-common.ts");
   assert.match(delivery, /FAWRI_STAGING_OTP_BYPASS/);
-  assert.match(common, /stagingOtpBypassAllowed\(\)/);
+  assert.match(common, /stagingOtpBypassAllowed/);
 
   assert.match(loginPage, /OTP_DELIVERY_NOT_CONFIGURED/);
   assert.match(loginPage, /OTP_DELIVERY_FAILED/);
