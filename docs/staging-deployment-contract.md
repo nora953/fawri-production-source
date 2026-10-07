@@ -65,6 +65,8 @@ FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required
 FAWRI_AUTH_SECURITY_SECRET=<strong staging secret, at least 32 characters>
 FAWRI_PASSWORD_SALT=<independent strong staging password salt, at least 32 characters>
 FAWRI_ALLOWED_ORIGINS=<exact staging HTTPS origin>
+FAWRI_STAGING_OTP_BYPASS=1
+AUTH_INCLUDE_DEV_CODE=true
 FAWRI_DISABLE_JOB_WORKERS=1
 FAWRI_META_CUTOVER_READY=0
 FAWRI_META_REPLY_TRANSPORT=disabled
@@ -75,6 +77,8 @@ FAWRI_SERVICE_VERSION=<safe staging version>
 Set `FAWRI_DEPLOYMENT_MODE=staging` explicitly. Do **not** rely on omitting a production safety variable: `NODE_ENV=production` is used for the built application, while the explicit staging deployment mode is what prevents production-only provider requirements from activating. Do **not** set `FAWRI_PRODUCTION_RELEASE_GATE=required` in this QA staging environment.
 
 Do not provide real Meta, OpenAI, billing, or production KMS credentials to this staging contract.
+
+For manual QA only, `FAWRI_STAGING_OTP_BYPASS=1` may be enabled together with `AUTH_INCLUDE_DEV_CODE=true`. The runtime accepts this bypass only when `NODE_ENV=production`, `FAWRI_DEPLOYMENT_MODE=staging`, and the production release gate is not required. It allows the owner new-device OTP to be returned to the staging login UI without configuring a real WhatsApp/Meta sender. Production deployment mode never accepts this bypass.
 
 `FAWRI_PASSWORD_SALT` must be independent from `FAWRI_AUTH_SECURITY_SECRET`. It is part of password hashing/verification and must not reuse the Auth v2 session secret.
 
