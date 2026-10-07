@@ -53,16 +53,28 @@ async function main(): Promise<void> {
       }
 
       await loadStartupModule(
-        "STARTUP_ROUTES_CORE_GROUP_LOAD_FAILED",
-        () =>
-          Promise.all([
-            import("./routes"),
-            import("./routes/auth-security"),
-            import("./routes/channel-operations"),
-            import("./routes/channel-durable-job-admin"),
-            import("./routes/catalog-operations"),
-            import("./routes/knowledge-operations"),
-          ]),
+        "STARTUP_ROUTE_INDEX_LOAD_FAILED",
+        () => import("./routes"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_AUTH_SECURITY_LOAD_FAILED",
+        () => import("./routes/auth-security"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_CHANNEL_OPERATIONS_LOAD_FAILED",
+        () => import("./routes/channel-operations"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_CHANNEL_DURABLE_ADMIN_LOAD_FAILED",
+        () => import("./routes/channel-durable-job-admin"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_CATALOG_OPERATIONS_LOAD_FAILED",
+        () => import("./routes/catalog-operations"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_KNOWLEDGE_OPERATIONS_LOAD_FAILED",
+        () => import("./routes/knowledge-operations"),
       );
       await loadStartupModule(
         "STARTUP_ROUTES_COMMERCE_GROUP_LOAD_FAILED",
