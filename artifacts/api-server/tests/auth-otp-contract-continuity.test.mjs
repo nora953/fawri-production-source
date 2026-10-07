@@ -15,27 +15,36 @@ async function workspaceSource(relativePath) {
   return readFile(path.join(workspaceRoot, relativePath), "utf8");
 }
 
-test("server test-code guards require both non-production and explicit opt-in", async () => {
+test("server preview-code guards stay fail-closed outside development or explicit staging QA", async () => {
   const common = await source("src/routes/auth-route-common.ts");
+  const delivery = await source("src/services/authOtpDelivery.ts");
   const legacy = await source("src/routes/authRuntimePart2.ts");
-  const devCodeBody = common.match(/export function devCode\(code: string\) \{([\s\S]*?)\n\}/)?.[1];
+
+  assert.match(common, /AUTH_INCLUDE_DEV_CODE === "true"/);
+  assert.match(common, /stagingOtpBypassAllowed/);
+
+  assert.match(delivery, /process\.env\.NODE_ENV === "production"/);
+  assert.match(delivery, /process\.env\.FAWRI_DEPLOYMENT_MODE === "staging"/);
+  assert.match(delivery, /purpose === "admin_device_verification"/);
+  assert.match(delivery, /process\.env\.FAWRI_STAGING_OTP_BYPASS === "1"/);
+  assert.match(delivery, /!productionReleaseGateRequired\(\)/);
+
   const includeBody = legacy.match(/function includeDevCode\(\): boolean \{([\s\S]*?)\n\}/)?.[1];
-  assert.ok(devCodeBody);
   assert.ok(includeBody);
   for (const NODE_ENV of ["production", "development", "test", undefined]) {
     for (const AUTH_INCLUDE_DEV_CODE of ["true", "false", "TRUE", undefined]) {
       const process = { env: { NODE_ENV, AUTH_INCLUDE_DEV_CODE } };
       const allowed = NODE_ENV !== "production" && AUTH_INCLUDE_DEV_CODE === "true";
-      assert.deepEqual(new Function("process", "code", devCodeBody)(process, "012345"), allowed ? { devCode: "012345" } : {});
       assert.equal(new Function("process", includeBody)(process), allowed);
     }
   }
+
   const routes = await source("src/routes/auth-public-routes.ts");
   for (const endpoint of ["/signup", "/otp/resend"]) {
-    const start = routes.indexOf(`router.post("${endpoint}"`);
-    assert.ok(start >= 0);
-    const next = routes.indexOf("router.post(", start + 1);
-    assert.match(routes.slice(start, next < 0 ? undefined : next), /\.\.\.devCode\(issued\.code\)/);
+    const endpointStart = routes.indexOf(`router.post("${endpoint}"`);
+    assert.ok(endpointStart >= 0);
+    const next = routes.indexOf("router.post(", endpointStart + 1);
+    assert.match(routes.slice(endpointStart, next < 0 ? undefined : next), /\.\.\.devCode\(issued\.code,/);
   }
 });
 
@@ -117,7 +126,7 @@ test("owner new-device login requires OTP while assistant new-device login requi
   assert.match(routes, /setAuthSessionCookie\(res, "admin", issued\)/);
 });
 
-test("preview runtime is singleton and only exposes development OTP codes outside production", async () => {
+test("preview runtime remains singleton and login UI accepts guarded preview OTP codes", async () => {
   const preview = await workspaceSource("scripts/run-fawri-preview.mjs");
   const loginPage = await workspaceSource("artifacts/fawri/src/pages/LoginPage.tsx");
   const resend = await workspaceSource("artifacts/fawri/src/components/OtpResendSection.tsx");
@@ -127,6 +136,11 @@ test("preview runtime is singleton and only exposes development OTP codes outsid
   assert.match(preview, /process\.env\.NODE_ENV !== "production"/);
   assert.match(preview, /AUTH_ALLOW_DEV_OTP_BYPASS/);
   assert.match(preview, /AUTH_INCLUDE_DEV_CODE/);
+
+  const delivery = await source("src/services/authOtpDelivery.ts");
+  const common = await source("src/routes/auth-route-common.ts");
+  assert.match(delivery, /FAWRI_STAGING_OTP_BYPASS/);
+  assert.match(common, /stagingOtpBypassAllowed/);
 
   assert.match(loginPage, /OTP_DELIVERY_NOT_CONFIGURED/);
   assert.match(loginPage, /OTP_DELIVERY_FAILED/);

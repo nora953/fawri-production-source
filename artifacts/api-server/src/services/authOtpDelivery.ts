@@ -16,6 +16,17 @@ function developmentDeliveryAllowed(): boolean {
   );
 }
 
+export function stagingOtpBypassAllowed(purpose?: OtpPurpose): boolean {
+  return (
+    purpose === "admin_device_verification" &&
+    process.env.NODE_ENV === "production" &&
+    process.env.FAWRI_DEPLOYMENT_MODE === "staging" &&
+    process.env.FAWRI_STAGING_OTP_BYPASS === "1" &&
+    process.env.FAWRI_PRODUCTION_RELEASE_GATE !== "required" &&
+    !productionReleaseGateRequired()
+  );
+}
+
 function normalizeRecipient(phone: string): string {
   const configuredTestNumber = developmentDeliveryAllowed()
     ? String(process.env.WHATSAPP_TEST_TO || "").replace(/\D/g, "")
@@ -42,8 +53,9 @@ export async function deliverAuthOtp(
   purpose: OtpPurpose,
 ): Promise<OtpDeliveryResult> {
   if (
-    developmentDeliveryAllowed() &&
-    process.env.AUTH_ALLOW_DEV_OTP_BYPASS === "true"
+    (developmentDeliveryAllowed() &&
+      process.env.AUTH_ALLOW_DEV_OTP_BYPASS === "true") ||
+    stagingOtpBypassAllowed(purpose)
   ) {
     return { ok: true };
   }

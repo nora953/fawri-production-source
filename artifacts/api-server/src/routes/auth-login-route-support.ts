@@ -155,7 +155,7 @@ export async function login(
             challenge_id: issued.challengeId,
             expires_at: issued.expiresAt,
             retry_after_seconds: issued.retryAfterSeconds,
-            ...devCode(issued.code),
+            ...devCode(issued.code, "admin_device_verification"),
           });
         } catch (error) {
           otpError(res, error);

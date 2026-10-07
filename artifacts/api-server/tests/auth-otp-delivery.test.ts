@@ -8,6 +8,8 @@ function configure(t: TestContext, overrides: NodeJS.ProcessEnv = {}) {
     NODE_ENV: "production",
     FAWRI_DEPLOYMENT_MODE: undefined,
     AUTH_ALLOW_DEV_OTP_BYPASS: "true",
+    FAWRI_STAGING_OTP_BYPASS: undefined,
+    FAWRI_PRODUCTION_RELEASE_GATE: undefined,
     OTP_DELIVERY_CHANNEL: "whatsapp",
     WHATSAPP_ACCESS_TOKEN: "synthetic-test-token",
     WHATSAPP_PHONE_NUMBER_ID: "synthetic-sender",
@@ -66,5 +68,67 @@ test("a production test recipient cannot replace a missing intended recipient", 
   const result = await deliverAuthOtp("", "123456", "signup");
   assert.equal(result.ok, false);
   if (!result.ok) assert.equal(result.code, "OTP_DELIVERY_NOT_CONFIGURED");
+  assert.deepEqual(recipients, []);
+});
+
+
+test("production-node staging can explicitly bypass delivery for manual QA", async t => {
+  const recipients = configure(t, {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_STAGING_OTP_BYPASS: "1",
+    OTP_DELIVERY_CHANNEL: undefined,
+    WHATSAPP_ACCESS_TOKEN: undefined,
+    WHATSAPP_PHONE_NUMBER_ID: undefined,
+  });
+  assert.deepEqual(
+    await deliverAuthOtp("+15550000001", "123456", "admin_device_verification"),
+    { ok: true },
+  );
+  assert.deepEqual(recipients, []);
+});
+
+test("staging bypass flag is ignored in production deployment mode", async t => {
+  const recipients = configure(t, {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "production",
+    FAWRI_STAGING_OTP_BYPASS: "1",
+  });
+  assert.deepEqual(
+    await deliverAuthOtp("+15550000001", "123456", "admin_device_verification"),
+    { ok: true },
+  );
+  assert.deepEqual(recipients, ["15550000001"]);
+});
+
+test("production release gate disables staging OTP bypass", async t => {
+  const recipients = configure(t, {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_STAGING_OTP_BYPASS: "1",
+    FAWRI_PRODUCTION_RELEASE_GATE: "required",
+  });
+  assert.deepEqual(
+    await deliverAuthOtp("+15550000001", "123456", "admin_device_verification"),
+    { ok: true },
+  );
+  assert.deepEqual(recipients, ["15550000001"]);
+});
+
+
+test("staging bypass does not bypass merchant signup or recovery OTP delivery", async t => {
+  const recipients = configure(t, {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_STAGING_OTP_BYPASS: "1",
+    OTP_DELIVERY_CHANNEL: undefined,
+    WHATSAPP_ACCESS_TOKEN: undefined,
+    WHATSAPP_PHONE_NUMBER_ID: undefined,
+  });
+  for (const purpose of ["signup", "password_reset", "admin_recovery"] as const) {
+    const result = await deliverAuthOtp("+15550000001", "123456", purpose);
+    assert.equal(result.ok, false);
+    if (!result.ok) assert.equal(result.code, "OTP_DELIVERY_NOT_CONFIGURED");
+  }
   assert.deepEqual(recipients, []);
 });
