@@ -465,6 +465,13 @@ export function useAdminPageController() {
       });
       const data = await response.json().catch(() => null);
       if (handleUnauthorizedAdminResponse(response)) return;
+      if (response.status === 410) {
+        // PostgreSQL-required deployments intentionally retire the legacy
+        // subscription import route. Treat that retirement as terminal so
+        // owner browsers do not retry a dead compatibility path on every load.
+        localStorage.setItem(migrationKey, "done");
+        return;
+      }
       if (!response.ok || !data?.ok) {
         throw new Error(data?.error || "Could not migrate subscriptions");
       }
