@@ -53,7 +53,23 @@ async function main(): Promise<void> {
       }
 
       await loadStartupModule(
-        "STARTUP_ROUTE_INDEX_LOAD_FAILED",
+        "STARTUP_ROUTE_INDEX_PART1_LOAD_FAILED",
+        () => import("./routes/indexModulePart1"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_LEGACY_DEBUG_GUARD_LOAD_FAILED",
+        () => import("./routes/legacyBotDebugRouteGuard"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_INDEX_PART4_LOAD_FAILED",
+        () => import("./routes/indexModulePart4"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_INDEX_PART3_LOAD_FAILED",
+        () => import("./routes/indexModulePart3"),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_INDEX_ASSEMBLY_LOAD_FAILED",
         () => import("./routes"),
       );
       await loadStartupModule(
