@@ -125,7 +125,7 @@ test("owner new-device login requires OTP while assistant new-device login requi
   assert.match(routes, /setAuthSessionCookie\(res, "admin", issued\)/);
 });
 
-test("preview runtime is singleton and only exposes development OTP codes outside production", async () => {
+test("preview runtime remains singleton and login UI accepts guarded preview OTP codes", async () => {
   const preview = await workspaceSource("scripts/run-fawri-preview.mjs");
   const loginPage = await workspaceSource("artifacts/fawri/src/pages/LoginPage.tsx");
   const resend = await workspaceSource("artifacts/fawri/src/components/OtpResendSection.tsx");
@@ -135,6 +135,11 @@ test("preview runtime is singleton and only exposes development OTP codes outsid
   assert.match(preview, /process\.env\.NODE_ENV !== "production"/);
   assert.match(preview, /AUTH_ALLOW_DEV_OTP_BYPASS/);
   assert.match(preview, /AUTH_INCLUDE_DEV_CODE/);
+
+  const delivery = await source("src/services/authOtpDelivery.ts");
+  const common = await source("src/routes/auth-route-common.ts");
+  assert.match(delivery, /FAWRI_STAGING_OTP_BYPASS/);
+  assert.match(common, /stagingOtpBypassAllowed\(\)/);
 
   assert.match(loginPage, /OTP_DELIVERY_NOT_CONFIGURED/);
   assert.match(loginPage, /OTP_DELIVERY_FAILED/);
