@@ -95,6 +95,28 @@ test("client legacy credentials are not accepted as auth authority", async () =>
   assert.match(bridge, /FAWRI_AUTH_SSE_REVALIDATE_MS/);
 });
 
+test("Auth v2 security secret is the approved compatibility fallback during PostgreSQL cutover", async () => {
+  const bridge = await source("src/middleware/authCutoverCompatibility.ts");
+  const legacyRuntime = await source("src/routes/authRuntimePart1.ts");
+
+  assert.match(
+    bridge,
+    /FAWRI_MERCHANT_SESSION_SECRET[\s\S]*FAWRI_ADMIN_SESSION_SECRET[\s\S]*FAWRI_AUTH_SECURITY_SECRET[\s\S]*FAWRI_PASSWORD_SALT/,
+  );
+  assert.match(
+    bridge,
+    /FAWRI_ADMIN_SESSION_SECRET[\s\S]*FAWRI_AUTH_SECURITY_SECRET[\s\S]*FAWRI_PASSWORD_SALT/,
+  );
+  assert.match(
+    legacyRuntime,
+    /ADMIN_SESSION_SECRET[\s\S]*FAWRI_ADMIN_SESSION_SECRET[\s\S]*FAWRI_AUTH_SECURITY_SECRET[\s\S]*PASSWORD_SALT/,
+  );
+  assert.match(
+    legacyRuntime,
+    /CONFIGURED_MERCHANT_SESSION_SECRET[\s\S]*FAWRI_MERCHANT_SESSION_SECRET[\s\S]*FAWRI_ADMIN_SESSION_SECRET[\s\S]*FAWRI_AUTH_SECURITY_SECRET[\s\S]*FAWRI_PASSWORD_SALT/,
+  );
+});
+
 test("merchant operational authority uses the secure server session context", async () => {
   const middleware = await source("src/middleware/merchantOperationalAccess.ts");
   assert.match(middleware, /from "\.\/authSession"/);
