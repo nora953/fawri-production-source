@@ -16,8 +16,9 @@ function developmentDeliveryAllowed(): boolean {
   );
 }
 
-export function stagingOtpBypassAllowed(): boolean {
+export function stagingOtpBypassAllowed(purpose?: OtpPurpose): boolean {
   return (
+    purpose === "admin_device_verification" &&
     process.env.NODE_ENV === "production" &&
     process.env.FAWRI_DEPLOYMENT_MODE === "staging" &&
     process.env.FAWRI_STAGING_OTP_BYPASS === "1" &&
@@ -54,7 +55,7 @@ export async function deliverAuthOtp(
   if (
     (developmentDeliveryAllowed() &&
       process.env.AUTH_ALLOW_DEV_OTP_BYPASS === "true") ||
-    stagingOtpBypassAllowed()
+    stagingOtpBypassAllowed(purpose)
   ) {
     return { ok: true };
   }
