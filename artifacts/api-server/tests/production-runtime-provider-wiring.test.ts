@@ -103,6 +103,27 @@ function tempDataDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "fawri-provider-wiring-"));
 }
 
+test("explicit disabled knowledge embedding provider is accepted for staging", async () => {
+  const never = () => {
+    throw new Error("disabled knowledge embedding provider must not initialize OpenAI");
+  };
+
+  const result = await bootstrapRuntimeAndLoadApplication({
+    env: {
+      FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER: "disabled",
+    } as NodeJS.ProcessEnv,
+    dependencies: {
+      createOpenAi: never,
+      configureKnowledge: never,
+    },
+    loadApplication: async () => "staging-app",
+  });
+
+  assert.equal(result.application, "staging-app");
+  assert.equal(result.runtime.selections.knowledgeEmbeddingProvider, "disabled");
+  result.runtime.dispose();
+});
+
 test("production core can bootstrap with Meta disabled before cutover", async () => {
   let awsBootstrapCalled = false;
   const result = await bootstrapRuntimeAndLoadApplication({
