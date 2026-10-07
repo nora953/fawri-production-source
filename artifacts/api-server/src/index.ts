@@ -41,17 +41,35 @@ async function main(): Promise<void> {
 
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
     loadApplication: async () => {
-      const [
-        { default: app },
-        { startMetaWebhookWorker },
-        { startEarlyWarningIncidentMonitor },
-        { startMerchantPhysicalMediaCleanupReconciler },
-      ] = await Promise.all([
-        import("./app"),
-        import("./services/metaWebhookWorker"),
-        import("./services/earlyWarningIncidentMonitor"),
-        import("./services/merchantPhysicalMediaCleanup"),
-      ]);
+      async function loadStartupModule<T>(
+        code: string,
+        loader: () => Promise<T>,
+      ): Promise<T> {
+        try {
+          return await loader();
+        } catch {
+          throw Object.assign(new Error("startup module load failed"), { code });
+        }
+      }
+
+      const { default: app } = await loadStartupModule(
+        "STARTUP_APP_MODULE_LOAD_FAILED",
+        () => import("./app"),
+      );
+      const { startMetaWebhookWorker } = await loadStartupModule(
+        "STARTUP_META_WORKER_MODULE_LOAD_FAILED",
+        () => import("./services/metaWebhookWorker"),
+      );
+      const { startEarlyWarningIncidentMonitor } = await loadStartupModule(
+        "STARTUP_EARLY_WARNING_MODULE_LOAD_FAILED",
+        () => import("./services/earlyWarningIncidentMonitor"),
+      );
+      const { startMerchantPhysicalMediaCleanupReconciler } =
+        await loadStartupModule(
+          "STARTUP_MEDIA_CLEANUP_MODULE_LOAD_FAILED",
+          () => import("./services/merchantPhysicalMediaCleanup"),
+        );
+
       return {
         app,
         startMetaWebhookWorker,
