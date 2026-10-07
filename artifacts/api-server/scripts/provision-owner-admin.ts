@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import {
   OwnerAdminProvisioningError,
   provisionOwnerAdminPostgres,
@@ -55,7 +54,11 @@ async function main(): Promise<void> {
       "owner password must be provided through stdin",
     );
   }
-  const passwordInput = await readFile(0, "utf8");
+  process.stdin.setEncoding("utf8");
+  let passwordInput = "";
+  for await (const chunk of process.stdin) {
+    passwordInput += chunk;
+  }
   const password = passwordInput.replace(/(?:\r?\n)+$/, "");
   if (!password) {
     throw new OwnerAdminProvisioningError(
