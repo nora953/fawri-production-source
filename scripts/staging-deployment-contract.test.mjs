@@ -28,6 +28,7 @@ test('staging environment template keeps PostgreSQL authority required and exter
   assert.equal(values.get('FAWRI_OPERATIONAL_POSTGRES_AUTHORITY'), 'required');
   assert.equal(values.get('FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY'), 'required');
   assert.equal(values.get('FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY'), 'required');
+  assert.match(values.get('FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE') || '', /restricted-staging-runtime-role/);
   assert.equal(values.get('FAWRI_STAGING_OTP_BYPASS'), '1');
   assert.equal(values.get('AUTH_INCLUDE_DEV_CODE'), 'true');
   assert.match(values.get('FAWRI_AUTH_SECURITY_SECRET') || '', /at-least-32-characters/);
@@ -83,6 +84,7 @@ test('staging documentation preserves same-origin manual-QA boundary', async () 
   assert.match(contract, /FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required/);
   assert.match(contract, /FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required/);
   assert.match(contract, /FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required/);
+  assert.match(contract, /FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE=<restricted staging runtime role>/);
   assert.match(contract, /FAWRI_STAGING_OTP_BYPASS=1/);
   assert.match(contract, /AUTH_INCLUDE_DEV_CODE=true/);
   assert.match(contract, /Production deployment mode never accepts this bypass/);
@@ -92,5 +94,7 @@ test('staging documentation preserves same-origin manual-QA boundary', async () 
   assert.match(contract, /one exact `\(hash, created_at\)` row for every committed journal entry/);
   assert.match(contract, /Do \*\*not\*\* set `FAWRI_PRODUCTION_RELEASE_GATE=required`/);
   assert.match(contract, /Do not provide real Meta, OpenAI, billing, or production KMS credentials/);
+  assert.match(contract, /FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE/);
+  assert.match(contract, /effective \`current_user\` drifts away from the restricted role/);
   assert.match(contract, /This workflow proves repository\/container packaging only/);
 });

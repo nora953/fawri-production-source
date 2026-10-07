@@ -62,6 +62,7 @@ DATABASE_URL=<staging PostgreSQL connection string>
 FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required
 FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required
 FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required
+FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE=<restricted staging runtime role>
 FAWRI_AUTH_SECURITY_SECRET=<strong staging secret, at least 32 characters>
 FAWRI_PASSWORD_SALT=<independent strong staging password salt, at least 32 characters>
 FAWRI_ALLOWED_ORIGINS=<exact staging HTTPS origin>
@@ -77,6 +78,10 @@ FAWRI_SERVICE_VERSION=<safe staging version>
 Set `FAWRI_DEPLOYMENT_MODE=staging` explicitly. Do **not** rely on omitting a production safety variable: `NODE_ENV=production` is used for the built application, while the explicit staging deployment mode is what prevents production-only provider requirements from activating. Do **not** set `FAWRI_PRODUCTION_RELEASE_GATE=required` in this QA staging environment.
 
 Do not provide real Meta, OpenAI, billing, or production KMS credentials to this staging contract.
+
+When the hosting provider's generated login role has broader attributes than the application is allowed to use, connect through a restricted effective role and set `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE` to that role. Readiness then fails closed if the effective `current_user` drifts away from the restricted role.
+
+For Neon staging specifically, a generated login role may carry provider-managed attributes that cannot be altered directly. In that case, use a separate `NOLOGIN NOBYPASSRLS` application role, grant only the required schema/table/sequence/function privileges to it, grant that role to the Neon login role with `SET`, and connect through the **direct/unpooled** Neon endpoint with the startup option `role=<restricted-role>`. Neon pooled endpoints reject the `role` startup option. Keep `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE` set to the restricted role so `/ops/readiness` proves the effective role rather than merely proving that PostgreSQL is reachable.
 
 For manual QA only, `FAWRI_STAGING_OTP_BYPASS=1` may be enabled together with `AUTH_INCLUDE_DEV_CODE=true`. The runtime accepts this bypass only when `NODE_ENV=production`, `FAWRI_DEPLOYMENT_MODE=staging`, and the production release gate is not required. It allows the owner new-device OTP to be returned to the staging login UI without configuring a real WhatsApp/Meta sender. Production deployment mode never accepts this bypass.
 
@@ -139,7 +144,7 @@ Before opening the staging URL for manual QA, verify:
 
 1. `GET /healthz` returns HTTP 200 and the Fawri health payload.
 2. PostgreSQL authority is reachable from the runtime.
-3. `/ops/readiness` does not report a PostgreSQL authority failure.
+3. `/ops/readiness` does not report a PostgreSQL authority failure and confirms the configured effective PostgreSQL runtime role through `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE`.
 4. `/api/auth/admin/login` and `/api/auth/login` are served by the API process rather than by the frontend SPA fallback.
 5. Browser requests to `/api/*` remain same-origin.
 6. No Meta worker starts while `FAWRI_DISABLE_JOB_WORKERS=1`.
