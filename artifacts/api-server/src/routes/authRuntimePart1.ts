@@ -635,7 +635,9 @@ export const ADDON_EXPIRY_REMINDER_DAYS = 10;
 export const PASSWORD_SALT = process.env.FAWRI_PASSWORD_SALT || "fawri-local-dev-salt";
 
 export const ADMIN_SESSION_SECRET =
-  process.env.FAWRI_ADMIN_SESSION_SECRET || PASSWORD_SALT;
+  process.env.FAWRI_ADMIN_SESSION_SECRET ||
+  process.env.FAWRI_AUTH_SECURITY_SECRET ||
+  PASSWORD_SALT;
 
 export const ADMIN_SESSION_TTL_MS = Number(
   process.env.FAWRI_ADMIN_SESSION_TTL_MS || 8 * 60 * 60 * 1000,
@@ -644,6 +646,7 @@ export const ADMIN_SESSION_TTL_MS = Number(
 export const CONFIGURED_MERCHANT_SESSION_SECRET =
   process.env.FAWRI_MERCHANT_SESSION_SECRET ||
   process.env.FAWRI_ADMIN_SESSION_SECRET ||
+  process.env.FAWRI_AUTH_SECURITY_SECRET ||
   process.env.FAWRI_PASSWORD_SALT;
 
 if (

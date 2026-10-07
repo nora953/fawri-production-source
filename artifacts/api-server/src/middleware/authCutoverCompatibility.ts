@@ -60,6 +60,7 @@ function legacyMerchantSecret(): string {
   const configured = String(
     process.env.FAWRI_MERCHANT_SESSION_SECRET ||
       process.env.FAWRI_ADMIN_SESSION_SECRET ||
+      process.env.FAWRI_AUTH_SECURITY_SECRET ||
       process.env.FAWRI_PASSWORD_SALT ||
       "",
   ).trim();
@@ -71,7 +72,10 @@ function legacyMerchantSecret(): string {
 
 function legacyAdminSecret(): string {
   const configured = String(
-    process.env.FAWRI_ADMIN_SESSION_SECRET || process.env.FAWRI_PASSWORD_SALT || "",
+    process.env.FAWRI_ADMIN_SESSION_SECRET ||
+      process.env.FAWRI_AUTH_SECURITY_SECRET ||
+      process.env.FAWRI_PASSWORD_SALT ||
+      "",
   ).trim();
   if (process.env.NODE_ENV === "production" && configured.length < 32) {
     throw new Error("legacy admin compatibility secret must be explicitly configured during auth cutover");
