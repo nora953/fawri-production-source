@@ -21,6 +21,7 @@ export function stagingOtpBypassAllowed(): boolean {
     process.env.NODE_ENV === "production" &&
     process.env.FAWRI_DEPLOYMENT_MODE === "staging" &&
     process.env.FAWRI_STAGING_OTP_BYPASS === "1" &&
+    process.env.FAWRI_PRODUCTION_RELEASE_GATE !== "required" &&
     !productionReleaseGateRequired()
   );
 }
