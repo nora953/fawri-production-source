@@ -85,10 +85,10 @@ export function genericRecovery() {
   return buildGenericOtpResponse("password_reset");
 }
 
-export function devCode(code: string) {
+export function devCode(code: string, purpose?: OtpPurpose) {
   const previewCodeAllowed =
     process.env.AUTH_INCLUDE_DEV_CODE === "true" &&
-    (process.env.NODE_ENV !== "production" || stagingOtpBypassAllowed());
+    (process.env.NODE_ENV !== "production" || stagingOtpBypassAllowed(purpose));
   return previewCodeAllowed ? { devCode: code } : {};
 }
 
