@@ -28,6 +28,9 @@ test('staging environment template keeps PostgreSQL authority required and exter
   assert.equal(values.get('FAWRI_OPERATIONAL_POSTGRES_AUTHORITY'), 'required');
   assert.equal(values.get('FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY'), 'required');
   assert.equal(values.get('FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY'), 'required');
+  assert.match(values.get('FAWRI_AUTH_SECURITY_SECRET') || '', /at-least-32-characters/);
+  assert.match(values.get('FAWRI_PASSWORD_SALT') || '', /at-least-32-characters/);
+  assert.notEqual(values.get('FAWRI_PASSWORD_SALT'), values.get('FAWRI_AUTH_SECURITY_SECRET'));
   assert.equal(values.get('FAWRI_DISABLE_JOB_WORKERS'), '1');
   assert.equal(values.get('FAWRI_META_CUTOVER_READY'), '0');
   assert.equal(values.get('FAWRI_META_REPLY_TRANSPORT'), 'disabled');
@@ -78,6 +81,10 @@ test('staging documentation preserves same-origin manual-QA boundary', async () 
   assert.match(contract, /FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required/);
   assert.match(contract, /FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required/);
   assert.match(contract, /FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required/);
+  assert.match(contract, /FAWRI_PASSWORD_SALT=<independent strong staging password salt, at least 32 characters>/);
+  assert.match(contract, /must be independent from `FAWRI_AUTH_SECURITY_SECRET`/);
+  assert.match(contract, /drizzle\.__drizzle_migrations/);
+  assert.match(contract, /one exact `\(hash, created_at\)` row for every committed journal entry/);
   assert.match(contract, /Do \*\*not\*\* set `FAWRI_PRODUCTION_RELEASE_GATE=required`/);
   assert.match(contract, /Do not provide real Meta, OpenAI, billing, or production KMS credentials/);
   assert.match(contract, /This workflow proves repository\/container packaging only/);
