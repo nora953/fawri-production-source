@@ -133,7 +133,63 @@ async function main(): Promise<void> {
         () => import("./routes"),
       );
       await loadStartupModule(
-        "STARTUP_ROUTE_AUTH_SECURITY_LOAD_FAILED",
+        "STARTUP_AUTH_SECURITY_SUPPORT_CUTOVER_LOAD_FAILED",
+        () => import("./services/postgresSupportRuntimeCutover"),
+      );
+      await loadStartupModule(
+        "STARTUP_AUTH_SECURITY_MIDDLEWARE_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./middleware/authSession"),
+            import("./middleware/ownerRecoveryReauth"),
+            import("./services/adminAuthPostgresCutover"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_AUTH_SECURITY_CORE_ROUTES_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./routes/auth-public-routes"),
+            import("./routes/auth-session-routes"),
+            import("./routes/auth-admin-postgres-routes"),
+            import("./routes/auth-admin-routes"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_AUTH_SECURITY_ADMIN_SUPPORT_ROUTES_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./routes/auth-admin-device-otp-pg-routes"),
+            import("./routes/auth-owner-recovery-postgres-routes"),
+            import("./routes/auth-early-warning-postgres-routes"),
+            import("./routes/auth-provider-cost-postgres-routes"),
+            import("./routes/auth-emergency-postgres-routes"),
+            import("./routes/auth-merchant-management-postgres-routes"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_AUTH_SECURITY_SUPPORT_ROUTES_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./routes/auth-support-admin-lifecycle-postgres-routes"),
+            import("./routes/auth-support-image-alias-postgres-routes"),
+            import("./routes/auth-support-inspection-decision-postgres-routes"),
+            import("./routes/auth-support-message-postgres-routes"),
+            import("./routes/auth-support-postgres-routes"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_AUTH_SECURITY_BILLING_REALTIME_ROUTES_LOAD_FAILED",
+        () =>
+          Promise.all([
+            import("./routes/merchant-notifications-pg"),
+            import("./routes/merchant-realtime-pg"),
+            import("./routes/subscription-entitlement-pg"),
+            import("./routes/saas-billing"),
+          ]),
+      );
+      await loadStartupModule(
+        "STARTUP_ROUTE_AUTH_SECURITY_ASSEMBLY_LOAD_FAILED",
         () => import("./routes/auth-security"),
       );
       await loadStartupModule(
