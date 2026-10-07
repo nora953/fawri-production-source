@@ -57,7 +57,15 @@ async function main(): Promise<void> {
         () => import("./routes/health"),
       );
       await loadStartupModule(
-        "STARTUP_PART1_BOT_TRAINING_ROUTE_LOAD_FAILED",
+        "STARTUP_BOT_TRAINING_SERVICE_LOAD_FAILED",
+        () => import("./services/merchantBotTraining"),
+      );
+      await loadStartupModule(
+        "STARTUP_BOT_TRAINING_AUTH_ROUTE_LOAD_FAILED",
+        () => import("./routes/auth"),
+      );
+      await loadStartupModule(
+        "STARTUP_PART1_BOT_TRAINING_ROUTE_ASSEMBLY_LOAD_FAILED",
         () => import("./routes/bot-training"),
       );
       await loadStartupModule(
