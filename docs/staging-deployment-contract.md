@@ -146,4 +146,4 @@ The full-stack staging URL produced from this contract becomes the manual-QA tar
 
 Do not treat staging success as production launch readiness.
 
-Production promotion still requires the repository's production-release sequence, including real PostgreSQL production preparation, deployment secrets, AWS KMS/IAM, Meta production configuration, OpenAI configuration, backup/restore proof, SaaS billing-provider readiness, and finally `FAWRI_PRODUCTION_RELEASE_GATE=required` with successful readiness before customer traffic.
+Production promotion still requires the repository's production-release sequence, including real PostgreSQL production preparation, deployment secrets, AWS KMS/IAM, Meta production configuration, OpenAI configuration, backup/restore proof, SaaS billing-provider readiness, and finally explicit `NODE_ENV=production` plus `FAWRI_DEPLOYMENT_MODE=production` with successful startup and `/ops/readiness` before customer traffic. The legacy `FAWRI_PRODUCTION_RELEASE_GATE=required` marker may remain for compatibility but is not the production safety authority.
