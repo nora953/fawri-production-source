@@ -11,7 +11,7 @@ import {
 } from "./postgresql-migration-plan-complete.mjs";
 
 export { canonicalJson, loadLatestSnapshot, repositoryRoot, validateAgainstSnapshot };
-export const crossLaneMigrationPlanVersion = "7";
+export const crossLaneMigrationPlanVersion = "8";
 
 const SCHEMA_VALIDATION_CODES = new Set([
   "TARGET_TABLE_NOT_FOUND",

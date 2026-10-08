@@ -84,7 +84,40 @@ unknown-reference rejection, CLI read-only behavior and the Neon writer guard.
    rehearsal before requesting approval for any external write. This change does
    not implement or authorize that writer.
 
-Legacy notifications/admin_logs expansion remains deferred until this policy is
-verified on the current source. Existing cross-lane security exclusions remain
-in place; sessions, trusted devices, login attempts and OTP rows are forbidden
-if presented to the policy. No new security authority is migrated here.
+## Legacy history coverage (planner version 8)
+
+The supplied real-data version 7 dry run passed on October 8, 2026: 116 complete
+rows and 108 staging-proposal rows, with matching summary and lineage counts.
+The eight exclusions were the old owner account/profile, three historical
+requests and three dependent merchant notices. All 38 audit events remained;
+15 actor references were detached. No database was contacted. This is source
+validation evidence, not target-state verification or a persisted archive.
+
+The subsequent source inventory reported 27 `merchant_notifications`, 182
+`admin_logs`, no OTPs, and an `admin_notes` object whose entry count was not
+reported. Version 8 adds these history collections to the offline planner:
+
+- Notifications retain IDs, type, read status, creation time and scalar display
+  variables. Legacy `expires_at` belongs to subscription/batch content, so it
+  remains in variables; the target notification TTL is null. This matches the
+  canonical reader and avoids hiding historical notices. Unknown types/fields,
+  malformed timestamps and missing merchants block instead of silently dropping.
+- Admin logs retain IDs, actions, details, reasons, timestamps and nested meta.
+  Actor snapshots use the existing reader's `source_admin_*` metadata fields.
+  Known actors keep their original FK until the staging policy detaches the
+  legacy owner; missing actors/merchants have null FKs and retained snapshots.
+  No record is assigned to the importer/current owner. No audit hash is invented.
+  Conflicting IDs, including collisions with emergency audits, fail closed.
+- Admin notes retain their complete string (up to the schema's 5000-character
+  limit). No updater is invented. Legacy notes have no timestamps; target required
+  timestamps use the merchant timestamp, with that fallback declared in the
+  coverage report. Missing merchants and malformed/oversized notes block.
+- `legacy_auth_history` reports source collection counts and explicitly excludes
+  OTPs by count/reason without copying their values. Source manifest hashes bind
+  all collections. Existing cross-lane security exclusions remain unchanged;
+  sessions, devices, login attempts and OTP target rows remain forbidden by the
+  staging policy.
+
+Version 8 still requires a real-source dry run; the version 7 counts above are
+not an assertion about the expanded plan. No writer guards or runtime import
+routes were changed, and no real restore is authorized by this coverage.

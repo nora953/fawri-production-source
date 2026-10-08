@@ -10,8 +10,9 @@ import {
   validateAgainstSnapshot,
 } from "./postgresql-migration-plan-safe.mjs";
 import { buildTransitionalMigrationReadiness } from "./transitional-migration-readiness.mjs";
+import { mergeLegacyAuthHistory } from "./legacy-auth-history.mjs";
 
-export const migrationPlanVersion = "7";
+export const migrationPlanVersion = "8";
 
 const audits = [
   {
@@ -643,6 +644,7 @@ function mergeLegacyAuthOperationalRows(report, dataDirectory) {
   if (!source.exists) return;
 
   const auth = asRecord(source.value);
+  mergeLegacyAuthHistory(report, auth, mergeRow);
   const merchants = asArray(auth.merchants);
   const merchantById = new Map(
     merchants

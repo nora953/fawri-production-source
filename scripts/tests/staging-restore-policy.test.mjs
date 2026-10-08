@@ -20,6 +20,9 @@ function fixture() {
   auth.merchants.find((r) => r.id === "admin-1").admin_role = "assistant_admin";
   auth.merchants.push({ ...auth.merchants.find((r) => r.id === "admin-1"), id: legacyOwnerId, phone: "07700000003", admin_role: "owner_admin" });
   auth.channel_overrides = { "merchant-1": { messenger: "pending", instagram: "disconnected" } };
+  auth.admin_notes = { "merchant-1": "Historical note" };
+  auth.admin_logs = [{ id: "legacy-admin-log", admin_id: legacyOwnerId, admin_name: "Legacy owner",
+    merchant_id: "merchant-1", action_type: "historical_action", created_at: "2026-08-01T00:00:00Z", meta: { proof: true } }];
   auth.deletion_requests = [{ id: "deletion-1", merchant_id: "merchant-1", requested_by_admin_id: "admin-1", requested_by_admin_name: "Assistant", requested_by_admin_phone: "07700000002", reviewed_by_admin_id: legacyOwnerId, reason: "policy_violation", details: "History", status: "rejected", reviewed_at: "2026-08-04T00:00:00Z", created_at: "2026-08-03T00:00:00Z" }];
   write("merchants.json", auth);
   const emergency = read("emergency-read-access.json");
@@ -68,6 +71,11 @@ test("additive proposal preserves history and does not insert either owner or au
   assert.deepEqual(audit.metadata, before.rows.audit_events[0].metadata);
   assert.equal(audit.event_hash, before.rows.audit_events[0].event_hash);
   assert.deepEqual(audit, { ...before.rows.audit_events[0], actor_account_id: null });
+  const legacyLog = result.rows.audit_events.find((row) => row.id === "legacy-admin-log");
+  assert.equal(legacyLog.actor_account_id, null);
+  assert.equal(legacyLog.metadata.source_admin_id, legacyOwnerId);
+  assert.equal(legacyLog.metadata.source_admin_name, "Legacy owner");
+  assert.equal(result.rows.merchant_admin_notes[0].updated_by_admin_id, null);
   assert.deepEqual(result.rows.emergency_authorizations[0], { ...before.rows.emergency_authorizations[0], granted_by_owner_account_id: currentOwnerId });
   const deletion = result.rows.merchant_deletion_requests[0];
   assert.equal(deletion.requested_by_admin_id, "admin-1");
