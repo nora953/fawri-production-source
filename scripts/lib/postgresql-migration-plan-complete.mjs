@@ -199,6 +199,9 @@ function mergeAudit(report, dataDirectory, definition, auditReport) {
 }
 
 function rowIdentity(tableName, row) {
+  if (tableName === "merchant_channel_overrides") {
+    return canonicalJson([row?.merchant_id, row?.platform]);
+  }
   if (row?.id) return String(row.id);
   if (tableName === "merchant_settings") return String(row?.merchant_id || "");
   if (tableName === "admin_permissions") {
@@ -767,6 +770,7 @@ function finalizeReport(report, snapshot, includeRows) {
     warnings: report.warnings.length,
     write_readiness_errors: report.errors.length,
     source_lineage_records: report.source_lineage.length,
+    planned_rows: report.planned_row_count,
   };
   report.ok = report.errors.length === 0;
 }

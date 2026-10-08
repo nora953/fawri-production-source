@@ -115,6 +115,7 @@ function sanitizeRecord(value) {
   return output;
 }
 function rowIdentity(tableName, row) {
+  if (tableName === "merchant_channel_overrides") return canonicalJson([row?.merchant_id, row?.platform]);
   if (row?.id) return String(row.id);
   if (tableName === "merchant_settings") return String(row?.merchant_id || "");
   if (tableName === "admin_permissions") return `${row?.admin_id || ""}:${row?.permission || ""}`;
@@ -621,7 +622,7 @@ function finalize(report, snapshot, includeRows) {
   report.source_manifest_sha256 = sha256(canonicalJson(report.source_files || {}));
   validateAgainstSnapshot(report, snapshot, { removeRows: !includeRows });
   report.write_readiness = { ok: report.errors.length === 0, operational_overlays_supported: true, blockers: report.errors.length === 0 ? [] : report.errors };
-  report.summary = { ...(report.summary || {}), errors: report.errors.length, warnings: report.warnings.length, write_readiness_errors: report.errors.length };
+  report.summary = { ...(report.summary || {}), planned_rows: report.planned_row_count, source_lineage_records: report.source_lineage.length, errors: report.errors.length, warnings: report.warnings.length, write_readiness_errors: report.errors.length };
   report.ok = report.errors.length === 0;
 }
 

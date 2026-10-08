@@ -9,6 +9,7 @@ import {
   assertCompleteMigrationWritable,
   buildValidatedMigrationPlan,
 } from "../lib/postgresql-migration-plan-complete.mjs";
+import { buildValidatedMigrationPlan as buildReconciledPlan } from "../lib/postgresql-cross-lane-reconciliation.mjs";
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -71,6 +72,7 @@ test("complete plan includes operational overlays and deterministic lineage", ()
     assert.match(report.source_manifest_sha256, /^[a-f0-9]{64}$/);
     assert.match(report.source_lineage_sha256, /^[a-f0-9]{64}$/);
     assert.equal(report.source_lineage.length, report.planned_row_count);
+    assert.equal(report.summary.planned_rows, report.planned_row_count);
     assert.ok(
       report.source_lineage.some(
         (item) =>
@@ -134,6 +136,25 @@ test("legacy auth operational state is preserved without creating channel connec
       (row) => row.merchant_id === "merchant-1" && row.platform === "instagram",
     );
     assert.equal(instagram?.status, "disconnected");
+    for (const build of [buildValidatedMigrationPlan, buildReconciledPlan]) {
+      for (const includeRows of [true, false]) {
+        const plan = build({ dataDirectory: directory, includeRows }).report;
+        assert.equal(plan.ok, true, JSON.stringify(plan.errors));
+        assert.equal(plan.summary.planned_rows, plan.planned_row_count);
+        assert.equal(plan.source_lineage.length, plan.planned_row_count);
+        assert.deepEqual(plan.source_lineage.filter((r) => r.target_table === "merchant_channel_overrides")
+          .map((r) => r.target_record_id).sort(), ['["merchant-1","instagram"]', '["merchant-1","messenger"]']);
+      }
+      const before = build({ dataDirectory: directory, includeRows: true }).report;
+      const changed = structuredClone(auth);
+      changed.channel_overrides["merchant-1"].messenger = "disconnected";
+      writeJson(directory, "merchants.json", changed);
+      const after = build({ dataDirectory: directory, includeRows: true }).report;
+      const lineage = (p) => p.source_lineage.find((r) => r.target_record_id === '["merchant-1","messenger"]');
+      assert.equal(lineage(before).target_record_id, lineage(after).target_record_id);
+      assert.notEqual(lineage(before).source_record_sha256, lineage(after).source_record_sha256);
+      writeJson(directory, "merchants.json", auth);
+    }
 
     const deletion = report.rows.merchant_deletion_requests[0];
     assert.equal(deletion.id, "deletion-request-1");
