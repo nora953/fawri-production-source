@@ -11,7 +11,7 @@ import {
 } from "./postgresql-migration-plan-safe.mjs";
 import { buildTransitionalMigrationReadiness } from "./transitional-migration-readiness.mjs";
 
-export const migrationPlanVersion = "6";
+export const migrationPlanVersion = "7";
 
 const audits = [
   {
@@ -46,6 +46,9 @@ const baseSourceByTable = {
   admin_profiles: "auth",
   admin_permissions: "auth",
   subscriptions: "auth",
+  notifications: "auth",
+  merchant_channel_overrides: "auth",
+  merchant_deletion_requests: "auth",
   products: "runtime",
   merchant_channels: "runtime",
   conversations: "runtime",
@@ -627,6 +630,91 @@ function applyMerchantSettings(report, source) {
   }
 }
 
+
+function mergeLegacyAuthOperationalRows(report, dataDirectory) {
+  const source = readOptional(dataDirectory, "merchants.json", {
+    merchants: [],
+    channel_overrides: {},
+    deletion_requests: [],
+  });
+  if (!source.exists) return;
+
+  const auth = asRecord(source.value);
+  const merchants = asArray(auth.merchants);
+  const merchantById = new Map(
+    merchants
+      .filter((item) => text(item?.id))
+      .map((item) => [text(item.id), asRecord(item)]),
+  );
+
+  for (const [merchantId, overrideValue] of Object.entries(
+    asRecord(auth.channel_overrides),
+  )) {
+    const override = asRecord(overrideValue);
+    const merchant = merchantById.get(merchantId) || {};
+    const timestamp =
+      merchant.updated_at ||
+      merchant.created_at ||
+      "1970-01-01T00:00:00.000Z";
+
+    for (const platform of ["messenger", "instagram"]) {
+      const status = text(override[platform]);
+      if (!status) continue;
+
+      mergeRow(
+        report,
+        "merchant_channel_overrides",
+        {
+          merchant_id: merchantId,
+          platform,
+          status,
+          updated_by_admin_id: null,
+          created_at: timestamp,
+          updated_at: timestamp,
+        },
+        "auth",
+        { merchant_id: merchantId, platform, status },
+      );
+    }
+  }
+
+  for (const requestValue of asArray(auth.deletion_requests)) {
+    const request = asRecord(requestValue);
+    const merchantId = text(request.merchant_id);
+    const merchant = merchantById.get(merchantId) || {};
+
+    mergeRow(
+      report,
+      "merchant_deletion_requests",
+      {
+        id: text(request.id),
+        merchant_id: merchantId || null,
+        merchant_id_snapshot: merchantId,
+        merchant_name_snapshot:
+          text(request.merchant_name) ||
+          text(merchant.store_name) ||
+          text(merchant.owner_name) ||
+          merchantId,
+        merchant_phone_snapshot:
+          text(request.merchant_phone) || text(merchant.phone),
+        requested_by_admin_id: text(request.requested_by_admin_id) || null,
+        requested_by_admin_id_snapshot: text(request.requested_by_admin_id),
+        requested_by_admin_name_snapshot: text(request.requested_by_admin_name),
+        requested_by_admin_phone_snapshot: text(request.requested_by_admin_phone),
+        reason: text(request.reason),
+        details: text(request.details),
+        status: text(request.status) || "pending",
+        reviewed_by_admin_id: text(request.reviewed_by_admin_id) || null,
+        reviewed_at: request.reviewed_at || null,
+        completed_at: request.completed_at || null,
+        created_at: request.created_at || null,
+      },
+      "auth",
+      request,
+    );
+  }
+}
+
 function normalizeCompleteRows(report) {
   for (const order of asArray(report.rows?.orders)) {
     order.delivery_fee_iqd = Number(order.delivery_fee_iqd || 0);
@@ -735,6 +823,7 @@ export function buildValidatedMigrationPlan(options) {
   applyManualOverlay(report, manualSource);
   applyOrderOperations(report, orderSource);
   applyMerchantSettings(report, settingsSource);
+  mergeLegacyAuthOperationalRows(report, dataDirectory);
   normalizeCompleteRows(report);
 
   finalizeReport(report, result.snapshot, options.includeRows === true);

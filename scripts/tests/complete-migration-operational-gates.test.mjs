@@ -52,7 +52,7 @@ test("complete plan includes operational overlays and deterministic lineage", ()
     });
 
     assert.equal(report.ok, true, JSON.stringify(report.errors, null, 2));
-    assert.equal(report.tool_version, "6");
+    assert.equal(report.tool_version, "7");
     assert.equal(report.write_readiness.ok, true);
     assert.equal(report.write_readiness.operational_overlays_supported, true);
     assert.doesNotThrow(() => assertCompleteMigrationWritable(report));
@@ -76,6 +76,91 @@ test("complete plan includes operational overlays and deterministic lineage", ()
         (item) =>
           item.source_key === "manualConversationOperations" &&
           item.target_table === "manual_reply_requests",
+      ),
+    );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+
+test("legacy auth operational state is preserved without creating channel connections", () => {
+  const directory = createFixture();
+  try {
+    const auth = readJson(directory, "merchants.json");
+
+    auth.channel_overrides = {
+      "merchant-1": {
+        messenger: "pending",
+        instagram: "disconnected",
+      },
+    };
+
+    auth.deletion_requests = [
+      {
+        id: "deletion-request-1",
+        merchant_id: "merchant-1",
+        merchant_name: "Merchant Store",
+        merchant_phone: "07700000001",
+        requested_by_admin_id: "admin-1",
+        requested_by_admin_name: "Owner Admin",
+        requested_by_admin_phone: "07700000002",
+        reason: "policy_violation",
+        details: "Legacy deletion request",
+        status: "rejected",
+        reviewed_by_admin_id: "admin-1",
+        reviewed_at: "2026-08-04T00:00:00.000Z",
+        created_at: "2026-08-03T00:00:00.000Z",
+      },
+    ];
+
+    writeJson(directory, "merchants.json", auth);
+
+    const { report } = buildValidatedMigrationPlan({
+      dataDirectory: directory,
+      includeRows: true,
+    });
+
+    assert.equal(report.ok, true, JSON.stringify(report.errors, null, 2));
+    assert.equal(report.rows.merchant_channel_overrides.length, 2);
+    assert.equal(report.rows.merchant_deletion_requests.length, 1);
+
+    const messenger = report.rows.merchant_channel_overrides.find(
+      (row) => row.merchant_id === "merchant-1" && row.platform === "messenger",
+    );
+    assert.equal(messenger?.status, "pending");
+
+    const instagram = report.rows.merchant_channel_overrides.find(
+      (row) => row.merchant_id === "merchant-1" && row.platform === "instagram",
+    );
+    assert.equal(instagram?.status, "disconnected");
+
+    const deletion = report.rows.merchant_deletion_requests[0];
+    assert.equal(deletion.id, "deletion-request-1");
+    assert.equal(deletion.merchant_id, "merchant-1");
+    assert.equal(deletion.merchant_id_snapshot, "merchant-1");
+    assert.equal(deletion.reason, "policy_violation");
+    assert.equal(deletion.status, "rejected");
+    assert.equal(deletion.reviewed_by_admin_id, "admin-1");
+
+    assert.equal(
+      report.rows.merchant_channels.length,
+      1,
+      "legacy overrides must not create additional canonical channel connections",
+    );
+
+    assert.ok(
+      report.source_lineage.some(
+        (item) =>
+          item.source_key === "auth" &&
+          item.target_table === "merchant_channel_overrides",
+      ),
+    );
+    assert.ok(
+      report.source_lineage.some(
+        (item) =>
+          item.source_key === "auth" &&
+          item.target_table === "merchant_deletion_requests",
       ),
     );
   } finally {
