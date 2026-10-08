@@ -121,3 +121,39 @@ reported. Version 8 adds these history collections to the offline planner:
 Version 8 still requires a real-source dry run; the version 7 counts above are
 not an assertion about the expanded plan. No writer guards or runtime import
 routes were changed, and no real restore is authorized by this coverage.
+
+## Verified version 8 checkpoint and private archive
+
+The subsequently supplied real-source report passed: 325 complete rows, 317
+staging rows, 27 notifications, 220 audit events (38 plus 182 admin logs), zero
+admin notes and zero OTPs. Summary and lineage counts agree. The user-side
+comparison found no conflicts with the eight existing staging audit IDs or the
+current owner's phone hash. These checks are point-in-time evidence, not a lock
+on future source/target changes.
+
+Read-only inspection of the explicitly selected `staging-runtime` branch found
+only the active/enabled current owner, no legacy owner and no merchants. The
+other affected tables were empty except for eight audit events. Existing target
+records must remain untouched. The current environment has no PostgreSQL/Docker
+executable available; no SQL restore rehearsal has been claimed.
+
+Create a private archive on the machine holding the real source:
+
+```sh
+node scripts/archive-staging-restore.mjs artifacts/api-server/data "$HOME/fawri-private-backups/staging-history-v8-20261009.json"
+```
+
+This command writes a **local history file only**, outside the source directory
+and repository, using exclusive creation (never overwriting an archive). It
+rechecks source hashes, writes with restrictive POSIX permissions, flushes and
+reads back the file, then verifies both archive and history checksums. On Windows
+the enclosing directory's ACL determines access. It stores normalized historical
+exclusions, original detached/remapped identities, and source/schema/plan hashes;
+it does not include account rows or their password hashes. It prints only the
+archive path, checksums and counts. Keep the original source files as well: this
+history archive is not a complete source backup. Checksums detect corruption,
+not malicious replacement by someone able to rewrite both content and checksum.
+
+Archive creation does not authorize database writes or mark the staging writer
+ready. A real PostgreSQL rehearsal and fresh target/source conflict checks are
+still required before a separately approved external restore.

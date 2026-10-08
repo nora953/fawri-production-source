@@ -7,6 +7,7 @@ import test from "node:test";
 import { buildValidatedMigrationPlan, repositoryRoot, assertCompleteMigrationWritable } from "../lib/postgresql-cross-lane-reconciliation.mjs";
 import { applyStagingRestorePolicy, currentOwnerId, legacyOwnerId } from "../lib/staging-restore-policy.mjs";
 import { requireSafeDatabase, validatePlanForWrite } from "../../lib/db/scripts/lib/migration-write.mjs";
+import { writeRestoreArchive, verifyRestoreArchive } from "../lib/staging-restore-archive.mjs";
 
 function fixture() {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-staging-policy-"));
@@ -92,6 +93,22 @@ test("additive proposal preserves history and does not insert either owner or au
   assert.throws(() => assertCompleteMigrationWritable(result), /ADDITIVE_STAGING_WRITER_NOT_IMPLEMENTED/);
   assert.throws(() => validatePlanForWrite(result, snapshot.value), /not write-ready/);
   assert.equal(result.restore_plan_sha256, applyStagingRestorePolicy(report, snapshot).restore_plan_sha256);
+  const archiveDir = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-private-history-"));
+  t.after(() => fs.rmSync(archiveDir, { recursive: true, force: true }));
+  const archivePath = path.join(archiveDir, "history.json");
+  const saved = writeRestoreArchive(result, archivePath);
+  const archive = JSON.parse(fs.readFileSync(archivePath, "utf8"));
+  assert.equal(verifyRestoreArchive(archive), saved.archive_sha256);
+  assert.deepEqual(archive.history, result.restore_history);
+  assert.equal(archive.restore_plan_sha256, result.restore_plan_sha256);
+  assert.equal(archive.rows, undefined);
+  assert.ok(!JSON.stringify(archive).includes("password"));
+  assert.throws(() => writeRestoreArchive(result, archivePath), { code: "EEXIST" });
+  assert.throws(() => writeRestoreArchive(result, path.join(directory, "history.json")), /OUTSIDE_SOURCE/);
+  assert.throws(() => writeRestoreArchive(result, path.join(repositoryRoot, "history.json")), /OUTSIDE_SOURCE/);
+  assert.throws(() => writeRestoreArchive({ ...result, ok: false }, path.join(archiveDir, "invalid.json")), /VALID_OFFLINE_PLAN/);
+  archive.history[0].action = "tampered";
+  assert.throws(() => verifyRestoreArchive(archive), /CHECKSUM_MISMATCH/);
   const compact = applyStagingRestorePolicy(report, snapshot);
   assert.equal(compact.rows, undefined);
   assert.equal(compact.restore_history, undefined);
@@ -111,6 +128,21 @@ test("additive proposal preserves history and does not insert either owner or au
   const writeAttempt = spawnSync(process.execPath, [path.join(repositoryRoot, "scripts/plan-staging-restore.mjs"), directory, "--write"], { encoding: "utf8" });
   assert.notEqual(writeAttempt.status, 0);
   assert.match(writeAttempt.stderr, /no write mode/);
+  const archiveCli = spawnSync(process.execPath, [path.join(repositoryRoot, "scripts/archive-staging-restore.mjs"), directory, path.join(archiveDir, "cli.json")], {
+    encoding: "utf8", env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" },
+  });
+  assert.equal(archiveCli.status, 0, archiveCli.stderr);
+  assert.equal(JSON.parse(archiveCli.stdout).archive_sha256, saved.archive_sha256);
+  const sourcePath = path.join(directory, "merchants.json");
+  const sourceBytes = fs.readFileSync(sourcePath);
+  fs.appendFileSync(sourcePath, "\n");
+  assert.throws(() => writeRestoreArchive(result, path.join(archiveDir, "changed.json")), /SOURCE_CHANGED/);
+  assert.equal(fs.existsSync(path.join(archiveDir, "changed.json")), false);
+  fs.writeFileSync(sourcePath, sourceBytes);
+  const link = path.join(archiveDir, "source-link");
+  fs.symlinkSync(directory, link, process.platform === "win32" ? "junction" : "dir");
+  assert.throws(() => writeRestoreArchive(result, path.join(link, "new-directory", "history.json")), /OUTSIDE_SOURCE/);
+  assert.equal(fs.existsSync(path.join(directory, "new-directory")), false);
 });
 
 test("unexpected owners, live requests, security rows, unhandled FKs and prior errors fail closed", (t) => {
