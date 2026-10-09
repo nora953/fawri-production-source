@@ -50,11 +50,21 @@ async function seedMerchant(phone: string, suffix: string) {
   });
   const verified = await accounts.markMerchantOtpVerifiedAuthoritative(created.account.id);
   assert.ok(verified?.merchantProfile);
+  // Operational fixtures must be approved before connecting channels.
+  const approved = await raw(
+    `UPDATE merchants
+        SET status = 'approved', account_status = 'approved', updated_at = now()
+      WHERE id = $1 AND account_id = $1
+      RETURNING id`,
+    [created.account.id],
+  );
+  assert.equal(approved.rowCount, 1);
   return verified!;
 }
 
 let merchantA: Awaited<ReturnType<typeof seedMerchant>>;
 let merchantB: Awaited<ReturnType<typeof seedMerchant>>;
+let productAId = "";
 let channelAId = "";
 let conversationAId = "";
 
@@ -109,6 +119,7 @@ test("catalog writes and reads stay inside the merchant tenant", async () => {
   });
   assert.equal(created.replayed, false);
   assert.equal(created.product.stock_quantity, 7);
+  productAId = created.product.id;
 
   const replay = await catalog.createCatalogProductAuthoritative({
     merchantId: merchantA.account.id,
@@ -207,6 +218,21 @@ test("manual conversation state and messages are tenant-bound", async () => {
 
 test("order lifecycle and terminal payment audit are PostgreSQL authoritative", async () => {
   const orderId = "order-runtime-a";
+  const locationId = "location-runtime-a";
+  await raw(
+    `INSERT INTO merchant_locations
+      (id, merchant_id, name, is_default, operational_status,
+       online_fulfillment_enabled, accept_online_orders_while_closed,
+       merchant_priority, inventory_fresh_at)
+     VALUES ($1, $2, 'Runtime Main', TRUE, 'open', TRUE, FALSE, 1, now())`,
+    [locationId, merchantA.account.id],
+  );
+  await raw(
+    `INSERT INTO location_inventory_levels
+      (id, merchant_id, location_id, product_id, quantity, low_stock_threshold, version)
+     VALUES ('inventory-runtime-a', $1, $2, $3, 7, 2, 1)`,
+    [merchantA.account.id, locationId, productAId],
+  );
   await raw(
     `INSERT INTO orders
       (id, merchant_id, conversation_id, customer_external_id, customer_name,
@@ -219,10 +245,10 @@ test("order lifecycle and terminal payment audit are PostgreSQL authoritative", 
   );
   await raw(
     `INSERT INTO order_items
-      (id, order_id, merchant_id, product_name_snapshot, quantity,
+      (id, order_id, merchant_id, product_id, product_name_snapshot, quantity,
        unit_price_iqd, line_total_iqd)
-     VALUES ('order-item-runtime-a', $1, $2, 'Runtime Proof Product', 1, 12000, 12000)`,
-    [orderId, merchantA.account.id],
+     VALUES ('order-item-runtime-a', $1, $2, $3, 'Runtime Proof Product', 1, 12000, 12000)`,
+    [orderId, merchantA.account.id, productAId],
   );
 
   const before = await orders.getServerOrderAuthoritative(merchantA.account.id, orderId);
