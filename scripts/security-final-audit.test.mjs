@@ -8,6 +8,7 @@ import {
   evaluateDependencyAudit,
   isKnownTestFixtureCredentialUrl,
   isKnownHistoricalScannerSelfTestCredentialUrl,
+  isKnownHistoricalRestoreRejectionFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -279,5 +280,25 @@ test("repository policy requires history scan and full checkout", () => {
     assert.ok(report.violations.some((item) => item.includes("full-history secret scan")));
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("historical restore fixture exception is pinned to one immutable finding", () => {
+  const blob = "6668fa788522ce931d40ab5e879463fd445085a2";
+  const file = "scripts/tests/staging-restore-rehearsal-safety.test.mjs";
+  const finding = { rule: "credential-url", index: 1078, length: 47 };
+  assert.equal(isKnownHistoricalRestoreRejectionFixture(finding, file, blob), true);
+  for (const otherBlob of [undefined, "0".repeat(40)]) {
+    assert.equal(isKnownHistoricalRestoreRejectionFixture(finding, file, otherBlob), false);
+  }
+  for (const otherFile of ["scripts/restore.mjs", "scripts/tests/another.test.mjs"]) {
+    assert.equal(isKnownHistoricalRestoreRejectionFixture(finding, otherFile, blob), false);
+  }
+  for (const changed of [
+    { ...finding, index: 1079 },
+    { ...finding, length: 48 },
+    { ...finding, rule: "meta-access-token" },
+  ]) {
+    assert.equal(isKnownHistoricalRestoreRejectionFixture(changed, file, blob), false);
   }
 });
