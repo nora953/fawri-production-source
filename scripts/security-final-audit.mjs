@@ -267,6 +267,14 @@ export function isKnownHistoricalScannerSelfTestCredentialUrl(
   return matched === KNOWN_HISTORICAL_SCANNER_SELF_TEST_CREDENTIAL;
 }
 
+// This immutable historical fixture proves remote restore targets are rejected
+// before connecting. Pin the blob and finding; never allow a host or file broadly.
+export function isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId) {
+  return objectId === "6668fa788522ce931d40ab5e879463fd445085a2" &&
+    normalizeRepositoryPath(objectPath) === "scripts/tests/staging-restore-rehearsal-safety.test.mjs" &&
+    finding.rule === "credential-url" && finding.index === 1078 && finding.length === 47;
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -342,7 +350,8 @@ function scanHistory(root) {
     })) {
       if (
         isKnownTestFixtureCredentialUrl(objectText, finding, objectPath) ||
-        isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath)
+        isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath) ||
+        isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,
