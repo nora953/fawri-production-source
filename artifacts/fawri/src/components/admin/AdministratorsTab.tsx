@@ -1234,7 +1234,14 @@ export default function AdministratorsTab({
             ))}
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter
+            className={
+              adminText.dir === "rtl"
+                ? "gap-2 sm:gap-2 sm:flex-row sm:justify-end"
+                : "gap-2 sm:gap-2 sm:flex-row sm:justify-end"
+            }
+            dir="ltr"
+          >
             <Button
               type="button"
               variant="outline"
