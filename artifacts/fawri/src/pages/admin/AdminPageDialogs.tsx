@@ -1,3 +1,4 @@
+import { getDiscardUnsavedNoteCopy } from "@/lib/translations/features/admin/AdminNotesDialogCopy";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
@@ -570,14 +571,10 @@ export function DetailsModal({
   const [noteText, setNoteText] = useState(notes);
   const [isSavingNote, setIsSavingNote] = useState(false);
   const hasUnsavedNote = noteText !== notes;
-  const discardText = {
-    ar: "لديك ملاحظات غير محفوظة. هل تريد الخروج دون حفظها؟",
-    ku: "تێبینیی پاشەکەوتنەکراوت هەیە. دەتەوێت بەبێ پاشەکەوتکردن بچیتە دەرەوە؟",
-    en: "You have unsaved notes. Leave without saving them?",
-  };
+
   const requestClose = () => {
     if (isSavingNote) return;
-    if (hasUnsavedNote && !window.confirm(discardText[lang])) return;
+    if (hasUnsavedNote && !window.confirm(getDiscardUnsavedNoteCopy(lang))) return;
     onClose();
   };
   const handleSaveNote = async () => {
