@@ -26,3 +26,5 @@ Evidence statuses: HISTORICAL_PASS | CURRENT_VERIFIED | OPEN_PROOF | NOT_CHECKED
 | DB-003 | End-to-end tenant isolation and Meta routing | OPEN_PROOF | `artifacts/api-server/tests/global-merchant-postgres-http-journey.integration.test.ts`; `postgresMetaChannelAuthority.ts` | Existing golden journey requires local `fawri_ci`; cannot safely run against live Neon. Meta page routing cross-tenant query lacks tenant context; no connected staging pages to reproduce. |
 
 OPS-003 remains historical OPEN_PROOF for its original 2026-10-10 snapshot; newer evidence above supersedes its connection-only portion. Production release and backup readiness remain unverified.
+
+| META-001 | Meta webhook page mapping with restricted RLS role | OPEN_PROOF | Reviewed webhook middleware, page directory, PostgreSQL channel authority, migrations 0024/0025 and local Meta ingress test (2026-10-10) | Potential RLS-filtered lookup; no restricted-role reproduction or application change. |
