@@ -37,3 +37,18 @@ No unapproved application code changes, branch deletion, database changes, secre
 - Migrations 0024 and 0025 establish a tenant-or-audited-admin RLS predicate for merchant_channels.
 - The existing Meta ingress integration test is restricted to local fawri_ci and does not prove staging restricted-role behavior.
 - Next: reproduce with a synthetic connected page and a restricted role on disposable PostgreSQL. Do not alter live Neon or bypass RLS.
+
+## FA-I-006 reproduction matrix and scope (2026-10-10)
+Source verified: `merchantWebhookAccess.ts`, `metaPageDirectory.ts`, `postgresMetaChannelAuthority.ts`, `operationalPostgresAuthority.ts`, `meta-webhook-postgres-ingress-cutover.integration.test.ts`.
+
+Required disposable-PostgreSQL cases (not executed yet):
+1. Connected page A for approved merchant A under restricted NOBYPASSRLS role, no tenant/admin context: verify whether `listActiveMetaPageMappingsAuthoritative()` returns page A and middleware calls next. Record actual `current_user` and RLS policy state.
+2. Same fixture with tenant context A inside transaction: verify page A visible and merchant B page invisible; reset context on pooled connection.
+3. Unknown page: expect HTTP 503 `META_PAGE_DIRECTORY_UNAVAILABLE` (current contract); ensure no merchant data is leaked.
+4. Suspended merchant with known page: ensure terminal event handling without enqueue, as current local-only ingress test expects.
+5. Batch with one valid and one unknown page: inspect all-or-nothing 503 and webhook retry/idempotency consequences; do not label a defect without an expected-contract decision.
+6. Prove no tenant bypass or unrestricted global page-directory grants are introduced by any fix.
+
+Execution blocker: no verified disposable local PostgreSQL runtime attached to this audit session. The existing local-only integration test does not switch to a restricted role. Do not run its mutating fixtures on Neon staging. This is an OPEN_PROOF, not PASS or confirmed production failure.
+
+Audit completion tracking: planning estimate 30/100 overall, unchanged; do not increment until an actual restricted-role test or another closure criterion is evidenced.
