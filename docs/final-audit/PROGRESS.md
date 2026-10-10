@@ -23,3 +23,10 @@ Main baseline at last verified merge: `a083262e68557ec6838799da5a869e90b909b56f`
 
 ## Restrictions
 No unapproved application code changes, branch deletion, database changes, secret exposure or production deployment. Do not repeat historical 16 core phases without a scoped reason.
+
+## 2026-10-10 staging verification addendum
+- Railway `fawri-staging/fawri-web` deployment status SUCCESS; user supplied `/ops/readiness` response with `ready`, `postgresql_authority: up`, and `production_release_configuration: up` at `2026-10-10T18:17:58.935Z`.
+- User confirmed `FAWRI_DEPLOYMENT_MODE=staging`, `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE=fawri_staging_rls_runtime`. The readiness code compares `current_user` with the expected role; it does not switch roles itself. No secret values recorded.
+- Neon `staging-runtime` branch `br-falling-dust-b1km4gix`: 94 public tables, 28 Drizzle migration records, 1 merchant, 0 Meta channels; 45 RLS-enabled and 49 without RLS. Restricted role has no BYPASSRLS but broad grants to selected non-RLS auth/cashier tables. Default Neon `production` branch is distinct and missing the migration ledger.
+- Open: FA-I-006 Meta page routing under RLS; FA-I-007 sensitive non-RLS table grants and application authorization; FA-I-008 branch targeting; FA-I-009 scope of readiness proof. No live data mutation, branch merge, production deploy, or credential changes.
+- Next: inspect targeted API authorization paths and run negative tenant isolation / Meta mapping tests on a disposable local database. Do not declare FA-004 PASS from readiness alone.
