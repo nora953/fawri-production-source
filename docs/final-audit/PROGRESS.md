@@ -131,3 +131,9 @@ On main, `artifacts/fawri/src/components/admin/AdministratorsTab.tsx` permission
 ## Audit throughput and count clarification
 
 `ISSUES.md` previously held 23 issue-table rows covering 27 unique issue identifiers (some rows combine IDs). Four distinct UI identifiers `FAWRI-UI-001` through `FAWRI-UI-004` were appended in a separate table on this branch, giving **31 unique tracked issue IDs**, not 31 confirmed defects; 001 and 003 source-confirmed, 002 visual pending, 004 investigate. `AUDIT_REGISTER.md` previously contained 49 evidence IDs; do not treat evidence IDs as completed audit tasks. This is a documentation-count reconciliation, not a project completion percentage. Continue batch auditing; never run mutating PostgreSQL suites on staging/production.
+
+## 2026-10-11 — Parent callback and audit log fallback traced
+
+On main `AdminPageView.tsx` lines 762-776, `DetailsModal` receives `onClose={() => setDetailsMerchant(null)}` and `onSaveNote={(note) => void doSaveNote(detailsMerchant.id, note)}`. The child `AdminPageDialogs.tsx` has local `noteText` edited via Textarea and saved via separate button; dismissal does not check dirty state in either inspected callback. Thus UI-004 is a source-supported unsaved-draft loss path (not browser-reproduced); async save confirmation also warrants separate review because the child immediately toasts success while parent discards the promise.
+
+On main `AdminPageSections.tsx` LogsTab `getLocalizedDetails` maps recognized event types but its default returns `log.details` raw (lines 457-547). Unknown action labels use `actionLabel[action] ?? action` and reasons use `log.reason` raw. UI-003 therefore has three source-confirmed raw display paths: action, details and reason. Preserve stored codes; localize presentation with a safe unknown fallback.
