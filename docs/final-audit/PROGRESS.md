@@ -96,3 +96,7 @@ The earlier 70/100 is a qualitative conversation estimate, NOT an independently 
 | FA-006 release decision | BLOCKED | All launch gate evidence, verified main SHA and owner go/no-go |
 
 This is a stage status matrix, not a weighted percent: stages differ in size, and no complete test inventory exists. Existing audit issue IDs remain canonical. Source reviews are not executed tests. Do not treat draft PR #520 as merged main evidence. Next: finish FA-001 inventory or establish scoped FA-002 exit criteria; then compute coverage from explicit task counts, not arbitrary percentages. No app code, database, deployment or PR merge changes.
+
+## FastPay production readiness source check
+
+`fastPayProductionReadiness.ts` always reports adapter_implemented=false and production_ready=false with production_adapter_pending. `fastpay-production-readiness.test.ts` asserts this remains true even with complete HTTPS configuration. This confirms existing FASTPAY-RELEASE-001; official integration, server-side settlement validation and authenticated callbacks remain launch prerequisites. Source review only; no payment tests run.
