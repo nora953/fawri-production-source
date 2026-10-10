@@ -37,3 +37,9 @@ Obtain the complete prior conversation note inventory or exported transcript; ma
 2. Read current-main staging restore writer and compare with prior rehearsal claims; classify any concrete gap.
 3. Check historical bot scenario coverage against current tests without running DB-mutating suites.
 4. Continue reconciliation as new prior-conversation evidence becomes available. Keep this document as an explicit, auditable checkpoint.
+
+## 2026-10-11 follow-up source checks
+- **Restore rehearsal script path check:** `lib/db/scripts/staging-restore-writer.mjs` returns GitHub 404 on inspected main. GitHub repository search for `staging-restore-writer` returned no indexed results. This does **not** prove no equivalent script exists elsewhere or that an uncommitted historical working tree was lost. Classify the earlier reported rehearsal as **NOT VERIFIED IN CURRENT MAIN AT REPORTED PATH**; locate an alternative path or commit before creating a defect.
+- **Cashier historical integration test safety:** `artifacts/api-server/tests/cashier-historical-operation-postgres.integration.test.ts` on main (blob `ecf4073bc1bb0a54da15d787fe6b224741b42e5d`) explicitly asserts `DATABASE_URL` hostname is localhost/127.0.0.1 and database name `fawri_ci` before importing DB modules. This particular test is **SOURCE-GUARDED**, unlike the separately documented unsafe compensation test. No test executed.
+- **Historical local migration claims:** `PROGRESS.md` describes 28 Drizzle records on Neon staging-runtime at its prior snapshot, but that is not evidence of the older 27-migration disposable-local run or any missing comprehensive-gate outcome. Retain **UNRECONCILED HISTORICAL CLAIM**, not a mismatch defect.
+- **Open PR #519:** historical permission-attribution entry remains PR-only in the inspected main/register comparison; do not treat this as merged or as an exploited vulnerability.
