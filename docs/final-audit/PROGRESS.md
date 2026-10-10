@@ -127,3 +127,7 @@ On main, `artifacts/fawri/src/components/admin/AdministratorsTab.tsx` permission
 - `FAWRI-UI-003` SOURCE CONFIRMED: `artifacts/fawri/src/pages/admin/AdminPageSections.tsx` LogsTab falls back to raw `action_type` for unknown codes (lines 602, 628-629), and renders `log.reason` directly (lines 636-640). Needs localized display mapping while preserving raw audit records.
 - Merchant notes UNSAVED-CHANGE RISK (not runtime reproduced): DetailsModal uses local `noteText` and explicit `onSaveNote(noteText)`; inspected dismissal paths have no local dirty-state check. Review parent close handler and test before remediation.
 - `FAWRI-UI-002` remains RTL visual QA pending; source trace recorded earlier. No source code, database or deployment changes made.
+
+## Audit throughput and count clarification
+
+`ISSUES.md` previously held 23 issue-table rows covering 27 unique issue identifiers (some rows combine IDs). Four distinct UI identifiers `FAWRI-UI-001` through `FAWRI-UI-004` were appended in a separate table on this branch, giving **31 unique tracked issue IDs**, not 31 confirmed defects; 001 and 003 source-confirmed, 002 visual pending, 004 investigate. `AUDIT_REGISTER.md` previously contained 49 evidence IDs; do not treat evidence IDs as completed audit tasks. This is a documentation-count reconciliation, not a project completion percentage. Continue batch auditing; never run mutating PostgreSQL suites on staging/production.
