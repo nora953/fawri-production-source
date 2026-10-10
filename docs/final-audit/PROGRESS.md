@@ -112,3 +112,7 @@ Compared with current main using GitHub compare: fix/admin-retired-subscription-
 ## Branch content equivalence checkpoint
 
 Compared main and historical branches: `fix/admin-retired-subscription-migration` version of `artifacts/fawri/src/pages/admin/useAdminPageController.tsx` has identical GitHub blob SHA on main. `fix/cashier-first-station` `cashierStationCreationBody` implements the same location bootstrap and recognized-location checks as main, with formatting differences; main's test includes an additional offlineAuthority=true case. These are scoped file-level findings only; remaining branch files and test execution have not been verified. Do not merge/delete either branch based on ancestry alone.
+
+## Additional branch file comparison
+
+`fix/admin-retired-subscription-migration`: both changed files (`useAdminPageController.tsx` and `admin-retired-subscription-migration.test.mjs`) have identical blob SHA on main; branch content is already present at those paths, though no test rerun. `fix/cashier-first-station`: `cashier-station-management-status.test.mjs` identical to main; `CashierManagementPage.tsx` differs (main is larger), so functional equivalence remains open. `docs/staging-ui-findings`: `docs/qa/staging-ui-findings-2026-10-09.md` exists on the old branch but not on main at that path. Do not merge/delete any branch automatically.
