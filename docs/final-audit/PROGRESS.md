@@ -104,3 +104,7 @@ This is a stage status matrix, not a weighted percent: stages differ in size, an
 ## Count-based audit register baseline (2026-10-11)
 
 Read-only count on this PR branch: AUDIT_REGISTER.md has 49 unique evidence rows; exactly 6 are labeled CURRENT_VERIFIED and 1 HISTORICAL_PASS. The other 42 have mixed evidence/proof/pending statuses and MUST NOT be assumed all failed or all completed. ISSUES.md has 23 unique issue rows: 22 OPEN variants and 1 PENDING; no row is explicitly CLOSED. Counts are for recorded entries, not a complete normalized task inventory, so audit completion percentage and issue closure rate for the whole project remain unproven. Next: normalize status vocabulary, reconcile stale register entries against newer evidence and define stage-specific exit criteria before computing coverage. This baseline does not alter code, DB or deployment.
+
+## FA-001 branch delta checkpoint (2026-10-11)
+
+Compared with current main using GitHub compare: fix/admin-retired-subscription-migration ahead 2 / behind 38, files useAdminPageController.tsx and admin-retired-subscription-migration.test.mjs; fix/cashier-first-station ahead 1 / behind 209, four cashier station files; docs/staging-ui-findings ahead 1 / behind 34, only docs/qa/staging-ui-findings-2026-10-09.md. All diverged. Commit ancestry alone does not prove unmerged behavior after squash; inspect content equivalence before merge/closure. No branches merged or deleted.
