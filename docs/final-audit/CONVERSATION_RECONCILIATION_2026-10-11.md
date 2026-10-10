@@ -108,3 +108,14 @@ GitHub Actions workflow runs associated with PR #518 head `ec15937aea43819ff279d
 - Root `package.json` scripts: `build`, `typecheck`, `migration:test` (`node --test --test-concurrency=1 ./scripts/tests/*.test.mjs`), others. API `artifacts/api-server/package.json` includes `test:global-merchant-journey` calling `global-merchant-auth-bootstrap-postgres.integration.test.mjs`; this script exists but was **not evidenced as executed by the above eight jobs**.
 - `.github/workflows/ci.yml` 404 means only that exact guessed path is absent. Actual workflow run metadata establishes the two real workflow names; path enumeration and exact YAML audit still pending.
 - **Safe next action:** enumerate repository workflows and all PostgreSQL integration tests from a complete repository tree or verified local checkout; classify each as DB-writing vs read-only, guarded vs unguarded, and map actual CI invocations. No integration test executed in this review.
+
+## CI execution log evidence — 2026-10-11
+
+Read-only GitHub Actions log inspection of `Final quality gates` run `38090880741`, job `full-typecheck` `114326882816`, on PR #518 head:
+
+1. The API TypeScript test command builds its file list with `find tests -maxdepth 1 -name '*.test.ts' ! -name '*.integration.test.ts' | sort`, then invokes `pnpm exec tsx --test --test-concurrency=2 --test-timeout=60000 "${tests[@]}"`. This **explicitly excludes `*.integration.test.ts`** from that job step.
+2. Other commands in the same job include `node --test artifacts/fawri/tests/*.test.mjs` plus named API contract tests, and `pnpm exec tsx --test --test-concurrency=2 --test-timeout=60000 tests/*.test.ts` for frontend TypeScript tests. Do not assume these commands prove PostgreSQL integration coverage.
+3. Therefore this specific successful quality workflow is **not evidence of PostgreSQL integration suite execution**. Separate workflows, manual runs or historical test evidence may exist; none is disproved here.
+4. Workflow YAML filenames were not identified by guessed paths; exact workflow path enumeration remains OPEN. No test was run in this audit session.
+
+**Disposition:** This is additional execution-scope evidence under existing `PG-TEST-GUARD-002/003` and `TEST-DB-SAFETY-008`, not a new defect ID. It does not establish that the workflow itself is defective: excluding DB integration tests may be intentional for safe CI.
