@@ -30,3 +30,10 @@ No unapproved application code changes, branch deletion, database changes, secre
 - Neon `staging-runtime` branch `br-falling-dust-b1km4gix`: 94 public tables, 28 Drizzle migration records, 1 merchant, 0 Meta channels; 45 RLS-enabled and 49 without RLS. Restricted role has no BYPASSRLS but broad grants to selected non-RLS auth/cashier tables. Default Neon `production` branch is distinct and missing the migration ledger.
 - Open: FA-I-006 Meta page routing under RLS; FA-I-007 sensitive non-RLS table grants and application authorization; FA-I-008 branch targeting; FA-I-009 scope of readiness proof. No live data mutation, branch merge, production deploy, or credential changes.
 - Next: inspect targeted API authorization paths and run negative tenant isolation / Meta mapping tests on a disposable local database. Do not declare FA-004 PASS from readiness alone.
+
+## FA-I-006 follow-up: source review (2026-10-10)
+- The Meta webhook middleware reads the page-to-merchant directory before merchant operational authorization. An unresolved page returns HTTP 503.
+- PostgreSQL-only mode uses the channel mapping authority; its all-pages query has no tenant context.
+- Migrations 0024 and 0025 establish a tenant-or-audited-admin RLS predicate for merchant_channels.
+- The existing Meta ingress integration test is restricted to local fawri_ci and does not prove staging restricted-role behavior.
+- Next: reproduce with a synthetic connected page and a restricted role on disposable PostgreSQL. Do not alter live Neon or bypass RLS.
