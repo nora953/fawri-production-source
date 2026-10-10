@@ -116,3 +116,7 @@ Compared main and historical branches: `fix/admin-retired-subscription-migration
 ## Additional branch file comparison
 
 `fix/admin-retired-subscription-migration`: both changed files (`useAdminPageController.tsx` and `admin-retired-subscription-migration.test.mjs`) have identical blob SHA on main; branch content is already present at those paths, though no test rerun. `fix/cashier-first-station`: `cashier-station-management-status.test.mjs` identical to main; `CashierManagementPage.tsx` differs (main is larger), so functional equivalence remains open. `docs/staging-ui-findings`: `docs/qa/staging-ui-findings-2026-10-09.md` exists on the old branch but not on main at that path. Do not merge/delete any branch automatically.
+
+## FAWRI-UI-002 source follow-up
+
+On main, `artifacts/fawri/src/components/admin/AdministratorsTab.tsx` permission modal places Cancel before Save in JSX inside `DialogFooter` (lines 1237-1267). `artifacts/fawri/src/components/ui/dialog.tsx` defines footer as `flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2`, with no explicit locale-dependent order in that component. This leaves the historical RTL action-order observation unresolved pending actual AR/KU/EN responsive rendering; source ordering alone is not visual proof. No app changes or browser tests performed.
