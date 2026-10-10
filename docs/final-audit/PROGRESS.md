@@ -108,3 +108,7 @@ Read-only count on this PR branch: AUDIT_REGISTER.md has 49 unique evidence rows
 ## FA-001 branch delta checkpoint (2026-10-11)
 
 Compared with current main using GitHub compare: fix/admin-retired-subscription-migration ahead 2 / behind 38, files useAdminPageController.tsx and admin-retired-subscription-migration.test.mjs; fix/cashier-first-station ahead 1 / behind 209, four cashier station files; docs/staging-ui-findings ahead 1 / behind 34, only docs/qa/staging-ui-findings-2026-10-09.md. All diverged. Commit ancestry alone does not prove unmerged behavior after squash; inspect content equivalence before merge/closure. No branches merged or deleted.
+
+## Branch content equivalence checkpoint
+
+Compared main and historical branches: `fix/admin-retired-subscription-migration` version of `artifacts/fawri/src/pages/admin/useAdminPageController.tsx` has identical GitHub blob SHA on main. `fix/cashier-first-station` `cashierStationCreationBody` implements the same location bootstrap and recognized-location checks as main, with formatting differences; main's test includes an additional offlineAuthority=true case. These are scoped file-level findings only; remaining branch files and test execution have not been verified. Do not merge/delete either branch based on ancestry alone.
