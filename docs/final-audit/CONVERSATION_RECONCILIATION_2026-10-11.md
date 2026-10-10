@@ -98,3 +98,13 @@ This section reconciles the user's explicit handoff against four **freshly fetch
 **Process gap:** Canonical `ISSUES.md` primarily lists FA-I-001..009, whereas many later register findings (cashier SW, test guards, release/media blockers, historical permissions) are open in `AUDIT_REGISTER.md` without mirrored issue rows. The canonical register is the evidence source; mirroring *actionable* unresolved findings in ISSUES is recommended as a later batch, without duplicating IDs or treating each as a vulnerability.
 
 **Checkpoint:** Matching and new scenario detail saved in this draft documentation branch; neither PR #519 nor this PR #520 is merged into main. No code edits, DB operations, or tests.
+
+## CI workflow run evidence — 2026-10-11 (read-only)
+
+GitHub Actions workflow runs associated with PR #518 head `ec15937aea43819ff279d5aa0a6cf690ed0f6b8d` were inspected directly:
+- `Final quality gates`, run `38090880741`, conclusion `success`: `full-build`, `full-typecheck`, `quality-tool-tests`, `translation-structure-audit` all succeeded. Step summaries include API unit tests, frontend TypeScript unit tests, source contracts, build/typecheck and localization structure.
+- `Final security and supply chain`, run `38090880764`, conclusion `success`: `lockfile-integrity`, `repository-security`, `dependency-review`, `dependency-audit` all succeeded.
+- These are **eight successful jobs across two workflow runs**, not proof of PostgreSQL integration test execution. Their exposed job steps do **not** list a PostgreSQL integration suite or a database URL allowlist. This does not prove that no guard exists in other scripts or workflows.
+- Root `package.json` scripts: `build`, `typecheck`, `migration:test` (`node --test --test-concurrency=1 ./scripts/tests/*.test.mjs`), others. API `artifacts/api-server/package.json` includes `test:global-merchant-journey` calling `global-merchant-auth-bootstrap-postgres.integration.test.mjs`; this script exists but was **not evidenced as executed by the above eight jobs**.
+- `.github/workflows/ci.yml` 404 means only that exact guessed path is absent. Actual workflow run metadata establishes the two real workflow names; path enumeration and exact YAML audit still pending.
+- **Safe next action:** enumerate repository workflows and all PostgreSQL integration tests from a complete repository tree or verified local checkout; classify each as DB-writing vs read-only, guarded vs unguarded, and map actual CI invocations. No integration test executed in this review.
