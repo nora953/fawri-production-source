@@ -64,3 +64,7 @@ Audit completion tracking: planning estimate 30/100 overall, unchanged; do not i
 ## 2026-10-11 database test audit checkpoint
 
 Current qualitative planning estimate is 70/100 (user's latest estimate, not a test-pass rate). PR #520 records read-only CI evidence and an eight-suite PostgreSQL safety sample. Three billing suites import the DB module before callback-only URL-presence checks; some delete test fixture rows before seeding. Separate support, historical cashier, and Meta ingress integration tests do contain early local disposable-DB guards. No test was executed. Next: inventory all test entrypoints and workflow runners; propose a shared pre-import guard and runner-level enforcement before any application code changes. Existing test safety findings remain open; do not duplicate IDs. Do not run database-writing tests on Neon staging or production.
+
+## Backup workflow source verification
+
+Verified `.github/workflows/backup-restore-drill.yml` on main. It defines a disposable PostgreSQL 16 service, separate local source/restore databases, backup manifest and checksum validation, restore with source/target consistency check, disposable object-storage restore comparison, and redacted evidence artifact. This proves a defined CI drill, not that it ran successfully in the current audit or that a hosted Neon/PITR or durable production media restore has been proven. Existing BACKUP-DRILL-001 remains open for hosted recovery evidence. No workflow executed or environment changed.
