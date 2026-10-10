@@ -68,3 +68,7 @@ Current qualitative planning estimate is 70/100 (user's latest estimate, not a t
 ## Backup workflow source verification
 
 Verified `.github/workflows/backup-restore-drill.yml` on main. It defines a disposable PostgreSQL 16 service, separate local source/restore databases, backup manifest and checksum validation, restore with source/target consistency check, disposable object-storage restore comparison, and redacted evidence artifact. This proves a defined CI drill, not that it ran successfully in the current audit or that a hosted Neon/PITR or durable production media restore has been proven. Existing BACKUP-DRILL-001 remains open for hosted recovery evidence. No workflow executed or environment changed.
+
+## Production launch gate verification
+
+Read-only verification of `artifacts/api-server/src/services/productionReleaseReadiness.ts` lines 225-248: when the production release gate is required, the function always returns five external blockers (Meta, AI, billing, backup, durable support storage). `launch_ready` therefore remains false even if runtime checks pass. `artifacts/api-server/tests/production-release-readiness.test.ts` explicitly asserts blocked launch. This is intentional fail-closed behavior, not a reason to disable the gate. Existing RELEASE-GATE-STATIC-001 remains open pending approved, auditable evidence-based clearance with negative tests. No application change or test execution.
