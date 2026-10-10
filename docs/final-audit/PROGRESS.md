@@ -72,3 +72,7 @@ Verified `.github/workflows/backup-restore-drill.yml` on main. It defines a disp
 ## Production launch gate verification
 
 Read-only verification of `artifacts/api-server/src/services/productionReleaseReadiness.ts` lines 225-248: when the production release gate is required, the function always returns five external blockers (Meta, AI, billing, backup, durable support storage). `launch_ready` therefore remains false even if runtime checks pass. `artifacts/api-server/tests/production-release-readiness.test.ts` explicitly asserts blocked launch. This is intentional fail-closed behavior, not a reason to disable the gate. Existing RELEASE-GATE-STATIC-001 remains open pending approved, auditable evidence-based clearance with negative tests. No application change or test execution.
+
+## Support image transaction review
+
+Source review of `postgresSupportImageAuthority.ts` confirms that ticket ownership, assignment and active status are checked before image file persistence. The service then inserts message and attachment metadata in an operational transaction, and removes the written file if that transaction throws. Image reads check the attachment identifiers and optional merchant ID before resolving a filesystem path. This narrows the previously logged support write-order concern; it does not prove durable storage across deployments or runtime authorization tests. Existing support storage and test findings remain open. No test execution.
