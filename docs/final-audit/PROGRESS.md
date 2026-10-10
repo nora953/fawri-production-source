@@ -173,3 +173,7 @@ Source: `artifacts/api-server/src/services/cashierEntitlementAuthority.ts` lines
 ## 2026-10-11 — Sandbox checkout transaction-boundary follow-up
 
 Source: `artifacts/api-server/src/services/cashierBillingAuthority.ts:489-680` and `saasBillingAuthority.ts:628-657`. Both invoke the external SuperQi sandbox payment creation while a database checkout transaction remains open, then attach the provider reference before commit. This requires isolated failure-injection tests for slow provider response, successful provider checkout followed by failed DB update/commit, retry behavior and reconciliation. It is a source-level reliability risk, not an observed production incident; sandbox does not establish production readiness. No external payment or DB write was performed during audit.
+
+## 2026-10-11 — SaaS checkout idempotency parity
+
+`saasBillingAuthority.ts:509-595` expires pending orders, selects existing `(merchant_id,idempotency_key)` `FOR UPDATE`, compares operation, plan, amount, catalog version and provider (409 on conflict), returns a matching existing checkout, rejects any other pending checkout, and validates eligibility. The behavior parallels cashier checkout but also ties replay to the current plan price/catalog version: retry after catalog changes can return 409 rather than original checkout. Need disposable-DB concurrency/unique-index proof and a deliberate stable-retry contract. Existing row lock does not by itself serialize two absent-row inserts. No runtime tests or mutations.
