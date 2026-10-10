@@ -120,3 +120,10 @@ Compared main and historical branches: `fix/admin-retired-subscription-migration
 ## FAWRI-UI-002 source follow-up
 
 On main, `artifacts/fawri/src/components/admin/AdministratorsTab.tsx` permission modal places Cancel before Save in JSX inside `DialogFooter` (lines 1237-1267). `artifacts/fawri/src/components/ui/dialog.tsx` defines footer as `flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2`, with no explicit locale-dependent order in that component. This leaves the historical RTL action-order observation unresolved pending actual AR/KU/EN responsive rendering; source ordering alone is not visual proof. No app changes or browser tests performed.
+
+## 2026-10-11 — Admin UI source findings pending remediation
+
+- `FAWRI-UI-001` SOURCE CONFIRMED: `artifacts/fawri/src/pages/admin/AdminPageDialogs.tsx` DetailsModal includes bottom Close button (lines 946-950); shared `artifacts/fawri/src/components/ui/dialog.tsx` DialogContent includes automatic X (lines 57-68). Review unsaved-note protection before removing duplicate control.
+- `FAWRI-UI-003` SOURCE CONFIRMED: `artifacts/fawri/src/pages/admin/AdminPageSections.tsx` LogsTab falls back to raw `action_type` for unknown codes (lines 602, 628-629), and renders `log.reason` directly (lines 636-640). Needs localized display mapping while preserving raw audit records.
+- Merchant notes UNSAVED-CHANGE RISK (not runtime reproduced): DetailsModal uses local `noteText` and explicit `onSaveNote(noteText)`; inspected dismissal paths have no local dirty-state check. Review parent close handler and test before remediation.
+- `FAWRI-UI-002` remains RTL visual QA pending; source trace recorded earlier. No source code, database or deployment changes made.
