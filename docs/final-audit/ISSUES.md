@@ -68,3 +68,5 @@ This is an **index**, not a second evidence register. Detailed source observatio
 | FAWRI-UI-004 | INVESTIGATE | Possible unsaved merchant note loss on dialog dismissal: local noteText and explicit save; parent close behavior and runtime reproduction still pending. |
 
 These findings are documentation-only on draft PR #520, not merged into main and not repaired.
+
+| FAWRI-UI-005 | SOURCE_CONFIRMED_FIX_PENDING | Merchant note save success toast fires before async PUT result: `AdminPageDialogs.tsx` lines 933-938 calls `onSaveNote(noteText)` then `toast.success`, while `AdminPageView.tsx` passes a voided async `doSaveNote` and `useAdminPageController.tsx` lines 1244-1268 awaits PUT and handles failure. Need awaitable save contract, success only on confirmed result, failure messaging, and pending-state protection; no runtime test or code fix yet. |
