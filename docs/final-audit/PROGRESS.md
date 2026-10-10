@@ -100,3 +100,7 @@ This is a stage status matrix, not a weighted percent: stages differ in size, an
 ## FastPay production readiness source check
 
 `fastPayProductionReadiness.ts` always reports adapter_implemented=false and production_ready=false with production_adapter_pending. `fastpay-production-readiness.test.ts` asserts this remains true even with complete HTTPS configuration. This confirms existing FASTPAY-RELEASE-001; official integration, server-side settlement validation and authenticated callbacks remain launch prerequisites. Source review only; no payment tests run.
+
+## Count-based audit register baseline (2026-10-11)
+
+Read-only count on this PR branch: AUDIT_REGISTER.md has 49 unique evidence rows; exactly 6 are labeled CURRENT_VERIFIED and 1 HISTORICAL_PASS. The other 42 have mixed evidence/proof/pending statuses and MUST NOT be assumed all failed or all completed. ISSUES.md has 23 unique issue rows: 22 OPEN variants and 1 PENDING; no row is explicitly CLOSED. Counts are for recorded entries, not a complete normalized task inventory, so audit completion percentage and issue closure rate for the whole project remain unproven. Next: normalize status vocabulary, reconcile stale register entries against newer evidence and define stage-specific exit criteria before computing coverage. This baseline does not alter code, DB or deployment.
