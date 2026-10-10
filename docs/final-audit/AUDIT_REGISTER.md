@@ -15,3 +15,14 @@ Evidence statuses: HISTORICAL_PASS | CURRENT_VERIFIED | OPEN_PROOF | NOT_CHECKED
 
 ## Recording template
 `ID | commit | files/config touched | expected behavior | test/evidence | finding | severity | disposition | reopen trigger`
+
+## 2026-10-10 live staging evidence (read-only)
+
+| ID | Scope | Status | Evidence | Notes |
+| --- | --- | --- | --- | --- |
+| OPS-004 | Railway staging readiness and expected DB role | CURRENT_VERIFIED | Operator-provided `/ops/readiness` screenshot, timestamp `2026-10-10T18:17:58.935Z`; source `artifacts/api-server/src/observability/runtime.ts` | `ready`, `postgresql_authority: up`, `production_release_configuration: up`. Expected role `fawri_staging_rls_runtime` matches `current_user` at probe time. Does not prove every transaction or release-gated RLS assertion. |
+| DB-001 | Neon `staging-runtime` schema and migration ledger | CURRENT_VERIFIED | Read-only Neon connector SQL, branch `br-falling-dust-b1km4gix`, 2026-10-10 | 94 public tables, 28 Drizzle migrations, 1 merchant, 0 channels; branch-specific evidence only. |
+| DB-002 | Runtime RLS and grants | CURRENT_VERIFIED | Read-only Neon `pg_class`, `pg_roles`, `has_table_privilege` queries, 2026-10-10 | 45 tables RLS-enabled, 49 not. Restricted role `fawri_staging_rls_runtime` has no BYPASSRLS, but has broad grants on non-RLS account/cashier tables; authorization and negative access proof remain OPEN. |
+| DB-003 | End-to-end tenant isolation and Meta routing | OPEN_PROOF | `artifacts/api-server/tests/global-merchant-postgres-http-journey.integration.test.ts`; `postgresMetaChannelAuthority.ts` | Existing golden journey requires local `fawri_ci`; cannot safely run against live Neon. Meta page routing cross-tenant query lacks tenant context; no connected staging pages to reproduce. |
+
+OPS-003 remains historical OPEN_PROOF for its original 2026-10-10 snapshot; newer evidence above supersedes its connection-only portion. Production release and backup readiness remain unverified.
