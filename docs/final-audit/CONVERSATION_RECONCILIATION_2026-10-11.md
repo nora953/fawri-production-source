@@ -49,3 +49,19 @@ Obtain the complete prior conversation note inventory or exported transcript; ma
 - **Backup / restore:** current-main `docs/backup-restore-runbook.md` (blob `3d126f3a1959715a054c560eb59d8ecb509b4254`) describes disposable-only PostgreSQL/object restore checks, manifests, hashes, and row-count consistency. This is distinct from the prior reported `staging-restore-writer.mjs` rehearsal, which remains unlocated at its claimed path. No hosted backup, PITR, production restore or rehearsal execution was observed in this session.
 - **Search limitation:** GitHub code search for the restore script name and bot scenario phrases returned no indexed matches; absence of a code-search result does not prove code absence. Exact register and runbook fetches are positive evidence of existing documentation.
 - **Safety:** no tests run and no changes to application code, database, secrets, `main`, or deployment.
+
+## Screenshot-to-ledger cross-check — 2026-10-11
+User-provided screenshots of the prior conversation show the following **specific claims**. Each is classified against the inspected main register or PR #519, without interpreting source review as executed proof.
+
+| Screenshot claim | GitHub match | Disposition |
+| --- | --- | --- |
+| Returns cannot exceed remaining sold quantity, restore after void, void after prior compensation, refund mismatch | `CASHIER-COMPENSATION-007` on main | DOCUMENTED SOURCE REVIEW; runtime tests not executed |
+| Partial returns/replay and original-location restock after station transfer | `CASHIER-COMPENSATION-007` on main | DOCUMENTED TEST INVENTORY; execution pending |
+| Compensation integration test has no explicit localhost/`fawri_ci` guard | `TEST-DB-SAFETY-008` on main | DOCUMENTED FIX PENDING; do not run against shared DB |
+| Sale saved but attribution/ACK interrupted: retain local queue, retry idempotently without new sale | `CASHIER-ATTRIBUTION-006`, `CASHIER-SYNC-001`, `CASHIER-SYNC-OPERATOR-003` on main | DOCUMENTED SOURCE REVIEW; end-to-end failure test pending |
+| Current uploader permission and historical operator attribution are distinct | `CASHIER-OP-REVOCATION-004`, `CASHIER-SYNC-OPERATOR-003` on main | DOCUMENTED; historical negative proof pending |
+| Current uploader authorized, historical operator lacked sale/return/void permission at occurred_at | `CASHIER-HIST-PERMISSION-009` in PR #519 only | DOCUMENTED PR-ONLY; review before main merge |
+| PR #518 merged and triggered Railway build/deployment | Main register contains PR #518 additions; screenshot reports merge and subsequent Railway SUCCESS | MAIN CONTENT CONFIRMED; deployment SUCCESS is historical screenshot claim, not independently rechecked this turn |
+| Audit 70% estimate | Screenshot reports 70%; current-main `PROGRESS.md` retains older 54% planning estimate | UNRECONCILED ESTIMATES; neither is launch readiness |
+
+**Scope limit:** screenshots are overlapping excerpts, not an exhaustive export of the full previous conversation. All actionable findings visible in the supplied screenshots have a matching main register entry or PR #519 entry; this is **not** a claim that every finding in the entire previous conversation has been matched.
