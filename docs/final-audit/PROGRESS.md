@@ -1,25 +1,25 @@
 # Fawri final audit — resume here
 
 Updated: 2026-10-10
-Status: **FA-000 IN PROGRESS** (documentation branch created; merge not yet confirmed).
-Baseline main SHA: `56d7ac266d2d02d0cc5197f2dfeda134199b2baf`.
-Audit branch: `docs/final-audit-continuity-fa-000`.
+Status: **FA-000 PASS; FA-001 IN PROGRESS**.
+Main baseline at last verified merge: `a083262e68557ec6838799da5a869e90b909b56f` (PR #478).
 
-## Verified this session
-- Railway project `fawri-staging`, service `fawri-web`, environment named `production` (within staging project).
-- Railway service online: 1/1 replica; latest SUCCESS deployment from baseline main SHA on 2026-10-09.
-- Railway healthcheck configured at `/ops/readiness`; `DATABASE_URL` variable name present; no live volume or bucket reported.
-- Railway last-24h request totals at inspection: 1,487 HTTP; 0 5xx; this does NOT prove all product journeys.
-- One open draft GitHub PR #476 at inspection.
-- First GitHub branch listing page contained 100 branches; full inventory NOT performed.
-- Direct Neon connector project lookup returned a tool error; PostgreSQL runtime/permissions NOT independently verified.
-- Historical 16-phase freeze report exists; it is prior evidence, not a fresh complete audit.
+## Completed
+- FA-000 continuity ledger: PR #477 squash-merged as `3b51731758ff3e15728bdb61bafb4149976f6882`.
+- FA-001 enumeration: 225 branches across GitHub pages 100 + 100 + 25; inventory documented by merged PR #478.
+- Priority comparisons: independent cashier licensing branch is 0 ahead/44 behind; FastPay readiness branch 0 ahead/36 behind.
+- Old cashier entitlement branch is 3 ahead/179 behind. Its `0027_cashier_subscription_entitlement.sql` is an **obsolete/incompatible design**, not an appropriate direct merge: current main has `0027_cashier_subscription_licensing.sql` and a broader cashier subscription schema. Database migration execution remains unverified.
+- `fix/cashier-first-station`: 1 ahead/177 behind, 4 changed paths; main already contains `cashierStationCreation.ts`. Patch equivalence not yet proven.
+- `fix/admin-retired-subscription-migration`: 2 ahead/6 behind; requires review.
+- Draft PR #476 `fix/staging-admin-ui-qa`: 4 ahead/2 behind, 7 files; author says build/typecheck passed but visual QA pending. Do not merge until verified.
+- `feature/whatsapp-offline-foundation`: 240 ahead/3233 behind, 93 changed files; high-risk legacy branch, do not merge blindly.
+- `docs/staging-ui-findings`: 1 ahead/2 behind, contains the 2026-10-09 admin UI findings; not on main at same path.
 
 ## Next exact action
-1. Verify four FA-000 files and PR; await review/CI before merging to protected main.
-2. Once merged, update this file to FA-000 PASS with merge SHA.
-3. Begin FA-001: enumerate ALL branch pages and classify against main, without modifications.
-4. Keep Neon runtime proof open under FA-004; do not rebuild infrastructure or claim DB PASS.
+1. Continue read-only comparison of remaining branches; classify using content equivalence as well as ahead/behind (squash merges change ancestry).
+2. Review PR #476 against the three staging UI findings; run or inspect CI and real visual QA before any merge.
+3. Verify current cashier migrations/schema against live Neon PostgreSQL in FA-004; absence of legacy file is not a defect.
+4. Record further evidence and update this ledger via a PR. Never modify protected main directly.
 
 ## Restrictions
-No code changes, branch deletion, database changes, secrets exposure, or production deploy. Do not repeat 16 core phases without a scoped reason.
+No unapproved application code changes, branch deletion, database changes, secret exposure or production deployment. Do not repeat historical 16 core phases without a scoped reason.
