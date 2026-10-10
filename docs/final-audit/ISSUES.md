@@ -57,3 +57,14 @@ This is an **index**, not a second evidence register. Detailed source observatio
 **Status:** PR #518 verified merged; PRs #519 and #520 verified open drafts on 2026-10-11. This index is committed to PR #520 only, **not main** until reviewed and merged. CI inventory remains incomplete: attempting `.github/workflows/ci.yml` returned 404, but no inference is made about other workflow filenames. No integration test, database mutation, code change, or deploy performed.
 
 **Resumption order:** (1) inventory CI/workflow paths and PostgreSQL integration test commands, (2) close safe-test guard coverage with approved code fixes, (3) historical operator negative test and Meta restricted-role reproduction on disposable PostgreSQL, (4) external media/backup/provider proof, (5) visual QA. Do not raise audit completion estimate for documentation-only activity.
+
+## UI findings from historical staging notes — current main source review (2026-10-11)
+
+| ID | Status | Evidence / next proof |
+| --- | --- | --- |
+| FAWRI-UI-001 | SOURCE_CONFIRMED_FIX_PENDING | Merchant DetailsModal bottom Close and shared DialogContent top X both present. Confirm unsaved note behavior before UI fix. |
+| FAWRI-UI-002 | VISUAL_QA_PENDING | Permission footer has Cancel then Save and responsive flex layout; verify AR/KU/EN desktop/mobile. |
+| FAWRI-UI-003 | SOURCE_CONFIRMED_FIX_PENDING | LogsTab unknown action codes fall back to raw codes; reason rendered verbatim. Localize display only, preserve stored audit data. |
+| FAWRI-UI-004 | INVESTIGATE | Possible unsaved merchant note loss on dialog dismissal: local noteText and explicit save; parent close behavior and runtime reproduction still pending. |
+
+These findings are documentation-only on draft PR #520, not merged into main and not repaired.
