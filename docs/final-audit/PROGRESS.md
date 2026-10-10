@@ -80,3 +80,19 @@ Source review of `postgresSupportImageAuthority.ts` confirms that ticket ownersh
 ## Support attachment read authorization (source-only)
 
 `auth-support-postgres-routes.ts` GET `/support-images/attachments/:attachmentId` requires `requireSupportViewer`: secure merchant session, or secure admin session with `manage_support`. After loading the attachment, merchant access requires matching merchant_id; a mismatch yields 404. Admin viewers with `manage_support` are not additionally restricted by ticket assignment in this GET path. File keys are validated as two safe path segments and responses set `Cache-Control: private, no-store`. This establishes merchant cross-tenant filtering in source, but leaves an explicit product-policy question about whether any support admin should read all ticket attachments or only assigned tickets. Do not claim a vulnerability without the intended admin access policy and runtime negative tests. No tests run.
+
+## Stage-based progress reconciliation (2026-10-11)
+
+The earlier 70/100 is a qualitative conversation estimate, NOT an independently computed completion rate. Use stage statuses instead of incrementing it without exit evidence:
+
+| Stage | Evidence-backed status | Exit evidence still needed |
+| --- | --- | --- |
+| FA-000 continuity | PASS (merged audit ledger PR #477) | Keep checkpoints current |
+| FA-001 GitHub inventory | IN PROGRESS (225 branches enumerated; priority comparisons documented) | Resolve remaining branches and draft PR #476 |
+| FA-002 cross-system audit | IN PROGRESS (cashier, Meta RLS, media, support, billing test-safety findings) | Complete scoped coverage and negative proofs |
+| FA-003 fixes/cleanup | BLOCKED ON APPROVAL | Approved fixes plus regression tests |
+| FA-004 staging operational proof | PARTIAL / BLOCKED | Restricted-role tenant tests, durable media and hosted restore evidence |
+| FA-005 visual QA | NOT VERIFIED | Merchant/cashier/admin multilingual responsive end-to-end checks |
+| FA-006 release decision | BLOCKED | All launch gate evidence, verified main SHA and owner go/no-go |
+
+This is a stage status matrix, not a weighted percent: stages differ in size, and no complete test inventory exists. Existing audit issue IDs remain canonical. Source reviews are not executed tests. Do not treat draft PR #520 as merged main evidence. Next: finish FA-001 inventory or establish scoped FA-002 exit criteria; then compute coverage from explicit task counts, not arbitrary percentages. No app code, database, deployment or PR merge changes.
