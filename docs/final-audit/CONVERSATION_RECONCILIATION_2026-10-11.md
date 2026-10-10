@@ -65,3 +65,36 @@ User-provided screenshots of the prior conversation show the following **specifi
 | Audit 70% estimate | Screenshot reports 70%; current-main `PROGRESS.md` retains older 54% planning estimate | UNRECONCILED ESTIMATES; neither is launch readiness |
 
 **Scope limit:** screenshots are overlapping excerpts, not an exhaustive export of the full previous conversation. All actionable findings visible in the supplied screenshots have a matching main register entry or PR #519 entry; this is **not** a claim that every finding in the entire previous conversation has been matched.
+
+## User-supplied comprehensive audit handoff — 2026-10-11
+
+This section reconciles the user's explicit handoff against four **freshly fetched** canonical files on `main` (MASTER_PLAN blob `55ab1a4`, PROGRESS `3a53247`, AUDIT_REGISTER `04a6e0b`, ISSUES `ecc3ab5`). The user's 70% is a historical *qualitative* estimate; main PROGRESS still records 54/100. Do not increment for this documentation work.
+
+| ID | Area | File / evidence | Finding / category | Documentation | Test state | Risk | Action / status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FA-I-006 | Meta/RLS | `postgresMetaChannelAuthority.ts`; `ISSUES.md` FA-I-006 | Cross-merchant page lookup under tenant RLS, potential security/functionality proof gap | MAIN COMPLETE | Restricted-role test NOT RUN | HIGH (unconfirmed) | Disposable-role negative test; OPEN |
+| FA-I-007 | PostgreSQL grants | `ISSUES.md` FA-I-007; `AUDIT_REGISTER.md` DB-002 | Non-RLS tables with broad grants; not automatically an exploit | MAIN COMPLETE | Tenant-negative test NOT RUN | HIGH (unconfirmed) | Least-privilege review; OPEN |
+| RELEASE-GATE-STATIC-001 | Release | `productionReleaseReadiness.ts` | Five unconditional external blockers | MAIN COMPLETE | Live release proof NOT RUN | HIGH launch blocker | Provider/evidence decisions; OPEN |
+| CASHIER-SW-001 | Offline app | `cashier-sw.js`; `cashierOfflineAppShell.ts` | SW cache version mismatch | MAIN COMPLETE | Cold-start runtime NOT RUN | MEDIUM | Targeted fix/test approval; OPEN |
+| CASHIER-DEMO-001 | Cashier UI | `cashierMain.tsx`; `CashierPosPage.tsx` | Demo query/UI gate mismatch; not proven unauthorized sale | MAIN COMPLETE | Runtime negative test NOT RUN | UNRESOLVED | Targeted UI/authorization test; OPEN |
+| CASHIER-OFFLINE-001 | Licensing | `cashierOfflineEntitlementAuthority.ts` | Local IndexedDB cache, no observed cryptographic signature | MAIN COMPLETE | Tamper test NOT RUN | UNRESOLVED | Security/product policy decision; OPEN |
+| CASHIER-SYNC-SESSION-002 | Legacy sync | `cashier-sync-operations.ts` | Merchant-session compatibility bridge | MAIN COMPLETE | Abuse negative test NOT RUN | UNRESOLVED | Test reachability and binding; OPEN |
+| CASHIER-ATTRIBUTION-006 | Sync | `cashierOperatorCommerceAuthority.ts` lines 406-550 | Separate sale/attribution transactions; code comments explicitly specify repair on retry | MAIN COMPLETE; EXTRA SOURCE CHECK 2026-10-11 | Failure injection NOT RUN | MEDIUM proof gap | Simulate commit then attribution failure in disposable DB; OPEN |
+| CASHIER-HIST-PERMISSION-009 | Historical permissions | `cashierOperatorCommerceAuthority.ts` lines 200-254 | Historical session query checks time/shift/credential but does not select historical `permission_snapshot`; current uploader permission distinct. Potential authorization policy gap, not proven exploit | PR #519 ONLY | Negative test NOT RUN | HIGH (unconfirmed) | Decide policy and run disposable test; OPEN |
+| CASHIER-HIST-IDENTITY-010 | Historical identity | `cashierOperatorCommerceAuthority.ts` lines 154-186, 406-477 | Merchant/device asserted; attribution conflict checks operation ID, sale ID, kind, staff, shift, session, device and occurred_at. However forged `occurred_at` and sequence-to-session end-to-end negative proof not established | **NEW SCENARIO DETAIL IN THIS DRAFT PR**, related to CASHIER-ATTRIBUTION-006 | Negative test NOT RUN | UNRESOLVED | Verify cross-service sequence/timeline and forged-time test; OPEN |
+| TEST-DB-SAFETY-008 | Test safety | `catalog-cashier-compensation-history-postgres.integration.test.ts` lines 1-30 | Imports `@workspace/db` and mutates DB without explicit local-only URL guard | MAIN COMPLETE; RECONFIRMED 2026-10-11 | TEST NOT RUN (unsafe) | HIGH test-process risk | Add guard with code approval; OPEN |
+| PG-TEST-GUARD-002 / 003 | Test safety | Register entries for billing/subscription and RLS security suites | Additional unsafe suites documented, but complete PostgreSQL test/CI inventory **not yet done** | MAIN PARTIAL INVENTORY | NOT RUN | HIGH test-process risk | Enumerate all integration suites and actual workflow commands; OPEN |
+| BACKUP-DRILL-001 | Restore | `backup-restore-runbook.md` | Disposable-only backup proof, not hosted PITR restore | MAIN COMPLETE | Hosted recovery NOT PROVEN | HIGH launch blocker | Safe external proof plan; OPEN |
+| CATALOG-MEDIA-001 / SUPPORT-STORAGE-001 | Media | Storage services and Railway volume inventory | Filesystem-only and no verified durable staging mount | MAIN COMPLETE | Redeploy durability NOT PROVEN | HIGH launch blocker | Storage architecture decision; OPEN |
+| FASTPAY-RELEASE-001 | Billing | FastPay readiness test and production adapter | Production adapter pending | MAIN COMPLETE | Production end-to-end NOT RUN | HIGH launch blocker | Provider integration approval; OPEN |
+| FA-005 | Visual QA | `MASTER_PLAN.md`; PR #476 | Final visual QA still pending | MAIN PLAN DOCUMENTED | NOT RUN | UNRESOLVED | Perform after safe functional gates; OPEN |
+
+**New detail rather than duplicate defect:** CASHIER-HIST-IDENTITY-010 is a distinct scenario-level proof question; the existing CASHIER-ATTRIBUTION-006 and CASHIER-HIST-AUTH-005 already cover much of the underlying logic. No exploit is asserted.
+
+**Source check:** On main, `cashierOperatorCommerceAuthority.ts` `resolveHistoricalOperatorAttributionContext` query (lines 200-254) selects historical session, shift, station, device credential and timestamps but does not select historical permission_snapshot. `recordAttribution` (lines 406-477) uses ON CONFLICT DO NOTHING then compares stored binding; `syncCashierOperatorSaleAuthoritative` (491-518) explicitly documents retry repair after core sale commit, and compensation (520-549) persists attribution after core compensation. These are source findings, not executed tests.
+
+**CI safety check limitation:** `.github/workflows/ci.yml` returned 404; this is not evidence that no CI workflow or central guard exists. Discover actual workflow filenames before concluding. **Do not execute any PostgreSQL-writing suite**.
+
+**Process gap:** Canonical `ISSUES.md` primarily lists FA-I-001..009, whereas many later register findings (cashier SW, test guards, release/media blockers, historical permissions) are open in `AUDIT_REGISTER.md` without mirrored issue rows. The canonical register is the evidence source; mirroring *actionable* unresolved findings in ISSUES is recommended as a later batch, without duplicating IDs or treating each as a vulnerability.
+
+**Checkpoint:** Matching and new scenario detail saved in this draft documentation branch; neither PR #519 nor this PR #520 is merged into main. No code edits, DB operations, or tests.
