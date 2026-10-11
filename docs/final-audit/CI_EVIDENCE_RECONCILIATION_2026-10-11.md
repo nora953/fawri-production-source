@@ -52,3 +52,5 @@ Skipped sourcecontract subtest is precisely auth-cutover-contract.test.mjs: vali
 | [Isolated PostgreSQL engineering audit](https://github.com/nora953/fawri-production-source/actions/runs/38175555975) | failure |
 | [Final security and supply chain](https://github.com/nora953/fawri-production-source/actions/runs/38175555964) | success |
 | [PostgreSQL schema validation](https://github.com/nora953/fawri-production-source/actions/runs/38175556050) | success |
+
+Follow-up source05456ea9: authcutover11PASS/0SKIP in isolatedrun38176210529; earlier sourcecontract1SKIP remains historical. Meta pipeline38176210628 and foundation38176210612SUCCESS after migration to owned offline runner; preserve actualpoolcontention assertion. Do not add duplicated Meta counts to global isolated total126PASS/14FAIL/0SKIP.
