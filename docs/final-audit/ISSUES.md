@@ -117,3 +117,11 @@ User authorizes test guards, test additions and isolated CI on the audit branch;
 | DB-TEST-CLEANUP-024 | CONFIRMED_TEST_PROCESS_DEFECT | OPEN | Both MJS merchant journeys swallow account DELETE failures with `.catch(() => {})`; the direct TS HTTP journey and Meta ingress do the same with `.catch(() => undefined)`. This can report a green test after failed cleanup. Separate from late hook registration DB-TEST-CLEANUP-021. Use teardown that attempts every resource release, propagates redacted aggregate errors, and register before setup; test failed setup and failed cleanup. Source evidence only at baseline 09d5b8cd; no DB execution. |
 
 DB-TEST-TARGET-GUARD-020 through GOLDEN-CONTRACT-DIVERGENCE-023 already exist; no duplicate entries created. Merchant deletion RLS suite has finally-based role cleanup but retains fixture rows until instance disposal; runner must destroy its owned instance.
+
+## SEQ-02 — scoped guard and cleanup remediation (audit branch only)
+
+- DB-TEST-TARGET-GUARD-020: IMPLEMENTED / 15 SAFETY REGRESSIONS PASS / ACTUAL CI INSTANCE PROOF PENDING. Five priority suites now call shared attestation before application DB imports. Guard requires a loopback-only network namespace matching runner-owned Docker identity, exact fawri_ci target/role, per-run marker verified by read-only probe, no URL query overrides and NODE_ENV=test. An environment flag or local tunnel URL alone cannot pass.
+- DB-TEST-CLEANUP-021: both MJS cleanup hooks moved before mkdir/first mutation; removed unnecessary initial DELETE. Failed-setup helper regression PASS; actual failed-DB-fixture cleanup proof still pending.
+- DB-TEST-CLEANUP-024: swallowed DELETE errors removed in both MJS journeys, TS HTTP and Meta ingress. Aggregate teardown attempts every cleanup and fails with redacted errors. Helper failure-injection PASS; actual PostgreSQL cleanup behavior pending.
+- GOLDEN-LEGACY-FIXTURE-022 and GOLDEN-CONTRACT-DIVERGENCE-023 remain OPEN; compatibility fixture intentionally retained until measured canonical journey proof. No application implementation changed.
+- Unselected unsafe suites under PG-TEST-GUARD-002/003 and TEST-DB-SAFETY-008 remain OPEN; the five-suite guard is not a repository-wide claim.

@@ -158,9 +158,7 @@ jobs:
           artifacts/api-server/tests/support-image-write-order-postgres.integration.test.ts
 
       - name: Prove merchant deletion under restricted tenant RLS
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/merchant-deletion-tenant-rls.integration.test.mjs
+        run: bash scripts/run-isolated-postgres-audit.sh deletion
 
       - name: Prove merchant management and retention under restricted tenant RLS
         run: >-

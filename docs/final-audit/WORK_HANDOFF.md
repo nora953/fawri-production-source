@@ -1,14 +1,13 @@
 # Fawri autonomous audit — resume here
 
-Updated 2026-10-11. Scope: authorized test infrastructure and audit documentation only. PR #520 remains draft; no main merge or deployment.
+Updated 2026-10-11. Scope: test infrastructure and documentation only; PR #520 draft, no merge/deploy/live DB changes.
 
-- Last completed task: SEQ-01 continuity and cleanup safety source review.
-- Commit: this file's latest commit on [audit branch](https://github.com/nora953/fawri-production-source/commits/audit/conversation-notes-reconciliation-20261011). Exact self-commit SHA cannot be embedded before commit creation; consult branch history.
-- Source baseline: audit 09d5b8cde1145031c26da8a315f63117cf20fcbe; main d38d29229bed0f9575a98e7026e7819fe363bfd4.
-- Tests run here: none. Baseline Actions quality 38169088260 and security 38169088266 successful; no inference of PostgreSQL proof.
-- Open: DB-TEST-TARGET-GUARD-020, DB-TEST-CLEANUP-021/024, GOLDEN-LEGACY-FIXTURE-022, GOLDEN-CONTRACT-DIVERGENCE-023; existing RLS/billing/cashier/external blockers remain.
-- Next task SEQ-02: add shared fail-closed guard before DB imports in priority entrypoints; reject remote URL, tunnel-style loopback without runner attestation, mismatched run identity; add meaningful safety/teardown regression tests with no DB.
-- Then SEQ-03: new Actions service in isolated Docker network, fresh owned PostgreSQL, no hosted secrets, full committed migrations, selected suites sequentially, destroy instance with always cleanup.
-- Blockers: local Docker/psql absent; CI is execution path. No additional permission required within current scope. Business changes/live deployment need separate approval.
-- Time estimate: guard/cleanup + first isolated CI results roughly 1–2 engineering hours, conditional on Actions availability. Whole remaining audit cannot be estimated reliably until first DB failures and normalized coverage inventory; previous percentages are not evidence.
-- Work credits: unavailable; never guessed.
+- Last completed implementation task: SEQ-02 five-suite guard, teardown and isolated CI preparation; integration execution still pending.
+- Previous verified saved checkpoint: [SEQ-01 commit de4478b9](https://github.com/nora953/fawri-production-source/commit/de4478b987241d1a4b1f26babfdf8bfb58ab8d27). Current task commit is this file's latest change in [audit branch history](https://github.com/nora953/fawri-production-source/commits/audit/conversation-notes-reconciliation-20261011).
+- Tests: safety regressions 15 PASS / 0 FAIL / 0 SKIP. Includes three actual MJS entrypoint remote-target rejects, fake read-only probe identity checks, failed setup and aggregate cleanup. Shell/JS syntax, six workflow YAML parse, whitespace PASS. No PostgreSQL integration yet.
+- Pending local: pinned corepack pnpm 10.26.1 install; API build attempted too early failed esbuild missing, rerun after install. No lockfile change authorized/needed.
+- Implemented workflow: audit-isolated-postgres.yml + run-isolated-postgres-audit.sh; fresh network-none PostgreSQL, Node same namespace, no published port or external secrets, read-only source, per-run DB marker; full migrations then five tests sequential; fail on skipped/zero pass and destroy containers/volumes.
+- Open: 020/021/024 actual CI/DB proof; 022/023 compatibility fixture necessity; all earlier cashier/billing/RLS/provider/media/restore issues. Guard is only five suites, not all unsafe PG tests.
+- Next task SEQ-03: verify save, fetch Actions for new PR head, inspect migration and each suite result (pass/fail/skip counts), resolve test infrastructure failures within authorization, then add restricted-role Meta negative reproduction and wider cashier/billing suites in short saved tasks.
+- Blockers/permissions: no local Docker/psql, use Actions. No approval needed for authorized safety/test edits. Business implementation, hosted DB, merge and production deployment require separate explicit approval.
+- Estimated remaining: initial CI proof and infrastructure fixes ~30–90 min once Actions starts, conditional on failures. Whole audit estimate unresolved until normalized remaining test inventory/first DB evidence; no invented percentage or credit balance.

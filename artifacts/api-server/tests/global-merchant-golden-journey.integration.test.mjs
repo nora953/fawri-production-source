@@ -1,3 +1,5 @@
+import { cleanupResources, stopTestChild } from "./helpers/cleanup-resources.mjs";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { spawn } from "node:child_process";
@@ -7,6 +9,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+
+if (process.env.DATABASE_URL) await assertDisposablePostgres();
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(testDir, "..");
@@ -234,8 +238,17 @@ test(
     const dataDirectory = path.join(os.tmpdir(), `fawri-golden-journey-${id}`);
     const runtimeDirectory = path.join(dataDirectory, "runtime");
 
+    let child;
+    t.after(async () => cleanupResources([
+      ["server", () => stopTestChild(child)],
+      ["fixture accounts", async () => {
+        await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
+      }],
+      ["pool", () => pool.end()],
+      ["temporary directory", () => rm(dataDirectory, { recursive: true, force: true })],
+    ]));
+
     await mkdir(runtimeDirectory, { recursive: true });
-    await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
     const phoneCollision = await pool.query(
       "SELECT id FROM accounts WHERE phone = $1 LIMIT 1",
       [phone],
@@ -346,7 +359,7 @@ test(
     const port = await reservePort();
     const baseUrl = `http://127.0.0.1:${port}`;
     let serverOutput = "";
-    const child = spawn(process.execPath, [serverEntry], {
+    child = spawn(process.execPath, [serverEntry], {
       cwd: runtimeDirectory,
       env: {
         ...process.env,
@@ -372,13 +385,6 @@ test(
     });
     child.stderr?.on("data", (chunk) => {
       serverOutput += chunk.toString();
-    });
-
-    t.after(async () => {
-      if (child.exitCode === null) child.kill("SIGTERM");
-      await rm(dataDirectory, { recursive: true, force: true });
-      await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]).catch(() => {});
-      await pool.end();
     });
 
     await waitForServer(baseUrl, child, () => serverOutput);
