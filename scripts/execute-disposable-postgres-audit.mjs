@@ -6,8 +6,9 @@ const suites = {
   http: ['global-merchant-postgres-http-journey.integration.test.ts'],
   deletion: ['merchant-deletion-tenant-rls.integration.test.mjs'],
   meta: ['meta-webhook-postgres-ingress-cutover.integration.test.ts'],
+  'meta-rls': ['meta-page-directory-restricted-rls.integration.test.mjs'],
 };
-suites.priority = [...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta];
+suites.priority = [...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
 const selected = suites[process.argv[2]];
 assert.ok(selected, 'unknown audit suite');
 await assertDisposablePostgres();

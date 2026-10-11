@@ -3,7 +3,7 @@ set -euo pipefail
 # Only fresh Docker-owned PostgreSQL; no host DB URL or hosted credentials inherited.
 audit_suite="${1:-priority}"
 case "$audit_suite" in
-  priority|http|meta|bootstrap|deletion) ;;
+  priority|http|meta|meta-rls|bootstrap|deletion) ;;
   *) echo 'Unsupported audit suite' >&2; exit 2 ;;
 esac
 : "${RUNNER_TEMP:?GitHub runner temp is required}"
@@ -29,10 +29,10 @@ printf 'POSTGRES_USER=fawri_ci\nPOSTGRES_DB=fawri_ci\nPOSTGRES_PASSWORD=%s\n' "$
 audit_pg="$(docker run -d --label "fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}" --network none --env-file "$audit_temp/postgres.env" postgres:16-alpine)"
 test "$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$audit_pg")" = none
 for audit_attempt in {1..40}; do
-  if docker exec "$audit_pg" pg_isready -U fawri_ci -d fawri_ci >/dev/null 2>&1; then break; fi
+  if docker exec "$audit_pg" pg_isready -h 127.0.0.1 -U fawri_ci -d fawri_ci >/dev/null 2>&1; then break; fi
   sleep 1
 done
-docker exec "$audit_pg" pg_isready -U fawri_ci -d fawri_ci >/dev/null
+docker exec "$audit_pg" pg_isready -h 127.0.0.1 -U fawri_ci -d fawri_ci >/dev/null
 docker exec "$audit_pg" psql -U fawri_ci -d fawri_ci -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE fawri_ci IS 'fawri-disposable:$audit_run'" >/dev/null
 audit_namespace="$(docker exec "$audit_pg" readlink /proc/self/ns/net)"
 AUDIT_RUN="$audit_run" AUDIT_CONTAINER="$audit_pg" AUDIT_NAMESPACE="$audit_namespace" node --input-type=module - "$audit_temp/attestation.json" <<'NODE'
