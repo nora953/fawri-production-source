@@ -271,3 +271,12 @@ GitHub connector fetched **actual jobs** (not merely workflow definitions) for p
 | `38090880764` | `dependency-audit` | success | Separate dependency audit command completed successfully; no severity counts extracted here |
 
 Evidence boundary: these are **historical PR #518 run IDs**, not new runs for the current `main` SHA or the audit branch. CI job success does not establish integration DB safety, tenant RLS isolation, production Meta/SuperQi, hosted restore or UI visual QA. Do not increment stage percentages from these observations. No workflow rerun, database operation, merge, deployment or application change.
+
+
+## 2026-10-11 SuperQi reference attachment — narrower source proof
+
+Current `main` `artifacts/api-server/src/services/superQiSandboxWebhook.ts:118-160` selects `cashier_billing_orders` or `saas_billing_orders` by authority, checks `provider_checkout_ref` collision with a separate `SELECT`, then issues an `UPDATE` conditioned on same-order null/equal reference. The SQL is **not an atomic cross-order uniqueness guarantee by itself**; whether concurrent different-order requests can attach the same payment ID depends on a database unique index/constraint not yet verified in this audit. The conditional UPDATE does protect against changing a different reference on the *same* order. Keep the concurrency concern classified as `SCHEMA_AND_RACE_PROOF_PENDING`, not a confirmed exploit. The relevant column is `provider_checkout_ref`, not `provider_payment_ref`.
+
+Current `main` `quality-gates.yml` includes a `translation-structure-audit` CI job with successful historical execution, but that only checks translation structure, not Arabic wording quality or visual layout. Historical CI run/job/step evidence is documented above. GitHub compare `main...audit/conversation-notes-reconciliation-20261011` after previous audit commits: ahead 59, behind 0, exactly three documentation files changed; no application source change. No tests run or database touched.
+
+Next precise evidence: inspect the actual schema/migration unique indexes for both billing order tables; run two-order same-reference race only on a verified disposable DB, and test delayed/hung SuperQi sandbox provider responses. Do not infer absence of constraints from unsuccessful path guesses; no code change authorized.
