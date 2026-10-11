@@ -93,3 +93,5 @@ Success criterion met: remaining direct-entrypoint coverage is enumerated withou
 Follow-up in this checkpoint: merchant-password-recovery-postgres.integration.test.ts gains direct guard and isolated selection; current markers17/selection32, uncovered32 (same64 candidates). Two actual local invocations reject before application DB imports; HTTP functionality awaits CI. Original inventory table remains an exact sourcefc1ee417 snapshot.
 
 SEQ-21 prepared newrestricted HTTP integrationcandidate with directguard/selectedrunner:65 textual integrationcandidates,18directmarkers/33selectedintegrationfiles,32outsideboth. authcutover non-integration test additionallyselected (total34distinctfiles/35restorephaseinvocations). Countsare scoped inventories, not exhaustive transitive safety closure. Newfixture onlylocalrefusal/syntaxproven, DBpending.
+
+SEQ-23 adds externalcheckoutrollbackintegration fixture:66 textual candidates,19directmarkers/34selectedintegrationfiles,32outsideboth. Plusauthcutover non-integrationfile=>35distinctselectedfiles; restoreverify+Node22repeat=>37invocations. Newfileguardrejection/syntaxPASS; DBpending.

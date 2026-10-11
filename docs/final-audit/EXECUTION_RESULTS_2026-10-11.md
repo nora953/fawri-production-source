@@ -409,3 +409,46 @@ Sourcefe892e69, run38174186237/job114572937993:108PASS/11FAIL/0SKIP;29unique fil
 | meta-live-reply-postgres.integration.test.ts | 0 | 54 | 0 | 0 |
 | full-schema-restore-postgres.integration.test.mjs (seed) | 0 | 1 | 0 | 0 |
 | full-schema-restore-postgres.integration.test.mjs (verify) | 0 | 1 | 0 | 0 |
+
+## SEQ-23 — run38177206914 / source83999ff1
+
+34unique files/36phase-runtimeinvocations:132PASS/14FAIL/0SKIP; seven28migrationchains/cleanupSUCCESS. HTTPrepeat underNode22 is justified by imageNode22vsoriginalNode24; counteachinvocationbutnot asuniqueadditionalfile.
+
+| Suite / phase / runtime batch | Runtime | Exit | Pass | Fail | Skip |
+| --- | --- | --- | --- | --- | --- |
+| failed-setup-cleanup-postgres.integration.test.mjs | v24.21.0 | 0 | 1 | 0 | 0 |
+| global-merchant-auth-bootstrap-postgres.integration.test.mjs | v24.21.0 | 0 | 1 | 0 | 0 |
+| global-merchant-golden-journey.integration.test.mjs | v24.21.0 | 0 | 1 | 0 | 0 |
+| global-merchant-postgres-http-journey.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| merchant-deletion-tenant-rls.integration.test.mjs | v24.21.0 | 0 | 1 | 0 | 0 |
+| meta-webhook-postgres-ingress-cutover.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| meta-page-directory-restricted-rls.integration.test.mjs | v24.21.0 | 1 | 2 | 3 | 0 |
+| cashier-billing-negative-failure-cases.integration.test.mjs | v24.21.0 | 1 | 2 | 4 | 0 |
+| cashier-full-lifecycle-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| cashier-subscription-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| cashier-billing-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| cashier-downgrade-grace-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| cashier-historical-operation-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| cashier-operator-logout-pin-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| cashier-operator-own-history-scope-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| catalog-cashier-compensation-history-postgres.integration.test.ts | v24.21.0 | 0 | 2 | 0 | 0 |
+| saas-billing-sql-failure-recovery.integration.test.mjs | v24.21.0 | 1 | 1 | 2 | 0 |
+| saas-billing-negative-failure-cases.integration.test.mjs | v24.21.0 | 1 | 1 | 4 | 0 |
+| saas-billing-authority.integration.test.ts | v24.21.0 | 0 | 4 | 0 | 0 |
+| superqi-sandbox-billing.integration.test.ts | v24.21.0 | 0 | 2 | 0 | 0 |
+| subscription-entitlement-postgres.integration.test.ts | v24.21.0 | 0 | 2 | 0 | 0 |
+| merchant-customer-payment-authority-postgres.integration.test.ts | v24.21.0 | 0 | 11 | 0 | 0 |
+| merchant-session-restricted-http-postgres.integration.test.mjs | v24.21.0 | 0 | 5 | 0 | 0 |
+| auth-cutover-contract.test.mjs | v24.21.0 | 0 | 11 | 0 | 0 |
+| merchant-password-recovery-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| reply-addon-refund-postgres.integration.test.mjs | v24.21.0 | 0 | 3 | 0 | 0 |
+| reply-cross-cycle-refund-postgres.integration.test.mjs | v24.21.0 | 1 | 0 | 1 | 0 |
+| production-postgres-rls-security.integration.test.ts | v24.21.0 | 0 | 6 | 0 | 0 |
+| knowledge-tenant-rls.integration.test.mjs | v24.21.0 | 0 | 1 | 0 | 0 |
+| merchant-management-tenant-rls.integration.test.mjs | v24.21.0 | 0 | 6 | 0 | 0 |
+| subscription-reminder-rls.integration.test.mjs | v24.21.0 | 0 | 1 | 0 | 0 |
+| knowledge-learning-cycle-postgres.integration.test.ts | v24.21.0 | 0 | 1 | 0 | 0 |
+| meta-live-reply-postgres.integration.test.ts | v24.21.0 | 0 | 54 | 0 | 0 |
+| full-schema-restore-postgres.integration.test.mjs (seed) | v24.21.0 | 0 | 1 | 0 | 0 |
+| full-schema-restore-postgres.integration.test.mjs (verify) | v24.21.0 | 0 | 1 | 0 | 0 |
+| global-merchant-postgres-http-journey.integration.test.ts [node22-http] | v22.23.3 | 0 | 1 | 0 | 0 |
