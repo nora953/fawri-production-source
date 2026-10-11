@@ -243,3 +243,13 @@ Source review: `superQiSandboxWebhook.ts` attachProviderPaymentReference checks 
 ## SuperQi network timeout source verification
 
 `superQiSandboxTransport.ts` createSuperQiSandboxPayment and getSuperQiSandboxPaymentStatus both use fetchImpl without an explicit request deadline. SuperQiFetch init type exposes method, headers, and body but no AbortSignal. Default fetch delegates directly to global fetch. A network-stall regression test is needed before remediation; no runtime failure claimed. No tests or code changes.
+
+
+## 2026-10-11 verified CI runner inventory — continuation
+
+- Current `main` `.github/workflows/quality-gates.yml` is the **Final quality gates** workflow (not `.github/workflows/ci.yml`). It has `quality-tool-tests`, `full-typecheck`, `full-build`, and `translation-structure-audit` jobs. The `full-typecheck` job explicitly enumerates API `tests/*.test.ts` **excluding** `*.integration.test.ts`; its additional frontend and contract tests do not establish PostgreSQL integration-suite coverage. The frontend TypeScript unit suite runs separately. This is a **coverage boundary**, not a CI failure.
+- Current `main` `artifacts/api-server/tsconfig.json` has `include: ["src"]`; the API package typecheck alone therefore does **not** establish that `tests/*.ts` were typechecked. This distinction applies even if CI is green.
+- `artifacts/api-server/tests/merchant-reply-entitlement.test.ts` uses temporary local JSON fixtures and cleanup; `observability-components.test.ts` covers readiness fail-closed, timeout, secret-safe metrics, and runtime-role matching. Both are already eligible for the non-integration API unit-test selector, but no new execution is claimed.
+- Current `main` `.github/workflows/backup-restore-drill.yml` has a disposable PostgreSQL 16 restore job and an observability contract job. Workflow existence and defined commands do not prove current run success, hosted Neon PITR restore, or durable hosted media.
+- Execution boundary: repository code is readable through GitHub connector; this session has no verified local Fawri checkout or disposable PostgreSQL. No DB-writing integration test was executed, no CI rerun initiated, no application or infrastructure change made.
+- Next closure evidence: enumerate other CI workflows; verify recent `quality-gates.yml` run/jobs against a specific SHA; establish disposable-only pre-import guards for unsafe integration suites (approval required); then execute restricted-role Meta and SuperQi negative cases on disposable PostgreSQL. Keep existing test-safety and release findings OPEN. **Do not increment stage percentages for this documentation update.**
