@@ -56,6 +56,9 @@ jobs:
       - name: Restricted-role tenant, knowledge and retention proofs
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
         run: bash scripts/run-isolated-postgres-audit.sh tenant
+      - name: Meta bot and AI lifecycle with injected providers only
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
+        run: bash scripts/run-isolated-postgres-audit.sh meta-bot
       - name: Ensure owned containers and anonymous volumes are destroyed
         if: always()
         run: |

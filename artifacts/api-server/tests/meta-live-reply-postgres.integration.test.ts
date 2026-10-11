@@ -4,6 +4,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
+await assertDisposablePostgres();
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-meta-live-pg-"));
 process.env.FAWRI_DATA_DIR = dataDir;
@@ -15,6 +18,10 @@ process.env.FAWRI_AUTH_SECURITY_SECRET = "meta-live-test-auth-secret-32-bytes-mi
 
 const dbModule = await import("@workspace/db");
 const pool = dbModule.pool;
+test.after(async () => cleanupResources([
+  ['pool', () => pool.end()],
+  ['data directory', () => fs.rmSync(dataDir, { recursive: true, force: true })],
+]));
 const accounts = await import("../src/services/postgresMerchantAccountAuthority.js");
 const settings = await import("../src/services/postgresMerchantSettingsAuthority.js");
 const channels = await import("../src/services/postgresMetaChannelAuthority.js");
@@ -5947,7 +5954,26 @@ await test("same provider event id with changed payload fails closed as identity
 });
 
 
-test.after(async () => {
-  await pool.end();
-  fs.rmSync(dataDir, { recursive: true, force: true });
+
+
+await test("duplicate reservation after subscription suspension cannot invoke provider send", async () => {
+  const queued = await enqueueReply({ merchantId: merchantA.account.id, pageId: pageA, senderId: `audit-suspended-${runId}`, eventId: `audit-suspended-event-${runId}`, mid: `audit-suspended-mid-${runId}` });
+  const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+  assert.equal(prepared.action, 'send');
+  if (prepared.action !== 'send') return;
+  const { reserveMerchantAutoReplyAuthoritative } = await import('../src/services/merchantReplyEntitlementAuthority.js');
+  assert.equal((await reserveMerchantAutoReplyAuthoritative(merchantA.account.id, prepared.eventId)).allowed, true);
+  const prior = (await raw('SELECT status FROM subscriptions WHERE merchant_id=$1', [merchantA.account.id])).rows[0].status;
+  let sends = 0;
+  try {
+    await raw("UPDATE subscriptions SET status='suspended' WHERE merchant_id=$1", [merchantA.account.id]);
+    const duplicate = await reserveMerchantAutoReplyAuthoritative(merchantA.account.id, prepared.eventId);
+    console.log('REPLY_SUSPENDED_DUPLICATE ' + JSON.stringify(duplicate));
+    const transport = await liveTransport.createPostgresMetaWebhookReplyTransport({ prepared, sendText: async () => { sends++; return { status: 'sent', providerMessageId: 'synthetic-never-sent', recipientId: prepared.recipientId }; } });
+    const currentSettings = await settings.getMerchantOperationalSettingsAuthoritative(prepared.merchantId);
+    await assert.rejects(() => transport.send({ eventId: prepared.eventId, merchantId: prepared.merchantId, settingsVersion: currentSettings.version, beforeSend: async () => {} }), (error: unknown) => (error as { code?: string }).code === 'MERCHANT_AUTO_REPLY_DISABLED');
+    assert.equal(sends, 0);
+  } finally {
+    await raw('UPDATE subscriptions SET status=$2 WHERE merchant_id=$1', [merchantA.account.id, prior]);
+  }
 });
