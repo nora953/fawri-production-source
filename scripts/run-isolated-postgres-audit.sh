@@ -3,7 +3,7 @@ set -euo pipefail
 # Only fresh Docker-owned PostgreSQL; no host DB URL or hosted credentials inherited.
 audit_suite="${1:-priority}"
 case "$audit_suite" in
-  priority|http|meta|meta-rls|bootstrap|deletion|cashier|billing|tenant|meta-bot) ;;
+  priority|http|meta|meta-rls|bootstrap|deletion|cashier|billing|tenant|meta-bot|full-restore) ;;
   *) echo 'Unsupported audit suite' >&2; exit 2 ;;
 esac
 : "${RUNNER_TEMP:?GitHub runner temp is required}"
@@ -21,6 +21,7 @@ audit_cleanup() {
 }
 trap 'audit_status=$?; audit_cleanup || audit_status=1; exit "$audit_status"' EXIT
 umask 077
+mkdir -p "$audit_temp/restore-proof"
 docker pull postgres:16-alpine >/dev/null
 docker pull node:24-bookworm-slim >/dev/null
 audit_run="$(node -e "process.stdout.write(require('node:crypto').randomBytes(16).toString('hex'))")"
@@ -45,6 +46,8 @@ printf 'DATABASE_URL=postgresql://fawri_ci:%s@127.0.0.1:5432/fawri_ci\nNODE_ENV=
 audit_node="$(docker create --label "fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}" --network "container:$audit_pg" --env-file "$audit_temp/runner.env" \
   --mount "type=bind,src=$audit_root,dst=$audit_root,readonly" \
   --mount "type=bind,src=$audit_temp/attestation.json,dst=/audit-proof.json,readonly" \
+  --mount "type=bind,src=$audit_temp/restore-proof,dst=/restore-proof" \
+  --env FAWRI_AUDIT_RESTORE_PHASE=seed \
   --workdir "$audit_root" node:24-bookworm-slim \
   node scripts/ci-run-redacted.mjs --label isolated-postgres-audit -- node scripts/execute-disposable-postgres-audit.mjs "$audit_suite")"
 AUDIT_CONTAINER="$audit_pg" AUDIT_NAMESPACE="$audit_namespace" AUDIT_SUITE="$audit_suite" node --input-type=module <<'NODE'
@@ -52,4 +55,25 @@ console.log('AUDIT_ISOLATION_PROOF ' + JSON.stringify({ suite: process.env.AUDIT
 NODE
 docker start -a "$audit_node"
 audit_exit="$(docker inspect -f '{{.State.ExitCode}}' "$audit_node")"
+if [ "$audit_exit" -ne 0 ]; then exit "$audit_exit"; fi
+if [ "$audit_suite" = full-restore ]; then
+  # All commands below address only the fresh owned, offline container ID.
+  # No URL or host connection is used by pg_dump/pg_restore/psql.
+  docker exec "$audit_pg" pg_dump -U fawri_ci -d fawri_ci --format=custom --file=/tmp/fawri-full-schema.dump
+  docker exec "$audit_pg" createdb -U fawri_ci --template=template0 fawri_restore_target
+  docker exec "$audit_pg" pg_restore -U fawri_ci -d fawri_restore_target --no-owner --exit-on-error /tmp/fawri-full-schema.dump
+  docker exec "$audit_pg" psql -U fawri_ci -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE fawri_ci' -c 'ALTER DATABASE fawri_restore_target RENAME TO fawri_ci' >/dev/null
+  docker exec "$audit_pg" psql -U fawri_ci -d fawri_ci -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE fawri_ci IS 'fawri-disposable:$audit_run'" >/dev/null
+  echo 'AUDIT_FULL_SCHEMA_DUMP_RESTORE_PASS'
+  docker rm -fv "$audit_node" >/dev/null
+  audit_node=""
+  audit_node="$(docker create --label "fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}" --network "container:$audit_pg" --env-file "$audit_temp/runner.env" --env FAWRI_AUDIT_RESTORE_PHASE=verify \
+    --mount "type=bind,src=$audit_root,dst=$audit_root,readonly" \
+    --mount "type=bind,src=$audit_temp/attestation.json,dst=/audit-proof.json,readonly" \
+    --mount "type=bind,src=$audit_temp/restore-proof,dst=/restore-proof,readonly" \
+    --workdir "$audit_root" node:24-bookworm-slim \
+    node scripts/ci-run-redacted.mjs --label isolated-full-schema-restore -- node scripts/execute-disposable-postgres-audit.mjs full-restore)"
+  docker start -a "$audit_node"
+  audit_exit="$(docker inspect -f '{{.State.ExitCode}}' "$audit_node")"
+fi
 exit "$audit_exit"

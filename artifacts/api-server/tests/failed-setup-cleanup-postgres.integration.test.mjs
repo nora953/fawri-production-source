@@ -12,7 +12,10 @@ test('failed fixture setup still removes real DB rows after one cleanup fails', 
     ['fallback fixture account', () => pool.query('DELETE FROM accounts WHERE id=$1', [id])],
     ['pool', () => pool.end()],
   ]));
-  const child = spawnSync(process.execPath, ['--import', './scripts/lib/disposable-postgres-preload.mjs', '--import', 'tsx', '--test', '--test-reporter=tap', 'artifacts/api-server/tests/fixtures/disposable-failed-setup.mjs'], { env: { ...process.env, FAWRI_AUDIT_FAILED_SETUP_ID: id }, encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024 });
+  const childEnv = { ...process.env, FAWRI_AUDIT_FAILED_SETUP_ID: id };
+  // A nested --test process must be a new runner, not an inherited IPC worker.
+  delete childEnv.NODE_TEST_CONTEXT;
+  const child = spawnSync(process.execPath, ['--import', './scripts/lib/disposable-postgres-preload.mjs', '--import', 'tsx', '--test', '--test-reporter=tap', 'artifacts/api-server/tests/fixtures/disposable-failed-setup.mjs'], { env: childEnv, encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024 });
   const output = (child.stdout || '') + (child.stderr || '');
   assert.equal(child.error, undefined, 'child must finish rather than time out');
   assert.equal(child.status, 1, 'injected fixture/cleanup failure must remain visible');

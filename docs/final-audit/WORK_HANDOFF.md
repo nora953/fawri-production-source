@@ -12,11 +12,15 @@ SEQ-13: verified [commit2964aba2](https://github.com/nora953/fawri-production-so
 - Meta54Nodepasses (53subtests+parent), standaloneknowledgecycle1pass, injectedproviders/owner-role only.017officialsender rejects suspendedsubscription duplicate before fakeprovider call.52historicalMeta harness errors corrected; keep failure history.
 - Cashier8files/9passes and7policytests passed in38173288724; typechecks passed.019stationrollback and022/023noJSONjourney passed. Restore3rows/2objects and21safetytests passed38172886344; fullschema/storage/PITR recovery remains open.
 
-## Exact next task
+## Latest completed review and exact next task
 
-Read the new28file isolated run for the commit containing this checkpoint. New failed-setup child test deliberately throws after real synthetic account/merchant insertion and injects firstcleanup SQLfailure; parent expects childexit1, TEST_CLEANUP_FAILURE bounded log, zero remaining accounts/merchants and no raw SQLerror.15localguard testsPASS; DB proof pending. Node probe verified reporter can hide an afterhookerror behind setupfailure; helper now emits count before throwing. Verify actual suite counts, five migration chains and cleanup, then save results.
+SEQ-14 [source43e60b16](https://github.com/nora953/fawri-production-source/commit/43e60b164282beec5feba9546625b4c16faca21f), [run38173870161](https://github.com/nora953/fawri-production-source/actions/runs/38173870161), job114571997037:28files106PASS/11FAIL/0SKIP;23filesPASS; five28migration chains/cleanupPASS. One extra failure: nested cleanup child inherited NODE_TEST_CONTEXT and skipped itsfile (exit0), so cleanup assertions not reached. Local reproduction confirmed warning; child environment now strips that context, pendingrerun.
 
-Next independent tasks: REMAINING_WORK_MATRIX.md; focus full Fawri schema restore, cashier retention/proration and failure recovery, extended reply refund, sensitive grants/dependency artifact exposure. FINAL_REPORT_DRAFT.md stays interim.
+Next read new isolated job for this checkpoint. It has29unique files/30invocations:28existing plus fullschema restoreseed/verify on sixth offlinecluster. Verify AUDIT_EXPECTED_FAILURE_CLEANUP has expectedChildExit1/zeroaccountmerchantcounts/redaction; then AUDIT_FULL_SCHEMA_DUMP_RESTORE_PASS and phase seed/verify fingerprint equality/restrictedtenantreads. Verify eachmigrationcount/cleanup and exact results. Do not infer fullrestore success from shellsyntax or phasepresence.
+
+Restore compares publictables/ACL/RLSflags,policies/functions,constraints/indexes,journal andsyntheticchannels. Roles remainpreexisting in samecluster; no fullcluster/PITR/mediarecovery claim. Syntax/YAML/shellchecksPASS.
+
+Then remainingmatrix: cashierretention/proration/failurecases, directentrypointguards, extendedrefunds/sensitivegrants/dependencyartifactreachability, semantic/visual/deployment proof. Draftreport remainsinterim.
 
 ## Blockers and permissions
 

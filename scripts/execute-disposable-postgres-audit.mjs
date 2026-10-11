@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.mjs';
 const suites = {
+  'full-restore': ['full-schema-restore-postgres.integration.test.mjs'],
   cashier: ['cashier-full-lifecycle-postgres.integration.test.ts', 'cashier-subscription-postgres.integration.test.ts', 'cashier-billing-postgres.integration.test.ts', 'cashier-downgrade-grace-postgres.integration.test.ts', 'cashier-historical-operation-postgres.integration.test.ts', 'cashier-operator-logout-pin-postgres.integration.test.ts', 'cashier-operator-own-history-scope-postgres.integration.test.ts', 'catalog-cashier-compensation-history-postgres.integration.test.ts'],
   billing: ['saas-billing-sql-failure-recovery.integration.test.mjs', 'saas-billing-negative-failure-cases.integration.test.mjs', 'saas-billing-authority.integration.test.ts', 'superqi-sandbox-billing.integration.test.ts', 'subscription-entitlement-postgres.integration.test.ts', 'merchant-customer-payment-authority-postgres.integration.test.ts'],
   'meta-bot': ['knowledge-learning-cycle-postgres.integration.test.ts', 'meta-live-reply-postgres.integration.test.ts'],
@@ -25,15 +26,17 @@ function execute(args, env = process.env) {
   process.stderr.write(result.stderr || '');
   return result;
 }
-const migration = execute(['lib/db/scripts/audit-disposable-migrate.mjs']);
-if (migration.status !== 0) process.exit(1);
+if (process.env.FAWRI_AUDIT_RESTORE_PHASE !== 'verify') {
+  const migration = execute(['lib/db/scripts/audit-disposable-migrate.mjs']);
+  if (migration.status !== 0) process.exit(1);
+}
 let failed = false;
 for (const file of selected) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fawri-audit-suite-'));
   const result = execute(['--import', './scripts/lib/disposable-postgres-preload.mjs', '--import', 'tsx', '--test', '--test-reporter=tap', '--test-concurrency=1', '--test-timeout=180000', `artifacts/api-server/tests/${file}`], { ...process.env, FAWRI_DATA_DIR: dataDir });
   try { fs.rmSync(dataDir, { recursive: true, force: true }); }
   catch { failed = true; console.error("AUDIT_SUITE_DATA_CLEANUP_FAILURE"); }
-  const summary = { suite: file, exit: result.status, passed: Number(result.stdout?.match(/^# pass (\d+)$/m)?.[1] || 0), failed: Number(result.stdout?.match(/^# fail (\d+)$/m)?.[1] || 0), skipped: Number(result.stdout?.match(/^# skipped (\d+)$/m)?.[1] || 0) };
+  const summary = { suite: file, ...(process.argv[2] === 'full-restore' ? { phase: process.env.FAWRI_AUDIT_RESTORE_PHASE } : {}), exit: result.status, passed: Number(result.stdout?.match(/^# pass (\d+)$/m)?.[1] || 0), failed: Number(result.stdout?.match(/^# fail (\d+)$/m)?.[1] || 0), skipped: Number(result.stdout?.match(/^# skipped (\d+)$/m)?.[1] || 0) };
   // CI cannot silently pass a suite that skipped its entire PostgreSQL proof.
   if (result.status !== 0 || summary.passed === 0 || summary.skipped !== 0) failed = true;
   console.log('AUDIT_SUITE_RESULT ' + JSON.stringify(summary));
