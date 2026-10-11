@@ -231,3 +231,7 @@ Read-only inspection found no public tables in Neon production branch; staging h
 Read `metaPageDirectory.ts`, `postgresMetaChannelAuthority.ts`, and migration `0025_tenant_rls_policy_predicate_cutover.sql`. The authoritative page-directory read uses the PostgreSQL merchant_channels table; migration 0025 defines a tenant-or-audited-admin RLS predicate for that table. This supports existing FA-I-006 restricted-role visibility concern, but does not prove an actual failure. Negative test with a synthetic page and restricted role on disposable PostgreSQL remains required. No duplicate issue created and no tests run.
 
 User-requested planning progress estimates (NOT measured code/test coverage): FA-000 100%, FA-001 60%, FA-002 45%, FA-003 0%, FA-004 35%, FA-005 0%, FA-006 0%. Percentages are provisional, not evidence-backed pass rates or launch readiness; update only with explicit stage exit evidence. No reliable overall percentage.
+
+## Meta RLS policy check
+
+Read-only staging query confirms merchant_channels has policy merchant_channels_tenant_boundary with predicate fawri_tenant_or_audited_admin(merchant_id). Source page-directory lookup uses a general transaction without merchant context. FA-I-006 remains an untested integration risk, not a confirmed runtime failure. No changes to app or database.
