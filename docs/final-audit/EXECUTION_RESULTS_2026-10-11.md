@@ -138,3 +138,37 @@ Source9331c489, run38173288435/job114570243330.52PASS/62FAIL/0SKIP;52Meta failur
 | merchant-management-tenant-rls.integration.test.mjs | 6 | 0 | 0 |
 | subscription-reminder-rls.integration.test.mjs | 1 | 0 | 0 |
 | meta-live-reply-postgres.integration.test.ts | 1 | 52 | 0 |
+
+## SEQ-13 corrected Meta functional run
+
+Source2964aba2, run38173603888/job114571197444:106PASS/10FAIL/0SKIP;23/27filesPASS. Sevenfunctionalfailures+threeparents; Meta54PASS and standaloneknowledge1PASS. Five28-migration chains andcleanupPASS.017officialsender blocked;018persists. Prior52Meta harness failures corrected.
+
+| Suite | PASS | FAIL | SKIP |
+| --- | --- | --- | --- |
+| global-merchant-auth-bootstrap-postgres.integration.test.mjs | 1 | 0 | 0 |
+| global-merchant-golden-journey.integration.test.mjs | 1 | 0 | 0 |
+| global-merchant-postgres-http-journey.integration.test.ts | 1 | 0 | 0 |
+| merchant-deletion-tenant-rls.integration.test.mjs | 1 | 0 | 0 |
+| meta-webhook-postgres-ingress-cutover.integration.test.ts | 1 | 0 | 0 |
+| meta-page-directory-restricted-rls.integration.test.mjs | 2 | 3 | 0 |
+| cashier-full-lifecycle-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-subscription-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-billing-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-downgrade-grace-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-historical-operation-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-operator-logout-pin-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-operator-own-history-scope-postgres.integration.test.ts | 1 | 0 | 0 |
+| catalog-cashier-compensation-history-postgres.integration.test.ts | 2 | 0 | 0 |
+| saas-billing-sql-failure-recovery.integration.test.mjs | 1 | 2 | 0 |
+| saas-billing-negative-failure-cases.integration.test.mjs | 1 | 4 | 0 |
+| saas-billing-authority.integration.test.ts | 4 | 0 | 0 |
+| superqi-sandbox-billing.integration.test.ts | 2 | 0 | 0 |
+| subscription-entitlement-postgres.integration.test.ts | 2 | 0 | 0 |
+| merchant-customer-payment-authority-postgres.integration.test.ts | 11 | 0 | 0 |
+| reply-cross-cycle-refund-postgres.integration.test.mjs | 0 | 1 | 0 |
+| production-postgres-rls-security.integration.test.ts | 6 | 0 | 0 |
+| knowledge-tenant-rls.integration.test.mjs | 1 | 0 | 0 |
+| merchant-management-tenant-rls.integration.test.mjs | 6 | 0 | 0 |
+| subscription-reminder-rls.integration.test.mjs | 1 | 0 | 0 |
+| knowledge-learning-cycle-postgres.integration.test.ts | 1 | 0 | 0 |
+| meta-live-reply-postgres.integration.test.ts | 54 | 0 | 0 |

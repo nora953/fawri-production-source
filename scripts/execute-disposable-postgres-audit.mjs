@@ -15,7 +15,7 @@ const suites = {
   meta: ['meta-webhook-postgres-ingress-cutover.integration.test.ts'],
   'meta-rls': ['meta-page-directory-restricted-rls.integration.test.mjs'],
 };
-suites.priority = [...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
+suites.priority = ['failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
 const selected = suites[process.argv[2]];
 assert.ok(selected, 'unknown audit suite');
 await assertDisposablePostgres();

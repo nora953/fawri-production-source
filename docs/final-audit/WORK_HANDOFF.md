@@ -1,28 +1,27 @@
-# Fawri audit — resume point
+# Fawri audit — current resume point
 
-Updated 2026-10-11. Draft PR520; branch audit/conversation-notes-reconciliation-20261011. All changes are test infrastructure, tests or documentation. No application/business fix, main merge, hosted database mutation or deployment.
+Updated2026-10-11. DraftPR520, audit/conversation-notes-reconciliation-20261011. Tests/guards/docs only. No app fixes, main merge, hosted DB mutation or deployment.
 
 ## Last completed task
 
-SEQ-11 execution review and SEQ-12 report consolidation. Verified [commit9331c489](https://github.com/nora953/fawri-production-source/commit/9331c489903c315a24d41726a3efa1b77954513b), [run38173288435](https://github.com/nora953/fawri-production-source/actions/runs/38173288435), job114570243330:26 suite files,52NodePASS/62FAIL/0SKIP;21filesPASS. Five fresh instances each28migrationsPASS; cleanupPASS.52Meta failures came from premature root-hook pool cleanup; other10failures include3parents and7functional failures.
+SEQ-13: verified [commit2964aba2](https://github.com/nora953/fawri-production-source/commit/2964aba2800274f704adbe5cf820e458958f0915), [run38173603888](https://github.com/nora953/fawri-production-source/actions/runs/38173603888), job114571197444.27suitefiles106NodePASS/10FAIL/0SKIP;23filesPASS. Five fresh instances each28migrationsPASS; cleanupPASS. Seven functional failures plus three parents.
 
-## Results and issues
+## Findings and coverage
 
--018 cross-cycle refund confirmed: historical refund erases current-cycle reply usage (1->0,3999->4000). No live balance was changed.
-- Confirmed open: FA-I-006 restricted Meta routing;012 concurrent checkout SQL23505;027 payment after proactive expiry;028 paid-state rewrite;032 missing durable payment/reconciliation evidence after SQL fault. Exact retry after fault removal passed.
--019 station rollback and022/023 fixture-free noJSON contract passed.029/031 backup tool guards and workflow ownership checks passed.
-- Cashier workflow38173288724 both jobs succeeded:7policy tests, API/frontend typechecks,8DB files/9Nodepasses,28migrations. Tiny3row/2object restore38172886344 passed; full Fawri recovery remains open.
+- Open confirmed:006restricted Meta routing;012same-keycheckout23505;027latepaymentafterproactiveexpiry;028paidstate rewrite;032missingSQLfailure reconciliation;018oldcycle refund erasesnewcycle debit. No realpayments/data or duplicateentitlement proven.
+- Meta54Nodepasses (53subtests+parent), standaloneknowledgecycle1pass, injectedproviders/owner-role only.017officialsender rejects suspendedsubscription duplicate before fakeprovider call.52historicalMeta harness errors corrected; keep failure history.
+- Cashier8files/9passes and7policytests passed in38173288724; typechecks passed.019stationrollback and022/023noJSONjourney passed. Restore3rows/2objects and21safetytests passed38172886344; fullschema/storage/PITR recovery remains open.
 
-## Next task
+## Exact next task
 
-Read the latest isolated run for the commit containing this checkpoint. It has27files: corrected Meta parent/t.after lifecycle plus existing standalone knowledge learning with fake embedding. Verify actual counts, all migration chains and cleanup. Inspect REPLY_SUSPENDED_DUPLICATE and zero fake sends; classify any media/AI failure by executed assertion. Record actual results before another task. The previous52Meta harness failures must remain in history, not be counted as app defects.
+Read the new28file isolated run for the commit containing this checkpoint. New failed-setup child test deliberately throws after real synthetic account/merchant insertion and injects firstcleanup SQLfailure; parent expects childexit1, TEST_CLEANUP_FAILURE bounded log, zero remaining accounts/merchants and no raw SQLerror.15localguard testsPASS; DB proof pending. Node probe verified reporter can hide an afterhookerror behind setupfailure; helper now emits count before throwing. Verify actual suite counts, five migration chains and cleanup, then save results.
 
-Then use REMAINING_WORK_MATRIX.md: failed-setup cleanup injection, cashier retention/proration/failure recovery, extended reply refunds, full schema restore, sensitive grants, dependency artifact exposure, UI/translation and deployment proof. FINAL_REPORT_DRAFT.md is interim.
+Next independent tasks: REMAINING_WORK_MATRIX.md; focus full Fawri schema restore, cashier retention/proration and failure recovery, extended reply refund, sensitive grants/dependency artifact exposure. FINAL_REPORT_DRAFT.md stays interim.
 
-## Blockers and authority
+## Blockers and permissions
 
-No local Docker/psql; isolated Actions is available. No visible Work credit balance; do not guess it. Audit/test safety work can continue. Application accounting/routing changes, hosted mutations, merge and deploy require explicit approval. External storage/provider and final browser proof need separately identified environments and procedures.
+No localDocker/psql; isolated Actions available. Work balance not visible. Business routing/accounting fixes, hosted mutations, main merge and deploy need explicit approval; safe audits can continue. Externalprovider/storage and finalvisual proof need identified approved environments/procedures.
 
-## Estimate
+## Time
 
-Next focused CI triage15–30minutes. The14-task planning matrix is roughly3.5–7hours of engineering work, excluding additional investigations, queue time, approved fixes and external proof. Update the range as rows close; complete release timing is not yet reliable.
+Next CI triage15–30minutes.14task planning matrix3.5–7hours excluding failures/queue/fixes/externalproof; update as rows close. Full release date not reliable until externalproof and businessfix decisions resolved.

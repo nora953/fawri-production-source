@@ -7,7 +7,12 @@ export async function cleanupResources(resources) {
     try { await cleanup(); }
     catch { failures.push(new Error(`Test cleanup failed: ${name}`)); }
   }
-  if (failures.length) throw new AggregateError(failures, `Test cleanup failed for ${failures.length} resource(s)`);
+  if (failures.length) {
+    // node:test may report only the original setup failure and omit a failing
+    // after hook. Emit bounded metadata so cleanup failure remains observable.
+    console.error('TEST_CLEANUP_FAILURE ' + JSON.stringify({ failedResources: failures.length }));
+    throw new AggregateError(failures, `Test cleanup failed for ${failures.length} resource(s)`);
+  }
 }
 
 export async function stopTestChild(child) {

@@ -149,3 +149,7 @@ SEQ-11 prepared: add existing Meta bot/AI full PostgreSQL testfile to new isolat
 ## SEQ-11 execution / SEQ-12 report checkpoint
 
 Source9331c489, run38173288435/job114570243330:26files52PASS/62FAIL/0SKIP;21filesPASS. Five28migration chains andcleanupPASS.52Meta failures are prematurepoolcleanupharness errors; corrected by parent t.after, rerunpending. Other10failures include3parents and7functional assertions;018oldcycle refund erasesnewcycle debit confirmed (used1->0,remaining3999->4000). Prior findingspersist. Cashier38173288724bothjobsSUCCESS:7policytests and8DBsuitefiles9passes; API/frontendtypechecksPASS. New draftreport and remainingmatrix saved; no launchclaim or applicationfix. Next27file run addsfakeembeddingknowledgecycle and correctsMeta harness.
+
+## SEQ-13 — functional Meta rerun
+
+Source2964aba2/run38173603888/job114571197444:27files106NodePASS/10FAIL/0SKIP,23filesPASS. Five28migration chains/cleanupPASS. Meta54passes (53subtests+parent), standaloneknowledgecycle1pass; injected providers/owner-role only.017officialtransport rejects suspendedsubscription duplicate before fakeprovider invocation; othercallers remain open.006restrictedmap failure and012/027/028/032/018persist. Testcleanup helper now logs bounded count because Node masks afterhook error aftersetupfailure;15localguardtestsPASS. Realfailedsetup/cleanupSQL-childcase prepared,28fileCIpending. Report refreshed; no applicationchange.
