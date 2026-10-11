@@ -23,3 +23,9 @@ Docs-only checkpoint may rerun existingActions due wholePR path matching; no tes
 ## Blockers, authority and estimate
 
 Business/UI fixes require explicitapproval. Hosted runtime role/provider settlement/storagePITR/browser QA need identified approved environments. No localDocker/psql; isolatedActions available. Workbalance unknown. Nexttask15–30minutes; roughly1.5–3.5hours focused audit excluding queues/newfailures/repairs/externalproof. Release date/readiness not established.
+
+## Latest SEQ-21 saved preparation (supersedes next task)
+
+Previous source/documentation checkpoint[755cc007](https://github.com/nora953/fawri-production-source/commit/755cc00708cdbe52711c007ad2a7e476f92072e0). Newrestricted-session HTTP fixture prepared and saved in this commit; exact remoteHEAD is durable. Actual no-attestation direct refusalPASS (exit1beforeDBimports); syntax/diffPASS. DB/HTTP results NOT_RUN.
+
+Next read CI for this commit:34unique files/35invocations. Newfixture must prove applicationpool role is restricted/nonowner/NOBYPASSRLS, broadfourDMLgrants and account_sessions nonRLS, then missing/tampered/wrongdevice401, own-only/token-redacted list, crossrevoke404/ownrevoke200, forbiddenorigin403/no mutation and own logout-all preserving othermerchant. Separate fixture/permission failures from confirmed app defects; verify teardown role/account cleanup. No live staging-role conclusion. Latest executed source05456ea9 still126PASS/14FAIL/0SKIP with sixexisting findings. After proof, R13deployment/media/PITR source review andR14report reconciliation. Business/UI repairs remain outside authorization.

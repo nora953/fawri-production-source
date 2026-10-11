@@ -34,3 +34,5 @@ SEQ-18 planning update: R03/R05/R06/R07/R08 synthetic tasks complete; R01 checkp
 SEQ-19: password recovery HTTPPASS; R11 CI normalization complete with one explicit skipped business-route DB assertion queued in isolatedrunner. Two legacy Meta guard refusals repaired, actualCIpending. R02 remains32 uncovered integrationcandidates plus out-of-glob DB tests; no broad safety closure.
 
 SEQ-20: R11 safe legacy caller repairs actualPASS and priorauthDBskip nowPASS. R12 bounded critical source review complete; existing016UI selection and newUI006localization findings documented, browser/linguistic/fullsite gates open. NextR09 restricted-role HTTP ownership, thenR13 recovery/deploy review andR14 reconciliation. Remaining focused range1.5–3.5hours excludes external proof and fixes; directguard breadth remains open.
+
+SEQ-21 R09guarded two-merchant HTTPsession proof prepared under actual synthetic restricted applicationrole/broadgrants; localpreimportdenialPASS, DBpending.34unique/35invocations next. Doesnot certify actualhostedgrants/staff/credentials.
