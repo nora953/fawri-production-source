@@ -84,3 +84,15 @@ These findings are documentation-only on draft PR #520, not merged into main and
 | CASHIER-PRORATION-014 | POLICY_AND_BOUNDARY_TEST_PENDING | `cashierEntitlementAuthority.ts:132-241` uses UTC calendar-month clamp and BigInt whole-IQD half-up proration; near expiry a positive amount below 0.5 IQD rounds to zero and is rejected. Decide intended minimum/next-cycle policy; test leap year, month-end, expiry and grace boundaries. |
 
 These are **audit work items, not three proven vulnerabilities**. No integration tests, external payment, DB mutation or deployment performed.
+
+## 2026-10-11 source review continuation — test gaps (not executed)
+
+| ID | Status | Source observation / exit proof |
+| --- | --- | --- |
+| BILLING-WEBHOOK-ORPHAN-015 | RECONCILIATION_TEST_PENDING | `superQiSandboxWebhook.ts` verifies signed payload and gateway status, but returns `ignored/order_not_found` when no order matches. Together with BILLING-EXTERNAL-TX-013, inject sandbox provider-success/DB-rollback and prove recovery, retries and reconciliation. No confirmed incident. |
+| CASHIER-SEAT-RELEASE-016 | POLICY_AND_DB_TEST_PENDING | `cashierEntitlementAuthority.ts` seat assignment returns existing snapshot for both `active` and `release_scheduled` rows; test whether merchant retention of a scheduled-release station cancels the release as intended. |
+| REPLY-LEDGER-DUPLICATE-017 | NEGATIVE_TEST_PENDING | `postgresSubscriptionEntitlement.ts` duplicate reservation returns allowed/duplicate after matching prior debit and checking current subscription row, without reapplying the initial new-event status checks; verify caller does not send an unauthorized new reply on replay after suspension. |
+| REPLY-RESTORE-CYCLE-018 | CROSS_CYCLE_TEST_PENDING | `restoreMerchantAutoReplyPostgres` credits the original subscription/batch and guards duplicate credits. Test late refund after renewal, old batch missing/expired and balance invariants. |
+| CASHIER-STATION-ROLLBACK-019 | DB_TEST_PENDING | `postgresCashierStaffAuthority.ts` station insert and seat assignment share merchant transaction; test exhausted-seat rollback, no orphan station and concurrent create. |
+
+All entries are source review or test design, not executed proof. No changes to application code, live DB, payment providers, or deployment.
