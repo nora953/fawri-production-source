@@ -3,9 +3,11 @@ set -euo pipefail
 # Only fresh Docker-owned PostgreSQL; no host DB URL or hosted credentials inherited.
 audit_suite="${1:-priority}"
 case "$audit_suite" in
-  priority|http|meta|meta-rls|bootstrap|deletion|cashier|billing|tenant|meta-bot|full-restore) ;;
+  priority|http|node22-http|meta|meta-rls|bootstrap|deletion|cashier|billing|tenant|meta-bot|full-restore) ;;
   *) echo 'Unsupported audit suite' >&2; exit 2 ;;
 esac
+audit_node_image="node:24-bookworm-slim"
+if [ "$audit_suite" = node22-http ]; then audit_node_image="node:22-bookworm-slim"; fi
 : "${RUNNER_TEMP:?GitHub runner temp is required}"
 : "${GITHUB_ACTIONS:?GitHub runner is required}"
 audit_root="$(pwd)"
@@ -23,7 +25,7 @@ trap 'audit_status=$?; audit_cleanup || audit_status=1; exit "$audit_status"' EX
 umask 077
 mkdir -p "$audit_temp/restore-proof"
 docker pull postgres:16-alpine >/dev/null
-docker pull node:24-bookworm-slim >/dev/null
+docker pull "$audit_node_image" >/dev/null
 audit_run="$(node -e "process.stdout.write(require('node:crypto').randomBytes(16).toString('hex'))")"
 audit_password="$(node -e "process.stdout.write(require('node:crypto').randomBytes(24).toString('hex'))")"
 printf 'POSTGRES_USER=fawri_ci\nPOSTGRES_DB=fawri_ci\nPOSTGRES_PASSWORD=%s\n' "$audit_password" > "$audit_temp/postgres.env"
@@ -48,10 +50,10 @@ audit_node="$(docker create --label "fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_A
   --mount "type=bind,src=$audit_temp/attestation.json,dst=/audit-proof.json,readonly" \
   --mount "type=bind,src=$audit_temp/restore-proof,dst=/restore-proof" \
   --env FAWRI_AUDIT_RESTORE_PHASE=seed \
-  --workdir "$audit_root" node:24-bookworm-slim \
+  --workdir "$audit_root" "$audit_node_image" \
   node scripts/ci-run-redacted.mjs --label isolated-postgres-audit -- node scripts/execute-disposable-postgres-audit.mjs "$audit_suite")"
-AUDIT_CONTAINER="$audit_pg" AUDIT_NAMESPACE="$audit_namespace" AUDIT_SUITE="$audit_suite" node --input-type=module <<'NODE'
-console.log('AUDIT_ISOLATION_PROOF ' + JSON.stringify({ suite: process.env.AUDIT_SUITE, containerId: process.env.AUDIT_CONTAINER, networkNamespace: process.env.AUDIT_NAMESPACE, networkMode: 'none', publishedPorts: false, database: 'fawri_ci', role: 'fawri_ci', localPort: 5432 }));
+AUDIT_CONTAINER="$audit_pg" AUDIT_NAMESPACE="$audit_namespace" AUDIT_SUITE="$audit_suite" AUDIT_NODE_IMAGE="$audit_node_image" node --input-type=module <<'NODE'
+console.log('AUDIT_ISOLATION_PROOF ' + JSON.stringify({ suite: process.env.AUDIT_SUITE, nodeImage: process.env.AUDIT_NODE_IMAGE, containerId: process.env.AUDIT_CONTAINER, networkNamespace: process.env.AUDIT_NAMESPACE, networkMode: 'none', publishedPorts: false, database: 'fawri_ci', role: 'fawri_ci', localPort: 5432 }));
 NODE
 docker start -a "$audit_node"
 audit_exit="$(docker inspect -f '{{.State.ExitCode}}' "$audit_node")"
@@ -71,7 +73,7 @@ if [ "$audit_suite" = full-restore ]; then
     --mount "type=bind,src=$audit_root,dst=$audit_root,readonly" \
     --mount "type=bind,src=$audit_temp/attestation.json,dst=/audit-proof.json,readonly" \
     --mount "type=bind,src=$audit_temp/restore-proof,dst=/restore-proof,readonly" \
-    --workdir "$audit_root" node:24-bookworm-slim \
+    --workdir "$audit_root" "$audit_node_image" \
     node scripts/ci-run-redacted.mjs --label isolated-full-schema-restore -- node scripts/execute-disposable-postgres-audit.mjs full-restore)"
   docker start -a "$audit_node"
   audit_exit="$(docker inspect -f '{{.State.ExitCode}}' "$audit_node")"

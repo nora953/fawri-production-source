@@ -47,3 +47,7 @@ Source1c498c06/run38175863733:115PASS/14FAIL/0SKIP,32 unique files/33invocations
 ## Latest SEQ-20 checkpoint
 
 Source05456ea9/run38176210529:126PASS/14FAIL/0SKIP,33unique/34invocations; six28-migration chains/cleanupSUCCESS. Previously skipped auth business-route test now11PASS/0SKIP. Meta pipeline38176210628 and foundation38176210612SUCCESS after safe runner migration; guards retained. Added source findings: existing016 UI omits pending-release replacement station despite servicePASS, and newFAWRI-UI-006 raw billing enums/English errors lack AR/KU localization. Both UI source findings need approved fixes and browser proof; no new executed functional failure. Critical UI semantic review is source-only, not release visual clearance.
+
+## Latest SEQ-22 checkpoint
+
+Sourcefccd677a/run38176766705:131PASS/14FAIL/0SKIP;34unique/35invocations,six28migrationchains/cleanupSUCCESS. Actualrestrictednonowner/NOBYPASSRLS broadgrant HTTPsession suite5PASS; partially closesFA-I-007sessionownershipnegativeproof, hosted/staff/credentialleastprivilege stillopen. Deployment/recoveryreview documents boundaries and reviewabledrill; Node22vs24delta prompts isolatedHTTP compatibilitytest, pending. Existing media/PITR/rollback/provider/browser gates remainopen.

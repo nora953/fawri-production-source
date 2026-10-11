@@ -36,3 +36,5 @@ SEQ-19: password recovery HTTPPASS; R11 CI normalization complete with one expli
 SEQ-20: R11 safe legacy caller repairs actualPASS and priorauthDBskip nowPASS. R12 bounded critical source review complete; existing016UI selection and newUI006localization findings documented, browser/linguistic/fullsite gates open. NextR09 restricted-role HTTP ownership, thenR13 recovery/deploy review andR14 reconciliation. Remaining focused range1.5–3.5hours excludes external proof and fixes; directguard breadth remains open.
 
 SEQ-21 R09guarded two-merchant HTTPsession proof prepared under actual synthetic restricted applicationrole/broadgrants; localpreimportdenialPASS, DBpending.34unique/35invocations next. Doesnot certify actualhostedgrants/staff/credentials.
+
+SEQ-22 R09boundedrestrictedHTTPsessiondefense5PASS; actualrole/grants/nonRLSproven, hosted/staff/credential scopeopen. R13source/drillplancomplete; Node22runtimecompatibilitypending, actualimage/redeploy/media/PITRexternal. Next013externalcheckoutSQLrollbackmockproof thenR14report reconciliation. Roughly1–3hours focused work plus external/fix/queue dependencies.
