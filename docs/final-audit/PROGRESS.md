@@ -213,3 +213,7 @@ Reviewed `artifacts/api-server/tests/saas-billing-authority.integration.test.ts`
 ## 2026-10-11 — Billing SQL migration uniqueness proof
 
 Read `lib/db/drizzle/0006_saas_billing_authority.sql` and `lib/db/drizzle/0027_cashier_subscription_licensing.sql` on main. Migration 0006 defines unique indexes for SaaS `(merchant_id,idempotency_key)`, partial `(provider,provider_payment_ref)`, provider event ID, pending merchant order, entitlement application order and payment reference. Migration 0027 defines equivalent cashier uniqueness via constraints and indexes. These match Drizzle schema declarations and resolve the prior source/migration lookup question. Deployment-level index existence remains NOT VERIFIED until read-only PostgreSQL catalog inspection; no DB accessed or migrations run.
+
+## 2026-10-11 — Neon connection provenance check
+
+Read-only Neon SQL connection returned database `neondb`, role `neondb_owner`, schema `public`, and zero tables in public; the six billing tables and their indexes were absent in THIS connection. This is not the previously described populated staging runtime connection (`fawri_staging_rls_runtime`), and branch/project identity is unverified. Do not interpret as missing migrations on Fawri staging or production. Source migrations 0006 and 0027 define the billing uniqueness constraints. Must establish exact staging branch and target DB before deployed-index proof. No SQL writes or migration commands.
