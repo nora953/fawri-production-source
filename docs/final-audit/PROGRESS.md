@@ -209,3 +209,7 @@ Reviewed `artifacts/api-server/tests/superqi-sandbox-billing.integration.test.ts
 ## 2026-10-11 — SaaS billing test coverage
 
 Reviewed `artifacts/api-server/tests/saas-billing-authority.integration.test.ts` on main. Tests cover duplicate checkout, duplicate payment notification, successful subscription application, refund, late payment requiring reconciliation, and amount mismatch. The test suite writes and deletes database records and checks only that DATABASE_URL exists. It must run only against a disposable test database. Database statement failure and simultaneous payment-reference reuse remain unverified in this suite. Review was read-only; no tests executed.
+
+## 2026-10-11 — Billing SQL migration uniqueness proof
+
+Read `lib/db/drizzle/0006_saas_billing_authority.sql` and `lib/db/drizzle/0027_cashier_subscription_licensing.sql` on main. Migration 0006 defines unique indexes for SaaS `(merchant_id,idempotency_key)`, partial `(provider,provider_payment_ref)`, provider event ID, pending merchant order, entitlement application order and payment reference. Migration 0027 defines equivalent cashier uniqueness via constraints and indexes. These match Drizzle schema declarations and resolve the prior source/migration lookup question. Deployment-level index existence remains NOT VERIFIED until read-only PostgreSQL catalog inspection; no DB accessed or migrations run.
