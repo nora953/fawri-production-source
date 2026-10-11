@@ -280,3 +280,12 @@ Current `main` `artifacts/api-server/src/services/superQiSandboxWebhook.ts:118-1
 Current `main` `quality-gates.yml` includes a `translation-structure-audit` CI job with successful historical execution, but that only checks translation structure, not Arabic wording quality or visual layout. Historical CI run/job/step evidence is documented above. GitHub compare `main...audit/conversation-notes-reconciliation-20261011` after previous audit commits: ahead 59, behind 0, exactly three documentation files changed; no application source change. No tests run or database touched.
 
 Next precise evidence: inspect the actual schema/migration unique indexes for both billing order tables; run two-order same-reference race only on a verified disposable DB, and test delayed/hung SuperQi sandbox provider responses. Do not infer absence of constraints from unsuccessful path guesses; no code change authorized.
+
+## 2026-10-11 — Verified PR #520 GitHub Actions execution
+
+Commit `73c04b4406601c596324220e965edc1b515bd3b8` has two successful PR-triggered runs, confirmed by fetching their job and step results:
+
+- [Final quality gates, run 38154369254](https://github.com/nora953/fawri-production-source/actions/runs/38154369254): 4/4 jobs successful. `quality-tool-tests`, `full-typecheck` (including API non-integration TS unit tests, frontend unit tests, source contracts), `full-build`, and `translation-structure-audit` (Arabic/Sorani/English).
+- [Final security and supply chain, run 38154369225](https://github.com/nora953/fawri-production-source/actions/runs/38154369225): 4/4 jobs successful. Repository secret/history scan, dependency review, dependency audit, lockfile integrity. In dependency-review, the dependency-graph-specific install, policy, and High/Critical audit steps were **skipped**; the independent `dependency-audit` job completed successfully.
+
+Scope: these prove GitHub CI execution for this PR commit, not disposable PostgreSQL integration tests, Meta tenant RLS, payment failure injection, offline cashier browser QA, staging acceptance, or production release readiness. No local tests or live DB changes were made. Avoid treating this docs-only commit's CI success as functional release approval.
