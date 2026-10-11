@@ -239,3 +239,7 @@ Read-only staging query confirms merchant_channels has policy merchant_channels_
 ## SuperQi sandbox checkout reference review
 
 Source review: `superQiSandboxWebhook.ts` attachProviderPaymentReference checks for another order using provider_checkout_ref, then updates the matched order in separate pool queries. This does not by itself establish atomic exclusion between concurrent attachments. Previously verified billing uniqueness covers provider_payment_ref, a distinct field. Treat as concurrency test gap, not a proven exploit. `superQiSandboxTransport.ts` defaultFetch delegates directly to fetch; explicit request timeout not visible there. No tests executed; use disposable fixtures for concurrency proof.
+
+## SuperQi network timeout source verification
+
+`superQiSandboxTransport.ts` createSuperQiSandboxPayment and getSuperQiSandboxPaymentStatus both use fetchImpl without an explicit request deadline. SuperQiFetch init type exposes method, headers, and body but no AbortSignal. Default fetch delegates directly to global fetch. A network-stall regression test is needed before remediation; no runtime failure claimed. No tests or code changes.
