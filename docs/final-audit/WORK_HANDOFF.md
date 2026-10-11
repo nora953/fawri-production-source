@@ -1,13 +1,14 @@
 # Fawri autonomous audit — resume here
 
-Updated2026-10-11. Authorized test guards/CI and documentation; PR#520 draft, no main merge/deploy/hosted DB mutation.
+Updated2026-10-11. PR#520 draft. Test infrastructure/fixture fixes and docs only; app, main, hosted DB, provider secrets and deployment unchanged.
 
-- Last prepared task SEQ-04: corrected address formatting, expanded four sequential isolated batches, added preload before static test dependency imports.
-- Saved diagnostic [f5063824](https://github.com/nora953/fawri-production-source/commit/f50638241b9e0ed3b20da8e9e0547d932963d2fa); next code is latest change in audit branch history.
-- Actual run38171237527/job114564105163: DB/role/marker match=true; inet text includes mask causing loopback=false. Fixed with host(inet_server_addr()); no relaxed acceptance. Safety/build/cleanup PASS, migrations/integration NOT RUN in this failed run.
-- Local checks: 15 guard tests +17 security/redaction tests=32 PASS, 0 FAIL/SKIP; API build PASS; two TS unsafe-target rejects PASS; current repository secret scan1583 files PASS. History scan pending fake literal review AUDIT-FIXTURE-SCAN-025.
-- Next exact task: verify saved correction; inspect direct isolated Actions workflow. It now runs priority6, cashier7, billing4, tenant4 sequentially with separate new network-none PostgreSQL instances. Node preload enforces target before any static DB import. Driver reports AUDIT_SUITE_RESULT counts and fails on skipped/zero-pass suites.
-- Capture per-batch migrations, each suite totals/assertions and cleanup; classify FA-I-006 global map/known-page failure separately from tenant-isolation passes. Preserve genuine failures, do not change application logic to make tests green.
-- Open: 020/021/024 real DB execution; 022/023 legacy fixture; all cashier/billing/external issues; direct unguarded legacy suites remain unsafe outside approved isolated runner.
-- Permissions: app/business fixes, hosted DB writes, merge/deploy need separate approval. No local Docker/psql; Actions available.
-- Estimate: first broad CI proof/failure triage30–90min conditional on outcomes; full audit not reliably estimated until remaining coverage inventory normalized. Credit balance unavailable.
+- Last task SEQ-05: first real21-suite execution, failure classification, runner/fixture corrections, narrowly bounded historical fake URL scan handling.
+- Verified source [0a101ba3](https://github.com/nora953/fawri-production-source/commit/0a101ba3dd1e45df4baee0417b66893cacc82ae7), synthetic merge3d8c9fdbaf3ba1434a087978af0b222d5d3908ea/main d38d2922.
+- Actual [run38171428265](https://github.com/nora953/fawri-production-source/actions/runs/38171428265), job114564672592: four sequential isolated instances, each28migrationsPASS;21suite files;32NodePASS/14FAIL/0SKIP; cleanupPASS. See EXECUTION_RESULTS_2026-10-11.md for each result and successful separate journey/Meta gates.
+- Failures before business assertions: loader preflight when restricted-role env inherited by tsx worker; readonly checkout data mkdir; old077phones violating E.164 migration. Corrected main-thread preload, per-suite writable temp data, two billing fixture phone formats. Preserve strict isolation/source readonly/schema.
+- Safety tests33PASS/0FAIL/0SKIP; current1584files and history5916blobs secret scansPASS after exact six fabricated historical test findings pinned; new CI scan pending. Direct legacy unsafe entrypoints remain unsafe outside protected runner.
+- Next SEQ-06: verify new commit saved/PR head; read new isolated Actions job including21suite counts and cleanup. Confirm FA-I-006 only after its tenant/global-map/known-page subtests execute. Fix only test infrastructure/fixtures; record application failures with reproduction and expected behavior for later approved fixes.
+- Open: 020/021/024 negative cleanup/fail-setup real DB proof; 022/023 golden legacy fixture; FA-I-006; BILLING-TEST-E164-026 rerun; cashier/billing failure scenarios and external storage/restore/provider/visual gates.
+- Following short tasks: remove legacy compatibility fixture and prove same journey with no root JSON; targeted payment failure/late-event/idempotency tests using fake provider; safe restore proof and remaining source/UI coverage.
+- Blockers/permissions: no local Docker/psql, Actions available. App/business fixes, hosted mutations, merge and deploy need explicit approval. No credit balance available.
+- Remaining time: current rerun/triage20–60min conditional on failures; full audit estimate awaits normalized remaining matrix and browser/provider/hosted recovery prerequisites. No invented percentage.

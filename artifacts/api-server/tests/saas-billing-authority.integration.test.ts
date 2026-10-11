@@ -82,7 +82,7 @@ test("verified SaaS payment applies one entitlement exactly once", async () => {
 
   try {
     await cleanup();
-    await seedMerchant(merchantId, "07700000201");
+    await seedMerchant(merchantId, "+9647700000201");
 
     const catalog = getSaasBillingCatalog();
     assert.equal(catalog.catalog_version, "2026-08-v1");
@@ -182,8 +182,8 @@ test("manual admin entitlement remains financially unknown", async () => {
   process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY = "required";
   try {
     await cleanup();
-    await seedMerchant(manualMerchantId, "07700000202");
-    await seedAccount(adminId, "admin", "07700000203");
+    await seedMerchant(manualMerchantId, "+9647700000202");
+    await seedAccount(adminId, "admin", "+9647700000203");
     const subscription = await applySubscriptionPlanOperationPostgres({
       merchantId: manualMerchantId,
       actorAccountId: adminId,
@@ -220,7 +220,7 @@ test("late verified payment is preserved for reconciliation without silent entit
   process.env.NODE_ENV = "test";
   try {
     await cleanup();
-    await seedMerchant(lateMerchantId, "07700000204");
+    await seedMerchant(lateMerchantId, "+9647700000204");
     const created = await createSaasBillingCheckout({
       merchantId: lateMerchantId,
       operation: "activate",
@@ -265,7 +265,7 @@ test("browser amount cannot override server plan pricing", async () => {
   process.env.NODE_ENV = "test";
   try {
     await cleanup();
-    await seedMerchant(merchantId, "07700000205");
+    await seedMerchant(merchantId, "+9647700000205");
     const created = await createSaasBillingCheckout({
       merchantId,
       operation: "activate",

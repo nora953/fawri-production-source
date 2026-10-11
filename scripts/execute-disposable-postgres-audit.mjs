@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.mjs';
 const suites = {
@@ -15,8 +18,8 @@ suites.priority = [...suites.bootstrap, ...suites.http, ...suites.deletion, ...s
 const selected = suites[process.argv[2]];
 assert.ok(selected, 'unknown audit suite');
 await assertDisposablePostgres();
-function execute(args) {
-  const result = spawnSync(process.execPath, args, { env: process.env, encoding: 'utf8', timeout: 240000, maxBuffer: 4 * 1024 * 1024 });
+function execute(args, env = process.env) {
+  const result = spawnSync(process.execPath, args, { env, encoding: 'utf8', timeout: 240000, maxBuffer: 4 * 1024 * 1024 });
   process.stdout.write(result.stdout || '');
   process.stderr.write(result.stderr || '');
   return result;
@@ -25,7 +28,10 @@ const migration = execute(['lib/db/scripts/audit-disposable-migrate.mjs']);
 if (migration.status !== 0) process.exit(1);
 let failed = false;
 for (const file of selected) {
-  const result = execute(['--import', './scripts/lib/disposable-postgres-preload.mjs', '--import', 'tsx', '--test', '--test-reporter=tap', '--test-concurrency=1', '--test-timeout=180000', `artifacts/api-server/tests/${file}`]);
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fawri-audit-suite-'));
+  const result = execute(['--import', './scripts/lib/disposable-postgres-preload.mjs', '--import', 'tsx', '--test', '--test-reporter=tap', '--test-concurrency=1', '--test-timeout=180000', `artifacts/api-server/tests/${file}`], { ...process.env, FAWRI_DATA_DIR: dataDir });
+  try { fs.rmSync(dataDir, { recursive: true, force: true }); }
+  catch { failed = true; console.error("AUDIT_SUITE_DATA_CLEANUP_FAILURE"); }
   const summary = { suite: file, exit: result.status, passed: Number(result.stdout?.match(/^# pass (\d+)$/m)?.[1] || 0), failed: Number(result.stdout?.match(/^# fail (\d+)$/m)?.[1] || 0), skipped: Number(result.stdout?.match(/^# skipped (\d+)$/m)?.[1] || 0) };
   // CI cannot silently pass a suite that skipped its entire PostgreSQL proof.
   if (result.status !== 0 || summary.passed === 0 || summary.skipped !== 0) failed = true;
