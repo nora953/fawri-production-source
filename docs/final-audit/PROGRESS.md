@@ -217,3 +217,7 @@ Read `lib/db/drizzle/0006_saas_billing_authority.sql` and `lib/db/drizzle/0027_c
 ## 2026-10-11 — Neon connection provenance check
 
 Read-only Neon SQL connection returned database `neondb`, role `neondb_owner`, schema `public`, and zero tables in public; the six billing tables and their indexes were absent in THIS connection. This is not the previously described populated staging runtime connection (`fawri_staging_rls_runtime`), and branch/project identity is unverified. Do not interpret as missing migrations on Fawri staging or production. Source migrations 0006 and 0027 define the billing uniqueness constraints. Must establish exact staging branch and target DB before deployed-index proof. No SQL writes or migration commands.
+
+## Staging billing index check — 2026-10-11
+
+Read-only Neon staging query confirmed billing idempotency, payment-reference, event identity, pending-order and entitlement application uniqueness indexes for SaaS and cashier. All inspected names match source migrations. Production and concurrency behavior remain unverified. No database changes.
