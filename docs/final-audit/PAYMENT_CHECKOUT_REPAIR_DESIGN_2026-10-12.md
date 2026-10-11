@@ -43,3 +43,11 @@ Read webhook application code in both billing authorities. SaaS `saasBillingAuth
 Reviewed SaaS billing lines 518-550 and cashier billing lines 498-505, 533-555. Both reject a matching idempotency-key order without provider reference and redirect URL with an incomplete-checkout error. A durable reservation repair must provide a safe resume/reconciliation state for that existing order instead of requiring a new key. The existing immutable-payload comparison should remain.
 
 For concurrent initial requests, SELECT FOR UPDATE on a missing row cannot itself serialize insertion. Verify the actual schema uniqueness constraints and migration compatibility before coding a conflict re-read. Required regression cases: simultaneous same-key checkout, incomplete checkout replay, timeout unknown state, process restart, and conflicting payload. This is source/design review only; schema constraints were not inspected or asserted in this step.
+
+## SEQ-39 — billing event recording preconditions
+
+SaaS `saasBillingAuthority.ts:708-734` inserts into `saas_billing_events` with required order_id and merchant_id supplied by resolved order; no independent verified-event inbox is implemented in this function. Both SaaS (`736-755`) and cashier (`cashierBillingAuthority.ts:969-989`) require provider enabled in current non-production/test environment and `signatureVerified === true` before event application. Preserve these gates when designing any inbox; a new table alone does not prove verification. Actual SQL FK/NOT NULL and RLS policies remain unverified.
+
+## SEQ-40 — environment release boundary
+
+Both provider-event application functions explicitly exclude `superqi_sandbox` when `NODE_ENV === production` (`saasBillingAuthority.ts:741-745`, `cashierBillingAuthority.ts:978-983`). Therefore a sandbox-successful billing regression cannot demonstrate production provider readiness. Production payment integration requires a separately approved provider contract/configuration, security verification and end-to-end settlement evidence; do not remove environment restrictions to make tests pass. Source review only; no live sandbox or production transaction.
