@@ -243,3 +243,29 @@ Prepared fixednode22-http isolated selection with sameguard/migrations/assertion
 Prepared guarded billing-external-checkout-rollback-postgres.integration.test.mjs for existing013/015, **DB_NOT_RUN**. Each SaaS/cashier synthetic fixture creates a sandbox-shaped payment through injectedfetch, observes an open INSERTtransaction via pg_stat_activity, then triggers SQLP0001 on referenceattachment; mustinspect durableorderstate. Removesfault, verifies signed status-confirmed orphan webhook through injectedfetchImpl, then retries identicalbusinesskey and comparesproviderrequest/orderidentity. Statusmockcall countasserted, preventing accidentaldefaultfetch from producing falsegreen. RSAkeys are generated transiently; onlyfake credentials, no liveprovidercall. Two nestedcontracts perkind separate identityretention and orphanpaymentacknowledgment; actualoutcome awaited.
 
 Earlyaggregateteardown removesfixturetriggers/functions/accounts/pool. Local noattestation invocationexit1beforeDB/providerimports, syntax/diffPASS. Next35unique files/37phase-runtimeinvocations. Interpretfailureas modeled reliability evidence, neverreal duplicatecharge/loss. Updateexisting013/015 rather thancreate duplicateissue IDs; external latency/actualCOMMITfailure/liveproviderretrycontract still separateproof.
+
+## SEQ-26 — canonical remediation and non-code acceptance register (2026-10-12)
+
+Evidence baseline: [completed isolated run 38180374172](https://github.com/nora953/fawri-production-source/actions/runs/38180374172), job 114591512528, 132 PASS/21 FAIL/0 SKIP; see exact suite breakdown in EXECUTION_RESULTS_2026-10-11.md. Existing IDs only; these are requirements for future approved fixes, NOT claims that fixes are implemented.
+
+| Canonical finding | Release risk | Required proof before closure |
+| --- | --- | --- |
+| BILLING-EXTERNAL-TX-013 + BILLING-WEBHOOK-ORPHAN-015 | CRITICAL payment/provider side-effect and orphan reconciliation in SaaS + cashier | Durable/recoverable provider identity before side effect; same-key retry must not create second external checkout; verified orphan webhook retryable or durably queued, signature checked, idempotent replay; crash/commit and real provider sandbox contract checks |
+| BILLING-IDEMPOTENCY-012 | HIGH simultaneous SaaS checkout yields 23505 instead of identical response | Concurrent same-key requests both receive same durable order, no duplicate provider calls, test retries under load |
+| BILLING-LATE-EXPIRED-027 + BILLING-PAID-REPLAY-028 | HIGH late payment not reconciled; mismatched verified replay mutates terminal paid state | Paid reconciliation durable after expiry; terminal paid/refunded protected; duplicate and mismatched events auditable, no entitlement double-application |
+| REPLY-RESTORE-CYCLE-018 | HIGH old-cycle refund corrupts renewed-cycle reply counters | Preserve new-cycle debits on old-cycle refund; duplicate/concurrent refunds and add-on policy verified |
+| BILLING-SQL-RECONCILIATION-032 | HIGH permanent SQL failure can leave pending order without received-payment evidence | Durable received-payment or retryable reconciliation evidence with operator SLA; fault/retry after failure, cashier parity |
+| FA-I-006 | HIGH restricted-role Meta page mapping returns 0/503 | Approved tenant page lookup and known page route pass with real restricted role, no cross-tenant disclosure |
+| CASHIER-SEAT-RELEASE-016 | MEDIUM seat replacement UI excludes release_scheduled despite service support | Scheduled downgrade, replacement selection, stale response and reload browser tests in AR/EN/KU |
+| FAWRI-UI-006 | MEDIUM raw billing enums and English errors shown to AR/KU users | Localized stable error/operation/status mapping and safe fallback on mobile/desktop in AR/EN/KU |
+
+### Required non-code audit proof before launch
+
+1. Role-by-role, screen-by-screen browser matrix: owner/admin, merchant, cashier and support; desktop/mobile; Arabic, Sorani, English; RTL, accessibility, error/loading/empty states and receipts. **NOT_RUN**; source-only UI inspection is not browser certification.
+2. Physical or representative offline cashier device: subscription expiry, 7-day grace, offline clock tamper, local sale/reconnect, sync conflicts, multiple seats and station downgrade. **NOT_RUN**; isolated DB tests do not prove device behavior.
+3. Authorized staging: actual container start/readiness, HTTPS/domain, restricted DB grants, tenant denial, rate limits, logs/alerts, deploy/rollback and incident response. **EXTERNAL_BLOCKED** pending environment/access.
+4. Authorized provider sandboxes: payment initiation/settlement/refund/late webhook, Meta page connect/reconnect and AI provider costs/quotas. **EXTERNAL_BLOCKED**; synthetic tests are not real settlement.
+5. Durable recovery: PostgreSQL PITR, role/ACL restoration, catalog/support media across redeploy, measured RPO/RTO, operator-run drill. **EXTERNAL_BLOCKED**; disposable schema restore PASS only.
+6. Commercial readiness: merchant onboarding, pricing/proration policy, payment dispute/refund support, legal privacy/terms, taxes, data retention and owner signoff. **NOT_RUN**, requires business decisions.
+
+Keep each item OPEN until a specific reproducible artifact/run/screenshot/operator record is linked. No production data mutation, deployment, business-code fix or main merge authorized by this audit register.
