@@ -225,3 +225,9 @@ Read-only Neon staging query confirmed billing idempotency, payment-reference, e
 ## Production branch schema check
 
 Read-only inspection found no public tables in Neon production branch; staging has 94. Production migration readiness remains blocked pending approval. No changes made.
+
+## 2026-10-11 — Meta page directory source follow-up and stage estimates
+
+Read `metaPageDirectory.ts`, `postgresMetaChannelAuthority.ts`, and migration `0025_tenant_rls_policy_predicate_cutover.sql`. The authoritative page-directory read uses the PostgreSQL merchant_channels table; migration 0025 defines a tenant-or-audited-admin RLS predicate for that table. This supports existing FA-I-006 restricted-role visibility concern, but does not prove an actual failure. Negative test with a synthetic page and restricted role on disposable PostgreSQL remains required. No duplicate issue created and no tests run.
+
+User-requested planning progress estimates (NOT measured code/test coverage): FA-000 100%, FA-001 60%, FA-002 45%, FA-003 0%, FA-004 35%, FA-005 0%, FA-006 0%. Percentages are provisional, not evidence-backed pass rates or launch readiness; update only with explicit stage exit evidence. No reliable overall percentage.
