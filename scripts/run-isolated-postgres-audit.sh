@@ -3,7 +3,7 @@ set -euo pipefail
 # Only fresh Docker-owned PostgreSQL; no host DB URL or hosted credentials inherited.
 audit_suite="${1:-priority}"
 case "$audit_suite" in
-  priority|http|meta|meta-rls|bootstrap|deletion) ;;
+  priority|http|meta|meta-rls|bootstrap|deletion|cashier|billing|tenant) ;;
   *) echo 'Unsupported audit suite' >&2; exit 2 ;;
 esac
 : "${RUNNER_TEMP:?GitHub runner temp is required}"

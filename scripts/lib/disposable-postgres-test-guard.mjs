@@ -41,7 +41,7 @@ export async function assertDisposablePostgres(env = process.env, dependencies =
     await client.connect();
     stage = 'identity-query';
     const result = await client.query(`SELECT current_database() AS database, current_user AS role,
-      inet_server_addr()::text AS address, shobj_description(oid, 'pg_database') AS marker
+      host(inet_server_addr()) AS address, shobj_description(oid, 'pg_database') AS marker
       FROM pg_database WHERE datname = current_database()`);
     const row = result.rows[0];
     stage = 'identity-match';
