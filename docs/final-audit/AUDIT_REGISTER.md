@@ -98,3 +98,5 @@ OPS-003 remains historical OPEN_PROOF for its original 2026-10-10 snapshot; newe
 | SEQ-03a | Real isolated runner preflight | RUNNER_FAIL_CLOSED_CORRECTION_PENDING_CI | Run 38170796690 / job 114562799838, source 9b1e1199 (merge 812e409b) | 15 safety PASS + build PASS; DB identity probe refused due obj_description vs shobj_description; no migrations/suite run. Cleanup PASS. Probe corrected, actual rerun required. |
 
 | SEQ-03b | Container readiness and Meta restricted-role coverage | RUNNER_STARTUP_RACE_CORRECTED_TEST_PENDING | Run 38170920460 / job 114563167460; new `meta-page-directory-restricted-rls.integration.test.mjs` | Unix-socket readiness saw init server shutting down. TCP readiness fixed; no migration/suite proof from failed run. FA-I-006 new real restricted-role test added, not run yet. |
+
+| SEQ-03c | Preflight diagnosis and safety fixture scan | FAIL_CLOSED_DIAGNOSTICS_ADDED | Run 38171061437/job114563593426; security38171061371/job114563593327 | Probe still rejects; no migration/suite execution yet. Added redacted stage/SQLSTATE/boolean diagnostics and recognized placeholder credentials. TS target-rejection checks PASS. |

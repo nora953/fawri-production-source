@@ -36,14 +36,22 @@ export async function assertDisposablePostgres(env = process.env, dependencies =
   // Only this read-only, short-lived probe is permitted before DB application imports.
   const Client = dependencies.Client || createRequire(new URL('../../lib/db/package.json', import.meta.url))('pg').Client;
   const client = new Client({ connectionString: target.connectionString, connectionTimeoutMillis: 5000, query_timeout: 5000 });
+  let stage = 'connect';
   try {
     await client.connect();
+    stage = 'identity-query';
     const result = await client.query(`SELECT current_database() AS database, current_user AS role,
       inet_server_addr()::text AS address, shobj_description(oid, 'pg_database') AS marker
       FROM pg_database WHERE datname = current_database()`);
     const row = result.rows[0];
+    stage = 'identity-match';
+    console.log('DISPOSABLE_PG_IDENTITY_CHECK ' + JSON.stringify({ database: row?.database === 'fawri_ci', role: row?.role === 'fawri_ci', loopback: row?.address === '127.0.0.1', marker: row?.marker === `fawri-disposable:${target.runId}` }));
     if (row?.database !== 'fawri_ci' || row.role !== 'fawri_ci' || row.address !== '127.0.0.1' ||
         row.marker !== `fawri-disposable:${target.runId}`) deny();
-  } catch { deny(); }
+  } catch (error) {
+    const sqlState = /^[A-Z0-9]{5}$/.test(error?.code || '') ? error.code : 'unavailable';
+    console.error(`DISPOSABLE_PG_PREFLIGHT_FAILURE stage=${stage} sqlState=${sqlState}`);
+    deny();
+  }
   finally { await client.end(); }
 }

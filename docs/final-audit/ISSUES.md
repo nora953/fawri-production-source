@@ -129,3 +129,5 @@ DB-TEST-TARGET-GUARD-020 through GOLDEN-CONTRACT-DIVERGENCE-023 already exist; n
 SEQ-03a follow-up to DB-TEST-TARGET-GUARD-020: first real CI refused at preflight because test guard used the per-database comment function instead of shared-object database comment function. Corrected to shobj_description; no application or hosted DB defect claimed. Closure remains pending fresh CI proof.
 
 FA-I-006: dedicated restricted-role test added in SEQ-03b. Requires real tenant-reset passes and known-page routing passes; do not close from source or owner-role Meta suite. Runner startup race fixed by TCP readiness after actual CI init failure; no application defect inferred from that failure.
+
+| AUDIT-FIXTURE-SCAN-025 | TEST_INFRASTRUCTURE / FALSE_POSITIVE_REVIEW | OPEN | Security run 38171061371 flags three fabricated remote connection strings in guard regression tests. Current inputs now use recognized placeholder passwords; historical blobs may still be flagged. These inputs were rejected before connections. Do not suppress real secret findings or rewrite history; verify narrowly scoped false-positive handling if needed. |

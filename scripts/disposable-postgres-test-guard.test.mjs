@@ -11,8 +11,8 @@ const denied = /attestation rejected/;
 
 for (const [name, changes] of [
   ['absent URL', { DATABASE_URL: undefined }],
-  ['remote Neon', { DATABASE_URL: 'postgresql://owner:secret@host.neon.tech/neondb' }],
-  ['remote IP', { DATABASE_URL: 'postgresql://fawri_ci:synthetic@10.0.0.1:5432/fawri_ci' }],
+  ['remote Neon', { DATABASE_URL: 'postgresql://owner:placeholder@host.neon.tech/neondb' }],
+  ['remote IP', { DATABASE_URL: 'postgresql://fawri_ci:placeholder@10.0.0.1:5432/fawri_ci' }],
   ['wrong database', { DATABASE_URL: environment.DATABASE_URL.replace('/fawri_ci', '/neondb') }],
   ['wrong role', { DATABASE_URL: environment.DATABASE_URL.replace('fawri_ci:', 'owner:') }],
   ['libpq options override', { DATABASE_URL: environment.DATABASE_URL + '?host=staging' }],
@@ -83,7 +83,7 @@ test('real MJS entrypoints reject remote target without loading application DB',
   const { spawnSync } = await import('node:child_process');
   for (const file of ['global-merchant-auth-bootstrap-postgres.integration.test.mjs', 'global-merchant-golden-journey.integration.test.mjs', 'merchant-deletion-tenant-rls.integration.test.mjs']) {
     const result = spawnSync(process.execPath, ['--test', `artifacts/api-server/tests/${file}`], {
-      env: { NODE_ENV: 'test', DATABASE_URL: 'postgresql://synthetic:synthetic@staging.invalid/neondb' }, encoding: 'utf8', timeout: 10000,
+      env: { NODE_ENV: 'test', DATABASE_URL: 'postgresql://synthetic:placeholder@staging.invalid/neondb' }, encoding: 'utf8', timeout: 10000,
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stdout + result.stderr, denied);
