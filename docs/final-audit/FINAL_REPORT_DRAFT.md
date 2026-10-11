@@ -56,3 +56,5 @@ See ISSUES.md for canonical findings and historical updates, EXECUTION_RESULTS_2
 Full schema seed/restrictedreadsPASS (94tables,45policies,3functions,28journalrows,twochannels); pg_dump/pg_restore commandPASS. Finalfingerprint verificationFAIL, componentcause unknown; fullrestore remainsOPEN. New boundeddiagnostics and postrestore tenantread proof pending. Do not label mismatch data loss or a harmless format difference without evidence.
 
 030: fast-copy4.0.3 is present in locally built pino-pretty asset, and staging Dockerfile copies allbuilt assets/node_modules; defaultproduction logger disables prettytransport. Artifact presence established, activeproduction exploitability unproven.
+
+SEQ-16 source3a9e83ab/run38174557888:108PASS/11FAIL/0SKIP unchanged. Postrestore restrictedtenantreadsPASS. Fingerprint differences localized to definitions of638constraints, with allcounts/flags/tables/ACL/policies/functions/indexes/journal/data otherwise identical; exactdefinition sample pending, semantic difference unclassified. Explicitcashier retention switch/staleversionnegativePASS. Newcashier paymentfailure matrix prepared; no results claimed.

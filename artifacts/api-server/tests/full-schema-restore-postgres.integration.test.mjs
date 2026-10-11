@@ -43,6 +43,11 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
       const original = before.components[component];
       const changed = rows.flatMap((row, index) => JSON.stringify(row) === JSON.stringify(original[index]) ? [] : [{ key: row.relname || row.proname || row.tablename || row.id || index, fields: Object.keys(row).filter(key => JSON.stringify(row[key]) !== JSON.stringify(original[index]?.[key])) }]);
       if (changed.length || rows.length !== original.length) console.log('AUDIT_FULL_SCHEMA_RESTORE_DIFFERENCE ' + JSON.stringify({ component, originalCount: original.length, restoredCount: rows.length, changed: changed.slice(0, 8) }));
+      if (component === 'constraints' && changed.length) {
+        const index = rows.findIndex((row, i) => row.definition !== original[i]?.definition);
+        // Constraint DDL is public schema metadata, not row values or secrets.
+        console.log('AUDIT_RESTORE_CONSTRAINT_SAMPLE ' + JSON.stringify({ table: rows[index].relname, constraint: rows[index].conname, original: original[index].definition, restored: rows[index].definition }));
+      }
     }
   }
   const client = await pool.connect();

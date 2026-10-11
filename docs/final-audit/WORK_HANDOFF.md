@@ -25,3 +25,9 @@ Then remainingmatrix: directguards, cashierpaymentfaults/extendedreplyrefunds,se
 No localDocker/psql; isolatedActionsavailable; Workbalanceunknown. Safeauditscontinue. Businessfixes/hostedmutations/mainmerge/deployneedexplicitapproval. Externalproviders/storage/finalvisualproofneedidentifiedapprovedenvironments.
 
 Next CI/triage15–30minutes. Original14taskplanning3.5–7hours includesnow-completedR07 andpartiallycompletedR03/R08; remainingroughly3–6hours offocusedwork, excludingnewfailures/queue/approvedfixes/externalproof. Fullreleasedate not reliablybounded.
+
+## Latest SEQ-16 checkpoint
+
+[Commit3a9e83ab](https://github.com/nora953/fawri-production-source/commit/3a9e83ab580c7f0845c5b9309707901b9fe14523), [run38174557888](https://github.com/nora953/fawri-production-source/actions/runs/38174557888), job114574050281:108PASS/11FAIL/0SKIP; six28migration chains/cleanupPASS. RestoredtenantreadsPASS; only constraint.definition differences remain,638constraints/counts/flags preserved and othercomponents identical. FinalfingerprintstillFAIL; do not assumeharmless.016explicitkeeperselection/staleversionPASS.
+
+Next new30unique/31invocationrun: capture AUDIT_RESTORE_CONSTRAINT_SAMPLE original/restoredpublicDDL; diagnose semantic vs representation difference before normalizing. Newcashiernegativefile has5subtests for012/027/028/032equivalents andsharedpaymentref; syntaxPASS, DBproofpending. Then remainingmatrix. No applicationchange; allcurrentcode savedwiththischeckpoint.
