@@ -8,7 +8,7 @@ on:
       - 'lib/db/scripts/audit-disposable-migrate.mjs'
       - 'artifacts/api-server/tests/helpers/**'
       - 'artifacts/api-server/tests/*postgres*.integration.test.*'
-      - 'artifacts/api-server/tests/saas-billing-negative-failure-cases.integration.test.mjs'
+      - 'artifacts/api-server/tests/saas-billing-*.integration.test.*'
       - '.github/workflows/audit-isolated-postgres.yml'
   workflow_dispatch:
   workflow_call:

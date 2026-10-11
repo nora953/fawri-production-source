@@ -1,28 +1,12 @@
-# Fawri autonomous audit — resume here
+# Fawri audit — current resume point
 
-Updated2026-10-11. PR#520 draft; test infrastructure, fixture changes and docs only. No app/business change, main merge, hosted DB mutation or deployment.
+Updated2026-10-11. Branch audit/conversation-notes-reconciliation-20261011, draftPR520. Test safety/test fixtures/docs only; no app fixes, merge, deploy or hosted DB mutation.
 
-- Prior completed task SEQ-06: verify21-suite rerun and classify restricted Meta failure. Source [284a5fa4](https://github.com/nora953/fawri-production-source/commit/284a5fa476ad975261099be74597e4cbeb23ba68).
-- Actual [run38171811645](https://github.com/nora953/fawri-production-source/actions/runs/38171811645), job114565798191:48NodePASS/3FAIL/0SKIP,20of21filesPASS. Four isolated instances, each28migrationsPASS; cleanupPASS. All other source workflow runsSUCCESS including security and quality.
-- FA-I-006 now runtime-confirmed with NOSUPERUSER/NOBYPASSRLS synthetic role: tenant scope/resetPASS, unknown page generic503PASS; all-page map0 instead2FAIL and approved-page503FAIL. Three Node failures include parent; two functional failures. No demonstrated cross-tenant leak.
-- DeletionRLS, cashier7files, billing4files and tenant4filesPASS. BILLING-TEST-E164-026 fixed and CI verified. Existing source-only concerns/omitted failure paths remain open.
-- Next SEQ-07: new synthetic negative billing3subtests and golden journey without merchants.json fixture saved with this checkpoint, awaiting CI. Verify actual results, record issues by existing IDs, preserve teardown and readonly checkout. No app fix without approval.
-- Remaining: guards for direct legacy entrypoints; forced DB setup cleanup evidence; targeted cashier negative/concurrency, storage/restore, bot/AI/security/UI/translations/deployment matrix. Two moderate dependency advisories require path reconciliation.
-- Tools: no local Docker/psql; isolated GitHub Actions works. No visible credit balance; no guessed credit.
-- Permissions: audit/test safety permitted. Business fixes, hosted DB changes, merge or deploy need approval. No current blocker to additional safe tests.
-- Estimate: next CI/triage15–30min; following focused tasks15–30min each. Full audit estimate depends on normalized remaining matrix and external provider/storage/visual prerequisites; not yet reliable.
-
-## Latest checkpoint — SEQ-07/08
-
-- Verified last source [91d639ff](https://github.com/nora953/fawri-production-source/commit/91d639ff17dad866a89b06c1cea736e8f57bae6f); [run38172237280](https://github.com/nora953/fawri-production-source/actions/runs/38172237280), job114567076990.22files49PASS/6FAIL/0SKIP;20successfulfiles; four28-migration chains and teardownPASS. Counts include two failing parents.
--027late verifiedpayment after proactiveexpiry throwsnotpayable;028mismatchednew eventrewritespaidstate. Both runtime-confirmed synthetic paymentcases. No application change. Sharedpaymentref concurrencyPASS withcollision rejection.022/023closed:noJSONgoldenjourneyPASS.
--029backup/restoreURLsearch/hashrejected and subprocessPGenvstripped; six regressiontests failedbeforepatch,17localbackup/restore/objecttestsPASSafterpatch. Fakebinaries only, no DBrestore.030two moderate devdependency advisorypaths confirmed, artifactreachabilitypending.
-- Next SEQ-09: prove simultaneous same-key SaaS checkout replay; cashier exhausted-seat rollback/concurrency and retention semantics. Then cross-cycle reply restoration/SQL-fault recovery. All through already guarded isolatedrunner.
-- App fixes for FA-I-006/027/028 require explicit approval; audit tests can continue. Full release stillblocked by these defects and externalproof gaps.
-- Estimate nextfocusedtask15–30min; fullremainingaudit not reliably bounded until externalprovider/storage/visualprerequisites resolved.
-
-### SEQ-09 test preparation saved
-
-Prior verified checkpoint commit861524b46143668079055a280db32e4c403d436e. New concurrency/orphan assertions prepared, syntax/diff checksPASS; API tsc noEmit result recorded below after completion. Next: fetch new isolated Actions run, verify migration/cleanup and targeted outputs, distinguish SQL idempotency race from duplicate-entitlement risk. Then test pending reconciliation after injected SQL failure on disposable DB only. No application changes. Estimate15–30min nexttriage.
-
-API tsc --noEmit PASS (exit0); tests still await real DB CI.
+- Last completed SEQ-09: [commitf956b689](https://github.com/nora953/fawri-production-source/commit/f956b689b0135ebe56503687a8557e8c8a579739), [run38172594527](https://github.com/nora953/fawri-production-source/actions/runs/38172594527), job114568154729.22files49NodePASS/7FAIL/0SKIP; four28migration chains andcleanupPASS. Failures5subtests+2parents, not7independent defects.
+- Confirmed open: FA-I-006restricted Meta map/routing;027late verifiedpaymentafterproactiveexpiry;028mismatchednewpaymentrewritespaid;012same-keyconcurrentcheckoutSQL23505 observed trial1 after trial0success. No duplicateentitlement/leakproof.019stationrollback serviceDBnegativesPASS;022/023fixturefree/rootJSONabsencePASS.
+- Restore [run38172470218](https://github.com/nora953/fawri-production-source/actions/runs/38172470218) on861524b4: freshservice synthetic3rowdump/restore/hashPASS;2localobjectsPASS;12observabilitytestsPASS; cleanupPASS. This is not production/fullFawrirecovery.
+- SEQ-10 prepared with this save: restore031narrowSELECTcountgrammar+workflowownership/loopback/freshschema/cleanupchecks; local21guard/objecttestsPASS. SQLfault/retry integrationtest added23rdfile, pendingCI.
+- Next: fetch latest isolated and restore workflow runs, verify each job source/count/cleanup; inspect BILLING_SQL_FAULT_STATE plus retry/reconciliation subtests, classify new finding only from actual execution. Then reply duplicate-after-suspension/cross-cycle refund, cashier retention/proration, normalized bot/AI/security/UI/translation remaining matrix.
+- Blockers: no localDocker/psql; Actionsavailable. App resolver/billingbusinessfixes, hostedmutations, merge/deploy need approval; safe audits continue. No visible Workbalance.
+- Remaining open evidence: legacydirectunguardedtests/tunnels; failedsetupcleanupfaultproof; fullschema/mediarestore/PITR/retention; realprovider/AI integrations; browser visual andtranslationcoverage;030moderatedependencyartifactreachability.
+- Time: nextCI/triage15–30min; followingindependenttasks15–30min each. Full audit total not reliably estimated until externalproof prerequisites and remaining matrix normalized.

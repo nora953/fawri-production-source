@@ -99,3 +99,12 @@ test("PostgreSQL drill strips inherited libpq routing environment before tool in
   const result = run(args, { PATH: binaryRoot, PGHOSTADDR: '192.0.2.1', PGSERVICE: 'unexpected', PGOPTIONS: '-c search_path=unexpected', FAWRI_ALLOW_DISPOSABLE_POSTGRES_RESTORE: '1' });
   assert.equal(result.status, 0, result.stderr);
 });
+
+for (const sql of ['select write_side_effect()', 'select count(*) from records for update', "select count(*) from records where write_side_effect()", 'select * into new_table from records']) {
+  test('restore verification refuses arbitrary SELECT effects: ' + sql, () => {
+    const args = ['--url', 'postgresql://fixture_user:fixture_password@127.0.0.1:5432/fawri_restore_target', '--backup', 'missing.dump', '--manifest', 'missing.json', '--verify-sql', sql, '--expect', '3'];
+    const result = run(args, { FAWRI_ALLOW_DISPOSABLE_POSTGRES_RESTORE: '1' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /one read-only SELECT/i);
+  });
+}

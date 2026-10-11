@@ -60,8 +60,10 @@ function assertDisposableRestoreUrl(rawUrl) {
 
 function assertSafeVerificationSql(sql) {
   const normalized = String(sql).trim();
-  if (!/^select\b/i.test(normalized) || /;|--|\/\*/.test(normalized)) {
-    throw new Error("Restore verification SQL must be one read-only SELECT without comments or statement separators");
+  // A SELECT prefix alone allows writable functions and SELECT INTO. The
+  // disposable drill needs only a row count, so permit that narrow grammar.
+  if (!/^select\s+count\s*\(\s*\*\s*\)\s+from\s+(?:[a-z_][a-z0-9_]*\.)?[a-z_][a-z0-9_]*$/i.test(normalized)) {
+    throw new Error("Restore verification SQL must be one read-only SELECT count(*) from an unquoted table identifier");
   }
 }
 
