@@ -253,3 +253,21 @@ Source review: `superQiSandboxWebhook.ts` attachProviderPaymentReference checks 
 - Current `main` `.github/workflows/backup-restore-drill.yml` has a disposable PostgreSQL 16 restore job and an observability contract job. Workflow existence and defined commands do not prove current run success, hosted Neon PITR restore, or durable hosted media.
 - Execution boundary: repository code is readable through GitHub connector; this session has no verified local Fawri checkout or disposable PostgreSQL. No DB-writing integration test was executed, no CI rerun initiated, no application or infrastructure change made.
 - Next closure evidence: enumerate other CI workflows; verify recent `quality-gates.yml` run/jobs against a specific SHA; establish disposable-only pre-import guards for unsafe integration suites (approval required); then execute restricted-role Meta and SuperQi negative cases on disposable PostgreSQL. Keep existing test-safety and release findings OPEN. **Do not increment stage percentages for this documentation update.**
+
+
+## 2026-10-11 GitHub Actions run/job/step verification
+
+GitHub connector fetched **actual jobs** (not merely workflow definitions) for prior PR #518 runs:
+
+| Workflow run ID | Job | Job conclusion | Nuance |
+| --- | --- | --- | --- |
+| `38090880741` | `full-build` | success | Build job; no DB integration claim |
+| `38090880741` | `full-typecheck` | success | `Run all API unit tests`, frontend TypeScript unit tests, source contracts and repository typecheck all have successful step conclusions; API selector excludes `*.integration.test.ts` |
+| `38090880741` | `quality-tool-tests` | success | Quality/security tooling tests |
+| `38090880741` | `translation-structure-audit` | success | Arabic, Sorani and English translation structure step success; not visual/semantic translation QA |
+| `38090880764` | `lockfile-integrity` | success | Frozen install/lockfile checks successful |
+| `38090880764` | `repository-security` | success | Tracked content and reachable Git history secret scans successful |
+| `38090880764` | `dependency-review` | success | Dependency graph detection successful; **three subsequent conditional dependency-graph checks skipped**; do not claim they ran |
+| `38090880764` | `dependency-audit` | success | Separate dependency audit command completed successfully; no severity counts extracted here |
+
+Evidence boundary: these are **historical PR #518 run IDs**, not new runs for the current `main` SHA or the audit branch. CI job success does not establish integration DB safety, tenant RLS isolation, production Meta/SuperQi, hosted restore or UI visual QA. Do not increment stage percentages from these observations. No workflow rerun, database operation, merge, deployment or application change.
