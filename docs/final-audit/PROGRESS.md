@@ -235,3 +235,7 @@ User-requested planning progress estimates (NOT measured code/test coverage): FA
 ## Meta RLS policy check
 
 Read-only staging query confirms merchant_channels has policy merchant_channels_tenant_boundary with predicate fawri_tenant_or_audited_admin(merchant_id). Source page-directory lookup uses a general transaction without merchant context. FA-I-006 remains an untested integration risk, not a confirmed runtime failure. No changes to app or database.
+
+## SuperQi sandbox checkout reference review
+
+Source review: `superQiSandboxWebhook.ts` attachProviderPaymentReference checks for another order using provider_checkout_ref, then updates the matched order in separate pool queries. This does not by itself establish atomic exclusion between concurrent attachments. Previously verified billing uniqueness covers provider_payment_ref, a distinct field. Treat as concurrency test gap, not a proven exploit. `superQiSandboxTransport.ts` defaultFetch delegates directly to fetch; explicit request timeout not visible there. No tests executed; use disposable fixtures for concurrency proof.
