@@ -32,6 +32,7 @@ test('valid offline namespace attestation permits read-only identity probe', asy
     async connect() { calls.push('connect'); }
     async query(sql) {
       assert.match(sql, /^SELECT /);
+      assert.match(sql, /shobj_description\(oid, 'pg_database'\)/, 'database comments live in shared-object catalog');
       calls.push('query');
       return { rows: [{ database: 'fawri_ci', role: 'fawri_ci', address: '127.0.0.1', marker: `fawri-disposable:${runId}` }] };
     }

@@ -125,3 +125,5 @@ DB-TEST-TARGET-GUARD-020 through GOLDEN-CONTRACT-DIVERGENCE-023 already exist; n
 - DB-TEST-CLEANUP-024: swallowed DELETE errors removed in both MJS journeys, TS HTTP and Meta ingress. Aggregate teardown attempts every cleanup and fails with redacted errors. Helper failure-injection PASS; actual PostgreSQL cleanup behavior pending.
 - GOLDEN-LEGACY-FIXTURE-022 and GOLDEN-CONTRACT-DIVERGENCE-023 remain OPEN; compatibility fixture intentionally retained until measured canonical journey proof. No application implementation changed.
 - Unselected unsafe suites under PG-TEST-GUARD-002/003 and TEST-DB-SAFETY-008 remain OPEN; the five-suite guard is not a repository-wide claim.
+
+SEQ-03a follow-up to DB-TEST-TARGET-GUARD-020: first real CI refused at preflight because test guard used the per-database comment function instead of shared-object database comment function. Corrected to shobj_description; no application or hosted DB defect claimed. Closure remains pending fresh CI proof.

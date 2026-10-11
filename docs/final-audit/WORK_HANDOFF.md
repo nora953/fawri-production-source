@@ -1,13 +1,13 @@
 # Fawri autonomous audit — resume here
 
-Updated 2026-10-11. Scope: test infrastructure and documentation only; PR #520 draft, no merge/deploy/live DB changes.
+Updated 2026-10-11. Test infrastructure/documentation scope only, PR #520 draft. No main merge/deploy/hosted DB mutation.
 
-- Last completed implementation task: SEQ-02 five-suite guard, teardown and isolated CI preparation; integration execution still pending.
-- Previous verified saved checkpoint: [SEQ-01 commit de4478b9](https://github.com/nora953/fawri-production-source/commit/de4478b987241d1a4b1f26babfdf8bfb58ab8d27). Current task commit is this file's latest change in [audit branch history](https://github.com/nora953/fawri-production-source/commits/audit/conversation-notes-reconciliation-20261011).
-- Tests: safety regressions 15 PASS / 0 FAIL / 0 SKIP. Includes three actual MJS entrypoint remote-target rejects, fake read-only probe identity checks, failed setup and aggregate cleanup. Shell/JS syntax, six workflow YAML parse, whitespace PASS. No PostgreSQL integration yet.
-- Pending local: pinned corepack pnpm 10.26.1 install; API build attempted too early failed esbuild missing, rerun after install. No lockfile change authorized/needed.
-- Implemented workflow: audit-isolated-postgres.yml + run-isolated-postgres-audit.sh; fresh network-none PostgreSQL, Node same namespace, no published port or external secrets, read-only source, per-run DB marker; full migrations then five tests sequential; fail on skipped/zero pass and destroy containers/volumes.
-- Open: 020/021/024 actual CI/DB proof; 022/023 compatibility fixture necessity; all earlier cashier/billing/RLS/provider/media/restore issues. Guard is only five suites, not all unsafe PG tests.
-- Next task SEQ-03: verify save, fetch Actions for new PR head, inspect migration and each suite result (pass/fail/skip counts), resolve test infrastructure failures within authorization, then add restricted-role Meta negative reproduction and wider cashier/billing suites in short saved tasks.
-- Blockers/permissions: no local Docker/psql, use Actions. No approval needed for authorized safety/test edits. Business implementation, hosted DB, merge and production deployment require separate explicit approval.
-- Estimated remaining: initial CI proof and infrastructure fixes ~30–90 min once Actions starts, conditional on failures. Whole audit estimate unresolved until normalized remaining test inventory/first DB evidence; no invented percentage or credit balance.
+- Last task: SEQ-03a real Actions preflight and marker-query correction.
+- Saved implementation: [9b1e1199](https://github.com/nora953/fawri-production-source/commit/9b1e11994a27dded1ca7c1f2328b1460af55e0a5). Current correction is latest file commit in audit branch history.
+- Actual CI [38170796690](https://github.com/nora953/fawri-production-source/actions/runs/38170796690), job 114562799838: 15 safety PASS, install/build PASS, probe FAILURE before any migration or integration suite, cleanup PASS. Source synthetic merge 812e409b5a87e1d03105cfe9fb5b577ce309de0b from head 9b1e1199 + main d38d2922.
+- Cause/correction: database marker needs shobj_description in PostgreSQL shared comment catalog; fixed query and unit expectation. Remains fail closed.
+- Local pinned pnpm install and API build now PASS; no package/lockfile changes.
+- Next: verify saved correction and fresh Actions migration/five-suite outcomes. Then add restricted-role Meta test (FA-I-006), tenant reset and expected ingress rejection evidence, followed by cashier/billing suites on isolated runner.
+- Open: DB-TEST-TARGET-GUARD-020 actual instance proof, cleanup 021/024 actual DB teardown proof, legacy fixture 022/023; all earlier external/cashier/billing risks unchanged.
+- No additional permission needed for test/guard changes. App remediation/business rules/hosted DB/merge/deploy remain approval-bound.
+- Time: first CI outcomes/fixes ~30–90 min conditional on failures; whole-audit estimate not yet reliable. Credits unavailable.
