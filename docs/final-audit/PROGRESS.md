@@ -221,3 +221,7 @@ Read-only Neon SQL connection returned database `neondb`, role `neondb_owner`, s
 ## Staging billing index check — 2026-10-11
 
 Read-only Neon staging query confirmed billing idempotency, payment-reference, event identity, pending-order and entitlement application uniqueness indexes for SaaS and cashier. All inspected names match source migrations. Production and concurrency behavior remain unverified. No database changes.
+
+## Production branch schema check
+
+Read-only inspection found no public tables in Neon production branch; staging has 94. Production migration readiness remains blocked pending approval. No changes made.
