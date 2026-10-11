@@ -3,6 +3,10 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
+
+await assertDisposablePostgres();
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "");
 assert.ok(DATABASE_URL, "DATABASE_URL is required");
@@ -116,9 +120,19 @@ async function seedMerchant(): Promise<void> {
 test(
   "merchant password recovery proof rejects tampering/replay and serializes concurrent resets",
   async (t) => {
+    let server: import("node:http").Server | undefined;
+    let runtimeDirectory: string | undefined;
+    t.after(async () => cleanupResources([
+      ["HTTP server", () => server ? new Promise<void>((resolve, reject) => server!.close(error => error ? reject(error) : resolve())) : undefined],
+      ["fixture login attempts", () => pool.query("DELETE FROM login_attempts WHERE account_id=$1", [merchantId])],
+      ["fixture OTP challenges", () => pool.query("DELETE FROM auth_otp_challenges WHERE account_id=$1", [merchantId])],
+      ["fixture identity", () => pool.query("DELETE FROM accounts WHERE id=$1 OR phone=$2", [merchantId, phone])],
+      ["pool", () => pool.end()],
+      ["runtime directory", () => runtimeDirectory ? rm(runtimeDirectory, { recursive: true, force: true }) : undefined],
+    ]));
     await seedMerchant();
 
-    const runtimeDirectory = await mkdtemp(
+    runtimeDirectory = await mkdtemp(
       path.join(os.tmpdir(), "fawri-merchant-password-recovery-"),
     );
     const dataDirectory = path.join(runtimeDirectory, "data");
@@ -140,7 +154,7 @@ test(
     app.use(express.json());
     app.use("/api/auth", authSecurityRouter);
 
-    const server = await new Promise<ReturnType<typeof app.listen>>(
+    server = await new Promise<ReturnType<typeof app.listen>>(
       (resolve, reject) => {
         const listening = app.listen(0, "127.0.0.1", () =>
           resolve(listening),
@@ -152,13 +166,6 @@ test(
     const address = server.address();
     assert.ok(address && typeof address === "object");
     const baseUrl = `http://127.0.0.1:${address.port}`;
-
-    t.after(async () => {
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-      await cleanup();
-      await pool.end();
-      await rm(runtimeDirectory, { recursive: true, force: true });
-    });
 
     async function recoveryProof(): Promise<string> {
       const requested = await json(

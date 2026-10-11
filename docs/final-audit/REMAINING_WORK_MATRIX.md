@@ -4,14 +4,14 @@ Each row is a short task with a separate saved checkpoint. Estimates are enginee
 
 | Next task | Scope and success criteria | Current evidence / dependency | Estimate |
 | --- | --- | --- | --- |
-| R01 | Read latest isolated run; classify all 26 files, migrations and cleanup; save exact counters and issue updates | Next diagnostic run afterfe892e69;29unique files/30seed-verify invocations; do not guess totals | 15–30 min |
-| R02 | Extend direct-entrypoint guards based on inventory; prove unsafe targets rejected before DB imports | Protected runner already proven; older standalone tests still unguarded | 15–30 min |
+| R01 | Read latest isolated run; classify all 26 files, migrations and cleanup; save exact counters and issue updates | SEQ-18 read/saved:114PASS/14FAIL/0SKIP,31 unique/32invocations; next password suite expands32/33 | 15–30 min |
+| R02 | Extend direct-entrypoint guards based on inventory; prove unsafe targets rejected before DB imports | 64 textual candidates;17 direct markers/32 selected after password recovery;32 outside both. Local password pre-import denialPASS; HTTP CI pending | 15–30 min |
 | R03 | Failed setup and first SQL cleanup failure; later deletion/error visibility | COMPLETE common strategy onfe892e69/run38174186237: childexit1, zeroaccounts/merchants, rawerrorredacted; journey-specific fault points remain optional follow-up | Completed |
-| R04 | Cashier retention selection and month-end/leap-year/proration boundaries | Existing grace, full lifecycle and seat competition coverage; policy016/014 unresolved | 15–30 min |
-| R05 | Cashier same-key checkout, payment-ref competition and SQL-failure recovery | SaaS012/032 reproduced; cashier equivalent not yet established | 15–30 min |
-| R06 | Refund after cycle change: base, expired/missing add-on batch, duplicate credit and concurrent refund | Base cross-cycle test pending018; sender suspension017 pending | 15–30 min |
+| R04 | Cashier retention selection and month-end/leap-year/proration boundaries | Retention/stale-version DBPASS;8 calendar/nearzero policy testsPASS. Pricing policy decision/UI proof still open | 15–30 min |
+| R05 | Cashier same-key checkout, payment-ref competition and SQL-failure recovery | COMPLETE audit: cashier6same-key trials/payment-refPASS;027/028/032 confirmed. Application repairs need approval | 15–30 min |
+| R06 | Refund after cycle change: base, expired/missing add-on batch, duplicate credit and concurrent refund | COMPLETE audit: base018FAIL; addonFK/concurrency/expired-renewal3PASS; official suspended sender017denialPASS | 15–30 min |
 | R07 | Knowledge learning lifecycle and injected-provider Meta lifecycle | COMPLETE on2964aba2/run38173603888: standalone learning1PASS, Meta54PASS; real-provider proof remains external | Completed |
-| R08 | Full migrated Fawri schema plus synthetic account/merchant/RLS fixture dump/restore; compare data/policies and rerun tenant assertion | Full schema94tables/45policies seeded, dump/restore commandPASS; fingerprint difference under diagnosis; tiny3row/2object drillPASS | 15–30 min |
+| R08 | Full migrated Fawri schema plus synthetic account/merchant/RLS fixture dump/restore; compare data/policies and rerun tenant assertion | COMPLETE synthetic schema/channel proof: seed+verifyPASS,94tables/45policies/638constraints/matching fingerprint/restricted reads. Role/media/PITR external | 15–30 min |
 | R09 | Sensitive non-RLS table grants and authenticated HTTP denial matrix | FA-I-007 remains a coverage gap; avoid owner-role-only conclusions | 15–30 min |
 | R10 | Determine moderate advisory reachability in shipped API/frontend artifacts; propose minimum compatible patch |030 has exact dev dependency paths; exploitation unproven | 15–30 min |
 | R11 | Normalize bot/AI/security CI counts, provider mocks, skips and failure coverage | Reuse already green adversarial/quality/security runs; live provider proof excluded | 15–30 min |
@@ -28,3 +28,5 @@ Original14-task plan was3.5–7hours. WithR03/R07 completed, the remaining12list
 - Persistent catalog/support media storage, production-like recovery/PITR/RPO/RTO, real provider settlement and real Meta/AI operation require separately approved environments, credentials and procedures.
 - Final visual QA requires an identified deployed version and approved site access; structure/typecheck/build success cannot substitute for browser evidence.
 - Main merge and production deployment remain forbidden without explicit approval.
+
+SEQ-18 planning update: R03/R05/R06/R07/R08 synthetic tasks complete; R01 checkpoint recurring. R02 broader guards, R04 policy/UI limits, R09/R11/R12/R13/R14 remain; R10 artifact presence established but compatible fix/exploitability external. Remaining focused audit roughly2–4hours excluding queues, new failures, fixes and external gates. Earlier3–6hour estimate is historical.

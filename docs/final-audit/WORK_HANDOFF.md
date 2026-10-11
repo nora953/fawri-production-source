@@ -1,25 +1,25 @@
 # Fawri audit — current resume point
 
-Updated 2026-10-11. Draft PR520; audit/conversation-notes-reconciliation-20261011. Scope: test infrastructure, fixtures and documentation only. No hosted mutation, application fix, merge or deployment.
+Updated2026-10-11. DraftPR520, audit/conversation-notes-reconciliation-20261011. Authorized changes are test infrastructure/fixtures/docs; application fixes, hosted mutation, merge and deployment need explicit approval.
 
-## Last completed task and saved evidence
+## Last completed task
 
-SEQ-17: [commit 8dcc893e](https://github.com/nora953/fawri-production-source/commit/8dcc893ebf9c15a9162b93cb5276c392a7e4d4f9), [run38174896098](https://github.com/nora953/fawri-production-source/actions/runs/38174896098), job114575105770.30 unique files/31 invocations:110 PASS/15 FAIL/0 SKIP. Six fresh offline PostgreSQL clusters,28 migrations each; cleanup SUCCESS. Cashier negative suite2PASS/4FAIL (three functional failures plus parent); six same-key concurrency trials/shared payment-reference protection PASS. Existing006/012/018 and billing027/028/032 persist;027/028/032 now also cashier-confirmed. Real failed-setup cleanup and Meta injected-provider lifecycle remain PASS.
+SEQ-18 [commitfc1ee417](https://github.com/nora953/fawri-production-source/commit/fc1ee4171eac9b75189383539857664afa37b264), [run38175555975](https://github.com/nora953/fawri-production-source/actions/runs/38175555975), job114577082735:31 unique files/32 invocations,114PASS/14FAIL/0SKIP. Six28-migration chains and owned-container/volume cleanupSUCCESS.
 
-## Current checkpoint preparation
+Full committed-schema dump/restore seed+verify PASS:94tables/45policies/3functions/638constraints/28journalrows/twofixturechannels, matching normalized fingerprint and postrestore restricted tenant reads.303 CHECK expressions reparsed on each side; equivalent-grouping and changed-predicate canaries PASS. Historical CHECK mismatch was representation. Roles remain pre-existing; no external media/PITR/cluster-role proof.
 
-Native PostgreSQL CHECK parse/deparse normalization with positive grouping and negative changed-predicate canaries; no expression comparison removed. Exact original/restored sample showed associative AND flattening. Final full-schema fingerprint still FAIL in latest actual run; postrestore restricted reads PASS. New addon refund fixture tests FK restriction, concurrent refund and expired addon after renewal; syntax PASS only. Both changes saved in this checkpoint, actual run pending.
+Addon refund FK/concurrency/expired-batch controls3PASS including parent. Base-cycle refund018 remains confirmed failing. Common real failed-setup/cleanup proof and injected Meta/knowledge lifecycle remainPASS. Fourteen failures are ten functional failures plus four parents for six existing findings006/012/018/027/028/032;027/028/032 also cashier-confirmed. No real provider money/key used.
 
-## Exact next task
+## Saved preparation and exact next task
 
-Read isolated Actions for this checkpoint. Expect31 unique files/32 phase invocations and six migration chains. Verify canaries, all638 constraint definitions/counts/flags and full schema/data/ACL/RLS/function/index/journal fingerprints, restored restricted reads, addon results and cleanup. Classify any harness failure separately from product findings; update existing issue IDs. Preserve historical failure tables. Update PR summary to latest evidence.
+Inventory64 source candidates:17 direct guard markers/32 isolated selections after adding password recovery,32 outside both; transitive imports/globs not fully analyzed. Password recovery now rejects missing URL and unattested hosted-shaped URL before dynamic application imports (two local proofs); early aggregate teardown before setup. TSsyntax/API typecheck PASS. Read next isolated CI for this checkpoint (expected32 unique/33 phase invocations) and classify password HTTP tamper/replay/concurrent reset assertions. Verify migrations/teardown and preserve existing failure counts; save exact evidence.
 
-Then continue REMAINING_WORK_MATRIX: direct-entrypoint guards, sensitive role grants, critical translation/UI semantics, deployment/recovery boundaries and final evidence reconciliation. Do not repeat unchanged proven checks unless fixture/runner changes require rerun.
+Then continue REMAINING_WORK_MATRIX: sensitive non-RLS grants/authenticated denials; bot/security CI normalization; critical AR/Sorani/EN semantics/accessibility; deployment/media recovery review; final report reconciliation. Do not restart or rerun unchanged green checks without new assertions/configuration reason. Update PR summary after each significant execution checkpoint.
 
-## Open findings, blockers and authority
+## Open findings and blockers
 
-006 restricted Meta routing;012 SaaS checkout race;018 base-cycle refund;027 late expired payment;028 terminal paid/applied-state mutation;032 SQL-fault reconciliation evidence;030 two moderate dependency advisories with artifact presence but exploitability unproved. Business fixes require explicit approval. External provider, hosted role, storage/PITR and visual deployment proofs require identified approved environments. No local Docker/psql; isolated Actions available. Work balance is not visible and has not been estimated.
+006 restricted Meta resolver;012 SaaS checkout race;018 base-cycle refund;027 expired-order late payment;028 paid/applied terminal mutation;032 SQL-fault durable reconciliation;030 two moderate artifact dependencies, active exploitability unproved.020 broader direct test guards open. Hosted role survey, real settlement/Meta/AI, external storage/PITR and visual QA require identified approved environments; no business repairs authorized. No localDocker/psql, isolatedActions available. Work balance not visible.
 
 ## Time estimate
 
-Next CI/triage15–30minutes. Roughly3–6hours of remaining focused audit work excluding queues, new failures, application fixes and external proofs. Release completion time cannot be bounded until those gates are resolved. GitHub commit tree is the durable resume source; check remote HEAD before editing.
+Next CI/triage15–30minutes; roughly2–4hours remaining focused source/test audit excluding queues, new failures, application repairs and external proofs. Release readiness cannot be established until operational/visual dependencies are resolved. All code/results are committed to the audit branch; check current remoteHEAD before resuming.

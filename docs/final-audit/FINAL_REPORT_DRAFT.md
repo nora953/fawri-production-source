@@ -1,72 +1,41 @@
-# Fawri engineering audit — evidence-based draft
+# Fawri engineering audit — current evidence draft
 
-Updated 2026-10-11. This is an interim report, not a release approval. Main baseline d38d29229bed0f9575a98e7026e7819fe363bfd4. Changes remain in draft PR520 on audit/conversation-notes-reconciliation-20261011.
+Updated2026-10-11. Main baseline d38d29229bed0f9575a98e7026e7819fe363bfd4; draftPR520, audit/conversation-notes-reconciliation-20261011. No staging/production mutation, main merge or deployment.
 
-## Decision supported by current evidence
+## Current conclusion
 
-Launch readiness is **not established**. Disposable testing has confirmed restricted-role Meta routing failures and several synthetic billing reliability defects. Important recovery, external-provider, hosted runtime and visual gates remain open. No production or staging data was modified by this audit.
+Launch readiness is **not established**. Synthetic execution confirms six product/reliability findings. Full committed-schema recovery and selected tenant isolation are now demonstrated, but external providers, hosted role privileges, persistent media/PITR and visual/accessibility gates remain open. Application fixes require approval outside current test-only scope.
 
-## Verified execution checkpoint
+## Latest executed evidence
 
-[Sourcefbbb9d0c](https://github.com/nora953/fawri-production-source/commit/fbbb9d0cb8806d1e0fc7bd04d57aa7fdd34f1132), [Actions38172886288](https://github.com/nora953/fawri-production-source/actions/runs/38172886288), job114569035624:
+[Sourcefc1ee417](https://github.com/nora953/fawri-production-source/commit/fc1ee4171eac9b75189383539857664afa37b264), [run38175555975](https://github.com/nora953/fawri-production-source/actions/runs/38175555975), job114577082735: **114 Node PASS / 14 FAIL / 0 SKIP**,31 unique files/32 invocations. Failures are ten functional failures and four parent failures across the six findings below; do not count parents as independent defects or sum reruns. Six fresh PostgreSQL16 clusters,28 committed migrations each, no external network/published ports, synthetic credentials, pre-import attestation, owned-container/volume cleanupSUCCESS. Full execution tables and historical failures remain in EXECUTION_RESULTS_2026-10-11.md/ISSUES.md.
 
-- 23 suite files: **50 Node passes, 9 failures, 0 skips**; 20 files successful. Nine failures comprise six failed functional subtests and three failed parents. Do not add rerun counts together or call nine independent defects.
-- Four fresh PostgreSQL16 instances each applied all 28 committed migrations. No schema push. Application tests ran with no external network, synthetic credentials, read-only checkout and disposable-target preflight. Owned container/volume cleanup succeeded.
-- Successful selected coverage includes account bootstrap and journeys, no root JSON in the golden journey, merchant deletion RLS, cashier seat limits/concurrency/rollback/grace/historical operations/compensation, positive SaaS and SuperQi sandbox fixtures, customer payments/refunds, reply entitlement, tenant/knowledge/reminder isolation.
-- SQL-failure recovery: transaction rolled back all entitlement writes; replay after removal of the synthetic fault applied once and subsequent replay was duplicate. Durable reconciliation during the fault did not persist.
+Successful selected coverage: account bootstrap, both golden/HTTP journeys, no root JSON, merchant deletion RLS; cashier lifecycle/licensing/seat concurrency/compensation/history/grace/retention selection/stale version; positive SaaS/SuperQi fixtures/customer payments/refunds; tenant/knowledge/reminder boundaries; standalone learning cycle and54 Meta tests with injected providers. Official send denies a suspended-subscription duplicate reservation with zero fake provider calls. Cashier checkout same-key six concurrency trials and shared payment-reference protection PASS. Real failed setup plus first SQL cleanup failure proves later deletion/pool teardown/error visibility with zero fixture account/merchant rows.
 
-[Restore38172886344](https://github.com/nora953/fawri-production-source/actions/runs/38172886344), job114569035881 on the same source: 21 guard/object tests passed; workflow-owned loopback service and empty source schema verified before writes; three PostgreSQL rows restored with matching checksum/count/consistency hash; two local objects restored consistently; cleanup passed. This is a small synthetic restore drill, not full Fawri or production recovery.
+Addon refunds: referenced batch deletion rejected23503, concurrent credit exactly once, expired original-addon refund preserves renewed base usage and offers zero addon balance (three tests including parent). Base-cycle refund remains unsafe018.
 
-Latest [source2964aba2](https://github.com/nora953/fawri-production-source/commit/2964aba2800274f704adbe5cf820e458958f0915), [run38173603888](https://github.com/nora953/fawri-production-source/actions/runs/38173603888), job114571197444:27 files,**106PASS/10FAIL/0SKIP**,23 files successful. Five fresh28-migration chains and cleanup PASS. Seven functional failures plus three parent failures correspond to the six indexed product/reliability findings below.
+Full-schema recovery seed/verify PASS after real pg_dump/pg_restore:94tables/RLSflags/ACLs,45policies,3functions,638constraints/flags/definitions, indexes,28journalrows and two fixturechannels match; restricted tenant readsPASS. Native roundtrip of303 CHECK definitions plus equivalent-grouping and changed-predicate canaries identifies prior mismatch as deparse representation. Roles remain pre-existing in one disposable cluster; no cluster-role/PITR/external-media/RPO-RTO proof. Earlier small recovery drill restored three rows/two local objects and21 safety/object tests passed; its narrower scope is retained.
 
-Corrected Meta harness:54passes (53subtests+parent),0fail/skip. Injected providers cover send deduplication, confirmed/uncertain failure handling, media provenance/unsafe URL denial, manual takeover and tenant-scoped knowledge. Standalone knowledge learning-cycle passed. Suspended subscription duplicate reservation still returns duplicate; official PostgreSQL transport rejected sending with zero fake-provider invocations (017). This is owner-role/injected-provider coverage; restricted Meta page resolver006 still fails. Historical52harness failures are retained in ISSUES.md. Next28file matrix added failed-setup/cleanup SQL proof, but [run38173870161](https://github.com/nora953/fawri-production-source/actions/runs/38173870161) on43e60b16 returned106PASS/11FAIL/0SKIP: new child harness skipped its file because of inherited NODE_TEST_CONTEXT. One extra failure is infrastructure; no real cleanup proof from it. Context stripping and full migrated-schema restore are prepared, pending new CI. The restore uses an offline owned cluster, preserves and compares data/ACL/RLS/functions/constraints/indexes, and verifies restricted tenant reads; cluster roles remain pre-existing in the same temporary cluster.
+## Confirmed findings and repair order
 
-## Confirmed problems and remediation order
-
-| Priority | Issue | Confirmed behavior | Repair acceptance criteria |
+| Priority | Existing issue | Confirmed behavior | Required acceptance evidence |
 | --- | --- | --- | --- |
-| P1 | FA-I-006 | Restricted NOLOGIN/NOSUPERUSER/NOBYPASSRLS role sees own tenant correctly; global Meta page map returns0 instead2 and known approved page returns503 | Narrow audited resolver routes synthetic approved pages while retaining tenant isolation, pool context reset and generic unknown-page failure; then staging proof |
-| P1 | BILLING-PAID-REPLAY-028 | Distinct verified mismatched-amount event rewrites a paid order to paid_reconciliation_required | Paid/refunded terminal state and applied entitlement preserved; conflicting event audited and safely rejected |
-| P1 | BILLING-LATE-EXPIRED-027 | Matching verified payment for proactively expired checkout throws not-payable before reconciliation | Durable received-payment reconciliation without applying inappropriate entitlement; safe duplicate/retry and operator handling |
-| P1 | BILLING-IDEMPOTENCY-012 | Identical concurrent checkout calls yield SQLSTATE23505 to one caller | Both callers receive one stable checkout; changed payload rejected; no duplicate order/charge |
-| P1 | REPLY-RESTORE-CYCLE-018 | Old-cycle refund resets new-cycle used1->0 and remaining3999->4000 while new debit stays in ledger | Cycle-aware refund accounting preserves unrelated current-cycle usage; duplicate/concurrent and add-on refund tests |
-| P1/P2 | BILLING-SQL-RECONCILIATION-032 | SQL failure leaves pending order and no provider-event/reconciliation record; retry recovery works | Durable received-payment evidence or independently proven reliable retry/recovery procedure; no duplicate entitlement |
-| P2 | SUPPLYCHAIN-MODERATE-030 | Two moderate dependency advisories in dev dependency paths | Determine shipped artifact reachability and apply compatible minimal patch/override with build verification |
+| P1 | FA-I-006 | Restricted RLS role tenant isolation passes, global Meta page map0 instead2; known page503 | Narrow audited resolver routes approved pages while preserving tenant isolation, pool reset and generic unknown-page denial; approved hosted proof |
+| P1 | BILLING-PAID-REPLAY-028 | Distinct mismatched verified event rewrites SaaS paid and cashier applied orders to reconciliation-required | Preserve terminal state/applied entitlement, safely reject and audit conflict |
+| P1 | BILLING-LATE-EXPIRED-027 | Matching late verified payment throws not-payable after proactive expiry in SaaS and cashier | Durable payment evidence/reconciliation and safe retry without inappropriate entitlement |
+| P1 | BILLING-IDEMPOTENCY-012 | SaaS identical concurrent checkout yields23505 to one caller; cashier control passes | Both SaaS callers receive same stable order; changed payload rejected; no duplicate charge |
+| P1 | REPLY-RESTORE-CYCLE-018 | Old base-cycle refund erases current-cycle usage1->0, remaining3999->4000 | Preserve unrelated new-cycle debit and prove duplicate/concurrent safety; addon controls alreadyPASS |
+| P1/P2 | BILLING-SQL-RECONCILIATION-032 | SaaS/cashier SQL fault leaves pending order with no durable payment-event evidence; exact retry later works | Durable evidence or independently verified recovery/retry procedure; no duplicate entitlement |
+| P2 | SUPPLYCHAIN-MODERATE-030 | Two moderate dependency advisories; fast-copy4.0.3 present in built pretty asset/copied node_modules | Compatible minimal update and build validation; active default production exploitability unproved |
 
-Application/business repairs are outside the current authorization. Priorities reflect the synthetic failures and potential operational impact, not proof of a live incident or exploit.
+These are synthetic failures, not evidence of a real financial incident or API data leak.032 transaction rollback prevents partial entitlement writes. No real charge/settlement/provider call was performed.
 
-## Test infrastructure repairs
+## Safety repairs and residual gaps
 
-- 020: fail-closed pre-import disposable guard protects priority suites and selected direct entrypoints; runner preloader protects the remaining selected legacy suites. Arbitrary direct execution of older tests is still unproven.
-- 021/024: earlier cleanup hooks, aggregate error reporting and container/volume teardown. Mocked cleanup failure tests pass; broader real failed-setup cleanup scenarios remain open.
-- 022/023: removed unnecessary merchants.json compatibility fixture; same golden journey passed with no root JSON persistence.
-- 025/026: exact historical fabricated credential findings narrowly pinned; corrected only invalid E.164 test phones. Security scan and positive billing fixtures passed.
-- 029/031: reject URL override parameters, strip inherited libpq routing environment, restrict restore verification to a row-count grammar; CI verifies owned fresh loopback service and reports cleanup errors.
+020 priority guards plus runner preloader proven; expanded textual inventory64 candidate files,16 guard markers/31 selected at latest executed source. Next checkpoint adds password recovery guard/selection (17/32,32 candidates outside both); local missing/unattested URL denial and APItypecheck PASS, HTTP assertions pending. Static/transitive imports and legacy service workflows need staged migration, not blind blanket guards.
 
-## Evidence limits and next work
+021/024 common early aggregate cleanup and real failure proofPASS; not every mutation faultpoint tested.022/023 legacyJSON compatibility removed and actual goldenPASS.025 exact historical fake scanner exceptions pinned;026 synthetic E.164 corrected.029 rejects URL override parameters/PG routing environment;031 restricts restore count verification grammar. Earlier security scan/guard checksPASS; use source-linked CI logs for current status.
 
-RLS results are for synthetic roles/data and committed schema, not a complete live staging-role grant survey. SuperQi tests use synthetic/sandbox fixtures; no real charge or settlement was performed. Injected AI/media/transport providers cannot establish real OpenAI/Meta availability, token permissions or operational quality. Current restore does not prove persistence across redeploys, external storage, retention or PITR. Translation structure success does not prove wording quality, responsive layout or accessibility.
+Synthetic restricted-role results do not close FA-I-007 hosted non-RLS sensitive-table grant/API authorization gap. SuperQi mocks cannot establish settlement. Injected Meta/AI providers do not establish live token permissions, availability or answer quality. Dependency presence does not establish active exploitability. Translation structure/typechecks do not prove wording, responsive layout or accessibility. No release decision until remaining required gates are reconciled.
 
-See ISSUES.md for canonical findings and historical updates, EXECUTION_RESULTS_2026-10-11.md for execution tables, REMAINING_WORK_MATRIX.md for short tasks and estimates, and WORK_HANDOFF.md for the exact next action. The final report must reconcile all required successful, failed, skipped and blocked gates before a release decision.
-
-## Latest SEQ-15 recovery checkpoint
-
-[Sourcefe892e69](https://github.com/nora953/fawri-production-source/commit/fe892e6973907e93c808f2c5af80b7273c224e9e), [run38174186237](https://github.com/nora953/fawri-production-source/actions/runs/38174186237), job114572937993:29unique files/30invocations,108PASS/11FAIL/0SKIP. Six28-migration chains and teardownPASS. Real failed-setup/cleanup injection nowPASS: firstcleanup SQLfails, laterDELETE removes bothfixture rows, boundederrorreported/no rawdrivererror.
-
-Full schema seed/restrictedreadsPASS (94tables,45policies,3functions,28journalrows,twochannels); pg_dump/pg_restore commandPASS. Finalfingerprint verificationFAIL, componentcause unknown; fullrestore remainsOPEN. New boundeddiagnostics and postrestore tenantread proof pending. Do not label mismatch data loss or a harmless format difference without evidence.
-
-030: fast-copy4.0.3 is present in locally built pino-pretty asset, and staging Dockerfile copies allbuilt assets/node_modules; defaultproduction logger disables prettytransport. Artifact presence established, activeproduction exploitability unproven.
-
-SEQ-16 source3a9e83ab/run38174557888:108PASS/11FAIL/0SKIP unchanged. Postrestore restrictedtenantreadsPASS. Fingerprint differences localized to definitions of638constraints, with allcounts/flags/tables/ACL/policies/functions/indexes/journal/data otherwise identical; exactdefinition sample pending, semantic difference unclassified. Explicitcashier retention switch/staleversionnegativePASS. Newcashier paymentfailure matrix prepared; no results claimed.
-
-## SEQ-17 — cashier payment boundaries and restore representation evidence
-
-Source [8dcc893e](https://github.com/nora953/fawri-production-source/commit/8dcc893ebf9c15a9162b93cb5276c392a7e4d4f9), [run 38174896098](https://github.com/nora953/fawri-production-source/actions/runs/38174896098), job 114575105770: 30 unique files/31 invocations, **110 PASS / 15 FAIL / 0 SKIP**. Six isolated PostgreSQL instances applied 28 migrations each; owned container/volume cleanup SUCCESS. Failures comprise ten existing functional/parent failures, four new cashier failures (three functional and their parent), and one restore comparison failure. These are not fifteen independent defects.
-
-027 now confirmed for cashier as well as SaaS: matching verified payment after proactive order expiry throws CASHIER_BILLING_ORDER_NOT_PAYABLE. 028 now confirmed for cashier applied orders: a distinct mismatched-amount event rewrites applied to paid_reconciliation_required while entitlement remains applied. 032 cashier SQL trigger fault P0001 rolls back payment/application/subscription writes but leaves order pending and no durable provider-event evidence; removing fault permits exact-event retry and duplicate protection. These extend existing issue scope, not new issue IDs. No real provider charge or loss was tested.
-
-012 remains confirmed for SaaS only. Cashier identical concurrent checkout succeeded for both callers with one stable order in all six independent trials, with no rejected SQLSTATE. Shared cashier payment-reference competition also passed. Do not generalize SaaS concurrency failure to cashier.
-
-Full-schema dump/restore commands and restored restricted tenant reads passed. The sampled cashier_operation_attribution_identity_check differs only by flattening its leading associative AND group; 638 constraints retain counts/flags and other components match. One sample is insufficient to classify every constraint. Prepared native PostgreSQL parse/deparse normalization for CHECK constraints only, with equivalent-grouping positive canary and changed-predicate negative canary; all ACL/RLS/data/index/function/journal assertions retained. Syntax passed; actual normalization/restore proof pending.
-
-Next guarded fixture covers addon-batch FK protection, concurrent duplicate refunds and expired-addon refund after renewal, separately from confirmed base-cycle defect018. Synthetic setup/early aggregate teardown; syntax passed, DB execution pending. Matrix expands to31 unique files/32 phase invocations. No application change.
+WORK_HANDOFF.md gives the exact saved resume point; REMAINING_WORK_MATRIX.md lists short tasks and external dependencies. This is a current draft, not a completed comprehensive release report.
