@@ -37,3 +37,9 @@ Read webhook application code in both billing authorities. SaaS `saasBillingAuth
 ## SEQ-36 — webhook signature and cashier discovery source review
 
 `superQiSandboxTransport.ts:418-446` computes SHA-256 of canonical webhook signing payload and checks RSA-SHA256 against configured public key; this establishes an implemented signature check, not end-to-end security of all routes or live provider trust. `cashierBillingAuthority.ts:1221-1246` has existing discovery by provider checkout ref OR metadata.provider_request_id, rejects multiple matching orders; a committed reserved order with stable request ID would make that path usable for pre-attachment webhook resolution. When order rolled back, discovery cannot succeed. Preserve this discovery and its ambiguity rejection during repair; verify tenant scope and DB policies separately. These are source inspections only, not executed integration tests.
+
+## SEQ-37 and SEQ-38 — incomplete checkout replay and schema verification
+
+Reviewed SaaS billing lines 518-550 and cashier billing lines 498-505, 533-555. Both reject a matching idempotency-key order without provider reference and redirect URL with an incomplete-checkout error. A durable reservation repair must provide a safe resume/reconciliation state for that existing order instead of requiring a new key. The existing immutable-payload comparison should remain.
+
+For concurrent initial requests, SELECT FOR UPDATE on a missing row cannot itself serialize insertion. Verify the actual schema uniqueness constraints and migration compatibility before coding a conflict re-read. Required regression cases: simultaneous same-key checkout, incomplete checkout replay, timeout unknown state, process restart, and conflicting payload. This is source/design review only; schema constraints were not inspected or asserted in this step.
