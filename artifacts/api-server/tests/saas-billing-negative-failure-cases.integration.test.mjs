@@ -52,6 +52,19 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 1);
   });
+  await t.test('simultaneous identical checkout requests return one durable order for both callers', async () => {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const fixture = await checkout(new Date(Date.now() - 60 * 60 * 1000));
+      await billing.listMerchantSaasBillingOrders(fixture.merchantId);
+      const key = randomUUID();
+      const input = { merchantId: fixture.merchantId, operation: 'activate', plan: 'silver', idempotencyKey: key };
+      const results = await Promise.allSettled([billing.createSaasBillingCheckout(input), billing.createSaasBillingCheckout(input)]);
+      console.log('BILLING_CHECKOUT_RACE ' + JSON.stringify({ attempt, rejectedCodes: results.filter(r => r.status === 'rejected').map(r => r.reason.code) }));
+      assert.equal(results.filter(r => r.status === 'fulfilled').length, 2, 'identical idempotency retry must return stable checkout rather than SQL failure');
+      assert.equal(results[0].value.order.id, results[1].value.order.id);
+      assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_billing_orders WHERE merchant_id=$1 AND idempotency_key=$2', [fixture.merchantId, key])).rows[0].count, 1);
+    }
+  });
   await t.test('two concurrent orders sharing provider payment identity apply at most one entitlement', async () => {
     const fixtures = [await checkout(), await checkout()];
     const reference = randomUUID();

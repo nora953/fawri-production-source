@@ -20,3 +20,9 @@ Updated2026-10-11. PR#520 draft; test infrastructure, fixture changes and docs o
 - Next SEQ-09: prove simultaneous same-key SaaS checkout replay; cashier exhausted-seat rollback/concurrency and retention semantics. Then cross-cycle reply restoration/SQL-fault recovery. All through already guarded isolatedrunner.
 - App fixes for FA-I-006/027/028 require explicit approval; audit tests can continue. Full release stillblocked by these defects and externalproof gaps.
 - Estimate nextfocusedtask15–30min; fullremainingaudit not reliably bounded until externalprovider/storage/visualprerequisites resolved.
+
+### SEQ-09 test preparation saved
+
+Prior verified checkpoint commit861524b46143668079055a280db32e4c403d436e. New concurrency/orphan assertions prepared, syntax/diff checksPASS; API tsc noEmit result recorded below after completion. Next: fetch new isolated Actions run, verify migration/cleanup and targeted outputs, distinguish SQL idempotency race from duplicate-entitlement risk. Then test pending reconciliation after injected SQL failure on disposable DB only. No application changes. Estimate15–30min nexttriage.
+
+API tsc --noEmit PASS (exit0); tests still await real DB CI.
