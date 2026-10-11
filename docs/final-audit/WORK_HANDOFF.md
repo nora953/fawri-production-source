@@ -1,33 +1,25 @@
 # Fawri audit — current resume point
 
-Updated2026-10-11. DraftPR520, branch audit/conversation-notes-reconciliation-20261011. Test infrastructure/fixtures/docs only; no app fix, hosted mutation, main merge or deployment.
+Updated 2026-10-11. Draft PR520; audit/conversation-notes-reconciliation-20261011. Scope: test infrastructure, fixtures and documentation only. No hosted mutation, application fix, merge or deployment.
 
-## Last completed task
+## Last completed task and saved evidence
 
-SEQ-15 [commitfe892e69](https://github.com/nora953/fawri-production-source/commit/fe892e6973907e93c808f2c5af80b7273c224e9e), [run38174186237](https://github.com/nora953/fawri-production-source/actions/runs/38174186237), job114572937993.29unique files/30invocations,108NodePASS/11FAIL/0SKIP; six fresh28migration chains/cleanupPASS. Existing10functional/parent failures and one fullrestore comparison failure. Security/supplychain fourjobsSUCCESS.
+SEQ-17: [commit 8dcc893e](https://github.com/nora953/fawri-production-source/commit/8dcc893ebf9c15a9162b93cb5276c392a7e4d4f9), [run38174896098](https://github.com/nora953/fawri-production-source/actions/runs/38174896098), job114575105770.30 unique files/31 invocations:110 PASS/15 FAIL/0 SKIP. Six fresh offline PostgreSQL clusters,28 migrations each; cleanup SUCCESS. Cashier negative suite2PASS/4FAIL (three functional failures plus parent); six same-key concurrency trials/shared payment-reference protection PASS. Existing006/012/018 and billing027/028/032 persist;027/028/032 now also cashier-confirmed. Real failed-setup cleanup and Meta injected-provider lifecycle remain PASS.
 
-## Actual results
+## Current checkpoint preparation
 
--021/024 realfailedsetup/firstcleanupSQLfaultPASS: childexit1, boundederrorreported, rawerrorredacted; accounts0/merchants0. Common strategyproven, not everyjourney faultpoint.
-- FullrestoreseedPASS:94tables/45policies/3functions/28journalrows/twochannels/restrictedreads. pg_dump/pg_restore commandPASS. VerifyfingerprintFAIL; no componentdiagnostics yet; postrestoretenantreads were not reached. No fullrestore/data-loss conclusion.
-- Existingconfirmed006/012/027/028/032/018persist. Meta54passes andknowledgecycle1pass;017officialsenddenialPASS.019stationrollback and022/023noJSONcontractPASS. Tinyrestore3rows/2objects/21safetytestsPASS.
+Native PostgreSQL CHECK parse/deparse normalization with positive grouping and negative changed-predicate canaries; no expression comparison removed. Exact original/restored sample showed associative AND flattening. Final full-schema fingerprint still FAIL in latest actual run; postrestore restricted reads PASS. New addon refund fixture tests FK restriction, concurrent refund and expired addon after renewal; syntax PASS only. Both changes saved in this checkpoint, actual run pending.
 
 ## Exact next task
 
-Read newisolatedrun for checkpointcommit: same29unique/30phaseinvocations. Fullrestore now emits AUDIT_FULL_SCHEMA_RESTORE_DIFFERENCE with component/key/changedfields and executes restrictedtenantreads before finalfingerprintassertion. Determineactual difference; normalize only representation with documented reason, preserveACL/RLS/data assertions. Verify sixmigrationchains andcleanup.
+Read isolated Actions for this checkpoint. Expect31 unique files/32 phase invocations and six migration chains. Verify canaries, all638 constraint definitions/counts/flags and full schema/data/ACL/RLS/function/index/journal fingerprints, restored restricted reads, addon results and cleanup. Classify any harness failure separately from product findings; update existing issue IDs. Preserve historical failure tables. Update PR summary to latest evidence.
 
-Also verify modifiedcashierdowngrade test: changedkeepselection mustcancel scheduledrelease, rejectstaleversion andrestoreoriginalselection beforepaidrenewal. Directguard/aggregatecleanup added.014nearzero monthly rounding8localpolicytestsPASS; pricingpolicy stillopen.
+Then continue REMAINING_WORK_MATRIX: direct-entrypoint guards, sensitive role grants, critical translation/UI semantics, deployment/recovery boundaries and final evidence reconciliation. Do not repeat unchanged proven checks unless fixture/runner changes require rerun.
 
-Then remainingmatrix: directguards, cashierpaymentfaults/extendedreplyrefunds,sensitivegrants,artifactsecurity,UI/semantictranslations/deployment. R07learningcycle/Meta syntheticcoveragecomplete; fullproviderproofexternal.030fast-copy presentinbuiltprettyasset; defaultproductionloggerdoesnot activateit. No dependencychange.
+## Open findings, blockers and authority
 
-## Resources, authority and time
+006 restricted Meta routing;012 SaaS checkout race;018 base-cycle refund;027 late expired payment;028 terminal paid/applied-state mutation;032 SQL-fault reconciliation evidence;030 two moderate dependency advisories with artifact presence but exploitability unproved. Business fixes require explicit approval. External provider, hosted role, storage/PITR and visual deployment proofs require identified approved environments. No local Docker/psql; isolated Actions available. Work balance is not visible and has not been estimated.
 
-No localDocker/psql; isolatedActionsavailable; Workbalanceunknown. Safeauditscontinue. Businessfixes/hostedmutations/mainmerge/deployneedexplicitapproval. Externalproviders/storage/finalvisualproofneedidentifiedapprovedenvironments.
+## Time estimate
 
-Next CI/triage15–30minutes. Original14taskplanning3.5–7hours includesnow-completedR07 andpartiallycompletedR03/R08; remainingroughly3–6hours offocusedwork, excludingnewfailures/queue/approvedfixes/externalproof. Fullreleasedate not reliablybounded.
-
-## Latest SEQ-16 checkpoint
-
-[Commit3a9e83ab](https://github.com/nora953/fawri-production-source/commit/3a9e83ab580c7f0845c5b9309707901b9fe14523), [run38174557888](https://github.com/nora953/fawri-production-source/actions/runs/38174557888), job114574050281:108PASS/11FAIL/0SKIP; six28migration chains/cleanupPASS. RestoredtenantreadsPASS; only constraint.definition differences remain,638constraints/counts/flags preserved and othercomponents identical. FinalfingerprintstillFAIL; do not assumeharmless.016explicitkeeperselection/staleversionPASS.
-
-Next new30unique/31invocationrun: capture AUDIT_RESTORE_CONSTRAINT_SAMPLE original/restoredpublicDDL; diagnose semantic vs representation difference before normalizing. Newcashiernegativefile has5subtests for012/027/028/032equivalents andsharedpaymentref; syntaxPASS, DBproofpending. Then remainingmatrix. No applicationchange; allcurrentcode savedwiththischeckpoint.
+Next CI/triage15–30minutes. Roughly3–6hours of remaining focused audit work excluding queues, new failures, application fixes and external proofs. Release completion time cannot be bounded until those gates are resolved. GitHub commit tree is the durable resume source; check remote HEAD before editing.

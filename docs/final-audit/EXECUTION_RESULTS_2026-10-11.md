@@ -209,3 +209,41 @@ Sourcefe892e69, run38174186237/job114572937993:108PASS/11FAIL/0SKIP;29unique fil
 | meta-live-reply-postgres.integration.test.ts | 54 | 0 | 0 |
 | full-schema-restore-postgres.integration.test.mjs / seed | 1 | 0 | 0 |
 | full-schema-restore-postgres.integration.test.mjs / verify | 0 | 1 | 0 |
+
+## SEQ-17 — run38174896098 / source8dcc893e
+
+30 unique files,31 invocations:110PASS/15FAIL/0SKIP. Six28-migration chains and cleanupSUCCESS. Detailed per-file Node counts:
+
+| Suite / phase | Exit | Pass | Fail | Skip |
+| --- | --- | --- | --- | --- |
+| failed-setup-cleanup-postgres.integration.test.mjs | 0 | 1 | 0 | 0 |
+| global-merchant-auth-bootstrap-postgres.integration.test.mjs | 0 | 1 | 0 | 0 |
+| global-merchant-golden-journey.integration.test.mjs | 0 | 1 | 0 | 0 |
+| global-merchant-postgres-http-journey.integration.test.ts | 0 | 1 | 0 | 0 |
+| merchant-deletion-tenant-rls.integration.test.mjs | 0 | 1 | 0 | 0 |
+| meta-webhook-postgres-ingress-cutover.integration.test.ts | 0 | 1 | 0 | 0 |
+| meta-page-directory-restricted-rls.integration.test.mjs | 1 | 2 | 3 | 0 |
+| cashier-billing-negative-failure-cases.integration.test.mjs | 1 | 2 | 4 | 0 |
+| cashier-full-lifecycle-postgres.integration.test.ts | 0 | 1 | 0 | 0 |
+| cashier-subscription-postgres.integration.test.ts | 0 | 1 | 0 | 0 |
+| cashier-billing-postgres.integration.test.ts | 0 | 1 | 0 | 0 |
+| cashier-downgrade-grace-postgres.integration.test.ts | 0 | 1 | 0 | 0 |
+| cashier-historical-operation-postgres.integration.test.ts | 0 | 1 | 0 | 0 |
+| cashier-operator-logout-pin-postgres.integration.test.ts | 0 | 1 | 0 | 0 |
+| cashier-operator-own-history-scope-postgres.integration.test.ts | 0 | 1 | 0 | 0 |
+| catalog-cashier-compensation-history-postgres.integration.test.ts | 0 | 2 | 0 | 0 |
+| saas-billing-sql-failure-recovery.integration.test.mjs | 1 | 1 | 2 | 0 |
+| saas-billing-negative-failure-cases.integration.test.mjs | 1 | 1 | 4 | 0 |
+| saas-billing-authority.integration.test.ts | 0 | 4 | 0 | 0 |
+| superqi-sandbox-billing.integration.test.ts | 0 | 2 | 0 | 0 |
+| subscription-entitlement-postgres.integration.test.ts | 0 | 2 | 0 | 0 |
+| merchant-customer-payment-authority-postgres.integration.test.ts | 0 | 11 | 0 | 0 |
+| reply-cross-cycle-refund-postgres.integration.test.mjs | 1 | 0 | 1 | 0 |
+| production-postgres-rls-security.integration.test.ts | 0 | 6 | 0 | 0 |
+| knowledge-tenant-rls.integration.test.mjs | 0 | 1 | 0 | 0 |
+| merchant-management-tenant-rls.integration.test.mjs | 0 | 6 | 0 | 0 |
+| subscription-reminder-rls.integration.test.mjs | 0 | 1 | 0 | 0 |
+| knowledge-learning-cycle-postgres.integration.test.ts | 0 | 1 | 0 | 0 |
+| meta-live-reply-postgres.integration.test.ts | 0 | 54 | 0 | 0 |
+| full-schema-restore-postgres.integration.test.mjs (seed) | 0 | 1 | 0 | 0 |
+| full-schema-restore-postgres.integration.test.mjs (verify) | 1 | 0 | 1 | 0 |

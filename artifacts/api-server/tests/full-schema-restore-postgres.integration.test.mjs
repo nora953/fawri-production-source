@@ -25,7 +25,30 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
   const tables = (await pool.query("SELECT relname, relrowsecurity, relforcerowsecurity, relacl::text AS acl FROM pg_class JOIN pg_namespace n ON n.oid=relnamespace WHERE n.nspname='public' AND relkind IN ('r','p') ORDER BY relname")).rows;
   const policies = (await pool.query("SELECT c.relname, polname, polcmd, polpermissive, pg_get_expr(polqual,polrelid) AS predicate, pg_get_expr(polwithcheck,polrelid) AS check_predicate FROM pg_policy JOIN pg_class c ON c.oid=polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,polname")).rows;
   const functions = (await pool.query("SELECT proname, pg_get_function_identity_arguments(p.oid) AS args, pg_get_functiondef(p.oid) AS definition FROM pg_proc p JOIN pg_namespace n ON n.oid=pronamespace WHERE n.nspname='public' AND prokind='f' ORDER BY proname,args")).rows;
-  const constraints = (await pool.query("SELECT c.relname, conname, convalidated, condeferrable, condeferred, pg_get_constraintdef(k.oid) AS definition FROM pg_constraint k JOIN pg_class c ON c.oid=conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,conname")).rows;
+  const constraints = (await pool.query("SELECT c.relname, conname, contype, convalidated, condeferrable, condeferred, pg_get_constraintdef(k.oid) AS definition FROM pg_constraint k JOIN pg_class c ON c.oid=conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,conname")).rows;
+  // pg_dump reparses CHECK DDL and PostgreSQL flattens associative leading AND
+  // groups. Round-trip both sides through the same native parser; never strip
+  // arbitrary parentheses or discard constraint expressions from comparison.
+  const normalizer = await pool.connect();
+  const quote = value => '"' + String(value).replaceAll('"', '""') + '"';
+  let checkCount = 0;
+  async function canonicalCheck(table, definition) {
+    const name = `audit_restore_check_${checkCount++}`;
+    await normalizer.query(`CREATE TEMP TABLE ${quote(name)} (LIKE public.${quote(table)})`);
+    try {
+      await normalizer.query(`ALTER TABLE ${quote(name)} ADD CONSTRAINT audit_check ${definition}`);
+      return (await normalizer.query("SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid=$1::regclass AND conname='audit_check'", [`pg_temp.${name}`])).rows[0].definition;
+    } finally { await normalizer.query(`DROP TABLE ${quote(name)}`); }
+  }
+  try {
+    for (const row of constraints) if (row.contype === 'c') row.definition = await canonicalCheck(row.relname, row.definition);
+    const grouped = await canonicalCheck('merchant_channels', 'CHECK (((char_length(merchant_id) >= 1) AND (char_length(merchant_id) <= 200)) AND (char_length(page_id) >= 1))');
+    const flat = await canonicalCheck('merchant_channels', 'CHECK ((char_length(merchant_id) >= 1) AND (char_length(merchant_id) <= 200) AND (char_length(page_id) >= 1))');
+    const changed = await canonicalCheck('merchant_channels', 'CHECK ((char_length(merchant_id) >= 2) AND (char_length(merchant_id) <= 200) AND (char_length(page_id) >= 1))');
+    assert.equal(grouped, flat, 'native parser must canonicalize equivalent associative grouping');
+    assert.notEqual(grouped, changed, 'a changed predicate must remain detectable');
+    console.log('AUDIT_CONSTRAINT_CANONICALIZATION_PASS ' + JSON.stringify({ checkCount: checkCount - 3, equivalentGrouping: true, changedPredicateDetected: true }));
+  } finally { normalizer.release(); }
   const indexes = (await pool.query("SELECT tablename,indexname,indexdef FROM pg_indexes WHERE schemaname='public' ORDER BY tablename,indexname")).rows;
   const migrations = (await pool.query('SELECT hash,created_at::text AS created_at FROM drizzle.__drizzle_migrations ORDER BY id')).rows;
   const channels = (await pool.query('SELECT id,merchant_id,page_id,status::text AS status FROM merchant_channels ORDER BY id')).rows;
