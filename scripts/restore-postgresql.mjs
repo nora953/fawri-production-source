@@ -45,6 +45,10 @@ function assertDisposableRestoreUrl(rawUrl) {
   if (!new Set(["postgres:", "postgresql:"]).has(parsed.protocol)) {
     throw new Error("Disposable PostgreSQL restore URL must use PostgreSQL");
   }
+  // libpq URL parameters can override the hostname validated below.
+  if (parsed.search || parsed.hash) {
+    throw new Error("Disposable PostgreSQL URL options are forbidden");
+  }
   if (!SAFE_LOCAL_HOSTS.has(parsed.hostname)) {
     throw new Error("PostgreSQL restore target must be loopback-only and disposable");
   }
@@ -69,6 +73,8 @@ function run(command, args, capture = false) {
   const result = spawnSync(command, args, {
     stdio: ["ignore", "pipe", "pipe"],
     encoding: "utf8",
+    // PGHOSTADDR/PGSERVICE/PGOPTIONS must not override the disposable URL.
+    env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))),
   });
   if (result.error) throw new Error(`${command} could not start: ${redact(result.error.message)}`);
   if (result.status !== 0) {

@@ -42,6 +42,10 @@ function parseDisposableDatabaseUrl(rawUrl) {
   if (!new Set(["postgres:", "postgresql:"]).has(parsed.protocol)) {
     throw new Error("Disposable PostgreSQL URL must use PostgreSQL");
   }
+  // libpq URL parameters can override the hostname validated below.
+  if (parsed.search || parsed.hash) {
+    throw new Error("Disposable PostgreSQL URL options are forbidden");
+  }
   if (!SAFE_LOCAL_HOSTS.has(parsed.hostname)) {
     throw new Error("PostgreSQL backup drill target must be loopback-only and disposable");
   }
@@ -57,7 +61,7 @@ function sha256(file) {
 }
 
 function run(command, args) {
-  const result = spawnSync(command, args, { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
+  const result = spawnSync(command, args, { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))) });
   if (result.error) throw new Error(`${command} could not start: ${redact(result.error.message)}`);
   if (result.status !== 0) {
     const detail = redact(result.stderr || result.stdout || "command failed").trim();

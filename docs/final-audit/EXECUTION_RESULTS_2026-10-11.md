@@ -76,3 +76,32 @@ Source284a5fa476ad975261099be74597e4cbeb23ba68; Actions38171811645/job1145657981
 | knowledge-tenant-rls.integration.test.mjs | 1 | 0 | 0 |
 | merchant-management-tenant-rls.integration.test.mjs | 6 | 0 | 0 |
 | subscription-reminder-rls.integration.test.mjs | 1 | 0 | 0 |
+
+## SEQ-07 negative-path run
+
+Source91d639ff17dad866a89b06c1cea736e8f57bae6f, Actions38172237280/job114567076990:49PASS/6FAIL/0SKIP,20/22filesPASS. Four28-migration chains and cleanupPASS. Meta2functional failures+parent; SaaS2functional failures+parent. Golden fixture-free/root JSON absencePASS. Billing failures027/028 detailed in ISSUES.md.
+
+| Suite | PASS | FAIL | SKIP |
+| --- | --- | --- | --- |
+| global-merchant-auth-bootstrap-postgres.integration.test.mjs | 1 | 0 | 0 |
+| global-merchant-golden-journey.integration.test.mjs | 1 | 0 | 0 |
+| global-merchant-postgres-http-journey.integration.test.ts | 1 | 0 | 0 |
+| merchant-deletion-tenant-rls.integration.test.mjs | 1 | 0 | 0 |
+| meta-webhook-postgres-ingress-cutover.integration.test.ts | 1 | 0 | 0 |
+| meta-page-directory-restricted-rls.integration.test.mjs | 2 | 3 | 0 |
+| cashier-subscription-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-billing-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-downgrade-grace-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-historical-operation-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-operator-logout-pin-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-operator-own-history-scope-postgres.integration.test.ts | 1 | 0 | 0 |
+| catalog-cashier-compensation-history-postgres.integration.test.ts | 2 | 0 | 0 |
+| saas-billing-negative-failure-cases.integration.test.mjs | 1 | 3 | 0 |
+| saas-billing-authority.integration.test.ts | 4 | 0 | 0 |
+| superqi-sandbox-billing.integration.test.ts | 2 | 0 | 0 |
+| subscription-entitlement-postgres.integration.test.ts | 2 | 0 | 0 |
+| merchant-customer-payment-authority-postgres.integration.test.ts | 11 | 0 | 0 |
+| production-postgres-rls-security.integration.test.ts | 6 | 0 | 0 |
+| knowledge-tenant-rls.integration.test.mjs | 1 | 0 | 0 |
+| merchant-management-tenant-rls.integration.test.mjs | 6 | 0 | 0 |
+| subscription-reminder-rls.integration.test.mjs | 1 | 0 | 0 |
