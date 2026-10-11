@@ -96,3 +96,9 @@ These are **audit work items, not three proven vulnerabilities**. No integration
 | CASHIER-STATION-ROLLBACK-019 | DB_TEST_PENDING | `postgresCashierStaffAuthority.ts` station insert and seat assignment share merchant transaction; test exhausted-seat rollback, no orphan station and concurrent create. |
 
 All entries are source review or test design, not executed proof. No changes to application code, live DB, payment providers, or deployment.
+
+## 2026-10-11 integration entrypoint safety
+
+| ID | Status | Evidence / required fix |
+| --- | --- | --- |
+| DB-TEST-TARGET-GUARD-020 | VERIFIED_SOURCE_GAP / NOT_EXECUTED | `artifacts/api-server/tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs:79` and `global-merchant-golden-journey.integration.test.mjs:223` skip only when `DATABASE_URL` is absent, with no disposable/local DB assertion in those entrypoints. Both use `@workspace/db` and write/delete synthetic accounts; `test:global-merchant-journey` invokes both. Require pre-import fail-closed target attestation and isolated ephemeral Postgres; prove rejection of remote/tunneled DB. No test execution or real-data impact observed. |
