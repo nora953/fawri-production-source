@@ -33,9 +33,18 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
   assert.equal(channels.length, 2);
   assert.ok(tables.length > 30 && policies.length > 0 && functions.length > 0, 'full schema, not tiny restore table');
   assert.equal(tables.find(x => x.relname === 'merchant_channels').relrowsecurity, true);
-  const fingerprint = createHash('sha256').update(JSON.stringify({ tables, policies, functions, constraints, indexes, migrations, channels })).digest('hex');
-  if (phase === 'seed') fs.writeFileSync('/restore-proof/before.json', JSON.stringify({ fingerprint }), { mode: 0o600 });
-  else assert.equal(fingerprint, JSON.parse(fs.readFileSync('/restore-proof/before.json', 'utf8')).fingerprint, 'restored schema/data/policy/ACL fingerprint must match');
+  const components = { tables, policies, functions, constraints, indexes, migrations, channels };
+  const fingerprint = createHash('sha256').update(JSON.stringify(components)).digest('hex');
+  let before;
+  if (phase === 'seed') fs.writeFileSync('/restore-proof/before.json', JSON.stringify({ fingerprint, components }), { mode: 0o600 });
+  else {
+    before = JSON.parse(fs.readFileSync('/restore-proof/before.json', 'utf8'));
+    for (const [component, rows] of Object.entries(components)) {
+      const original = before.components[component];
+      const changed = rows.flatMap((row, index) => JSON.stringify(row) === JSON.stringify(original[index]) ? [] : [{ key: row.relname || row.proname || row.tablename || row.id || index, fields: Object.keys(row).filter(key => JSON.stringify(row[key]) !== JSON.stringify(original[index]?.[key])) }]);
+      if (changed.length || rows.length !== original.length) console.log('AUDIT_FULL_SCHEMA_RESTORE_DIFFERENCE ' + JSON.stringify({ component, originalCount: original.length, restoredCount: rows.length, changed: changed.slice(0, 8) }));
+    }
+  }
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -52,6 +61,7 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
     client.release();
   }
   console.log('AUDIT_FULL_SCHEMA_RESTORE_RESULT ' + JSON.stringify({ phase, migrationCount: migrations.length, tableCount: tables.length, policyCount: policies.length, functionCount: functions.length, fixtureChannels: channels.length, restrictedTenantReads: true, fingerprint }));
+  if (phase === 'verify') assert.equal(fingerprint, before.fingerprint, 'restored schema/data/policy/ACL fingerprint must match');
   // Fixture rows intentionally persist between seed and restore verification.
   // The launcher destroys the entire owned cluster and anonymous volume.
 });

@@ -48,3 +48,11 @@ Application/business repairs are outside the current authorization. Priorities r
 RLS results are for synthetic roles/data and committed schema, not a complete live staging-role grant survey. SuperQi tests use synthetic/sandbox fixtures; no real charge or settlement was performed. Injected AI/media/transport providers cannot establish real OpenAI/Meta availability, token permissions or operational quality. Current restore does not prove persistence across redeploys, external storage, retention or PITR. Translation structure success does not prove wording quality, responsive layout or accessibility.
 
 See ISSUES.md for canonical findings and historical updates, EXECUTION_RESULTS_2026-10-11.md for execution tables, REMAINING_WORK_MATRIX.md for short tasks and estimates, and WORK_HANDOFF.md for the exact next action. The final report must reconcile all required successful, failed, skipped and blocked gates before a release decision.
+
+## Latest SEQ-15 recovery checkpoint
+
+[Sourcefe892e69](https://github.com/nora953/fawri-production-source/commit/fe892e6973907e93c808f2c5af80b7273c224e9e), [run38174186237](https://github.com/nora953/fawri-production-source/actions/runs/38174186237), job114572937993:29unique files/30invocations,108PASS/11FAIL/0SKIP. Six28-migration chains and teardownPASS. Real failed-setup/cleanup injection nowPASS: firstcleanup SQLfails, laterDELETE removes bothfixture rows, boundederrorreported/no rawdrivererror.
+
+Full schema seed/restrictedreadsPASS (94tables,45policies,3functions,28journalrows,twochannels); pg_dump/pg_restore commandPASS. Finalfingerprint verificationFAIL, componentcause unknown; fullrestore remainsOPEN. New boundeddiagnostics and postrestore tenantread proof pending. Do not label mismatch data loss or a harmless format difference without evidence.
+
+030: fast-copy4.0.3 is present in locally built pino-pretty asset, and staging Dockerfile copies allbuilt assets/node_modules; defaultproduction logger disables prettytransport. Artifact presence established, activeproduction exploitability unproven.

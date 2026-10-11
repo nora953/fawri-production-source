@@ -139,3 +139,9 @@ test("scheduled downgrade remains visible without reducing paid seats early", ()
   assert.equal(value?.scheduled_licensed_seats, 3);
   assert.equal(value?.scheduled_change_at, "2026-11-01T00:00:00.000Z");
 });
+
+test("positive sub-IQD proration below half dinar is rejected and nearest accepted boundary bills one IQD", () => {
+  const input = { unitPriceIqd: 3900, additionalSeats: 1, billingPeriodStart: new Date('2026-10-01T00:00:00Z'), billingPeriodEnd: new Date('2026-11-01T00:00:00Z') };
+  assert.throws(() => calculateCashierProrationIqd({ ...input, effectiveAt: new Date(input.billingPeriodEnd.getTime() - 343384) }), (error: unknown) => error instanceof CashierEntitlementError && error.code === 'CASHIER_PRORATION_AMOUNT_INVALID');
+  assert.equal(calculateCashierProrationIqd({ ...input, effectiveAt: new Date(input.billingPeriodEnd.getTime() - 343385) }), 1);
+});
