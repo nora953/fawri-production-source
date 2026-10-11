@@ -8,6 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { cleanupResources, stopTestChild } from "./helpers/cleanup-resources.mjs";
 
 const apiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -164,7 +165,14 @@ test(
     const phone = `+9647${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
     const password = "BridgePass1!";
     const deviceId = `auth-cutover-proof-device-${proof}`;
-    const runtimeDirectory = await mkdtemp(
+    let runtimeDirectory, child;
+    t.after(async () => cleanupResources([
+      ["API child", () => stopTestChild(child)],
+      ["fixture identity", () => pool.query("DELETE FROM accounts WHERE id=$1", [merchantId])],
+      ["pool", () => pool.end()],
+      ["runtime directory", () => runtimeDirectory ? rm(runtimeDirectory, { recursive: true, force: true }) : undefined],
+    ]));
+    runtimeDirectory = await mkdtemp(
       path.join(os.tmpdir(), "fawri-auth-cutover-business-"),
     );
     const dataDirectory = path.join(runtimeDirectory, "data");
@@ -222,7 +230,7 @@ test(
     const port = await reservePort();
     const baseUrl = `http://127.0.0.1:${port}`;
     let serverOutput = "";
-    const child = spawn(
+    child = spawn(
       process.execPath,
       [path.join(apiRoot, "dist", "index.mjs")],
       {
@@ -252,19 +260,6 @@ test(
     });
     child.stderr.on("data", (chunk) => {
       serverOutput += String(chunk);
-    });
-
-    t.after(async () => {
-      if (child.exitCode === null) {
-        child.kill("SIGTERM");
-        await Promise.race([
-          new Promise((resolve) => child.once("exit", resolve)),
-          new Promise((resolve) => setTimeout(resolve, 2_000)),
-        ]);
-      }
-      await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
-      await pool.end();
-      await rm(runtimeDirectory, { recursive: true, force: true });
     });
 
     await waitForServer(baseUrl, child, () => serverOutput);

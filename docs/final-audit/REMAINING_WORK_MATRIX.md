@@ -30,3 +30,5 @@ Original14-task plan was3.5–7hours. WithR03/R07 completed, the remaining12list
 - Main merge and production deployment remain forbidden without explicit approval.
 
 SEQ-18 planning update: R03/R05/R06/R07/R08 synthetic tasks complete; R01 checkpoint recurring. R02 broader guards, R04 policy/UI limits, R09/R11/R12/R13/R14 remain; R10 artifact presence established but compatible fix/exploitability external. Remaining focused audit roughly2–4hours excluding queues, new failures, fixes and external gates. Earlier3–6hour estimate is historical.
+
+SEQ-19: password recovery HTTPPASS; R11 CI normalization complete with one explicit skipped business-route DB assertion queued in isolatedrunner. Two legacy Meta guard refusals repaired, actualCIpending. R02 remains32 uncovered integrationcandidates plus out-of-glob DB tests; no broad safety closure.

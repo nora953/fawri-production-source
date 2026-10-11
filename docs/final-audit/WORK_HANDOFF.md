@@ -23,3 +23,9 @@ Then continue REMAINING_WORK_MATRIX: sensitive non-RLS grants/authenticated deni
 ## Time estimate
 
 Next CI/triage15–30minutes; roughly2–4hours remaining focused source/test audit excluding queues, new failures, application repairs and external proofs. Release readiness cannot be established until operational/visual dependencies are resolved. All code/results are committed to the audit branch; check current remoteHEAD before resuming.
+
+## Latest SEQ-19 checkpoint (supersedes next task above)
+
+[Source1c498c06](https://github.com/nora953/fawri-production-source/commit/1c498c06e27da42ccb73bfbadb4bd7599d9e2601), [run38175863733](https://github.com/nora953/fawri-production-source/actions/runs/38175863733), job114578004547:115PASS/14FAIL/0SKIP;32 unique/33invocations, six28-migration chains/cleanupSUCCESS. Password recovery HTTP tamper/replay/concurrent reset/revocationPASS. Schema/addon proofs remainPASS. Current task also reconciled completed fc1ee417 CI counts (seeCI_EVIDENCE_RECONCILIATION_2026-10-11.md).
+
+Next: verify checkpoint CI with33 unique files/34invocations. New selected auth-cutover-contract.test.mjs must execute its previously skipped PostgreSQL business-route assertion; early aggregate hook/awaited child teardown prepared. Verify Meta pipeline and foundation knowledge-gap steps now use owned offline meta-bot runner and no longer reject legacy service targets. Full Meta parent includes genuine all-but-one pool connection occupancy, preserved without name-filter skips. Do not count guard refusals as application defects. YAML/path test/local source10PASS+1DBSKIP verified. Then R09/R12/R13 source/negative access/semantic/deployment audit; remainingroughly2–4hours excluding fixes/queues/externalproof. Currentcode/docs saved in this checkpoint; no app change.

@@ -165,11 +165,10 @@ jobs:
           pnpm exec tsx --test
           artifacts/api-server/tests/merchant-management-tenant-rls.integration.test.mjs
 
-      - name: Prove knowledge-gap notification under pool contention
-        run: >-
-          pnpm exec tsx --test --test-timeout=60000
-          --test-name-pattern="seed isolated|stable knowledge gap hands off"
-          artifacts/api-server/tests/meta-live-reply-postgres.integration.test.ts
+      - name: Prove Meta knowledge-gap notification under pool contention in an owned offline cluster
+        # Full parent lifecycle includes the assertion that holds all but one
+        # pool connection; do not filter away its seed or teardown dependencies.
+        run: bash scripts/run-isolated-postgres-audit.sh meta-bot
       - name: Prove settings timestamps tolerate application clock skew
         run: >-
           pnpm exec tsx --test
