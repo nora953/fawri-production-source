@@ -107,3 +107,13 @@ All entries are source review or test design, not executed proof. No changes to 
 | GOLDEN-LEGACY-FIXTURE-022 | LEGACY_COMPATIBILITY_REVIEW | `global-merchant-golden-journey.integration.test.mjs:321-344` still writes a `merchants.json` compatibility fixture described as pre-PR #139. Confirm whether current runtime still needs this; if not, remove fixture and assert fully PostgreSQL-backed behavior. No runtime test performed. |
 
 | GOLDEN-CONTRACT-DIVERGENCE-023 | TEST_CONTRACT_RECONCILIATION_PENDING | `global-merchant-golden-journey.integration.test.mjs:321-344` explicitly writes a pre-PR-#139 `merchants.json` fixture, while `global-merchant-postgres-http-journey.integration.test.ts:46-56,704` asserts no root-level `.json` files in its test data directory. The latter tests a stricter no-legacy-JSON contract but is not the same entrypoint as `test:global-merchant-journey`. Establish whether the legacy fixture is still necessary and make the npm command exercise the canonical contract. Source evidence only; neither test was executed. |
+
+## Autonomous sequential audit — task SEQ-01 (2026-10-11)
+
+User authorizes test guards, test additions and isolated CI on the audit branch; earlier approval-only wording for these scoped actions is superseded. No app/business changes, main merge or hosted DB mutation authorized.
+
+| ID | Classification | State | Evidence / next action |
+| --- | --- | --- | --- |
+| DB-TEST-CLEANUP-024 | CONFIRMED_TEST_PROCESS_DEFECT | OPEN | Both MJS merchant journeys swallow account DELETE failures with `.catch(() => {})`; the direct TS HTTP journey and Meta ingress do the same with `.catch(() => undefined)`. This can report a green test after failed cleanup. Separate from late hook registration DB-TEST-CLEANUP-021. Use teardown that attempts every resource release, propagates redacted aggregate errors, and register before setup; test failed setup and failed cleanup. Source evidence only at baseline 09d5b8cd; no DB execution. |
+
+DB-TEST-TARGET-GUARD-020 through GOLDEN-CONTRACT-DIVERGENCE-023 already exist; no duplicate entries created. Merchant deletion RLS suite has finally-based role cleanup but retains fixture rows until instance disposal; runner must destroy its owned instance.
