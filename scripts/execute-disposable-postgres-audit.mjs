@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.mjs';
 const suites = {
   cashier: ['cashier-subscription-postgres.integration.test.ts', 'cashier-billing-postgres.integration.test.ts', 'cashier-downgrade-grace-postgres.integration.test.ts', 'cashier-historical-operation-postgres.integration.test.ts', 'cashier-operator-logout-pin-postgres.integration.test.ts', 'cashier-operator-own-history-scope-postgres.integration.test.ts', 'catalog-cashier-compensation-history-postgres.integration.test.ts'],
-  billing: ['saas-billing-authority.integration.test.ts', 'superqi-sandbox-billing.integration.test.ts', 'subscription-entitlement-postgres.integration.test.ts', 'merchant-customer-payment-authority-postgres.integration.test.ts'],
+  billing: ['saas-billing-negative-failure-cases.integration.test.mjs', 'saas-billing-authority.integration.test.ts', 'superqi-sandbox-billing.integration.test.ts', 'subscription-entitlement-postgres.integration.test.ts', 'merchant-customer-payment-authority-postgres.integration.test.ts'],
   tenant: ['production-postgres-rls-security.integration.test.ts', 'knowledge-tenant-rls.integration.test.mjs', 'merchant-management-tenant-rls.integration.test.mjs', 'subscription-reminder-rls.integration.test.mjs'],
   bootstrap: ['global-merchant-auth-bootstrap-postgres.integration.test.mjs', 'global-merchant-golden-journey.integration.test.mjs'],
   http: ['global-merchant-postgres-http-journey.integration.test.ts'],

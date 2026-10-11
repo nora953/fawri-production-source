@@ -1,14 +1,13 @@
 # Fawri autonomous audit — resume here
 
-Updated2026-10-11. PR#520 draft. Test infrastructure/fixture fixes and docs only; app, main, hosted DB, provider secrets and deployment unchanged.
+Updated2026-10-11. PR#520 draft; test infrastructure, fixture changes and docs only. No app/business change, main merge, hosted DB mutation or deployment.
 
-- Last task SEQ-05: first real21-suite execution, failure classification, runner/fixture corrections, narrowly bounded historical fake URL scan handling.
-- Verified source [0a101ba3](https://github.com/nora953/fawri-production-source/commit/0a101ba3dd1e45df4baee0417b66893cacc82ae7), synthetic merge3d8c9fdbaf3ba1434a087978af0b222d5d3908ea/main d38d2922.
-- Actual [run38171428265](https://github.com/nora953/fawri-production-source/actions/runs/38171428265), job114564672592: four sequential isolated instances, each28migrationsPASS;21suite files;32NodePASS/14FAIL/0SKIP; cleanupPASS. See EXECUTION_RESULTS_2026-10-11.md for each result and successful separate journey/Meta gates.
-- Failures before business assertions: loader preflight when restricted-role env inherited by tsx worker; readonly checkout data mkdir; old077phones violating E.164 migration. Corrected main-thread preload, per-suite writable temp data, two billing fixture phone formats. Preserve strict isolation/source readonly/schema.
-- Safety tests33PASS/0FAIL/0SKIP; current1584files and history5916blobs secret scansPASS after exact six fabricated historical test findings pinned; new CI scan pending. Direct legacy unsafe entrypoints remain unsafe outside protected runner.
-- Next SEQ-06: verify new commit saved/PR head; read new isolated Actions job including21suite counts and cleanup. Confirm FA-I-006 only after its tenant/global-map/known-page subtests execute. Fix only test infrastructure/fixtures; record application failures with reproduction and expected behavior for later approved fixes.
-- Open: 020/021/024 negative cleanup/fail-setup real DB proof; 022/023 golden legacy fixture; FA-I-006; BILLING-TEST-E164-026 rerun; cashier/billing failure scenarios and external storage/restore/provider/visual gates.
-- Following short tasks: remove legacy compatibility fixture and prove same journey with no root JSON; targeted payment failure/late-event/idempotency tests using fake provider; safe restore proof and remaining source/UI coverage.
-- Blockers/permissions: no local Docker/psql, Actions available. App/business fixes, hosted mutations, merge and deploy need explicit approval. No credit balance available.
-- Remaining time: current rerun/triage20–60min conditional on failures; full audit estimate awaits normalized remaining matrix and browser/provider/hosted recovery prerequisites. No invented percentage.
+- Last completed task SEQ-06: verify21-suite rerun and classify restricted Meta failure. Source [284a5fa4](https://github.com/nora953/fawri-production-source/commit/284a5fa476ad975261099be74597e4cbeb23ba68).
+- Actual [run38171811645](https://github.com/nora953/fawri-production-source/actions/runs/38171811645), job114565798191:48NodePASS/3FAIL/0SKIP,20of21filesPASS. Four isolated instances, each28migrationsPASS; cleanupPASS. All other source workflow runsSUCCESS including security and quality.
+- FA-I-006 now runtime-confirmed with NOSUPERUSER/NOBYPASSRLS synthetic role: tenant scope/resetPASS, unknown page generic503PASS; all-page map0 instead2FAIL and approved-page503FAIL. Three Node failures include parent; two functional failures. No demonstrated cross-tenant leak.
+- DeletionRLS, cashier7files, billing4files and tenant4filesPASS. BILLING-TEST-E164-026 fixed and CI verified. Existing source-only concerns/omitted failure paths remain open.
+- Next SEQ-07: new synthetic negative billing3subtests and golden journey without merchants.json fixture saved with this checkpoint, awaiting CI. Verify actual results, record issues by existing IDs, preserve teardown and readonly checkout. No app fix without approval.
+- Remaining: guards for direct legacy entrypoints; forced DB setup cleanup evidence; targeted cashier negative/concurrency, storage/restore, bot/AI/security/UI/translations/deployment matrix. Two moderate dependency advisories require path reconciliation.
+- Tools: no local Docker/psql; isolated GitHub Actions works. No visible credit balance; no guessed credit.
+- Permissions: audit/test safety permitted. Business fixes, hosted DB changes, merge or deploy need approval. No current blocker to additional safe tests.
+- Estimate: next CI/triage15–30min; following focused tasks15–30min each. Full audit estimate depends on normalized remaining matrix and external provider/storage/visual prerequisites; not yet reliable.

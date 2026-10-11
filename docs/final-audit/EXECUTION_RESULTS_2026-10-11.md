@@ -49,3 +49,30 @@ Primary [run 38171428265](https://github.com/nora953/fawri-production-source/act
 Local33 tests pass (guard/security/redaction); current repository scan1584 files passes. History5916 blobs passes after narrowly pinning six fabricated URL rejection inputs in two immutable test blobs by blob SHA+path+rule+index+length; new/changed findings are not suppressed. Future CI scan still needs verification. Fixture URL inputs were never used to connect. No dependency/lockfile changes.
 
 Next: save runner/fixture corrections, inspect fresh CI for actual six-priority+cashier+billing+tenant outcomes, then targeted legacy-json and remaining failure tests. External provider activation, media durability, hosted restore and browser/offline visual QA remain unverified.
+# Verified rerun — SEQ-06
+
+Source284a5fa476ad975261099be74597e4cbeb23ba68; Actions38171811645/job114565798191. Four isolated instances, each28migrationsPASS, cleanupPASS. Counts include nested parent failures.20/21filesPASS;48PASS/3FAIL/0SKIP. Meta restricted role has two failed functional subtests plus failed parent. Tenant isolation/context reset and unknown-page generic failurePASS; mapping0/2 and known-page503FAIL. Historical first-run results below remain preserved.
+
+| Suite | Node PASS | FAIL | SKIP |
+| --- | --- | --- | --- |
+| global-merchant-auth-bootstrap-postgres.integration.test.mjs | 1 | 0 | 0 |
+| global-merchant-golden-journey.integration.test.mjs | 1 | 0 | 0 |
+| global-merchant-postgres-http-journey.integration.test.ts | 1 | 0 | 0 |
+| merchant-deletion-tenant-rls.integration.test.mjs | 1 | 0 | 0 |
+| meta-webhook-postgres-ingress-cutover.integration.test.ts | 1 | 0 | 0 |
+| meta-page-directory-restricted-rls.integration.test.mjs | 2 | 3 | 0 |
+| cashier-subscription-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-billing-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-downgrade-grace-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-historical-operation-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-operator-logout-pin-postgres.integration.test.ts | 1 | 0 | 0 |
+| cashier-operator-own-history-scope-postgres.integration.test.ts | 1 | 0 | 0 |
+| catalog-cashier-compensation-history-postgres.integration.test.ts | 2 | 0 | 0 |
+| saas-billing-authority.integration.test.ts | 4 | 0 | 0 |
+| superqi-sandbox-billing.integration.test.ts | 2 | 0 | 0 |
+| subscription-entitlement-postgres.integration.test.ts | 2 | 0 | 0 |
+| merchant-customer-payment-authority-postgres.integration.test.ts | 11 | 0 | 0 |
+| production-postgres-rls-security.integration.test.ts | 6 | 0 | 0 |
+| knowledge-tenant-rls.integration.test.mjs | 1 | 0 | 0 |
+| merchant-management-tenant-rls.integration.test.mjs | 6 | 0 | 0 |
+| subscription-reminder-rls.integration.test.mjs | 1 | 0 | 0 |
