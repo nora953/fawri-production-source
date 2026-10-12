@@ -78,7 +78,7 @@ try {
     const lang=new URLSearchParams(location.search).get('lang') || 'en';localStorage.setItem('fawri_lang',lang);
     globalThis.auditCopy=COPY[lang];globalThis.auditToolbarCopy=REPORT_TOOLBAR_COPY[lang];
     createRoot(document.getElementById('root')).render(React.createElement(I18nProvider,null,React.createElement(Page,{embedded:true})));`;
-  const bundled=await build({stdin:{contents:entry,loader:'tsx',resolveDir:process.cwd()},bundle:true,format:'iife',platform:'browser',write:false,
+  const bundled=await build({stdin:{contents:entry,loader:'tsx',resolveDir:process.cwd()},bundle:true,format:'iife',platform:'browser',write:false,outfile:'audit-central-report.js',
     jsx:'automatic',alias:{'@':resolve('artifacts/fawri/src')},nodePaths:[resolve('artifacts/fawri/node_modules')],define:{'process.env.NODE_ENV':'"production"'}});
   const assets=resolve('artifacts/fawri/dist/public/assets');const cssFiles=(await readdir(assets)).filter(n=>n.endsWith('.css'));assert.ok(cssFiles.length);
   const styles=(await Promise.all(cssFiles.map(n=>readFile(join(assets,n),'utf8')))).join('\n');
@@ -89,7 +89,7 @@ try {
       const ref=new URL(req.headers.referer||'http://synthetic/?mode=success');const mode=ref.searchParams.get('mode')||'success';
       const key=ref.search;const n=(calls.get(key)||0)+1;calls.set(key,n);res.setHeader('Content-Type','application/json; charset=utf-8');
       if(mode==='error' && n===1){res.statusCode=503;res.end(JSON.stringify({ok:false}));}else res.end(JSON.stringify(mode==='empty'?empty:data));
-    }else if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end(bundled.outputFiles[0].text);}
+    }else if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end(bundled.outputFiles.find(file=>file.path.endsWith('.js')).text);}
     else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css; charset=utf-8');res.end(styles);}
     else{res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/style.css"><div id="root" class="report-print-root"></div><script src="/bundle.js"></script>');}
   });
