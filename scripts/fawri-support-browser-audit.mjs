@@ -93,7 +93,7 @@ try {
  }
  const loaded=c=>waitFor(()=>evaluate(c,'document.body.textContent.includes("AUDIT_SUPPORT_MESSAGE")'),15000,'support ticket message rendered');
  const click=(c,expr)=>evaluate(c,`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${expr}).click();true`);
- for(const lang of ['ar','en','ku'])await check(`actual merchant support ${lang} mobile loading and escaped conversation`,async()=>{
+ for(const lang of ['ar','en','ku'])await check(`actual merchant support ${lang} narrow-screen loading and escaped conversation`,async()=>{
  const {cdp}=await tab('merchant',lang);await cdp('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
  await waitFor(()=>evaluate(cdp,'document.body.textContent.includes(auditCopy.support_loading)'),15000,'merchant loading text');await loaded(cdp);const shape=await evaluate(cdp,`({dir:document.querySelector('#root>div').getAttribute('dir'),
  width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,active:document.querySelectorAll('#root img,#root script').length,
@@ -102,11 +102,11 @@ try {
  await cdp('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});
  await evaluate(cdp,`document.querySelector('[aria-label="'+auditCopy.support_new_ticket+'"]').focus();true`);
  assert.equal(await evaluate(cdp,`document.activeElement?.getAttribute('aria-label')===auditCopy.support_new_ticket`),true,'new-ticket control receives keyboard focus');
- await cdp('Page.bringToFront');
- await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',text:'\r',unmodifiedText:'\r',windowsVirtualKeyCode:13,nativeVirtualKeyCode:13});await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,nativeVirtualKeyCode:13});
- await waitFor(()=>evaluate(cdp,'Boolean(document.querySelector("input[maxlength=\"120\"]"))'),15000,'keyboard-opened new ticket form');
+ assert.equal(await evaluate(cdp,`document.activeElement?.tagName==='BUTTON' && document.activeElement.tabIndex===0`),true,'new-ticket control uses a native focusable button');
+ await click(cdp,'auditCopy.support_new_ticket');
+ await waitFor(()=>evaluate(cdp,'Boolean(document.querySelector("input[maxlength=\"120\"]"))'),15000,'new-ticket form opening');
  assert.equal(await evaluate(cdp,'document.querySelectorAll("label").length>=3'),true);
- return {...shape,keyboardCreate:true,limits:'Actual mounted component/i18n/CSS with synthetic API; no backend/session, full visual or accessibility signoff.'};
+ return {...shape,buttonFocus:'native focusable button',formOpens:true,keyboardActivation:'not verified by headless CDP input; no keyboard clearance claimed',limits:'Actual mounted component/i18n/CSS with synthetic API; no backend/session/full visual/accessibility signoff.'};
  });
  await check('merchant empty state enables new ticket with no stale conversation',async()=>{
  const {cdp}=await tab('merchant','en','empty');await waitFor(()=>evaluate(cdp,'document.body.textContent.includes(auditCopy.support_empty_title)'));
