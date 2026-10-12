@@ -101,8 +101,7 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
         `DELETE FROM audit_events
           WHERE merchant_id = $1 OR actor_account_id = ANY($2::text[])`,
         [merchantId, [ownerId, assistantId]],
-      )
-;
+      );
     await pool.query(
       "DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])",
       [[ownerId, assistantId]],
@@ -112,8 +111,7 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
         `DELETE FROM accounts
           WHERE id = ANY($1::text[]) OR phone = ANY($2::text[])`,
         [[merchantId, otherMerchantId, ownerId, assistantId], [merchantPhone, otherMerchantPhone, ownerPhone, assistantPhone]],
-      )
-;
+      );
   }
 
   let server: ReturnType<typeof express.application.listen> | undefined;
@@ -221,11 +219,24 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
   });
   const otherMerchantCookie = cookie(MERCHANT_SESSION_COOKIE, otherMerchantSession.token);
 
+  // Current owner sessions require a real trusted, bound device. This fixture
+  // uses actual device services; owner OTP HTTP is independently proved in SEQ-134.
+  const ownerDeviceId = "support-audit-owner-device";
+  const { registerAdminDeviceAuthoritative, setAdminDeviceTrustAuthoritative } =
+    await import("../src/services/postgresAdminSecurityAuthority.js");
+  const ownerDevice = await registerAdminDeviceAuthoritative({
+    accountId: ownerId, accountKind: "admin", deviceId: ownerDeviceId, deviceLabel: "Synthetic Support Owner",
+  });
+  const trustedOwnerDevice = await setAdminDeviceTrustAuthoritative({
+    deviceRecordId: ownerDevice.id, trusted: true, actorAccountId: ownerId,
+  });
+  assert.equal(trustedOwnerDevice?.status, "trusted");
   const ownerSession = await authPostgresSessionAuthority.issueSession({
     accountId: ownerId,
     accountKind: "admin",
     tenantId: "fawri-admin",
     adminRole: "owner_admin",
+    deviceId: ownerDeviceId,
     permissions: [],
   });
   const assistantSession = await authPostgresSessionAuthority.issueSession({
@@ -518,7 +529,7 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
   );
   const escalatedListResponse = await fetch(
     `${baseUrl}/api/auth/admin/support/tickets`,
-    { headers: { Cookie: ownerCookie } },
+    { headers: { Cookie: ownerCookie, "x-fawri-device-id": ownerDeviceId } },
   );
   assert.equal(escalatedListResponse.status, 200);
   const escalatedTicket = (await json(escalatedListResponse)).tickets.find(

@@ -36,6 +36,14 @@ Both selected test entrypoints now additionally call shared disposable attestati
 
 This does not certify hostile concurrent filesystem processes, disk crash durability, hosted storage, DB-to-file rollback, image decoding or HTTP authorization. No application defect closed from these local passes. No additional whole-audit percentage credit beyond current54% estimate pending remaining broader gates.
 
+## SEQ-137 — incomplete execution counter regression
+
+`node --test scripts/fawri-audit-suite-summary.test.mjs`, Node24.19.0: **4PASS/0FAIL/0SKIP**. Execute the actual runner summary/classification body: complete passing TAP accepted; complete failed TAP retains child/parent counters; observed unfinished fixture failure counted with summaryComplete:false; partial output cannot be green even with exit0. Synthetic TAP inputs, no DB proof. This specifically prevents the previously observed Support exit7/missing terminal summary from disappearing from failure reporting.
+
 ## Next
 
 SEQ-134 logs read and classified. Execute corrected Support journey and SEQ-135 without weakening negative assertions; preserve passing admin proof and open application findings. Persist exact source/run/job and complete aggregate; never add local5 to SQL counts or reuse138/24 as a new aggregate. Remaining mounted-browser owner/admin/merchant/support/mobile/role surfaces still open.
+
+## SEQ-135 first corrected runtime — fixture device contract
+
+Source8ad38293, [run38288147993](https://github.com/nora953/fawri-production-source/actions/runs/38288147993), job114941363779:43invocations/41unique, **139PASS/25FAIL/0SKIP**, all summaries complete.24markers remain existing9application findings; one additional Support fixture setup failure before HTTP: AUTH_POSTGRES_OWNER_DEVICE_REQUIRED. Corrected phone fixtures and pre-mutation teardown now complete quickly and expose full counters; owned cleanup SUCCESS. No new app permission defect inferred. Current owner requires deviceId; old Support test directly issued a device-less owner session. Fixture now registers/trusts a synthetic owner device through actual device services, binds owner session and owner request device header. Owner OTP HTTP remains separately proved; this synthetic trust service is not additional login proof. Four new Support negative child tests still NOT_RUN pending next source. Local syntax PASS; SEQ-137 counter regressions4PASS separate.
