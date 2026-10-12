@@ -79,3 +79,8 @@ Provisional audit estimate: approximately 50% (40–60% uncertainty); methodolog
 ## Latest classified execution — SEQ-114a / SEQ-115
 
 Firstnewrun38194961047 on d0be9ea3:132PASS/24FAIL/0SKIP; actual SQLgapobservationPASS. Stockrace hit historicaldeviceauthority fixturetiming, so contentionnotproven. Recoverytamperfailure was a testfixtureBase64urlbytealias, not establishedcrypto forgery. Test-only corrections and29localPASS saved; correctedSQL/HTTPresultsPENDING. Source narrows shiftrecovery tofeasibleadministrativeclosure, asnormallogout/pairing andsame-staffopenshiftreuse mitigate simplerhypotheses. Details inEXECUTION_RESULTS/ISSUES/WORK_HANDOFF. ReleaseBLOCKED; auditestimateapproximately50%, no applicationrepair.
+
+
+## SEQ-114 real service proof verified; recovery fixture follow-up
+
+Sourcebc8ca369, run38195395321/job114636790344:134PASS/22FAIL/0SKIP. New multi-device suite3PASS: four last-stock races, concurrent replay/no duplicate mutation, altered-note conflict, loser rollback/retry and SQLgap observation. Exact boundaries and evidence inEXECUTION_RESULTS. Extra recovery failure was duplicatefirst variable introduced in test correction; renamedtagFirstCharacter, full-file transformed syntaxPASS, actualHTTPretestawaited. Existing21product failuremarkers remain. ReleaseBLOCKED; no applicationchange. Exactresume: inspect newcommitrecovery/runcounts/cleanup before feasibleclosedshift/browserproof. WORK_HANDOFF andISSUES preserveopen scope; local29runtime/18sourcePASS, no browsercertification.

@@ -241,8 +241,8 @@ test(
     const parts = cookieValue.split(".");
     assert.equal(parts.length, 4);
     const originalTag = Buffer.from(parts[3], "base64url");
-    const first = parts[3][0];
-    parts[3] = (first === "A" ? "B" : "A") + parts[3].slice(1);
+    const tagFirstCharacter = parts[3][0];
+    parts[3] = (tagFirstCharacter === "A" ? "B" : "A") + parts[3].slice(1);
     assert.notDeepEqual(Buffer.from(parts[3], "base64url"), originalTag);
     const tampered = `${cookieName}=${parts.join(".")}`;
 

@@ -512,3 +512,8 @@ Exact next action: inspect the new commit's isolated CI cashier phase and this t
 First actual new run132PASS/24FAIL/0SKIP; SQL gap observationPASS. Stock-race fixture hit device-authority timestamp mismatch and passwordrecovery test hit identical-byte Base64url alias; neither counted as new productdefect or ignored. Test-only corrections saved; local harness now29PASS/0FAIL/0SKIP. Corrected actualSQL/HTTP resultsPENDING. Existing21failure markers persist. Details inEXECUTION_RESULTS andISSUES. Scope estimate remainsapproximately50%; no increase for preparation/failedfixture.
 
 Same-staff login retains openshift; logout/pairing already blockpending. SourceSEQ115 refines recovery concern to explicitclosure/admin transitions, not expiryalone. Browser unavailable. Exactnext: inspect correctedCI/new suiteandcleanup, then recoveryHTTP/browser proof. No functionalchange approved.
+
+
+## SEQ-114 real service proof verified; recovery fixture follow-up
+
+Sourcebc8ca369, run38195395321/job114636790344:134PASS/22FAIL/0SKIP. New multi-device suite3PASS: four last-stock races, concurrent replay/no duplicate mutation, altered-note conflict, loser rollback/retry and SQLgap observation. Exact boundaries and evidence inEXECUTION_RESULTS. Extra recovery failure was duplicatefirst variable introduced in test correction; renamedtagFirstCharacter, full-file transformed syntaxPASS, actualHTTPretestawaited. Existing21product failuremarkers remain. ReleaseBLOCKED; no applicationchange. Exactresume: inspect newcommitrecovery/runcounts/cleanup before feasibleclosedshift/browserproof. WORK_HANDOFF andISSUES preserveopen scope; local29runtime/18sourcePASS, no browsercertification.

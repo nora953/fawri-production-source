@@ -106,3 +106,8 @@ This supersedes earlier exactnext. Actual first new run38194961047/job1146354794
 Latest local command node --test scripts/fawri-sync-audit.test.mjs:29PASS/0FAIL/0SKIP; syntax/diffPASS. CorrectedSQL/HTTP resultsPENDING untilnewcommitCI read. Exactnext: inspect newhead isolatedcashier suite andpasswordrecoverysuite markers pluscleanup; resolvefixturefailures separately; preserveexisting21canonicalfailures. Newcommit discoverable frombranchHEAD. No actualclient/IndexedDB/browserproof.
 
 SEQ115source narrowed shiftPROOF_GAP: same-staff login reusesopenshift; ordinarylogout/pairing protectpending. Disable/revoke closesstaff/station shifts; currentoperatorauth required forhistoricalupload. Test feasibledisable/re-enable/newshift recovery, not expiry-only hypothesis. Full evidenceinEXECUTION_RESULTS, stableIDs inISSUES. Remain nofunctionalfix/merge/deploy/liveDB/providerauthorization. Auditestimate~50%, unchanged.
+
+
+## SEQ-114 real service proof verified; recovery fixture follow-up
+
+Sourcebc8ca369, run38195395321/job114636790344:134PASS/22FAIL/0SKIP. New multi-device suite3PASS: four last-stock races, concurrent replay/no duplicate mutation, altered-note conflict, loser rollback/retry and SQLgap observation. Exact boundaries and evidence inEXECUTION_RESULTS. Extra recovery failure was duplicatefirst variable introduced in test correction; renamedtagFirstCharacter, full-file transformed syntaxPASS, actualHTTPretestawaited. Existing21product failuremarkers remain. ReleaseBLOCKED; no applicationchange. Exactresume: inspect newcommitrecovery/runcounts/cleanup before feasibleclosedshift/browserproof. WORK_HANDOFF andISSUES preserveopen scope; local29runtime/18sourcePASS, no browsercertification.
