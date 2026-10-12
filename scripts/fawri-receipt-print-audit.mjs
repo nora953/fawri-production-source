@@ -61,7 +61,8 @@ try {
   const entry=`import {renderCashierReceiptHtml} from './artifacts/fawri/src/lib/cashierReceiptPrinting.ts';
     const p=new URLSearchParams(location.search);const lang=p.get('lang');const width=Number(p.get('width'));
     const html=renderCashierReceiptHtml({sale:${JSON.stringify(sale)},lang,paperWidthMm:width,storeName:'Synthetic & Store',stationLabel:'Station <unsafe>',reprint:true});
-    document.open();document.write(html);document.close();globalThis.auditRendered=true;`;
+    const render=()=>{document.open();document.write(html);document.close();globalThis.auditRendered=true;};
+    if(document.readyState==='complete')render();else addEventListener('load',render,{once:true});`;
   const bundled=await build({stdin:{contents:entry,loader:'ts',resolveDir:process.cwd()},bundle:true,format:'iife',platform:'browser',write:false,
     alias:{'@':resolve('artifacts/fawri/src')},nodePaths:[resolve('artifacts/fawri/node_modules')],define:{'process.env.NODE_ENV':'"production"'}});
   server=createServer((req,res)=>{
@@ -82,10 +83,10 @@ try {
     await cdp('Emulation.setEmulatedMedia',{media:'print'});
     const shape=await evaluate(cdp,`({characterSet:document.characterSet,rows:document.querySelectorAll('tbody tr').length,
       width:document.body.getBoundingClientRect().width,scroll:document.body.scrollWidth,text:document.body.textContent,
-      activeMarkup:document.querySelectorAll('img,script,iframe').length,injected:globalThis.injected===true,
+      activeMarkup:document.querySelectorAll('img,script,iframe').length,activeElements:Array.from(document.querySelectorAll('img,script,iframe')).map(e=>({tag:e.tagName,src:e.getAttribute('src')})),injected:globalThis.injected===true,
       reprint:document.querySelector('.reprint')?.textContent,total:document.querySelector('.summary-row.total strong')?.textContent})`);
     assert.equal(shape.characterSet,'UTF-8');assert.equal(shape.rows,2);assert.ok(Math.abs(shape.width-cssWidth)<1);
-    assert.ok(shape.scroll<=Math.ceil(cssWidth)+1,'receipt horizontal overflow');assert.equal(shape.activeMarkup,0);assert.equal(shape.injected,false);
+    assert.ok(shape.scroll<=Math.ceil(cssWidth)+1,'receipt horizontal overflow');assert.equal(shape.activeMarkup,0,JSON.stringify(shape.activeElements));assert.equal(shape.injected,false);
     assert.ok(!shape.text.includes('PRIVATE_COST_SENTINEL'));assert.ok(shape.reprint?.trim().length>0);
     const digits=value=>String(value).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[^0-9]/g,'');
     assert.equal(digits(shape.total),'2400');
