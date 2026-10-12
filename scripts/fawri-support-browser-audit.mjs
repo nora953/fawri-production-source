@@ -102,6 +102,7 @@ try {
  await cdp('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});
  await evaluate(cdp,`document.querySelector('[aria-label="'+auditCopy.support_new_ticket+'"]').focus();true`);
  assert.equal(await evaluate(cdp,`document.activeElement?.getAttribute('aria-label')===auditCopy.support_new_ticket`),true,'new-ticket control receives keyboard focus');
+ await cdp('Page.bringToFront');
  await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',text:'\r',unmodifiedText:'\r',windowsVirtualKeyCode:13,nativeVirtualKeyCode:13});await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,nativeVirtualKeyCode:13});
  await waitFor(()=>evaluate(cdp,'Boolean(document.querySelector("input[maxlength=\"120\"]"))'),15000,'keyboard-opened new ticket form');
  assert.equal(await evaluate(cdp,'document.querySelectorAll("label").length>=3'),true);
