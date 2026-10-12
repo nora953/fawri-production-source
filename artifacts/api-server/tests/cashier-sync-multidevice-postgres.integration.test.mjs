@@ -76,7 +76,10 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
 
   function saleBody(f, device, sequence = 1) {
     const operationId = `audit-op-${randomUUID()}`, saleId = `audit-sale-${randomUUID()}`;
-    const occurredAt = new Date().toISOString();
+    // PostgreSQL issued_at has microseconds; JavaScript timestamps truncate to
+    // milliseconds. Place this synthetic operation unambiguously after setup,
+    // within the existing five-minute server clock tolerance.
+    const occurredAt = new Date(Date.now() + 1000).toISOString();
     const identity = { operation_id: operationId, local_merchant_id: `local-${f.merchantId}`,
       cloud_merchant_id: f.merchantId, device_id: device.deviceId, device_sequence: sequence };
     const sale = { ...identity, sale_id: saleId, source: 'cashier', status: 'completed',
@@ -97,6 +100,13 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
     for (let trial = 0; trial < 4; trial++) {
       const f = await fixture();
       const bodies = f.stations.map(device => saleBody(f, device));
+      for (let i = 0; i < f.stations.length; i++) {
+        const authority = await operational.withMerchantOperationalTransaction(f.merchantId, client =>
+          historical.evaluateCashierHistoricalOperationAuthorityInTransaction({ target: client,
+            merchantId: f.merchantId, deviceId: f.stations[i].deviceId,
+            occurredAt: bodies[i].envelopes[0].occurred_at }));
+        assert.equal(authority.allowed, true, 'fixture must authorize both devices before the stock race');
+      }
       const results = await Promise.allSettled(bodies.map(body => sync.syncCashierSaleAuthoritative({ merchantId: f.merchantId, body })));
       const winner = results.findIndex(r => r.status === 'fulfilled');
       assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);

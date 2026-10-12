@@ -67,3 +67,8 @@ Two subtests plus parent: four independent merchant trials, two licensed/credent
 Shared attestation executes before DB/application imports; teardown registered before first fixture mutation, tracks owned account IDs before INSERT and aggregates cleanup failures. Existing network-none runner and migrated schema retained. Local syntax checks PASS; direct unattested invocation exits1 with expected guard refusal before DB import. Actual PostgreSQL assertions **NOT_RUN locally / CI_PENDING**, no assertion success claimed. Expected inventory becomes36 unique files/38 invocations for the full isolated run if all existing phases execute; counts/results must come from logs, not expectation.
 
 Exact next action: inspect the new commit's isolated CI cashier phase and this test's AUDIT_SUITE_RESULT, distinguish fixture/schema errors from product failures, verify cleanup, and update these ledgers. Do not rerun previous unchanged assertions merely to increase counts; this run is justified by new multi-device/altered-replay/gap assertions. After proof, continue SEQ-115 feasible expired/admin-closed historical shift recovery. Browser/IndexedDB remain blocked locally by missing Chromium. Functional fixes, hosted DB, deploy and merge remain unapproved. SEQ-114 is PREPARED until actual results are reconciled.
+
+
+## SEQ-114a update
+
+Firstnewrunclassified inEXECUTION_RESULTS: gapSQLobservationPASS; stockracefixture/recoverytamperfixture correctionspendingactualCI. Nextmandatorytask isreadcorrectedheadCI suitecounts/cleanup, notdeclareSEQ114fullPASS. Afterproof: feasibleclosedshiftrecoveryHTTP, realIndexedDB/browser, signedlicense and remainingwholeproductgates. Existingproductfailuresstillopen; nofunctionalfixauthorized.

@@ -74,3 +74,8 @@ Release remains **BLOCKED**. New 27 mocked runtime and 18 source assertions pass
 New sequence-gap and prior-shift recovery concerns are PROOF_GAPs with reproducible function behavior, not certified production incidents. Normal logout protects pending data. Offline-cache structural validation accepts edited future grace, enriching the existing unsigned-license concern without claiming a full browser bypass. Local browser execution is blocked by missing Chromium. No new actual two-device SQL, IndexedDB, browser, staging or provider proof was performed. Application behavior is unchanged.
 
 Provisional audit estimate: approximately 50% (40–60% uncertainty); methodology and domain scores are in PROGRESS.md. Green observation tests do not close issues. Resume SEQ-114 as WORK_HANDOFF specifies. No application fix, merge or deployment.
+
+
+## Latest classified execution — SEQ-114a / SEQ-115
+
+Firstnewrun38194961047 on d0be9ea3:132PASS/24FAIL/0SKIP; actual SQLgapobservationPASS. Stockrace hit historicaldeviceauthority fixturetiming, so contentionnotproven. Recoverytamperfailure was a testfixtureBase64urlbytealias, not establishedcrypto forgery. Test-only corrections and29localPASS saved; correctedSQL/HTTPresultsPENDING. Source narrows shiftrecovery tofeasibleadministrativeclosure, asnormallogout/pairing andsame-staffopenshiftreuse mitigate simplerhypotheses. Details inEXECUTION_RESULTS/ISSUES/WORK_HANDOFF. ReleaseBLOCKED; auditestimateapproximately50%, no applicationrepair.

@@ -299,3 +299,33 @@ test('runtime offline clock estimate never falls below durable prior server esti
   const h = offlineHarness(); h.authority.last_estimated_server_time_ms = h.now + 60000;
   assert.equal(h.api.estimatedServerNow(h.authority), h.now + 60000);
 });
+
+function recoveryCodec() {
+  return load('artifacts/api-server/src/services/merchantPasswordRecoveryProof.ts',
+    ['encodeRecoveryProof', 'decodeRecoveryProof'], { Buffer,
+      process: { env: { NODE_ENV: 'test', FAWRI_AUTH_SECURITY_SECRET: 'synthetic-audit-codec-only-secret' } } });
+}
+
+test('runtime recovery codec accepts unchanged tag bytes under a base64url padding-bit alias', () => {
+  const api = recoveryCodec();
+  let proof;
+  for (let i = 0; i < 512; i++) {
+    const token = api.encodeRecoveryProof({ accountId: 'synthetic', passwordVersion: 1 });
+    if (token.endsWith('A')) { proof = token; break; }
+  }
+  assert.ok(proof, 'must generate a tag ending in A for the byte-alias observation');
+  const alias = proof.slice(0, -1) + 'B';
+  assert.deepEqual(Buffer.from(alias.split('.')[3], 'base64url'), Buffer.from(proof.split('.')[3], 'base64url'));
+  assert.notEqual(api.decodeRecoveryProof(alias), null);
+});
+
+test('runtime recovery codec rejects first-tag-character tampering with provably changed bytes', () => {
+  const api = recoveryCodec();
+  for (let i = 0; i < 64; i++) {
+    const proof = api.encodeRecoveryProof({ accountId: 'synthetic', passwordVersion: 1 });
+    const parts = proof.split('.'), before = Buffer.from(parts[3], 'base64url');
+    parts[3] = (parts[3][0] === 'A' ? 'B' : 'A') + parts[3].slice(1);
+    assert.notDeepEqual(Buffer.from(parts[3], 'base64url'), before);
+    assert.equal(api.decodeRecoveryProof(parts.join('.')), null);
+  }
+});

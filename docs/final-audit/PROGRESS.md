@@ -505,3 +505,10 @@ Two subtests plus parent: four independent merchant trials, two licensed/credent
 Shared attestation executes before DB/application imports; teardown registered before first fixture mutation, tracks owned account IDs before INSERT and aggregates cleanup failures. Existing network-none runner and migrated schema retained. Local syntax checks PASS; direct unattested invocation exits1 with expected guard refusal before DB import. Actual PostgreSQL assertions **NOT_RUN locally / CI_PENDING**, no assertion success claimed. Expected inventory becomes36 unique files/38 invocations for the full isolated run if all existing phases execute; counts/results must come from logs, not expectation.
 
 Exact next action: inspect the new commit's isolated CI cashier phase and this test's AUDIT_SUITE_RESULT, distinguish fixture/schema errors from product failures, verify cleanup, and update these ledgers. Do not rerun previous unchanged assertions merely to increase counts; this run is justified by new multi-device/altered-replay/gap assertions. After proof, continue SEQ-115 feasible expired/admin-closed historical shift recovery. Browser/IndexedDB remain blocked locally by missing Chromium. Functional fixes, hosted DB, deploy and merge remain unapproved. SEQ-114 is PREPARED until actual results are reconciled.
+
+
+## SEQ-114a / SEQ-115 current progress
+
+First actual new run132PASS/24FAIL/0SKIP; SQL gap observationPASS. Stock-race fixture hit device-authority timestamp mismatch and passwordrecovery test hit identical-byte Base64url alias; neither counted as new productdefect or ignored. Test-only corrections saved; local harness now29PASS/0FAIL/0SKIP. Corrected actualSQL/HTTP resultsPENDING. Existing21failure markers persist. Details inEXECUTION_RESULTS andISSUES. Scope estimate remainsapproximately50%; no increase for preparation/failedfixture.
+
+Same-staff login retains openshift; logout/pairing already blockpending. SourceSEQ115 refines recovery concern to explicitclosure/admin transitions, not expiryalone. Browser unavailable. Exactnext: inspect correctedCI/new suiteandcleanup, then recoveryHTTP/browser proof. No functionalchange approved.

@@ -235,11 +235,16 @@ test(
     assert.ok(cookieName);
     assert.ok(cookieValue);
 
-    const last = cookieValue.at(-1) || "A";
-    const tampered =
-      `${cookieName}=` +
-      cookieValue.slice(0, -1) +
-      (last === "A" ? "B" : "A");
+    // The final base64url tag character contains unused padding bits. A→B
+    // there can decode to identical authenticated bytes, producing a false
+    // tamper failure. Change the first tag character and prove byte inequality.
+    const parts = cookieValue.split(".");
+    assert.equal(parts.length, 4);
+    const originalTag = Buffer.from(parts[3], "base64url");
+    const first = parts[3][0];
+    parts[3] = (first === "A" ? "B" : "A") + parts[3].slice(1);
+    assert.notDeepEqual(Buffer.from(parts[3], "base64url"), originalTag);
+    const tampered = `${cookieName}=${parts.join(".")}`;
 
     const tamperedResult = await confirm(tampered, password1);
     assert.equal(tamperedResult.response.status, 401);
