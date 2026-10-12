@@ -531,3 +531,14 @@ Executed source: `0d5b9ef8b967d472e6dbddf832abbb28e4f75b2c`. [Run38195697724](ht
 - Local latest harness29PASS/0FAIL/0SKIP; separate existing source assertions18PASS. Do not add these to PostgreSQL135 as one homogeneous coverage counter. No browser, actual IndexedDB, hosted staging mutation, real provider or money flow here.
 
 This final checkpoint changes documentation only. Executed results belong to0d5b9ef8, not automatically to later documentation SHA. No new runtime rerun requested; existing PR path filters may schedule unchanged checks. Any later failures must be inspected, and no automatic release approval follows from a docs commit.
+
+
+## SEQ-116 — closed-shift recovery HTTP proof prepared, 2026-10-12
+
+Continuation baseline `57032ce1a88d0ee1588b401fd714668485bb9952`, same audit branch/PR520. User clarified: complete comprehensive audit first; defer all application repair planning/execution until the audit is complete. Earlier billing implementation approval question is withdrawn; no approval requested. No restart of verified stages.
+
+Added `artifacts/api-server/tests/cashier-closed-shift-recovery-http-postgres.integration.test.mjs` to existing guarded cashier runner. Synthetic disposable schema only: real HTTP PIN login, timestamp inside original session, real administrative staff-service disable/re-enable closing original shift, revoked-token rejection/no sale, fresh PIN login/new shift, wrong-device denial, old-operation HTTP upload with original staff/shift/session attribution, complete entity ACK and exact replay/no duplicate stock/order/attribution. Owner administration HTTP middleware, browser outbox, returns/voids and other-staff/tenant cases are outside this bounded new proof. Shared attestation executes before DB/application imports; aggregate HTTP/account/pool cleanup registered before mutation.
+
+Local `node --check` PASS; direct invocation without attestation refuses (exit1) before DB imports as required. SQL/HTTP assertions **PREPARED / NOT_RUN** until isolated Actions logs are read. CI head baseline57032ce1 has23 completed workflows:21SUCCESS/2FAIL (isolated audit/cashier); prior source0d5b9ef8 results135PASS/21FAIL reused, not rerun evidence. New test adds one invocation, expected inventory37 unique/39 invocations, subject to actual logs. CASHIER-SYNC-SHIFT-001 remainsOPEN awaiting results; no new functional bug declared.
+
+Next: read isolated cashier suite result/cleanup, classify fixture vs product failure; continue SEQ117 native IndexedDB versionchange/concurrency/changed-input replay. Existing browser-storage workflow only scans source and executes Node audit behavior; it does not launch a browser. Local Chromium/Docker/psql absent. Whole audit estimate unchanged~50% (40–60% uncertainty); source/runtime/browser/provider/hosted evidence remains separate.

@@ -382,3 +382,8 @@ Source0d5b9ef8, run38195697724/job114637714590:135PASS/21FAIL/0SKIP. **TEST-RECO
 **CASHIER-SYNC-SEQUENCE-001 remains OPEN / PROOF_GAP** with actual SQL1→3→2 observation. Final-stock concurrency/replay subset now VERIFIED_ISOLATED_SERVICE_PASS (new suite3PASS over four races), not blanket sync correctness. **CASHIER-SYNC-SHIFT-001 remains OPEN / PROOF_GAP**, narrowed by normal logout/pairing/open-shift reuse safeguards; feasible closure recovery not executed. **CASHIER-OFFLINE-001 remains OPEN**; no signed licensing/browser certification.
 
 Existing application findings FA-I-006 / BILLING-IDEMPOTENCY-012 / BILLING-EXTERNAL-TX-013 / BILLING-WEBHOOK-ORPHAN-015 / REPLY-RESTORE-CYCLE-018 / BILLING-LATE-EXPIRED-027 / BILLING-PAID-REPLAY-028 / BILLING-SQL-RECONCILIATION-032 remain unresolved. No new duplicate issue IDs. Twenty-one failed markers represent fourteen functional failures and seven parents. Closing these requires approved application repair and targeted regression, not further repeated source review.
+
+
+### CASHIER-SYNC-SHIFT-001 — SEQ116 prepared proof
+
+Guarded real HTTP recovery test saved, executionPENDING. Covers disable/re-enable administrative service closure (staffAuthority713–843), current-token middleware vs historical original attribution (cashierStaffSession134–183,commerceAuthority200–255/489–519), exact replay and no extra stock/order. Client binding checkcashierOperatorCloudSync783–803 remains independently reproduced; server success alone cannot close client recovery finding. No ordinary logout/expiry-only defect claimed. Local syntaxPASS/guard refusalPASS; no local SQL/browser assertion executed. Audit-only user directive: complete remaining coverage before preparing consolidated repair plan or changing application.
