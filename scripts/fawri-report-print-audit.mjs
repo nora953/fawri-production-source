@@ -80,10 +80,10 @@ try {
   const styles = (await Promise.all(cssFiles.map(name => readFile(join(assets, name), 'utf8')))).join('\n');
   server = createServer((req,res) => {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'none'; connect-src 'none'; img-src 'none'; object-src 'none'");
-    if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript');res.end(bundled.outputFiles[0].text);}
-    else if(req.url==='/debug.js'){res.setHeader('Content-Type','application/javascript');res.end("globalThis.auditErrors=[];addEventListener('error',e=>auditErrors.push(e.message));addEventListener('unhandledrejection',e=>auditErrors.push(String(e.reason)));");}
-    else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css');res.end(styles);}
-    else{res.setHeader('Content-Type','text/html');res.end('<!doctype html><link rel="stylesheet" href="/style.css"><div id="root" class="report-print-root"></div><script src="/debug.js"></script><script src="/bundle.js"></script>');}
+    if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end(bundled.outputFiles[0].text);}
+    else if(req.url==='/debug.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end("globalThis.auditErrors=[];addEventListener('error',e=>auditErrors.push(e.message));addEventListener('unhandledrejection',e=>auditErrors.push(String(e.reason)));");}
+    else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css; charset=utf-8');res.end(styles);}
+    else{res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/style.css"><div id="root" class="report-print-root"></div><script src="/debug.js"></script><script src="/bundle.js"></script>');}
   });
   await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
   const origin=`http://127.0.0.1:${server.address().port}`;
@@ -99,9 +99,9 @@ try {
     catch(e) { throw Error(e.message+' '+JSON.stringify(await evaluate(cdp, '({errors:globalThis.auditErrors,metrics:document.querySelectorAll(".report-print-online-metric").length})'))); }
     await waitFor(()=>evaluate(cdp,'document.querySelectorAll("svg.recharts-surface").length>0'));
     await cdp('Emulation.setEmulatedMedia',{media:'print'});
-    const shape=await evaluate(cdp,`({metrics:document.querySelectorAll('.report-print-online-metric').length,
+    const shape=await evaluate(cdp,`({characterSet:document.characterSet,metrics:document.querySelectorAll('.report-print-online-metric').length,
       text:document.body.innerText,metricValues:Array.from(document.querySelectorAll('.report-print-metric-value')).map(e=>e.textContent),scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth})`);
-    assert.equal(shape.metrics,9);assert.ok(shape.text.includes('Audit item 8'));
+    assert.equal(shape.characterSet,'UTF-8');assert.equal(shape.metrics,9);assert.ok(shape.text.includes('Audit item 8'));
     const pdf=await cdp('Page.printToPDF',{printBackground:true,preferCSSPageSize:true,paperWidth:8.27,paperHeight:11.69,marginTop:0.2,marginBottom:0.2,marginLeft:0.2,marginRight:0.2});
     const bytes=Buffer.from(pdf.data,'base64');
     const extracted=spawnSync('pdftotext',['-layout','-','-'],{input:bytes,encoding:'utf8',timeout:15000});
@@ -112,7 +112,7 @@ try {
     assert.ok(extracted.stdout.includes('Audit item 8'),'last chart product absent from PDF text');
     const normalizeNumber=value=>String(value).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[^0-9]/g,'');
     assert.ok(shape.metricValues.some(value=>normalizeNumber(value)==='697910'),'Revenue card missing expected value: '+JSON.stringify(shape.metricValues));
-    return {bytes:bytes.length,pages:pages.length,firstPageCharacters:pages[0].trim().length,metrics:shape.metrics,lastProductPresent:true,semanticRevenueCard:697910,
+    return {bytes:bytes.length,pages:pages.length,firstPageCharacters:pages[0].trim().length,metrics:shape.metrics,lastProductPresent:true,semanticRevenueCard:697910,characterSet:shape.characterSet,
       limits:'Actual report components and compiled CSS, synthetic props/system fallback fonts; not full report API, mobile app, linguistic signoff or production webfonts.'};
   });
 } catch(e){infrastructureError=e.message;}
