@@ -87,7 +87,7 @@ try {
   });
   await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
   const origin=`http://127.0.0.1:${server.address().port}`;
-  browser=spawn(chromePath,['--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-background-networking','--disable-component-update','--disable-sync','--no-first-run','--no-default-browser-check','--remote-debugging-port=0','--remote-debugging-address=127.0.0.1','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',`--user-data-dir=${profile}`,'about:blank'],{stdio:['ignore','ignore','pipe']});
+  browser=spawn(chromePath,['--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-background-networking','--disable-component-update','--disable-sync','--no-first-run','--no-default-browser-check','--remote-debugging-port=0','--remote-debugging-address=127.0.0.1','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',`--user-data-dir=${profile}`,'about:blank'],{stdio:['ignore','ignore','pipe'],detached:true});
   browser.stderr.on('data',()=>{});
   browser.on('error',e=>{infrastructureError=e.message;});
   const port=await waitFor(async()=>Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]));
@@ -117,10 +117,17 @@ try {
 } catch(e){infrastructureError=e.message;}
 finally {
   for(const ws of sockets)ws.close();
-  if(browser && browser.exitCode===null){const stopped=new Promise(ok=>browser.once('exit',ok));browser.kill('SIGTERM');await Promise.race([stopped,delay(3000)]);if(browser.exitCode===null){browser.kill('SIGKILL');await stopped;}}
+  if(browser?.pid){
+    const stopped=browser.exitCode===null?new Promise(ok=>browser.once('exit',ok)):Promise.resolve();
+    try{process.kill(-browser.pid,'SIGTERM');}catch(e){if(e.code!=='ESRCH')infrastructureError='browser group cleanup: '+e.message;}
+    await Promise.race([stopped,delay(3000)]);
+    try{process.kill(-browser.pid,'SIGKILL');}catch(e){if(e.code!=='ESRCH')infrastructureError='browser group cleanup: '+e.message;}
+  }
   if(server)await new Promise((ok,no)=>server.close(e=>e?no(e):ok()));
-  await rm(profile,{recursive:true,force:true});
+  try{await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:200});}
+  catch(e){infrastructureError='profile cleanup failed: '+e.message;}
 }
+
 if(infrastructureError)evidence.infrastructureError=infrastructureError;
 console.log('AUDIT_REPORT_PRINT_RESULT '+JSON.stringify(evidence));
 if(infrastructureError||evidence.results.length!==3||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;

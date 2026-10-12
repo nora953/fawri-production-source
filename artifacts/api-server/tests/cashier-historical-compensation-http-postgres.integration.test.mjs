@@ -107,9 +107,9 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   const f = await fixture(), device = f.stations[0];
   const member = await staff.createCashierStaffAuthoritative({ merchantId: f.merchantId,
     displayName: 'Synthetic recovery cashier', role: 'cashier', pin: '2468', permissions: ['sale.create', 'sale.return', 'sale.void', 'sale.view_own'] });
-  async function request(path, token, payload, deviceId = device.deviceId) {
+  async function request(path, token, payload, deviceId = device.deviceId, stationToken = device.stationToken) {
     const response = await fetch(base + path, { method: 'POST', signal: AbortSignal.timeout(15000), headers: {
-      'Content-Type': 'application/json', 'x-fawri-cashier-station-token': device.stationToken,
+      'Content-Type': 'application/json', 'x-fawri-cashier-station-token': stationToken,
       'x-fawri-cashier-device-id': deviceId, ...(token ? { 'x-fawri-cashier-operator-token': token } : {}),
     }, body: JSON.stringify(payload) });
     return { status: response.status, body: await response.json() };
@@ -202,6 +202,41 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   assert.equal(repeatComp.body.replayed, true);
   assert.equal(repeatComp.body.inventory_mutation_count, 0);
   assert.equal((await pool.query('SELECT quantity FROM location_inventory_levels WHERE merchant_id=$1 AND location_id=$2 AND product_id=$3 AND variant_id IS NULL', [f.merchantId, f.locationId, f.productId])).rows[0].quantity, 1);
+
+  // Real second licensed tenant: denied at the HTTP boundary, not only by a
+  // mocked merchant-id adapter. The body remains the original tenant's bundle.
+  const otherTenant = await fixture(), otherDevice = otherTenant.stations[0];
+  const otherManager = await staff.createCashierStaffAuthoritative({ merchantId: otherTenant.merchantId,
+    displayName: 'Other synthetic tenant', role: 'manager', pin: '1357',
+    permissions: ['sale.create', 'sale.return', 'sale.void', 'sale.view_all'] });
+  const otherLogin = await request('/api/cashier/operator/login', null, { staff_id: otherManager.id, pin: '1357' }, otherDevice.deviceId, otherDevice.stationToken);
+  assert.equal(otherLogin.status, 200, JSON.stringify(otherLogin.body));
+  const tenantDenied = await request(`/api/cashier/operator/sync/${kind}`, otherLogin.body.operator_token,
+    compensation, otherDevice.deviceId, otherDevice.stationToken);
+  assert.equal(tenantDenied.status, 403, JSON.stringify(tenantDenied.body));
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [otherTenant.merchantId])).rows[0].n, 0);
+  const currentVersion = (await pool.query('SELECT version FROM merchant_cashier_staff WHERE id=$1', [member.id])).rows[0].version;
+  const actionRemoved = await staff.updateCashierStaffAuthoritative({ merchantId: f.merchantId, staffId: member.id,
+    expectedVersion: currentVersion, permissions: ['sale.create', 'sale.view_all'] });
+  const noActionLogin = await request('/api/cashier/operator/login', null, {staff_id: member.id, pin:'2468'});
+  assert.equal(noActionLogin.status,200,JSON.stringify(noActionLogin.body));
+  const actionDenied = await request(`/api/cashier/operator/sync/${kind}`, noActionLogin.body.operator_token, compensation);
+  assert.equal(actionDenied.status,403,JSON.stringify(actionDenied.body));
+  // A distinct cashier with action+view_own is also denied; this is an ordinary
+  // supported administrative closure, not handcrafted operator authentication.
+  await staff.updateCashierStaffAuthoritative({ merchantId:f.merchantId,staffId:member.id,
+    expectedVersion:actionRemoved.version,status:'disabled' });
+  const colleague = await staff.createCashierStaffAuthoritative({merchantId:f.merchantId,
+    displayName:'Other synthetic cashier',role:'cashier',pin:'3579',permissions:['sale.create','sale.return','sale.void','sale.view_own']});
+  const colleagueLogin = await request('/api/cashier/operator/login',null,{staff_id:colleague.id,pin:'3579'});
+  assert.equal(colleagueLogin.status,200,JSON.stringify(colleagueLogin.body));
+  const staffDenied = await request(`/api/cashier/operator/sync/${kind}`,colleagueLogin.body.operator_token,compensation);
+  assert.equal(staffDenied.status,403,JSON.stringify(staffDenied.body));
+  assert.equal(staffDenied.body.code,'CASHIER_OPERATOR_SALE_SCOPE_FORBIDDEN');
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM cashier_operation_attribution WHERE merchant_id=$1',[f.merchantId])).rows[0].n,2);
+  assert.equal((await pool.query('SELECT quantity FROM location_inventory_levels WHERE merchant_id=$1 AND location_id=$2 AND product_id=$3 AND variant_id IS NULL',[f.merchantId,f.locationId,f.productId])).rows[0].quantity,1);
+  console.log('AUDIT_COMPENSATION_HTTP_DENIALS '+JSON.stringify({kind,otherTenant:tenantDenied.status,
+    missingActionPermission:actionDenied.status,otherStaff:staffDenied.status,attributions:2,stock:1}));
   console.log('AUDIT_HISTORICAL_COMPENSATION_RESULT ' + JSON.stringify({ kind, ownScope: ownScope.body.code,
     privilegedStatus: compensated.status, replayed: repeatComp.body.replayed, originalAttribution: true, stock: 1 }));
   }
