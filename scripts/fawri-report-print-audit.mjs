@@ -63,6 +63,7 @@ try {
     by_location: [{ location_id: 'synthetic', location_name: 'Synthetic location', delivered_order_count: 32, delivered_sales_iqd: 697910 }],
     top_products: Array.from({ length: 8 }, (_, i) => ({ product_id: `audit-${i}`, product_name: `Audit item ${i+1}`, units: i+1, revenue_iqd: (i+1)*1000 })) };
   const entry = `import React from 'react'; import { createRoot } from 'react-dom/client';
+    import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
     import { formatMerchantMoneyMinor } from './artifacts/fawri/src/lib/moneyUi.ts';
     import { REPORTS_PAGE_COPY as COPY } from './artifacts/fawri/src/lib/translations/features/pages/dashboard/ReportsPage.ts';
     ${components}
@@ -80,8 +81,9 @@ try {
   server = createServer((req,res) => {
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'none'; connect-src 'none'; img-src 'none'; object-src 'none'");
     if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript');res.end(bundled.outputFiles[0].text);}
+    else if(req.url==='/debug.js'){res.setHeader('Content-Type','application/javascript');res.end("globalThis.auditErrors=[];addEventListener('error',e=>auditErrors.push(e.message));addEventListener('unhandledrejection',e=>auditErrors.push(String(e.reason)));");}
     else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css');res.end(styles);}
-    else{res.setHeader('Content-Type','text/html');res.end('<!doctype html><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/bundle.js"></script>');}
+    else{res.setHeader('Content-Type','text/html');res.end('<!doctype html><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/debug.js"></script><script src="/bundle.js"></script>');}
   });
   await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
   const origin=`http://127.0.0.1:${server.address().port}`;
@@ -93,7 +95,9 @@ try {
   for(const lang of ['ar','en','ku']) await check(`actual online report component print ${lang}`,async()=>{
     const target=await(await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(origin+'/?lang='+lang)}`,{method:'PUT'})).json();
     const cdp=await connect(target.webSocketDebuggerUrl);await cdp('Runtime.enable');
-    await waitFor(()=>evaluate(cdp,'document.querySelectorAll(".report-print-online-metric").length===9'));
+    try { await waitFor(()=>evaluate(cdp,'document.querySelectorAll(".report-print-online-metric").length===9')); }
+    catch(e) { throw Error(e.message+' '+JSON.stringify(await evaluate(cdp, '({errors:globalThis.auditErrors,metrics:document.querySelectorAll(".report-print-online-metric").length})'))); }
+    await waitFor(()=>evaluate(cdp,'document.querySelectorAll("svg.recharts-surface").length>0'));
     await cdp('Emulation.setEmulatedMedia',{media:'print'});
     const shape=await evaluate(cdp,`({metrics:document.querySelectorAll('.report-print-online-metric').length,
       text:document.body.innerText,scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth})`);
