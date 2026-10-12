@@ -76,7 +76,7 @@ try {
  const ref=new URL(req.headers.referer||'http://synthetic/'),mode=ref.searchParams.get('mode')||'success',key=ref.search;
  const n=(calls.get(key)||0)+1;calls.set(key,n);res.setHeader('Content-Type','application/json; charset=utf-8');
  const fail=mode==='error'&&n===1||mode==='stale'&&n===2;
- setTimeout(()=>{res.statusCode=fail?503:200;res.end(JSON.stringify(fail?{ok:false}:{ok:true,tickets:mode==='empty'?[]:[ticket]}));},n===1?400:10);
+ setTimeout(()=>{res.statusCode=fail?503:200;res.end(JSON.stringify(fail?{ok:false}:{ok:true,tickets:mode==='empty'?[]:[ticket]}));},n===1?1600:10);
  }else if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end(bundle.outputFiles.find(x=>x.path.endsWith('.js')).text);}
  else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css; charset=utf-8');res.end(styles);}
  else{res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/bundle.js"></script>');}
