@@ -517,3 +517,10 @@ Same-staff login retains openshift; logout/pairing already blockpending. SourceS
 ## SEQ-114 real service proof verified; recovery fixture follow-up
 
 Sourcebc8ca369, run38195395321/job114636790344:134PASS/22FAIL/0SKIP. New multi-device suite3PASS: four last-stock races, concurrent replay/no duplicate mutation, altered-note conflict, loser rollback/retry and SQLgap observation. Exact boundaries and evidence inEXECUTION_RESULTS. Extra recovery failure was duplicatefirst variable introduced in test correction; renamedtagFirstCharacter, full-file transformed syntaxPASS, actualHTTPretestawaited. Existing21product failuremarkers remain. ReleaseBLOCKED; no applicationchange. Exactresume: inspect newcommitrecovery/runcounts/cleanup before feasibleclosedshift/browserproof. WORK_HANDOFF andISSUES preserveopen scope; local29runtime/18sourcePASS, no browsercertification.
+
+
+## Final current checkpoint — SEQ-114 verified, SEQ-115 source reviewed
+
+Corrected SQL/HTTP result135PASS/21FAIL/0SKIP; new stock-concurrency suite3PASS and recovery suite1PASS, cleanupPASS. Test fixture failures resolved; existing product failures remain. See EXECUTION_RESULTS for exact source0d5b9ef8 and run38195697724. Local29mocked tests and18source assertions remain separate evidence classes. New docs checkpoint has no fresh runtime claim.
+
+Engineering audit estimate remains approximately50% (40–60% uncertainty), using the domain/weighted milestones above; conservative because whole browser/hosted/provider/commercial gates remain unverified. No increment for duplicated CI runs or green observations of an open design gap. Release BLOCKED. User approval is required before functional billing repair; concrete design is PAYMENT_CHECKOUT_REPAIR_DESIGN_2026-10-12.md. Safe next uncompleted audit: feasible closed-shift HTTP recovery and actual-browser IndexedDB lifecycle/local replay/offline grace tests; no browser available locally.

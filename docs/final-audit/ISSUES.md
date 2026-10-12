@@ -373,3 +373,12 @@ CASHIER-SYNC-SEQUENCE-001 now has actual disposable PostgreSQL observation: run3
 ## SEQ-114 real service proof verified; recovery fixture follow-up
 
 Sourcebc8ca369, run38195395321/job114636790344:134PASS/22FAIL/0SKIP. New multi-device suite3PASS: four last-stock races, concurrent replay/no duplicate mutation, altered-note conflict, loser rollback/retry and SQLgap observation. Exact boundaries and evidence inEXECUTION_RESULTS. Extra recovery failure was duplicatefirst variable introduced in test correction; renamedtagFirstCharacter, full-file transformed syntaxPASS, actualHTTPretestawaited. Existing21product failuremarkers remain. ReleaseBLOCKED; no applicationchange. Exactresume: inspect newcommitrecovery/runcounts/cleanup before feasibleclosedshift/browserproof. WORK_HANDOFF andISSUES preserveopen scope; local29runtime/18sourcePASS, no browsercertification.
+
+
+## Final SEQ-114/115 adjudication
+
+Source0d5b9ef8, run38195697724/job114637714590:135PASS/21FAIL/0SKIP. **TEST-RECOVERY-TAMPER-001 CLOSED / VERIFIED_TEST_FIX**: actual corrected disposable HTTP recovery suite1PASS, including byte-changing tamper rejection/replay/concurrent reset/session revocation; no application crypto fix or bypass found. Earlier duplicate-variable transform error was a test-only agent error, corrected and verified.
+
+**CASHIER-SYNC-SEQUENCE-001 remains OPEN / PROOF_GAP** with actual SQL1→3→2 observation. Final-stock concurrency/replay subset now VERIFIED_ISOLATED_SERVICE_PASS (new suite3PASS over four races), not blanket sync correctness. **CASHIER-SYNC-SHIFT-001 remains OPEN / PROOF_GAP**, narrowed by normal logout/pairing/open-shift reuse safeguards; feasible closure recovery not executed. **CASHIER-OFFLINE-001 remains OPEN**; no signed licensing/browser certification.
+
+Existing application findings FA-I-006 / BILLING-IDEMPOTENCY-012 / BILLING-EXTERNAL-TX-013 / BILLING-WEBHOOK-ORPHAN-015 / REPLY-RESTORE-CYCLE-018 / BILLING-LATE-EXPIRED-027 / BILLING-PAID-REPLAY-028 / BILLING-SQL-RECONCILIATION-032 remain unresolved. No new duplicate issue IDs. Twenty-one failed markers represent fourteen functional failures and seven parents. Closing these requires approved application repair and targeted regression, not further repeated source review.

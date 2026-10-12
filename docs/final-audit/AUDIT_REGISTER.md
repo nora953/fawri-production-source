@@ -309,3 +309,10 @@ SEQ115 source-only: same-staff login reuses open shift, normallogout andpairing 
 ## SEQ-114 real service proof verified; recovery fixture follow-up
 
 Sourcebc8ca369, run38195395321/job114636790344:134PASS/22FAIL/0SKIP. New multi-device suite3PASS: four last-stock races, concurrent replay/no duplicate mutation, altered-note conflict, loser rollback/retry and SQLgap observation. Exact boundaries and evidence inEXECUTION_RESULTS. Extra recovery failure was duplicatefirst variable introduced in test correction; renamedtagFirstCharacter, full-file transformed syntaxPASS, actualHTTPretestawaited. Existing21product failuremarkers remain. ReleaseBLOCKED; no applicationchange. Exactresume: inspect newcommitrecovery/runcounts/cleanup before feasibleclosedshift/browserproof. WORK_HANDOFF andISSUES preserveopen scope; local29runtime/18sourcePASS, no browsercertification.
+
+
+## Final SEQ-114 verified / SEQ-115 bounded source completion
+
+Executed0d5b9ef8, run38195697724/job114637714590:135PASS/21FAIL/0SKIP;36unique/38invocations. New multi-device stock/replay/gap suite3PASS; corrected recovery HTTP suite1PASS; owned cleanup/restore/Node22/injected Meta PASS. Source-only shift lifecycle refinement remains bounded; browser/POS/offline device/staging/provider proof not supplied. Fixture issue TEST-RECOVERY-TAMPER-001 closed with actual HTTP evidence; two new sync recovery proof gaps and existing offline/license concern remain OPEN. Exact breakdown in EXECUTION_RESULTS, canonical states inISSUES.
+
+Reviewed migration/schema facts for payment repair proposal: SaaS idempotency unique index0006:93 and event order/merchant FK0006:84; cashier idempotency unique0027:83 and event FK0027:122; both event tables RLS and required order_id. Existing event tables cannot directly persist an orphan without a valid order. Proposal updated; no migration or app code executed.

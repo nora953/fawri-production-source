@@ -84,3 +84,10 @@ Firstnewrun38194961047 on d0be9ea3:132PASS/24FAIL/0SKIP; actual SQLgapobservatio
 ## SEQ-114 real service proof verified; recovery fixture follow-up
 
 Sourcebc8ca369, run38195395321/job114636790344:134PASS/22FAIL/0SKIP. New multi-device suite3PASS: four last-stock races, concurrent replay/no duplicate mutation, altered-note conflict, loser rollback/retry and SQLgap observation. Exact boundaries and evidence inEXECUTION_RESULTS. Extra recovery failure was duplicatefirst variable introduced in test correction; renamedtagFirstCharacter, full-file transformed syntaxPASS, actualHTTPretestawaited. Existing21product failuremarkers remain. ReleaseBLOCKED; no applicationchange. Exactresume: inspect newcommitrecovery/runcounts/cleanup before feasibleclosedshift/browserproof. WORK_HANDOFF andISSUES preserveopen scope; local29runtime/18sourcePASS, no browsercertification.
+
+
+## Final evidence and release decision for this batch
+
+Source0d5b9ef8 / run38195697724:135PASS/21FAIL/0SKIP. Four two-device last-stock races and idempotent replay controls passed; actual sequence-gap behavior reproduced; corrected HTTP password recovery passed. Local29runtime/codec and18source assertions are separate bounded evidence. Fixture timing and Base64url tamper issues were corrected in tests only; no application change. Owned cleanup, restore, injected Meta, Node22HTTP, quality and security gates passed.
+
+**Release remains BLOCKED.** Existing eight application findings, sync gap/closed-shift recovery, unsigned offline cache, actual browser/device/staging/provider/backup/visual/commercial proof remain open. Audit planning estimate~50%, with40–60%uncertainty; current definitive handoff and domain table supersede stale conversation guesses. NextSEQ116 recoveryHTTP andSEQ117 actualbrowser; functional billing repair needs explicit approval of concrete proposal. No merge/deploy/liveDB/provider/financial action.

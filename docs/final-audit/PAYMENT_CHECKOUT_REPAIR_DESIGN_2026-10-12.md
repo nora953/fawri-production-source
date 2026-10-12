@@ -51,3 +51,8 @@ SaaS `saasBillingAuthority.ts:708-734` inserts into `saas_billing_events` with r
 ## SEQ-40 — environment release boundary
 
 Both provider-event application functions explicitly exclude `superqi_sandbox` when `NODE_ENV === production` (`saasBillingAuthority.ts:741-745`, `cashierBillingAuthority.ts:978-983`). Therefore a sandbox-successful billing regression cannot demonstrate production provider readiness. Production payment integration requires a separately approved provider contract/configuration, security verification and end-to-end settlement evidence; do not remove environment restrictions to make tests pass. Source review only; no live sandbox or production transaction.
+
+
+## Schema prerequisites reconciled during SEQ-115 follow-up
+
+Source0d5b9ef8: `lib/db/src/schema/saas-billing.ts:55-70,104-134` and `lib/db/src/schema/cashier-subscription.ts:163-179,202-230`; committed migrations0006_saas_billing_authority.sql:84,93,103 and0027_cashier_subscription_licensing.sql:83,102-122,217,238-239. Both orders have unique merchant/idempotency keys; payment-reference uniqueness is filtered to non-null references. Existing billing events require order_id and tenant-matching composite orderFK; provider/event uniqueness and tenant RLS apply. Therefore do not insert verified orphan events directly into these order-linked tables or weakenFK/RLS. Independent durable verified-inbox (or equivalent durable reservation-based resolution) is required by the proposal. These facts resolve earlier schema-inspection caveats; actual new migration/provider contract, timeout lookup/idempotency and least-privilege inbox implementation remain subject to explicit approval and safe tests.

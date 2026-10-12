@@ -77,3 +77,13 @@ Firstnewrunclassified inEXECUTION_RESULTS: gapSQLobservationPASS; stockracefixtu
 ## SEQ-114 real service proof verified; recovery fixture follow-up
 
 Sourcebc8ca369, run38195395321/job114636790344:134PASS/22FAIL/0SKIP. New multi-device suite3PASS: four last-stock races, concurrent replay/no duplicate mutation, altered-note conflict, loser rollback/retry and SQLgap observation. Exact boundaries and evidence inEXECUTION_RESULTS. Extra recovery failure was duplicatefirst variable introduced in test correction; renamedtagFirstCharacter, full-file transformed syntaxPASS, actualHTTPretestawaited. Existing21product failuremarkers remain. ReleaseBLOCKED; no applicationchange. Exactresume: inspect newcommitrecovery/runcounts/cleanup before feasibleclosedshift/browserproof. WORK_HANDOFF andISSUES preserveopen scope; local29runtime/18sourcePASS, no browsercertification.
+
+
+## Final queue after verified SEQ-114 and bounded SEQ-115
+
+1. SEQ-116: disposable HTTP recovery after an actual staff/station lifecycle closes the original shift; preserve original attribution and prove cross-tenant/device/current permission denial. Normal session expiry reuses open shift and is not a sufficient defect reproduction.
+2. SEQ-117: real browser two-tab IndexedDB concurrency, versionchange, local altered-input replay, durable outbox restart and7-day signed-license/cache/clock behavior. Chromium missing locally; do not substitute fake storage for browser proof.
+3. Application remediation: explicit approval needed for the concrete payment reserve/outside-transaction dispatch/orphan inbox design; existing012/013/015/027/028/032 and Meta006/refund018 remain open. No live gateway required for synthetic repair tests, and no production provider activation authorized.
+4. Whole-product unresolved gates: owner/merchant/staff browser journeys, reports/PDF/Excel correctness, AR/EN/KU RTL/mobile/accessibility, hosted least-privilege/image/readiness/media/PITR/monitoring/rollback and authorized external provider/business acceptance.
+
+Finalnew SQL suite3PASS and corrected recovery1PASS on0d5b9ef8 are verified, no longer CI_PENDING. Whole-run135PASS/21FAIL/0SKIP. Canonical issue closure and counts inISSUES/EXECUTION_RESULTS. Auditestimate~50%, not release readiness.
