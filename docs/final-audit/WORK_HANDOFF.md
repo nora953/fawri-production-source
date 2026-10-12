@@ -1,3 +1,26 @@
+# Fawri audit — current authoritative handoff
+
+Updated2026-10-12. **Continue from SEQ-128; SEQ-121–127 bounded audit completed. Do not restart.**
+
+User explicitly requires comprehensive audit completion before a consolidated repair plan or application repairs. Scope remains test infrastructure and documentation only. Same audit branch, draft PR #520. No main merge, deployment, live DB/secrets changes or real financial actions.
+
+## Executed source and evidence
+
+- PR head e1320f8616b5607536c19b6527c92e8c74bf546e: isolated run38201278470/job114655029862 =137PASS/21FAIL/0SKIP,38unique/40invocations; cleanup/full restore/Meta54/Node22 HTTP PASS.21markers are14functional+7parents for8open application findings.
+- Historical return/void recovery and actual second-tenant/current-action/other-staff denial assertions PASS. Same-staff view_own cannot recover original-shift compensation; view_all can preserve original attribution. Client outbox binding gap still OPEN.
+- Workbook actual ZIP/SheetJS reader and independent Python CRC/XML proof PASS. Actual report exporter currency scaling finding remains OPEN.
+- Actual online report AR/EN/Sorani print run38201278442/job114655029719:3PASS, each2nonempty pages/9metrics/lastproduct/exact697910 revenue card. Real React/Recharts/components/translations/Vite CSS; synthetic props/system fonts. Not full API/mobile/linguistic/visual clearance.
+- Local Node24.19.0 commands: calendar6PASS; completeness4PASS (inert SQL); print-fixture2PASS. Existing export-input5PASS/3FAIL and native IndexedDB3PASS/1FAIL are distinct unchanged proofs.
+- Query-budget source gap REPORT-QUERY-BUDGET-001 MEDIUM/OPEN; actual DB timeout/load settings unverified.
+
+## Exact next task
+
+SEQ-128: central-cashier report/receipt print and profit-visibility boundaries, with actual components and approved synthetic roles. Then remaining owner/admin/merchant screen groups in37route inventory. Do not repeat already proven workbook/sync/calendar subsets without new assertions. Full physical offline7day/unsigned-license, current-shift recovery, foreigncurrency export, provider/hosted/media/PITR/role grants and commercial gates remain OPEN.
+
+Read ISSUES and final EXECUTION_RESULTS/PROGRESS sections for exact limits. No app fixes or repair-plan approval question. Estimate~53% complete/~47%remaining(40–60%uncertainty), not launch readiness. Later docs-only Actions may rerun because PR path filters include earlier changes: they are not fresh coverage.
+
+## Historical handoffs below — superseded where they conflict
+
 # Fawri audit — durable resume point
 
 Updated2026-10-11. DraftPR520; audit/conversation-notes-reconciliation-20261011. Test infrastructure/fixtures/docs only; no app repair, hosted mutation, merge or deploy authorized.
@@ -234,3 +257,26 @@ SEQ125 actual HTTP denials already PASS in dedicated cashier subset. Some interv
 ## SEQ-123 Arabic fixture charset diagnosis and correction
 
 Fifth print run38201039466/job114654293191 (sourcee05f9701) confirms English/Sorani2-page PDF PASS but Arabic DOM monetary values contain onlycurrency labels, while Arabic integer counts are correct. Original Arabic formatter locally yields correct697910; the test HTTP fixture omitted charset on HTML/JS and omitted meta charset. This can decode raw non-ASCII regex ranges differently from escaped string literals in the esbuild bundle; `formatArabicIqd` uses rawArabic digit range to recover ASCII before grouping. Actual application `artifacts/fawri/index.html` andcashier.html explicitlydeclare UTF-8. Test-only fixture now matches that contract: HTMLmeta andHTML/JS/CSS Content-Type charset=utf-8; assert document.characterSetUTF-8 and retain exact revenue-card value check. Hypothesis must be confirmed by a successful corrected browser run; no Arabic application defect declared yet, no numeric assertion removed. Printed glyph positioning still not visually certified. Next inspect this corrected print run and completed aggregate before saving definitive handoff.
+
+
+## FINAL VERIFIED SEQ-121–127 checkpoint — 2026-10-12
+
+Executed PR head **e1320f8616b5607536c19b6527c92e8c74bf546e**; no application source changes in this continuation. This supersedes the intermediate prepared/failed-fixture notes only for the bounded assertions below.
+
+| Stage | Evidence | Verified outcome and limits |
+| --- | --- | --- |
+| SEQ-121 workbook package | run38199810989/job114650490522; repeated unchanged producer run38201278452 SUCCESS | Locked SheetJS0.20.3 actual ZIP writer/reader plus independent Python CRC/XML parser PASS. Six package parts; AR/Sorani text, RTL, merge/filter,0/negative numbers and formula-as-text. DOM download inert; no Office visual or actual accounting clearance. Existing REPORT-EXPORT-CURRENCY-001 OPEN. |
+| SEQ-122 historical compensation | run38201278470/job114655029862, new suite1PASS | Two independent return/void fixtures: same-staff view_own403 after original shift closure; manager view_all200 and original historical attribution, complete ACK, replay/no duplicate stock restore. This is policy/recovery evidence; own-shift historical recovery gap remains OPEN. |
+| SEQ-123 actual online report print | run38201278442/job114655029719; checkout merge4a31b6150cceaec1efec5bc0ff4d3f571d807d21 | Chrome154.0.8037.97, real React/Recharts report components/helpers/translations and Vite CSS; AR/EN/Sorani **3PASS/0FAIL**. Each2nonempty pages,9metrics, exact revenue697910 in card, last of8products present in PDFtext. AR186462bytes/firstpage2359characters; EN81573/1869; KU157941/2285. Synthetic props, loopback/system fallback fonts, no full app/API/mobile or linguistic/visual signoff. |
+| SEQ-124 date query | node --test scripts/fawri-report-calendar-audit.test.mjs; Node24.19.0 |6PASS/0FAIL: Baghdad leap/year-end boundaries, NewYork23h/25h DST days,7local-day preset/alltime. Actual function bodies; no HTTP/DB/browser-calendar proof. |
+| SEQ-125 HTTP denials | run38201278470/job114655029862 | For return and void: real second licensed tenant403, missing current action permission403, distinct same-tenant cashier403; stock1/attributions2 unchanged and other tenant0orders. Default disposable role only, not live RLS/grants certification. |
+| SEQ-126 completeness | node --test scripts/fawri-report-completeness-audit.test.mjs; Node24.19.0 |4PASS/0FAIL with inert SQL adapters:50001 financial rows cause413 rather than silent truncation; explicit0emptyreport;500activity details preserve750matchingcount; filtered30-of30 does not show false truncation warning. Actual large-data SQL/performance NOT_RUN. |
+| SEQ-127 cashier query budget | ISSUES.md REPORT-QUERY-BUDGET-001 | Source-confirmed lack of explicit application deadline in two concurrent cashier report transactions. Database-level timeout settings and load behavior unknown; MEDIUM/OPEN performance proof gap, not demonstrated live DoS. |
+
+**Final isolated SQL/HTTP aggregate:** run38201278470/job114655029862, **137PASS/21FAIL/0SKIP**,38unique files/40invocations. Existing21markers remain14functional+7parents for8existing application findings; no app defect repaired. Actual new suite and all three denial classes PASS. Owned cleanup, full-schema restore, injected Meta54, password recovery and Node22 HTTP PASS. Quality38201278432/security38201278488/schema38201278456 SUCCESS. The overall isolated and cashier workflows remain FAILURE because canonical product defects remain; green new tests do not override them.
+
+**Print fixture failures correctly classified and resolved:** missing actual chart imports, missing original print-root wrapper, browser descendant/profile cleanup, and omitted UTF-8 declaration. Corrected harness retains actual chart/PDF/metric assertions, owns browser group and removes profile before result. Source app index.html/cashier.html already declare UTF-8. Local `node --test scripts/fawri-report-print-fixture.test.mjs`2PASS reproduces wrong decoding of raw Arabic regex (blank monetary number) and correct original UTF-8 output; corrected real browser3PASS confirms fixture diagnosis. Earlier failed runs remain history, not product defects or success. No old failed result silently overwritten.
+
+**Open product/gate scope:** existing billing/Meta/refund defects; local changed-payload replay; unsigned offline cache/licensing and actual7day/device proof; current-shift historical outbox/own-scope recovery; foreign-currency export units; cashier query budget; actual central-cashier/receipt/mobile/PDF visual and37route role journeys; hosted grants/image/media/PITR/monitoring/rollback; real external providers and commercial signoff. All repairs and consolidated repair plan remain deferred until comprehensive audit completion.
+
+**Definitive next SEQ-128:** bounded central-cashier report/receipt print and profit-visibility scope, separating genuine app role/PDF evidence from inert adapters. Then unverified owner/admin/merchant screen groups from the37route inventory. Reuse completed sync/compensation/workbook/date proofs; reopen only for changed code/config or a new justified assertion. No merge/deploy/live DB/secrets/real payments authorized.
