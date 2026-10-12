@@ -1,5 +1,14 @@
 # Fawri final audit — resume here
 
+## SEQ-134 reconciled; SEQ-135 prepared; SEQ-136 local media verified
+
+See [SEQ_134_136_ADMIN_SUPPORT_20261012.md](SEQ_134_136_ADMIN_SUPPORT_20261012.md) for exact scope and limits. Source3019e9a4 / run38287120221 / job114938040636: real admin auth/router journey1PASS. Support fixture fails before HTTP on normalized phone constraint23514; child exit7 has no terminal TAP counters.43invocations/41unique; completed summary counters139PASS/24FAIL/0SKIP **plus one observed uncounted fixture-setup failure**. Not an exhaustive139/24 aggregate. No new product defect. Owned cleanup, restore, Meta54 and Node22 PASS.
+
+Corrected test-only Support phones, pre-mutation aggregate cleanup with visible errors, fixture admin audit deletion and direct-entry attestation. Runner reports summaryComplete and observed failure fallback, rejecting incomplete summaries. SEQ-135 adds4 real negative HTTP child tests: missing/foreign-tenant ticket/image/reply access/no mutation, current revoked support permission despite stale session claims, read-only/exact-session preview, terminated preview rejection. Runtime pending next source; no new SQL pass claimed. SEQ-136 local actual filesystem functions5PASS: paths/private modes/symlink denial/atomic bytes/no collision overwrite. Separate from DB counts and hosted durability.
+
+Planning approximately54%audited/46%remaining; no further increment for fixture correction or these limited local controls. No repairs/consolidated plan/merge/deploy/live changes. Next inspect corrected Support/negative tests and complete SQL counters; continue remaining owner/admin/merchant/support browser roles afterward.
+
+
 ## Current checkpoint — SEQ-128–133 verified; SEQ-134 prepared (2026-10-12)
 
 This supersedes earlier next-step/prepared statuses below; keep them as history. Continue the comprehensive audit, tests/documentation only. No application repair or consolidated repair plan until the audit is complete.
@@ -13,6 +22,26 @@ Executed PR head `4b9bc639ff35addb6babb1d28f266a1c10d9bc90`, Actions checkout me
 - Local admin UI authority **14 PASS / 0 FAIL / 0 SKIP**, Node24.19.0, actual capability/refresh/effect bodies with inert state/HTTP adapters; no mounted admin or real server auth proof. Reuse results; do not add the earlier10test run to14.
 
 Planning estimate approximately **54% audited /46% remaining**, uncertainty40–60%. Same weighted milestone model (source20,functional30,adversarial20,target20,acceptance10), equal11domains. Modest bounded evidence increments: security68→69, dashboards44→47, reports49→53, language27→29. Other domain estimates unchanged; no credit for automatic CI repeats or fixture corrections. This is not measured universal coverage or launch readiness. Release BLOCKED.
+
+### Domain planning estimates at SEQ-133
+
+Same milestone weights. Specific bounded updates: security adversarial80→85 (+1weighted point), dashboards functional +10 (+3), reports target20→40 (+4), language target10→20 (+2). These are transparent planning judgments, not empirical denominators. Receipt physical acceptance, authenticated central-report backend and mounted admin/browser gates remain uncredited.
+
+| Domain | Estimated audit coverage |
+| --- | ---: |
+| Repository/build/lineage |61%|
+| Cashier cloud sync |58%|
+| Cashier offline/licensing |46%|
+| Finance/subscriptions/payments |62%|
+| Security/auth/tenant boundaries |69%|
+| Owner/merchant/staff dashboards |47%|
+| Catalog/inventory/orders |54%|
+| Reports/PDF/Excel |53%|
+| Languages/RTL/mobile/accessibility |29%|
+| Bot/Meta/AI integration |60%|
+| Hosting/backup/restore/operations |54%|
+
+Domain sum593/11≈53.91%, rounded54%audited/46%remaining. No fresh credit for CI reruns, fixture corrections or local5media tests alone.
 
 **SEQ-134 PREPARED:** execute existing previously audit-unverified admin-auth-router and support-postgres-cutover journeys first in guarded tenant batch. The preload attestation runs before application/DB imports; runner is disposable loopback/network-none with owned teardown. Actual Auth v2 admin login/device OTP/trust/password-change/session-disable/device-revoke HTTP; Support merchant/admin tickets/images/approval/read-only preview/secret redaction/reminders. These are bounded mounted-router/default disposable-role fixtures, not full application route fallthrough, restricted deployed grants, OTP provider, browser or media durability proof. Support tiny signature-only PNG fixture cannot establish full image decode validation. Existing internal cleanup quality is not separately fault-certified; owned entire DB teardown is the containment boundary. Results NOT_RUN until CI read. Provisional inventory41unique/43invocations; preserve verified138/24 until complete new aggregate.
 

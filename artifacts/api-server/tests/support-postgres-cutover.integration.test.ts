@@ -4,6 +4,10 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+
+await assertDisposablePostgres();
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "");
 assert.ok(DATABASE_URL, "DATABASE_URL is required");
@@ -23,9 +27,11 @@ const AUTH_SECRET = "support-pg-proof-security-secret-at-least-32-characters";
 const ownerId = "support-pg-owner";
 const assistantId = "support-pg-assistant";
 const merchantId = "support-pg-merchant";
-const ownerPhone = "07987222001";
-const assistantPhone = "07987222002";
-const merchantPhone = "07987222003";
+const otherMerchantId = "support-pg-other-merchant";
+const otherMerchantPhone = "+9647987222004";
+const ownerPhone = "+9647987222001";
+const assistantPhone = "+9647987222002";
+const merchantPhone = "+9647987222003";
 const subscriptionId = "support-pg-subscription";
 const channelId = "support-pg-channel";
 
@@ -96,15 +102,28 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
           WHERE merchant_id = $1 OR actor_account_id = ANY($2::text[])`,
         [merchantId, [ownerId, assistantId]],
       )
-      .catch(() => undefined);
+;
+    await pool.query(
+      "DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])",
+      [[ownerId, assistantId]],
+    );
     await pool
       .query(
         `DELETE FROM accounts
           WHERE id = ANY($1::text[]) OR phone = ANY($2::text[])`,
-        [[merchantId, ownerId, assistantId], [merchantPhone, ownerPhone, assistantPhone]],
+        [[merchantId, otherMerchantId, ownerId, assistantId], [merchantPhone, otherMerchantPhone, ownerPhone, assistantPhone]],
       )
-      .catch(() => undefined);
+;
   }
+
+  let server: ReturnType<typeof express.application.listen> | undefined;
+  t.after(async () => cleanupResources([
+    ["Support runtime", () => stopPostgresSupportRuntimeCutoverForTests()],
+    ["HTTP server", () => server ? new Promise<void>((resolve, reject) => server!.close(error => error ? reject(error) : resolve())) : undefined],
+    ["fixture rows", () => cleanup()],
+    ["database pool", () => pool.end()],
+    ["fixture directory", () => rm(runtimeDirectory, { recursive: true, force: true })],
+  ]));
 
   await cleanup();
 
@@ -186,6 +205,22 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
     [channelId, merchantId],
   );
 
+  // A real second tenant, with its own Auth v2 session and no support entitlement to tenant A.
+  await pool.query(
+    `INSERT INTO accounts(id,kind,phone,password_hash,state,language,phone_verified)
+     VALUES($1,'merchant',$2,$3,'active','en',true)`,
+    [otherMerchantId, otherMerchantPhone, hashPassword("OtherMerchantSupport9!")],
+  );
+  await pool.query(
+    `INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status)
+     VALUES($1,$1,'Other Synthetic Merchant','Other Synthetic Store','retail','approved','approved')`,
+    [otherMerchantId],
+  );
+  const otherMerchantSession = await authPostgresSessionAuthority.issueSession({
+    accountId: otherMerchantId, accountKind: "merchant", tenantId: otherMerchantId,
+  });
+  const otherMerchantCookie = cookie(MERCHANT_SESSION_COOKIE, otherMerchantSession.token);
+
   const ownerSession = await authPostgresSessionAuthority.issueSession({
     accountId: ownerId,
     accountKind: "admin",
@@ -210,7 +245,7 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
   app.use(cookieParser());
   app.use(express.json());
   app.use("/api/auth", authSecurityRouter);
-  const server = await new Promise<ReturnType<typeof app.listen>>((resolve, reject) => {
+  server = await new Promise<ReturnType<typeof app.listen>>((resolve, reject) => {
     const listening = app.listen(0, "127.0.0.1", () => resolve(listening));
     listening.once("error", reject);
   });
@@ -220,14 +255,6 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
   const ownerCookie = cookie(ADMIN_SESSION_COOKIE, ownerSession.token);
   const assistantCookie = cookie(ADMIN_SESSION_COOKIE, assistantSession.token);
   const merchantCookie = cookie(MERCHANT_SESSION_COOKIE, merchantSession.token);
-
-  t.after(async () => {
-    stopPostgresSupportRuntimeCutoverForTests();
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    await cleanup();
-    await pool.end();
-    await rm(runtimeDirectory, { recursive: true, force: true });
-  });
 
   assertNoLegacyJson(dataDirectory);
 
@@ -299,6 +326,50 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
   });
   assert.equal(imageRead.status, 200);
   assert.match(imageRead.headers.get("content-type") || "", /^image\/png/);
+
+  await t.test("Support resources require an authenticated matching tenant", async () => {
+    const ticketPath = `/api/auth/support/tickets/${encodeURIComponent(ticketId)}`;
+    assert.equal((await fetch(`${baseUrl}${ticketPath}`)).status, 401);
+    assert.equal((await fetch(`${baseUrl}${adminAttachment.url}`)).status, 401);
+    const foreignTicket = await fetch(`${baseUrl}${ticketPath}`, { headers: { Cookie: otherMerchantCookie } });
+    assert.equal(foreignTicket.status, 404);
+    assert.equal((await json(foreignTicket)).code, "SUPPORT_TICKET_NOT_FOUND");
+    assert.equal((await fetch(`${baseUrl}${adminAttachment.url}`, { headers: { Cookie: otherMerchantCookie } })).status, 404);
+    const before = await pool.query("SELECT count(*)::int AS count FROM support_messages WHERE ticket_id=$1", [ticketId]);
+    const foreignReply = await fetch(`${baseUrl}${ticketPath}/messages`, {
+      method: "POST", headers: { Cookie: otherMerchantCookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "AUDIT_FOREIGN_REPLY_MUST_NOT_PERSIST" }),
+    });
+    assert.equal(foreignReply.status, 404);
+    const after = await pool.query("SELECT count(*)::int AS count FROM support_messages WHERE ticket_id=$1", [ticketId]);
+    assert.equal(after.rows[0].count, before.rows[0].count);
+    const list = await fetch(`${baseUrl}/api/auth/support/tickets`, { headers: { Cookie: otherMerchantCookie } });
+    assert.equal(list.status, 200);
+    assert.equal((await json(list)).tickets.some((item: any) => item.id === ticketId), false);
+    assert.equal((await fetch(`${baseUrl}${adminAttachment.url}`, { headers: { Cookie: merchantCookie } })).status, 200);
+  });
+
+  await t.test("current server permissions override a stale permitted admin session", async () => {
+    // Keep the same session whose snapshot includes manage_support, revoke only the current profile grant.
+    await pool.query("DELETE FROM admin_permissions WHERE admin_id=$1 AND permission='manage_support'", [assistantId]);
+    try {
+      const deniedList = await fetch(`${baseUrl}/api/auth/admin/support/tickets`, { headers: { Cookie: assistantCookie } });
+      assert.equal(deniedList.status, 403);
+      assert.equal((await json(deniedList)).code, "ADMIN_PERMISSION_REQUIRED");
+      assert.equal((await fetch(`${baseUrl}${adminAttachment.url}`, { headers: { Cookie: assistantCookie } })).status, 403);
+      const before = await pool.query("SELECT count(*)::int AS count FROM support_messages WHERE ticket_id=$1", [ticketId]);
+      const deniedReply = await fetch(`${baseUrl}/api/auth/admin/support/tickets/${encodeURIComponent(ticketId)}/messages`, {
+        method: "POST", headers: { Cookie: assistantCookie, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "AUDIT_REVOKED_REPLY_MUST_NOT_PERSIST" }),
+      });
+      assert.equal(deniedReply.status, 403);
+      const after = await pool.query("SELECT count(*)::int AS count FROM support_messages WHERE ticket_id=$1", [ticketId]);
+      assert.equal(after.rows[0].count, before.rows[0].count);
+    } finally {
+      await pool.query("INSERT INTO admin_permissions(admin_id,permission,granted_by_admin_id) VALUES($1,'manage_support',$2)", [assistantId, ownerId]);
+    }
+    assert.equal((await fetch(`${baseUrl}/api/auth/admin/support/tickets`, { headers: { Cookie: assistantCookie } })).status, 200);
+  });
 
   const adminReply = await fetch(
     `${baseUrl}/api/auth/admin/support/tickets/${encodeURIComponent(ticketId)}/messages`,
@@ -401,11 +472,42 @@ test("Support is end-to-end PostgreSQL authoritative with Auth v2 cookies", asyn
     assert.equal(Object.hasOwn(snapshot.channels[0], secret), false);
   }
 
+  await t.test("approved Support preview is read-only and bound to its exact admin session", async () => {
+    const snapshotPath = `/api/auth/admin/support-preview/${encodeURIComponent(previewSession.id)}/snapshot`;
+    assert.equal((await fetch(`${baseUrl}${snapshotPath}`)).status, 401);
+    const blockedWrite = await fetch(`${baseUrl}${snapshotPath}`, {
+      method: "PATCH", headers: { Cookie: assistantCookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ store_name: "AUDIT_PREVIEW_MUTATION_MUST_NOT_PERSIST" }),
+    });
+    assert.equal(blockedWrite.status, 403);
+    assert.equal((await json(blockedWrite)).code, "SUPPORT_PREVIEW_READ_ONLY");
+    const parallelSession = await authPostgresSessionAuthority.issueSession({
+      accountId: assistantId, accountKind: "admin", tenantId: "fawri-admin",
+      adminRole: "assistant_admin", permissions: ["manage_support", "inspect_merchant_sessions"],
+    });
+    const wrongSession = await fetch(`${baseUrl}${snapshotPath}`, {
+      headers: { Cookie: cookie(ADMIN_SESSION_COOKIE, parallelSession.token) },
+    });
+    assert.equal(wrongSession.status, 403);
+    assert.equal((await json(wrongSession)).code, "SUPPORT_PREVIEW_SESSION_MISMATCH");
+    const unchanged = await pool.query("SELECT store_name FROM merchants WHERE id=$1", [merchantId]);
+    assert.equal(unchanged.rows[0].store_name, "Support Merchant Store");
+    assert.equal((await fetch(`${baseUrl}${snapshotPath}`, { headers: { Cookie: assistantCookie } })).status, 200);
+  });
+
   const previewEnd = await fetch(
     `${baseUrl}/api/auth/admin/support-preview/${encodeURIComponent(previewSession.id)}/end`,
     { method: "POST", headers: { Cookie: assistantCookie } },
   );
   assert.equal(previewEnd.status, 200);
+  await t.test("terminated Support preview cannot be reused", async () => {
+    const ended = await fetch(`${baseUrl}/api/auth/admin/support-preview/${encodeURIComponent(previewSession.id)}/snapshot`, {
+      headers: { Cookie: assistantCookie },
+    });
+    assert.equal(ended.status, 409);
+    assert.equal((await json(ended)).code, "SUPPORT_PREVIEW_ENDED");
+  });
+
 
   await pool.query(
     `UPDATE support_tickets

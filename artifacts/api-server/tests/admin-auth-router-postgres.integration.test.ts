@@ -4,6 +4,9 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+
+await assertDisposablePostgres();
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "");
 assert.ok(DATABASE_URL, "DATABASE_URL is required");

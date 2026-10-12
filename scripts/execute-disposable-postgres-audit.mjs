@@ -37,9 +37,9 @@ for (const file of selected) {
   const result = execute(['--import', './scripts/lib/disposable-postgres-preload.mjs', '--import', 'tsx', '--test', '--test-reporter=tap', '--test-concurrency=1', '--test-timeout=180000', `artifacts/api-server/tests/${file}`], { ...process.env, FAWRI_DATA_DIR: dataDir });
   try { fs.rmSync(dataDir, { recursive: true, force: true }); }
   catch { failed = true; console.error("AUDIT_SUITE_DATA_CLEANUP_FAILURE"); }
-  const summary = { suite: file, auditBatch: process.argv[2], runtime: process.version, ...(process.argv[2] === 'full-restore' ? { phase: process.env.FAWRI_AUDIT_RESTORE_PHASE } : {}), exit: result.status, passed: Number(result.stdout?.match(/^# pass (\d+)$/m)?.[1] || 0), failed: Number(result.stdout?.match(/^# fail (\d+)$/m)?.[1] || 0), skipped: Number(result.stdout?.match(/^# skipped (\d+)$/m)?.[1] || 0) };
+  const summary = { suite: file, auditBatch: process.argv[2], runtime: process.version, ...(process.argv[2] === 'full-restore' ? { phase: process.env.FAWRI_AUDIT_RESTORE_PHASE } : {}), exit: result.status, passed: Number(result.stdout?.match(/^# pass (\d+)$/m)?.[1] || 0), failed: Number(result.stdout?.match(/^# fail (\d+)$/m)?.[1] ?? (result.stdout?.match(/^\s*not ok \d+ -/gm)?.length || 0)), skipped: Number(result.stdout?.match(/^# skipped (\d+)$/m)?.[1] || 0), summaryComplete: /^# pass \d+$/m.test(result.stdout || '') && /^# fail \d+$/m.test(result.stdout || '') && /^# skipped \d+$/m.test(result.stdout || '') };
   // CI cannot silently pass a suite that skipped its entire PostgreSQL proof.
-  if (result.status !== 0 || summary.passed === 0 || summary.skipped !== 0) failed = true;
+  if (result.status !== 0 || !summary.summaryComplete || summary.passed === 0 || summary.skipped !== 0) failed = true;
   console.log('AUDIT_SUITE_RESULT ' + JSON.stringify(summary));
 }
 process.exitCode = failed ? 1 : 0;

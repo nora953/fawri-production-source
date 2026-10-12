@@ -1,5 +1,14 @@
 # Fawri comprehensive release audit — scope and evidence gates
 
+## SEQ-134 reconciled; SEQ-135 prepared; SEQ-136 local media verified
+
+See [SEQ_134_136_ADMIN_SUPPORT_20261012.md](SEQ_134_136_ADMIN_SUPPORT_20261012.md) for exact scope and limits. Source3019e9a4 / run38287120221 / job114938040636: real admin auth/router journey1PASS. Support fixture fails before HTTP on normalized phone constraint23514; child exit7 has no terminal TAP counters.43invocations/41unique; completed summary counters139PASS/24FAIL/0SKIP **plus one observed uncounted fixture-setup failure**. Not an exhaustive139/24 aggregate. No new product defect. Owned cleanup, restore, Meta54 and Node22 PASS.
+
+Corrected test-only Support phones, pre-mutation aggregate cleanup with visible errors, fixture admin audit deletion and direct-entry attestation. Runner reports summaryComplete and observed failure fallback, rejecting incomplete summaries. SEQ-135 adds4 real negative HTTP child tests: missing/foreign-tenant ticket/image/reply access/no mutation, current revoked support permission despite stale session claims, read-only/exact-session preview, terminated preview rejection. Runtime pending next source; no new SQL pass claimed. SEQ-136 local actual filesystem functions5PASS: paths/private modes/symlink denial/atomic bytes/no collision overwrite. Separate from DB counts and hosted durability.
+
+Planning approximately54%audited/46%remaining; no further increment for fixture correction or these limited local controls. No repairs/consolidated plan/merge/deploy/live changes. Next inspect corrected Support/negative tests and complete SQL counters; continue remaining owner/admin/merchant/support browser roles afterward.
+
+
 ## Current checkpoint — SEQ-128–133 verified; SEQ-134 prepared (2026-10-12)
 
 This supersedes earlier next-step/prepared statuses below; keep them as history. Continue the comprehensive audit, tests/documentation only. No application repair or consolidated repair plan until the audit is complete.
