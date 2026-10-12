@@ -103,7 +103,7 @@ try {
  await evaluate(cdp,`document.querySelector('[aria-label="'+auditCopy.support_new_ticket+'"]').focus();true`);
  assert.equal(await evaluate(cdp,`document.activeElement?.getAttribute('aria-label')===auditCopy.support_new_ticket`),true,'new-ticket control receives keyboard focus');
  assert.equal(await evaluate(cdp,`document.activeElement?.tagName==='BUTTON' && document.activeElement.tabIndex===0`),true,'new-ticket control uses a native focusable button');
- await click(cdp,'auditCopy.support_new_ticket');
+ await evaluate(cdp,`document.querySelector('[aria-label="'+auditCopy.support_new_ticket+'"]').click();true`);
  await waitFor(()=>evaluate(cdp,'Boolean(document.querySelector("input[maxlength=\"120\"]"))'),15000,'new-ticket form opening');
  assert.equal(await evaluate(cdp,'document.querySelectorAll("label").length>=3'),true);
  return {...shape,buttonFocus:'native focusable button',formOpens:true,keyboardActivation:'not verified by headless CDP input; no keyboard clearance claimed',limits:'Actual mounted component/i18n/CSS with synthetic API; no backend/session/full visual/accessibility signoff.'};
