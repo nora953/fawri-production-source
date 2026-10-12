@@ -1,9 +1,24 @@
-# SEQ-138 — mounted Support browser audit (2026-10-13 Baghdad)
+# SEQ-138 — Support component browser audit (2026-10-13 Baghdad)
 
-Continue from saved6b762715/SEQ137; no restart or app repairs. Existing verified SQL/HTTP144PASS/24FAIL/0SKIP sourcea2a9a780 is reused; browser evidence is separate.
+Continue from saved6b762715/SEQ137; no restart. Final executed browser source is the audit branch PR #520 head immediately before this documentation checkpoint: `2af179d9e186ae12ae0a85e67ed9b951959a2404`.
 
-PREPARED: actual merchant SupportPage and AdminSupportTab, real React/I18nProvider/Radix components, compiled Vite CSS, fresh isolated Chrome profile/UTF8/viewport, loopback synthetic GET fixture only.12cases: merchant AR/EN/Sorani loading/mobile390px/escaped conversation/keyboard create; empty; merchant/admin initial503/retry; merchant stale refresh disables mutations/recovers; admin owner/assistant/inspection-granted role prop surfaces and Escape dialog; admin empty; admin silent503 mutation gating negative assertion. Synthetic role props do not prove parent AdminPage route gate or backend authorization. No session/DB/provider/hosted/hardware/full visual or full accessibility clearance.
+## Result
 
-Candidate source observation: AdminSupportTab silent refresh catch keeps tickets and does not set loadError or stale authority; reply/resolve rely on working only. Merchant expressly uses staleAuthority to disable mutations. Last negative browser assertion expects mutation gate and may FAIL; no app defect declared until runtime observation, and no backend permission bypass assumed. Existing real Support revoked-permission403/no-write proof remains valid. Review reliability risk separately from confidentiality/security defects.
+[Chrome run38317602367](https://github.com/nora953/fawri-production-source/actions/runs/38317602367), job115038173842, Node24/Chrome154: **11 PASS /1 FAIL /0 SKIP**,12 cases; installation/build and browser/server/profile cleanup succeeded. Final marker contains all12 results. Earlier attempts were harness-debug runs only (loading observation timing and headless CDP keyboard synthesis); they add no independent coverage. No application source/schema change.
 
-Local syntax PASS; native browser NOT_RUN until CI logs. Workflow frozen install/no lifecycle, pinned actions/read-only contents; owns browser profile/process cleanup and loopback server. No app source change or consolidated repair plan.
+Actual merchant `SupportPage`, admin `AdminSupportTab`, React/I18nProvider/Radix and built Vite CSS were mounted against a loopback synthetic GET API. The suite verified:
+
+- Arabic and Kurdish render RTL; English LTR at390px with no horizontal overflow. Hostile message text creates no active `img` or `script`; merchant reply and new-ticket button are enabled after confirmed authority; the new-ticket control is a native focusable button.
+- Merchant initial loading, empty state, first-request503/unavailable state and actual retry recovery. After a confirmed ticket, failed silent refresh retains the ticket, disables merchant mutations, and later successful refresh restores them.
+- Admin initial503/retry and empty state; owner has no reply/inspection action, assistant has reply but no inspection request, inspection-prop assistant exposes request dialog and Escape closes it.
+- One intentional negative assertion failed: after admin silent refresh503, previous ticket remains visible while reply and resolve controls are both enabled. The fetch catch only sets `loadError` for nonsilent requests, and the component has no stale-authority guard unlike merchant Support.
+
+**Finding `ADMIN-SUPPORT-STALE-001` — MEDIUM / OPEN / UI reliability.** Stale admin support actions remain enabled after refresh failure; this can invite actions based on outdated support data or present avoidable errors. The suite used synthetic GET responses and performed no write. This does not establish authorization bypass, disclosure, or mutation: actual SQL/HTTP coverage already proved the server rejects Support list/image/reply with403 after current `manage_support` is removed, even using the old cookie, then allows access again after restoration. Keep UI consistency separate from server authorization.
+
+## Limits and next scope
+
+This mounts the child components, not the full admin parent route/tab/session flow. Role props are supplied by the harness; parent `canManageSupport` condition is source-reviewed, while actual session/grant enforcement is evidenced separately by SQL/HTTP. No full visual review, browser-authenticated backend, actual write, accessibility sign-off, physical device, hosted grants, backend accounting or external provider was exercised. Headless CDP did not provide reliable click-to-form or trusted keyboard activation; report those as **unverified**, not pass or app failure. No consolidated repair plan or application repair.
+
+Reuse prior source SQL/HTTP result run38288686551 at144PASS/24FAIL/0SKIP; this browser result is separate and does not change its counters. Planning stays about54% audited/46% remaining (40–60% uncertainty); dashboard/language evidence is bounded and route inventory remains incomplete.
+
+**Next SEQ-139:** actual parent AdminPage permission/tab gate and Support overlapping-refresh behavior, followed by remaining owner/admin/merchant route groups. Preserve completed SQL, media, report and print proofs; no merge/deploy/live DB/secrets/real payment.
