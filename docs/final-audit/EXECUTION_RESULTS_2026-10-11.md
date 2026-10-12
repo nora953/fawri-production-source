@@ -1,5 +1,22 @@
 # Isolated PostgreSQL audit execution — 2026-10-11
 
+## Definitive current handoff — SEQ-134–137 completed; next SEQ-138
+
+Continue from saved evidence; do not restart. Audit/test/documentation only. All application repairs and consolidated repair planning remain deferred until the comprehensive audit is complete.
+
+Executed source `a2a9a780740d8719be5564344ad9afa984e2bbbd`, [isolated run38288686551](https://github.com/nora953/fawri-production-source/actions/runs/38288686551), job114943166682, Node24.21.0: **144 PASS /24 FAIL /0 SKIP**,41unique files/43invocations. Every AUDIT_SUITE_RESULT has summaryComplete:true.24markers remain16functional+8parents for9existing canonical application findings, including HIGH/OPEN CASHIER-REPORT-PROFIT-001. No application defect repaired or new Support defect demonstrated. Owned teardown, full-schema restore, injected Meta54 and Node22 HTTP PASS.
+
+New actualSQL/HTTP: admin auth/router1PASS; Support5PASS (4negative children+parent). Actual tickets/images/replies/inspection approval/secret-redacted preview/reminders persist inSQL without legacy JSON. Missing session401; real foreign merchant404 for other ticket/image/reply, absent in own list/no message mutation; owner image200. Removing current manage_support grant rejects list/image/reply403 with same previously permitted cookie; restoring grant returns200. Preview PATCH403/read-only and same-admin other-session403; original session200/store unchanged; ended snapshot409. Default disposable role and mounted router fixtures; not deployed grants/full-app fallthrough/browser/live OTP/media durability proof. Owner Support device trust uses real services with synthetic setup; actual owner OTP/device login separately passed in admin suite.
+
+Prior Support fixture failures remain documented: invalid legacy phone shape (23514), then device-less owner session (AUTH_POSTGRES_OWNER_DEVICE_REQUIRED), both before HTTP. Corrected only test fixtures, pre-mutation cleanup and audit counters; no app/schema change. Failed incomplete output was not counted as success. Final complete runtime above supersedes those prepared/setup-only statuses.
+
+Local separate: media filesystem5PASS (real scratch fs, actual producer bodies), runner counter4PASS (actual summary/classification body, synthetic TAP). Prior admin UI14PASS, receipt native8PASS and central component5PASS remain bounded evidence, not added to SQL aggregate. [Detailed evidence](SEQ_134_136_ADMIN_SUPPORT_20261012.md).
+
+Planning estimate remains approximately **54%audited /46%remaining**, uncertainty40–60%, same milestone/domain model. No increment for fixture corrections, unchanged CI repeats or limited extra controls alone; this is not a measured passrate/readiness. Release BLOCKED. Full screen/role/modal/mobile/offline, hosted grants/media/PITR/rollback/monitoring, provider and commercial acceptance remain open.
+
+**Exact next SEQ-138:** mounted merchant/admin Support page state and role/browser coverage from the37route inventory (loading/empty/error/retry, allowed/denied role surfaces and keyboard/RTL), separating synthetic API UI proof from already verified real Support HTTP. Then remaining owner/admin/merchant screen groups. Reuse all completed service/media/report proofs; rerun only for changed code/config or a justified new assertion. No main merge, deployment, live DB/secrets or real payment.
+
+
 ## SEQ-134 reconciled; SEQ-135 prepared; SEQ-136 local media verified
 
 See [SEQ_134_136_ADMIN_SUPPORT_20261012.md](SEQ_134_136_ADMIN_SUPPORT_20261012.md) for exact scope and limits. Source3019e9a4 / run38287120221 / job114938040636: real admin auth/router journey1PASS. Support fixture fails before HTTP on normalized phone constraint23514; child exit7 has no terminal TAP counters.43invocations/41unique; completed summary counters139PASS/24FAIL/0SKIP **plus one observed uncounted fixture-setup failure**. Not an exhaustive139/24 aggregate. No new product defect. Owned cleanup, restore, Meta54 and Node22 PASS.

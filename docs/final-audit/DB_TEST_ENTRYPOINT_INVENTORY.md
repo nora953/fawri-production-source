@@ -1,5 +1,17 @@
 # PostgreSQL test entrypoint inventory — source verified
 
+## Current SEQ-134–137 delta — 2026-10-12
+
+Historical64candidate table remains its original source snapshot. Two existing tests now have direct shared attestation before DB/application imports and explicit guarded tenant selection:
+
+| Entrypoint | Direct guard | Isolated selected | Actual result on a2a9a780/run38288686551/job114943166682 |
+| --- | --- | --- | --- |
+| admin-auth-router-postgres.integration.test.ts | yes | yes |1PASS|
+| support-postgres-cutover.integration.test.ts | yes | yes |5PASS (4child denials+parent)|
+
+Selected runtime inventory41unique/43invocations; all complete summaries,144PASS/24FAIL/0SKIP. This is not a new exhaustive transitive candidate scan and does not clear unselected entrypoints. Direct unattested invocation of both tests rejects before DB/application imports. Detailed setup-failure/correction/cleanup history in SEQ_134_136_ADMIN_SUPPORT_20261012.md.
+
+
 Status: source inspection only, NOT RUN. Ref: main as reviewed 2026-10-11. The database execution plan is `DISPOSABLE_POSTGRES_EXECUTION_PLAN.md`.
 
 | File or command | Observed requirement | Audit finding |
