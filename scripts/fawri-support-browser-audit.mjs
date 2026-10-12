@@ -76,7 +76,8 @@ try {
  const ref=new URL(req.headers.referer||'http://synthetic/'),mode=ref.searchParams.get('mode')||'success',key=ref.search;
  const n=(calls.get(key)||0)+1;calls.set(key,n);res.setHeader('Content-Type','application/json; charset=utf-8');
  const fail=mode==='error'&&n===1||mode==='stale'&&n===2;
- setTimeout(()=>{res.statusCode=fail?503:200;res.end(JSON.stringify(fail?{ok:false}:{ok:true,tickets:mode==='empty'?[]:[ticket]}));},n===1?1600:10);
+ const responseTicket=mode==='race'?{...ticket,messages:[{...ticket.messages[0],body:n===1?'AUDIT_RACE_OLD':'AUDIT_RACE_NEW'}]}:ticket;
+ setTimeout(()=>{res.statusCode=fail?503:200;res.end(JSON.stringify(fail?{ok:false}:{ok:true,tickets:mode==='empty'?[]:[responseTicket]}));},mode==='race'&&n===1?1200:n===1?1600:10);
  }else if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end(bundle.outputFiles.find(x=>x.path.endsWith('.js')).text);}
  else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css; charset=utf-8');res.end(styles);}
  else{res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/bundle.js"></script>');}
@@ -143,6 +144,12 @@ try {
  const shape=await evaluate(cdp,`({replyDisabled:document.querySelector('textarea')?.disabled,resolveDisabled:Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===auditAdmin.markResolved)?.disabled,retained:document.body.textContent.includes('AUDIT_SUPPORT_MESSAGE')})`);
  assert.equal(shape.replyDisabled,true,`Stale admin controls remain active: ${JSON.stringify(shape)}`);return shape;
  });
+ await check('admin newer support refresh must survive an older late response',async()=>{
+ const {cdp,key}=await tab('assistant','en','race');await waitFor(()=>calls.get(key)>=1);await evaluate(cdp,'window.dispatchEvent(new Event("focus"));true');
+ await waitFor(()=>calls.get(key)>=2);await waitFor(()=>evaluate(cdp,'document.body.textContent.includes("AUDIT_RACE_NEW")'));await delay(1300);
+ const shape=await evaluate(cdp,`({old:document.body.textContent.includes('AUDIT_RACE_OLD'),newer:document.body.textContent.includes('AUDIT_RACE_NEW')})`);shape.requests=calls.get(key);
+ assert.equal(shape.newer,true);assert.equal(shape.old,false,`Older Support response replaced the newer list: ${JSON.stringify(shape)}`);return shape;
+ });
 } catch(e){infrastructureError=e.message;}
 finally {
   for(const ws of sockets)ws.close();
@@ -159,4 +166,4 @@ finally {
 
 if(infrastructureError)evidence.infrastructureError=infrastructureError;
 console.log('AUDIT_SUPPORT_BROWSER_RESULT '+JSON.stringify(evidence));
-if(infrastructureError||evidence.results.length!==12||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
+if(infrastructureError||evidence.results.length!==13||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
