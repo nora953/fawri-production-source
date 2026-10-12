@@ -413,3 +413,8 @@ Extended existing REPORT-EXPORT-CURRENCY-001 to actual centralcashierdownloadclo
 Final`node --test scripts/fawri-report-export-audit.test.mjs` onNode24.19.0: **5PASS/3FAIL/0SKIP**,8tests. Threefailures=onecurrency-scale finding. InitialSEQ118six-test4/2 result is historical and superseded by this expanded sameharness8-test5/3 result; no homogeneousaddition toSQL136/21 ornative3/1. RealZIPgeneration/XLSXofficeopen,PDFpagination andvisual comparison remainNOT_RUN. Noapplicationchange.
 
 **Current definitive continuation:**SEQ116–120 bounded workcomplete; nextSEQ121 actualworkbookZIP/consumer andPDF/range/completeness assertions, plusclosed-shiftreturn/void/currentpermission/crossstaff/tenant HTTPnegatives.37routeinventory remainsNOT_RUN forappjourneys. Sameexplicituserconstraint: completecomprehensiveaudit before consolidatedrepairplan; historicalpaymentproposalnotcurrentqueue. Allnoteddefects preserved, no repairs. Overallplanning~52%,48%remaining(40–60%uncertainty), releaseBLOCKED.
+
+
+### SEQ-122 existing CASHIER-SYNC-SHIFT-001 follow-up prepared
+
+`cashierOperatorSaleScope.ts:112–139` rejects own-staff compensation for an original sale outside the current shift, while `sale.view_all` bypasses the staff/shift comparison inside the same station/device. Routes `cashier-operator-commerce.ts:184–230` apply this check before historical compensation ingestion. Guarded actual HTTP proof prepared for both return and void; results pending. Historical pending operations vs newly initiated cross-shift actions need separate acceptance decisions after audit. No new duplicate issue or permission-policy defect declared solely from this source review.
