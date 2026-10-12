@@ -1,0 +1,38 @@
+name: Cashier native IndexedDB engineering audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/fawri-native-indexeddb-audit.mjs'
+      - 'artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts'
+      - 'artifacts/fawri/src/lib/cashierLocalContracts.ts'
+      - 'artifacts/fawri/src/lib/cashier*Pricing*.ts'
+      - 'artifacts/fawri/src/lib/cashierPromotionRuntime.ts'
+      - '.github/workflows/cashier-native-indexeddb-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cashier-native-idb-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  native-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label native-idb-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Require installed real browser and execute isolated profile audit
+        shell: bash
+        run: |
+          node --check scripts/fawri-native-indexeddb-audit.mjs
+          audit_chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$audit_chrome"
+          FAWRI_AUDIT_CHROME="$audit_chrome" node scripts/fawri-native-indexeddb-audit.mjs

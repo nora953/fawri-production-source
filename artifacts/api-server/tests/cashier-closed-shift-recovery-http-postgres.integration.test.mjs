@@ -153,7 +153,8 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
     operator_session_id: original.context.operator_session_id, device_id: device.deviceId });
   const replay = await request('/api/cashier/operator/sync/sale', restored.operator_token, body);
   assert.equal(replay.status, 200, JSON.stringify(replay.body));
-  assert.equal(replay.body.duplicate, true);
+  assert.equal(replay.body.replayed, true);
+  assert.equal(replay.body.inventory_mutation_count, 0);
   assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 1);
   assert.equal((await pool.query('SELECT quantity FROM location_inventory_levels WHERE merchant_id=$1 AND location_id=$2 AND product_id=$3 AND variant_id IS NULL', [f.merchantId, f.locationId, f.productId])).rows[0].quantity, 0);
   assert.equal((await pool.query('SELECT count(*)::int AS n FROM cashier_operation_attribution WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 1);

@@ -387,3 +387,8 @@ Existing application findings FA-I-006 / BILLING-IDEMPOTENCY-012 / BILLING-EXTER
 ### CASHIER-SYNC-SHIFT-001 — SEQ116 prepared proof
 
 Guarded real HTTP recovery test saved, executionPENDING. Covers disable/re-enable administrative service closure (staffAuthority713–843), current-token middleware vs historical original attribution (cashierStaffSession134–183,commerceAuthority200–255/489–519), exact replay and no extra stock/order. Client binding checkcashierOperatorCloudSync783–803 remains independently reproduced; server success alone cannot close client recovery finding. No ordinary logout/expiry-only defect claimed. Local syntaxPASS/guard refusalPASS; no local SQL/browser assertion executed. Audit-only user directive: complete remaining coverage before preparing consolidated repair plan or changing application.
+
+
+**SEQ116 first-run test classification:** source8d3f4888, cashier38197881066/job114644536563, new HTTPsuite0PASS/1FAIL. Historical-saleHTTP200/originalattribution/HTTP200replay precede failingassertion156; nonexistent`duplicate` instead of actual`replayed` field is fixture error. Correctedfixture awaits end-state proof; do not call recovery finding closed. Client mismatch stillOPEN.
+
+**SEQ117 preparation:** native Chrome tests preserve priorSEQ93/94 changed-payload replay andSEQ99/100 cached-handle observations without duplicate IDs. Actual browserNOT_RUN; assertions and limits in register. Browser-storage source scanner is not a native IndexedDB test.
