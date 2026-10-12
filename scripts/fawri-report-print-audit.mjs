@@ -83,7 +83,7 @@ try {
     if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript');res.end(bundled.outputFiles[0].text);}
     else if(req.url==='/debug.js'){res.setHeader('Content-Type','application/javascript');res.end("globalThis.auditErrors=[];addEventListener('error',e=>auditErrors.push(e.message));addEventListener('unhandledrejection',e=>auditErrors.push(String(e.reason)));");}
     else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css');res.end(styles);}
-    else{res.setHeader('Content-Type','text/html');res.end('<!doctype html><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/debug.js"></script><script src="/bundle.js"></script>');}
+    else{res.setHeader('Content-Type','text/html');res.end('<!doctype html><link rel="stylesheet" href="/style.css"><div id="root" class="report-print-root"></div><script src="/debug.js"></script><script src="/bundle.js"></script>');}
   });
   await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
   const origin=`http://127.0.0.1:${server.address().port}`;
