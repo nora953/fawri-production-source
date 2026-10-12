@@ -100,7 +100,7 @@ try {
     await waitFor(()=>evaluate(cdp,'document.querySelectorAll("svg.recharts-surface").length>0'));
     await cdp('Emulation.setEmulatedMedia',{media:'print'});
     const shape=await evaluate(cdp,`({metrics:document.querySelectorAll('.report-print-online-metric').length,
-      text:document.body.innerText,scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth})`);
+      text:document.body.innerText,metricValues:Array.from(document.querySelectorAll('.report-print-metric-value')).map(e=>e.textContent),scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth})`);
     assert.equal(shape.metrics,9);assert.ok(shape.text.includes('Audit item 8'));
     const pdf=await cdp('Page.printToPDF',{printBackground:true,preferCSSPageSize:true,paperWidth:8.27,paperHeight:11.69,marginTop:0.2,marginBottom:0.2,marginLeft:0.2,marginRight:0.2});
     const bytes=Buffer.from(pdf.data,'base64');
@@ -110,8 +110,9 @@ try {
     assert.ok(pages.length>=1 && pages.length<=3,`unexpected page count ${pages.length}`);
     assert.ok(pages[0].trim().length>40,'first page blank/near empty');
     assert.ok(extracted.stdout.includes('Audit item 8'),'last chart product absent from PDF text');
-    assert.ok(shape.text.includes('697') || shape.text.includes('٦٩٧'));
-    return {bytes:bytes.length,pages:pages.length,firstPageCharacters:pages[0].trim().length,metrics:shape.metrics,lastProductPresent:true,
+    const normalizeNumber=value=>String(value).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[^0-9]/g,'');
+    assert.ok(shape.metricValues.some(value=>normalizeNumber(value)==='697910'),'Revenue card missing expected value: '+JSON.stringify(shape.metricValues));
+    return {bytes:bytes.length,pages:pages.length,firstPageCharacters:pages[0].trim().length,metrics:shape.metrics,lastProductPresent:true,semanticRevenueCard:697910,
       limits:'Actual report components and compiled CSS, synthetic props/system fallback fonts; not full report API, mobile app, linguistic signoff or production webfonts.'};
   });
 } catch(e){infrastructureError=e.message;}
