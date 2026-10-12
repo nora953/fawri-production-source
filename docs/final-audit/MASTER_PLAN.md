@@ -32,3 +32,8 @@ Task ID | baseline SHA | checked scope | prior evidence reused | new evidence | 
 - [Historical 16-phase core freeze](../fawri-core-freeze-audit-2026-10-07.md)
 - [Release blockers](../FAWRI_RELEASE_BLOCKERS.md)
 - [Staging deployment contract](../staging-deployment-contract.md)
+
+
+## Current continuation — SEQ-113 (2026-10-12)
+
+Baseline23563ffb, main d38d2922; continue fromSEQ114, not from initialFA000/SEQ26. PR520 discussion carriesSEQ27–108; latest durable canonical additions coverSEQ109–113. New local harness27mocked runtime assertions/18existing source assertions; current-head isolatedCI132PASS/21FAIL/0SKIP reused. StableIDs for sync gap/shift recovery inISSUES; ordinary logout pending guard preserved. Estimates and uncertainty inPROGRESS; external production/staging/browser/provider/repair gates remain open. SeeWORK_HANDOFF for exact continuation and commands. No authorization for business fixes, merge or deploy.

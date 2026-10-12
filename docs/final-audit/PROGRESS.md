@@ -467,3 +467,30 @@ Earlyaggregateteardown removesfixturetriggers/functions/accounts/pool. Local noa
 ## SEQ-27 (2026-10-12): evidence reconciliation
 
 Latest completed isolated CI: run 38180374172, 132 passed, 21 failed, 0 skipped. Payment rollback and orphan webhook findings in SaaS/cashier are saved under existing 013/015 in ISSUES.md. UI language/accessibility/mobile checks remain source-only; actual browser tests not run. Hosted startup, role grants, media recovery, PITR, offline devices and real provider settlement remain unverified. No additional functional tests were executed in this documentation checkpoint. Continue from the saved evidence; no launch approval.
+
+
+## Current SEQ-113 checkpoint — 2026-10-12 (supersedes historical resume notes)
+
+SEQ109–113 completed within bounded audit scope: actual server ingestion/caller trace, mocked replay/tenant/money negatives, ACK/partial upload, device sequence/clock, source concurrency/recovery, offline validation. Baseline23563ffb; new proof27mocked-runtimePASS +18source-contractPASS,0FAIL/0SKIP. No actual browser/DB execution locally. Current-head CI reused132PASS/21FAIL/0SKIP; canonical product failures remainOPEN. New sequence/shift recovery proof gaps indexed inISSUES; existing unsigned-cache concern narrowed with runtime structural acceptance test. No functional fixes, main merge, deployment, live mutations or finance.
+
+### Provisional whole-audit planning estimate (not release readiness)
+
+Because a complete screen/role/scenario denominator is still missing, percentages below are transparent planning judgments, not measured pass rates. Model weights: source/caller coverage20%, automated functional execution30%, adversarial/concurrency evidence20%, target environment/browser/provider proof20%, final acceptance10%. Each column is a0–100 estimated completion of that milestone; partial tests do not earn full credit. Equal domain weights; changing scope changes estimate. This explicitly replaces arbitrarySEQ-based counting and is not a claim of universal coverage.
+
+| Domain | Source | Functional | Adversarial | Target | Acceptance | Weighted audit estimate |
+| --- | --- | --- | --- | --- | --- | --- |
+| Repository/build/lineage |100|80|60|0|50|61%|
+| Cashier cloud sync |100|80|50|0|0|54%|
+| Cashier offline/licensing |100|50|40|0|0|43%|
+| Finance/subscriptions/payments |100|80|80|0|20|62%|
+| Security/auth/tenant boundaries |100|90|75|25|0|67%|
+| Owner/merchant/staff dashboards |80|60|50|0|0|44%|
+| Catalog/inventory/orders |100|80|50|0|0|54%|
+| Reports/PDF/Excel |75|50|25|0|0|35%|
+| Languages/RTL/mobile/accessibility |80|30|0|0|0|25%|
+| Bot/Meta/AI integration |100|80|80|0|0|60%|
+| Hosting/backup/restore/operations |100|80|50|0|0|54%|
+
+Equal-domain mean50.8%, report **approximately50% audited toward complete evidence/acceptance, plausible40–60% range**. This can be lower than earlier conversation guesses because physical/browser/hosted/provider and commercial gates are included. Passing more synthetic tests does not make an open defect ready; fixing is a separate approval scope. Commercial/legal/settlement acceptance remains an additional unverified gate, so this engineering estimate cannot estimate release date. Exact source/runtime/staging/browser labels in register remain authoritative over estimates.
+
+NextSEQ114: prepare disposable PostgreSQL gap/backfill and simultaneous two-device stock/sale/return/replay proofs, preserving guards/tenant context; reproduce session-expiry/admin-close recovery without normal-logout shortcut. ExistingCI lacks these exact assertions. Then browserversionchange/local changed-payload/durable-outbox proofs when a browser is available. Billing/Meta/refund repair and signed-license design require separate concrete approval before application changes.

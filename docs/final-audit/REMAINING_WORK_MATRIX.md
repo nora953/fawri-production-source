@@ -42,3 +42,17 @@ SEQ-22 R09boundedrestrictedHTTPsessiondefense5PASS; actualrole/grants/nonRLSprov
 SEQ-23 Node22/24HTTPcompatibilityactualPASS; R13boundedsource/drilltaskcomplete, hostedproofopen. Existing013/015mockrollback/orphanmatrixprepared, actualCIpending. ThenR14comprehensivecheckpointreport with precise residualproofgaps; remainingfocusedrange1–2.5hours excluding operationalproof/fixes/queues.
 
 SEQ-24 (2026-10-12): Isolated PostgreSQL run 38180374172 completed FAILURE; new guarded checkout rollback test reproduced canonical BILLING-EXTERNAL-TX-013 and BILLING-WEBHOOK-ORPHAN-015 in both SaaS and cashier. First order rolled back after synthetic external creation; same-key retry caused second fake provider creation and orphan webhook ignored order_not_found. Exact evidence recorded in ISSUES.md commit 8efdf168. Final quality/security workflows SUCCESS; isolated cashier workflow FAILURE. Meta fake-provider, full-schema restore, Node22 HTTP, cleanup steps PASS. Next: reconcile detailed new run counts, classify all remaining failures, update final report and whole-product gate inventory. Release remains BLOCKED; browser/RTL/accessibility, actual offline device, hosted RLS grants, media/PITR, real provider sandbox, staging startup and commercial/legal acceptance remain NOT VERIFIED. Do not treat synthetic test as real double charge; do not merge/deploy or alter business code without approval.
+
+
+## SEQ-113 current remaining queue (supersedes old exact-next rows)
+
+| Next | Task / exit evidence | Dependency / allowed scope |
+| --- | --- | --- |
+| SEQ114 | Guarded disposable PostgreSQL1→3→2/gap contract, exact/altered replay and paired two-device final-stock contention | New test-only assertions/fixtures permitted; no live DB. Define distinction between commerce gap and intentionally local-only adjustment. Preserve tenant/device/operation uniqueness and fault rollback |
+| SEQ115 | Expired/admin-closed prior-shift pending-operation recovery; sameoperator/newoperator/return/void/attribution-fault retry | Test-only actual HTTP on disposableDB; browser dependencies. Normal logout already blockspending and must not be removed |
+| SEQ116 | Real IndexedDB two-tab stock/compensation concurrency, versionchange automatic recovery and durablepending after restart | Chromium absent locally; identified safe browser needed. No fake browserPASS |
+| SEQ117 | Local sale/return/void altered-payload retry,7dayexpiry/cache tamper/clock restart and pending-upload partialacceptance | Source findings already known; add actualbrowser proof rather thanrepeat source assertions |
+| Repair gate | Prioritize013/015/012/018/027/028/032/FA-I-006 and UI findings; signed license/gap/recovery designs | Application changes require user approval after concrete design. No production changes |
+| Whole-product gates | Admin/merchant/staff flows; reportPDF/Excel/data parity; AR/EN/KU RTL/mobile/accessibility; hosted roles/readiness/image/rollback/media/PITR; authorizedproviders/settlement/commercialacceptance | Keep SOURCE_REVIEW/MOCKED_RUNTIME/DISPOSABLE_INTEGRATION/STAGING/BROWSER distinct; use current scope ledger, no duplicate findings |
+
+Planning estimate approximately50%(40–60% uncertainty) for engineering evidence coverage, not release eligibility. No reliabletime-to-release while repairs and target-environment/provider proof remain blocked. This audit batch did not execute new remoteCI; current existing runs are exact baseline evidence. Any new commit'sActions must be read before claiming current pass.

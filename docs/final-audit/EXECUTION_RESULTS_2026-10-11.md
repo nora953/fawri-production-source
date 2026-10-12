@@ -456,3 +456,35 @@ Sourcefe892e69, run38174186237/job114572937993:108PASS/11FAIL/0SKIP;29unique fil
 ## SEQ-24 actual isolated CI result (2026-10-12)
 
 [Run 38180374172](https://github.com/nora953/fawri-production-source/actions/runs/38180374172), job 114591512528, Node suite markers parsed from completed job log: **132 PASS / 21 FAIL / 0 SKIP**, **37 phase/runtime invocations**. Compared with SEQ-23 132/14, the seven added failed assertions/parents come from the new checkout rollback suite; do not count all 21 as independent defects. Failed suite markers: `meta-page-directory-restricted-rls.integration.test.mjs` 2P/3F; `cashier-billing-negative-failure-cases.integration.test.mjs` 2P/4F; `billing-external-checkout-rollback-postgres.integration.test.mjs` 0P/7F; `saas-billing-sql-failure-recovery.integration.test.mjs` 1P/2F; `saas-billing-negative-failure-cases.integration.test.mjs` 1P/4F; `reply-cross-cycle-refund-postgres.integration.test.mjs` 0P/1F. All other suite markers passed. New suite tests SaaS and cashier external creation followed by injected SQL rollback and orphan signed payment event; see canonical 013/015 evidence in ISSUES.md. CI steps for Meta injected provider, full committed-schema restore, Node22 HTTP, and owned cleanup succeeded. Final quality and security workflows succeeded, while isolated cashier workflow failed. No production or real gateway assertions.
+
+
+## SEQ-109–113 — baseline CI reconciliation and new local runtime audit
+
+Source audit23563ffba019a666e3d2f61f29769723d56b7e03; main d38d29229bed0f9575a98e7026e7819fe363bfd4. Read current-head23workflow records:21completedSUCCESS/2completedFAILURE. New documentation/test commit results are not yet known.
+
+[Isolated run38187646375](https://github.com/nora953/fawri-production-source/actions/runs/38187646375), job114613349687:37AUDIT_SUITE_RESULT markers/35unique files;132PASS/21FAIL/0SKIP, including parent tests. Failed suites below reproduce existing findings; not environment skips and not21 independent defects.
+
+| Suite | P/F/S | Canonical IDs |
+| --- | --- | --- |
+| meta-page-directory-restricted-rls.integration.test.mjs |2/3/0|FA-I-006|
+| cashier-billing-negative-failure-cases.integration.test.mjs |2/4/0|027/028/032|
+| billing-external-checkout-rollback-postgres.integration.test.mjs |0/7/0|013/015|
+| saas-billing-sql-failure-recovery.integration.test.mjs |1/2/0|032|
+| saas-billing-negative-failure-cases.integration.test.mjs |1/4/0|027/028/012|
+| reply-cross-cycle-refund-postgres.integration.test.mjs |0/1/0|018|
+
+Total failed markers14functional/7parents. Current-run cashier historical-operation1PASS, subscription1PASS, full-lifecycle1PASS, downgrade-grace1PASS, operator logout/PIN1PASS, own-history1PASS, compensation-history2PASS. Restricted session5PASS; injected Meta54PASS; full-schema seed1PASS/verify1PASS,28migration records/94tables/45policies/3functions/matching fingerprint/restricted reads; Node22HTTP1PASS. Owned container/volume cleanup stepSUCCESS. Reuse exact execution as bounded existing evidence, never actual staging/license/real-provider clearance.
+
+[Cashier run38187646619](https://github.com/nora953/fawri-production-source/actions/runs/38187646619): normal job114613350272SUCCESS (API/frontend typecheck and policy tests); isolated job114613350678FAILURE with later unselected phasesSKIPPED and cleanupSUCCESS. Skipped phases are not passed tests. Workflow itselfFAILURE.
+
+Local fresh commands, repository root, Nodev24.19.0:
+
+```sh
+node --test scripts/fawri-sync-audit.test.mjs
+node --test artifacts/fawri/tests/cashier-operator-outbox-hardening.test.mjs artifacts/api-server/tests/cashier-sync-contract.test.mjs artifacts/api-server/tests/cashier-compensation-sync-contract.test.mjs artifacts/api-server/tests/cashier-cash-tender-sync.test.mjs
+git diff --check
+```
+
+Results:27/27 mocked runtime audit testsPASS,18/18 source contractsPASS,0FAIL/0SKIP;diff checkPASS. Earlier16/23 intermediate counts are superseded by final27, not added to totals. Runtime scope: full actual uploader orchestration with inert session/fetch/outbox adapters; timeline function with in-memory query adapter; server sale parser/replay with modeled existing order and transaction/authority adapters; offline structural validation/clock functions. No PostgreSQL/IndexedDB, actual permissions middleware, cryptographic licensing, server HTTP, two tabs/devices, power failure or actual provider execution. StripTypeScriptTypes emits experimental warning, not assertion failure. Harness requires Node supporting node:module.stripTypeScriptTypes; bundledNode24 is used here. No dependency installation or CI workflow change.
+
+Browser prerequisite check: Playwright chromium.launch(headless:true) exits1 because chromium_headless_shell-1234 executable is absent. Browser testNOT_RUN / ENVIRONMENT_BLOCKED; application was not loaded. LocalDocker/psql unavailable. Do not bypass disposable guards, use live Neon, or call a real gateway to compensate. Test file and exact source/evidence ledger are committed for reproducibility.

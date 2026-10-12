@@ -55,3 +55,34 @@ Comprehensive non-code release scope saved as `COMPREHENSIVE_RELEASE_AUDIT_SCOPE
 Previous in-progress CI note is superseded. Completed isolated PostgreSQL run [38180374172](https://github.com/nora953/fawri-production-source/actions/runs/38180374172), job 114591512528: 132 PASS, 21 FAIL, 0 SKIP across 37 phase/runtime invocations. New synthetic checkout rollback suite 0 PASS/7 FAIL; SaaS and cashier both confirmed existing BILLING-EXTERNAL-TX-013 and BILLING-WEBHOOK-ORPHAN-015. Exact observations in ISSUES.md; exact suite breakdown in EXECUTION_RESULTS_2026-10-11.md (commit fd85f357); final launch-gate synthesis in FINAL_REPORT_DRAFT.md (commit 7e64bec4); remaining-work checkpoint in REMAINING_WORK_MATRIX.md (commit 6e2fc890). The CI run has completed: quality/security SUCCESS; isolated PostgreSQL FAILURE; cashier isolated FAILURE, normal cashier suite SUCCESS. Meta synthetic, full schema restore, Node22 HTTP, cleanup PASS. New CI from docs-only commits should not be interpreted as new code proof unless source/fixtures change. No new app business changes.
 
 **Next work:** prioritize existing issue IDs 013/015/012/018/027/028/032/FA-I-006 and UI006/016 with severity, acceptance tests and remediation dependencies; check coverage by user role and screen without treating source review as browser proof; record separate operator/owner approval requirements for real payment sandbox, hosted role grants, media/PITR, staging container startup and commercial/legal signoff. Avoid duplicate issue IDs or rerunning completed synthetic proofs without changed source. Release remains BLOCKED. Commit documentation checkpoints to GitHub; do not merge PR520 or deploy.
+
+
+## CURRENT RESUME — SEQ-113, 2026-10-12 (supersedes earlier next-task sections)
+
+Branch: `audit/conversation-notes-reconciliation-20261011`; draft PR #520. Last completed: SEQ-109–113. Reviewed source: `23563ffba019a666e3d2f61f29769723d56b7e03`; main: `d38d29229bed0f9575a98e7026e7819fe363bfd4`. Discover this documentation/test checkpoint from the branch HEAD; no self-referential SHA is embedded. Read current refs and PR discussion first. The old SEQ-26 handoff was stale: later SEQ-27–108 evidence is in PR comments and the existing cashier review files. Do not restart the audit.
+
+### Completed evidence
+
+- `scripts/fawri-sync-audit.test.mjs`: actual committed function bodies with explicit inert dependency adapters. 27 PASS / 0 FAIL / 0 SKIP on Node 24.19.0. This executes uploader orchestration, sale parsing/replay, timeline and offline-cache helpers, without application imports, DB, IndexedDB or provider calls. Tests asserting problematic current behavior being green mean reproducible evidence, not repaired product.
+- Existing four source-contract files: 18 PASS / 0 FAIL / 0 SKIP. Exact commands in EXECUTION_RESULTS_2026-10-11.md. Syntax and git diff checks PASS. Node stripTypeScriptTypes warning is nonfatal.
+- New canonical proof gaps: CASHIER-SYNC-SEQUENCE-001 (accept 1→3, reject later 2) and CASHIER-SYNC-SHIFT-001 (pending binding from prior shift rejects before upload). Normal logout already refuses pending envelopes, mitigating the ordinary shift-close path. Feasible expiry/admin-close recovery still needs integration proof.
+- Existing CASHIER-OFFLINE-001: structural validation accepts edited far-future grace; clock helpers reject >2-minute rollback and preserve the durable prior server-time estimate. No full POS licensing bypass claimed.
+- Server normalized hash rejects changed note and coherent changed quantity/totals; identical sale replays with no inventory access; cross-tenant mismatch rejects before transaction. Client invalid/partial ACK and network ambiguity retain operations; partial upload deletes accepted first operation only. These are mocked runtime results, not real SQL/HTTP/storage proof.
+
+### Current baseline CI
+
+Run 38187646375 / job 114613349687, source 23563ffb: 132 PASS / 21 FAIL / 0 SKIP, 35 unique files and 37 invocations. Fourteen functional failures and seven parents correspond to eight existing canonical findings: FA-I-006, 012, 013, 015, 018, 027, 028, 032. Current historical-operation test 1 PASS; compensation-history 2 PASS; restricted-session 5 PASS; injected Meta 54 PASS; full-schema restore, Node22 HTTP and owned cleanup PASS. Cashier run 38187646619: normal job 114613350272 PASS, isolated job 114613350678 FAIL. Of 23 current-head workflows, 21 SUCCESS and 2 FAIL. No rerun requested. New checkpoint Actions are UNKNOWN until inspected; baseline results must not be attributed to a later SHA as fresh execution.
+
+### Exact next task: SEQ-114
+
+Prepare guarded disposable PostgreSQL gap/backfill and simultaneous two-device final-stock tests. Read existing guards/runner/fixtures, add only new assertions: 1→3→2, intentionally local-only sequence gap, initial sequence >1, exact/altered replay, last-stock competition, sale-versus-return, transaction rollback and complete receipts. Existing CI does not cover this exact matrix. Test-only changes and documentation are authorized; application repairs are not.
+
+Then SEQ-115: reproduce pending operations after expired/admin-closed session, preserving historical staff/shift attribution. Test same/new operator, return/void, session restoration and core-sale commit followed by attribution failure/retry. Do not claim the ordinary logout path is broken or remove its pending safeguard.
+
+SEQ-116/117: actual browser IndexedDB multi-tab concurrency, versionchange recovery, local changed-payload sale/return/void replay, restart/outbox durability, exact 7-day expiry and cache/clock tampering. Browser launch is currently ENVIRONMENT_BLOCKED: Playwright is installed but Chromium headless-shell executable is absent. Docker/psql also unavailable locally. Never substitute live Neon or a real gateway for isolated tests.
+
+### Decisions and remaining gates
+
+Gap/tombstone/backfill policy, secure historical upload recovery and signed offline license threat model need concrete design approval before functional changes. Existing payment repair design remains unapproved. User forbids application fixes, main merge, deploy, live DB/secret changes and real payments without separate authorization. Continue independent authorized audit work when possible.
+
+Engineering audit planning estimate: approximately 50%, uncertain 40–60%, using explicit milestone/domain weights in PROGRESS.md; not a measured scenario pass rate, release-readiness percentage or release-date forecast. Release remains BLOCKED. Whole-product scope still includes dashboards, reporting/export, languages/RTL/mobile/accessibility, hosted grants/image/readiness/media/PITR, monitoring/rollback, authorized providers and commercial acceptance.
