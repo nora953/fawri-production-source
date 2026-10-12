@@ -107,9 +107,9 @@ try {
     await waitFor(()=>evaluate(cdp,'document.querySelectorAll("svg.recharts-surface").length===2'));
     await cdp('Emulation.setEmulatedMedia',{media:'print'});
     const shape=await evaluate(cdp,`({metrics:document.querySelectorAll('.report-summary-metric').length,operationRows:document.querySelectorAll('.report-print-operation-details tbody tr').length,
-      text:document.body.textContent,warning:document.body.textContent.includes(auditCopy.detailsLimited.replace('{limit}','30')),
+      text:document.body.textContent,warning:document.body.textContent.replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).includes(auditCopy.detailsLimited.replace('{limit}','30').replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))),
       net:document.querySelector('.report-summary-metric')?.textContent,characterSet:document.characterSet})`);
-    assert.equal(shape.characterSet,'UTF-8');assert.equal(shape.metrics,6);assert.equal(shape.operationRows,30);assert.equal(shape.warning,true);
+    assert.equal(shape.characterSet,'UTF-8');assert.equal(shape.metrics,6);assert.equal(shape.operationRows,30);assert.equal(shape.warning,true,'Localized partial-details notice must preserve its exact count30');
     assert.ok(shape.text.includes('End audit product'));
     const normalize=value=>String(value).replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g,d=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[^0-9]/g,'');
     assert.equal(normalize(shape.net),'697910');

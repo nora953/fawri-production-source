@@ -62,3 +62,31 @@ test('initial transient failure without preserve option clears admin UI identity
 test('malformed successful admin response on initial load clears identity',async()=>{
   const h=refreshHarness({status:200,body:{ok:true,admin:{is_admin:false}}});await h.api();assert.equal(h.current(),undefined);assert.equal(h.state.location,'/login');
 });
+
+const cleanupStart=controller.indexOf('    const merchantStatusConfirmTypes =');
+const cleanupEnd=controller.indexOf('  }, [canManageMerchants, canManageSubscriptions, canViewMerchantData]);',cleanupStart);
+assert.ok(cleanupStart>0&&cleanupEnd>cleanupStart);
+const cleanupCode=stripTypeScriptTypes(controller.slice(cleanupStart,cleanupEnd),{mode:'transform'});
+function pendingUi(capabilities,confirm){
+  const state={confirm,plan:'pending-plan',replies:'pending-replies',filter:'silver',deleteTarget:'merchant',details:'private-details'};
+  const fn=vm.runInNewContext(`()=>{${cleanupCode}}`,{...capabilities,
+    setConfirmDialog:fn=>state.confirm=fn(state.confirm),setPlanModal:v=>state.plan=v,setRepliesModal:v=>state.replies=v,
+    setFilterPlan:v=>state.filter=v,setDeleteMerchantTarget:v=>state.deleteTarget=v,setDetailsMerchant:v=>state.details=v,
+  },{timeout:2000});fn();return state;
+}
+test('losing merchant-management permission cancels its pending confirmation and delete target',()=>{
+  const r=pendingUi({canManageMerchants:false,canManageSubscriptions:true,canViewMerchantData:true},{type:'suspend'});
+  assert.equal(r.confirm,null);assert.equal(r.deleteTarget,null);assert.equal(r.plan,'pending-plan');
+});
+test('losing subscription permission cancels pending reply reset and billing modals',()=>{
+  const r=pendingUi({canManageMerchants:true,canManageSubscriptions:false,canViewMerchantData:true},{type:'reset_replies'});
+  assert.equal(r.confirm,null);assert.equal(r.plan,null);assert.equal(r.replies,null);assert.equal(r.filter,'all');
+});
+test('losing merchant-data visibility closes the private details modal',()=>{
+  const r=pendingUi({canManageMerchants:false,canManageSubscriptions:false,canViewMerchantData:false},{type:'approve'});
+  assert.equal(r.details,null);assert.equal(r.confirm,null);
+});
+test('retained permission preserves its relevant pending actions',()=>{
+  const r=pendingUi({canManageMerchants:true,canManageSubscriptions:true,canViewMerchantData:true},{type:'approve'});
+  assert.equal(r.confirm.type,'approve');assert.equal(r.plan,'pending-plan');assert.equal(r.details,'private-details');
+});
