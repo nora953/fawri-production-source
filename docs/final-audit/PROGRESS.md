@@ -697,3 +697,14 @@ Same milestone weights: source20%, functional30%, adversarial20%, target20%, acc
 | Hosting/backup/restore/operations |54%|
 
 Rounded domain mean **approximately53% audited /47%remaining**, plausible40–60% range. This is a planning judgment, not a measured pass rate or launch readiness. Full screens/modals/roles and physical/hosted/provider/commercial acceptance remain incomplete. Release BLOCKED.
+
+
+## SEQ-128–129 preparation — 2026-10-12
+
+Continue from saved54fdcd78, no audit restart. Application source unchanged; tests and documentation only.
+
+**SEQ-128 profit boundary / PREPARED:** source `postgresCashierOperatorReportAuthority.ts:59–72,175–189` redacts only currency-level profit/cost coverage, spreading nested `top_products`/`top_profitable_products` unchanged. Central product projection936–1014 includes productgross_profit and ranked profit lists. Candidate CASHIER-REPORT-PROFIT-001: a reports.sales+sale.view_own cashier withoutreports.profit may receive profit despite can_view_profit:false. New guarded actualHTTP test seeds a real synthetic1000sale/500cost, checks nested values and ranking absence without grant, then checks authorized grant allows actual500profit. No permission bypass assumed until runtime; positive control prevents false green from unknown costs. Local syntaxPASS, direct no-attestation refusalPASS before DB imports. Registered first in existing network-none cashier batch. SQL/HTTP NOT_RUN pendingCI.
+
+**SEQ-129 receipt native print / PREPARED:** `scripts/fawri-receipt-print-audit.mjs` and minimal workflow bundle actual renderCashierReceiptHtml/translation/money/profile dependencies, fresh UTF-8 loopback Chrome, CSP blocksnetwork/images/fonts. Six cases AR/EN/Sorani×58/80mm: bodywidth/nooverflow, two sale lines, exact2400total, reprint marker, cost sentinel absent, hostileproduct/variant/store/station markup escaped with no activeimg/script/iframe, PDFconsumer retains last item/saleID. Actual caller-generated receipt CSS used; no physicalthermalprinter, POSflow orprintdialog/iframe lifecycle proof. LocalsyntaxPASS; browserNOT_RUN pendingCI. Existing receipt unit tests are source references, not rerun proof.
+
+Prior aggregate137PASS/21FAIL on e1320f86 reused. Expected new inventory39unique/41invocations is provisional; actual counters fromlogs only. Planning estimate~53%, releaseBLOCKED. Next inspect new suites, classify fixturevsproduct failure, then centralcashier report presentation and remaining owner/merchant/administration scope. No repair plan orapplication changes before comprehensive audit completes.
