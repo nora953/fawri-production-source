@@ -1,3 +1,4 @@
+import { getDiscardUnsavedNoteCopy } from "@/lib/translations/features/admin/AdminNotesDialogCopy";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
@@ -559,7 +560,7 @@ export function DetailsModal({
   canManageSubscriptions: boolean;
   canManageChannels: boolean;
   onClose: () => void;
-  onSaveNote: (note: string) => void;
+  onSaveNote: (note: string) => Promise<boolean>;
   onChannelStatusChange: (platform: string, status: string) => void;
 }) {
   const { lang } = useI18n();
@@ -568,6 +569,24 @@ export function DetailsModal({
     "store" | "subscription" | "channels" | "notes"
   >("store");
   const [noteText, setNoteText] = useState(notes);
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const hasUnsavedNote = noteText !== notes;
+
+  const requestClose = () => {
+    if (isSavingNote) return;
+    if (hasUnsavedNote && !window.confirm(getDiscardUnsavedNoteCopy(lang))) return;
+    onClose();
+  };
+  const handleSaveNote = async () => {
+    if (isSavingNote) return;
+    setIsSavingNote(true);
+    try {
+      const saved = await onSaveNote(noteText);
+      if (saved) toast.success(adminText.detailsNotesSaved);
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
   useEffect(() => {
     setNoteText(notes);
   }, [merchant.id, notes]);
@@ -686,7 +705,7 @@ export function DetailsModal({
     ],
   ];
   return (
-    <Dialog open onOpenChange={onClose}>
+    <Dialog open onOpenChange={(open) => { if (!open) requestClose(); }}>
       <DialogContent
         className={`flex max-h-[92vh] w-full max-w-3xl flex-col p-0 ${
           adminText.dir === "rtl"
@@ -923,6 +942,7 @@ export function DetailsModal({
                   className={`min-h-36 ${textAlignmentClass}`}
                   rows={6}
                   value={noteText}
+                  disabled={isSavingNote}
                   onChange={(event) =>
                     setNoteText(event.target.value)
                   }
@@ -932,10 +952,8 @@ export function DetailsModal({
               <div className="flex justify-start">
                 <Button
                   size="sm"
-                  onClick={() => {
-                    onSaveNote(noteText);
-                    toast.success(adminText.detailsNotesSaved);
-                  }}
+                  disabled={isSavingNote}
+                  onClick={() => void handleSaveNote()}
                 >
                   {adminText.detailsSaveNotes}
                 </Button>
@@ -943,11 +961,7 @@ export function DetailsModal({
             </div>
           )}
         </div>
-        <div className="flex justify-start border-t px-5 pb-3 pt-3">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            {adminText.close}
-          </Button>
-        </div>
+
       </DialogContent>
     </Dialog>
   );

@@ -1256,15 +1256,17 @@ export function useAdminPageController() {
         },
       );
       const data = await response.json().catch(() => null);
-      if (handleUnauthorizedAdminResponse(response)) return;
+      if (handleUnauthorizedAdminResponse(response)) return false;
       if (!response.ok || !data?.ok) {
         throw new Error(data?.error || "Could not save merchant note");
       }
       setAdminNotesMap((current) => ({ ...current, [merchantId]: data.note || "" }));
       logAction("note_saved", m, adminText.logInternalNoteSaved);
+      return true;
     } catch (error) {
       console.error("Merchant note save failed:", error);
       toast.error(adminText.deletionOperationError);
+      return false;
     }
   };
 

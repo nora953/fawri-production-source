@@ -9,6 +9,7 @@ import {
   getSubscriptionStatusLabel,
 } from "@/lib/admin-status-translations";
 import { ADMIN_SECURITY_ACTION_COPY } from "@/lib/translations/features/admin/AdminSecurityActions";
+import { localizedAuditAction, localizedAuditReason } from "@/lib/translations/features/admin/AdminAuditLogCopy";
 import {
   getMerchants,
   saveMerchants,
@@ -599,7 +600,7 @@ export function LogsTab({ logs }: { logs: AdminLog[] }) {
                 key={action}
                 value={action}
               >
-                {actionLabel[action] ?? action}
+                {actionLabel[action] ?? localizedAuditAction(lang, action)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -625,8 +626,7 @@ export function LogsTab({ logs }: { logs: AdminLog[] }) {
                     ·
                   </span>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-                    {actionLabel[log.action_type] ??
-                      log.action_type}
+                    {actionLabel[log.action_type] ?? localizedAuditAction(lang, log.action_type)}
                   </span>
                   {log.details && (
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -636,7 +636,7 @@ export function LogsTab({ logs }: { logs: AdminLog[] }) {
                   {log.reason && (
                     <p className="mt-1 text-xs text-orange-600 dark:text-orange-400">
                       {adminText.logsReasonLabel}:{" "}
-                      {log.reason}
+                      {localizedAuditReason(lang, log.reason)}
                     </p>
                   )}
                   {(log.admin_role === "owner_admin" ||

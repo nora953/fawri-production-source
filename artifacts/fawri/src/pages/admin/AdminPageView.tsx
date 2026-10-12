@@ -769,7 +769,7 @@ export function AdminPageView({ model }: { model: AdminPageViewModel }) {
           canManageSubscriptions={canManageSubscriptions}
           canManageChannels={canManageChannels}
           onClose={() => setDetailsMerchant(null)}
-          onSaveNote={(note) => void doSaveNote(detailsMerchant.id, note)}
+          onSaveNote={(note) => doSaveNote(detailsMerchant.id, note)}
           onChannelStatusChange={(p, s) =>
             void doChannelStatusChange(detailsMerchant.id, p, s)
           }
