@@ -18,10 +18,10 @@ let browser, server;
 const sockets = [];
 const evidence = { browser: null, source: process.env.GITHUB_SHA || 'local', results: [] };
 let infrastructureError;
-async function waitFor(fn, limitMs = 15000) {
+async function waitFor(fn, limitMs = 15000, label = 'Browser prerequisite') {
   const until = Date.now() + limitMs;
   while (Date.now() < until) { try { const v = await fn(); if (v) return v; } catch {} await delay(100); }
-  throw Error('Browser prerequisite timed out');
+  throw Error(label + ' timed out');
 }
 async function connect(url) {
   const ws = new WebSocket(url);
@@ -91,17 +91,17 @@ try {
  const target=await(await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`,{method:'PUT'})).json();
  const cdp=await connect(target.webSocketDebuggerUrl);await cdp('Runtime.enable');await waitFor(()=>evaluate(cdp,'Boolean(globalThis.auditCopy)'));return {cdp,key:new URL(url).search};
  }
- const loaded=c=>waitFor(()=>evaluate(c,'document.body.textContent.includes("AUDIT_SUPPORT_MESSAGE")'));
+ const loaded=c=>waitFor(()=>evaluate(c,'document.body.textContent.includes("AUDIT_SUPPORT_MESSAGE")'),15000,'support ticket message rendered');
  const click=(c,expr)=>evaluate(c,`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${expr}).click();true`);
  for(const lang of ['ar','en','ku'])await check(`actual merchant support ${lang} mobile loading and escaped conversation`,async()=>{
  const {cdp}=await tab('merchant',lang);await cdp('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
- await waitFor(()=>evaluate(cdp,'document.body.textContent.includes(auditCopy.support_loading)'));await loaded(cdp);const shape=await evaluate(cdp,`({dir:document.querySelector('#root>div').getAttribute('dir'),
+ await waitFor(()=>evaluate(cdp,'document.body.textContent.includes(auditCopy.support_loading)'),15000,'merchant loading text');await loaded(cdp);const shape=await evaluate(cdp,`({dir:document.querySelector('#root>div').getAttribute('dir'),
  width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,active:document.querySelectorAll('#root img,#root script').length,
  reply:document.querySelector('textarea')?.disabled,newDisabled:document.querySelector('[aria-label="'+auditCopy.support_new_ticket+'"]').disabled})`);
  assert.equal(shape.dir,lang==='en'?'ltr':'rtl');assert.equal(shape.width,390);assert.equal(shape.overflow,false);assert.equal(shape.active,0);assert.equal(shape.reply,false);assert.equal(shape.newDisabled,false);
  await evaluate(cdp,`document.querySelector('[aria-label="'+auditCopy.support_new_ticket+'"]').focus();true`);
  await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
- await waitFor(()=>evaluate(cdp,'Boolean(document.querySelector("input[maxlength=\"120\"]"))'));
+ await waitFor(()=>evaluate(cdp,'Boolean(document.querySelector("input[maxlength=\"120\"]"))'),15000,'keyboard-opened new ticket form');
  assert.equal(await evaluate(cdp,'document.querySelectorAll("label").length>=3'),true);
  return {...shape,keyboardCreate:true,limits:'Actual mounted component/i18n/CSS with synthetic API; no backend/session, full visual or accessibility signoff.'};
  });
