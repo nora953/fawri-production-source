@@ -58,8 +58,9 @@ try {
       quantity:2,base_unit_price_minor:1000,effective_unit_price_minor:1000,discount_minor:0,line_total_minor:2000,unit_cost_minor:321,cost_evidence:'PRIVATE_COST_SENTINEL'},
       {line_id:'two',product_id:'two',product_name_snapshot:'Last audit item',quantity:1,base_unit_price_minor:500,effective_unit_price_minor:500,discount_minor:0,line_total_minor:500}],
     subtotal_minor:2500,manual_discount_minor:100,discount_minor:100,total_minor:2400,payment_method:'cash',payment_status:'paid',cash_tendered_minor:3000,change_due_minor:600,occurred_at:'2026-10-12T00:00:00Z'};
-  const entry=`import {renderCashierReceiptHtml} from './artifacts/fawri/src/lib/cashierReceiptPrinting.ts';
+  const entry=`import {renderCashierReceiptHtml,printCashierReceipt} from './artifacts/fawri/src/lib/cashierReceiptPrinting.ts';
     const p=new URLSearchParams(location.search);const lang=p.get('lang');const width=Number(p.get('width'));
+    globalThis.auditPrintReceipt=printCashierReceipt;globalThis.auditSale=${JSON.stringify(sale)};
     const html=renderCashierReceiptHtml({sale:${JSON.stringify(sale)},lang,paperWidthMm:width,storeName:'Synthetic & Store',stationLabel:'Station <unsafe>',reprint:true});
     const render=()=>{document.open();document.write(html);document.close();globalThis.auditRendered=true;};
     if(document.readyState==='complete')render();else addEventListener('load',render,{once:true});`;
@@ -75,9 +76,10 @@ try {
   browser.stderr.on('data',()=>{});browser.on('error',e=>{infrastructureError=e.message;});
   const port=await waitFor(async()=>Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]));
   evidence.browser=(await(await fetch(`http://127.0.0.1:${port}/json/version`)).json()).Browser;
+  let lastCdp;
   for(const lang of ['ar','en','ku'])for(const width of [58,80])await check(`actual receipt ${lang} ${width}mm`,async()=>{
     const target=await(await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(origin+`/?lang=${lang}&width=${width}`)}`,{method:'PUT'})).json();
-    const cdp=await connect(target.webSocketDebuggerUrl);await cdp('Runtime.enable');
+    const cdp=await connect(target.webSocketDebuggerUrl);lastCdp=cdp;await cdp('Runtime.enable');
     await waitFor(()=>evaluate(cdp,'globalThis.auditRendered===true'));
     const cssWidth=width*96/25.4;await cdp('Emulation.setDeviceMetricsOverride',{width:Math.ceil(cssWidth),height:1200,deviceScaleFactor:1,mobile:false});
     await cdp('Emulation.setEmulatedMedia',{media:'print'});
@@ -97,6 +99,30 @@ try {
     return {widthMm:width,pages:pages.length,bytes:bytes.length,totalMinor:2400,activeMarkup:0,costSentinelExposed:false,reprintMarker:true,
       limits:'Actual receipt HTML and Chrome PDF, synthetic sale/system fonts; not physical thermal printer, print-dialog/iframe cleanup or full POS workflow.'};
   });
+
+  for(const throwPrint of [false,true])await check(throwPrint?'actual receipt iframe removes itself after print failure':'actual receipt iframe afterprint cleanup',async()=>{
+    const outcome=await evaluate(lastCdp,`(async()=>{
+      const append=document.body.appendChild;let printCalls=0;let iframeHtml='';
+      document.body.appendChild=function(el){
+        if(el.tagName==='IFRAME')el.addEventListener('load',()=>{iframeHtml=el.contentDocument.body.textContent;
+          el.contentWindow.print=()=>{printCalls++;${throwPrint?"throw new Error('AUDIT_SYNTHETIC_PRINT_FAILURE');":''}};
+        },{capture:true,once:true});
+        return append.call(this,el);
+      };
+      let error=null;
+      try{await auditPrintReceipt({sale:auditSale,lang:'en',storeName:'Synthetic Store',paperWidthMm:80,reprint:true});}
+      catch(e){error=e.message;}
+      finally{document.body.appendChild=append;}
+      const beforeCleanup=document.querySelectorAll('iframe').length;
+      for(const frame of document.querySelectorAll('iframe'))frame.contentWindow.dispatchEvent(new Event('afterprint'));
+      return {printCalls,error,beforeCleanup,afterCleanup:document.querySelectorAll('iframe').length,
+        costHidden:!iframeHtml.includes('PRIVATE_COST_SENTINEL'),itemPresent:iframeHtml.includes('Last audit item')};
+    })()`);
+    assert.equal(outcome.printCalls,1);assert.equal(outcome.afterCleanup,0);assert.equal(outcome.costHidden,true);assert.equal(outcome.itemPresent,true);
+    if(throwPrint){assert.equal(outcome.error,'AUDIT_SYNTHETIC_PRINT_FAILURE');assert.equal(outcome.beforeCleanup,0);}
+    else{assert.equal(outcome.error,null);assert.equal(outcome.beforeCleanup,1);}
+    return {...outcome,limits:'Actual native iframe load and helper/error/cleanup; print method inert and afterprint explicitly dispatched. No physical/native print-dialog proof.'};
+  });
 } catch(e){infrastructureError=e.message;}
 finally {
   for(const ws of sockets)ws.close();
@@ -113,4 +139,4 @@ finally {
 
 if(infrastructureError)evidence.infrastructureError=infrastructureError;
 console.log('AUDIT_RECEIPT_PRINT_RESULT '+JSON.stringify(evidence));
-if(infrastructureError||evidence.results.length!==6||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
+if(infrastructureError||evidence.results.length!==8||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
