@@ -101,15 +101,18 @@ test('current full Authv2 management and session boundaries on owned SQL',async 
 
  await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,language,phone_verified,phone_verified_at) VALUES($1,'admin','+9647987111004',$2,'active','en',true,now())",[deniedId,hashPassword('OwnedDenied9!')]);
  await pool.query("INSERT INTO admin_profiles(id,account_id,profile_kind,display_name,role,enabled,must_change_password) VALUES($1,$1,'admin','Owned denied assistant','assistant_admin',true,false)",[deniedId]);
- const ownerSession=await auth.issueSession({accountId:ownerId,accountKind:'admin',tenantId:'fawri-admin',adminRole:'owner_admin',permissions:[]});
- const assistantSession=await auth.issueSession({accountId:assistantId,accountKind:'admin',tenantId:'fawri-admin',adminRole:'assistant_admin',permissions:['view_merchants','manage_merchant_status','manage_channels']});
- const deniedSession=await auth.issueSession({accountId:deniedId,accountKind:'admin',tenantId:'fawri-admin',adminRole:'assistant_admin',permissions:[]});
+ const devices={owner:'owned-owner-device',assistant:'owned-assistant-device',denied:'owned-denied-device'};
+ const security=await import('../../../artifacts/api-server/src/services/postgresAdminSecurityAuthority.js');
+ for(const [accountId,deviceId] of [[ownerId,devices.owner],[assistantId,devices.assistant],[deniedId,devices.denied]]){const device=await security.registerAdminDeviceAuthoritative({accountId,accountKind:'admin',deviceId,deviceLabel:'Owned synthetic trusted device'});await security.setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:ownerId});}
+ const ownerSession=await auth.issueSession({accountId:ownerId,accountKind:'admin',tenantId:'fawri-admin',adminRole:'owner_admin',deviceId:devices.owner,permissions:[]});
+ const assistantSession=await auth.issueSession({accountId:assistantId,accountKind:'admin',tenantId:'fawri-admin',adminRole:'assistant_admin',deviceId:devices.assistant,permissions:['view_merchants','manage_merchant_status','manage_channels']});
+ const deniedSession=await auth.issueSession({accountId:deniedId,accountKind:'admin',tenantId:'fawri-admin',adminRole:'assistant_admin',deviceId:devices.denied,permissions:[]});
  const ownerCookie=`${ADMIN_SESSION_COOKIE}=${ownerSession.token}`,assistantCookie=`${ADMIN_SESSION_COOKIE}=${assistantSession.token}`,deniedCookie=`${ADMIN_SESSION_COOKIE}=${deniedSession.token}`;
  const app=express();app.use(cookieParser());app.use(express.json());app.use('/api/auth',authRouter);
  server=await new Promise<any>((ok,no)=>{const s=app.listen(0,'127.0.0.1',()=>ok(s));s.once('error',no);});const origin=`http://127.0.0.1:${server.address().port}`;
  const observations:any[]=[];
  async function run(name:string,fn:()=>Promise<any>){let passed=false;await t.test(name,async()=>{const details=await fn();observations.push({name,status:'PASS',details});passed=true;});if(!passed)throw Error('Later dependent cases BLOCKED after '+name);}
- async function req(route:string,cookie?:string,method='GET',value?:unknown){const r=await fetch(origin+'/api/auth'+route,{method,headers:{...(cookie?{Cookie:cookie}:{}),...(value!==undefined?{'Content-Type':'application/json'}:{})},...(value!==undefined?{body:JSON.stringify(value)}:{})});return {status:r.status,body:await r.json().catch(()=>null)};}
+ async function req(route:string,cookie?:string,method='GET',value?:unknown){const r=await fetch(origin+'/api/auth'+route,{method,headers:{...(cookie?{Cookie:cookie,...(cookie===ownerCookie?{'x-fawri-device-id':devices.owner}:cookie===assistantCookie?{'x-fawri-device-id':devices.assistant}:cookie===deniedCookie?{'x-fawri-device-id':devices.denied}:{})}:{}),...(value!==undefined?{'Content-Type':'application/json'}:{})},...(value!==undefined?{body:JSON.stringify(value)}:{})});return {status:r.status,body:await r.json().catch(()=>null)};}
  async function state(){return (await pool.query('SELECT a.state,m.status,m.account_status FROM accounts a JOIN merchants m ON m.id=a.id WHERE a.id=$1',[merchantId])).rows[0];}
  const merchantRoute='/merchants/'+merchantId;let merchantSession:any,firstRequest:any,secondRequest:any;
  await run('unauthenticated management read is denied',async()=>{assert.equal((await req('/merchants')).status,401);return {status:401};});
