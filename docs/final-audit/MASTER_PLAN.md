@@ -1,5 +1,10 @@
 # Fawri final audit — master plan
 
+## SEQ-166 checkpoint — 2026-10-13
+
+Before remediation: preserve fail-closed attestation, ensure network-none disposable DB provisioning and marker, route global admin integration through proven runner; reconcile DB-00..08 individually using exact CI job links. Avoid claiming cancelled jobs as test failures.
+
+
 ## SEQ-165 checkpoint — 2026-10-13
 
 Audit pending: compare isolated PostgreSQL runner patterns and migrate orchestration only after audit completed; run admin journey with valid disposable attestation then test owner non-owner and concurrent recovery. Maintain fail-closed guard.
