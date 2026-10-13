@@ -1,3 +1,13 @@
+## Current audit continuation — SEQ-255 (2026-10-13)
+
+This is a documentation-only checkpoint; historical sections below remain intact. Source review and PR #520 comments now reach SEQ-254, while the previously displayed handoff header only reached SEQ-142. Do not treat SEQ numbering as percentage complete or as test PASS counts.
+
+Latest audit comment: https://github.com/nora953/fawri-production-source/pull/520#issuecomment-6136210334 . Comparative support/emergency UI source review SEQ-226–250 and evidence governance SEQ-251–254 are recorded in PR comments; not all findings are yet reconciled into AUDIT_REGISTER.md, ISSUES.md, PROGRESS.md and MASTER_PLAN.md. Avoid duplicate issue IDs and do not infer runtime PASS from source inspection.
+
+Confirmed existing bounded CI evidence remains: AdminPage browser 15PASS/0FAIL run38325986744; support preview browser 6PASS/4FAIL run38325986879, with stale private snapshot on silent409/503/expiry and end503 navigation; actual emergency snapshot browser12 and expanded support preview11 are PREPARED, execution result NOT VERIFIED here. Older SQL/HTTP 144PASS/24FAIL/0SKIP remains distinct. Release BLOCKED; ~54% planning estimate only. No application fixes, merge, deployment or hosted mutation. Next: verify new browser runs against exact commit and reconcile canonical ledgers, then continue untested routes and runtime boundaries.
+
+---
+
 # Fawri audit — current authoritative handoff
 
 ## SEQ-140 verified; SEQ-141 findings; SEQ-142 prepared — 2026-10-13
