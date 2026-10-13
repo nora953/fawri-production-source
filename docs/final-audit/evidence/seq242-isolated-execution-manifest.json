@@ -1,7 +1,7 @@
 {
   "baseline": "17e521408b9fdc5621c18839f88d5f22a2c5992b",
   "mode": "PREPARED_DOCUMENT_ONLY",
-  "selection": "13unresolved integration files; official runner/workflow not edited",
+  "selection": "13 original files invoked by new audit-only workflow; original assertions unchanged",
   "files": [
     {
       "file": "artifacts/api-server/tests/catalog-variant-inventory-history-postgres.integration.test.ts",
@@ -11,7 +11,7 @@
         "cashier sale variant mutation survives a later catalog graph rebuild"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "EXECUTED_FAIL_REQUIRES_TRIAGE",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -21,7 +21,18 @@
       ],
       "observed_cleanup_hooks": [
         "test.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "catalog-variant-inventory-history-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 1,
+        "summaryComplete": true,
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/catalog-variant-promotion-survival-postgres.integration.test.ts",
@@ -30,7 +41,7 @@
         "variant promotion survives an ordinary catalog rebuild that preserves the variant"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "PASS",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -40,7 +51,18 @@
       ],
       "observed_cleanup_hooks": [
         "test.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "catalog-variant-promotion-survival-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 0,
+        "summaryComplete": true,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/catalog-variant-removal-history-conflict-postgres.integration.test.ts",
@@ -49,7 +71,7 @@
         "removing a variant with inventory history fails closed and rolls the catalog transaction back"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "EXECUTED_FAIL_REQUIRES_TRIAGE",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -59,7 +81,18 @@
       ],
       "observed_cleanup_hooks": [
         "test.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "catalog-variant-removal-history-conflict-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 1,
+        "summaryComplete": true,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/catalog-variant-row-preservation-postgres.integration.test.ts",
@@ -69,7 +102,7 @@
         "cashier sale evidence survives an ordinary product edit with the same variant identity"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "EXECUTED_FAIL_REQUIRES_TRIAGE",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -79,7 +112,18 @@
       ],
       "observed_cleanup_hooks": [
         "test.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "catalog-variant-row-preservation-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 1,
+        "summaryComplete": true,
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/emergency-read-access-postgres.integration.test.ts",
@@ -88,7 +132,7 @@
         "Emergency read access is PostgreSQL authoritative with Auth v2 sessions"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "PASS",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -97,7 +141,18 @@
       ],
       "observed_cleanup_hooks": [
         "t.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "emergency-read-access-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 0,
+        "summaryComplete": true,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/emergency-read-access.integration.test.mjs",
@@ -106,7 +161,7 @@
         "emergency read access is owner-controlled, secret-safe, read-only, and audited"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "EXECUTED_FAIL_REQUIRES_TRIAGE",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -116,7 +171,18 @@
       ],
       "observed_cleanup_hooks": [
         "t.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "emergency-read-access.integration.test.mjs",
+        "runtime": "v24.21.0",
+        "exit": 1,
+        "summaryComplete": true,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/knowledge-postgres-lifecycle.integration.test.ts",
@@ -125,7 +191,7 @@
         "merchant Knowledge lifecycle deletion is PostgreSQL-authoritative and tenant-scoped"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "PASS",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -135,7 +201,18 @@
       ],
       "observed_cleanup_hooks": [
         "t.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "knowledge-postgres-lifecycle.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 0,
+        "summaryComplete": true,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/merchant-management-postgres.integration.test.ts",
@@ -144,7 +221,7 @@
         "merchant management and deletion are PostgreSQL authoritative end to end"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "INCOMPLETE_FIXTURE_BLOCKED",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -153,7 +230,18 @@
       ],
       "observed_cleanup_hooks": [
         "t.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "merchant-management-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 7,
+        "summaryComplete": false,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/merchant-retention-postgres.integration.test.ts",
@@ -162,7 +250,7 @@
         "PostgreSQL retention enforces read-only, suspension, and renewal protection"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "EXECUTED_FAIL_REQUIRES_TRIAGE",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -171,7 +259,18 @@
       ],
       "observed_cleanup_hooks": [
         "t.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "merchant-retention-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 1,
+        "summaryComplete": true,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/order-payment-hardening.integration.test.mjs",
@@ -180,7 +279,7 @@
         "HTTP payment API rejects generic terminal writes and persists one audited decision"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "EXECUTED_FAIL_REQUIRES_TRIAGE",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -190,7 +289,18 @@
       ],
       "observed_cleanup_hooks": [
         "t.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "order-payment-hardening.integration.test.mjs",
+        "runtime": "v24.21.0",
+        "exit": 1,
+        "summaryComplete": true,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/owner-admin-postgres.integration.test.ts",
@@ -200,7 +310,7 @@
         "owner administrator provisions once and gates production readiness on PostgreSQL"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "EXECUTED_FAIL_REQUIRES_TRIAGE",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -210,7 +320,18 @@
       ],
       "observed_cleanup_hooks": [
         "t.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "owner-admin-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 1,
+        "summaryComplete": true,
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/runtime-authorities-postgres.integration.test.ts",
@@ -228,7 +349,7 @@
         "required operational PostgreSQL authority creates no legacy runtime JSON files"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "PASS",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -238,7 +359,18 @@
       ],
       "observed_cleanup_hooks": [
         "test.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "runtime-authorities-postgres.integration.test.ts",
+        "runtime": "v24.21.0",
+        "exit": 0,
+        "summaryComplete": true,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     },
     {
       "file": "artifacts/api-server/tests/support-images.integration.test.mjs",
@@ -247,7 +379,7 @@
         "support images are private, validated, and tenant-bound"
       ],
       "safety_preflight": "2PASS missing-url/unattested-hosted-target",
-      "original_runtime": "NOT_RUN",
+      "original_runtime": "EXECUTED_FAIL_REQUIRES_TRIAGE",
       "run_each_in_fresh_owned_cluster": true,
       "required": [
         "disposable attestation preload before app imports",
@@ -257,7 +389,21 @@
       ],
       "observed_cleanup_hooks": [
         "t.after("
-      ]
+      ],
+      "observed_runtime": {
+        "file": "support-images.integration.test.mjs",
+        "runtime": "v24.21.0",
+        "exit": 1,
+        "summaryComplete": true,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "cleanup": true
+      },
+      "previous_runtime_status": "NOT_RUN"
     }
-  ]
+  ],
+  "runtime_evidence_checkpoint": "SEQ-278",
+  "run_id": 38428443462,
+  "job_id": 115403939524
 }

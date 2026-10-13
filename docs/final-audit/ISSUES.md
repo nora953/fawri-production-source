@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-274–281 (2026-10-13)
+
+Latest [SEQ-274–281](SEQ_274_281_REAL_RESIDUAL_POSTGRES_20261013.md), auditexecutioncommit `3d4a4f529e7463448a4587b9d729e60f534734ac`. **NextSEQ-282**. NEW audit-onlyworkflow/executors; application/originaltests/schema/existingworkflows/scanner unchanged.
+
+Actualoriginal13files on13freshnetwork-nonePGclusters/28migrations each:12complete summaries16PASS/8FAIL/0SKIP;1incompletefixture.4fullygreenfiles/8completefailed/1incomplete. OwnedteardownSUCCESS. Failures largely obsoletefixtures; variantremovalarchivecontractTRIAGE, no newlyconfirmedproductdefect. NEWMEDIUM RESIDUAL-FIXTURE-CONTRACT-001 groupsfixturemaintenance. No originaltestpatched.
+
+Local4newrunnercontrolsPASS;7canonicalconsentadaptercases6P/1F strengthens existingexpiryrollbackfinding. Safe13selection resolvesuncertainty34→21/277;notuntestedcodepercentage.222fullroutecasesNOT_RUN/actualblockedbusinessassertions/externalgates remainopen. Wholepercentage **NOT_YET_MEASURABLE**. Historicalcheckpointresults retained;ReleaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-266–273 (2026-10-13)
 
 Latest [SEQ-266–273](SEQ_266_273_PREVIEW_BINDING_EXPIRY_ROLES_20261013.md), baseline `583774144dc24a840e7462227865db35bd19a0dc`. **NextSEQ-274**. Audit only; application/originaltests/workflows/schema unchanged.
@@ -738,3 +747,9 @@ SecurityCI scannerfailure1syntheticcredentialURL in auditfixture was a toolfixtu
 | SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 | LOW/OPEN/FUNCTION_COMPOSITION_CONFIRMED_SQL_PENDING | ExpiryUPDATEended thenthrow reachesactualhelperROLLBACK;adapterstateactive. Expiredaccessdenied;separatescheduledlifecycleexpirycancommit. NoSQL/browser/expiredaccessbypassclaim. |
 
 Supportpreviewvisualroutefixturecorrected toassistantwithmanage_support+inspect_merchant_sessions;ownerdenial4roleadaptertestsPASS.222casesremainNOT_RUN. Priorfindingsretained;noactualproductionfix orclosedissue.
+
+## SEQ-274–281 original runtime triage
+
+RESIDUAL-FIXTURE-CONTRACT-001 MEDIUM/OPEN/TEST_MAINTENANCE: realownedPGinvocation13files shows oldcashierentitlement/localphone/legacyJSONauth/legacycookie/productiongate fixtureexpectations failcurrentcontracts.12complete16P/8F;oneincomplete23514merchantmanagementseed. Variantremoval Missingexpectedrejection conflicts withcurrentarchiveintent; actualpostremovalhistoryacceptancepending, no productdefectdeclared fromoldtest alone. Source/remapping inreport. Originaltests/appunchanged.
+
+Fourfullygreenfiles:catalogpromotions/emergencyPG/knowledge lifecycle/runtime authorities. Mixedpositivecataloginventoryrows andactualownerprovisioningPASS, not blanketclearance. Incompletemerchantmanagementseed/latehook strengthens existingDB-TEST-CLEANUP-021;ownedcontainercleanupSUCCESS. Canonicalconsentexpiryadapter6P/1F extends existingSUPPORT-PREVIEW-EXPIRY-ROLLBACK-001, no duplicate. Allpreviousfindingsretained.
