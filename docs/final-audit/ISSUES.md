@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-240–247 (2026-10-13)
+
+Latest [SEQ-240–247](SEQ_240_247_ENTRYPOINT_FENCES_META_RECOVERY_20261013.md), baseline `17e521408b9fdc5621c18839f88d5f22a2c5992b`. **NextSEQ-248**. Audit only; original application/tests/workflows/schema unchanged.
+
+46localcontrols46PASS/0FAIL/0SKIP:26pre-import guardrefusals for13 residual entrypoints,20actualMeta recovery function cases with inertrefund/state adapters. **Original13 integration runtime NOT_RUN**, native direct-entrypoint safety/CI wiring not certified. Prepared per-file freshcluster executionmanifest; no guard weakened.
+
+Current33Actions26SUCCESS/7FAILURE. Receipt run38350269903/job115140836967 native8PASS; previous launchtimeout0assertions preserved. Zero new canonical product defects; prior refund-cycle/shutdown/DBsafety findings remainopen. Wholepercent **NOT_YET_MEASURABLE**; remaining13integration/fullUI/actualPG/provider/hosted proofs unchanged. Historical evidence retained. ReleaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-232–239 (2026-10-13)
 
 Latest [SEQ-232–239](SEQ_232_239_WORKER_SIGTERM_MONITOR_RACES_20261013.md), baseline `6ef87566bb55f6d6c9d7fc17698e4af210980482`. **NextSEQ-240**. Audit only; application/existing tests/workflows/schema unchanged.
@@ -673,3 +682,7 @@ OPS-WORKER-DRAIN-001 MEDIUM/OPEN: realSIGTERM/realprocess.exit/realHTTPclose/loc
 WORK-MONITOR-STALE-001 OPEN: lateoldadmin response overwrites newadmin data; lateoldsuccess clears newer403error; pending revoke-session callback still attempts POST after visible/silent403.8callbacktests4P/4F; not mountedReact/backend bypass. Server route still requires secure session/owner/password. No duplicates.
 
 Receipt run38348021288/job115133820484 ENVIRONMENT_BLOCKED before any assertions (browsernull/results[]/prerequisite timeout); prior native receipt PASS retained. Wholepercent NOT_YET_MEASURABLE.
+
+## SEQ-240–247 evidence / no new duplicates
+
+26pre-import negativecontrolsPASS for13residualtests through explicit existingpreload; native direct-entrypoint safety and CI wiring remain PG-TEST-GUARD-002/003/DB-TEST-CLEANUP-021 open. OriginalSQLcasesNOT_RUN.20actualMeta refund/dispatch/live-reconcile adaptersPASS; existing REPLY-RESTORE-CYCLE-018 accounting/runtimeSQL finding unchanged. Source pending-before-send ordering examined, no realprovider/crash proof. Receipt laternative8PASS run38350269903/job115140836967; previousenvironmenttimeout preserved. No new canonical product finding or closed issue.

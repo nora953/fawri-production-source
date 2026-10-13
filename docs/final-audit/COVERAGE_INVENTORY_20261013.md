@@ -34,3 +34,7 @@ Expanded243tracked script/workflow/package sources resolves7of41selectors throug
 ## SEQ-232–239 evidence update
 
 Real childSIGTERM plus local durableFS/restart proof added; no productionSQL/provider clearance. Actual requiredPG worker stop callback proof uses inertSQL. Monitor request race and pending-action after403 added with inertfetch/state, mountedReact pending.15tests10P/5F strengthen two existing findings,zero new canonical product findings. Current33Actions25SUCCESS/8FAILURE: extra receipt failure is environment startup withzeroassertions.34unresolvedselectors/13integration queue unchanged; entire UI case denominator unresolved. Wholepercent NOT_YET_MEASURABLE; nextSEQ-240.
+
+## SEQ-240–247 bounded evidence
+
+13/13 residualentrypoints have2negativepreload controls each26PASS;0/13 originalruntimeexecuted.20actualMeta recovery adaptercasesPASS, noSQL/providerstate proof. Prepared13perfileexecutionmanifest;34selectoruncertainty/13integrationruntime/fullUI/actualPGproofs unchanged. Current33Actions26SUCCESS/7FAILURE; laterreceipt8nativePASS, originaltimeout preserved. No overallpercent measurable; nextSEQ-248.
