@@ -1,5 +1,10 @@
 # Fawri final audit — evidence register
 
+## SEQ-166 checkpoint — 2026-10-13
+
+[SEQ-166](SEQ_166_ISOLATED_POSTGRES_RUNNER_COMPARISON_20261013.md): isolated runner validates attestation and includes tenant admin-auth suite, but does not provision proof. Admin CI invokes test without attestation. No new test run.
+
+
 ## SEQ-165 checkpoint — 2026-10-13
 
 [SEQ-165 root cause](SEQ_165_ADMIN_JOURNEY_ATTESTATION_20261013.md): global admin journey run 38335320862 failed pre-import due missing disposable PostgreSQL attestation in GitHub Actions services.postgres. CI orchestration defect; app auth not exercised.
