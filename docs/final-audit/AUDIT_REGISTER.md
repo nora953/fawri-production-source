@@ -1,5 +1,14 @@
 # Fawri final audit — evidence register
 
+## Authoritative continuation — SEQ-298–301 (2026-10-13)
+
+Latest [SEQ-298–301](SEQ_298_301_NATIVE_MONITOR_ACTIONS_20261013.md), head `8382a73faeb95ba284db70f05468a93c3430f26c`, merge071f16b2, run38439068416/job115440607861. **Next SEQ-302**. Audit-only, application/original tests unchanged.
+
+ActualnativeChrome154WorkMonitor/Dialog/PasswordInput **6cases4PASS/2FAIL**, noinfraerror. Cancel/success/incorrectpassword/doubleconfirmcontrolsPASS. Pendingaction sendsPOSTaftersilent403; afterReacttargetswitchB sendsoldsessionAunderB. Syntheticfixture rejects403/404, no realbackendmutation. Existing **WORK-MONITOR-STALE-001 / OPEN / NATIVE_ACTION_CONFIRMED**, no duplicate/backendbypass. Realowner/assistantHTTP/SQL/App/nativeotheraction scope pending.
+
+Previous7monitor cases notrerun;21selectorpaths/222fullroutecases unchanged. Wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-294–297 (2026-10-13)
 
 Latest [SEQ-294–297](SEQ_294_297_SELECTOR_MOUNTED_MONITOR_20261013.md), head `5da92ffd4423cea44f2681d8eaa87128c93c26bf`, mergecheckout21b72bd0, run38437736590/job115436032580. **Next SEQ-298**. Audit-only, application/original tests unchanged.
@@ -715,3 +724,7 @@ Fourdistinct actualSQL targetcasesPASS; no new issue. RESIDUAL-FIXTURE-CONTRACT-
 ## SEQ-294–297 native monitor and selector evidence
 
 WORK-MONITOR-STALE-001 OPEN/MOUNTED_BROWSER_CONFIRMED:actualReact/nativeChrome154real15second silent403/503 retainsoldmonitor withouterror; delayedAresponse replacesnewlydisplayedBafterpropchange.7cases4P/3F,source5da92ffd/run38437736590/job115436032580, noinfraerror. SyntheticHTTPonly,noApp/currentrole/backendbypass/nativependingwriteclearance. Existingfinding,no duplicate.21unchangedcontracts nofilename refs in959sources; priorlocalexecution retained/no rerun; boundedCIselectiongap staysOPEN.
+
+## SEQ-298–301 native pending action evidence
+
+WORK-MONITOR-STALE-001 OPEN/NATIVE_ACTION_CONFIRMED:actualcomponentdialog/PasswordInput/nativemouse6cases4P/2F. PendingconfirmPOSTafteractual15s403; targetpropBconfirmusesoldsessionA. Syntheticserverrejects403/404; no realSQL/backendbypass. Fourpositivecontrols cancel/success/incorrectpassword/singlependingPOSTPASS. Head8382a73f/run38439068416/job115440607861. Realbackendsource owner/password/accountqualifiedsession gate retained, notexecutedhere. No newfinding/repair.

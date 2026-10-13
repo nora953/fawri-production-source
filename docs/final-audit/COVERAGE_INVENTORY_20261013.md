@@ -70,3 +70,7 @@ Fournewdistinct SQLcases4PASS(final):3initialcompleted/oneinitialseedblocked,rem
 ## SEQ-294–297 mounted monitor and selection update
 
 ActualnativeChrome7cases4P/3F strengthens existingmonitorfinding beyondadapters. Three390pxlanguagecomponentcases are notfullrouteclearance:222allNOT_RUN unchanged.959sourcecensus confirms21unchangedMJScontracts/nofilename refs withinboundedsource/glob review;prior28filelocalruntime reused,norepeatedexecution.21automatedselectorpaths remainunmapped,notuntestedcodepercent. Realrole/App/HTTP/nativependingactions remainopen,wholepercentageNOT_YET_MEASURABLE,nextSEQ-298/releaseBLOCKED.
+
+## SEQ-298–301 native monitor action scope
+
+Sixnewnativecomponentcases4P/2F extendexistingmonitorfinding toactualpendingaction lifecycle. SyntheticGET/revokePOST403/404/200/incorrectpasswordboundaries only, no realHTTPauth/backendSQLmutation. Previous7casesnotrerun;21selectorpaths/222fullroutecasesNOT_RUN unchanged. Currentrole/App/othernativeactions/provider/hosted scopeopen,wholepercentageNOT_YET_MEASURABLE,nextSEQ-302/releaseBLOCKED.
