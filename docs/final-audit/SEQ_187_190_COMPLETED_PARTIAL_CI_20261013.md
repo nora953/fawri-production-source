@@ -1,0 +1,11 @@
+# SEQ-187–190 — completed partial isolated audit log and billing triage (2026-10-13)
+
+Source GitHub Actions run 38338290411, job 115103292150, final job conclusion CANCELLED. Parsed 43 `AUDIT_SUITE_RESULT` summaries: 144 PASS / 24 FAIL, with parent/subtest markers and repeated file invocations; **not** 43 distinct files or 24 distinct defects, and not a successful full run. Isolation proofs emitted in seven batches.
+
+SEQ-187 coverage: observed PASS file summaries for global merchant bootstrap, merchant HTTP, admin auth router (1P/0F), support PostgreSQL, restricted merchant sessions (5P/0F), tenant RLS, knowledge, Meta live reply (54P/0F), and full-schema restore twice (1P/0F each). These are individual suite outcomes within a cancelled job; do not claim full production readiness or external provider proof.
+
+SEQ-188 known failed files: Meta restricted page directory (2P/3F, existing FA-I-006); cashier operator profit HTTP (1P/3F, existing CASHIER-REPORT-PROFIT-001); cashier billing negative (2P/4F, existing BILLING-PAID-REPLAY-028 and CASHIER-BILLING-SQL-RECOVERY-001).
+
+SEQ-189 billing expansion: `billing-external-checkout-rollback-postgres.integration.test.mjs` 0P/7F, including synthetic external provider creation/SQL rollback retry and signed orphan payment incorrectly ignored without durable work; existing external checkout/orphan findings 013/015 require exact ID cross-reference. `saas-billing-sql-failure-recovery.integration.test.mjs` 1P/2F: expected reconciliation state, actual pending. `saas-billing-negative-failure-cases.integration.test.mjs` 1P/4F: paid-state mismatch regression (existing 028), concurrent identical checkout only one fulfilled (existing concurrency finding). No real payment provider incident claimed.
+
+SEQ-190 cross-cycle refund: `reply-cross-cycle-refund-postgres.integration.test.mjs` 0P/1F: expected 1 retained new-cycle reply debit, actual 0, corresponds to existing reply refund cross-cycle finding 018; verify canonical details before fix planning. All findings remain audit-only, no application changes, release BLOCKED, provisional estimate 54% complete / 46% remaining. Next: reconcile external checkout and refund root causes and finish coverage ledger.
