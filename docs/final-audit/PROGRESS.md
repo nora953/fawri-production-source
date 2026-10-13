@@ -1,5 +1,10 @@
 # Fawri final audit — resume here
 
+## SEQ-161–163 checkpoint — 2026-10-13
+
+SEQ-161–163 read-only source audits complete: WorkMonitor silent poll, owner recovery cookie/role/transaction. No new browser or SQL runtime tests executed. Release BLOCKED, planning estimate ~54%/46%.
+
+
 ## SEQ-159–160 checkpoint — 2026-10-13
 
 SEQ-159 actual-component Chrome154 SupportPreview 7 PASS/4 FAIL, run 38334859697; SEQ-160 SuperQi existing test coverage inspected (signed payment, duplicate and invalid signature covered; missing order, SQL503 and retry not located in two examined test files). No new tests executed by auditor, no app fixes. ~54%/46%; release BLOCKED.
