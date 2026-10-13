@@ -1,5 +1,14 @@
 # Fawri final audit — resume here
 
+## Authoritative continuation — SEQ-302–305 (2026-10-13)
+
+Latest [SEQ-302–305](SEQ_302_305_ACTUAL_RETENTION_LIFECYCLE_20261013.md), executed source `29be3ed302f1d307129a3999b1e978f8fb20ee19`, run38442860689/job115453629407. **Next SEQ-306**. Audit-only, application/original tests/schema unchanged.
+
+Actual ownedPG28migrations **8businesscases8PASS/0FAIL/0SKIP**, cleanupSUCCESS. Readonly/suspension+sessionrevocation/repeat/isolation, renewal0/10replies(no oldsessionrevival), manual/closedprotection, sessionrevocationfaultatomicrollback andconcurrentdeletionrequest1pending/1auditPASS. No newfinding; originaloldphonefixture remainsfailed/stale, notretroactivelygreen. Service/SQLscope, not fullHTTP/currentrole/purge/provider/RLSproof.
+
+Local4runnerrefusalsPASS separate; previousretentionadapters notrerun.21selectorpaths/222fullroutecases unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-298–301 (2026-10-13)
 
 Latest [SEQ-298–301](SEQ_298_301_NATIVE_MONITOR_ACTIONS_20261013.md), head `8382a73faeb95ba284db70f05468a93c3430f26c`, merge071f16b2, run38439068416/job115440607861. **Next SEQ-302**. Audit-only, application/original tests unchanged.

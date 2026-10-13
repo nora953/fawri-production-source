@@ -1,5 +1,14 @@
 # Fawri final audit — evidence register
 
+## Authoritative continuation — SEQ-302–305 (2026-10-13)
+
+Latest [SEQ-302–305](SEQ_302_305_ACTUAL_RETENTION_LIFECYCLE_20261013.md), executed source `29be3ed302f1d307129a3999b1e978f8fb20ee19`, run38442860689/job115453629407. **Next SEQ-306**. Audit-only, application/original tests/schema unchanged.
+
+Actual ownedPG28migrations **8businesscases8PASS/0FAIL/0SKIP**, cleanupSUCCESS. Readonly/suspension+sessionrevocation/repeat/isolation, renewal0/10replies(no oldsessionrevival), manual/closedprotection, sessionrevocationfaultatomicrollback andconcurrentdeletionrequest1pending/1auditPASS. No newfinding; originaloldphonefixture remainsfailed/stale, notretroactivelygreen. Service/SQLscope, not fullHTTP/currentrole/purge/provider/RLSproof.
+
+Local4runnerrefusalsPASS separate; previousretentionadapters notrerun.21selectorpaths/222fullroutecases unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-298–301 (2026-10-13)
 
 Latest [SEQ-298–301](SEQ_298_301_NATIVE_MONITOR_ACTIONS_20261013.md), head `8382a73faeb95ba284db70f05468a93c3430f26c`, merge071f16b2, run38439068416/job115440607861. **Next SEQ-302**. Audit-only, application/original tests unchanged.
@@ -728,3 +737,7 @@ WORK-MONITOR-STALE-001 OPEN/MOUNTED_BROWSER_CONFIRMED:actualReact/nativeChrome15
 ## SEQ-298–301 native pending action evidence
 
 WORK-MONITOR-STALE-001 OPEN/NATIVE_ACTION_CONFIRMED:actualcomponentdialog/PasswordInput/nativemouse6cases4P/2F. PendingconfirmPOSTafteractual15s403; targetpropBconfirmusesoldsessionA. Syntheticserverrejects403/404; no realSQL/backendbypass. Fourpositivecontrols cancel/success/incorrectpassword/singlependingPOSTPASS. Head8382a73f/run38439068416/job115440607861. Realbackendsource owner/password/accountqualifiedsession gate retained, notexecutedhere. No newfinding/repair.
+
+## SEQ-302–305 actual retention acceptance
+
+EightnewSQLcases8P/0F/0SKIP,source29be3ed3/run38442860689/job115453629407; newE164/currentAuthv2fixture proves readonly,suspension/sessionrevocation/repeat/tenantisolation,renewalreplystate,no oldsession/closed/manualrevival,SQLfaultrollback,1concurrentpendingdeletionrequest+1audit. No newfinding. RESIDUAL-FIXTURE-CONTRACT-001 remainsOPEN/originaloldphonefiles unchanged; successfulnewbusinessproofdoesnot rewriteoldrun. Currentrole/HTTP/purge/media/provider/leastprivilegegates remainopen.

@@ -74,3 +74,7 @@ ActualnativeChrome7cases4P/3F strengthens existingmonitorfinding beyondadapters.
 ## SEQ-298–301 native monitor action scope
 
 Sixnewnativecomponentcases4P/2F extendexistingmonitorfinding toactualpendingaction lifecycle. SyntheticGET/revokePOST403/404/200/incorrectpasswordboundaries only, no realHTTPauth/backendSQLmutation. Previous7casesnotrerun;21selectorpaths/222fullroutecasesNOT_RUN unchanged. Currentrole/App/othernativeactions/provider/hosted scopeopen,wholepercentageNOT_YET_MEASURABLE,nextSEQ-302/releaseBLOCKED.
+
+## SEQ-302–305 retention SQL boundary coverage
+
+EightnewactualSQLcases8PASS,4localrunnerrefusalsseparate. ModernE164retention/suspension/renewal/sessionrevocation/faultatomicity/deletionrequestsinglewinner proof; originalblockedfixtures unchanged. NoHTTP/realrole/purge/provider/productionRLSclearance, no newdefect.21selectorpaths/222fullroutecasesNOT_RUN unchanged,wholepercentageNOT_YET_MEASURABLE,nextSEQ-306/releaseBLOCKED.
