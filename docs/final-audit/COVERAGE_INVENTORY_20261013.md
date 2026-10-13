@@ -1,5 +1,14 @@
 # Current evidence inventory — baseline 7e0da5eb, SEQ-224
 
+## Authoritative continuation — SEQ-312–317 (2026-10-14 Baghdad)
+
+Latest [SEQ-312–317](SEQ_312_317_DEVICE_PERMISSION_HTTP_20261014.md). **Next SEQ-318**. Six sequential stages, audit only; application/original tests/schema unchanged.
+
+Actual Authv2/device/permission/enabled HTTP + ownedSQL: **10 distinct business cases PASS** across initial6 and corrected remaining4. Initial e412b4ed8e40e73048ae758a0b3c37cb3821eb1c run38484571902/job115595011417:6PASS, case7 audit endpoint expectation failure,3NOT_RUN; raw6P/2F includes failed parent. Remaining65bd43a462b8f46271ee39b9bad3e08c770f4a26 run38484821000/job115595809185:4businessPASS/raw5P includes one parent,0FAIL/0SKIP.28migrations and owned cleanup SUCCESS eachrun. Corrected admin identity /admin/me, application unchanged; six completed cases not rerun.
+
+Wrong/missing device, foreign device record, wrong password, selective device revocation, assistant role, invalid permission/enabled values, permission removal, disable and reenable/nonrevival boundaries PASS. Four local runner refusal controls separate. No new app finding; existing stale UI and legacy fixture issues remain OPEN. Seeded trust is not OTP onboarding/browser/RLS/provider proof.21selector paths/222full route visual cases unchanged. Whole percentage **NOT_YET_MEASURABLE**, release BLOCKED.
+
+
 This is a real scope/evidence inventory, not a universal test denominator. Each domain has partial proof. PASS and FAIL both constitute executed audit evidence; product release still requires acceptable outcomes. A domain cannot receive full credit merely because one constituent test passed.
 
 | Required domain | Existing evidence reused | Current classification | Specific remaining acceptance proof |
