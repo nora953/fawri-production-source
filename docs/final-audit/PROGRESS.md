@@ -1,5 +1,14 @@
 # Fawri final audit — resume here
 
+## Authoritative continuation — SEQ-232–239 (2026-10-13)
+
+Latest [SEQ-232–239](SEQ_232_239_WORKER_SIGTERM_MONITOR_RACES_20261013.md), baseline `6ef87566bb55f6d6c9d7fc17698e4af210980482`. **NextSEQ-240**. Audit only; application/existing tests/workflows/schema unchanged.
+
+15actual localtests10PASS/5FAIL/0SKIP. Real childSIGTERM leaves persisted unfinished local queue claim; restart protects uncertain outcomes from automatic retry and preserves row; explicit known reconciliation completes without rerun. RequiredPostgreSQL worker stop observed with SQL adapters, not actualSQL. Monitor callback races/pending action after403 strengthen previous UI stale finding; no mountedReact/backend bypass.
+
+No new canonical product finding; strengthens OPS-WORKER-DRAIN-001 and WORK-MONITOR-STALE-001. Baseline33Actions25SUCCESS/8FAILURE; receipt extraFAIL is browser startup ENVIRONMENT_BLOCKED with0assertions, not receipt regression. No whole-project percent: **NOT_YET_MEASURABLE**.13integration and mountedbrowser/guardedSQL/recovery/fullUI inventory still pending. Historical checkpoints preserved. ReleaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-225–231 (2026-10-13)
 
 Latest batch: [SEQ-225–231](SEQ_225_231_SELECTION_CONTRACT_PRECISION_20261013.md), baseline `1db2beb108aea0b507012428cce7ab5129f388be`. **Next SEQ-232**. Audit only; application, existing tests, workflows and schema unchanged.

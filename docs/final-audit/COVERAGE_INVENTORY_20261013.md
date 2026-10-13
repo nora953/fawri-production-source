@@ -30,3 +30,7 @@ Release BLOCKED. No application repairs or consolidated repair plan before compr
 ## SEQ-225–231 bounded update
 
 Expanded243tracked script/workflow/package sources resolves7of41selectors through commerce validator and two workflow callers;34remain unresolved,all13integration unchanged.41/277 prior figure remains historical bounded result; current34/277=12.27% selection uncertainty.28of original41files executed locally (68.29%),13NOT_RUN (31.71%); this is execution of declared file queue, including failures, not product completion.92contract assertions87P/5F,9actual discount runtimeP,4precision2P/2F. Five stale test expectations and one extreme numeric defect documented. Current33Actions26SUCCESS/7FAIL; provider deletion source1P/SQL1P distinct. Whole audit percentage still NOT_YET_MEASURABLE. NextSEQ-232.
+
+## SEQ-232–239 evidence update
+
+Real childSIGTERM plus local durableFS/restart proof added; no productionSQL/provider clearance. Actual requiredPG worker stop callback proof uses inertSQL. Monitor request race and pending-action after403 added with inertfetch/state, mountedReact pending.15tests10P/5F strengthen two existing findings,zero new canonical product findings. Current33Actions25SUCCESS/8FAILURE: extra receipt failure is environment startup withzeroassertions.34unresolvedselectors/13integration queue unchanged; entire UI case denominator unresolved. Wholepercent NOT_YET_MEASURABLE; nextSEQ-240.

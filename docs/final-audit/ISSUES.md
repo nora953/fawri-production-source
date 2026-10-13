@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-232–239 (2026-10-13)
+
+Latest [SEQ-232–239](SEQ_232_239_WORKER_SIGTERM_MONITOR_RACES_20261013.md), baseline `6ef87566bb55f6d6c9d7fc17698e4af210980482`. **NextSEQ-240**. Audit only; application/existing tests/workflows/schema unchanged.
+
+15actual localtests10PASS/5FAIL/0SKIP. Real childSIGTERM leaves persisted unfinished local queue claim; restart protects uncertain outcomes from automatic retry and preserves row; explicit known reconciliation completes without rerun. RequiredPostgreSQL worker stop observed with SQL adapters, not actualSQL. Monitor callback races/pending action after403 strengthen previous UI stale finding; no mountedReact/backend bypass.
+
+No new canonical product finding; strengthens OPS-WORKER-DRAIN-001 and WORK-MONITOR-STALE-001. Baseline33Actions25SUCCESS/8FAILURE; receipt extraFAIL is browser startup ENVIRONMENT_BLOCKED with0assertions, not receipt regression. No whole-project percent: **NOT_YET_MEASURABLE**.13integration and mountedbrowser/guardedSQL/recovery/fullUI inventory still pending. Historical checkpoints preserved. ReleaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-225–231 (2026-10-13)
 
 Latest batch: [SEQ-225–231](SEQ_225_231_SELECTION_CONTRACT_PRECISION_20261013.md), baseline `1db2beb108aea0b507012428cce7ab5129f388be`. **Next SEQ-232**. Audit only; application, existing tests, workflows and schema unchanged.
@@ -656,3 +665,11 @@ Catalog/history unsafe/unselected test queue maps to historical DB_TEST_ENTRYPOI
 | AUDIT-STALE-SOURCE-CONTRACT-001 | LOW / OPEN / TEST_MAINTENANCE | Five failed text/regex assertions in manual discount, tenant catalog, clean deploy wrapper, Meta memory and readiness doc. Each exact divergence in SEQ-225–231 report;9actual discount runtimePASS. No application defect inferred from stale contracts; test repairs deferred. |
 
 Residual13 integration entrypoints map to PG-TEST-GUARD-002/003 and DB-TEST-CLEANUP-021. No direct or transitive DB execution performed. No old issue closed.
+
+## SEQ-232–239 deduplicated evidence
+
+OPS-WORKER-DRAIN-001 MEDIUM/OPEN: realSIGTERM/realprocess.exit/realHTTPclose/localdurableFS unfinished claim confirmed; local restart uncertain blockeddeadletter/knownreconcilecomplete/reconciliationfaultblocked allPASS, no data disappearance. Actual requiredPostgres worker callback adapters show stop disables future polling but current handler continues; deployedSQL/provider proof still pending. Do not claim production job/payment loss.
+
+WORK-MONITOR-STALE-001 OPEN: lateoldadmin response overwrites newadmin data; lateoldsuccess clears newer403error; pending revoke-session callback still attempts POST after visible/silent403.8callbacktests4P/4F; not mountedReact/backend bypass. Server route still requires secure session/owner/password. No duplicates.
+
+Receipt run38348021288/job115133820484 ENVIRONMENT_BLOCKED before any assertions (browsernull/results[]/prerequisite timeout); prior native receipt PASS retained. Wholepercent NOT_YET_MEASURABLE.

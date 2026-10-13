@@ -1,0 +1,123 @@
+TAP version 13
+# (node:74) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: SEQ236 observation: late former-admin request replaces new-admin monitor data
+ok 1 - SEQ236 observation: late former-admin request replaces new-admin monitor data
+  ---
+  duration_ms: 2.779439
+  type: 'test'
+  ...
+# Subtest: SEQ236 acceptance: old admin response must not replace current admin data
+not ok 2 - SEQ236 acceptance: old admin response must not replace current admin data
+  ---
+  duration_ms: 2.070343
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq232/docs/final-audit/evidence/seq236-237-monitor.test.mjs:31:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    WORK-MONITOR-STALE-001: no request generation/abort guard
+    + actual - expected
+    
+    + 'admin-A'
+    - 'admin-B'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'admin-B'
+  actual: 'admin-A'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq232/docs/final-audit/evidence/seq236-237-monitor.test.mjs:32:41)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ236 observation: late success clears newer non-silent denial marker
+ok 3 - SEQ236 observation: late success clears newer non-silent denial marker
+  ---
+  duration_ms: 1.468856
+  type: 'test'
+  ...
+# Subtest: SEQ236 acceptance: earlier success cannot clear later failed refresh
+not ok 4 - SEQ236 acceptance: earlier success cannot clear later failed refresh
+  ---
+  duration_ms: 0.841682
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq232/docs/final-audit/evidence/seq236-237-monitor.test.mjs:43:1'
+  failureType: 'testCodeFailure'
+  error: 'WORK-MONITOR-STALE-001: newer failure overwritten'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq232/docs/final-audit/evidence/seq236-237-monitor.test.mjs:44:41)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ237 observation: pending action still sends synthetic POST after visible403
+ok 5 - SEQ237 observation: pending action still sends synthetic POST after visible403
+  ---
+  duration_ms: 0.865617
+  type: 'test'
+  ...
+# Subtest: SEQ237 acceptance: pending action blocked after visible403
+not ok 6 - SEQ237 acceptance: pending action blocked after visible403
+  ---
+  duration_ms: 0.80636
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq232/docs/final-audit/evidence/seq236-237-monitor.test.mjs:60:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    WORK-MONITOR-STALE-001: action callback lacks fresh-load authority guard
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq232/docs/final-audit/evidence/seq236-237-monitor.test.mjs:61:52)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ237 observation: pending action still sends synthetic POST after silent403
+ok 7 - SEQ237 observation: pending action still sends synthetic POST after silent403
+  ---
+  duration_ms: 0.588518
+  type: 'test'
+  ...
+# Subtest: SEQ237 acceptance: pending action blocked after silent403
+not ok 8 - SEQ237 acceptance: pending action blocked after silent403
+  ---
+  duration_ms: 0.8138
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq232/docs/final-audit/evidence/seq236-237-monitor.test.mjs:60:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    WORK-MONITOR-STALE-001: action callback lacks fresh-load authority guard
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq232/docs/final-audit/evidence/seq236-237-monitor.test.mjs:61:52)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 4
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 133.642336
