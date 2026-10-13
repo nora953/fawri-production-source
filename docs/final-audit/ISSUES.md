@@ -1,5 +1,10 @@
 # Fawri final audit — issue and decision ledger
 
+## Current issue checkpoint — SEQ-141 (2026-10-13)
+
+Confirmed in actual source and browser: EMERGENCY-SNAPSHOT-END503-001 (MEDIUM/OPEN, end 503 navigates without confirmation) and EMERGENCY-SNAPSHOT-END401-001 (MEDIUM/OPEN, finally overwrites /login). EMERGENCY-SNAPSHOT-KU-001 remains TRIAGE only (Sorani empty-tab timeout, root cause unconfirmed). Evidence [SEQ-140/141](SEQ_140_141_ADMIN_PARENT_EMERGENCY_20261013.md). Do not duplicate CASHIER-REPORT-PROFIT-001. No repair authorized.
+
+
 ## Definitive current handoff — SEQ-138–139 complete; next SEQ-140
 
 Continue from saved evidence. Comprehensive audit and evidence recording only; no application repairs or consolidated repair plan until the audit is complete. No main merge, deployment, hosted DB/secrets or real payment.
