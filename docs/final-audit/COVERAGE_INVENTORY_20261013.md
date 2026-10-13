@@ -46,3 +46,7 @@ Real childSIGTERM plus local durableFS/restart proof added; no productionSQL/pro
 ## SEQ-258–265 scoped case inventory
 
 37namedApp routes incl1conditionaldev;36productionroutes×AR/EN/KU×390/1280 plus6fallback=222minimumfullroutevisualcases allNOT_RUN. SourceIDs/components/fixtures/flags inseq262JSON/CSV; partialcomponentproofs notpromoted. Role/write/error/lifecycle/nestedpanes/cashier/accessibilityexcludedandpending.5newmediafunctioncases4P/1F,oneproductfinding;onehistoricalsyntheticsecurityCIblocker. Current33Actions25SUCCESS/8FAILURE/currentrepositorypass/historyfail. Original13integration/34selectors unchanged. Not universaldenominator;wholepercentNOT_YET_MEASURABLE,nextSEQ-266.
+
+## SEQ-266–273 applicability/evidence refinement
+
+15newpreview/transaction/roleadaptercases13P/2F. TwoLOW scopedfindings(servicebindingcontractgap/expiryrollbackmarker), noHTTP/SQL/backendbypassclearance. Supportpreviewroute1JSONrow/6visualcasesfixturechangedfromowner toassistantbothgrants;222fullroutecases allNOT_RUN unchanged.33Actions25SUCCESS/8FAILURE;historysyntheticgate retained.13originalintegration/34selectors unchanged;wholepercentNOT_YET_MEASURABLE,nextSEQ-274.

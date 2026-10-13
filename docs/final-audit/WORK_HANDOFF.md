@@ -1,5 +1,14 @@
 ## Current audit continuation — SEQ-255 (2026-10-13)
 
+## Authoritative continuation — SEQ-266–273 (2026-10-13)
+
+Latest [SEQ-266–273](SEQ_266_273_PREVIEW_BINDING_EXPIRY_ROLES_20261013.md), baseline `583774144dc24a840e7462227865db35bd19a0dc`. **NextSEQ-274**. Audit only; application/originaltests/workflows/schema unchanged.
+
+15newcases13PASS/2FAIL/0SKIP:actualpreviewvalidator+transactionhelper11cases9P/2F and actualassistantinspectionguard4P, inertSQL/sessionadapters. TwoNEWLOW entries: SUPPORT-PREVIEW-SESSION-BINDING-001 serviceblankcallercontractgap(noHTTPbypass), SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 attemptedexpirymarkerrolledback(accessstilldenied;scheduledexpiryworkermaypersist).
+
+Supportpreviewroutefixture refinedfromowner toassistantwithbothgrants;222fullroutevisualcases remainNOT_RUN. Baseline33Actions25SUCCESS/8FAILURE; existinghistoricalsyntheticgate retained. Wholepercentage **NOT_YET_MEASURABLE**.13integration/34selectors/fullUI/actualSQL/provider/hosted gatesopen. Priorhistorypreserved;releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-258–265 (2026-10-13)
 
 Latest [SEQ-258–265](SEQ_258_265_MEDIA_CONCURRENCY_UI_CASES_20261013.md), baseline `b97df88c43e99940a9d50638a9334422da00982d`. **NextSEQ-266**. Audit only, no application/CI/scanner/historyrepair.

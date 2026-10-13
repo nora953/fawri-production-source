@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-266–273 (2026-10-13)
+
+Latest [SEQ-266–273](SEQ_266_273_PREVIEW_BINDING_EXPIRY_ROLES_20261013.md), baseline `583774144dc24a840e7462227865db35bd19a0dc`. **NextSEQ-274**. Audit only; application/originaltests/workflows/schema unchanged.
+
+15newcases13PASS/2FAIL/0SKIP:actualpreviewvalidator+transactionhelper11cases9P/2F and actualassistantinspectionguard4P, inertSQL/sessionadapters. TwoNEWLOW entries: SUPPORT-PREVIEW-SESSION-BINDING-001 serviceblankcallercontractgap(noHTTPbypass), SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 attemptedexpirymarkerrolledback(accessstilldenied;scheduledexpiryworkermaypersist).
+
+Supportpreviewroutefixture refinedfromowner toassistantwithbothgrants;222fullroutevisualcases remainNOT_RUN. Baseline33Actions25SUCCESS/8FAILURE; existinghistoricalsyntheticgate retained. Wholepercentage **NOT_YET_MEASURABLE**.13integration/34selectors/fullUI/actualSQL/provider/hosted gatesopen. Priorhistorypreserved;releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-258–265 (2026-10-13)
 
 Latest [SEQ-258–265](SEQ_258_265_MEDIA_CONCURRENCY_UI_CASES_20261013.md), baseline `b97df88c43e99940a9d50638a9334422da00982d`. **NextSEQ-266**. Audit only, no application/CI/scanner/historyrepair.
@@ -720,3 +729,12 @@ SecurityCI scannerfailure1syntheticcredentialURL in auditfixture was a toolfixtu
 | --- | --- | --- |
 | MEDIA-CLEANUP-CONCURRENT-UNLINK-001 | MEDIUM/OPEN/FUNCTION_RUNTIME_CONFIRMED | Twoactualwrappercalls onrealownedFS;winnerpending aftersuccess/storagefault;loserconflict catchrmSync(sharedpath) removeswinnerintent.1observationPASS/1acceptanceFAIL;SQL/storageinjected, actualproductionraceNOT_RUN. Distinct fromcorrupt/batchstarvation. |
 | AUDIT-SYNTHETIC-HISTORY-GATE-001 | LOW/OPEN/CI_PROCESS_BLOCKER | run38353681095/job115151569363 currentrepositorySUCCESS/fullhistoryFAIL1credential-url historicalsyntheticfixtureblob202a9fc041cb2cde0e8169683a6eb9eb7478e130. No realsecret;currentliteralcorrection doesn'tclearhistorygate. No scannerexception/historyrewrite. |
+
+## SEQ-266–273 new scoped findings
+
+| ID | Severity/state | Evidence/limits |
+| --- | --- | --- |
+| SUPPORT-PREVIEW-SESSION-BINDING-001 | LOW/OPEN/SERVICE_CONTRACT_PROOF_GAP | Existingnonnullsessionbinding acceptedwithblankcallerID;actualvalidatoradapterobservationPASS/acceptanceFAIL. MismatchednonnullIDdenied andunboundcontrolPASS. SoleHTTPcaller passesvalidatedcontextsessionid;noactualroutebypassproved. |
+| SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 | LOW/OPEN/FUNCTION_COMPOSITION_CONFIRMED_SQL_PENDING | ExpiryUPDATEended thenthrow reachesactualhelperROLLBACK;adapterstateactive. Expiredaccessdenied;separatescheduledlifecycleexpirycancommit. NoSQL/browser/expiredaccessbypassclaim. |
+
+Supportpreviewvisualroutefixturecorrected toassistantwithmanage_support+inspect_merchant_sessions;ownerdenial4roleadaptertestsPASS.222casesremainNOT_RUN. Priorfindingsretained;noactualproductionfix orclosedissue.

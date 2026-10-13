@@ -86,7 +86,7 @@
       "route": "/admin/support-preview/:sessionId",
       "component": "AdminSupportPreviewPage",
       "production_applicability": "APPLICABLE",
-      "fixture": "authorized synthetic owner admin/session/data; valid scoped synthetic support preview grant",
+      "fixture": "authorized synthetic assistant admin with manage_support and inspect_merchant_sessions; matching caller/session and scoped preview grant",
       "source_line": 133
     },
     {
@@ -305,5 +305,7 @@
       "fixture": "approved synthetic merchant session/data",
       "source_line": 240
     }
-  ]
+  ],
+  "refined_in_seq": "SEQ-271",
+  "refinement": "Preview route requires assistant with both grants; historical owner fixture was preparation assumption, not runtime acceptance."
 }

@@ -1,0 +1,36 @@
+{
+  "baseline": "583774144dc24a840e7462227865db35bd19a0dc",
+  "local_identical_tree_commit": "9863fb2a",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "docs/final-audit/evidence/seq267-270-preview-transactions.test.mjs"
+  ],
+  "exit": 1,
+  "counts": {
+    "tests": 11,
+    "pass": 9,
+    "fail": 2,
+    "skipped": 0
+  },
+  "limits": "Actual validator+transaction helper; SQL/state/commit rollback adapters, no real database/browser",
+  "preparation": "Initial fixture counted SELECT FOR UPDATE as an UPDATE. Corrected classifier to anchored UPDATE; initial4fixture failures excluded.",
+  "route_guard_run": {
+    "command": [
+      "node",
+      "--test",
+      "--test-reporter=tap",
+      "docs/final-audit/evidence/seq271-route-permissions.test.mjs"
+    ],
+    "exit": 0,
+    "counts": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "skipped": 0
+    },
+    "scope": "Actual permission/guard bodies; secure session middleware inert, no HTTP/browser",
+    "preparation": "Unused crypto import removed from VM body before execution; first4fixture errors excluded."
+  }
+}
