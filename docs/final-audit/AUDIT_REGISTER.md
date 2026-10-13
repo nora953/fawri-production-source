@@ -1,5 +1,10 @@
 # Fawri final audit — evidence register
 
+## SEQ-161–163 checkpoint — 2026-10-13
+
+[SEQ-161–162](SEQ_161_162_WORK_MONITOR_OWNER_RECOVERY_20261013.md) and [SEQ-163](SEQ_163_OWNER_RECOVERY_TRANSACTION_20261013.md) inspected WorkMonitor silent stale poll and owner_admin role gate/atomic recovery revocations. Source-only, no fresh runtime tests.
+
+
 ## SEQ-159–160 checkpoint — 2026-10-13
 
 SEQ-159–160 [evidence](SEQ_159_160_PREVIEW_CHROME_SUPERQI_COVERAGE_20261013.md): Chrome154 preview 7 PASS/4 FAIL on 38334859697; silent409/503 stale snapshot, expiry retains data, end503 unconfirmed navigation. SuperQi coverage gap identified. No production data; release BLOCKED.
