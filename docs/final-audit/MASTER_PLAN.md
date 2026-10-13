@@ -1,5 +1,11 @@
 # Fawri final audit — master plan
 
+
+## SEQ-143–158 checkpoint — 2026-10-13
+
+Next: synthetic SuperQi route 200 on missing order, 503 on P0001, verify provider retry semantics; browser SupportPreview/WorkMonitor 401/403/503 and OwnerRecovery grants; IndexedDB local changed-payload and backend 409 integration. Keep audit-only until all scope done. [SEQ-158](SEQ_158_SUPERQI_WEBHOOK_HTTP_20261013.md).
+
+
 ## Next audit checkpoint — after SEQ-141 (2026-10-13)
 
 SEQ-140 actual parent AdminPage is verified 15/15 in Chrome154 synthetic loopback. SEQ-141 emergency snapshot source triage confirmed end503/end401 navigation defects; Sorani remains unclassified. See [evidence](SEQ_140_141_ADMIN_PARENT_EMERGENCY_20261013.md). Next examine other owner/admin/merchant route groups, and isolate Sorani timeout. Keep remediation planning deferred until entire audit concludes; do not deploy or touch hosted DB.
