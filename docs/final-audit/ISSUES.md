@@ -1,5 +1,10 @@
 # Fawri final audit — issue and decision ledger
 
+## SEQ-165 checkpoint — 2026-10-13
+
+ADMIN-JOURNEY-DISPOSABLE-ATTESTATION-001 HIGH test-gate blocker: global admin golden journey CI run 38335320862 fails before application import; workflow services.postgres lacks mandatory network-none proof, attestation file/run ID and DB marker required by disposable-postgres-test-guard. Do not disable fail-closed guard.
+
+
 ## SEQ-161–163 checkpoint — 2026-10-13
 
 WORK-MONITOR-STALE-001 source-confirmed: silent 15s GET failure retains old privileged monitor data without error; browser/backend tests pending. Owner recovery has explicit owner_admin 403 role gate and transactional credential/session/device revocation; no confirmed bypass.
