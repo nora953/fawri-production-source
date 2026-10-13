@@ -1,5 +1,10 @@
 # Fawri final audit — issue and decision ledger
 
+## SEQ-167 checkpoint — 2026-10-13
+
+ADMIN-JOURNEY-DISPOSABLE-ATTESTATION-001 root cause refined: secure network-none Docker provisioning already exists in scripts/run-isolated-postgres-audit.sh and audit-isolated-postgres.yml, but separate global-admin-golden-journey.yml bypasses it. No confirmed defect in isolation runner from source alone.
+
+
 ## SEQ-166 checkpoint — 2026-10-13
 
 ADMIN-JOURNEY-DISPOSABLE-ATTESTATION-001 remains OPEN: isolated audit runner consumes valid network-none DB proof but global-admin-golden-journey.yml directly invokes test against services.postgres without proof. Also CI concurrency cancels runs on audit-only commits; distinguish CANCELLED from test FAIL.
