@@ -1,5 +1,10 @@
 # Fawri final audit — issue and decision ledger
 
+## SEQ-159–160 checkpoint — 2026-10-13
+
+PREVIEW-SILENT-REFRESH-001: Chrome154 silent409 and silent503 retain unmarked private snapshot; PREVIEW-EXPIRED-RETAINED-001: expiry countdown retains visible preview; PREVIEW-END-UNCONFIRMED-001: end503 navigates without confirmation. These are UI lifetime findings, not fresh server authorization bypass. SuperQi missing-order HTTP200 and generic SQL HTTP503 remain untested route-level TRIAGE.
+
+
 
 ## SEQ-143–158 checkpoint — 2026-10-13
 
