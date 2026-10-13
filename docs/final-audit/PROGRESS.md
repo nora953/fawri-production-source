@@ -1,5 +1,10 @@
 # Fawri final audit — resume here
 
+## SEQ-165 checkpoint — 2026-10-13
+
+SEQ-165 actual CI log plus guard/workflow source root cause documented. Global admin journey FAIL is test setup, not verified admin auth application failure. No new app test executed. ~54%/46%, release BLOCKED.
+
+
 ## SEQ-161–163 checkpoint — 2026-10-13
 
 SEQ-161–163 read-only source audits complete: WorkMonitor silent poll, owner recovery cookie/role/transaction. No new browser or SQL runtime tests executed. Release BLOCKED, planning estimate ~54%/46%.
