@@ -1,0 +1,104 @@
+TAP version 13
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# Subtest: current session cap expiry rotation and self-session HTTP boundaries on owned SQL
+    # Subtest: owner third session on same device is refused without revoking first two
+    ok 1 - owner third session on same device is refused without revoking first two
+      ---
+      duration_ms: 61.517547
+      type: 'test'
+      ...
+    # Subtest: owner cap is per device and second trusted device may have its own session
+    ok 2 - owner cap is per device and second trusted device may have its own session
+      ---
+      duration_ms: 19.4092
+      type: 'test'
+      ...
+    # Subtest: assistant third session replaces oldest while retaining account cap two
+    ok 3 - assistant third session replaces oldest while retaining account cap two
+      ---
+      duration_ms: 27.813567
+      type: 'test'
+      ...
+    # Subtest: self session list is account scoped and has no token hash or token
+    ok 4 - self session list is account scoped and has no token hash or token
+      ---
+      duration_ms: 9.109048
+      type: 'test'
+      ...
+    # Subtest: self session delete cannot target owner account
+    ok 5 - self session delete cannot target owner account
+      ---
+      duration_ms: 8.708687
+      type: 'test'
+      ...
+    # Subtest: self session delete invalidates selected own cookie and keeps current cookie
+    ok 6 - self session delete invalidates selected own cookie and keeps current cookie
+      ---
+      duration_ms: 18.941583
+      type: 'test'
+      ...
+    # Subtest: idle expiration is rejected and SQL expired marker persists
+    ok 7 - idle expiration is rejected and SQL expired marker persists
+      ---
+      duration_ms: 7.949033
+      type: 'test'
+      ...
+    # Subtest: absolute expiration is rejected with valid SQL deadline ordering
+    ok 8 - absolute expiration is rejected with valid SQL deadline ordering
+      ---
+      duration_ms: 6.791764
+      type: 'test'
+      ...
+    # Subtest: successful HTTP touch cannot extend idle deadline past absolute deadline
+    ok 9 - successful HTTP touch cannot extend idle deadline past absolute deadline
+      ---
+      duration_ms: 9.699866
+      type: 'test'
+      ...
+    # Subtest: due HTTP session rotates to one replacement preserving absolute expiry
+    ok 10 - due HTTP session rotates to one replacement preserving absolute expiry
+      ---
+      duration_ms: 20.36518
+      type: 'test'
+      ...
+    # Subtest: logout using original rotated cookie follows two replacements and revokes latest
+    ok 11 - logout using original rotated cookie follows two replacements and revokes latest
+      ---
+      duration_ms: 22.223766
+      type: 'test'
+      ...
+    # Subtest: two concurrent due HTTP requests produce one rotation winner and one stale denial
+    ok 12 - two concurrent due HTTP requests produce one rotation winner and one stale denial
+      ---
+      duration_ms: 25.296908
+      type: 'test'
+      ...
+    # Subtest: self logout-all requires session and revokes own cookies without harming owner
+    ok 13 - self logout-all requires session and revokes own cookies without harming owner
+      ---
+      duration_ms: 16.384439
+      type: 'test'
+      ...
+# SESSION_HTTP_OBSERVATIONS {"cases":14,"results":[{"name":"owner third session on same device is refused without revoking first two","status":"PASS","details":{"sameDeviceCap":2,"thirdRefused":true,"firstTwoHTTP":200}},{"name":"owner cap is per device and second trusted device may have its own session","status":"PASS","details":{"activeAcrossTwoDevices":3,"secondDeviceHTTP":200}},{"name":"assistant third session replaces oldest while retaining account cap two","status":"PASS","details":{"oldestHTTP":401,"retainedHTTP":200,"cap":2}},{"name":"self session list is account scoped and has no token hash or token","status":"PASS","details":{"status":200,"ownedSessions":2,"tokenMaterialAbsent":true}},{"name":"self session delete cannot target owner account","status":"PASS","details":{"status":404,"ownerActive":true}},{"name":"self session delete invalidates selected own cookie and keeps current cookie","status":"PASS","details":{"delete":200,"selectedHTTP":401,"currentHTTP":200}},{"name":"idle expiration is rejected and SQL expired marker persists","status":"PASS","details":{"status":401,"sql":"expired"}},{"name":"absolute expiration is rejected with valid SQL deadline ordering","status":"PASS","details":{"status":401,"sql":"expired","idleAlsoExpired":true}},{"name":"successful HTTP touch cannot extend idle deadline past absolute deadline","status":"PASS","details":{"status":200,"idleBoundedToAbsolute":true}},{"name":"due HTTP session rotates to one replacement preserving absolute expiry","status":"PASS","details":{"status":200,"oldHTTP":401,"newHTTP":200,"oneLinkedReplacement":true,"absolutePreserved":true,"cookieFlags":true}},{"name":"logout using original rotated cookie follows two replacements and revokes latest","status":"PASS","details":{"logout":200,"lineageDepth":2,"latestHTTP":401,"ownerHTTP":200}},{"name":"two concurrent due HTTP requests produce one rotation winner and one stale denial","status":"PASS","details":{"statuses":[200,401],"oneLinkedWinner":true,"winnerHTTP":200,"loserEmittedCookieClear":false}},{"name":"self logout-all requires session and revokes own cookies without harming owner","status":"PASS","details":{"anonymous":401,"logout":200,"ownHTTP":401,"activeOwn":0,"ownerHTTP":200}},{"name":"tampered secret and merchant cookie kind cannot revoke rightful admin session","status":"PASS","details":{"tampered":401,"wrongKind":401,"rightful":200,"sessionActive":true}}],"noLegacyJSON":true}
+    # Subtest: tampered secret and merchant cookie kind cannot revoke rightful admin session
+    ok 14 - tampered secret and merchant cookie kind cannot revoke rightful admin session
+      ---
+      duration_ms: 12.559468
+      type: 'test'
+      ...
+    1..14
+ok 1 - current session cap expiry rotation and self-session HTTP boundaries on owned SQL
+  ---
+  duration_ms: 1750.444089
+  type: 'test'
+  ...
+1..1
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2139.4984

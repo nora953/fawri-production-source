@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-324–329 (2026-10-14 Baghdad)
+
+Latest [SEQ-324–329](SEQ_324_329_SESSION_HTTP_20261014.md). **Next SEQ-330**. Six sequential stages/audit only; application/original tests/schema unchanged.
+
+Source204b23402a07c4ad209b4be1156344fee64d07f6, run38487200244/job115603591089: **14distinct businessPASS/0FAIL**, raw15P/0F/0SKIP includes1parent.28migrations/ownedcleanupSUCCESS. Owner2perdevice/assistant2peraccount caps, selfsession list/delete ownership, expired SQL marker, touch absoluteclamp, HTTProtation/replacement/oldcookie401, originalcookie logout over2links, one concurrent200/401winner, selflogout-all and tamperedsecret/kindconfusion boundariesPASS. Fourlocal runner refusals separate; prior cases notrerun.
+
+DisposableSQLtimestamps adjusted under unchanged constraints; absoluteexpired case alsoidleexpired. Concurrent loser emitted no cookieclear in singletrial, not browser response-order/load guarantee. Trust/sessions seeded, not login/OTP/RLS/provider/fullApp proof. No newcanonicalappfinding; allpriorissuesOPEN.21selectors/222fullApproute visualcases unchanged. Wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED. Prioritize fullApp route harness/role inventory next.
+
+
 ## Authoritative continuation — SEQ-318–323 (2026-10-14 Baghdad)
 
 Latest [SEQ-318–323](SEQ_318_323_ADMIN_LIFECYCLE_HTTP_20261014.md). **Next SEQ-324**. Six sequential stages/audit only; application/original tests/schema unchanged.
