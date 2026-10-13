@@ -1,5 +1,18 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-215–224 (2026-10-13)
+
+Latest completed audit batch: [SEQ-215–224](SEQ_215_224_COVERAGE_WEBHOOK_MONITOR_20261013.md), baseline `7e0da5ebe93ee7cc444d0f2b9a1ed98c5476e1a3`. **Next SEQ-225**. Audit/test/documentation only; no application repair, final remediation plan, main merge, deployment or hosted DB/provider mutation. Historical checkpoints below are preserved and are not the current queue.
+
+Actual local application-body adapter harness Node24.19.0: **18 tests /14 PASS /4 FAIL /0 SKIP**, exit1. Four failures strengthen two existing findings: BILLING-WEBHOOK-ORPHAN-015 and WORK-MONITOR-STALE-001. This is not Express/network, SQL, browser or real provider proof. New OPS-WORKER-DRAIN-001 is a MEDIUM operational proof gap/TRIAGE; no lost job demonstrated.
+
+Current isolated Actions run38342332307/job115115887752:43 complete summaries,41unique files,144PASS/24FAIL/0SKIP, known failures reused without new coverage credit. Current cashier deletion SQL run38342332394/job115115888003:1PASS, no skips; separate static1PASS. Workflow snapshot33runs:25success/7failure/1in_progress at observation; provider identifier deletion still pending, not passed.
+
+[Measured sub-inventories and remaining gates](COVERAGE_INVENTORY_20261013.md):277API test files,91integration,41selection paths unresolved in bounded search;37routes plus fallback,5cashier modes plus demo and nested panes. **Overall remaining percent NOT_YET_MEASURABLE**;54/46 remains historical planning judgment, not current measured coverage. Release BLOCKED.
+
+Next: resolve catalog/history dynamic selection and safe isolated execution; mounted WorkMonitor denials/action state; owned child-process SIGTERM worker drain/restart; applicable route-role-language-device case denominator. Do not rerun unchanged failing suites just to raise SEQ count.
+
+
 ## SEQ-167 checkpoint — 2026-10-13
 
 ADMIN-JOURNEY-DISPOSABLE-ATTESTATION-001 root cause refined: secure network-none Docker provisioning already exists in scripts/run-isolated-postgres-audit.sh and audit-isolated-postgres.yml, but separate global-admin-golden-journey.yml bypasses it. No confirmed defect in isolation runner from source alone.
@@ -613,3 +626,13 @@ Corrected central native run38204282300 completedSUCCESS on sourced6f6b4a0. Pres
 SEQ-133 PREPARED expands actualreceiptbrowserharness from6 to8cases: actual printCashierReceipt/nativeiframe srcdoc load, withexplicitinertprint method at the physicalprintboundary; explicitlydispatchafterprint thenframe0; fault-injectedprint method throws andactualhelpercatchmustremoveframe0 andpreserveerror. Assertiframe receiptretainslastitem/noprivatecostsentinel. Original6native thermalwidth/PDFcases retained. This is actualDOM/load/helper orchestration plus controlledprint/eventadapter, not realhardware/printdialog event proof. Local syntaxPASS; two new assertionsNOT_RUN pendingCI. Possible fallbacktimer behavior afterexception remainsseparate fromframe-removalproof.
 
 CASHIER-REPORT-PROFIT-001 HIGH remainsconfirmed/unrepaired; aggregate138PASS/24FAIL includes16functional+8parents for9canonicalfindings. Existingreportsource/query/offline/provider/hosted/role/visualgates remainopen. Localadminauthority14PASS separate. Next inspect8receipt/central logs andcompletedSQL; then save definitivehandoff forremaining owner/admin/merchant scope. Noapplicationrepair orconsolidatedplan beforeauditcompletion.
+
+## SEQ-215–224 evidence delta and deduplicated issue index
+
+| Canonical ID | Classification | New evidence / boundary | State |
+| --- | --- | --- | --- |
+| BILLING-WEBHOOK-ORPHAN-015 (SUPERQI-ORDER-NOT-FOUND-ACK-001 alias) | Existing payment recovery finding | Actual service+route bodies with inert SQL/provider/signature adapters: confirmed missing order produces200/ignored and no durable write; acceptance fails.5adjacent deny/error controls pass. No real settlement or gateway retry claim. | OPEN; no duplicate created |
+| WORK-MONITOR-STALE-001 | Existing private-data UI lifetime finding | Actual load callback with inert state/fetch: silent401/403/503 retains data and no error;3acceptance failures, initial error/retry control passes. Not mounted React/parent revalidation/actions or fresh backend bypass. | OPEN; new bounded runtime evidence |
+| OPS-WORKER-DRAIN-001 | NEW operational PROOF_GAP / MEDIUM / TRIAGE | `src/index.ts:132–156` invokes synchronous worker.stop(), runtime.dispose(), server.close callback exit0. `durableJobQueue.ts:695–698` only disables polling; already running handler not awaited. `merchantPhysicalMediaCleanup.ts:482–485` same stop behavior. Actual shutdown body adapter demonstrates HTTP close can exit without worker completion notification;4shutdown controls pass. No actual job loss or provider duplicate demonstrated; lease/recovery mechanisms exist and need testing. | OPEN proof; owned child-process paused-handler SIGTERM + restart/lease/idempotency test needed |
+
+Catalog/history unsafe/unselected test queue maps to historical DB_TEST_ENTRYPOINT_INVENTORY and PG-TEST-GUARD-002/003; not a newly proven product bug. Literal selection uncertainty is not evidence of nonexecution. No prior application finding closed or repaired.
