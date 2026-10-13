@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-286–289 (2026-10-13)
+
+Latest [SEQ-286–289](SEQ_286_289_SUPPORT_EXPIRY_POSTGRES_20261013.md), executed source `23efe18cb9089507909b3d390fea790272e22cd7`, run38433417141/job115421169603. **Next SEQ-290**. Audit-only; application/original tests/schema unchanged.
+
+Actual owned PostgreSQL28migrations: **7 business cases / 5 PASS / 2 FAIL / 0 SKIP**, cleanup SUCCESS. Existing LOW **SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001** now CONFIRMED_SQL: expired consent/preview access denied but marker UPDATE rolls back; rows remain pending/active. No access bypass. Canonical lifecycle sweep commits expiry, preserves live other tenant and repeats with0expiryupdates. No duplicate issue; scheduler/HTTP/role/RLS proof still pending.
+
+Local4runner refusal controlsPASS separate. First newauditseed lacked required adminphone:7fixtureseedfailures/zero targetbusiness assertions, corrected auditfixture only.21selectors/222fullroutevisual cases unchanged; whole percentage **NOT_YET_MEASURABLE**. ReleaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-282–285 (2026-10-13)
 
 Latest [SEQ-282–285](SEQ_282_285_CATALOG_ARCHIVE_POSTGRES_20261013.md), executed source `ce48910f71cfd910c0b86fe24aa9fdb805083cec`, run38431991119/job115416248457. **Next SEQ-286**. Audit-only new runner/fixtures; application/original tests/schema unchanged.
@@ -753,7 +762,7 @@ SecurityCI scannerfailure1syntheticcredentialURL in auditfixture was a toolfixtu
 | ID | Severity/state | Evidence/limits |
 | --- | --- | --- |
 | SUPPORT-PREVIEW-SESSION-BINDING-001 | LOW/OPEN/SERVICE_CONTRACT_PROOF_GAP | Existingnonnullsessionbinding acceptedwithblankcallerID;actualvalidatoradapterobservationPASS/acceptanceFAIL. MismatchednonnullIDdenied andunboundcontrolPASS. SoleHTTPcaller passesvalidatedcontextsessionid;noactualroutebypassproved. |
-| SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 | LOW/OPEN/FUNCTION_COMPOSITION_CONFIRMED_SQL_PENDING | ExpiryUPDATEended thenthrow reachesactualhelperROLLBACK;adapterstateactive. Expiredaccessdenied;separatescheduledlifecycleexpirycancommit. NoSQL/browser/expiredaccessbypassclaim. |
+| SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 | LOW/OPEN/CONFIRMED_SQL (SEQ-288; prior adapter evidence retained) | ExpiryUPDATEended thenthrow reachesactualhelperROLLBACK;adapterstateactive. Expiredaccessdenied;separatescheduledlifecycleexpirycancommit. NoSQL/browser/expiredaccessbypassclaim. |
 
 Supportpreviewvisualroutefixturecorrected toassistantwithmanage_support+inspect_merchant_sessions;ownerdenial4roleadaptertestsPASS.222casesremainNOT_RUN. Priorfindingsretained;noactualproductionfix orclosedissue.
 
@@ -766,3 +775,7 @@ Fourfullygreenfiles:catalogpromotions/emergencyPG/knowledge lifecycle/runtime au
 ## SEQ-282–285 catalog marker atomicity
 
 CATALOG-ARCHIVE-ATOMICITY-001 MEDIUM/OPEN/CONFIRMED: actual ownedSQL fault-injection rejects archive-marker UPDATE after corecatalog transaction committed. Product version2→3 and rename persist; zero-stock variant remains publicly visible because metadata marker is absent. Full immutable mutation retained. Run38431991119/job115416248457 1P/1F/0SKIP; sourcece48910f. Trigger fault controlled, not hostedincident evidence. Source and limits in completed report. No repair.
+
+## SEQ-286–289 existing expiry finding strengthened
+
+SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 LOW/OPEN/CONFIRMED_SQL. Prioradapter-only evidence retained. ActualownedPG7cases5P/2F atsource23efe18cb9089507909b3d390fea790272e22cd7,run38433417141/job115421169603 confirmsconsent/preview markerrollback on timestampdenial. Accessdenied, no expirybypass. Canonical lifecycle commits pending/approved/session expiry and preserves liveother tenant; repeats0updates. Directsweep proof doesnot clear production timer/HTTP/role/RLS. No duplicate finding/repair.

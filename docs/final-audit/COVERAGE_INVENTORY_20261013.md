@@ -58,3 +58,7 @@ Real childSIGTERM plus local durableFS/restart proof added; no productionSQL/pro
 ## SEQ-282–285 bounded SQL archival update
 
 Two new actualSQL business cases1P/1F; four separate runner refusal controlsPASS. Archive preserves complete immutable inventory mutation/retains hidden variant through rebuild. Marker-failure atomicity confirmedMEDIUM: requestrejected whilecoreeditcommitted. Initialfixtureimportblocked0businessassertions separate. No originaltests rerun;21selectors/222fullroutevisualcases unchanged. WholepercentNOT_YET_MEASURABLE;nextSEQ-286,ReleaseBLOCKED.
+
+## SEQ-286–289 actual expiry SQL update
+
+New7SQLcases5P/2F,4separate runnerrefusalsPASS. ExistingLOWexpiryrollback finding strengthened toactualSQL; liveconsent/foreigntenant/oppositerace/lifecycle recovery/idempotence controlsPASS, deniedexpiry markersFAIL. Production timers/HTTP/auth/role/RLSNOT_RUN inthisbatch. Initial7auditseedfailures excludedfrombusinesscounts.21selectors/222routevisualcases unchanged,wholepercentNOT_YET_MEASURABLE,nextSEQ-290,releaseBLOCKED.
