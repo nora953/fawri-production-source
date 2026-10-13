@@ -1,5 +1,10 @@
 # Fawri final audit — master plan
 
+## SEQ-161–164 audit checkpoint — 2026-10-13
+
+[SEQ-161–162](SEQ_161_162_WORK_MONITOR_OWNER_RECOVERY_20261013.md) WorkMonitor stale silent refresh and owner recovery route source; [SEQ-163](SEQ_163_OWNER_RECOVERY_TRANSACTION_20261013.md) owner_admin 403 role gate, atomic session/device revocation; [SEQ-164](SEQ_164_OWNER_RECOVERY_TEST_COVERAGE_20261013.md) existing owner recovery integration/static tests reviewed, not run in this stage. Next actual WorkMonitor Chrome, owner recovery concurrent/non-owner HTTP, SuperQi missing-order 200 and SQL503 synthetic tests. Release BLOCKED; ~54%/46%, audit-only.
+
+
 ## SEQ-159–160 checkpoint — 2026-10-13
 
 Next: actual-component WorkMonitor silent503 and OwnerRecovery role checks; disposable HTTP SuperQi missing-order 200 vs SQL503; server preview authorization and expiry. No remediation until comprehensive audit complete.
