@@ -1,5 +1,10 @@
 # Fawri final audit — issue and decision ledger
 
+## SEQ-166 checkpoint — 2026-10-13
+
+ADMIN-JOURNEY-DISPOSABLE-ATTESTATION-001 remains OPEN: isolated audit runner consumes valid network-none DB proof but global-admin-golden-journey.yml directly invokes test against services.postgres without proof. Also CI concurrency cancels runs on audit-only commits; distinguish CANCELLED from test FAIL.
+
+
 ## SEQ-165 checkpoint — 2026-10-13
 
 ADMIN-JOURNEY-DISPOSABLE-ATTESTATION-001 HIGH test-gate blocker: global admin golden journey CI run 38335320862 fails before application import; workflow services.postgres lacks mandatory network-none proof, attestation file/run ID and DB marker required by disposable-postgres-test-guard. Do not disable fail-closed guard.
