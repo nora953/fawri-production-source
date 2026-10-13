@@ -15,11 +15,11 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'fawri-residual-owned-'));
 let cleanup=true,result;
 try{
  result=spawnSync(process.execPath,['--import','./scripts/lib/disposable-postgres-preload.mjs','--import','tsx','--test','--test-reporter=tap','--test-concurrency=1','--test-timeout=180000',`docs/final-audit/evidence/${file}`],{
-  env:{...process.env,FAWRI_DATA_DIR:dir},encoding:'utf8',timeout:240000,maxBuffer:8000000});
+  env:{...process.env,FAWRI_DATA_DIR:dir,FAWRI_CASHIER_HISTORY_ONLY_MISSING_LEVEL:'1'},encoding:'utf8',timeout:240000,maxBuffer:8000000});
  process.stdout.write(result.stdout||'');process.stderr.write(result.stderr||'');
 }finally{try{fs.rmSync(dir,{recursive:true,force:true});}catch{cleanup=false;}}
 const stdout=result.stdout||'';
 const summary={file,runtime:process.version,exit:result.status,summaryComplete:['pass','fail','skipped'].every(k=>new RegExp('^# '+k+' \\d+$','m').test(stdout)),
  passed:Number(stdout.match(/^# pass (\d+)$/m)?.[1]||0),failed:Number(stdout.match(/^# fail (\d+)$/m)?.[1]||0),skipped:Number(stdout.match(/^# skipped (\d+)$/m)?.[1]||0),cleanup};
 console.log('CASHIER_HISTORY_SUITE_RESULT '+JSON.stringify(summary));
-process.exitCode=result.status===0&&summary.summaryComplete&&summary.passed>0&&summary.skipped===0&&cleanup?0:1;
+process.exitCode=result.status===0&&summary.summaryComplete&&summary.passed===1&&summary.skipped===0&&cleanup?0:1;

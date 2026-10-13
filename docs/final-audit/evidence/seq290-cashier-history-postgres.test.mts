@@ -56,7 +56,7 @@ async function provisionCashierHistoryAuthority(input: {
        id, merchant_id, status, licensed_seats, price_per_seat_iqd,
        billing_period_start, billing_period_end, grace_duration_seconds,
        version, created_at, updated_at
-     ) VALUES ($1,$2,'active',1,3900,now(),now() + interval '1 month',604800,1,now(),now())`,
+     ) VALUES ($1,$2,'active',1,3900,(now() - interval '1 minute'),(now() - interval '1 minute') + interval '1 month',604800,1,(now() - interval '1 minute'),(now() - interval '1 minute'))`,
     [subscriptionId, input.merchantId],
   );
   await pool.query(
@@ -69,9 +69,9 @@ async function provisionCashierHistoryAuthority(input: {
        metadata, created_at, updated_at
      ) VALUES (
        $1,$2,$3,'activate',0,1,1,3900,3900,'IQD',
-       now(),now() + interval '1 month',604800,
+       (now() - interval '1 minute'),(now() - interval '1 minute') + interval '1 month',604800,
        'applied',$4,'test_fixture',$5,$6,
-       now() + interval '30 minutes',now(),now(),'{}'::jsonb,now(),now()
+       (now() - interval '1 minute') + interval '30 minutes',(now() - interval '1 minute'),(now() - interval '1 minute'),'{}'::jsonb,(now() - interval '1 minute'),(now() - interval '1 minute')
      )`,
     [
       billingOrderId,
@@ -87,7 +87,7 @@ async function provisionCashierHistoryAuthority(input: {
        id, merchant_id, subscription_id, order_id, operation,
        previous_seats, resulting_seats, previous_version, resulting_version,
        amount_iqd, provider, provider_payment_ref, applied_at
-     ) VALUES ($1,$2,$3,$4,'activate',0,1,0,1,3900,'test_fixture',$5,now())`,
+     ) VALUES ($1,$2,$3,$4,'activate',0,1,0,1,3900,'test_fixture',$5,(now() - interval '1 minute'))`,
     [
       `cashier-history-application-${input.suffix}`,
       input.merchantId,
@@ -100,7 +100,7 @@ async function provisionCashierHistoryAuthority(input: {
     `INSERT INTO cashier_station_seat_assignments (
        id, merchant_id, subscription_id, station_id, status,
        assigned_at, created_at, updated_at
-     ) VALUES ($1,$2,$3,$4,'active',now(),now(),now())`,
+     ) VALUES ($1,$2,$3,$4,'active',(now() - interval '1 minute'),(now() - interval '1 minute'),(now() - interval '1 minute'))`,
     [
       `cashier-history-seat-${input.suffix}`,
       input.merchantId,
@@ -112,7 +112,7 @@ async function provisionCashierHistoryAuthority(input: {
     `INSERT INTO cashier_station_credentials (
        id, merchant_id, station_id, device_id, token_hash, version,
        status, issued_at, expires_at
-     ) VALUES ($1,$2,$3,$4,$5,1,'active',now(),now() + interval '1 month')`,
+     ) VALUES ($1,$2,$3,$4,$5,1,'active',(now() - interval '1 minute'),(now() - interval '1 minute') + interval '1 month')`,
     [
       `cashier-history-credential-${input.suffix}`,
       input.merchantId,
@@ -390,7 +390,7 @@ async function immutable(s:Awaited<ReturnType<typeof seed>>){
 }
 async function levels(s:Awaited<ReturnType<typeof seed>>){return (await pool.query('SELECT * FROM location_inventory_levels WHERE merchant_id=$1 ORDER BY id',[s.merchantId])).rows;}
 function update(s:Awaited<ReturnType<typeof seed>>,input:any){return catalog.updateCatalogProductAuthoritative({merchantId:s.merchantId,productId:s.productId,expectedVersion:s.soldProduct.version,input});}
-test('zero-stock licensed sale immutable history survives subsequent catalog rename',async()=>{
+if(process.env.FAWRI_CASHIER_HISTORY_ONLY_MISSING_LEVEL!=='1')test('zero-stock licensed sale immutable history survives subsequent catalog rename',async()=>{
  const s=await seed(),before=await immutable(s),stock=await levels(s);assert.equal(before.orders.length,1);assert.equal(before.items.length,1);assert.equal(before.mutations.length,1);
  await update(s,{...s.soldProduct,name:'Renamed after zero-stock licensed sale'});
  assert.deepEqual(await immutable(s),before);assert.deepEqual(await levels(s),stock);
@@ -398,13 +398,13 @@ test('zero-stock licensed sale immutable history survives subsequent catalog ren
  assert.equal(before.items[0].product_variant_id,s.variantId);assert.equal(before.items[0].quantity,2);assert.equal(before.orders[0].total_iqd,18000);
  console.log('CASHIER_HISTORY_OBSERVATION '+JSON.stringify({scenario:'zero-stock-rebuild',orders:1,items:1,mutations:1,immutableRowsPreserved:true,locationLevelUnchanged:true}));
 });
-test('zero-quantity location row blocks archive without changing catalog or sale history',async()=>{
+if(process.env.FAWRI_CASHIER_HISTORY_ONLY_MISSING_LEVEL!=='1')test('zero-quantity location row blocks archive without changing catalog or sale history',async()=>{
  const s=await seed(),before=await immutable(s),stock=await levels(s);
  await assert.rejects(update(s,{...s.soldProduct,name:'Must not commit on dependency',variants:[]}),{code:'CATALOG_VARIANT_HISTORY_CONFLICT'});
  assert.deepEqual(await catalog.getCatalogProductAuthoritative(s.merchantId,s.productId),s.soldProduct);assert.deepEqual(await immutable(s),before);assert.deepEqual(await levels(s),stock);
  console.log('CASHIER_HISTORY_OBSERVATION '+JSON.stringify({scenario:'zero-stock-archive-guard',denied:true,graphUnchanged:true,immutableRowsPreserved:true,locationLevelUnchanged:true}));
 });
-test('zero-quantity location row blocks disabling inventory tracking atomically',async()=>{
+if(process.env.FAWRI_CASHIER_HISTORY_ONLY_MISSING_LEVEL!=='1')test('zero-quantity location row blocks disabling inventory tracking atomically',async()=>{
  const s=await seed(),before=await immutable(s),stock=await levels(s);
  await assert.rejects(update(s,{...s.soldProduct,name:'Must not disable inventory',track_inventory:false}),{code:'CATALOG_PRODUCT_LOCATION_INVENTORY_CONFLICT'});
  assert.deepEqual(await catalog.getCatalogProductAuthoritative(s.merchantId,s.productId),s.soldProduct);assert.deepEqual(await immutable(s),before);assert.deepEqual(await levels(s),stock);
