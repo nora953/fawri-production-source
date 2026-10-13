@@ -1,5 +1,14 @@
 # Remaining audit work — 2026-10-11
 
+## Authoritative continuation — SEQ-318–323 (2026-10-14 Baghdad)
+
+Latest [SEQ-318–323](SEQ_318_323_ADMIN_LIFECYCLE_HTTP_20261014.md). **Next SEQ-324**. Six sequential stages/audit only; application/original tests/schema unchanged.
+
+Source9824331fdded014a7bf98808a0dde035847dff47, run38486456958/job115601177970: **14distinct businessPASS/0FAIL**, rawTAP15P/0F/0SKIP includes1parent.28migrations/owned cleanup SUCCESS. Assistant creation/input/duplicate, owner monitor session isolation and selected private fields, third device trust cap, logout-all role/target/two-device/unrelated-account protection, password reset invalid/valid/versions/revocation, forced-change restriction/reused-temporary denial/different-password recovery PASS. Fourlocal runner refusals separate; no earlier cases rerun.
+
+No new canonical app finding; legacy fixture and native stale UI issues remain OPEN. Trust/sessions seeded, not interactive login/OTP/browser/RLS/provider proof; concurrency/fault rollback and failed-login telemetry not exercised.21selectors/222full-route visual cases unchanged. Whole percentage **NOT_YET_MEASURABLE**, release BLOCKED.
+
+
 ## Authoritative continuation — SEQ-312–317 (2026-10-14 Baghdad)
 
 Latest [SEQ-312–317](SEQ_312_317_DEVICE_PERMISSION_HTTP_20261014.md). **Next SEQ-318**. Six sequential stages, audit only; application/original tests/schema unchanged.
