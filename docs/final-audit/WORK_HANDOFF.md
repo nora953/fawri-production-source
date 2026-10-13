@@ -1,5 +1,12 @@
 # Fawri audit — current authoritative handoff
 
+## SEQ-140 in progress; SEQ-141 prepared — 2026-10-13
+
+Parent AdminPage native browser suite source03a24b86, run38325824630/job115064131411 produced13PASS/2FAIL plus fixture infrastructure failure. This is not completed product clearance. Two assertions: owner is correctly read-only so inspection button expectation was wrong; owner-to-logs checked before React fallback effect settled. Fixture also omitted real emergency overview GET and automatic logout POST. Correct only fixture endpoint map/expected owner surface/wait-for-settled fallback; keep all permission assertions and fail on unknown requests. Actual API/app code unchanged.
+
+SEQ-141 prepares actual AdminSupportPreviewPage: AR/EN/KU narrow-screen escaped/read-only records, initial403/409,503/retry, real10-second polling409/503, expired countdown and failed termination503. Candidate retained-data/termination concerns remain unverified until browser result. Prior SQL144PASS/24FAIL and Support12PASS/1FAIL unchanged;54%estimate unchanged. No repairs/merge/deploy/hosted writes. Next read corrected parent and new preview CI, classify findings and synchronize ledgers.
+
+
 ## Definitive current handoff — SEQ-138–139 complete; next SEQ-140
 
 Continue from saved evidence. Comprehensive audit and evidence recording only; no application repairs or consolidated repair plan until the audit is complete. No main merge, deployment, hosted DB/secrets or real payment.

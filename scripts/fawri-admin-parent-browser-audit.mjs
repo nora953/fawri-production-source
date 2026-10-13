@@ -61,7 +61,7 @@ try {
  import {getAdminText} from './artifacts/fawri/src/lib/admin-translations.ts';
  localStorage.clear();sessionStorage.clear();localStorage.setItem('fawri_lang','en');
  // Suppress legacy local imports in this fresh synthetic owner; those endpoints
- // are outside this UI permission test, and all non-GET requests fail closed.
+ // are outside this UI permission test, and non-GET requests other than synthetic logout fail closed.
  localStorage.setItem('fawri_admin_data_migrated_v1_synthetic-admin','done');
  localStorage.setItem('fawri_subscriptions_migrated_v1_synthetic-admin','done');
  globalThis.auditAdmin=getAdminSupportText('en');globalThis.auditText=getAdminText('en');
@@ -75,6 +75,7 @@ try {
   const ref=new URL(req.headers.referer||'http://synthetic/'),state=states.get(ref.searchParams.get('case'));
   res.setHeader('Content-Type','application/json; charset=utf-8');
   const send=(code,data)=>{res.statusCode=code;res.end(JSON.stringify(data));};
+  if(state&&req.url==='/api/auth/admin/logout'&&req.method==='POST'){state.calls.push('POST '+req.url);return send(200,{ok:true});}
   if(!state||req.method!=='GET'){unexpected.push({path:req.url,method:req.method,knownCase:Boolean(state)});return send(409,{ok:false});}
   state.calls.push(req.url);
   if(req.url==='/api/auth/admin/me'){
@@ -84,6 +85,7 @@ try {
   }
   if(req.url==='/api/auth/admin/support/tickets')return send(200,{ok:true,tickets:[ticket],active_count:1});
   const responses={
+   '/api/auth/admin/emergency-read-access/overview':{ok:true,is_owner:state.role==='owner',authorization:{can_request:false},requests:[]},
    '/api/auth/merchants':{ok:true,merchants:[]},
    '/api/auth/admin/subscriptions':{ok:true,subscriptions:[]},
    '/api/auth/admin/logs':{ok:true,logs:[]},
@@ -135,7 +137,7 @@ try {
    else await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(${JSON.stringify('Audit '+role)})`));
    await delay(250);const value=await snapshot(t.cdp);
    assert.equal(value.support,allowed);assert.equal(value.message,allowed);
-   if(allowed){assert.equal(value.reply,role==='owner'?0:1);assert.equal(value.inspection,role!=='support');}
+   if(allowed){assert.equal(value.reply,role==='owner'?0:1);assert.equal(value.inspection,role==='inspector',JSON.stringify(value));}
    else assert.equal(t.state.calls.filter(p=>p.includes('/support/')).length,0,'denied initial session must not request Support');
    if(role==='none')assert.equal(value.noPermissions,true);
    if(role==='password')assert.equal(await evaluate(t.cdp,'Boolean(document.querySelector("[role=dialog]"))'),true);
@@ -152,6 +154,7 @@ try {
    await waitFor(()=>t.state.meCalls>before,15000,'real controller permission refresh');
    if(change.to==='support')await openSupport(t.cdp);
    else await waitFor(async()=>{const v=await snapshot(t.cdp);return !v.support&&!v.message;},15000,'parent drops revoked support');
+   if(change.to==='logs')await waitFor(()=>evaluate(t.cdp,'document.querySelector("aside nav button[aria-current=page]")?.textContent===auditText.mainTabLogs'),15000,'settled logs fallback');
    const value=await snapshot(t.cdp);
    assert.equal(value.support,change.to==='support');assert.equal(value.message,change.to==='support');
    if(['401','403'].includes(change.to))assert.equal(value.path,'/login');
