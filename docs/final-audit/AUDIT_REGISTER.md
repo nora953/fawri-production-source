@@ -1,5 +1,10 @@
 # Fawri final audit — evidence register
 
+## SEQ-164 checkpoint — 2026-10-13
+
+[Owner recovery test coverage](SEQ_164_OWNER_RECOVERY_TEST_COVERAGE_20261013.md): inspected static contract and disposable PostgreSQL HTTP integration test source (OTP, replay denial, session/device revocation, password reset). Not run in this stage. Global admin CI run 38335204802 was in progress at inspection, no success claim. Pending concurrent and explicit non-owner test evidence. Release BLOCKED.
+
+
 ## SEQ-161–163 checkpoint — 2026-10-13
 
 [SEQ-161–162](SEQ_161_162_WORK_MONITOR_OWNER_RECOVERY_20261013.md) and [SEQ-163](SEQ_163_OWNER_RECOVERY_TRANSACTION_20261013.md) inspected WorkMonitor silent stale poll and owner_admin role gate/atomic recovery revocations. Source-only, no fresh runtime tests.
