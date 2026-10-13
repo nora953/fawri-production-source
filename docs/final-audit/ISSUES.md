@@ -1,5 +1,11 @@
 # Fawri final audit — issue and decision ledger
 
+
+## SEQ-143–158 checkpoint — 2026-10-13
+
+SEQ-153–158 open/triage: CASHIER-IDB-IDEMPOTENCY-001 local same-ID changed-input silent replay (Chrome+source, backend has request_hash 409); CASHIER-BILLING-SQL-RECOVERY-001 synthetic P0001 rolls back event/order, webhook returns 503; SUPERQI-ORDER-NOT-FOUND-ACK-001 TRIAGE missing-order webhook ignored with HTTP 200. No real lost payment or cloud bypass proven. [Root causes](SEQ_153_154_CASHIER_ROOT_CAUSE_20261013.md) · [Cloud boundaries](SEQ_155_157_SYNC_WEBHOOK_BOUNDARIES_20261013.md) · [Webhook HTTP](SEQ_158_SUPERQI_WEBHOOK_HTTP_20261013.md).
+
+
 ## Current issue checkpoint — SEQ-141 (2026-10-13)
 
 Confirmed in actual source and browser: EMERGENCY-SNAPSHOT-END503-001 (MEDIUM/OPEN, end 503 navigates without confirmation) and EMERGENCY-SNAPSHOT-END401-001 (MEDIUM/OPEN, finally overwrites /login). EMERGENCY-SNAPSHOT-KU-001 remains TRIAGE only (Sorani empty-tab timeout, root cause unconfirmed). Evidence [SEQ-140/141](SEQ_140_141_ADMIN_PARENT_EMERGENCY_20261013.md). Do not duplicate CASHIER-REPORT-PROFIT-001. No repair authorized.
