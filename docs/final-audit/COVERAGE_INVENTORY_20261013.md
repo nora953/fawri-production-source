@@ -54,3 +54,7 @@ Real childSIGTERM plus local durableFS/restart proof added; no productionSQL/pro
 ## SEQ-274–281 actual original execution update
 
 13/13 originalresidualfiles invoked inownseparateattestedcluster/28migrations;12completeNodeTAP summaries16P/8F/0SKIP,1incompletefixture.4fullygreenfiles,8completefails,1incomplete; intendedfailed/blockedbusinessassertions notcoveredmerelybyinvocation. Newauditworkflow13selectionproof reduces34unresolvedto21/277 (7.58%),notuntestedcodecoverage. Manifest retainsoldNOT_RUN andnewobservedruntime.222fullroutecasesstillNOT_RUN;wholepercentageNOT_YET_MEASURABLE,nextSEQ-282.
+
+## SEQ-282–285 bounded SQL archival update
+
+Two new actualSQL business cases1P/1F; four separate runner refusal controlsPASS. Archive preserves complete immutable inventory mutation/retains hidden variant through rebuild. Marker-failure atomicity confirmedMEDIUM: requestrejected whilecoreeditcommitted. Initialfixtureimportblocked0businessassertions separate. No originaltests rerun;21selectors/222fullroutevisualcases unchanged. WholepercentNOT_YET_MEASURABLE;nextSEQ-286,ReleaseBLOCKED.

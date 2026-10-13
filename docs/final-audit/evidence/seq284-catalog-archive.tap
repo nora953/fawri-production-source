@@ -1,0 +1,45 @@
+TAP version 13
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# CATALOG_ARCHIVE_OBSERVATION {"scenario":"successful-archive","historyUnchanged":true,"archivedRowRetained":true,"hiddenAfterRebuild":true}
+# Subtest: successful archive hides variant and preserves immutable mutation across later rebuild
+ok 1 - successful archive hides variant and preserves immutable mutation across later rebuild
+  ---
+  duration_ms: 114.004336
+  type: 'test'
+  ...
+# CATALOG_ARCHIVE_OBSERVATION {"scenario":"marker-fault","requestRejected":true,"beforeVersion":2,"afterVersion":3,"nameChanged":true,"visibleVariantCount":1,"variantQuantity":0,"archiveMarked":false,"historyUnchanged":true}
+# Subtest: archive marker SQL failure should roll back product edit and leave active variant intact
+not ok 2 - archive marker SQL failure should roll back product edit and leave active variant intact
+  ---
+  duration_ms: 44.077926
+  type: 'test'
+  location: '/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq282-catalog-archive-postgres.test.mts:1:4183'
+  failureType: 'testCodeFailure'
+  error: |-
+    rejected archive must not commit rename
+    + actual - expected
+
+    + 'Must roll back on marker failure'
+    - 'Archive history baseline'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Archive history baseline'
+  actual: 'Must roll back on marker failure'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq282-catalog-archive-postgres.test.mts:49:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1132.09819

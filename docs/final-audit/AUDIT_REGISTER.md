@@ -1,5 +1,14 @@
 # Fawri final audit — evidence register
 
+## Authoritative continuation — SEQ-282–285 (2026-10-13)
+
+Latest [SEQ-282–285](SEQ_282_285_CATALOG_ARCHIVE_POSTGRES_20261013.md), executed source `ce48910f71cfd910c0b86fe24aa9fdb805083cec`, run38431991119/job115416248457. **Next SEQ-286**. Audit-only new runner/fixtures; application/original tests/schema unchanged.
+
+Real owned PostgreSQL28migrations: **2 business cases / 1 PASS / 1 FAIL / 0 SKIP**, cleanup SUCCESS. Successful archive preserves immutable mutation and hides retained variant through later rebuild. NEW MEDIUM **CATALOG-ARCHIVE-ATOMICITY-001 / OPEN / CONFIRMED**: injected archive-marker SQL failure rejects request after core commit; name/version changed, zero-stock unmarked variant visible, ledger preserved. No hosted outage/history loss claim. Initial CJS fixture import failure is separate HARNESS_IMPORT_BLOCKED/zero business cases; corrected audit ESM only.
+
+Local four runner refusal controls PASS; not SQL acceptance. Existing fixture-maintenance finding remains, successful inventory-archive uncertainty now resolved within bounded case. Cashier/order/location/concurrent/recovery/HTTP/UI scope pending.21selectors/222full-route visuals remain open; whole percentage **NOT_YET_MEASURABLE**. Release BLOCKED.
+
+
 ## Authoritative continuation — SEQ-274–281 (2026-10-13)
 
 Latest [SEQ-274–281](SEQ_274_281_REAL_RESIDUAL_POSTGRES_20261013.md), auditexecutioncommit `3d4a4f529e7463448a4587b9d729e60f534734ac`. **NextSEQ-282**. NEW audit-onlyworkflow/executors; application/originaltests/schema/existingworkflows/scanner unchanged.
@@ -663,3 +672,7 @@ Corrected central native run38204282300 completedSUCCESS on sourced6f6b4a0. Pres
 SEQ-133 PREPARED expands actualreceiptbrowserharness from6 to8cases: actual printCashierReceipt/nativeiframe srcdoc load, withexplicitinertprint method at the physicalprintboundary; explicitlydispatchafterprint thenframe0; fault-injectedprint method throws andactualhelpercatchmustremoveframe0 andpreserveerror. Assertiframe receiptretainslastitem/noprivatecostsentinel. Original6native thermalwidth/PDFcases retained. This is actualDOM/load/helper orchestration plus controlledprint/eventadapter, not realhardware/printdialog event proof. Local syntaxPASS; two new assertionsNOT_RUN pendingCI. Possible fallbacktimer behavior afterexception remainsseparate fromframe-removalproof.
 
 CASHIER-REPORT-PROFIT-001 HIGH remainsconfirmed/unrepaired; aggregate138PASS/24FAIL includes16functional+8parents for9canonicalfindings. Existingreportsource/query/offline/provider/hosted/role/visualgates remainopen. Localadminauthority14PASS separate. Next inspect8receipt/central logs andcompletedSQL; then save definitivehandoff forremaining owner/admin/merchant scope. Noapplicationrepair orconsolidatedplan beforeauditcompletion.
+
+## SEQ-282–285 catalog marker atomicity
+
+CATALOG-ARCHIVE-ATOMICITY-001 MEDIUM/OPEN/CONFIRMED: actual ownedSQL fault-injection rejects archive-marker UPDATE after corecatalog transaction committed. Product version2→3 and rename persist; zero-stock variant remains publicly visible because metadata marker is absent. Full immutable mutation retained. Run38431991119/job115416248457 1P/1F/0SKIP; sourcece48910f. Trigger fault controlled, not hostedincident evidence. Source and limits in completed report. No repair.

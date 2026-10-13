@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-282–285 (2026-10-13)
+
+Latest [SEQ-282–285](SEQ_282_285_CATALOG_ARCHIVE_POSTGRES_20261013.md), executed source `ce48910f71cfd910c0b86fe24aa9fdb805083cec`, run38431991119/job115416248457. **Next SEQ-286**. Audit-only new runner/fixtures; application/original tests/schema unchanged.
+
+Real owned PostgreSQL28migrations: **2 business cases / 1 PASS / 1 FAIL / 0 SKIP**, cleanup SUCCESS. Successful archive preserves immutable mutation and hides retained variant through later rebuild. NEW MEDIUM **CATALOG-ARCHIVE-ATOMICITY-001 / OPEN / CONFIRMED**: injected archive-marker SQL failure rejects request after core commit; name/version changed, zero-stock unmarked variant visible, ledger preserved. No hosted outage/history loss claim. Initial CJS fixture import failure is separate HARNESS_IMPORT_BLOCKED/zero business cases; corrected audit ESM only.
+
+Local four runner refusal controls PASS; not SQL acceptance. Existing fixture-maintenance finding remains, successful inventory-archive uncertainty now resolved within bounded case. Cashier/order/location/concurrent/recovery/HTTP/UI scope pending.21selectors/222full-route visuals remain open; whole percentage **NOT_YET_MEASURABLE**. Release BLOCKED.
+
+
 ## Authoritative continuation — SEQ-274–281 (2026-10-13)
 
 Latest [SEQ-274–281](SEQ_274_281_REAL_RESIDUAL_POSTGRES_20261013.md), auditexecutioncommit `3d4a4f529e7463448a4587b9d729e60f534734ac`. **NextSEQ-282**. NEW audit-onlyworkflow/executors; application/originaltests/schema/existingworkflows/scanner unchanged.
@@ -753,3 +762,7 @@ Supportpreviewvisualroutefixturecorrected toassistantwithmanage_support+inspect_
 RESIDUAL-FIXTURE-CONTRACT-001 MEDIUM/OPEN/TEST_MAINTENANCE: realownedPGinvocation13files shows oldcashierentitlement/localphone/legacyJSONauth/legacycookie/productiongate fixtureexpectations failcurrentcontracts.12complete16P/8F;oneincomplete23514merchantmanagementseed. Variantremoval Missingexpectedrejection conflicts withcurrentarchiveintent; actualpostremovalhistoryacceptancepending, no productdefectdeclared fromoldtest alone. Source/remapping inreport. Originaltests/appunchanged.
 
 Fourfullygreenfiles:catalogpromotions/emergencyPG/knowledge lifecycle/runtime authorities. Mixedpositivecataloginventoryrows andactualownerprovisioningPASS, not blanketclearance. Incompletemerchantmanagementseed/latehook strengthens existingDB-TEST-CLEANUP-021;ownedcontainercleanupSUCCESS. Canonicalconsentexpiryadapter6P/1F extends existingSUPPORT-PREVIEW-EXPIRY-ROLLBACK-001, no duplicate. Allpreviousfindingsretained.
+
+## SEQ-282–285 catalog marker atomicity
+
+CATALOG-ARCHIVE-ATOMICITY-001 MEDIUM/OPEN/CONFIRMED: actual ownedSQL fault-injection rejects archive-marker UPDATE after corecatalog transaction committed. Product version2→3 and rename persist; zero-stock variant remains publicly visible because metadata marker is absent. Full immutable mutation retained. Run38431991119/job115416248457 1P/1F/0SKIP; sourcece48910f. Trigger fault controlled, not hostedincident evidence. Source and limits in completed report. No repair.
