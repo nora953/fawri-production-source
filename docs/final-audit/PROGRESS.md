@@ -1,5 +1,14 @@
 # Fawri final audit — resume here
 
+## Authoritative continuation — SEQ-290–293 (2026-10-13)
+
+Latest [SEQ-290–293](SEQ_290_293_LICENSED_CASHIER_HISTORY_20261013.md). **Next SEQ-294**. Audit-only; application/original tests/schema unchanged.
+
+Actual ownedSQL **4 distinct business cases PASS**: initial source3c03392c/run38434410022/job115424558317 gives3targetPASS/1seedBLOCKED; remaining-only corrected source9f9806b3/run38435030672/job115426684838 gives1PASS/0FAIL/0SKIP. Previously verified3notrerun.28migrations/ownedcleanupSUCCESS both. New licensed zero-stock sale history persists; zero-location-row blocks archive/inventorydisable; deliberate ownedmissing-level archive retains sale and exactreplay, unsafe returndenied without history/stock mutation. No new canonical defect; no productioncleanup/HTTP/UI/RLS proof.
+
+Local4runnerrefusalsPASS separate. Originalretiredlicense fixture finding remainsOPEN; prioratomicity/expiry findings unchanged.21selectors/222fullroutevisualcases unchanged; whole percentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-286–289 (2026-10-13)
 
 Latest [SEQ-286–289](SEQ_286_289_SUPPORT_EXPIRY_POSTGRES_20261013.md), executed source `23efe18cb9089507909b3d390fea790272e22cd7`, run38433417141/job115421169603. **Next SEQ-290**. Audit-only; application/original tests/schema unchanged.

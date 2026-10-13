@@ -62,3 +62,7 @@ Two new actualSQL business cases1P/1F; four separate runner refusal controlsPASS
 ## SEQ-286–289 actual expiry SQL update
 
 New7SQLcases5P/2F,4separate runnerrefusalsPASS. ExistingLOWexpiryrollback finding strengthened toactualSQL; liveconsent/foreigntenant/oppositerace/lifecycle recovery/idempotence controlsPASS, deniedexpiry markersFAIL. Production timers/HTTP/auth/role/RLSNOT_RUN inthisbatch. Initial7auditseedfailures excludedfrombusinesscounts.21selectors/222routevisualcases unchanged,wholepercentNOT_YET_MEASURABLE,nextSEQ-290,releaseBLOCKED.
+
+## SEQ-290–293 licensed zero-stock history update
+
+Fournewdistinct SQLcases4PASS(final):3initialcompleted/oneinitialseedblocked,remainingonly1PASS. Historicalfullsale/item/mutationrows preservedacrossrebuild/guardeddenial andownedmissing-level archive; replaynoadditionalstock, unsafe returndenied.4localrunnerrefusalsseparate. Originalfixturefailuresnotrewritten,noproductfindingadded.21selectors/222routevisualcases unchanged,wholepercentNOT_YET_MEASURABLE,nextSEQ-294/releaseBLOCKED.
