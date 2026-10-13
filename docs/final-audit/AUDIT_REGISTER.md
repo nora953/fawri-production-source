@@ -1,5 +1,10 @@
 # Fawri final audit — evidence register
 
+## SEQ-165 checkpoint — 2026-10-13
+
+[SEQ-165 root cause](SEQ_165_ADMIN_JOURNEY_ATTESTATION_20261013.md): global admin journey run 38335320862 failed pre-import due missing disposable PostgreSQL attestation in GitHub Actions services.postgres. CI orchestration defect; app auth not exercised.
+
+
 ## SEQ-164 checkpoint — 2026-10-13
 
 [Owner recovery test coverage](SEQ_164_OWNER_RECOVERY_TEST_COVERAGE_20261013.md): inspected static contract and disposable PostgreSQL HTTP integration test source (OTP, replay denial, session/device revocation, password reset). Not run in this stage. Global admin CI run 38335204802 was in progress at inspection, no success claim. Pending concurrent and explicit non-owner test evidence. Release BLOCKED.
