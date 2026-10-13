@@ -1,5 +1,10 @@
 # Fawri final audit — evidence register
 
+## SEQ-167 checkpoint — 2026-10-13
+
+[SEQ-167](SEQ_167_DISPOSABLE_PROVISIONING_AND_RUNS_20261013.md) actual Docker network-none disposable PostgreSQL provisioner and CI workflow verified in source; run 38335621370 queued, earlier cancelled, no PASS claim.
+
+
 ## SEQ-166 checkpoint — 2026-10-13
 
 [SEQ-166](SEQ_166_ISOLATED_POSTGRES_RUNNER_COMPARISON_20261013.md): isolated runner validates attestation and includes tenant admin-auth suite, but does not provision proof. Admin CI invokes test without attestation. No new test run.
