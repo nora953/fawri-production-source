@@ -75,7 +75,7 @@ try {
   if(req.url!=='/api/auth/admin/support-preview/synthetic-preview/snapshot'||req.method!=='GET'){unexpected.push({path:req.url,method:req.method});return send(404,{ok:false});}
   state.calls++;
   const status=state.status;
-  const data=snapshot();if(state.mode==='expired')data.session.expires_at=new Date(Date.now()-1000).toISOString();
+  const data=snapshot();if(state.mode==='expired')data.session.expires_at=new Date(Date.now()+2500).toISOString();
   return setTimeout(()=>send(status,status===200?{ok:true,snapshot:data}:{ok:false,error:status===409?'SUPPORT_PREVIEW_EXPIRED':'synthetic failure'}),state.calls===1?250:10);
  }else if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');res.end(bundle.outputFiles.find(x=>x.path.endsWith('.js')).text);}
  else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css; charset=utf-8');res.end(styles);}
@@ -151,6 +151,13 @@ try {
    const path=await evaluate(t.cdp,'location.pathname');assert.notEqual(path,'/admin','End503 navigates away without confirming server termination');return{path,endCalls:t.state.endCalls};
   }finally{await closed(t);}
  });
+
+ await check('actual preview successful end200 navigates after one termination request',async()=>{
+  const t=await tab();try{
+   await loaded(t.cdp);await click(t.cdp,'b.textContent.trim()===auditText.end');await waitFor(()=>t.state.endCalls===1);
+   await waitFor(()=>evaluate(t.cdp,'location.pathname==="/admin"'));return{endCalls:t.state.endCalls};
+  }finally{await closed(t);}
+ });
  assert.deepEqual(unexpected,[]);
  evidence.limits='Actual component/native browser/i18n/CSS, synthetic loopback snapshots and one synthetic end POST. No hosted/private records or real backend writes. Server expiry and current-grant enforcement remain separate SQL/HTTP evidence; retained already-delivered data is not a fresh access bypass.';
 } catch(e){infrastructureError=e.message;}
@@ -169,4 +176,4 @@ finally {
 
 if(infrastructureError)evidence.infrastructureError=infrastructureError;
 console.log('AUDIT_SUPPORT_PREVIEW_RESULT '+JSON.stringify(evidence));
-if(infrastructureError||evidence.results.length!==10||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
+if(infrastructureError||evidence.results.length!==11||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;

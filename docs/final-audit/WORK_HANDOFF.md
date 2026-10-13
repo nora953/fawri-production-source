@@ -1,5 +1,14 @@
 # Fawri audit — current authoritative handoff
 
+## SEQ-140 verified; SEQ-141 findings; SEQ-142 prepared — 2026-10-13
+
+Source436ceb98; merge checkout60503ccd. Parent run38325986744/job115064644425:15PASS/0FAIL, Chrome154, actual AdminPage/controller/shell/view. Current role downgrade and401/403 hide Support, upgrade opens it. English1280px/synthetic HTTP only; real App wrapper/backend/visual gates remain unverified. Prior13/2+fixture result preserved below, corrected fixture verified.
+
+Preview run38325986879/job115064645037:6PASS/4FAIL, actual component with synthetic snapshots. AR/EN/KU390px escaped records/hidden knownsecret keys/read-only inputs/emptytab, initial403/409 and503retry PASS. SUPPORT-PREVIEW-STALE-001 MEDIUM/OPEN: silent409 and503 retain data without error, expired countdown retains snapshot. SUPPORT-PREVIEW-END-001 MEDIUM/OPEN: end503 still navigates to/admin. These are UI lifecycle/reliability findings, not fresh backend access bypass; prior SQL rejects ended preview409. No app changes. Extend preview with real countdown crossing (was initially expired fixture) and successful-end positive control; next result11cases pending.
+
+SEQ-142 new actual emergency snapshot browser suite12cases prepared: analogous AR/EN/KU/error/retry/poll/expiry gates plus end200/503/401. Source has stronger clearing on failed poll/expiry but end finally navigates regardless of response. Runtime pending. Keep SQL144/24, prior Support12/1 and54%planning estimate unchanged. Next read preview+emergency runs, classify exact outcomes, synchronize all ledgers and PR. No repair/merge/deploy/hosted mutation.
+
+
 ## SEQ-140 in progress; SEQ-141 prepared — 2026-10-13
 
 Parent AdminPage native browser suite source03a24b86, run38325824630/job115064131411 produced13PASS/2FAIL plus fixture infrastructure failure. This is not completed product clearance. Two assertions: owner is correctly read-only so inspection button expectation was wrong; owner-to-logs checked before React fallback effect settled. Fixture also omitted real emergency overview GET and automatic logout POST. Correct only fixture endpoint map/expected owner surface/wait-for-settled fallback; keep all permission assertions and fail on unknown requests. Actual API/app code unchanged.
