@@ -15,7 +15,7 @@ async function seed(expired=false){
  const pending=await accounts.upsertPendingMerchantAuthoritative({phone:`+96477${crypto.randomInt(0,100000000).toString().padStart(8,'0')}`,passwordHash:`hash-${suffix}`,ownerName:'Expiry audit owner',storeName:'Expiry audit store',activityType:'retail',language:'en',requestedPlan:'silver'});
  await accounts.markMerchantOtpVerifiedAuthoritative(pending.account.id);
  const merchantId=pending.account.id,adminId=`admin-expiry-${suffix}`,ticketId=`ticket-expiry-${suffix}`,requestId=`request-expiry-${suffix}`,sessionId=`preview-expiry-${suffix}`;
- await pool.query("INSERT INTO accounts(id,kind,password_hash,state,language,phone_verified) VALUES($1,'admin',$2,'active','en',true)",[adminId,`hash-${suffix}`]);
+ await pool.query("INSERT INTO accounts(id,kind,password_hash,state,language,phone_verified,phone_verified_at,phone) VALUES($1,'admin',$2,'active','en',true,now(),$3)",[adminId,`hash-${suffix}`,`+96478${crypto.randomInt(0,100000000).toString().padStart(8,'0')}`]);
  await pool.query("INSERT INTO support_tickets(id,merchant_id,subject,category,status,assigned_admin_account_id,waiting_on,waiting_since) VALUES($1,$2,'Owned expiry proof','technical','in_progress',$3,'admin',now())",[ticketId,merchantId,adminId]);
  await pool.query("INSERT INTO support_inspection_requests(id,ticket_id,merchant_id,admin_account_id,mode,reason,request_expires_at) VALUES($1,$2,$3,$4,'independent_read_only','Owned expiry audit',now()+($5::int * interval '1 hour'))",[requestId,ticketId,merchantId,adminId,expired?-1:1]);
  return {merchantId,adminId,ticketId,requestId,sessionId};
