@@ -1,5 +1,10 @@
 # Fawri final audit — resume here
 
+## SEQ-167 checkpoint — 2026-10-13
+
+SEQ-167 read-only inspection: actual Docker network-none provisioner and workflow identified. Latest isolated CI run 38335621370 QUEUED at observation, previous 38335614360 and 38335596565 CANCELLED. No new test PASS/FAIL. Release BLOCKED, ~54%/46%.
+
+
 ## SEQ-166 checkpoint — 2026-10-13
 
 SEQ-166 runner/workflow comparison completed source-only; no tests run. Existing DISPOSABLE_POSTGRES_EXECUTION_PLAN.md DB-00..08 remains PLAN ONLY until exact isolated suite evidence reconciled. ~54%/46%, release BLOCKED.
