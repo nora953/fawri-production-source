@@ -1,5 +1,14 @@
 ## Current audit continuation — SEQ-255 (2026-10-13)
 
+## Authoritative continuation — SEQ-294–297 (2026-10-13)
+
+Latest [SEQ-294–297](SEQ_294_297_SELECTOR_MOUNTED_MONITOR_20261013.md), head `5da92ffd4423cea44f2681d8eaa87128c93c26bf`, mergecheckout21b72bd0, run38437736590/job115436032580. **Next SEQ-298**. Audit-only, application/original tests unchanged.
+
+Actual mountedChrome154WorkMonitor/I18n/CSS **7cases4PASS/3FAIL**, noinfraerror. AR/EN/KU390px direction/title/nooverflow andinitial403errorPASS. Real15second silent403/503 retain olddata/noerror, oldadminresponse replaces newtarget afterReactpropswitch. Existing **WORK-MONITOR-STALE-001 / OPEN / MOUNTED_BROWSER_CONFIRMED**, no duplicate/backendbypass. Pendingactions/realroles/fullAppHTTP stillopen.
+
+959source selectorcensus:21unchangedMJScontracts/nofilename references; priorSEQ226execution reused, no repeatedtestcredit.21unmapped repositoryselectionpaths stayOPEN;222fullroutecasesNOT_RUN unchanged. Wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-290–293 (2026-10-13)
 
 Latest [SEQ-290–293](SEQ_290_293_LICENSED_CASHIER_HISTORY_20261013.md). **Next SEQ-294**. Audit-only; application/original tests/schema unchanged.

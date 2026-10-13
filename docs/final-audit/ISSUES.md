@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-294–297 (2026-10-13)
+
+Latest [SEQ-294–297](SEQ_294_297_SELECTOR_MOUNTED_MONITOR_20261013.md), head `5da92ffd4423cea44f2681d8eaa87128c93c26bf`, mergecheckout21b72bd0, run38437736590/job115436032580. **Next SEQ-298**. Audit-only, application/original tests unchanged.
+
+Actual mountedChrome154WorkMonitor/I18n/CSS **7cases4PASS/3FAIL**, noinfraerror. AR/EN/KU390px direction/title/nooverflow andinitial403errorPASS. Real15second silent403/503 retain olddata/noerror, oldadminresponse replaces newtarget afterReactpropswitch. Existing **WORK-MONITOR-STALE-001 / OPEN / MOUNTED_BROWSER_CONFIRMED**, no duplicate/backendbypass. Pendingactions/realroles/fullAppHTTP stillopen.
+
+959source selectorcensus:21unchangedMJScontracts/nofilename references; priorSEQ226execution reused, no repeatedtestcredit.21unmapped repositoryselectionpaths stayOPEN;222fullroutecasesNOT_RUN unchanged. Wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-290–293 (2026-10-13)
 
 Latest [SEQ-290–293](SEQ_290_293_LICENSED_CASHIER_HISTORY_20261013.md). **Next SEQ-294**. Audit-only; application/original tests/schema unchanged.
@@ -792,3 +801,7 @@ SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 LOW/OPEN/CONFIRMED_SQL. Prioradapter-only ev
 ## SEQ-290–293 licensed history acceptance
 
 Fourdistinct actualSQL targetcasesPASS; no new issue. RESIDUAL-FIXTURE-CONTRACT-001 remainsOPEN/originallicensefixturesunchanged. Newcurrentlicensed salehistory surviveszero-stock rebuild andguarded denial; deliberately absentlevel archive retains sale/exactreplay, restitutiondenied withunchanged sale/mutationrows. Not successfulpostarchivecompensation/productiondeletionproof. Initial fourthseed denied deviceauthority; corrected timestampfixture runs onlyremainingcase. Prior3notrerun. ExistingCATALOG-ARCHIVE-ATOMICITY-001 andSUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 stayOPEN.
+
+## SEQ-294–297 native monitor and selector evidence
+
+WORK-MONITOR-STALE-001 OPEN/MOUNTED_BROWSER_CONFIRMED:actualReact/nativeChrome154real15second silent403/503 retainsoldmonitor withouterror; delayedAresponse replacesnewlydisplayedBafterpropchange.7cases4P/3F,source5da92ffd/run38437736590/job115436032580, noinfraerror. SyntheticHTTPonly,noApp/currentrole/backendbypass/nativependingwriteclearance. Existingfinding,no duplicate.21unchangedcontracts nofilename refs in959sources; priorlocalexecution retained/no rerun; boundedCIselectiongap staysOPEN.

@@ -66,3 +66,7 @@ New7SQLcases5P/2F,4separate runnerrefusalsPASS. ExistingLOWexpiryrollback findin
 ## SEQ-290–293 licensed zero-stock history update
 
 Fournewdistinct SQLcases4PASS(final):3initialcompleted/oneinitialseedblocked,remainingonly1PASS. Historicalfullsale/item/mutationrows preservedacrossrebuild/guardeddenial andownedmissing-level archive; replaynoadditionalstock, unsafe returndenied.4localrunnerrefusalsseparate. Originalfixturefailuresnotrewritten,noproductfindingadded.21selectors/222routevisualcases unchanged,wholepercentNOT_YET_MEASURABLE,nextSEQ-294/releaseBLOCKED.
+
+## SEQ-294–297 mounted monitor and selection update
+
+ActualnativeChrome7cases4P/3F strengthens existingmonitorfinding beyondadapters. Three390pxlanguagecomponentcases are notfullrouteclearance:222allNOT_RUN unchanged.959sourcecensus confirms21unchangedMJScontracts/nofilename refs withinboundedsource/glob review;prior28filelocalruntime reused,norepeatedexecution.21automatedselectorpaths remainunmapped,notuntestedcodepercent. Realrole/App/HTTP/nativependingactions remainopen,wholepercentageNOT_YET_MEASURABLE,nextSEQ-298/releaseBLOCKED.
