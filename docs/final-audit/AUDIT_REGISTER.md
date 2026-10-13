@@ -1,5 +1,10 @@
 # Fawri final audit — evidence register
 
+## SEQ-143–158 checkpoint — 2026-10-13
+
+CI batch [SEQ-143–152](SEQ_143_152_CI_TRIAGE_20261013.md) reviewed 10 workflows (6 pass/4 fail), not 10 full deep audits. Root cause [SEQ-153–154](SEQ_153_154_CASHIER_ROOT_CAUSE_20261013.md) identified local same-ID changed-payload replay and generic SQL rollback on synthetic payment failure. [SEQ-155–157](SEQ_155_157_SYNC_WEBHOOK_BOUNDARIES_20261013.md) confirmed backend cashier request-hash conflict guard and complete outbox acknowledgement. [SEQ-158](SEQ_158_SUPERQI_WEBHOOK_HTTP_20261013.md) identified generic SQL failure -> HTTP 503 and missing billing order -> ignored HTTP 200, provider retry unverified. Audit only; ~54%/46%, release BLOCKED.
+
+
 
 ## Latest checkpoint — SEQ-142 (2026-10-13)
 
