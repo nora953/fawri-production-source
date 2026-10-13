@@ -4,7 +4,7 @@ set -euo pipefail
 # Original application, tests, scanner and workflows remain unchanged.
 audit_suite="${1:-priority}"
 case "$audit_suite" in
-  seq282-catalog-archive-postgres.test.ts) ;;
+  seq282-catalog-archive-postgres.test.mts) ;;
   *) echo 'Unsupported catalog archive audit file' >&2; exit 2 ;;
 esac
 audit_node_image="node:24-bookworm-slim"

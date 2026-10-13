@@ -31,7 +31,7 @@ jobs:
           node --check docs/final-audit/evidence/seq282-execute-catalog-archive.mjs
           bash -n docs/final-audit/evidence/seq282-run-owned-catalog-archive.sh
       - name: Execute actual catalog archive and marker rollback assertions
-        run: bash docs/final-audit/evidence/seq282-run-owned-catalog-archive.sh seq282-catalog-archive-postgres.test.ts
+        run: bash docs/final-audit/evidence/seq282-run-owned-catalog-archive.sh seq282-catalog-archive-postgres.test.mts
       - name: Destroy owned containers and anonymous volumes even on failure
         if: always()
         run: |

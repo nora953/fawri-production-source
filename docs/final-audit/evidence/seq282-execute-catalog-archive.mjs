@@ -6,7 +6,7 @@ import {spawnSync} from 'node:child_process';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 
 const file=process.argv[2];
-assert.equal(file,'seq282-catalog-archive-postgres.test.ts','unregistered catalog archive audit');
+assert.equal(file,'seq282-catalog-archive-postgres.test.mts','unregistered catalog archive audit');
 await assertDisposablePostgres();
 const migration=spawnSync(process.execPath,['lib/db/scripts/audit-disposable-migrate.mjs'],{encoding:'utf8',timeout:180000,maxBuffer:4000000});
 process.stdout.write(migration.stdout||'');process.stderr.write(migration.stderr||'');

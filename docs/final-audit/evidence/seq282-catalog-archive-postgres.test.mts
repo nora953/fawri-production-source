@@ -6,7 +6,7 @@ import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres
 await assertDisposablePostgres();
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY='required';
 process.env.FAWRI_AUTH_SECURITY_SECRET='catalog-archive-owned-audit-secret-32-bytes';
-const {pool}=await import('@workspace/db');
+const {pool}=await import('../../../lib/db/src/index.ts');
 const accounts=await import('../../../artifacts/api-server/src/services/postgresMerchantAccountAuthority.js');
 const catalog=await import('../../../artifacts/api-server/src/services/postgresCatalogAuthority.js');
 async function seed(){
