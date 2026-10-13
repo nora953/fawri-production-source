@@ -1,5 +1,10 @@
 # Fawri final audit — resume here
 
+## SEQ-166 checkpoint — 2026-10-13
+
+SEQ-166 runner/workflow comparison completed source-only; no tests run. Existing DISPOSABLE_POSTGRES_EXECUTION_PLAN.md DB-00..08 remains PLAN ONLY until exact isolated suite evidence reconciled. ~54%/46%, release BLOCKED.
+
+
 ## SEQ-165 checkpoint — 2026-10-13
 
 SEQ-165 actual CI log plus guard/workflow source root cause documented. Global admin journey FAIL is test setup, not verified admin auth application failure. No new app test executed. ~54%/46%, release BLOCKED.
