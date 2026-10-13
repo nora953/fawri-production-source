@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-248–257 (2026-10-13)
+
+Latest [SEQ-248–257](SEQ_248_257_MEDIA_RETENTION_SECURITY_20261013.md), baseline `0e0c457638f1016bda1c22b246688bc7898a94fd`. **NextSEQ-258**. Application/applicationtests/workflows/schema/scannerrules unchanged; auditfixture representation corrected only.
+
+14newcases12PASS/2FAIL/0SKIP;twoNEWMEDIUM findings MEDIA-CLEANUP-CORRUPT-001 and MEDIA-CLEANUP-STARVATION-001 (realownedFS/inertSQL/storage). Retention7adaptercasesPASS. Separate26fencecontrolsPASS reverified; notrecounted asnewcoverage. Localrepositoryscanner1706files/0findingsPASS after syntheticfixtureliteral adjustment.
+
+Baseline33Actions24SUCCESS/9FAILURE: extraadminparentfailure ENVIRONMENT_BLOCKED/0tests; securityscanflags1syntheticURL in oldauditfixture, correctionhostedCIpending. No realsecret or applicationrepair. Wholepercent **NOT_YET_MEASURABLE**;13integration/fullUI/actualSQL/provider/hosted gates remainopen. ReleaseBLOCKED; historical records preserved.
+
+
 ## Authoritative continuation — SEQ-240–247 (2026-10-13)
 
 Latest [SEQ-240–247](SEQ_240_247_ENTRYPOINT_FENCES_META_RECOVERY_20261013.md), baseline `17e521408b9fdc5621c18839f88d5f22a2c5992b`. **NextSEQ-248**. Audit only; original application/tests/workflows/schema unchanged.
@@ -686,3 +695,12 @@ Receipt run38348021288/job115133820484 ENVIRONMENT_BLOCKED before any assertions
 ## SEQ-240–247 evidence / no new duplicates
 
 26pre-import negativecontrolsPASS for13residualtests through explicit existingpreload; native direct-entrypoint safety and CI wiring remain PG-TEST-GUARD-002/003/DB-TEST-CLEANUP-021 open. OriginalSQLcasesNOT_RUN.20actualMeta refund/dispatch/live-reconcile adaptersPASS; existing REPLY-RESTORE-CYCLE-018 accounting/runtimeSQL finding unchanged. Source pending-before-send ordering examined, no realprovider/crash proof. Receipt laternative8PASS run38350269903/job115140836967; previousenvironmenttimeout preserved. No new canonical product finding or closed issue.
+
+## SEQ-248–257 new findings
+
+| ID | Severity/state | Actual evidence / bounds |
+| --- | --- | --- |
+| MEDIA-CLEANUP-CORRUPT-001 | MEDIUM/OPEN/FUNCTION_RUNTIME_CONFIRMED | Corruptpersisted hashedmanifest silentlyreadnull/reconcilemissing/batch0pending/0logs.1observationPASS/1acceptanceFAIL on realownedFS,inertSQL/storage. No realcorruption/mediaretentionincident proved. |
+| MEDIA-CLEANUP-STARVATION-001 | MEDIUM/OPEN/FUNCTION_RUNTIME_CONFIRMED | Actualdefault100batch,101validmanifests;first100permanentadapterfailures monopolize2polls/200attempts,tenant101attempts0/pending.1observationPASS/1acceptanceFAIL. Boundedordering/faultmodel; no realcloudobjects removed. |
+
+SecurityCI scannerfailure1syntheticcredentialURL in auditfixture was a toolfixture classification, no realcredential exposure. Representationonlycorrected,26refusalPASS and scanner1706/0findingsPASS locally; hostedCIpending. Adminparentextra failure browserstartup0assertionsENVIRONMENT_BLOCKED. Existingfindings retained; no duplicate newentryfor these environment/fixture occurrences.

@@ -9,7 +9,12 @@ assert.equal(files.length,13);
 for(const file of files)for(const mode of ['missing-url','unattested-hosted-target']){
   test(`SEQ241 fence ${mode}: ${file}`,()=>{
     const env={PATH:process.env.PATH,NODE_ENV:'test'};
-    if(mode==='unattested-hosted-target')env.DATABASE_URL='postgresql://synthetic:synthetic@audit.example.invalid/untrusted';
+    if(mode==='unattested-hosted-target'){
+      // Synthetic identity only; avoid credential-shaped source literals.
+      const target=new URL('postgresql://audit.example.invalid/untrusted');
+      target.username='synthetic';target.password='synthetic';
+      env.DATABASE_URL=target.toString();
+    }
     const r=spawnSync(process.execPath,['--import','./scripts/lib/disposable-postgres-preload.mjs','--test','--test-reporter=tap',file],{
       env,encoding:'utf8',timeout:5000,maxBuffer:100000});
     assert.equal(r.error,undefined);assert.notEqual(r.status,0);

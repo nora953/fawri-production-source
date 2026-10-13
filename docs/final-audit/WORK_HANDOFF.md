@@ -1,5 +1,14 @@
 ## Current audit continuation — SEQ-255 (2026-10-13)
 
+## Authoritative continuation — SEQ-248–257 (2026-10-13)
+
+Latest [SEQ-248–257](SEQ_248_257_MEDIA_RETENTION_SECURITY_20261013.md), baseline `0e0c457638f1016bda1c22b246688bc7898a94fd`. **NextSEQ-258**. Application/applicationtests/workflows/schema/scannerrules unchanged; auditfixture representation corrected only.
+
+14newcases12PASS/2FAIL/0SKIP;twoNEWMEDIUM findings MEDIA-CLEANUP-CORRUPT-001 and MEDIA-CLEANUP-STARVATION-001 (realownedFS/inertSQL/storage). Retention7adaptercasesPASS. Separate26fencecontrolsPASS reverified; notrecounted asnewcoverage. Localrepositoryscanner1706files/0findingsPASS after syntheticfixtureliteral adjustment.
+
+Baseline33Actions24SUCCESS/9FAILURE: extraadminparentfailure ENVIRONMENT_BLOCKED/0tests; securityscanflags1syntheticURL in oldauditfixture, correctionhostedCIpending. No realsecret or applicationrepair. Wholepercent **NOT_YET_MEASURABLE**;13integration/fullUI/actualSQL/provider/hosted gates remainopen. ReleaseBLOCKED; historical records preserved.
+
+
 ## Authoritative continuation — SEQ-240–247 (2026-10-13)
 
 Latest [SEQ-240–247](SEQ_240_247_ENTRYPOINT_FENCES_META_RECOVERY_20261013.md), baseline `17e521408b9fdc5621c18839f88d5f22a2c5992b`. **NextSEQ-248**. Audit only; original application/tests/workflows/schema unchanged.

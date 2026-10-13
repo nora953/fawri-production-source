@@ -38,3 +38,7 @@ Real childSIGTERM plus local durableFS/restart proof added; no productionSQL/pro
 ## SEQ-240–247 bounded evidence
 
 13/13 residualentrypoints have2negativepreload controls each26PASS;0/13 originalruntimeexecuted.20actualMeta recovery adaptercasesPASS, noSQL/providerstate proof. Prepared13perfileexecutionmanifest;34selectoruncertainty/13integrationruntime/fullUI/actualPGproofs unchanged. Current33Actions26SUCCESS/7FAILURE; laterreceipt8nativePASS, originaltimeout preserved. No overallpercent measurable; nextSEQ-248.
+
+## SEQ-248–257 bounded update
+
+14newcases12P/2F:media5P/2F(realownedFS/inertSQLstorage),retention7P(inertSQL/actualcalendar).2newmediarecoveryfindings;separate26fencechecksreverified afterauditfixtureliteralchange, notnewcoverage. Localrepositoryscanner1706/0findingsPASS;hostedCIpending. Baseline33Actions24SUCCESS/9FAILURE;extraadminbrowserblocked0cases andsyntheticfixture scannerfinding. Original13integration/34selectors/fullUIcase denominator unchanged. OverallpercentageNOT_YET_MEASURABLE,nextSEQ-258.
