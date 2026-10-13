@@ -78,3 +78,7 @@ Sixnewnativecomponentcases4P/2F extendexistingmonitorfinding toactualpendingacti
 ## SEQ-302–305 retention SQL boundary coverage
 
 EightnewactualSQLcases8PASS,4localrunnerrefusalsseparate. ModernE164retention/suspension/renewal/sessionrevocation/faultatomicity/deletionrequestsinglewinner proof; originalblockedfixtures unchanged. NoHTTP/realrole/purge/provider/productionRLSclearance, no newdefect.21selectorpaths/222fullroutecasesNOT_RUN unchanged,wholepercentageNOT_YET_MEASURABLE,nextSEQ-306/releaseBLOCKED.
+
+## SEQ-306–311 current actual management HTTP update
+
+15distinctbusinesssubcases15PASS;raw16TAPincl1parent,4localrunnerrefusalsseparate. ActualAuthv2aggregateHTTProles/password/management/review/purgefields/sessionbinding/livecookie401,ownedSQLonly. Initialownerdeviceseedblocked0targetcases retained,modernfixturecorrected/noguardrelaxed. Originalfixtures/UIdefectsunchanged,provider/storage/allrelations/RLS/fullApp/OTP scopeopen.21selectorpaths/222fullroutecasesNOT_RUN unchanged,wholepercentageNOT_YET_MEASURABLE,nextSEQ-312/releaseBLOCKED.

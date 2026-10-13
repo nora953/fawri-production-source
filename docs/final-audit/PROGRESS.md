@@ -1,5 +1,14 @@
 # Fawri final audit — resume here
 
+## Authoritative continuation — SEQ-306–311 (2026-10-13)
+
+Latest [SEQ-306–311](SEQ_306_311_CURRENT_MANAGEMENT_HTTP_20261013.md), executed source `cc27ff5aef9d2e8e9347c0604e53efa23d2c19a7`, run38444767251/job115460157268. **Next SEQ-312**. Sixsequentialstages/auditonly; application/original tests/schema unchanged.
+
+ActualaggregateAuthv2HTTP/SQL **15businesscases15PASS/0FAIL**, rawTAP16P/0F/0SKIP includes1parent.28migrations/ownedcleanupSUCCESS. Managementpermissions/approval/note/channel/suspension+cookie401/requestduplicate/ownerreview/spoofpassword/purgeanonymization and realowner-sessionrole/account/password/cookie401 boundariesPASS. No newcanonicaldefect. Originalphone/devicefixturemaintenance andnativeUIstaleaction findings remainOPEN.
+
+Firstattemptzero targetcases blocked ownerDEVICE_REQUIRED; audittrusteddevicefixture correctedusingcurrentservices/boundheader, noguardrelaxed. FourlocalrunnerrefusalsPASSseparate; actualOTP/provider/media/RLS/fullAppscopepending.21selectorpaths/222fullroutecases unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-302–305 (2026-10-13)
 
 Latest [SEQ-302–305](SEQ_302_305_ACTUAL_RETENTION_LIFECYCLE_20261013.md), executed source `29be3ed302f1d307129a3999b1e978f8fb20ee19`, run38442860689/job115453629407. **Next SEQ-306**. Audit-only, application/original tests/schema unchanged.
