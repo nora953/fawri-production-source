@@ -1,5 +1,16 @@
 # Fawri final audit — resume here
 
+## Authoritative continuation — SEQ-225–231 (2026-10-13)
+
+Latest batch: [SEQ-225–231](SEQ_225_231_SELECTION_CONTRACT_PRECISION_20261013.md), baseline `1db2beb108aea0b507012428cce7ab5129f388be`. **Next SEQ-232**. Audit only; application, existing tests, workflows and schema unchanged.
+
+Actual local105tests:98PASS/7FAIL/0SKIP.28 previously unresolved contract files:92tests87P/5F; five stale source-contract expectations. Actual discount runtime9P; independent precision oracle2P/2F. New LOW findings CASHIER-DISCOUNT-PRECISION-001 (extreme safe-integer percentage floor/one-unit acceptance; no real sale proved) and AUDIT-STALE-SOURCE-CONTRACT-001 (five stale expectations, no five product defects).
+
+Expanded243-source selector review resolves7paths through commerce validator/CI;34/277 remain unresolved,13 integration NOT_RUN. Original41-file queue28executed/13not run; this is a bounded inventory, not whole audit coverage. Current baseline33Actions:26SUCCESS/7FAIL. Provider deletion currentrun38343460680/job115119606452 source1P and SQL1P; older pendingrun38342332323 cancelled before assertions.
+
+Overall remaining percentage **NOT_YET_MEASURABLE**. Next mounted WorkMonitor, owned worker SIGTERM recovery, safe residual13 integrations and applicable UI case denominator. Historical records below preserved. Release BLOCKED.
+
+
 ## Authoritative continuation — SEQ-215–224 (2026-10-13)
 
 Latest completed audit batch: [SEQ-215–224](SEQ_215_224_COVERAGE_WEBHOOK_MONITOR_20261013.md), baseline `7e0da5ebe93ee7cc444d0f2b9a1ed98c5476e1a3`. **Next SEQ-225**. Audit/test/documentation only; no application repair, final remediation plan, main merge, deployment or hosted DB/provider mutation. Historical checkpoints below are preserved and are not the current queue.
