@@ -54,11 +54,12 @@ try {
  const states=new Map(),unexpected=[];
  const snapshot=()=>({emergency_access:{request_id:'synthetic-preview',incident_reference:'AUDIT-INCIDENT',severity:'high',reason:'Synthetic audit',expires_at:new Date(Date.now()+60000).toISOString()},session:{id:'synthetic-preview',merchant_name:'Synthetic Store',admin_name:'Synthetic Admin',started_at:new Date().toISOString(),expires_at:new Date(Date.now()+60000).toISOString(),status:'active'},ticket:{id:'synthetic-ticket',subject:'Preview audit',status:'in_progress'},merchant:{store_name:'AUDIT_PRIVATE_STORE',owner_name:'AUDIT_PRIVATE_OWNER',phone:'+19955550000',status:'approved'},subscription:null,products:[{id:'synthetic-product',name:'AUDIT_PRODUCT <img src=x onerror=alert(1)>',password:'AUDIT_HIDDEN_SECRET',access_token:'AUDIT_HIDDEN_SECRET'}],orders:[],conversations:[],saved_answers:[],training_requests:[],learned_answers:[],channels:[],counts:{products:1},generated_at:new Date().toISOString()});
  const entry=`import React from 'react';import {createRoot} from 'react-dom/client';
+ import {Route,Switch} from 'wouter';
  import Preview from './artifacts/fawri/src/pages/AdminEmergencySnapshotPage.tsx';
  import {I18nProvider} from './artifacts/fawri/src/lib/i18n.tsx';
  import {ADMIN_EMERGENCY_SNAPSHOT_PAGE_TEXT as TEXT} from './artifacts/fawri/src/lib/translations/features/pages/AdminEmergencySnapshotPage.ts';
  const lang=new URLSearchParams(location.search).get('lang')||'en';localStorage.clear();sessionStorage.clear();localStorage.setItem('fawri_lang',lang);globalThis.auditText=TEXT[lang];
- createRoot(document.getElementById('root')).render(React.createElement(I18nProvider,null,React.createElement(Preview,{requestId:'synthetic-preview'})));`;
+ createRoot(document.getElementById('root')).render(React.createElement(I18nProvider,null,React.createElement(Switch,null,React.createElement(Route,{path:'/admin/emergency-access/:requestId/snapshot'},params=>React.createElement(Preview,{requestId:params.requestId})),React.createElement(Route,null,React.createElement('div',null,'AUDIT_ROUTE_EXIT')))));`;
  const bundle=await build({stdin:{contents:entry,loader:'tsx',resolveDir:process.cwd()},bundle:true,format:'iife',platform:'browser',write:false,outfile:'audit-preview.js',jsx:'automatic',alias:{'@':resolve('artifacts/fawri/src')},nodePaths:[resolve('artifacts/fawri/node_modules')],define:{'process.env.NODE_ENV':'"production"'}});
  const assets=resolve('artifacts/fawri/dist/public/assets'),css=(await readdir(assets)).filter(n=>n.endsWith('.css'));assert.ok(css.length);
  const styles=(await Promise.all(css.map(n=>readFile(join(assets,n),'utf8')))).join('\n');
@@ -101,7 +102,7 @@ try {
  async function closed(t){await fetch(`http://127.0.0.1:${port}/json/close/${t.target.id}`);}
  const loaded=c=>waitFor(()=>evaluate(c,'document.body.textContent.includes("AUDIT_PRIVATE_STORE")'));
  async function click(c,expression){
-  const point=await evaluate(c,`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>${expression});if(!b)throw Error('button missing');b.scrollIntoView();const r=b.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  const point=await evaluate(c,`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>${expression});if(!b)throw Error('button missing');b.scrollIntoView({block:'center',inline:'center'});const r=b.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);if(!hit||hit.closest('button')!==b)throw Error('control hit-test blocked: '+b.textContent);return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
   await c('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
   await c('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
  }
@@ -111,11 +112,11 @@ try {
    assert.equal(await evaluate(t.cdp,'document.querySelector("#root>div").dir'),lang==='en'?'ltr':'rtl');
    assert.equal(await evaluate(t.cdp,'document.documentElement.scrollWidth>innerWidth+1'),false);
    await click(t.cdp,'b.textContent.includes(auditText.products)');
-   await waitFor(()=>evaluate(t.cdp,'document.body.textContent.includes("AUDIT_PRODUCT")'));
+   await waitFor(()=>evaluate(t.cdp,'document.body.textContent.includes("AUDIT_PRODUCT")'),15000,'native products tab renders record');
    const v=await evaluate(t.cdp,`({markup:document.querySelectorAll('#root img,#root script').length,secret:document.body.textContent.includes('AUDIT_HIDDEN_SECRET'),inputs:document.querySelectorAll('input,textarea,select').length})`);
    assert.equal(v.markup,0);assert.equal(v.secret,false);assert.equal(v.inputs,0);
    await click(t.cdp,'b.textContent.includes(auditText.orders)');
-   await waitFor(()=>evaluate(t.cdp,'document.body.textContent.includes(auditText.empty)'));
+   await waitFor(()=>evaluate(t.cdp,'document.body.textContent.includes(auditText.empty)'),15000,'native orders tab renders empty');
    return {...v,emptyTab:true,endCalls:t.state.endCalls};
   }finally{await closed(t);}
  });
