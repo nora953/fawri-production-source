@@ -1,5 +1,14 @@
 # Fawri final audit — master plan
 
+## Authoritative continuation — SEQ-258–265 (2026-10-13)
+
+Latest [SEQ-258–265](SEQ_258_265_MEDIA_CONCURRENCY_UI_CASES_20261013.md), baseline `b97df88c43e99940a9d50638a9334422da00982d`. **NextSEQ-266**. Audit only, no application/CI/scanner/historyrepair.
+
+5newtests4PASS/1FAIL/0SKIP realownedFS/inertSQL-storage. NEWMEDIUM MEDIA-CLEANUP-CONCURRENT-UNLINK-001: loserconcurrentdelete removes winnerpendingmanifest. Oldretry canreopencomplete;idempotentretryrecovers. NEWLOW AUDIT-SYNTHETIC-HISTORY-GATE-001: currentrepositoryscanSUCCESS but reachablehistoryFAIL1oldsyntheticfixtureblob; no realsecretclaim.
+
+37namedroutes inventoried;1conditionaldevexcluded,36×3languages×2viewport+6fallback=222minimumfullroutevisualcases, allNOT_RUN. Scope excludes role/write/error/lifecycle/cashier/accessibility; not wholepercent. Baseline33Actions25SUCCESS/8FAILURE. Wholepercent **NOT_YET_MEASURABLE**;13integration/34selectors/fullUI/actualSQL/provider/hosted gatesopen. Historicalevidence retained;ReleaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-248–257 (2026-10-13)
 
 Latest [SEQ-248–257](SEQ_248_257_MEDIA_RETENTION_SECURITY_20261013.md), baseline `0e0c457638f1016bda1c22b246688bc7898a94fd`. **NextSEQ-258**. Application/applicationtests/workflows/schema/scannerrules unchanged; auditfixture representation corrected only.

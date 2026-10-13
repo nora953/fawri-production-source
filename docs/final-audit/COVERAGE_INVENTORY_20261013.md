@@ -42,3 +42,7 @@ Real childSIGTERM plus local durableFS/restart proof added; no productionSQL/pro
 ## SEQ-248–257 bounded update
 
 14newcases12P/2F:media5P/2F(realownedFS/inertSQLstorage),retention7P(inertSQL/actualcalendar).2newmediarecoveryfindings;separate26fencechecksreverified afterauditfixtureliteralchange, notnewcoverage. Localrepositoryscanner1706/0findingsPASS;hostedCIpending. Baseline33Actions24SUCCESS/9FAILURE;extraadminbrowserblocked0cases andsyntheticfixture scannerfinding. Original13integration/34selectors/fullUIcase denominator unchanged. OverallpercentageNOT_YET_MEASURABLE,nextSEQ-258.
+
+## SEQ-258–265 scoped case inventory
+
+37namedApp routes incl1conditionaldev;36productionroutes×AR/EN/KU×390/1280 plus6fallback=222minimumfullroutevisualcases allNOT_RUN. SourceIDs/components/fixtures/flags inseq262JSON/CSV; partialcomponentproofs notpromoted. Role/write/error/lifecycle/nestedpanes/cashier/accessibilityexcludedandpending.5newmediafunctioncases4P/1F,oneproductfinding;onehistoricalsyntheticsecurityCIblocker. Current33Actions25SUCCESS/8FAILURE/currentrepositorypass/historyfail. Original13integration/34selectors unchanged. Not universaldenominator;wholepercentNOT_YET_MEASURABLE,nextSEQ-266.

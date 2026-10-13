@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-258–265 (2026-10-13)
+
+Latest [SEQ-258–265](SEQ_258_265_MEDIA_CONCURRENCY_UI_CASES_20261013.md), baseline `b97df88c43e99940a9d50638a9334422da00982d`. **NextSEQ-266**. Audit only, no application/CI/scanner/historyrepair.
+
+5newtests4PASS/1FAIL/0SKIP realownedFS/inertSQL-storage. NEWMEDIUM MEDIA-CLEANUP-CONCURRENT-UNLINK-001: loserconcurrentdelete removes winnerpendingmanifest. Oldretry canreopencomplete;idempotentretryrecovers. NEWLOW AUDIT-SYNTHETIC-HISTORY-GATE-001: currentrepositoryscanSUCCESS but reachablehistoryFAIL1oldsyntheticfixtureblob; no realsecretclaim.
+
+37namedroutes inventoried;1conditionaldevexcluded,36×3languages×2viewport+6fallback=222minimumfullroutevisualcases, allNOT_RUN. Scope excludes role/write/error/lifecycle/cashier/accessibility; not wholepercent. Baseline33Actions25SUCCESS/8FAILURE. Wholepercent **NOT_YET_MEASURABLE**;13integration/34selectors/fullUI/actualSQL/provider/hosted gatesopen. Historicalevidence retained;ReleaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-248–257 (2026-10-13)
 
 Latest [SEQ-248–257](SEQ_248_257_MEDIA_RETENTION_SECURITY_20261013.md), baseline `0e0c457638f1016bda1c22b246688bc7898a94fd`. **NextSEQ-258**. Application/applicationtests/workflows/schema/scannerrules unchanged; auditfixture representation corrected only.
@@ -704,3 +713,10 @@ Receipt run38348021288/job115133820484 ENVIRONMENT_BLOCKED before any assertions
 | MEDIA-CLEANUP-STARVATION-001 | MEDIUM/OPEN/FUNCTION_RUNTIME_CONFIRMED | Actualdefault100batch,101validmanifests;first100permanentadapterfailures monopolize2polls/200attempts,tenant101attempts0/pending.1observationPASS/1acceptanceFAIL. Boundedordering/faultmodel; no realcloudobjects removed. |
 
 SecurityCI scannerfailure1syntheticcredentialURL in auditfixture was a toolfixture classification, no realcredential exposure. Representationonlycorrected,26refusalPASS and scanner1706/0findingsPASS locally; hostedCIpending. Adminparentextra failure browserstartup0assertionsENVIRONMENT_BLOCKED. Existingfindings retained; no duplicate newentryfor these environment/fixture occurrences.
+
+## SEQ-258–265 new findings
+
+| ID | Severity/state | Evidence/limits |
+| --- | --- | --- |
+| MEDIA-CLEANUP-CONCURRENT-UNLINK-001 | MEDIUM/OPEN/FUNCTION_RUNTIME_CONFIRMED | Twoactualwrappercalls onrealownedFS;winnerpending aftersuccess/storagefault;loserconflict catchrmSync(sharedpath) removeswinnerintent.1observationPASS/1acceptanceFAIL;SQL/storageinjected, actualproductionraceNOT_RUN. Distinct fromcorrupt/batchstarvation. |
+| AUDIT-SYNTHETIC-HISTORY-GATE-001 | LOW/OPEN/CI_PROCESS_BLOCKER | run38353681095/job115151569363 currentrepositorySUCCESS/fullhistoryFAIL1credential-url historicalsyntheticfixtureblob202a9fc041cb2cde0e8169683a6eb9eb7478e130. No realsecret;currentliteralcorrection doesn'tclearhistorygate. No scannerexception/historyrewrite. |
