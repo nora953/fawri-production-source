@@ -1,5 +1,11 @@
 # Fawri final audit — resume here
 
+
+## SEQ-143–158 checkpoint — 2026-10-13
+
+SEQ-143–152 ten CI workflow results triaged (6 pass, 4 fail); SEQ-153–158 source root causes and boundaries documented, not six new runtime test suites. No application fixes. ~54% audited/46% remaining, release BLOCKED. [CI](SEQ_143_152_CI_TRIAGE_20261013.md) · [Root cause](SEQ_153_154_CASHIER_ROOT_CAUSE_20261013.md) · [Webhook](SEQ_158_SUPERQI_WEBHOOK_HTTP_20261013.md).
+
+
 ## Current progress — SEQ-140 verified, SEQ-141 diagnosed (2026-10-13)
 
 [AdminPage parent run 38333323885](https://github.com/nora953/fawri-production-source/actions/runs/38333323885): 15 PASS / 0 FAIL. Emergency snapshot browser run38333324124: 9 PASS / 3 FAIL, with two source-confirmed navigation issues and one Sorani triage. [Detailed evidence](SEQ_140_141_ADMIN_PARENT_EMERGENCY_20261013.md). Overall estimate unchanged ~54% audited /46% remaining; release BLOCKED. Continue remaining routes; no repairs/merges/deploys.
