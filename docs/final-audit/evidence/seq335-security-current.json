@@ -1,0 +1,21 @@
+{
+  "scope": "current tracked final checkpoint;18PNGbinary captures skipped by textscanner",
+  "repository": {
+    "status": "pass",
+    "scanned_files": 1844,
+    "skipped_files": 23,
+    "findings": []
+  },
+  "policy": {
+    "status": "pass",
+    "scanned_workflows": 79,
+    "violations": []
+  },
+  "history": "existing reachable synthetic fixture gate remains OPEN; not rerun",
+  "browser": {
+    "name": "Chrome/154.0.8037.97",
+    "boundedRouteCasesPassed": 18,
+    "failed": 0,
+    "screenshotsReviewed": 18
+  }
+}

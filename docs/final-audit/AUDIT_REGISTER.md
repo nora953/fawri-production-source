@@ -1,5 +1,14 @@
 # Fawri final audit — evidence register
 
+## Authoritative continuation — SEQ-330–335 (2026-10-14 Baghdad)
+
+Latest [SEQ-330–335](SEQ_330_335_FULL_PUBLIC_ROUTES_20261014.md). **Next SEQ-336**. Six sequentialstages/auditonly; application/originaltests/schema unchanged.
+
+Full actualVite main/App/router/providers/publicpages on nativeChrome154: head56138e8a6d10d9aff5094222d3139aa799852d97/merge76306173e6f045c8d28cb93a0730852c39991158, run38489837137/job115612162119. **18distinctPASS/0FAIL**: privacy/terms/fallback xAR/EN/KU x390/1280. Exacttitle/all9policyitems/direction/overflow/controls/home URL navigation;0unexpectedAPI/0uncaughtsnapshoterrors.18first-view captures inspected andpersisted withhashmanifest. Belowfold/pixel/productionfonts/legal/accessibility/backend notcertified.
+
+New **PUBLIC-METADATA-TEMPLATE-001 LOW/OPEN/SOURCE_CONFIRMED**: index.html description/OG/Twitter retain Replit/template updateinstruction; notdeployedSEO incident proof. Otheropenfindingsretained. Currentseq335caseCSV:222baselinecases,18PASS_BOUNDED_FULL_APP/204NOT_RUN; historical222NOT_RUN superseded.21selectors unchanged. Wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED. NextremainingfullApppublic/rolecases; no repeatcredit.
+
+
 ## Authoritative continuation — SEQ-324–329 (2026-10-14 Baghdad)
 
 Latest [SEQ-324–329](SEQ_324_329_SESSION_HTTP_20261014.md). **Next SEQ-330**. Six sequential stages/audit only; application/original tests/schema unchanged.
