@@ -72,7 +72,7 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     const b=await balances();assert.equal(b.find(x=>x.merchant_id===merchants[1]).base_replies_used,1);
     assert.equal((await pool.query("SELECT count(*)::int AS n FROM messages WHERE merchant_id=$1 AND sender='fawri' AND status='sent'",[merchants[1]])).rows[0].n,1);positivePassed=true;
   });
-  const cases=['merchant','event','missing_event','body_page_conflict','body_sender_conflict','body_message_conflict','body_page_missing','body_sender_missing','body_message_missing'];
+  const cases=['merchant','event','missing_event','body_page_conflict','body_sender_conflict','body_message_conflict','body_page_missing','body_sender_missing','body_message_missing','body_object_conflict','body_echo','body_extra_entry','body_extra_message'];
   for(const kind of cases)await t.test(`${kind} identity conflict is rejected before all nine domain surfaces`,async()=>{
     const value=bodyFor(kind==='merchant'?1:0,kind);
     const canonical=kind==='event'?`canonical-${value.event}`:value.event;
@@ -84,6 +84,10 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     if(kind==='body_page_missing')delete entry.id;
     if(kind==='body_sender_missing')delete message.sender.id;
     if(kind==='body_message_missing')delete message.message.mid;
+    if(kind==='body_object_conflict')value.payload.webhook_body.object='instagram';
+    if(kind==='body_echo')message.message.is_echo=true;
+    if(kind==='body_extra_entry')value.payload.webhook_body.entry.push(structuredClone(bodyFor(1,'extra-entry').payload.webhook_body.entry[0]));
+    if(kind==='body_extra_message')entry.messaging.push(structuredClone(bodyFor(1,'extra-message').payload.webhook_body.entry[0].messaging[0]));
     const before=await domainSnapshot(),calls=providerCalls;
     const enqueued=await queue.enqueueDurableJobAuthoritative({type:'meta.webhook.reply',merchantId:merchants[0],dedupeKey:canonical,maxAttempts:1,payload:value.payload});
     // Real encrypted payload is associated with the canonical row tenant. The
@@ -98,6 +102,6 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
   });
   await t.test('original pooled worker retains tenant isolation after every denial',async()=>{
     const proof=await worker.command('isolation');assert.equal(proof.isolated,true);assert.equal(proof.contextReset,true);
-    if(positivePassed&&deniedKinds.size===cases.length)console.log('META_JOB_IDENTITY_PROOF '+JSON.stringify({originalLiveWorker:true,restrictedRole:true,originalEncryptedQueue:true,validForeignChannelPositive:true,tenantMismatchDenied:true,eventMismatchDenied:true,missingEventDenied:true,webhookBodyConflictAndMissingDenied:true,deniedCaseCount:deniedKinds.size,domainSurfacesUnchanged:9,providerCalls,contextReset:true}));
+    if(positivePassed&&deniedKinds.size===cases.length)console.log('META_JOB_IDENTITY_PROOF '+JSON.stringify({originalLiveWorker:true,restrictedRole:true,originalEncryptedQueue:true,validForeignChannelPositive:true,tenantMismatchDenied:true,eventMismatchDenied:true,missingEventDenied:true,webhookBodyConflictAndMissingDenied:true,normalizedEnvelopeDenied:true,deniedCaseCount:deniedKinds.size,domainSurfacesUnchanged:9,providerCalls,contextReset:true}));
   });
 });
