@@ -1,3 +1,15 @@
+# Latest P0 checkpoint — 2026-10-14
+
+Active branch fix/p0-meta-bounded-rls-resolver-20261014, draft PR537. Tested SQL/application source30a165dc: isolated38518960581/job115704014302 SUCCESS,173PASS/0FAIL/0SKIP,41unique/43invocations. Restricted Meta resolver7PASS, all7chains29migrations and cleanup PASS. Payment recovery inherited unchanged and still PASS. Full signed restricted-role HTTP and hosted EXECUTE grant remain unverified; issue535 stays OPEN for these acceptance gaps.
+
+Canonical schema gate38518960424 failed because stage0028 metadata/manual SQL source was missing; fixed locally with stage0028 plus deterministic snapshot ID. Full canonical generator and all59artifact byte comparison now PASS; corrected schema CI next. See P0_META_BOUNDED_RESOLVER_20261014.md. No change to migration SQL or app source from tested30a165dc during this correction.
+
+Security PR536/a1e7751f full-history38518815440 SUCCESS; exact54span fixture exception has real scanner mutation regression. Payment PR534/da4d0c05 initial168PASS/3FAIL is superseded for selected SQL runtime scope by current173/0, not a claim of complete P0/release readiness. No merge/deploy/hosted DB/grant actions.
+
+Exact next: publish canonical-stage correction; inspect schema/security/SQL CI and persist results. Then implement full signed HTTP restricted-role journey, remaining crash/connection/commit receipt-inbox acceptance under523 and document runtime grant rollout. Issues523/535 remain OPEN. Reuse proven unchanged checks. Whole completion percentage not recalculated.
+
+---
+
 # Active P0 work — Meta restricted resolver (2026-10-14)
 
 Payment recovery PR534 verified on da4d0c05: isolated38517736663/job115700230288,168PASS/3FAIL; SQL recovery/cashier/billing batches PASS. Only runtime failures in that aggregate are FA-I-006 / issue535. See P0_PAYMENT_SQL_RECOVERY_20261014.md.
