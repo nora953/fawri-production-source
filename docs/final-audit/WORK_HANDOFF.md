@@ -1,3 +1,63 @@
+# VERIFIED P0 continuation checkpoint — 2026-10-14
+
+Active draft PR537: fix/p0-meta-bounded-rls-resolver-20261014. **Tested source a696046b124af05421895d4b1fe2f27769f1c34e**; this documentation-only checkpoint does not change tested app/SQL/test source. Draft stack: PR534 payment recovery, PR536 historical scanner fixture, PR537 bounded Meta resolver/HTTP and controlled worker fixture; older PR533 checkout foundation remains unmerged.
+
+**Final verified result:** isolated38520772813/job115709702562 SUCCESS **174PASS/0FAIL/0SKIP,41unique files/43invocations**. Restricted Meta8PASS includes signed realHTTP signature→operational middleware under restricted role. All7offline migration chains29migrations and owned cleanupPASS. Billing/cashier/tenant/meta-bot/restore/Node22 subsetsPASS. **27/27 workflow runs on tested a696046b SUCCESS**, including schema38520772844, security38520772794 and complete Meta pipeline38520772699. Machine-readable per-suite/run records: evidence/P0_SELECTED_RESULTS_20261014.json. Reports: P0_PAYMENT_SQL_RECOVERY_20261014.md, P0_HISTORY_FIXTURE_20261014.md, P0_META_BOUNDED_RESOLVER_20261014.md.
+
+**Do not repeat/restart:** P0001 payment persistence + concurrent/next-day/idempotent recovery, checkout attachment identity, scoped resolver role grants/denials, canonical29migration reproducibility and exact historical fixture scan are proven at the source above. Prior missing-stage, scanner64span and poll-race failures remain preserved, not erased. Reopen only on changed source/config or new assertion.
+
+**Remaining P0 / exact next actions:**
+1. Issue523: split durable receipt admission COMMIT from entitlement transaction; preserve original identity/hash/payment/time and prove owned process/backend interruption after receipt commit, restart recovery, concurrent replay, failed receipt COMMIT/unacknowledged error and orphan reconciliation. No provider I/O in transaction; no real providers or hosted DB.
+2. Issue535: signed request through COMPLETE actual application/manual/queue/subscription/worker with restricted role. Current restricted HTTP fixture has controlled final acceptance handler. The complete Meta pipeline passed its own test environment and is not that restricted-role proof.
+3. Reviewed function owner/RLS/explicit runtime EXECUTE rollout; no live grant performed. Keep RLS/NOBYPASSRLS, no PUBLIC execute/global admin workaround.
+4. Reconcile remaining P0 acceptance register before P1; do not infer whole readiness/percentage from174or27. Issues523/535 stayOPEN; no main merge/deploy/live migration granted.
+
+**Handoff:** start here and current PR537/Issues523+535; use a696 source proof above. Any later docs-only head need not duplicate the large SQL suite solely to validate documentation; CI may auto-trigger, record it as pending until observed. User explicitly authorized publishing code/tests/docs to nora953/fawri-production-source and draftPR/CI; do not ask again for that same scope.
+
+---
+
+# Active P0 final pipeline verification — 2026-10-14
+
+PR537, branch fix/p0-meta-bounded-rls-resolver-20261014. Testedsourcef63bac89: isolated38519930732/job115707060578174PASS/0FAIL,43invocations/41unique; restricted resolver+signed HTTP8PASS. Schema38519930628/security38519930757SUCCESS. Signature→operational role boundary only; downstream/full app not covered by that test.
+
+Separate Meta pipeline38519930625/job115707059860FAILED at manual refund runOnce350. Forced1ms poll reproduces exact timer race; scoped test fixture60000ms poll/restoration prepared (no runtime code/settings changes). Local worker8PASS and whole affected group26PASS with DATABASE_URLunset/fake JSON only; counts overlap. Next inspect new pipelineCI including formerly skipped downstream stages, then persist final checkpoint. Existing173/0 and initialschema/securityfailures retained in dedicated P0 reports.
+
+Issues523/535/P0 remainOPEN for durable receipt before entitlement (process/connection/commit interruption), downstream full signed restricted-role pipeline and reviewed hosted grants. No main merge/deploy/live changes. Do not restart audit or report a full-release percentage from selected passes.
+
+---
+
+# Active P0 signed HTTP verification — 2026-10-14
+
+PR537 / branch fix/p0-meta-bounded-rls-resolver-20261014. Corrected source2123c0c9 verified: schema38519473541 SUCCESS, isolated38519473493/job115705631802173PASS/0FAIL, security38519473453 SUCCESS. Migration29 and restricted resolver7PASS remain proven. Prior schema missing-stage error and security span error preserved with corrections.
+
+New bounded signed HTTP test PREPARED/NOT_RUN: actual raw-body+signature+merchant-operational middleware with restricted DB role, invalid signature stops before route, signed known200, unknown503/no leak, revoked grant503/no leak, table isolation. Controlled acceptance handler; downstream queue/worker/full application not covered. Next inspect its new isolatedCI result and save exact counters. See P0_META_BOUNDED_RESOLVER_20261014.md. Only test/docs changed after tested2123c0c9.
+
+Payment recovery PR534 remains verified; security PR536 verified. Issues523/535 and P0 remain OPEN for crash/connection/commit inbox, full downstream signed pipeline and reviewed hosted-role rollout. No merge/deploy/live database/grants.
+
+---
+
+# Latest P0 checkpoint — 2026-10-14
+
+Active branch fix/p0-meta-bounded-rls-resolver-20261014, draft PR537. Tested SQL/application source30a165dc: isolated38518960581/job115704014302 SUCCESS,173PASS/0FAIL/0SKIP,41unique/43invocations. Restricted Meta resolver7PASS, all7chains29migrations and cleanup PASS. Payment recovery inherited unchanged and still PASS. Full signed restricted-role HTTP and hosted EXECUTE grant remain unverified; issue535 stays OPEN for these acceptance gaps.
+
+Canonical schema gate38518960424 failed because stage0028 metadata/manual SQL source was missing; fixed locally with stage0028 plus deterministic snapshot ID. Full canonical generator and all59artifact byte comparison now PASS; corrected schema CI next. See P0_META_BOUNDED_RESOLVER_20261014.md. No change to migration SQL or app source from tested30a165dc during this correction.
+
+Security PR536/a1e7751f full-history38518815440 SUCCESS; exact54span fixture exception has real scanner mutation regression. Payment PR534/da4d0c05 initial168PASS/3FAIL is superseded for selected SQL runtime scope by current173/0, not a claim of complete P0/release readiness. No merge/deploy/hosted DB/grant actions.
+
+Exact next: publish canonical-stage correction; inspect schema/security/SQL CI and persist results. Then implement full signed HTTP restricted-role journey, remaining crash/connection/commit receipt-inbox acceptance under523 and document runtime grant rollout. Issues523/535 remain OPEN. Reuse proven unchanged checks. Whole completion percentage not recalculated.
+
+---
+
+# Active P0 work — Meta restricted resolver (2026-10-14)
+
+Payment recovery PR534 verified on da4d0c05: isolated38517736663/job115700230288,168PASS/3FAIL; SQL recovery/cashier/billing batches PASS. Only runtime failures in that aggregate are FA-I-006 / issue535. See P0_PAYMENT_SQL_RECOVERY_20261014.md.
+
+Security draft PR536: first71598be7 run38518405312 failed due full-URL64span vs actual scanner54span. Corrected a1e7751f now invokes real scanner regression; local20PASS. Full history gate pending. Earlier failed proof retained in P0_HISTORY_FIXTURE_20261014.md.
+
+Active branch fix/p0-meta-bounded-rls-resolver-20261014, source PREPARED/SQL_NOT_RUN. Migration0028 scoped resolver + explicit EXECUTE only, no PUBLIC/default runtime grant. Three ingress callers now request only body page IDs. Read P0_META_BOUNDED_RESOLVER_20261014.md before changes. Next: inspect corrected security CI, publish Meta draft and execute isolated migration/RLS suites, classify results. Never declare full signed restricted HTTP/hosted grant acceptance from middleware tests alone. No merge/deploy/hosted writes; P0/523/535 stay OPEN.
+
+---
+
 # Latest verified P0 checkpoint — 2026-10-14
 
 This header supersedes prepared/NOT_RUN/local-only notes below. Active repair branch `fix/p0-verified-payment-sql-recovery-20261014`, draft PR534, tested source da4d0c05e43a953623d42ec74729f16a4bd05cef. Explicit publication authorization received; code/tests/docs are now in GitHub. Read [P0_PAYMENT_SQL_RECOVERY_20261014.md](P0_PAYMENT_SQL_RECOVERY_20261014.md) for complete results and exact limits.

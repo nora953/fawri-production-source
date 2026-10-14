@@ -208,23 +208,25 @@ export async function listMetaChannelsAuthoritative(
   });
 }
 
-export async function listActiveMetaPageMappingsAuthoritative(): Promise<
-  Array<{ pageId: string; merchantId: string }>
-> {
-  if (!operationalPostgresAuthorityRequired()) return listActiveMetaPageMappings();
+export async function listActiveMetaPageMappingsAuthoritative(
+  pageIds: readonly string[],
+): Promise<Array<{ pageId: string; merchantId: string }>> {
+  const requested = [...new Set(pageIds.map((id) => text(id)).filter(Boolean))];
+  if (requested.length > 100 || requested.some((id) => id.length > 180)) {
+    throw Object.assign(new Error("bounded Meta page identity request is invalid"), {
+      code: "META_PAGE_DIRECTORY_REQUEST_INVALID",
+    });
+  }
+  if (requested.length === 0) return [];
+  if (!operationalPostgresAuthorityRequired()) {
+    return listActiveMetaPageMappings().filter((mapping) => requested.includes(mapping.pageId));
+  }
   return withOperationalTransaction(async (client) => {
     const result = await client.query<{ page_id: string; merchant_id: string }>(
-      `SELECT page_id, merchant_id
-         FROM merchant_channels
-        WHERE platform = 'messenger'
-          AND status = 'connected'
-          AND page_id IS NOT NULL
-        ORDER BY page_id`,
+      `SELECT page_id, merchant_id FROM public.fawri_resolve_meta_page_merchants($1::text[])`,
+      [requested],
     );
-    return result.rows.map((row) => ({
-      pageId: row.page_id,
-      merchantId: row.merchant_id,
-    }));
+    return result.rows.map((row) => ({ pageId: row.page_id, merchantId: row.merchant_id }));
   });
 }
 

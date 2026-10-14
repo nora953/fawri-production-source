@@ -14,17 +14,26 @@ type RuntimeDatabase = { metaPagesByPageId?: unknown };
  * cutover is required. The legacy map remains read-only compatibility only
  * while the cutover flag is disabled.
  */
-export async function readMetaPageMerchantMapAuthoritative(): Promise<Map<string, string>> {
+export function metaPageIdsFromWebhookBody(body: unknown): string[] {
+  const record = body && typeof body === "object" ? body as { entry?: unknown } : {};
+  if (!Array.isArray(record.entry)) return [];
+  return [...new Set(record.entry.map((entry: unknown) => {
+    const item = entry && typeof entry === "object" ? entry as { id?: unknown } : {};
+    return String(item.id || "").trim();
+  }).filter(Boolean))];
+}
+
+export async function readMetaPageMerchantMapAuthoritative(pageIds: readonly string[]): Promise<Map<string, string>> {
   if (operationalPostgresAuthorityRequired()) {
     const result = new Map<string, string>();
-    for (const mapping of await listActiveMetaPageMappingsAuthoritative()) {
+    for (const mapping of await listActiveMetaPageMappingsAuthoritative(pageIds)) {
       if (mapping.pageId && mapping.merchantId) {
         result.set(mapping.pageId, mapping.merchantId);
       }
     }
     return result;
   }
-  return readMetaPageMerchantMap();
+  return new Map([...readMetaPageMerchantMap()].filter(([pageId]) => pageIds.includes(pageId)));
 }
 
 export function readMetaPageMerchantMap(): Map<string, string> {

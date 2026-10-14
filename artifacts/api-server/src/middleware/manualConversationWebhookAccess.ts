@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 import { getMetaWebhookEventId } from "./metaWebhookSecurity";
 import { isTrustedMetaWebhookInternalReplay } from "../services/metaWebhookInternalReplay";
 import {
+  metaPageIdsFromWebhookBody,
   readMetaPageMerchantMapAuthoritative,
 } from "../services/metaPageDirectory";
 import {
@@ -81,7 +82,7 @@ export async function enforceManualConversationWebhookAccess(
   }
 
   try {
-    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative(metaPageIdsFromWebhookBody(req.body));
     const terminalEventIds = new Set(existingTerminalEventIds(res));
     const filteredEntries: Record<string, unknown>[] = [];
     const internalReplay = isTrustedMetaWebhookInternalReplay(req);

@@ -112,11 +112,17 @@ async function withDataDirectory(
 ): Promise<void> {
   const directory = await mkdtemp(path.join(os.tmpdir(), prefix));
   const previous = process.env.FAWRI_DATA_DIR;
+  const previousPollInterval = process.env.FAWRI_JOB_POLL_INTERVAL_MS;
+  // These fixtures advance workers only through runOnce; automatic polling must
+  // not claim the refund concurrently with the next manual assertion.
+  process.env.FAWRI_JOB_POLL_INTERVAL_MS = "60000";
   process.env.FAWRI_DATA_DIR = directory;
   try {
     await initializeFixture(directory);
     await callback(directory);
   } finally {
+    if (previousPollInterval === undefined) delete process.env.FAWRI_JOB_POLL_INTERVAL_MS;
+    else process.env.FAWRI_JOB_POLL_INTERVAL_MS = previousPollInterval;
     if (previous === undefined) delete process.env.FAWRI_DATA_DIR;
     else process.env.FAWRI_DATA_DIR = previous;
     await rm(directory, { recursive: true, force: true });
