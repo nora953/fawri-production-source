@@ -32,7 +32,7 @@ export default function VerifiedReceiptReview() {
             {[[text.provider,receipt.provider],[text.event,receipt.provider_event_id],[text.type,receipt.event_type],
               [text.amount,receipt.amount_iqd.toLocaleString(lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ')],
               [text.received,receipt.first_received_at],[text.payment,receipt.payment_ref_suffix ? `…${receipt.payment_ref_suffix}` : '—'],
-              [text.request,receipt.request_ref_suffix ? `…${receipt.request_ref_suffix}` : '—']].map(([label,value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd dir="ltr" className="break-all font-medium">{value}</dd></div>)}
+              [text.request,receipt.request_ref_suffix ? `…${receipt.request_ref_suffix}` : '—']].map(([label,value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd dir="ltr" data-fawri-preserve-digits={label === text.amount ? undefined : "true"} className="break-all font-medium">{value}</dd></div>)}
           </dl>
         </li>)}
       </ul>

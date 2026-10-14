@@ -193,8 +193,8 @@ try {
   try{
    await openReceipts(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
    assert.equal(await evaluate(t.cdp,`document.querySelector('[aria-labelledby=receipt-review-title]').dir`),lang==='en'?'ltr':'rtl');
-   assert.equal(await evaluate(t.cdp,`document.body.textContent.includes(auditReceipt.description)`),true);
-   assert.equal(await evaluate(t.cdp,`document.body.textContent.includes('2026-10-14T12:00:00.123456Z')&&document.body.textContent.includes('…12345678')`),true);
+   assert.equal(await evaluate(t.cdp,`document.body.textContent.includes(auditReceipt.description)`),true,'localized review description');
+   assert.equal(await evaluate(t.cdp,`document.body.textContent.includes('2026-10-14T12:00:00.123456Z')&&document.body.textContent.includes('…12345678')`),true,'technical UTC timestamp and reference digits must remain exact');
    assert.equal(await evaluate(t.cdp,`/FORBIDDEN_FULL_REFERENCE|FORBIDDEN_PAYLOAD_HASH/.test(document.body.textContent)`),false);
    await receiptClick(t.cdp,'next');await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_SECOND_PAGE')&&!document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
    assert.ok(receiptRequests(t).at(-1).includes('cursor=synthetic_opaque_cursor'));
