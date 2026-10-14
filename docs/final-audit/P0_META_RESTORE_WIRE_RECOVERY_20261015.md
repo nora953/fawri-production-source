@@ -4,3 +4,7 @@ Test-only extension on authorized Draft PR547. New guarded offline suite invokes
 
 This covers original scoped restore primitive across TCP/process loss at its COMMIT, not full-worker interruption between deadletter and refundenqueue, initial-precommit rollback, arbitrary processdeath or actual Meta/provider traffic. Prior actualsignedworker13PASS/aggregate253 reused separately. Next full-worker refund-discovery restart gap and hostilepayload/rowtenant mismatch cases remainOPEN. No merge/deploy/hosted writes.
 
+
+## First attempt preserved; fixture chronology diagnosis prepared
+
+Source45428643ba43a2cb43f09d60ede91902d1136596: Meta pipeline38645703996/job116131890635 newwire2PASS/3FAIL(parentincluded). Two wire/process cases fullypassed; remaining failures occurred at initial reservation before child/wire injection. No runtime regression established by these fixture failures. Source subscriptions_time_range_check requires updated_at>=created_at; raw defaultnow microseconds can precede JS Date milliseconds in an immediate update. Owned positive fixtures now have explicit earlier created_at/updated_at, preserving all constraints/guards. Added originalSQL observer-only deterministic microsecond fixture case: require23514, original deniedresult and unchanged rollbackstate. Diagnosis/new fourcase completion remains pendingCI; no applicationcode changed.

@@ -1,3 +1,7 @@
+## Restricted restore wire first attempt and fixture correction — 2026-10-15 Baghdad
+
+New suite on45428643 failed preparation at reserveallowed assertion beforewirefault in somecases; Meta pipeline38645703996/job1161318906352PASS/3FAIL includingparent; Foundation38645703944 alsofailed sharedmeta-botbatch. Two fullwire/process casespassed, no aggregateacceptance. Raw subscriptioncreated_at defaultmicroseconds vs JS update milliseconds is sourceidentified candidate23514. Positive ownedfixtures now created1minuteearlier; deterministic originalSQL23514/rollback reproduction added with observer-only errorcodes. No applicationguard/constraint orfaultassertion weakening. PendingCI; prior accepted253 proofs remain separate.
+
 ## Prepared restricted Meta restore COMMIT-ack/process recovery — 2026-10-15 Baghdad
 
 Test-only extension on authorized Draft PR547. New guarded offline suite invokes original refund/release wrappers in fresh nonowner/NOBYPASSRLS processes, uses existing ownedTCP exact COMMIT CommandComplete filter after role/read-denial checks. Four cases: refund/release with handled COMMIT-ack loss or selfSIGKILL immediately after withheld actual committed response. Independent parent SQL mustprove1credit/restoredbalance, immutable debit; wrongtenant denial; two fresh-process concurrent duplicate retries mustleave original credit/time/metadata unchanged and resettenantcontext. Source syntax/diffPASS; PostgreSQL NOT_RUN pendingCI. No production source/SQL/RLS/grants change.

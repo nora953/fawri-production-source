@@ -27,7 +27,7 @@ test('actual tenant-scoped Meta restore wrappers recover once-only credit after 
     const id=`restore-wire-merchant-${randomUUID()}`;merchants.push(id);
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[id,`+1995${String(randomInt(0,100000000)).padStart(8,'0')}`]);
     await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved')",[id]);
-    await pool.query("INSERT INTO subscriptions(id,merchant_id,plan_name,status,price_iqd,billing_anchor_day,base_reply_limit,base_replies_used,base_replies_remaining,addon_replies_remaining,emergency_credit_amount,emergency_credit_activated,emergency_debt,auto_reply_enabled,starts_at,expires_at,activated_at,version) VALUES($1,$2,'silver','active',10000,1,20,0,20,0,0,false,0,true,now()-interval '1 day',now()+interval '30 days',now(),1)",[`restore-wire-sub-${randomUUID()}`,id]);
+    await pool.query("INSERT INTO subscriptions(id,merchant_id,plan_name,status,price_iqd,billing_anchor_day,base_reply_limit,base_replies_used,base_replies_remaining,addon_replies_remaining,emergency_credit_amount,emergency_credit_activated,emergency_debt,auto_reply_enabled,starts_at,expires_at,activated_at,version,created_at,updated_at) VALUES($1,$2,'silver','active',10000,1,20,0,20,0,0,false,0,true,now()-interval '1 day',now()+interval '30 days',now(),1,now()-interval '1 minute',now()-interval '1 minute')",[`restore-wire-sub-${randomUUID()}`,id]);
     return id;
   }
   const foreign=await merchant();
@@ -45,6 +45,24 @@ test('actual tenant-scoped Meta restore wrappers recover once-only credit after 
     child.send({...task,role,marker});
     try{return await Promise.race([done,new Promise((_,j)=>{timer=setTimeout(()=>j(Error('restore child timeout')),30000);})]);}finally{clearTimeout(timer);}
   }
+  await t.test('owned raw fixture precision reproduces pre-wire SQL constraint without altering runtime guards',async()=>{
+    const owned=await merchant(),event=`meta-restore-chronology-${randomUUID()}`;
+    await pool.query("UPDATE subscriptions SET created_at=date_trunc('milliseconds',clock_timestamp())+interval '456 microseconds',updated_at=date_trunc('milliseconds',clock_timestamp())+interval '1 second' WHERE merchant_id=$1",[owned]);
+    const created=(await pool.query('SELECT created_at FROM subscriptions WHERE merchant_id=$1',[owned])).rows[0].created_at;
+    const before=await snapshot(owned,event),codes=[],observedClients=[];
+    const connect=pool.connect;
+    pool.connect=async function(){
+      const client=await connect.call(this),query=client.query;observedClients.push({client,query});
+      client.query=function(...args){return query.apply(this,args).catch(error=>{codes.push(error.code);throw error;});};
+      return client;
+    };
+    let result;
+    try{result=await reserveMerchantAutoReplyAuthoritative(owned,event,new Date(created));}
+    finally{pool.connect=connect;for(const {client,query} of observedClients)client.query=query;}
+    assert.equal(result.allowed,false);assert.equal(result.code,'MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE');
+    assert.ok(codes.includes('23514'),'actual SQL constraint code required');assert.deepEqual(await snapshot(owned,event),before);
+    console.log('META_RESTORE_FIXTURE_CHRONOLOGY_PROOF '+JSON.stringify({sqlstate:'23514',originalGuardRetained:true,rolledBack:true,wireFaultNotReached:true}));
+  });
   for(const kind of ['refund','release'])for(const abrupt of [false,true])await t.test(`${kind}: withheld COMMIT acknowledgment ${abrupt?'with SIGKILL':'with handled uncertainty'} retains one immutable credit`,async()=>{
     const owned=await merchant(),event=`meta-restore-wire-event-${randomUUID()}`;
     assert.equal((await reserveMerchantAutoReplyAuthoritative(owned,event)).allowed,true);
