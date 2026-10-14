@@ -1,3 +1,13 @@
+# Latest verified P0 checkpoint — 2026-10-14
+
+This header supersedes prepared/NOT_RUN/local-only notes below. Active repair branch `fix/p0-verified-payment-sql-recovery-20261014`, draft PR534, tested source da4d0c05e43a953623d42ec74729f16a4bd05cef. Explicit publication authorization received; code/tests/docs are now in GitHub. Read [P0_PAYMENT_SQL_RECOVERY_20261014.md](P0_PAYMENT_SQL_RECOVERY_20261014.md) for complete results and exact limits.
+
+Payment SQL recovery verified: cashier6PASS/0FAIL, SaaS3PASS/0FAIL, checkout9PASS/0FAIL. Isolated run38517736663/job115700230288:168PASS/3FAIL,41unique/43invocations; only remaining functional failures in this selected aggregate are existing Meta restricted routing under RLS, issue535. Security full-history gate separately fails on1immutable synthetic rejection fixture; exact classification documented, correction next in separate draft PR. Issue523 remains OPEN for remaining acceptance/inbox/crash/connection-failure work. P0 not complete; no percentage recalculated.
+
+Exact next actions: (1) narrowly pinned historical fixture exception with negative mutation tests and CI; (2) implement/test least-privilege Meta resolver for535; (3) remaining durable-inbox acceptance under523. Reuse completed SQL recovery evidence when source unchanged. No merge/deploy/hosted DB or role changes.
+
+---
+
 # Active P0 repair checkpoint — 2026-10-14
 
 This section supersedes historical audit-only instructions below. Current user handoff authorizes P0 repairs, draft PRs and isolated CI; no merge, deploy, hosted DB mutations or real payments.
