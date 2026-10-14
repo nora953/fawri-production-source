@@ -1,0 +1,3637 @@
+{
+  "browser": "Chrome/154.0.8037.97",
+  "source": "d0244311d2e7fd57c7f5421ee22227ee8e29ac54",
+  "results": [
+    {
+      "name": "UIR-012-ar-390",
+      "status": "PASS",
+      "details": {
+        "mode": "owner",
+        "baselineCredit": 1,
+        "path": "/admin/emergency-access",
+        "title": "الوصول الطارئ للقراءة فقط",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UIR-012-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIR-012-ar-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIR-012-ar-390.png"
+    },
+    {
+      "name": "UIR-012-ar-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "owner",
+        "baselineCredit": 1,
+        "path": "/admin/emergency-access",
+        "title": "الوصول الطارئ للقراءة فقط",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UIR-012-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIR-012-ar-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIR-012-ar-1280.png"
+    },
+    {
+      "name": "UIR-012-en-390",
+      "status": "PASS",
+      "details": {
+        "mode": "owner",
+        "baselineCredit": 1,
+        "path": "/admin/emergency-access",
+        "title": "Emergency read-only access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UIR-012-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIR-012-en-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIR-012-en-390.png"
+    },
+    {
+      "name": "UIR-012-en-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "owner",
+        "baselineCredit": 1,
+        "path": "/admin/emergency-access",
+        "title": "Emergency read-only access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UIR-012-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIR-012-en-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIR-012-en-1280.png"
+    },
+    {
+      "name": "UIR-012-ku-390",
+      "status": "PASS",
+      "details": {
+        "mode": "owner",
+        "baselineCredit": 1,
+        "path": "/admin/emergency-access",
+        "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UIR-012-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIR-012-ku-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIR-012-ku-390.png"
+    },
+    {
+      "name": "UIR-012-ku-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "owner",
+        "baselineCredit": 1,
+        "path": "/admin/emergency-access",
+        "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UIR-012-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIR-012-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIR-012-ku-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIR-012-ku-1280.png"
+    },
+    {
+      "name": "UIE-012-ASSISTANT-ar-390",
+      "status": "PASS",
+      "details": {
+        "mode": "assistant",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "الوصول الطارئ للقراءة فقط",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1
+        },
+        "calls": [
+          {
+            "id": "UIE-012-ASSISTANT-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-ASSISTANT-ar-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-ASSISTANT-ar-390.png"
+    },
+    {
+      "name": "UIE-012-ASSISTANT-ar-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "assistant",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "الوصول الطارئ للقراءة فقط",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1
+        },
+        "calls": [
+          {
+            "id": "UIE-012-ASSISTANT-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-ASSISTANT-ar-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-ASSISTANT-ar-1280.png"
+    },
+    {
+      "name": "UIE-012-ASSISTANT-en-390",
+      "status": "PASS",
+      "details": {
+        "mode": "assistant",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "Emergency read-only access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1
+        },
+        "calls": [
+          {
+            "id": "UIE-012-ASSISTANT-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-ASSISTANT-en-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-ASSISTANT-en-390.png"
+    },
+    {
+      "name": "UIE-012-ASSISTANT-en-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "assistant",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "Emergency read-only access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1
+        },
+        "calls": [
+          {
+            "id": "UIE-012-ASSISTANT-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-ASSISTANT-en-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-ASSISTANT-en-1280.png"
+    },
+    {
+      "name": "UIE-012-ASSISTANT-ku-390",
+      "status": "PASS",
+      "details": {
+        "mode": "assistant",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1
+        },
+        "calls": [
+          {
+            "id": "UIE-012-ASSISTANT-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-ASSISTANT-ku-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-ASSISTANT-ku-390.png"
+    },
+    {
+      "name": "UIE-012-ASSISTANT-ku-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "assistant",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1
+        },
+        "calls": [
+          {
+            "id": "UIE-012-ASSISTANT-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-ASSISTANT-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-ASSISTANT-ku-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-ASSISTANT-ku-1280.png"
+    },
+    {
+      "name": "UIE-012-DENIED-ar-390",
+      "status": "PASS",
+      "details": {
+        "mode": "denied",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "الوصول الطارئ للقراءة فقط",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-DENIED-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-DENIED-ar-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-DENIED-ar-390.png"
+    },
+    {
+      "name": "UIE-012-DENIED-ar-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "denied",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "الوصول الطارئ للقراءة فقط",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-DENIED-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-DENIED-ar-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-DENIED-ar-1280.png"
+    },
+    {
+      "name": "UIE-012-DENIED-en-390",
+      "status": "PASS",
+      "details": {
+        "mode": "denied",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "Emergency read-only access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-DENIED-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-DENIED-en-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-DENIED-en-390.png"
+    },
+    {
+      "name": "UIE-012-DENIED-en-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "denied",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "Emergency read-only access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-DENIED-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-DENIED-en-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-DENIED-en-1280.png"
+    },
+    {
+      "name": "UIE-012-DENIED-ku-390",
+      "status": "PASS",
+      "details": {
+        "mode": "denied",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-DENIED-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-DENIED-ku-390.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-DENIED-ku-390.png"
+    },
+    {
+      "name": "UIE-012-DENIED-ku-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "denied",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-DENIED-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-DENIED-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-DENIED-ku-1280.png",
+        "recovered": null,
+        "diagnostic": null
+      },
+      "capture": "UIE-012-DENIED-ku-1280.png"
+    },
+    {
+      "name": "UIE-012-LOAD-ar-390",
+      "status": "PASS",
+      "details": {
+        "mode": "load-failure",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-LOAD-ar-390.png",
+        "recovered": {
+          "capture": "UIE-012-LOAD-ar-390-recovered.png",
+          "title": "الوصول الطارئ للقراءة فقط",
+          "scroll": 390,
+          "comboboxes": 3
+        },
+        "diagnostic": null
+      },
+      "capture": "UIE-012-LOAD-ar-390.png"
+    },
+    {
+      "name": "UIE-012-LOAD-ar-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "load-failure",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-LOAD-ar-1280.png",
+        "recovered": {
+          "capture": "UIE-012-LOAD-ar-1280-recovered.png",
+          "title": "الوصول الطارئ للقراءة فقط",
+          "scroll": 1280,
+          "comboboxes": 3
+        },
+        "diagnostic": null
+      },
+      "capture": "UIE-012-LOAD-ar-1280.png"
+    },
+    {
+      "name": "UIE-012-LOAD-en-390",
+      "status": "PASS",
+      "details": {
+        "mode": "load-failure",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-LOAD-en-390.png",
+        "recovered": {
+          "capture": "UIE-012-LOAD-en-390-recovered.png",
+          "title": "Emergency read-only access",
+          "scroll": 390,
+          "comboboxes": 3
+        },
+        "diagnostic": null
+      },
+      "capture": "UIE-012-LOAD-en-390.png"
+    },
+    {
+      "name": "UIE-012-LOAD-en-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "load-failure",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-LOAD-en-1280.png",
+        "recovered": {
+          "capture": "UIE-012-LOAD-en-1280-recovered.png",
+          "title": "Emergency read-only access",
+          "scroll": 1280,
+          "comboboxes": 3
+        },
+        "diagnostic": null
+      },
+      "capture": "UIE-012-LOAD-en-1280.png"
+    },
+    {
+      "name": "UIE-012-LOAD-ku-390",
+      "status": "PASS",
+      "details": {
+        "mode": "load-failure",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-LOAD-ku-390.png",
+        "recovered": {
+          "capture": "UIE-012-LOAD-ku-390-recovered.png",
+          "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+          "scroll": 390,
+          "comboboxes": 3
+        },
+        "diagnostic": null
+      },
+      "capture": "UIE-012-LOAD-ku-390.png"
+    },
+    {
+      "name": "UIE-012-LOAD-ku-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "load-failure",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 0,
+          "textareas": 0
+        },
+        "calls": [
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 503,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UIE-012-LOAD-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UIE-012-LOAD-ku-1280.png",
+        "recovered": {
+          "capture": "UIE-012-LOAD-ku-1280-recovered.png",
+          "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+          "scroll": 1280,
+          "comboboxes": 3
+        },
+        "diagnostic": null
+      },
+      "capture": "UIE-012-LOAD-ku-1280.png"
+    },
+    {
+      "name": "UID-012-CHAIN-ar-390",
+      "status": "FAIL",
+      "error": "Error: audit card absent\n    at <anonymous>:1:143\n    at <anonymous>:1:208",
+      "capture": "UID-012-CHAIN-ar-390.png"
+    },
+    {
+      "name": "UID-012-CHAIN-ar-1280",
+      "status": "FAIL",
+      "error": "Error: audit card absent\n    at <anonymous>:1:143\n    at <anonymous>:1:208",
+      "capture": "UID-012-CHAIN-ar-1280.png"
+    },
+    {
+      "name": "UID-012-CHAIN-en-390",
+      "status": "FAIL",
+      "error": "Error: audit card absent\n    at <anonymous>:1:141\n    at <anonymous>:1:206",
+      "capture": "UID-012-CHAIN-en-390.png"
+    },
+    {
+      "name": "UID-012-CHAIN-en-1280",
+      "status": "FAIL",
+      "error": "Error: audit card absent\n    at <anonymous>:1:141\n    at <anonymous>:1:206",
+      "capture": "UID-012-CHAIN-en-1280.png"
+    },
+    {
+      "name": "UID-012-CHAIN-ku-390",
+      "status": "FAIL",
+      "error": "Error: audit card absent\n    at <anonymous>:1:149\n    at <anonymous>:1:214",
+      "capture": "UID-012-CHAIN-ku-390.png"
+    },
+    {
+      "name": "UID-012-CHAIN-ku-1280",
+      "status": "FAIL",
+      "error": "Error: audit card absent\n    at <anonymous>:1:149\n    at <anonymous>:1:214",
+      "capture": "UID-012-CHAIN-ku-1280.png"
+    }
+  ],
+  "unexpectedRequests": [],
+  "apiCalls": [
+    {
+      "id": "UIR-012-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIR-012-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-ASSISTANT-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-DENIED-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 503,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UIE-012-LOAD-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    }
+  ],
+  "limits": "Actual Vite main/App/router/providers/global auth revalidator/launcher/emergency wrapper and management page; synthetic same-origin HTTP only. Six owner baseline, eighteen assistant/denied/load-retry extras and six invalid-chain reproduction diagnostics; diagnostic PASS is not product acceptance. No real cookie/backend SQL/grants/chain corruption or server authority certified. No writes/actions beyond GET-only retry; empty requests, high default severity; fallback fonts, no provider or physical-device/accessibility proof."
+}

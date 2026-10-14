@@ -1,3 +1,14 @@
+
+## Authoritative continuation — SEQ-366–371 (2026-10-14 Baghdad)
+
+Latest [SEQ-366–371](SEQ_366_371_EMERGENCY_WORKSPACE_INTEGRITY_20261014.md). **Next SEQ-372**. Audit only; application/original tests/schema unchanged.
+
+Full Vite main/App/emergency management owner ×AR/EN/KU ×390/1280:6 new baseline PASS.18 extra assistant/denied UI-branch/503→retry PASS, zero baseline credit. Initial run38500731533/job115646801848:24PASS/6 diagnostic locator FAIL; original failure preserved. Only6 diagnostics re-executed after audit-locator correction in run38501087503/job115647945992:6 reproduction PASS, not product acceptance. Both builds/uploads/cleanup succeeded;234+44 GET with device headers,0 unexpected/mutation.48 PNGs reviewed/persisted.
+
+New **EMERGENCY-AUDIT-STATUS-MISREPORT-001 MEDIUM/OPEN/NATIVE_DOM_CONFIRMED**: owner UI calls chain healthy despite synthetic overview valid:false, six DOM probes/three mobile visual captures. PostgreSQL overview source allows false payload; actual SQL corruption/HTTP tamper not executed. Legacy invalid-chain503 path distinguished. Desktop owner-card visibility/clipping TRIAGE; actual directory403 not executed (denied200 pair tests frontend branch only). No app repair.
+
+Current seq371CSV222 baseline:84PASS_BOUNDED_FULL_APP/138NOT_RUN;36 cumulative extra state cases and8 diagnostic cases outside baseline.37.84% baseline execution only; whole-audit percentage **NOT_YET_MEASURABLE**, releaseBLOCKED.21 selectors unmapped/11 domains partial; no real authorization/SQL/RLS/provider or complete responsive/accessibility clearance.
+
 # Fawri final audit — issue and decision ledger
 
 ## Authoritative continuation — SEQ-360–365 (2026-10-14 Baghdad)
@@ -947,3 +958,7 @@ Sorani work-monitor Last activity showsEnglish Oct/AM inactualfullApp390/1280cap
 Globalindexcatalog-kurdish-layout-fix.css640–1399Sorani selector appliesflex1 1 28rem tofirstheaderchild, which is40pxshieldbadge inbothsnapshotpages. Native1280badgewidths702.6875/547.921875; test-onlystylesheetdisable gives40px andtitlewidth254.6875/99.921875→917.375/607.84375.2ownedbrowsercausalcontrolsPASS,source/appunchanged. Presentation/usabilitygap,notauth/writebypass; mobilecrampingnotattributedtothismedia rule. SEQ-360–365 has16captures/fullbounds. No repair.
 
 I18N-MONITOR-SORANI-DATE-001 evidenceextension: emergency snapshot generated_at showsEnglishOct/AM inbothSoraniUIR-011captures; sourceusesckb-IQ/dateformatter. Sameexistingdatefinding, no newduplicate. Nativevisualproof, notresolvedOptions/alltimezone proof.
+
+## EMERGENCY-AUDIT-STATUS-MISREPORT-001 — MEDIUM / OPEN / NATIVE_DOM_CONFIRMED
+
+SEQ-366–371 full original App owner overview valid:false still renders localized healthy audit-chain text in all6 AR/EN/KU×390/1280 DOM probes. Three mobile390 chain-card PNGs corroborate; desktop card visibility not certified. AdminEmergencyAccessPage.tsx:658–663 unconditionally renders green shield/text.auditValid, ignoring boolean while showing event_count. PostgreSQL source verifier can return false, owner overview propagates it and HTTP handler serializes200; no actual SQL corruption/HTTP-tamper experiment or unauthorized-access proof. Legacy JSON path verifies/refuses503 before valid:true, not a bypass. SeverityMEDIUM for misleading security integrity indication. Original6 diagnostic locator failures preserved; corrected6-case-only diagnostic verifies reproduction. No application fix. Evidence [SEQ-366–371](SEQ_366_371_EMERGENCY_WORKSPACE_INTEGRITY_20261014.md), seq369/seq370 native results/captures. Owner desktop-card clipping potential remains separate TRIAGE.
