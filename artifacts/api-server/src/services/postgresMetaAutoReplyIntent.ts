@@ -200,9 +200,9 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     !storageText ||
     storageText.length > 2_000 ||
     (customerText !== null && customerText.length > 2_000) ||
-    (bodyPageId && bodyPageId !== pageId) ||
-    (bodySenderId && bodySenderId !== senderId) ||
-    (bodyMessageId && bodyMessageId !== externalMessageId)
+    bodyPageId !== pageId ||
+    bodySenderId !== senderId ||
+    bodyMessageId !== externalMessageId
   ) {
     throw Object.assign(new Error("Meta reply job payload is invalid"), {
       code: "META_JOB_PAYLOAD_INVALID",
