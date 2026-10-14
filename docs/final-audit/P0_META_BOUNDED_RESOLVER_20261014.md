@@ -21,3 +21,9 @@ Source30a165dc, PR537, isolated38518960581/job115704014302 SUCCESS:173PASS/0FAIL
 Schema gate38518960424/job115704013331 FAILED before migration SQL due canonical generator supported history2..28: stage0028 metadata/manual source was missing. Corrected by adding migration-stages/0028/{stage.json,manual.sql}, preserving exact migration SQL, and generating deterministic snapshot ID using existing canonical algorithm. Local full canonical generator PASS and all59 SQL/snapshot/journal artifacts byte-equal generated output. Table schema unchanged. Original schema failure retained; corrected schema CI pending.
 
 Security PR536 corrected a1e7751f full-history38518815440 SUCCESS, repository-security115703564292 plus dependency/lockfile jobs PASS. First length64 attempt failed; corrected detector54span proven through actual scanner regression, no broad allowance.
+
+
+## Corrected canonical checkpoint and signed HTTP preparation
+Source2123c0c9: schema38519473541/job115705632551 SUCCESS, isolated38519473493/job115705631802 SUCCESS173/0, security38519473453 SUCCESS (repository115705632421 and dependencies/lockfile/review PASS). Local deterministic two-run generator regression1PASS/0FAIL,59artifact comparison PASS. This supersedes the missing-stage failure only after preserving its earlier evidence.
+
+Prepared additional restricted-role actual loopback Express HTTP test: actual JSON raw-body capture, enforceMetaWebhookSecurity then enforceMerchantWebhookOperationalAccess; invalid signature401 before routing boundary, signed known pages200 with generic acceptance, unknown page503/no tenant leak, revoked EXECUTE503/no leak, ordinary table reads remain isolated. Actual middleware and DB role, generated synthetic secret only. Final success handler is controlled; manual-conversation/queue/subscription/router/worker stages are NOT exercised by this bounded test. SyntaxPASS; new HTTP runtime NOT RUN until nextCI. No claim of full-app/full-pipeline clearance.

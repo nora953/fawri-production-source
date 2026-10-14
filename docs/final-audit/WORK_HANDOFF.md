@@ -1,3 +1,13 @@
+# Active P0 signed HTTP verification — 2026-10-14
+
+PR537 / branch fix/p0-meta-bounded-rls-resolver-20261014. Corrected source2123c0c9 verified: schema38519473541 SUCCESS, isolated38519473493/job115705631802173PASS/0FAIL, security38519473453 SUCCESS. Migration29 and restricted resolver7PASS remain proven. Prior schema missing-stage error and security span error preserved with corrections.
+
+New bounded signed HTTP test PREPARED/NOT_RUN: actual raw-body+signature+merchant-operational middleware with restricted DB role, invalid signature stops before route, signed known200, unknown503/no leak, revoked grant503/no leak, table isolation. Controlled acceptance handler; downstream queue/worker/full application not covered. Next inspect its new isolatedCI result and save exact counters. See P0_META_BOUNDED_RESOLVER_20261014.md. Only test/docs changed after tested2123c0c9.
+
+Payment recovery PR534 remains verified; security PR536 verified. Issues523/535 and P0 remain OPEN for crash/connection/commit inbox, full downstream signed pipeline and reviewed hosted-role rollout. No merge/deploy/live database/grants.
+
+---
+
 # Latest P0 checkpoint — 2026-10-14
 
 Active branch fix/p0-meta-bounded-rls-resolver-20261014, draft PR537. Tested SQL/application source30a165dc: isolated38518960581/job115704014302 SUCCESS,173PASS/0FAIL/0SKIP,41unique/43invocations. Restricted Meta resolver7PASS, all7chains29migrations and cleanup PASS. Payment recovery inherited unchanged and still PASS. Full signed restricted-role HTTP and hosted EXECUTE grant remain unverified; issue535 stays OPEN for these acceptance gaps.

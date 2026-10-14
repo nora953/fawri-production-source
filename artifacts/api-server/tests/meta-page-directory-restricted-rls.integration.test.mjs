@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { assertDisposablePostgres } from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import { cleanupResources } from './helpers/cleanup-resources.mjs';
@@ -97,4 +97,60 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
     console.log('META_RESTRICTED_KNOWN_PAGE_STATUS ' + result.status);
     assert.equal(result.next, true, 'FA-I-006: restricted runtime must process the known approved page');
   });
+  await t.test('signed HTTP ingress uses the restricted capability and rejects invalid signatures before routing', async ht => {
+    const { default: express } = await import('express');
+    const security = await import('../src/middleware/metaWebhookSecurity.ts');
+    const oldSecret = process.env.META_APP_SECRET;
+    const appSecret = randomBytes(32).toString('hex');
+    process.env.META_APP_SECRET = appSecret;
+    let routingCalls = 0;
+    const app = express();
+    app.use(express.json({ verify(req, _res, buffer) { req.rawBody = Buffer.from(buffer); } }));
+    app.use(security.enforceMetaWebhookSecurity);
+    app.use((req, res, next) => {
+      routingCalls++;
+      return middleware.enforceMerchantWebhookOperationalAccess(req, res, next);
+    });
+    // Bounded acceptance boundary only: this test does not execute queue/worker stages.
+    app.post('/api/meta/webhook', (_req, res) => res.json({ accepted: true }));
+    const server = app.listen(0, '127.0.0.1');
+    ht.after(async () => cleanupResources([
+      ['HTTP server', async () => {
+        server.closeAllConnections();
+        await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+      }],
+      ['Meta secret environment', async () => {
+        if (oldSecret === undefined) delete process.env.META_APP_SECRET;
+        else process.env.META_APP_SECRET = oldSecret;
+      }],
+      ['resolver grant', () => admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) TO ${role}`)],
+    ]));
+    await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+    async function post(pageId, signature = 'valid') {
+      const body = JSON.stringify({object:'page', entry:[{id:pageId, messaging:[{sender:{id:'synthetic-customer'}, message:{mid:randomUUID(),text:'synthetic'}}]}]});
+      const signed = 'sha256=' + createHmac('sha256', appSecret).update(body).digest('hex');
+      const response = await fetch(baseUrl + '/api/meta/webhook', {
+        method:'POST',headers:{'content-type':'application/json','connection':'close','x-hub-signature-256':signature === 'valid' ? signed : 'sha256='+'0'.repeat(64)},body,
+      });
+      return {status:response.status, body:await response.json()};
+    }
+    assert.equal((await post(pages[0], 'invalid')).status, 401);
+    assert.equal(routingCalls, 0, 'invalid signature must not enter the DB routing boundary');
+    for (const pageId of pages) {
+      const result = await post(pageId);
+      assert.equal(result.status, 200);
+      assert.deepEqual(result.body, {accepted:true});
+    }
+    const missing = await post('unknown-' + suffix);
+    assert.equal(missing.status, 503);
+    assert.equal(missing.body.code, 'META_PAGE_DIRECTORY_UNAVAILABLE');
+    assert.ok(merchants.every(id => !JSON.stringify(missing.body).includes(id)));
+    await admin.query(`REVOKE EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) FROM ${role}`);
+    const revoked = await post(pages[0]);
+    assert.equal(revoked.status, 503);
+    assert.ok(merchants.every(id => !JSON.stringify(revoked.body).includes(id)));
+    assert.equal((await runtimePool.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count, 0);
+  });
+
 });
