@@ -491,7 +491,8 @@ export async function createCashierBillingCheckout(input: {
     await client.query(
       `UPDATE cashier_billing_orders
           SET status = 'expired', updated_at = $2
-        WHERE merchant_id = $1 AND status = 'pending' AND request_expires_at <= $2`,
+        WHERE merchant_id = $1 AND status = 'pending' AND request_expires_at <= $2
+          AND NOT (provider = 'superqi_sandbox' AND provider_checkout_ref IS NULL)`,
       [merchantId, now],
     );
 
@@ -701,7 +702,8 @@ export async function listMerchantCashierBillingOrders(
       await client.query(
         `UPDATE cashier_billing_orders
             SET status = 'expired', updated_at = now()
-          WHERE merchant_id = $1 AND status = 'pending' AND request_expires_at <= now()`,
+          WHERE merchant_id = $1 AND status = 'pending' AND request_expires_at <= now()
+          AND NOT (provider = 'superqi_sandbox' AND provider_checkout_ref IS NULL)`,
         [merchantId],
       );
       const rows = await operationalQueryRows<Record<string, unknown>>(
