@@ -1,3 +1,9 @@
+## Active wire COMMIT response acceptance — 2026-10-14
+
+DraftPR538 continuation fromf696827b (all13observed workflowsSUCCESS). Four new real TCP response-loss cases use attested loopback proxy and independent direct parent reads; no production source/schema change. Local framing4PASS/typecheck/syntaxPASS; actualwireSQL NOT_RUN pending CI. See P0_WIRE_COMMIT_ACCEPTANCE_20261014.md. Preserve existing driver/process/backend/COMMIT rollback proofs. After wire proof, next unmatched payment inbox under523 and full downstream restricted Meta535; do not repeat old work.
+
+---
+
 ## Verified COMMIT caller-outcome checkpoint — 2026-10-14
 
 Draft PR538 tested source **d418feaf63288411b0b135a6d0c50ad3bdb9caf7**. Owned offline PostgreSQL run38525448026/job115724620052: **185PASS/0FAIL/0SKIP**,42unique files/44invocations. Receipt suite11PASS includes four new driver08006 outcomes after successful actual receipt/entitlement COMMIT, fresh concurrent next-day processes, one entitlement and original paid_at. **13/13 observed workflows SUCCESS**. Cashier history fixture2PASS with database-clock rounding, original location/stock/catalog/idempotency checks intact. Prior documentation-head30020abf lifecycle failure38524878617/job115722776644 is preserved; never claim that head was wholly green.

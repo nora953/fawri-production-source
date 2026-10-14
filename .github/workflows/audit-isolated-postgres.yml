@@ -44,6 +44,8 @@ jobs:
         run: node scripts/ci-run-redacted.mjs --label audit-install -- pnpm install --frozen-lockfile --ignore-scripts
       - name: Prove fail-closed guard and teardown with no database
         run: node --test scripts/disposable-postgres-test-guard.test.mjs
+      - name: Prove PostgreSQL response frame filtering without a database
+        run: node --test scripts/tests/postgres-commit-response-proxy.test.mjs
       - name: Build API for child-process journeys
         id: build
         run: node scripts/ci-run-redacted.mjs --label audit-api-build -- pnpm --filter @workspace/api-server run build

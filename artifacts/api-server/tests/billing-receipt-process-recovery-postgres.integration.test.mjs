@@ -55,7 +55,7 @@ test('committed verified receipts survive owned application/backend interruption
     const subscriptions = Number((await pool.query(`SELECT count(*)::int AS n FROM ${tables.subscriptions} WHERE merchant_id=$1`, [fixture.merchantId])).rows[0].n);
     return {order,receipt,applications,subscriptions};
   }
-  async function start(kind, event, commitAcknowledgmentLoss) {
+  async function start(kind, event, commitAcknowledgmentLoss, wireCommitAcknowledgmentLoss) {
     const marker = `receipt-owned-${randomUUID()}`;
     markers.push(marker);
     const child = spawn(process.execPath, ['--import','tsx',childPath], {env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});
@@ -74,7 +74,7 @@ test('committed verified receipts survive owned application/backend interruption
     try {
       await Promise.race([ready, done.then(() => { throw new Error('owned child exited before ready'); }), new Promise((_,reject) => { timer=setTimeout(() => reject(new Error('owned child ready timeout')),15000); })]);
     } finally { clearTimeout(timer); }
-    child.send({kind,event,marker,commitAcknowledgmentLoss});
+    child.send({kind,event,marker,commitAcknowledgmentLoss,wireCommitAcknowledgmentLoss});
     return {child,marker,done,messages};
   }
   async function sleepingBackend(task, table) {
@@ -169,6 +169,35 @@ test('committed verified receipts survive owned application/backend interruption
         assert.equal(settled.subscriptions,1);
         assert.equal(new Date(settled.order.paid_at).getTime(),f.event.occurredAt.getTime());
         console.log('BILLING_COMMIT_ACK_LOSS_PROOF '+JSON.stringify({kind,boundary,mode:'driver-outcome-after-real-server-commit',serverCommitCompleted:true,callerReportedSuccess:false,freshProcessApplications:1,originalPaymentTime:true}));
+      });
+    }
+    for (const boundary of [1,2]) {
+      await t.test(`${kind}: lost PostgreSQL wire acknowledgment after ${boundary === 1 ? 'receipt' : 'entitlement'} COMMIT recovers exactly once`, async () => {
+        const f = await fixture(kind);
+        const task = await start(kind,f.event,undefined,boundary);
+        const lost = await task.done;
+        assert.notEqual(lost.code,0);
+        assert.ok(lost.messages.some(message => message.type==='wire-commit-ack-loss' && message.boundary===boundary && message.serverCommitCompleted===true && message.commandCompleteDelivered===false));
+        assert.ok(lost.messages.some(message => message.type==='failure'));
+        assert.ok(!lost.messages.some(message => message.type==='result'));
+        const uncertain = await snapshot(kind,f);
+        assert.equal(uncertain.receipt.length,1);
+        assert.equal(uncertain.order.provider_payment_ref,f.event.providerPaymentRef);
+        assert.equal(uncertain.receipt[0].status,boundary===1 ? 'received' : 'applied');
+        assert.equal(uncertain.applications,boundary===1 ? 0 : 1);
+        assert.equal(uncertain.subscriptions,boundary===1 ? 0 : 1);
+        const redelivered = {...f.event,occurredAt:new Date(f.event.occurredAt.getTime()+86400000)};
+        const restarted = await Promise.all([start(kind,redelivered),start(kind,redelivered)]);
+        const outcomes = await Promise.all(restarted.map(task => task.done));
+        assert.ok(outcomes.every(outcome => outcome.code===0));
+        assert.deepEqual(outcomes.map(outcome => outcome.messages.find(message => message.type==='result')?.status).sort(),boundary===1 ? ['applied','duplicate'] : ['duplicate','duplicate']);
+        const settled = await snapshot(kind,f);
+        assert.equal(settled.receipt.length,1);
+        assert.equal(settled.receipt[0].status,'applied');
+        assert.equal(settled.applications,1);
+        assert.equal(settled.subscriptions,1);
+        assert.equal(new Date(settled.order.paid_at).getTime(),f.event.occurredAt.getTime());
+        console.log('BILLING_WIRE_COMMIT_ACK_LOSS_PROOF '+JSON.stringify({kind,boundary,mode:'tcp-proxy-drops-command-complete-after-real-server-commit',commandCompleteDelivered:false,serverCommitCompleted:true,callerReportedSuccess:false,freshProcessApplications:1,originalPaymentTime:true}));
       });
     }
     await t.test(`${kind}: failed receipt COMMIT is rejected before entitlement and exact retry remains safe`, async () => {

@@ -7,6 +7,7 @@ const { pool } = await import('@workspace/db');
 pool.options.max = 1;
 pool.on('error', () => {}); // A deliberately terminated owned backend may emit after query rejection.
 let handled = false;
+let wireProxy;
 async function send(message) {
   if (process.connected) await new Promise(resolve => process.send(message, () => resolve()));
 }
@@ -16,6 +17,16 @@ process.on('message', async task => {
   try {
     if (!['saas', 'cashier'].includes(task.kind) || !/^receipt-owned-[a-f0-9-]+$/.test(task.marker)) throw new Error('invalid synthetic child task');
     pool.options.application_name = task.marker;
+    if (task.wireCommitAcknowledgmentLoss) {
+      if (task.commitAcknowledgmentLoss || ![1,2].includes(task.wireCommitAcknowledgmentLoss)) throw new Error('invalid synthetic wire boundary');
+      const { startOwnedCommitResponseProxy } = await import('./postgres-commit-response-proxy.mjs');
+      wireProxy = await startOwnedCommitResponseProxy(task.wireCommitAcknowledgmentLoss, () => send({type:'wire-commit-ack-loss',boundary:task.wireCommitAcknowledgmentLoss,serverCommitCompleted:true,commandCompleteDelivered:false}));
+      const ownedUrl = new URL(process.env.DATABASE_URL);
+      // Only the child application connection uses the proxy. Attestation and
+      // independent parent reads still connect directly to owned port5432.
+      pool.options.connectionString = undefined;
+      Object.assign(pool.options,{host:'127.0.0.1',port:wireProxy.port,user:decodeURIComponent(ownedUrl.username),password:decodeURIComponent(ownedUrl.password),database:'fawri_ci',ssl:false});
+    }
     if (task.commitAcknowledgmentLoss) {
       if (![1,2].includes(task.commitAcknowledgmentLoss)) throw new Error('invalid synthetic commit boundary');
       let commits = 0;
@@ -48,6 +59,7 @@ process.on('message', async task => {
     process.exitCode = 1;
   } finally {
     await pool.end().catch(() => {});
+    if (wireProxy) await wireProxy.close();
     if (process.connected) process.disconnect();
   }
 });
