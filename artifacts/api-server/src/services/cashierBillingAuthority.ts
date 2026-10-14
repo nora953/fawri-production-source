@@ -1113,6 +1113,12 @@ export async function applyVerifiedCashierBillingProviderEvent(
         { existing_order_id: paymentRefCollision[0].id },
       );
     }
+    // Applied cashier entitlements are immutable to conflicting provider payments.
+    if (order.status === "applied" &&
+        (input.amountIqd !== order.amount_iqd ||
+         (order.provider_payment_ref && order.provider_payment_ref !== paymentRef))) {
+      fail("CASHIER_BILLING_ORDER_NOT_PAYABLE", "applied cashier billing order cannot be changed by a conflicting payment", 409);
+    }
     if (input.amountIqd !== order.amount_iqd) {
       await client.query(
         `UPDATE cashier_billing_orders
