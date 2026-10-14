@@ -1,0 +1,831 @@
+{
+  "pr": 541,
+  "branch": "fix/p0-operator-receipt-review-ui-20261014",
+  "tested_head": "9fd5155eee05e74fb88d0d3f3bec2d777034a406",
+  "browser_run": 38602501013,
+  "browser_job": 115984989856,
+  "browser": {
+    "browser": "Chrome/154.0.8037.97",
+    "source": "6f8f78fa94897fbc91951f0180582c1b5d502245",
+    "results": [
+      {
+        "name": "actual AdminPage initial owner support gate",
+        "status": "PASS",
+        "details": {
+          "support": true,
+          "message": true,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/admin",
+          "active": "Support1",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me",
+            "/api/auth/admin/owner-recovery/status",
+            "/api/auth/admin/support/tickets",
+            "/api/auth/admin/subscriptions/events",
+            "/api/auth/merchants",
+            "/api/auth/admin/subscriptions",
+            "/api/auth/admin/logs",
+            "/api/auth/admin/channels",
+            "/api/auth/admin/deletion-requests",
+            "/api/auth/admin/support/tickets"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial support support gate",
+        "status": "PASS",
+        "details": {
+          "support": true,
+          "message": true,
+          "reply": 1,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/admin",
+          "active": "Support1",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me",
+            "/api/auth/admin/support/tickets",
+            "/api/auth/admin/support/tickets"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial inspector support gate",
+        "status": "PASS",
+        "details": {
+          "support": true,
+          "message": true,
+          "reply": 1,
+          "inspection": true,
+          "noPermissions": false,
+          "path": "/admin",
+          "active": "Support1",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me",
+            "/api/auth/admin/support/tickets",
+            "/api/auth/merchants",
+            "/api/auth/admin/support/tickets"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial logs support gate",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/admin",
+          "active": "Activity log",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me",
+            "/api/auth/admin/logs"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial none support gate",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": true,
+          "path": "/admin",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial password support gate",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": true,
+          "path": "/admin",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial 401 support gate",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/login",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me",
+            "POST /api/auth/admin/logout"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial 403 support gate",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/login",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me",
+            "POST /api/auth/admin/logout"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial malformed support gate",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/login",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me",
+            "POST /api/auth/admin/logout"
+          ]
+        }
+      },
+      {
+        "name": "actual AdminPage initial 503 support gate",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/login",
+          "requests": [
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/emergency-read-access/overview",
+            "/api/auth/admin/me",
+            "POST /api/auth/admin/logout"
+          ]
+        }
+      },
+      {
+        "name": "actual parent refresh support to logs",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/admin",
+          "active": "Activity log",
+          "meCalls": 2,
+          "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+        }
+      },
+      {
+        "name": "actual parent refresh support to 401",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/login",
+          "meCalls": 2,
+          "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+        }
+      },
+      {
+        "name": "actual parent refresh support to 403",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/login",
+          "meCalls": 2,
+          "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+        }
+      },
+      {
+        "name": "actual parent refresh none to support",
+        "status": "PASS",
+        "details": {
+          "support": true,
+          "message": true,
+          "reply": 1,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/admin",
+          "active": "Support1",
+          "meCalls": 2,
+          "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+        }
+      },
+      {
+        "name": "actual parent refresh owner to logs",
+        "status": "PASS",
+        "details": {
+          "support": false,
+          "message": false,
+          "reply": 0,
+          "inspection": false,
+          "noPermissions": false,
+          "path": "/admin",
+          "active": "Activity log",
+          "meCalls": 2,
+          "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+        }
+      },
+      {
+        "name": "actual receipt review owner pagination en",
+        "status": "PASS",
+        "details": {
+          "lang": "en",
+          "requests": [
+            "/api/auth/admin/billing/verified-receipts?limit=20",
+            "/api/auth/admin/billing/verified-receipts?limit=20&cursor=synthetic_opaque_cursor",
+            "/api/auth/admin/billing/verified-receipts?limit=20",
+            "/api/auth/admin/billing/verified-receipts?limit=20"
+          ],
+          "redacted": true,
+          "pagination": true,
+          "empty": true
+        }
+      },
+      {
+        "name": "actual receipt review owner pagination ar",
+        "status": "PASS",
+        "details": {
+          "lang": "ar",
+          "requests": [
+            "/api/auth/admin/billing/verified-receipts?limit=20",
+            "/api/auth/admin/billing/verified-receipts?limit=20&cursor=synthetic_opaque_cursor",
+            "/api/auth/admin/billing/verified-receipts?limit=20",
+            "/api/auth/admin/billing/verified-receipts?limit=20"
+          ],
+          "redacted": true,
+          "pagination": true,
+          "empty": true
+        }
+      },
+      {
+        "name": "actual receipt review owner pagination ku",
+        "status": "PASS",
+        "details": {
+          "lang": "ku",
+          "requests": [
+            "/api/auth/admin/billing/verified-receipts?limit=20",
+            "/api/auth/admin/billing/verified-receipts?limit=20&cursor=synthetic_opaque_cursor",
+            "/api/auth/admin/billing/verified-receipts?limit=20",
+            "/api/auth/admin/billing/verified-receipts?limit=20"
+          ],
+          "redacted": true,
+          "pagination": true,
+          "empty": true
+        }
+      },
+      {
+        "name": "actual receipt review denied support",
+        "status": "PASS",
+        "details": {
+          "requests": 0
+        }
+      },
+      {
+        "name": "actual receipt review denied logs",
+        "status": "PASS",
+        "details": {
+          "requests": 0
+        }
+      },
+      {
+        "name": "actual receipt review denied none",
+        "status": "PASS",
+        "details": {
+          "requests": 0
+        }
+      },
+      {
+        "name": "actual receipt review denied password",
+        "status": "PASS",
+        "details": {
+          "requests": 0
+        }
+      },
+      {
+        "name": "actual receipt review HTTP 403 clears previous data",
+        "status": "PASS",
+        "details": {
+          "status": 403,
+          "cleared": true,
+          "recovered": true
+        }
+      },
+      {
+        "name": "actual receipt review HTTP 503 clears previous data",
+        "status": "PASS",
+        "details": {
+          "status": 503,
+          "cleared": true,
+          "recovered": true
+        }
+      },
+      {
+        "name": "actual receipt review permission refresh unmounts data",
+        "status": "PASS",
+        "details": {
+          "unmounted": true,
+          "requestsStopped": true
+        }
+      }
+    ],
+    "limits": "Actual mounted AdminPage/controller/shell/view/i18n/CSS; synthetic loopback HTTP, desktop English plus receipt review English/Arabic/Sorani. No real auth server, App router wrapper, hosted grant, full visual/accessibility or backend write proof."
+  },
+  "preserved_failed_attempt": {
+    "head": "3d55c1ae5b554a496bb56cbe23e3831fef002917",
+    "run": 38602225533,
+    "job": 115984056869,
+    "evidence": {
+      "browser": "Chrome/154.0.8037.97",
+      "source": "c46d101cbab5f6126eee07624307013c11465211",
+      "results": [
+        {
+          "name": "actual AdminPage initial owner support gate",
+          "status": "PASS",
+          "details": {
+            "support": true,
+            "message": true,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/admin",
+            "active": "Support1",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me",
+              "/api/auth/admin/owner-recovery/status",
+              "/api/auth/admin/support/tickets",
+              "/api/auth/admin/subscriptions/events",
+              "/api/auth/merchants",
+              "/api/auth/admin/subscriptions",
+              "/api/auth/admin/logs",
+              "/api/auth/admin/channels",
+              "/api/auth/admin/deletion-requests",
+              "/api/auth/admin/support/tickets"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial support support gate",
+          "status": "PASS",
+          "details": {
+            "support": true,
+            "message": true,
+            "reply": 1,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/admin",
+            "active": "Support1",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me",
+              "/api/auth/admin/support/tickets",
+              "/api/auth/admin/support/tickets"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial inspector support gate",
+          "status": "PASS",
+          "details": {
+            "support": true,
+            "message": true,
+            "reply": 1,
+            "inspection": true,
+            "noPermissions": false,
+            "path": "/admin",
+            "active": "Support1",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me",
+              "/api/auth/admin/support/tickets",
+              "/api/auth/merchants",
+              "/api/auth/admin/support/tickets"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial logs support gate",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/admin",
+            "active": "Activity log",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me",
+              "/api/auth/admin/logs"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial none support gate",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": true,
+            "path": "/admin",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial password support gate",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": true,
+            "path": "/admin",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial 401 support gate",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/login",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me",
+              "POST /api/auth/admin/logout"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial 403 support gate",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/login",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me",
+              "POST /api/auth/admin/logout"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial malformed support gate",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/login",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me",
+              "POST /api/auth/admin/logout"
+            ]
+          }
+        },
+        {
+          "name": "actual AdminPage initial 503 support gate",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/login",
+            "requests": [
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/emergency-read-access/overview",
+              "/api/auth/admin/me",
+              "POST /api/auth/admin/logout"
+            ]
+          }
+        },
+        {
+          "name": "actual parent refresh support to logs",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/admin",
+            "active": "Activity log",
+            "meCalls": 2,
+            "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+          }
+        },
+        {
+          "name": "actual parent refresh support to 401",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/login",
+            "meCalls": 2,
+            "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+          }
+        },
+        {
+          "name": "actual parent refresh support to 403",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/login",
+            "meCalls": 2,
+            "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+          }
+        },
+        {
+          "name": "actual parent refresh none to support",
+          "status": "PASS",
+          "details": {
+            "support": true,
+            "message": true,
+            "reply": 1,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/admin",
+            "active": "Support1",
+            "meCalls": 2,
+            "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+          }
+        },
+        {
+          "name": "actual parent refresh owner to logs",
+          "status": "PASS",
+          "details": {
+            "support": false,
+            "message": false,
+            "reply": 0,
+            "inspection": false,
+            "noPermissions": false,
+            "path": "/admin",
+            "active": "Activity log",
+            "meCalls": 2,
+            "limits": "Synthetic GET auth fixture; no backend authorization or race-window write proof."
+          }
+        },
+        {
+          "name": "actual receipt review owner pagination en",
+          "status": "PASS",
+          "details": {
+            "lang": "en",
+            "requests": [
+              "/api/auth/admin/billing/verified-receipts?limit=20",
+              "/api/auth/admin/billing/verified-receipts?limit=20&cursor=synthetic_opaque_cursor",
+              "/api/auth/admin/billing/verified-receipts?limit=20",
+              "/api/auth/admin/billing/verified-receipts?limit=20"
+            ],
+            "redacted": true,
+            "pagination": true,
+            "empty": true
+          }
+        },
+        {
+          "name": "actual receipt review owner pagination ar",
+          "status": "FAIL",
+          "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+        },
+        {
+          "name": "actual receipt review owner pagination ku",
+          "status": "FAIL",
+          "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+        },
+        {
+          "name": "actual receipt review denied support",
+          "status": "PASS",
+          "details": {
+            "requests": 0
+          }
+        },
+        {
+          "name": "actual receipt review denied logs",
+          "status": "PASS",
+          "details": {
+            "requests": 0
+          }
+        },
+        {
+          "name": "actual receipt review denied none",
+          "status": "PASS",
+          "details": {
+            "requests": 0
+          }
+        },
+        {
+          "name": "actual receipt review denied password",
+          "status": "PASS",
+          "details": {
+            "requests": 0
+          }
+        },
+        {
+          "name": "actual receipt review HTTP 403 clears previous data",
+          "status": "PASS",
+          "details": {
+            "status": 403,
+            "cleared": true,
+            "recovered": true
+          }
+        },
+        {
+          "name": "actual receipt review HTTP 503 clears previous data",
+          "status": "PASS",
+          "details": {
+            "status": 503,
+            "cleared": true,
+            "recovered": true
+          }
+        },
+        {
+          "name": "actual receipt review permission refresh unmounts data",
+          "status": "PASS",
+          "details": {
+            "unmounted": true,
+            "requestsStopped": true
+          }
+        }
+      ],
+      "limits": "Actual mounted AdminPage/controller/shell/view/i18n/CSS; synthetic loopback HTTP, desktop English plus receipt review English/Arabic/Sorani. No real auth server, App router wrapper, hosted grant, full visual/accessibility or backend write proof."
+    }
+  },
+  "local": {
+    "frontend_typecheck": "PASS",
+    "frontend_build": "PASS",
+    "receipt_client_tests": {
+      "passed": 4,
+      "failed": 0
+    },
+    "combined_session_client_tests": {
+      "passed": 9,
+      "failed": 0,
+      "overlap_receipt_client": 4
+    },
+    "workflow_policy": "PASS"
+  },
+  "workflow_runs": [
+    {
+      "id": 38602501213,
+      "name": "Browser storage authority audit",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 1058,
+      "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602501213/jobs",
+      "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602501213/logs",
+      "workflow_id": 328910625
+    },
+    {
+      "id": 38602501135,
+      "name": "Clean deployment golden gate",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 337,
+      "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602501135/jobs",
+      "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602501135/logs",
+      "workflow_id": 376713187
+    },
+    {
+      "id": 38602500943,
+      "name": "Staging container contract",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 727,
+      "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602500943/jobs",
+      "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602500943/logs",
+      "workflow_id": 365584145
+    },
+    {
+      "id": 38602500829,
+      "name": "Final quality gates",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 2184,
+      "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602500829/jobs",
+      "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602500829/logs",
+      "workflow_id": 328957628
+    },
+    {
+      "id": 38602501013,
+      "name": "Admin parent permission browser engineering audit",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 142,
+      "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602501013/jobs",
+      "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602501013/logs",
+      "workflow_id": 382672929
+    },
+    {
+      "id": 38602501064,
+      "name": "Foundation integration final gate",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 1180,
+      "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602501064/jobs",
+      "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602501064/logs",
+      "workflow_id": 346643335
+    },
+    {
+      "id": 38602500754,
+      "name": "Final security and supply chain",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 2200,
+      "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602500754/jobs",
+      "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/38602500754/logs",
+      "workflow_id": 328957627
+    }
+  ],
+  "limits": "Actual mounted AdminPage and production CSS, synthetic loopback HTTP. No actual backend SQL/session proof added; no App router wrapper/full visual/accessibility/mobile acceptance, manual reconcile write/provider/live/hosted action. No baseline/whole audit percentage credit.",
+  "observed_workflows": {
+    "total": 7,
+    "success": 7
+  }
+}
