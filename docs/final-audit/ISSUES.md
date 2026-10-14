@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-342–347 (2026-10-14 Baghdad)
+
+Latest [SEQ-342–347](SEQ_342_347_FULL_LIFECYCLE_ROUTES_20261014.md). **Next SEQ-348**. Auditonly/application/tests/schemaunchanged.
+
+ActualVite main/App OTP/pending/recovery ×AR/EN/KU ×390/1280: headb8502d58406f66279ed9bccebb02f110173c39ee/merge0768cd0c40f8ad9aa06a18ae67a5826e2ae17afb, run38493001942/job115622347297. **18newbaselinePASS/0FAIL**;18captures inspected/persisted. SyntheticOTPinput/emptydisabledverify, pendinginitial+refresh12GET, key1emptydisabled/title/direction/overflowPASS. New **A11Y-OWNER-RECOVERY-HEADING-001 LOW/OPEN/DOM_CONFIRMED**: allsixrecoverycases have0semanticheadings; visibleCardTitle isdiv. Notauthfailure/WCAGcertification.
+
+Currentseq347CSV222cases:54PASS_BOUNDED_FULL_APP/168NOT_RUN. Prior36notrerun. No realOTP/recovery/backend/RLS/provider orlaternegative-state proof; fallbackfonts only.21selectors unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED. NextnegativeUIstatesoutsidebaseline.
+
+
 ## Authoritative continuation — SEQ-336–341 (2026-10-14 Baghdad)
 
 Latest [SEQ-336–341](SEQ_336_341_FULL_ENTRY_ROUTES_20261014.md). **Next SEQ-342**. Sixsequentialstages/auditonly; application/originaltests/schemaunchanged.
@@ -894,3 +903,8 @@ EightnewSQLcases8P/0F/0SKIP,source29be3ed3/run38442860689/job115453629407; newE1
 ## PUBLIC-METADATA-TEMPLATE-001 — LOW / OPEN / SOURCE_CONFIRMED
 
 Current artifacts/fawri/index.html:7/10/13 description, og:description and twitter:description retain built-on-Replit/template updateinstruction wording. Public social/search snippet quality issue; source proof on56138e8a, not currentlydeployedincident or credentialexposure. Discovered alongside firstfullApproute batch;18functionalbaselinePASS remainsseparate. Details/bounds inSEQ-330–335 report. No repair.
+
+
+## A11Y-OWNER-RECOVERY-HEADING-001 — LOW / OPEN / DOM_CONFIRMED
+
+OwnerRecoveryPage initialkey1stage, actualfullAppsixlocale/viewportcases: semantic h1–h6 count0 despite visibleportalTitle. OwnerRecoveryPage.tsx:203 usesCardTitle; card.tsx rendersdiv. Headingnavigationstructuralgap, notcredentialbypass/fullWCAG assessment. NativeDOM/source/captures inSEQ-342–347. No repair;18basicbaselinePASSdoesnotcloseaccessibilitygap.

@@ -1,5 +1,14 @@
 # Current evidence inventory — baseline 7e0da5eb, SEQ-224
 
+## Authoritative continuation — SEQ-342–347 (2026-10-14 Baghdad)
+
+Latest [SEQ-342–347](SEQ_342_347_FULL_LIFECYCLE_ROUTES_20261014.md). **Next SEQ-348**. Auditonly/application/tests/schemaunchanged.
+
+ActualVite main/App OTP/pending/recovery ×AR/EN/KU ×390/1280: headb8502d58406f66279ed9bccebb02f110173c39ee/merge0768cd0c40f8ad9aa06a18ae67a5826e2ae17afb, run38493001942/job115622347297. **18newbaselinePASS/0FAIL**;18captures inspected/persisted. SyntheticOTPinput/emptydisabledverify, pendinginitial+refresh12GET, key1emptydisabled/title/direction/overflowPASS. New **A11Y-OWNER-RECOVERY-HEADING-001 LOW/OPEN/DOM_CONFIRMED**: allsixrecoverycases have0semanticheadings; visibleCardTitle isdiv. Notauthfailure/WCAGcertification.
+
+Currentseq347CSV222cases:54PASS_BOUNDED_FULL_APP/168NOT_RUN. Prior36notrerun. No realOTP/recovery/backend/RLS/provider orlaternegative-state proof; fallbackfonts only.21selectors unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED. NextnegativeUIstatesoutsidebaseline.
+
+
 ## Authoritative continuation — SEQ-336–341 (2026-10-14 Baghdad)
 
 Latest [SEQ-336–341](SEQ_336_341_FULL_ENTRY_ROUTES_20261014.md). **Next SEQ-342**. Sixsequentialstages/auditonly; application/originaltests/schemaunchanged.
