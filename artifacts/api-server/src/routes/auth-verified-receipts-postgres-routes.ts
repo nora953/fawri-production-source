@@ -1,3 +1,4 @@
+import {reviewVerifiedReceiptReplay,ReceiptReplayReviewError} from '../services/verifiedReceiptReplayReview';
 import { Router } from "express";
 import { getAuthContext, requireSecureAdminPermission, sendAuthError } from "../middleware/authSession";
 import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
@@ -19,6 +20,22 @@ router.get("/admin/billing/verified-receipts", (req,res,next) => {
   } catch (error) {
     const failure = error instanceof ReceiptOperatorReadError ? error : new ReceiptOperatorReadError("RECEIPT_OPERATOR_READ_UNAVAILABLE",503);
     sendAuthError(res,failure.status,failure.code,"verified receipt read could not be completed");
+  }
+});
+router.post('/admin/billing/verified-receipts/:eventId/replay-review', (req,res,next)=>{
+  res.setHeader('Cache-Control','no-store, max-age=0');
+  if(adminAuthPostgresCutoverMode()!=='postgres'){sendAuthError(res,503,'RECEIPT_REPLAY_REVIEW_UNAVAILABLE','receipt review unavailable');return;}
+  next();
+},requireSecureAdminPermission('manage_subscriptions'),async(req,res)=>{
+  try {
+    const actor=getAuthContext(res)?.account.id;
+    if(!actor){sendAuthError(res,403,'RECEIPT_REPLAY_REVIEW_PERMISSION_REQUIRED','receipt review denied');return;}
+    if(Object.keys(req.query).length||typeof req.params.eventId!=='string'){sendAuthError(res,400,'RECEIPT_REPLAY_REVIEW_INVALID','receipt review invalid');return;}
+    const result=await reviewVerifiedReceiptReplay(actor,req.params.eventId,req.body);
+    res.json({ok:true,...result});
+  }catch(error){
+    const failure=error instanceof ReceiptReplayReviewError?error:new ReceiptReplayReviewError('RECEIPT_REPLAY_REVIEW_UNAVAILABLE',503);
+    sendAuthError(res,failure.status,failure.code,'receipt review could not be completed');
   }
 });
 export default router;
