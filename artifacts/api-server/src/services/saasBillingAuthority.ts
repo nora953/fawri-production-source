@@ -795,7 +795,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
   }
 
   let sqlFailure: unknown;
-  const outcome = await transaction(async (client) => {
+  const processEvent = async (client: DatabaseClient, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
       `${input.provider}:${eventId}`,
     ]);
@@ -842,6 +842,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
       retryReceived &&
       (order.status !== "paid_reconciliation_required" ||
         order.metadata.reconciliation_event_id !== eventId ||
+        input.amountIqd !== order.amount_iqd ||
         order.provider_payment_ref !==
           requiredText(input.providerPaymentRef, 300))
     ) {
@@ -968,7 +969,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
     const paymentCollision = await client.query(
       `SELECT id FROM saas_billing_orders
         WHERE provider = $1 AND provider_payment_ref = $2 AND id <> $3
-        LIMIT 1 FOR UPDATE`,
+        LIMIT 1`,
       [input.provider, paymentRef, order.id],
     );
     if (paymentCollision.rows.length > 0) {
@@ -1087,6 +1088,21 @@ export async function applyVerifiedSaasBillingProviderEvent(
     }
 
     await eventRecord("received", null);
+    if (receiptOnly) {
+      if (!retryReceived) {
+        await client.query(
+          `UPDATE saas_billing_orders
+             SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
+                 paid_at = $3, updated_at = $3, metadata = metadata || $4::jsonb
+           WHERE id = $1`,
+          [order.id, paymentRef, input.occurredAt, JSON.stringify({ reconciliation_code: "SAAS_BILLING_RECEIPT_PENDING_APPLICATION", reconciliation_event_id: eventId })],
+        );
+      }
+      const received = await loadOrder(client, order.id, true);
+      if (!received) fail("SAAS_BILLING_ORDER_NOT_FOUND", "billing order not found", 503);
+      return { status: "reconciliation_required" as const, order: received,
+        reasonCode: "SAAS_BILLING_RECEIPT_PENDING_APPLICATION" };
+    }
     await client.query("SAVEPOINT billing_entitlement");
     try {
       const applied = await applySubscriptionPlanCycleInTransaction(client, {
@@ -1183,7 +1199,12 @@ export async function applyVerifiedSaasBillingProviderEvent(
         reasonCode,
       };
     }
-  });
+  };
+  // Commit verified receipt admission before any entitlement transaction begins.
+  const admitted = await transaction((client) => processEvent(client, true));
+  if (admitted.status !== "reconciliation_required" ||
+      admitted.reasonCode !== "SAAS_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;
+  const outcome = await transaction((client) => processEvent(client, false));
   // Throw only after COMMIT: the provider retries while durable receipt survives.
   if (sqlFailure) throw sqlFailure;
   return outcome;
