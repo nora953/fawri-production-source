@@ -40,11 +40,12 @@ test('committed verified receipts survive owned application/backend interruption
     fixtures.push(merchantId);
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)", [merchantId, `+1996${String(randomInt(0,100000000)).padStart(8,'0')}`]);
     await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')", [merchantId]);
+    const idempotencyKey = randomUUID();
     const checkout = kind === 'saas'
-      ? await saas.createSaasBillingCheckout({merchantId,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'})
-      : await cashier.createCashierBillingCheckout({merchantId,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'});
+      ? await saas.createSaasBillingCheckout({merchantId,operation:'activate',plan:'silver',idempotencyKey,provider:'test_fake'})
+      : await cashier.createCashierBillingCheckout({merchantId,operation:'activate',requestedSeats:1,idempotencyKey,provider:'test_fake'});
     const event = {provider:'test_fake',providerEventId:randomUUID(),orderId:checkout.order.id,eventType:'payment_succeeded',signatureVerified:true,payloadHash:'e'.repeat(64),occurredAt:new Date(),amountIqd:checkout.order.amount_iqd,currency:'IQD',providerPaymentRef:randomUUID()};
-    return {merchantId,event};
+    return {merchantId,event,idempotencyKey};
   }
   async function snapshot(kind, fixture) {
     const tables = kinds[kind];
@@ -118,6 +119,15 @@ test('committed verified receipts survive owned application/backend interruption
         assert.equal(after.receipt.length,1);
         assert.equal(after.applications,0);
         assert.equal(after.subscriptions,0);
+        const checkoutInput = kind === 'saas'
+          ? {merchantId:f.merchantId,operation:'activate',plan:'silver',provider:'test_fake'}
+          : {merchantId:f.merchantId,operation:'activate',requestedSeats:1,provider:'test_fake'};
+        const checkoutAgain = kind === 'saas' ? saas.createSaasBillingCheckout : cashier.createCashierBillingCheckout;
+        await assert.rejects(() => checkoutAgain({...checkoutInput,idempotencyKey:randomUUID()}), error => error.code===kind.toUpperCase()+'_BILLING_CHECKOUT_ALREADY_PENDING');
+        const replayedCheckout = await checkoutAgain({...checkoutInput,idempotencyKey:f.idempotencyKey});
+        assert.equal(replayedCheckout.order.id,f.event.orderId);
+        assert.equal(replayedCheckout.duplicate,true);
+        assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${kinds[kind].orders} WHERE merchant_id=$1`,[f.merchantId])).rows[0].n,1);
         const redelivered = {...f.event,occurredAt:new Date(f.event.occurredAt.getTime()+86400000)};
         const restarted = await Promise.all([start(kind,redelivered),start(kind,redelivered)]);
         const outcomes = await Promise.all(restarted.map(task => task.done));

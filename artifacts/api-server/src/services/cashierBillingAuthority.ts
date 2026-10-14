@@ -581,7 +581,7 @@ export async function createCashierBillingCheckout(input: {
     const pending = await operationalQueryRows<{ id: string }>(
       client,
       `SELECT id FROM cashier_billing_orders
-        WHERE merchant_id = $1 AND status = 'pending'
+        WHERE merchant_id = $1 AND status IN ('pending', 'paid_reconciliation_required')
         LIMIT 1 FOR UPDATE`,
       [merchantId],
     );
@@ -1057,6 +1057,8 @@ export async function applyVerifiedCashierBillingProviderEvent(
     client: OperationalQueryTarget,
     receiptOnly: boolean,
   ): Promise<Awaited<ReturnType<typeof applyVerifiedCashierBillingProviderEvent>>> => {
+      // Checkout locks the merchant before subscription/order rows; use that order.
+      await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
       await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `${input.provider}:${eventId}`,
       ]);

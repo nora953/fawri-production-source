@@ -1,10 +1,10 @@
 # Active P0 durable receipt admission — 2026-10-14
 
-Branch fix/p0-durable-payment-receipt-admission-20261014, parent draftPR537/bc3b670e; issue523. Previous verified sourcea696046b174/0 and27/27 CI is baseline only. New admission/application split changes billing code and is NOT_RUNTIME_VERIFIED yet.
+Branch fix/p0-durable-payment-receipt-admission-20261014, parent draftPR537/bc3b670e; issue523. Previous verified sourcea696046b174/0 and27/27 CI is baseline only. Admission split verified at a42a1ef7346b36bf1ea7fbe63e03c50fec1dff94: isolated181PASS/0FAIL/0SKIP,42unique files/44invocations, new process suite7PASS, all12 observed workflows SUCCESS. Draft PR538.
 
 Prepared implementation commits received event/payment reconciliation before second entitlement transaction, preserving event/order/payment locks, first time, unique keys, merchant context and SAVEPOINT regression behavior. New owned PostgreSQL suite proves process/backend interruption then two fresh-process next-day replays, plus deferred admission-COMMIT failure. Parent/child attest before imports; exact owned markers/PIDs and comprehensive cleanup. Local typecheck/build/syntax/guard15PASS. See P0_DURABLE_RECEIPT_ADMISSION_20261014.md.
 
-Next publish draft and inspect isolated PostgreSQL logs; never weaken old tests. On failure distinguish fixture from product; record exact source/run/state. After bounded recovery proof, address unmatched orphan/ambiguous commit acknowledgment and pending-receipt checkout barriers under523, then full downstream restricted-role Meta535. No main merge/deploy/live DB/grants or real providers authorized; publishing code/tests/docs and draftPR/CI to the same repo already explicitly approved.
+Follow-up adds pending-reconciliation checkout barrier and merchant-first lock ordering, with fresh assertions in process recovery. Local typecheck/build/syntax PASS; publish follow-up and inspect new isolated logs before claiming it verified. Never weaken old tests. On failure distinguish fixture from product; record exact source/run/state. After bounded recovery proof, address unmatched orphan/ambiguous commit acknowledgment and pending-receipt checkout barriers under523, then full downstream restricted-role Meta535. No main merge/deploy/live DB/grants or real providers authorized; publishing code/tests/docs and draftPR/CI to the same repo already explicitly approved.
 
 ---
 

@@ -507,6 +507,8 @@ export async function createSaasBillingCheckout(input: {
   const plan = getSaasPlan(input.plan);
 
   const reserved = await transaction(async (client) => {
+    // Match receipt application lock order before touching checkout orders.
+    await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
     // Serialize same-merchant checkout creation before reading the idempotency
     // key; a missing row cannot be protected by SELECT ... FOR UPDATE alone.
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))", [
@@ -579,7 +581,7 @@ export async function createSaasBillingCheckout(input: {
 
     const pendingResult = await client.query(
       `${ORDER_SELECT}
-        WHERE merchant_id = $1 AND status = 'pending'
+        WHERE merchant_id = $1 AND status IN ('pending', 'paid_reconciliation_required')
         LIMIT 2 FOR UPDATE`,
       [merchantId],
     );
@@ -794,8 +796,16 @@ export async function applyVerifiedSaasBillingProviderEvent(
     fail("SAAS_BILLING_CURRENCY_MISMATCH", "billing currency mismatch", 409);
   }
 
+  const database = await pool();
+  const owner = await database.query<{ merchant_id: string }>(
+    `SELECT merchant_id FROM saas_billing_orders WHERE id = $1 LIMIT 2`, [orderId],
+  );
+  if (owner.rows.length !== 1) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
+  const merchantId = owner.rows[0].merchant_id;
   let sqlFailure: unknown;
   const processEvent = async (client: DatabaseClient, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
+    // Match checkout and plan-cycle ordering before acquiring billing row locks.
+    await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
       `${input.provider}:${eventId}`,
     ]);
