@@ -1,7 +1,7 @@
 import { isMetaWebhookPost } from "./metaWebhookPath";
 import type { NextFunction, Request, Response } from "express";
 import { getMetaWebhookEventId } from "./metaWebhookSecurity";
-import { readMetaPageMerchantMapAuthoritative } from "../services/metaPageDirectory";
+import { metaPageIdsFromWebhookBody, readMetaPageMerchantMapAuthoritative } from "../services/metaPageDirectory";
 import { getMerchantOperationalDecisionAuthoritative } from "../services/merchantOperationalAccess";
 
 function entryEventIds(entry: unknown): string[] {
@@ -35,7 +35,7 @@ export async function enforceMerchantWebhookOperationalAccess(
   }
 
   try {
-    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative(metaPageIdsFromWebhookBody(req.body));
     const permittedEntries: unknown[] = [];
     const terminalEventIds: string[] = [];
 

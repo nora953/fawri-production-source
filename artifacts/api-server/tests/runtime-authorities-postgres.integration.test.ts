@@ -179,7 +179,7 @@ test("Meta credentials use PostgreSQL envelope storage and tenant mapping", asyn
   assert.notEqual(stored.rows[0].credential_ciphertext, "runtime-secret-token-A");
   assert.ok(String(stored.rows[0].credential_ciphertext || "").length > 10);
 
-  const mappings = await channels.listActiveMetaPageMappingsAuthoritative();
+  const mappings = await channels.listActiveMetaPageMappingsAuthoritative(["page-runtime-a", "page-runtime-b"]);
   assert.ok(mappings.some((item) => item.pageId === "page-runtime-a" && item.merchantId === merchantA.account.id));
   assert.ok(mappings.some((item) => item.pageId === "page-runtime-b" && item.merchantId === merchantB.account.id));
 });

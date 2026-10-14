@@ -1,0 +1,15 @@
+# P0 Meta bounded resolver — prepared 2026-10-14
+
+Canonical finding FA-I-006 / GitHub issue535. Separate branch `fix/p0-meta-bounded-rls-resolver-20261014`, stacked on security PR536. Payment recovery unchanged and verified at da4d0c05; security fixture corrected at a1e7751f pending full-history CI.
+
+## Change and privilege boundary
+Migration0028 adds `public.fawri_resolve_meta_page_merchants(text[])`, SECURITY DEFINER with fixed pg_catalog search_path, schema-qualified static SQL, row_security=off (fail closed if definer cannot read), maximum100requested page IDs/180characters each. Only connected messenger page_id/merchant_id rows matching supplied IDs are returned. No token/credential fields, dynamic SQL, table RLS policy changes or runtime BYPASSRLS.
+
+PUBLIC EXECUTE is revoked. Migration/schema owner retains execution; intended runtime role must receive an explicit reviewed EXECUTE grant before a future deployment, e.g. a schema owner grants EXECUTE on this one function to the authorized ingress role. No hosted grant or migration has been executed. Do not grant general role membership, table ownership, elevated role flags or forged administrator audit context to make this work. A forced-RLS definer without sufficient read privilege fails closed rather than silently weakening the table policy.
+
+Application directory accepts requested page IDs, not an all-pages enumeration. Merchant access, manual-conversation filter and queue ingress extract IDs from the actual request and request only those mappings. Legacy cutover-disabled lookup is similarly filtered. Existing page unique index stays authoritative.
+
+## Prepared regression and acceptance limits
+Restricted-role test retains the original two-tenant mapping/known-approved-page acceptance and tenant isolation/reset/unknown generic503 tests. It now proves function execution denied before explicit grant, returns only the requested page after grant, excludes disconnected pages, rejects101page SQL request, and ordinary table reads remain empty without tenant context. Existing runtime-authorities suite supplies its two explicit page IDs rather than requesting all pages.
+
+Local API typecheck/build, edited MJS syntax and whitespace checks PASS. New SQL migration and restricted-role runtime suite NOT RUN pending CI; migration snapshot/journal added without changing existing table schema. Full signed HTTP webhook pipeline under this restricted role remains a distinct acceptance requirement; isolated middleware success alone does not close535. Live deployment/grant readiness remains BLOCKED until reviewed setup, not automatic production change.

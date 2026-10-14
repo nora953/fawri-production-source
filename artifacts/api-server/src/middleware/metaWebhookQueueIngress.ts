@@ -8,6 +8,7 @@ import { enqueueDurableJob } from "../services/durableJobQueue";
 import { enqueueDurableJobAuthoritative } from "../services/postgresDurableJobQueue";
 import { isTrustedMetaWebhookInternalReplay } from "../services/metaWebhookInternalReplay";
 import {
+  metaPageIdsFromWebhookBody,
   readMetaPageMerchantMapAuthoritative,
 } from "../services/metaPageDirectory";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
@@ -73,7 +74,7 @@ export async function enqueueMetaWebhookEvents(
   }
 
   try {
-    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative(metaPageIdsFromWebhookBody(req.body));
     const processed = new Set<string>();
     let enqueued = 0;
     let deduplicated = Number(res.locals.metaWebhookDuplicateEvents || 0);

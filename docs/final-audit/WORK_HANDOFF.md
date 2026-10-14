@@ -1,3 +1,13 @@
+# Active P0 work — Meta restricted resolver (2026-10-14)
+
+Payment recovery PR534 verified on da4d0c05: isolated38517736663/job115700230288,168PASS/3FAIL; SQL recovery/cashier/billing batches PASS. Only runtime failures in that aggregate are FA-I-006 / issue535. See P0_PAYMENT_SQL_RECOVERY_20261014.md.
+
+Security draft PR536: first71598be7 run38518405312 failed due full-URL64span vs actual scanner54span. Corrected a1e7751f now invokes real scanner regression; local20PASS. Full history gate pending. Earlier failed proof retained in P0_HISTORY_FIXTURE_20261014.md.
+
+Active branch fix/p0-meta-bounded-rls-resolver-20261014, source PREPARED/SQL_NOT_RUN. Migration0028 scoped resolver + explicit EXECUTE only, no PUBLIC/default runtime grant. Three ingress callers now request only body page IDs. Read P0_META_BOUNDED_RESOLVER_20261014.md before changes. Next: inspect corrected security CI, publish Meta draft and execute isolated migration/RLS suites, classify results. Never declare full signed restricted HTTP/hosted grant acceptance from middleware tests alone. No merge/deploy/hosted writes; P0/523/535 stay OPEN.
+
+---
+
 # Latest verified P0 checkpoint — 2026-10-14
 
 This header supersedes prepared/NOT_RUN/local-only notes below. Active repair branch `fix/p0-verified-payment-sql-recovery-20261014`, draft PR534, tested source da4d0c05e43a953623d42ec74729f16a4bd05cef. Explicit publication authorization received; code/tests/docs are now in GitHub. Read [P0_PAYMENT_SQL_RECOVERY_20261014.md](P0_PAYMENT_SQL_RECOVERY_20261014.md) for complete results and exact limits.
