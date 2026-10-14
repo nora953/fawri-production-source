@@ -1136,6 +1136,11 @@ export async function applyVerifiedCashierBillingProviderEvent(
         { existing_order_id: paymentRefCollision[0].id },
       );
     }
+    // A settled entitlement is immutable: a later conflicting payment notification
+    // must not downgrade an already applied order into reconciliation.
+    if (order.status === "applied") {
+      return { status: "duplicate" as const, order };
+    }
     if (input.amountIqd !== order.amount_iqd) {
       await client.query(
         `UPDATE cashier_billing_orders
@@ -1164,9 +1169,6 @@ export async function applyVerifiedCashierBillingProviderEvent(
         order: updated,
         reasonCode: "CASHIER_BILLING_AMOUNT_MISMATCH",
       };
-    }
-    if (order.status === "applied") {
-      return { status: "duplicate" as const, order };
     }
     if (order.status !== "pending") {
       fail("CASHIER_BILLING_ORDER_NOT_PAYABLE", "cashier billing order is not payable", 409);
