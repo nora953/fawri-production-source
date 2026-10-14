@@ -518,7 +518,8 @@ export async function createSaasBillingCheckout(input: {
           SET status = 'expired', updated_at = $2
         WHERE merchant_id = $1
           AND status = 'pending'
-          AND request_expires_at <= $2`,
+          AND request_expires_at <= $2
+          AND NOT (provider = 'superqi_sandbox' AND provider_checkout_ref IS NULL)`,
       [merchantId, now],
     );
     const existingResult = await client.query(
@@ -698,7 +699,8 @@ export async function listMerchantSaasBillingOrders(
         SET status = 'expired', updated_at = NOW()
       WHERE merchant_id = $1
         AND status = 'pending'
-        AND request_expires_at <= NOW()`,
+        AND request_expires_at <= NOW()
+          AND NOT (provider = 'superqi_sandbox' AND provider_checkout_ref IS NULL)`,
     [normalizedMerchantId],
   );
   const result = await database.query(
