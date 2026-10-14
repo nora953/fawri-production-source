@@ -1,3 +1,13 @@
+# Active P0 final pipeline verification — 2026-10-14
+
+PR537, branch fix/p0-meta-bounded-rls-resolver-20261014. Testedsourcef63bac89: isolated38519930732/job115707060578174PASS/0FAIL,43invocations/41unique; restricted resolver+signed HTTP8PASS. Schema38519930628/security38519930757SUCCESS. Signature→operational role boundary only; downstream/full app not covered by that test.
+
+Separate Meta pipeline38519930625/job115707059860FAILED at manual refund runOnce350. Forced1ms poll reproduces exact timer race; scoped test fixture60000ms poll/restoration prepared (no runtime code/settings changes). Local worker8PASS and whole affected group26PASS with DATABASE_URLunset/fake JSON only; counts overlap. Next inspect new pipelineCI including formerly skipped downstream stages, then persist final checkpoint. Existing173/0 and initialschema/securityfailures retained in dedicated P0 reports.
+
+Issues523/535/P0 remainOPEN for durable receipt before entitlement (process/connection/commit interruption), downstream full signed restricted-role pipeline and reviewed hosted grants. No main merge/deploy/live changes. Do not restart audit or report a full-release percentage from selected passes.
+
+---
+
 # Active P0 signed HTTP verification — 2026-10-14
 
 PR537 / branch fix/p0-meta-bounded-rls-resolver-20261014. Corrected source2123c0c9 verified: schema38519473541 SUCCESS, isolated38519473493/job115705631802173PASS/0FAIL, security38519473453 SUCCESS. Migration29 and restricted resolver7PASS remain proven. Prior schema missing-stage error and security span error preserved with corrections.
