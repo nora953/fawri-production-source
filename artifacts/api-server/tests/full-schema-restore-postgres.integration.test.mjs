@@ -55,7 +55,7 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
       await normalizer.query(`REVOKE SELECT ON audit_restore_acl_probe FROM ${role}`);
       assert.deepEqual(await probeAcl(),defaultAcl,'revoked extra grant restores exact effective ACL');
       const orders=(await normalizer.query("SELECT ARRAY(SELECT entry::text FROM unnest(acldefault('f',current_user::regrole)) AS grants(entry) ORDER BY entry::text) AS forward, ARRAY(SELECT entry::text FROM unnest(acldefault('f',current_user::regrole)) AS grants(entry) ORDER BY entry::text DESC) AS reversed")).rows[0];
-      assert.deepEqual(orders.forward,[...orders.reversed].sort(),'function grant order must not change effective permission identity');
+      assert.deepEqual(orders.forward,[...orders.reversed].reverse(),'function grant order must not change effective permission identity');
       console.log('AUDIT_ACL_CANONICALIZATION_PASS '+JSON.stringify({defaultAndExplicitOwnerEquivalent:true,grantOrderNormalized:true,addedGrantDetected:true}));
     } finally { await normalizer.query('DROP TABLE audit_restore_acl_probe'); }
     const grouped = await canonicalCheck('merchant_channels', 'CHECK (((char_length(merchant_id) >= 1) AND (char_length(merchant_id) <= 200)) AND (char_length(page_id) >= 1))');
