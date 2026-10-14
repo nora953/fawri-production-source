@@ -691,14 +691,30 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   assert.equal(revoked.status, 200);
   assert.equal((await body(revoked)).authorization.can_request, false);
 
-  for (const endpoint of ["overview", "directory"]) {
-    const response = await fetch(
-      `${baseUrl}/api/auth/admin/emergency-read-access/${endpoint}`,
-      { headers: { Cookie: trustedCookie } },
-    );
-    assert.equal(response.status, 403);
-    assert.equal((await body(response)).code, "EMERGENCY_AUTHORIZATION_REQUIRED");
-  }
+  const deniedDirectory = await fetch(
+    `${baseUrl}/api/auth/admin/emergency-read-access/directory`,
+    { headers: { Cookie: trustedCookie } },
+  );
+  assert.equal(deniedDirectory.status, 403);
+  assert.equal((await body(deniedDirectory)).code, "EMERGENCY_AUTHORIZATION_REQUIRED");
+
+  const revokedOverview = await fetch(
+    `${baseUrl}/api/auth/admin/emergency-read-access/overview`,
+    { headers: { Cookie: trustedCookie } },
+  );
+  assert.equal(revokedOverview.status, 200);
+  const revokedOverviewBody = await body(revokedOverview);
+  assert.equal(revokedOverviewBody.ok, true);
+  assert.equal(revokedOverviewBody.is_owner, false);
+  assert.equal(revokedOverviewBody.authorization, null);
+  assert.equal("authorizations" in revokedOverviewBody, false);
+  assert.equal("owner_alerts" in revokedOverviewBody, false);
+  assert.equal("merchant_notices" in revokedOverviewBody, false);
+  assert.equal("audit_chain" in revokedOverviewBody, false);
+  assert.equal(Array.isArray(revokedOverviewBody.requests), true);
+  assert.equal(revokedOverviewBody.requests.every(
+    (request: { requested_by_admin_id: string }) => request.requested_by_admin_id === trustedId
+  ), true);
 
   const afterRevocation = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/requests`,
