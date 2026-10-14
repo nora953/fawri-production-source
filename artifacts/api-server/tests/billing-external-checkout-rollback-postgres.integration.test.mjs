@@ -138,13 +138,6 @@ test('checkout retry preserves provider identity after external creation and SQL
     await pool.query(`DROP TRIGGER ${name} ON ${table}`);
     await pool.query(`DROP FUNCTION ${name}()`);
     const original = creations[0];
-    const payload = { requestId: original.requestId, paymentId: original.paymentId, status: 'SUCCESS', canceled: false, amount: original.amount, confirmedAmount: original.amount, currency: 'IQD', creationDate: '2026-08-11T13:30:00' };
-    const signer = createSign('RSA-SHA256');
-    signer.update(superQiWebhookSigningPayload(payload), 'utf8'); signer.end();
-    let orphan;
-    try { orphan = await handleSuperQiSandboxWebhook({ payload, signature: signer.sign(privateKey).toString('base64'), fetchImpl: providerFetch }); }
-    catch (error) { assert.ok(error.status >= 500, 'only retryable server rejection may preserve orphan payment work'); orphan = { status: 'retryable_failure', httpStatus: error.status }; }
-    assert.equal(statusConfirmations, 1, 'orphan webhook must use the injected status transport, never default fetch');
     await assert.rejects(
       () => checkout(input),
       error => error.status === 503 && /INCOMPLETE/.test(String(error.code)),
@@ -158,6 +151,14 @@ test('checkout retry preserves provider identity after external creation and SQL
     assert.equal(persisted.rows[0].id, original.orderId, 'original order identity must remain stable');
     assert.equal(persisted.rows[0].metadata.provider_request_id, original.requestId, 'provider request ID must remain durable');
     assert.equal(creations.length, 1, 'retry must not issue a second remote payment');
+    const payload = { requestId: original.requestId, paymentId: original.paymentId, status: 'SUCCESS', canceled: false, amount: original.amount, confirmedAmount: original.amount, currency: 'IQD', creationDate: '2026-08-11T13:30:00' };
+    const signer = createSign('RSA-SHA256');
+    signer.update(superQiWebhookSigningPayload(payload), 'utf8'); signer.end();
+    let orphan;
+    try { orphan = await handleSuperQiSandboxWebhook({ payload, signature: signer.sign(privateKey).toString('base64'), fetchImpl: providerFetch }); }
+    catch (error) { assert.ok(error.status >= 500, 'only retryable server rejection may preserve orphan payment work'); orphan = { status: 'retryable_failure', httpStatus: error.status }; }
+    assert.equal(statusConfirmations, 1, 'orphan webhook must use the injected status transport, never default fetch');
+
     console.log('BILLING_EXTERNAL_CHECKOUT_ROLLBACK ' + JSON.stringify({
       kind, firstOrderRows, fakeProviderCreations: creations.length,
       requestIdReused: true, orderIdReused: true, retryOrderExists: true,
