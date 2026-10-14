@@ -10,6 +10,7 @@ on:
       - 'artifacts/api-server/tests/*postgres*.integration.test.*'
       - 'artifacts/api-server/tests/saas-billing-*.integration.test.*'
       - 'artifacts/api-server/tests/cashier-*.integration.test.*'
+      - 'artifacts/api-server/src/services/postgresCashierOperatorReportAuthority.ts'
       - '.github/workflows/audit-isolated-postgres.yml'
   workflow_dispatch:
   workflow_call:
