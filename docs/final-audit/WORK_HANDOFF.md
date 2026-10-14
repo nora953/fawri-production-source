@@ -1,5 +1,14 @@
 ## Current audit continuation — SEQ-255 (2026-10-13)
 
+## Authoritative continuation — SEQ-348–353 (2026-10-14 Baghdad)
+
+Latest [SEQ-348–353](SEQ_348_353_FULL_NEGATIVE_ROUTES_20261014.md). **Next SEQ-354**. Audit only; application/original tests/schema unchanged.
+
+Full Vite main/App negative OTP/pending/recovery ×AR/EN/KU ×390/1280, headb47b937c5927f7a62787fdceb82a3be80d9adef4/merge9e0f0933d0ca1bd68060c5fa921ebfb791d94aa1, run38493530475/job115624007088: **18 extra UI cases PASS/0FAIL**,30captures inspected/persisted. Missing challenge disables input/verify and redirects via signup link; synthetic503→manualrefresh200 recovers pending title; denied synthetic recovery key shows generic error/hides server sentinel/retains key1.12GET+6POST allowlisted,0unexpected requests/runtime errors. Existing heading issue remains OPEN; no new canonical defect.
+
+These18 negative states are outside222defaultbaseline, baseline_credit0. Baseline unchanged54PASS/168NOT_RUN; prior54notrerun. No actual backend key/OTP/SQL/provider/auth/RLS proof; fallback fonts.21selectors unchanged; whole percentage **NOT_YET_MEASURABLE**, release BLOCKED. Next full App admin/owner baseline fixtures.
+
+
 ## Authoritative continuation — SEQ-342–347 (2026-10-14 Baghdad)
 
 Latest [SEQ-342–347](SEQ_342_347_FULL_LIFECYCLE_ROUTES_20261014.md). **Next SEQ-348**. Auditonly/application/tests/schemaunchanged.
