@@ -1,6 +1,12 @@
-## Active COMMIT acknowledgment acceptance — 2026-10-14
+## Verified COMMIT caller-outcome checkpoint — 2026-10-14
 
-DraftPR538 acceptance continuation, no production code change. Adds four actual SQL COMMIT / injected driver08006 cases and fresh-process replay. Also corrects cashier history fixture clock precision after documentation-head lifecycle38524878617/job115722776644 failed a credential-at-operation boundary. Previous tested73023597181/0 stays historical, not proof of current changes. Local typecheck/syntax PASS; new runtime NOT_RUN pending CI. See P0_COMMIT_ACK_ACCEPTANCE_20261014.md. Issue523/535 stayOPEN, no hosted mutations/merge/deploy.
+Draft PR538 tested source **d418feaf63288411b0b135a6d0c50ad3bdb9caf7**. Owned offline PostgreSQL run38525448026/job115724620052: **185PASS/0FAIL/0SKIP**,42unique files/44invocations. Receipt suite11PASS includes four new driver08006 outcomes after successful actual receipt/entitlement COMMIT, fresh concurrent next-day processes, one entitlement and original paid_at. **13/13 observed workflows SUCCESS**. Cashier history fixture2PASS with database-clock rounding, original location/stock/catalog/idempotency checks intact. Prior documentation-head30020abf lifecycle failure38524878617/job115722776644 is preserved; never claim that head was wholly green.
+
+Proof is injected driver outcome after actual server COMMIT, not a proxy dropping wire acknowledgment frames. Issue523 remainsOPEN for true transport proof and unmatched verified payment inbox;535 remainsOPEN for full downstream restricted-role Meta/grant acceptance. No production source change in this acceptance revision, no merge/deploy/hosted writes/real provider actions; no UI baseline credit or release-ready claim. [Report](P0_COMMIT_ACK_ACCEPTANCE_20261014.md), [machine evidence](evidence/P0_COMMIT_ACK_RESULTS_20261014.json).
+
+---
+
+Next: unmatched verified-payment durable inbox and true transport loss proof under523; full downstream restricted-role Meta under535. Do not repeat proven receipt/driver recovery without new source or fault. Documentation-only checkpoint preserves tested source.
 
 ---
 
