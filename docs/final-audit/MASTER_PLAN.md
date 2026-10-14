@@ -430,3 +430,13 @@ Executed PR head **e1320f8616b5607536c19b6527c92e8c74bf546e**; no application so
 **Open product/gate scope:** existing billing/Meta/refund defects; local changed-payload replay; unsigned offline cache/licensing and actual7day/device proof; current-shift historical outbox/own-scope recovery; foreign-currency export units; cashier query budget; actual central-cashier/receipt/mobile/PDF visual and37route role journeys; hosted grants/image/media/PITR/monitoring/rollback; real external providers and commercial signoff. All repairs and consolidated repair plan remain deferred until comprehensive audit completion.
 
 **Definitive next SEQ-128:** bounded central-cashier report/receipt print and profit-visibility scope, separating genuine app role/PDF evidence from inert adapters. Then unverified owner/admin/merchant screen groups from the37route inventory. Reuse completed sync/compensation/workbook/date proofs; reopen only for changed code/config or a new justified assertion. No merge/deploy/live DB/secrets/real payments authorized.
+
+
+## P0 verified-payment SQL recovery continuation — 2026-10-14
+
+Issue #523 / BILLING-SQL-RECONCILIATION-032 remains OPEN. New local branch `fix/p0-verified-payment-sql-recovery-20261014` based on #533/2733cadae. SaaS/cashier savepoint recovery and exact-event concurrent replay regression prepared; API typecheck/build and guard15/15 PASS, real PostgreSQL NOT RUN for new code. Publication rejected by automatic approval review; no remote commit/PR/CI evidence. See active header in `WORK_HANDOFF.md` for design, limitations, exact next actions and publication blocker. P0 is not complete; no percentage recalculated.
+
+
+## Verified P0 SQL recovery — 2026-10-14
+
+Supersedes earlier local-only/NOT_RUN checkpoint: PR534/da4d0c05, isolated38517736663/job115700230288:168PASS/3FAIL,43invocations/41unique. Cashier SQL6/0 and SaaS SQL3/0 PASS, checkout9/0 PASS; remaining selected runtime failure is Meta FA-I-006/issue535 (2functional+parent). Security history1synthetic-fixture finding separately classified. See P0_PAYMENT_SQL_RECOVERY_20261014.md and active WORK_HANDOFF header. Issue523/P0 stay OPEN for broader acceptance; no merge/deploy or percentage claim.

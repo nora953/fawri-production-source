@@ -992,7 +992,12 @@ async function applyPaidOrder(
 export async function applyVerifiedCashierBillingProviderEvent(
   input: VerifiedCashierBillingProviderEvent,
 ): Promise<{
-  status: "applied" | "duplicate" | "failed" | "cancelled" | "reconciliation_required";
+  status:
+    | "applied"
+    | "duplicate"
+    | "failed"
+    | "cancelled"
+    | "reconciliation_required";
   order: CashierBillingOrderRecord;
   subscriptionId?: string;
   reasonCode?: string;
@@ -1005,13 +1010,25 @@ export async function applyVerifiedCashierBillingProviderEvent(
         process.env.NODE_ENV !== "production" &&
         providerState.provider === "superqi_sandbox"));
   if (!providerAllowed) {
-    fail("CASHIER_BILLING_PROVIDER_EVENT_UNAVAILABLE", "cashier billing provider event is unavailable", 503);
+    fail(
+      "CASHIER_BILLING_PROVIDER_EVENT_UNAVAILABLE",
+      "cashier billing provider event is unavailable",
+      503,
+    );
   }
   if (input.signatureVerified !== true) {
-    fail("CASHIER_BILLING_SIGNATURE_INVALID", "cashier billing signature is invalid", 401);
+    fail(
+      "CASHIER_BILLING_SIGNATURE_INVALID",
+      "cashier billing signature is invalid",
+      401,
+    );
   }
   if (input.currency !== "IQD") {
-    fail("CASHIER_BILLING_CURRENCY_MISMATCH", "cashier billing currency mismatch", 409);
+    fail(
+      "CASHIER_BILLING_CURRENCY_MISMATCH",
+      "cashier billing currency mismatch",
+      409,
+    );
   }
   positiveInt(input.amountIqd, "amount_iqd");
   const orderId = requiredText(input.orderId, "order_id", 200);
@@ -1027,224 +1044,377 @@ export async function applyVerifiedCashierBillingProviderEvent(
     [orderId],
   );
   if (discovery.length !== 1) {
-    fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 404);
+    fail(
+      "CASHIER_BILLING_ORDER_NOT_FOUND",
+      "cashier billing order not found",
+      404,
+    );
   }
   const merchantId = discovery[0].merchant_id;
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
-    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-      `${input.provider}:${eventId}`,
-    ]);
-    const duplicate = await operationalQueryRows<{ order_id: string }>(
-      client,
-      `SELECT order_id
+  let sqlFailure: unknown;
+  const outcome = await withMerchantOperationalTransaction(
+    merchantId,
+    async (client) => {
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+        `${input.provider}:${eventId}`,
+      ]);
+      const duplicate = await operationalQueryRows<{
+        order_id: string;
+        status: string;
+        payload_hash: string;
+        event_type: string;
+        occurred_at: Date | string;
+      }>(
+        client,
+        `SELECT order_id, status, payload_hash, event_type, occurred_at
          FROM cashier_billing_events
         WHERE provider = $1 AND provider_event_id = $2
         LIMIT 1`,
-      [input.provider, eventId],
-    );
-    if (duplicate[0]) {
-      if (duplicate[0].order_id !== orderId) {
-        fail("CASHIER_BILLING_PROVIDER_EVENT_COLLISION", "provider event was reused for another order", 409);
-      }
-      const order = await loadOrder(client, orderId, true);
-      if (!order) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 404);
-      const application = await operationalQueryRows<{ subscription_id: string }>(
-        client,
-        `SELECT subscription_id FROM cashier_entitlement_applications
-          WHERE order_id = $1 AND merchant_id = $2 LIMIT 1`,
-        [orderId, merchantId],
+        [input.provider, eventId],
       );
-      return {
-        status: "duplicate" as const,
-        order,
-        ...(application[0] ? { subscriptionId: application[0].subscription_id } : {}),
-      };
-    }
+      if (duplicate[0]) {
+        if (duplicate[0].order_id !== orderId) {
+          fail(
+            "CASHIER_BILLING_PROVIDER_EVENT_COLLISION",
+            "provider event was reused for another order",
+            409,
+          );
+        }
+        if (
+          duplicate[0].payload_hash !== input.payloadHash ||
+          duplicate[0].event_type !== input.eventType
+        ) {
+          fail(
+            "CASHIER_BILLING_PROVIDER_EVENT_COLLISION",
+            "provider event payload changed on replay",
+            409,
+          );
+        }
+        if (duplicate[0].status !== "received") {
+          const order = await loadOrder(client, orderId, true);
+          if (!order)
+            fail(
+              "CASHIER_BILLING_ORDER_NOT_FOUND",
+              "cashier billing order not found",
+              404,
+            );
+          const application = await operationalQueryRows<{
+            subscription_id: string;
+          }>(
+            client,
+            `SELECT subscription_id FROM cashier_entitlement_applications
+          WHERE order_id = $1 AND merchant_id = $2 LIMIT 1`,
+            [orderId, merchantId],
+          );
+          return {
+            status: "duplicate" as const,
+            order,
+            ...(application[0]
+              ? { subscriptionId: application[0].subscription_id }
+              : {}),
+          };
+        }
+      }
 
-    const order = await loadOrder(client, orderId, true);
-    if (!order) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 404);
-    if (order.provider !== input.provider) {
-      fail("CASHIER_BILLING_PROVIDER_MISMATCH", "cashier billing provider mismatch", 409);
-    }
+      const order = await loadOrder(client, orderId, true);
+      if (!order)
+        fail(
+          "CASHIER_BILLING_ORDER_NOT_FOUND",
+          "cashier billing order not found",
+          404,
+        );
+      const retryReceived = duplicate[0]?.status === "received";
+      if (
+        retryReceived &&
+        (order.status !== "paid_reconciliation_required" ||
+          order.metadata.reconciliation_event_id !== eventId ||
+          order.provider_payment_ref !== paymentRef)
+      ) {
+        fail(
+          "CASHIER_BILLING_PROVIDER_EVENT_COLLISION",
+          "received payment does not match reconciliation work",
+          409,
+        );
+      }
+      if (retryReceived) {
+        // HTTP redelivery time changes; retain the first verified receipt's time.
+        input = { ...input, occurredAt: timestamp(duplicate[0].occurred_at) };
+      }
+      // Unresolved paid work may only be resumed by its original received event.
+      if (order.status === "paid_reconciliation_required" && !retryReceived) {
+        fail("CASHIER_BILLING_ORDER_NOT_PAYABLE", "paid reconciliation requires the original received event or operator review", 409);
+      }
+      if (order.provider !== input.provider) {
+        fail(
+          "CASHIER_BILLING_PROVIDER_MISMATCH",
+          "cashier billing provider mismatch",
+          409,
+        );
+      }
 
-    const eventRecord = async (
-      status: "applied" | "rejected",
-      appliedAt: Date | null,
-    ) => {
-      await client.query(
-        `INSERT INTO cashier_billing_events (
+      const eventRecord = async (
+        status: "received" | "applied" | "rejected",
+        appliedAt: Date | null,
+      ) => {
+        if (retryReceived) {
+          await client.query(
+            `UPDATE cashier_billing_events SET status = $3, applied_at = $4
+            WHERE provider = $1 AND provider_event_id = $2 AND merchant_id = $5`,
+            [input.provider, eventId, status, appliedAt, merchantId],
+          );
+          return;
+        }
+        await client.query(
+          `INSERT INTO cashier_billing_events (
            id, merchant_id, order_id, provider, provider_event_id, event_type,
            payload_hash, status, occurred_at, applied_at, created_at
          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [
-          `cashier-billing-event-${crypto.randomUUID()}`,
-          merchantId,
-          orderId,
-          input.provider,
-          eventId,
-          input.eventType,
-          requiredText(input.payloadHash, "payload_hash", 128),
-          status,
-          input.occurredAt,
-          appliedAt,
-          new Date(),
-        ],
-      );
-    };
+          [
+            `cashier-billing-event-${crypto.randomUUID()}`,
+            merchantId,
+            orderId,
+            input.provider,
+            eventId,
+            input.eventType,
+            requiredText(input.payloadHash, "payload_hash", 128),
+            status,
+            input.occurredAt,
+            appliedAt,
+            new Date(),
+          ],
+        );
+      };
 
-    if (input.eventType === "payment_failed" || input.eventType === "payment_cancelled") {
-      if (order.status !== "pending") {
-        fail("CASHIER_BILLING_ORDER_NOT_PAYABLE", "cashier billing order is not payable", 409);
-      }
-      const status = input.eventType === "payment_failed" ? "failed" : "cancelled";
-      await client.query(
-        `UPDATE cashier_billing_orders
+      if (
+        input.eventType === "payment_failed" ||
+        input.eventType === "payment_cancelled"
+      ) {
+        if (order.status !== "pending") {
+          fail(
+            "CASHIER_BILLING_ORDER_NOT_PAYABLE",
+            "cashier billing order is not payable",
+            409,
+          );
+        }
+        const status =
+          input.eventType === "payment_failed" ? "failed" : "cancelled";
+        await client.query(
+          `UPDATE cashier_billing_orders
             SET status = $2,
                 failed_at = CASE WHEN $2 = 'failed' THEN $3 ELSE failed_at END,
                 updated_at = $3
           WHERE id = $1 AND merchant_id = $4`,
-        [order.id, status, input.occurredAt, merchantId],
-      );
-      await eventRecord("applied", input.occurredAt);
-      const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 503);
-      return { status: status as "failed" | "cancelled", order: updated };
-    }
+          [order.id, status, input.occurredAt, merchantId],
+        );
+        await eventRecord("applied", input.occurredAt);
+        const updated = await loadOrder(client, order.id, true);
+        if (!updated)
+          fail(
+            "CASHIER_BILLING_ORDER_NOT_FOUND",
+            "cashier billing order not found",
+            503,
+          );
+        return { status: status as "failed" | "cancelled", order: updated };
+      }
 
-    if (!paymentRef) {
-      fail("CASHIER_BILLING_PAYMENT_REFERENCE_REQUIRED", "cashier billing payment reference is required", 409);
-    }
-    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
-      `${input.provider}:cashier-payment:${paymentRef}`,
-    ]);
-    const paymentRefCollision = await operationalQueryRows<{ id: string }>(
-      client,
-      `SELECT id
+      if (!paymentRef) {
+        fail(
+          "CASHIER_BILLING_PAYMENT_REFERENCE_REQUIRED",
+          "cashier billing payment reference is required",
+          409,
+        );
+      }
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+        `${input.provider}:cashier-payment:${paymentRef}`,
+      ]);
+      const paymentRefCollision = await operationalQueryRows<{ id: string }>(
+        client,
+        `SELECT id
          FROM cashier_billing_orders
         WHERE provider = $1
           AND provider_payment_ref = $2
           AND id <> $3
         LIMIT 1`,
-      [input.provider, paymentRef, order.id],
-    );
-    if (paymentRefCollision[0]) {
-      fail(
-        "CASHIER_BILLING_PAYMENT_REPLAY",
-        "cashier payment reference was already used by another billing order",
-        409,
-        { existing_order_id: paymentRefCollision[0].id },
+        [input.provider, paymentRef, order.id],
       );
-    }
-    // A settled entitlement is immutable: a later conflicting payment notification
-    // must not downgrade an already applied order into reconciliation.
-    if (order.status === "applied") {
-      return { status: "duplicate" as const, order };
-    }
-    if (input.amountIqd !== order.amount_iqd) {
-      await client.query(
-        `UPDATE cashier_billing_orders
+      if (paymentRefCollision[0]) {
+        fail(
+          "CASHIER_BILLING_PAYMENT_REPLAY",
+          "cashier payment reference was already used by another billing order",
+          409,
+          { existing_order_id: paymentRefCollision[0].id },
+        );
+      }
+      // A settled entitlement is immutable: a later conflicting payment notification
+      // must not downgrade an already applied order into reconciliation.
+      if (order.status === "applied") {
+        return { status: "duplicate" as const, order };
+      }
+      if (input.amountIqd !== order.amount_iqd) {
+        await client.query(
+          `UPDATE cashier_billing_orders
             SET status = 'paid_reconciliation_required',
                 provider_payment_ref = $2,
                 paid_at = $3,
                 updated_at = $3,
                 metadata = metadata || $4::jsonb
           WHERE id = $1 AND merchant_id = $5`,
-        [
-          order.id,
-          paymentRef,
-          input.occurredAt,
-          JSON.stringify({
-            reconciliation_code: "CASHIER_BILLING_AMOUNT_MISMATCH",
-            received_amount_iqd: input.amountIqd,
-          }),
-          merchantId,
-        ],
-      );
-      await eventRecord("rejected", null);
-      const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 503);
-      return {
-        status: "reconciliation_required" as const,
-        order: updated,
-        reasonCode: "CASHIER_BILLING_AMOUNT_MISMATCH",
-      };
-    }
-    // A verified late payment for an already expired order is reconciliation work,
-    // never permission to activate an expired cashier entitlement.
-    if (order.status !== "pending" && order.status !== "expired") {
-      fail("CASHIER_BILLING_ORDER_NOT_PAYABLE", "cashier billing order is not payable", 409);
-    }
-    if (order.status === "expired" || timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()) {
-      await client.query(
-        `UPDATE cashier_billing_orders
+          [
+            order.id,
+            paymentRef,
+            input.occurredAt,
+            JSON.stringify({
+              reconciliation_code: "CASHIER_BILLING_AMOUNT_MISMATCH",
+              received_amount_iqd: input.amountIqd,
+            }),
+            merchantId,
+          ],
+        );
+        await eventRecord("rejected", null);
+        const updated = await loadOrder(client, order.id, true);
+        if (!updated)
+          fail(
+            "CASHIER_BILLING_ORDER_NOT_FOUND",
+            "cashier billing order not found",
+            503,
+          );
+        return {
+          status: "reconciliation_required" as const,
+          order: updated,
+          reasonCode: "CASHIER_BILLING_AMOUNT_MISMATCH",
+        };
+      }
+      // A verified late payment for an already expired order is reconciliation work,
+      // never permission to activate an expired cashier entitlement.
+      if (
+        order.status !== "pending" &&
+        order.status !== "expired" &&
+        !retryReceived
+      ) {
+        fail(
+          "CASHIER_BILLING_ORDER_NOT_PAYABLE",
+          "cashier billing order is not payable",
+          409,
+        );
+      }
+      if (
+        order.status === "expired" ||
+        timestamp(order.request_expires_at).getTime() <
+          input.occurredAt.getTime()
+      ) {
+        await client.query(
+          `UPDATE cashier_billing_orders
             SET status = 'paid_reconciliation_required',
                 provider_payment_ref = $2,
                 paid_at = $3,
                 updated_at = $3
           WHERE id = $1 AND merchant_id = $4`,
-        [order.id, paymentRef, input.occurredAt, merchantId],
-      );
-      await eventRecord("rejected", null);
-      const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 503);
-      return {
-        status: "reconciliation_required",
-        order: updated,
-        reasonCode: "CASHIER_BILLING_ORDER_EXPIRED_AFTER_PAYMENT",
-      };
-    }
+          [order.id, paymentRef, input.occurredAt, merchantId],
+        );
+        await eventRecord("rejected", null);
+        const updated = await loadOrder(client, order.id, true);
+        if (!updated)
+          fail(
+            "CASHIER_BILLING_ORDER_NOT_FOUND",
+            "cashier billing order not found",
+            503,
+          );
+        return {
+          status: "reconciliation_required" as const,
+          order: updated,
+          reasonCode: "CASHIER_BILLING_ORDER_EXPIRED_AFTER_PAYMENT",
+        };
+      }
 
-    try {
-      const applied = await applyPaidOrder(client, order, paymentRef, input.occurredAt);
-      await client.query(
-        `UPDATE cashier_billing_orders
+      await eventRecord("received", null);
+      await client.query("SAVEPOINT billing_entitlement");
+      try {
+        const applied = await applyPaidOrder(
+          client,
+          order,
+          paymentRef,
+          input.occurredAt,
+        );
+        await client.query(
+          `UPDATE cashier_billing_orders
             SET status = 'applied',
                 provider_payment_ref = $2,
                 paid_at = $3,
                 applied_at = $3,
                 updated_at = $3
           WHERE id = $1 AND merchant_id = $4`,
-        [order.id, paymentRef, input.occurredAt, merchantId],
-      );
-      await eventRecord("applied", input.occurredAt);
-      const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 503);
-      return {
-        status: "applied" as const,
-        order: updated,
-        subscriptionId: applied.subscriptionId,
-      };
-    } catch (error) {
-      if (!(error instanceof CashierBillingAuthorityError)) throw error;
-      await client.query(
-        `UPDATE cashier_billing_orders
+          [order.id, paymentRef, input.occurredAt, merchantId],
+        );
+        await client.query(
+          `UPDATE cashier_billing_events SET status = 'applied', applied_at = $3
+          WHERE provider = $1 AND provider_event_id = $2`,
+          [input.provider, eventId, input.occurredAt],
+        );
+        const updated = await loadOrder(client, order.id, true);
+        if (!updated)
+          fail(
+            "CASHIER_BILLING_ORDER_NOT_FOUND",
+            "cashier billing order not found",
+            503,
+          );
+        await client.query("RELEASE SAVEPOINT billing_entitlement");
+        return {
+          status: "applied" as const,
+          order: updated,
+          subscriptionId: applied.subscriptionId,
+        };
+      } catch (error) {
+        await client.query("ROLLBACK TO SAVEPOINT billing_entitlement");
+        await client.query("RELEASE SAVEPOINT billing_entitlement");
+        const domainFailure = error instanceof CashierBillingAuthorityError;
+        const reasonCode = domainFailure
+          ? error.code
+          : "CASHIER_BILLING_ENTITLEMENT_SQL_FAILURE";
+        if (!domainFailure) sqlFailure = error;
+        await client.query(
+          `UPDATE cashier_billing_orders
             SET status = 'paid_reconciliation_required',
                 provider_payment_ref = $2,
                 paid_at = $3,
                 updated_at = $3,
                 metadata = metadata || $4::jsonb
           WHERE id = $1 AND merchant_id = $5`,
-        [
-          order.id,
-          paymentRef,
-          input.occurredAt,
-          JSON.stringify({ reconciliation_code: error.code }),
-          merchantId,
-        ],
-      );
-      await eventRecord("rejected", null);
-      const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 503);
-      return {
-        status: "reconciliation_required" as const,
-        order: updated,
-        reasonCode: error.code,
-      };
-    }
-  });
+          [
+            order.id,
+            paymentRef,
+            input.occurredAt,
+            JSON.stringify({
+              reconciliation_code: reasonCode,
+              reconciliation_event_id: domainFailure ? null : eventId,
+            }),
+            merchantId,
+          ],
+        );
+        await client.query(
+          `UPDATE cashier_billing_events SET status = $3, applied_at = NULL
+          WHERE provider = $1 AND provider_event_id = $2`,
+          [input.provider, eventId, domainFailure ? "rejected" : "received"],
+        );
+        const updated = await loadOrder(client, order.id, true);
+        if (!updated)
+          fail(
+            "CASHIER_BILLING_ORDER_NOT_FOUND",
+            "cashier billing order not found",
+            503,
+          );
+        return {
+          status: "reconciliation_required" as const,
+          order: updated,
+          reasonCode,
+        };
+      }
+    },
+  );
+  // Throw only after COMMIT: the provider retries while durable receipt survives.
+  if (sqlFailure) throw sqlFailure;
+  return outcome;
 }
-
 export async function discoverCashierBillingOrderByProviderReference(input: {
   provider: string;
   paymentId: string;

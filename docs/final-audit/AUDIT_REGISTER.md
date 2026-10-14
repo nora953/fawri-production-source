@@ -846,3 +846,13 @@ EightnewSQLcases8P/0F/0SKIP,source29be3ed3/run38442860689/job115453629407; newE1
 ## SEQ-306–311 actual management HTTP and session binding
 
 15newbusinesssubcases15PASS(raw16inclparent),sourcecc27ff5a/run38444767251/job115460157268. CurrentE164/trusteddevice/fullAuthv2fixture reachesmanagementrole/permission/password/review/anonymization andowner-sessionqualifiedbinding/livecookie401. No newfinding. RESIDUAL-FIXTURE-CONTRACT-001 extendsoldmanagementfixture's missingownerdevicecontract(originaloldphonefailedfirst); originaltestsunchanged. Initialzero-caseownerissuanceblockednotapplicationdefect. WORK-MONITOR-STALE-001 remainsOPEN; backend404bindingPASSdoesnotfixnativeUIstaleaction. HostedRLS/provider/media/fullroute/OTP gatesremainopen.
+
+
+## P0 verified-payment SQL recovery continuation — 2026-10-14
+
+Issue #523 / BILLING-SQL-RECONCILIATION-032 remains OPEN. New local branch `fix/p0-verified-payment-sql-recovery-20261014` based on #533/2733cadae. SaaS/cashier savepoint recovery and exact-event concurrent replay regression prepared; API typecheck/build and guard15/15 PASS, real PostgreSQL NOT RUN for new code. Publication rejected by automatic approval review; no remote commit/PR/CI evidence. See active header in `WORK_HANDOFF.md` for design, limitations, exact next actions and publication blocker. P0 is not complete; no percentage recalculated.
+
+
+## Verified P0 SQL recovery — 2026-10-14
+
+Supersedes earlier local-only/NOT_RUN checkpoint: PR534/da4d0c05, isolated38517736663/job115700230288:168PASS/3FAIL,43invocations/41unique. Cashier SQL6/0 and SaaS SQL3/0 PASS, checkout9/0 PASS; remaining selected runtime failure is Meta FA-I-006/issue535 (2functional+parent). Security history1synthetic-fixture finding separately classified. See P0_PAYMENT_SQL_RECOVERY_20261014.md and active WORK_HANDOFF header. Issue523/P0 stay OPEN for broader acceptance; no merge/deploy or percentage claim.

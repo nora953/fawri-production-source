@@ -1078,3 +1078,13 @@ Corrected central native run38204282300 completedSUCCESS on sourced6f6b4a0. Pres
 SEQ-133 PREPARED expands actualreceiptbrowserharness from6 to8cases: actual printCashierReceipt/nativeiframe srcdoc load, withexplicitinertprint method at the physicalprintboundary; explicitlydispatchafterprint thenframe0; fault-injectedprint method throws andactualhelpercatchmustremoveframe0 andpreserveerror. Assertiframe receiptretainslastitem/noprivatecostsentinel. Original6native thermalwidth/PDFcases retained. This is actualDOM/load/helper orchestration plus controlledprint/eventadapter, not realhardware/printdialog event proof. Local syntaxPASS; two new assertionsNOT_RUN pendingCI. Possible fallbacktimer behavior afterexception remainsseparate fromframe-removalproof.
 
 CASHIER-REPORT-PROFIT-001 HIGH remainsconfirmed/unrepaired; aggregate138PASS/24FAIL includes16functional+8parents for9canonicalfindings. Existingreportsource/query/offline/provider/hosted/role/visualgates remainopen. Localadminauthority14PASS separate. Next inspect8receipt/central logs andcompletedSQL; then save definitivehandoff forremaining owner/admin/merchant scope. Noapplicationrepair orconsolidatedplan beforeauditcompletion.
+
+
+## P0 verified-payment SQL recovery continuation — 2026-10-14
+
+Issue #523 / BILLING-SQL-RECONCILIATION-032 remains OPEN. New local branch `fix/p0-verified-payment-sql-recovery-20261014` based on #533/2733cadae. SaaS/cashier savepoint recovery and exact-event concurrent replay regression prepared; API typecheck/build and guard15/15 PASS, real PostgreSQL NOT RUN for new code. Publication rejected by automatic approval review; no remote commit/PR/CI evidence. See active header in `WORK_HANDOFF.md` for design, limitations, exact next actions and publication blocker. P0 is not complete; no percentage recalculated.
+
+
+## Verified P0 SQL recovery — 2026-10-14
+
+Supersedes earlier local-only/NOT_RUN checkpoint: PR534/da4d0c05, isolated38517736663/job115700230288:168PASS/3FAIL,43invocations/41unique. Cashier SQL6/0 and SaaS SQL3/0 PASS, checkout9/0 PASS; remaining selected runtime failure is Meta FA-I-006/issue535 (2functional+parent). Security history1synthetic-fixture finding separately classified. See P0_PAYMENT_SQL_RECOVERY_20261014.md and active WORK_HANDOFF header. Issue523/P0 stay OPEN for broader acceptance; no merge/deploy or percentage claim.

@@ -93,7 +93,15 @@ test('cashier negative payment contracts: replay, expiry, concurrency and SQL re
     await removeFault();
     assert.equal(applicationCount, 0);
     assert.equal(subscriptionCount, 0);
-    assert.equal((await billing.applyVerifiedCashierBillingProviderEvent(paid)).status, 'applied');
+    await assert.rejects(() => billing.applyVerifiedCashierBillingProviderEvent({ ...paid, payloadHash: 'f'.repeat(64) }), error => error.code === 'CASHIER_BILLING_PROVIDER_EVENT_COLLISION');
+    await assert.rejects(() => billing.applyVerifiedCashierBillingProviderEvent({ ...paid, providerEventId: randomUUID(), providerPaymentRef: randomUUID(), amountIqd: 1 }), error => error.code === 'CASHIER_BILLING_ORDER_NOT_PAYABLE');
+    assert.equal((await pool.query('SELECT provider_payment_ref FROM cashier_billing_orders WHERE id=$1', [paid.orderId])).rows[0].provider_payment_ref, paid.providerPaymentRef);
+    // The same verified webhook can be delivered after checkout TTL has elapsed.
+    const redelivered = { ...paid, occurredAt: new Date(paid.occurredAt.getTime() + 86400000) };
+    const retries = await Promise.all([billing.applyVerifiedCashierBillingProviderEvent(redelivered), billing.applyVerifiedCashierBillingProviderEvent(redelivered)]);
+    assert.deepEqual(retries.map(result => result.status).sort(), ['applied', 'duplicate']);
+    assert.equal(new Date((await pool.query('SELECT paid_at FROM cashier_billing_orders WHERE id=$1', [paid.orderId])).rows[0].paid_at).getTime(), paid.occurredAt.getTime());
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM cashier_billing_events WHERE provider_event_id=$1', [paid.providerEventId])).rows[0].count, 1);
     assert.equal((await billing.applyVerifiedCashierBillingProviderEvent(paid)).status, 'duplicate');
     assert.equal(state, 'paid_reconciliation_required');
     assert.equal(eventCount, 1);
