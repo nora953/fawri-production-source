@@ -6,7 +6,7 @@ import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import {cleanupResources,stopTestChild} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
-Object.assign(process.env,{FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_DISABLE_JOB_WORKERS:'1',FAWRI_META_TOKEN_KEY_ID:'synthetic-meta-restart-key',FAWRI_META_TOKEN_KEY_BASE64:Buffer.alloc(32,31).toString('base64'),FAWRI_AUTH_SECURITY_SECRET:'synthetic-meta-restart-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-meta-restart-password-salt'});
+Object.assign(process.env,{FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_DISABLE_JOB_WORKERS:'1',FAWRI_JOB_POLL_INTERVAL_MS:'60000',FAWRI_META_TOKEN_KEY_ID:'synthetic-meta-restart-key',FAWRI_META_TOKEN_KEY_BASE64:Buffer.alloc(32,31).toString('base64'),FAWRI_AUTH_SECURITY_SECRET:'synthetic-meta-restart-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-meta-restart-password-salt'});
 const {pool}=await import('@workspace/db');
 const accounts=await import('../src/services/postgresMerchantAccountAuthority.ts');
 const settings=await import('../src/services/postgresMerchantSettingsAuthority.ts');

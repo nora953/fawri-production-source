@@ -6,3 +6,7 @@ Fresh original workerstartup must discover debt through original recovery/list/d
 
 This is targetedpostcommitkill at actualworkerDLQ/refundenqueuegap, not arbitrarycrash/fullscheduler/realprovider or hostedrollout. Dedicated hostileencryptedpayload/rowtenant mismatch runtimecase and broaderprecommitprocesskill stillseparateOPEN. No merge/deploy/hostedDB/payment authorized.
 
+
+## First attempt and owned polling correction
+
+Source88cbe8b2: Meta pipeline38647618893/job116138286332 newrestart1PASS/3FAIL(parentincluded). Actual DLQcommit/proxy/SIGKILL and zero-refundgap passed. Freshworker manualrun returnedfalse; later dependent assertion printed one realcredit alreadypersisted. Source startDurableJobWorkerAuthoritative always starts its own interval; FAWRI_DISABLE_JOB_WORKERS suppresses bootstrap, not this explicitconstructor. Existing original Meta helpers use60000ms poll to isolate manualrunOnce. Add same owned60000ms fixture setting, retaining manualrun=true, independent onejob/onecredit/noextraGraph, concurrentrestart and exactledger checks. No runtimepolling change or weakenedconditions; correctedacceptance pendingCI.

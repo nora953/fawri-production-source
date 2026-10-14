@@ -1,3 +1,7 @@
+## Meta worker restart first attempt/polling fixture correction — 2026-10-15 Baghdad
+
+88cbe8b2 newrestart Meta pipeline38647618893/job1161382863321PASS/3FAIL(parentincluded): originalDLQcommit/selfSIGKILL/no-refundgapPASS; freshworker manualrunfalse while downstreamownedSQL alreadyhas1credit; dependentledger comparisonfailed againstundefined afterearlyassert. Original explicitworkerconstructor starts500msinterval despitebootstrapdisableflag. Fixture nowsets60000ms as priororiginalworker tests, no app/polling/acceptance change. PendingCI; accepted259baseline separate.
+
 ## Prepared original Meta deadletter/refund enqueue restart gap — 2026-10-15 Baghdad
 
 Authorized Draft PR547 test-only extension. Prior documentationheadf759a31ea050d3cdfbc9a66c7b993cbfb2baca52 verified14/14CI SUCCESS; prior accepted259 reused, no additivecredit. New owned restricted-role process hosts original signed app/queue/liveworker. Passive real SQL/result observer (promise and callback forms forwarded unchanged) arms existing exactCOMMIT wireproxy only after target job transitions to dead_letter/META_REPLY_FAILED. Actual backend COMMIT response withheld, IPC notice, selfSIGKILL beforeoriginal failJob returns/onDeadLetter refundenqueue. Parent must independently prove committedfailedjob1, safe requeuepolicy, debit1/no credit/no refundjob and1localGraph confirmedfailure.
