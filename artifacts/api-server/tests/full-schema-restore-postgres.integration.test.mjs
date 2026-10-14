@@ -22,9 +22,9 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
       await pool.query("INSERT INTO merchant_channels(id,merchant_id,platform,status,page_id) VALUES($1,$2,'messenger','connected',$3)", [`channel-${id}`, id, `page-${id}`]);
     }
   }
-  const tables = (await pool.query("SELECT relname, relrowsecurity, relforcerowsecurity, coalesce(relacl,acldefault('r',relowner))::text AS acl FROM pg_class JOIN pg_namespace n ON n.oid=relnamespace WHERE n.nspname='public' AND relkind IN ('r','p') ORDER BY relname")).rows;
+  const tables = (await pool.query("SELECT relname, relrowsecurity, relforcerowsecurity, ARRAY(SELECT entry::text FROM unnest(coalesce(relacl,acldefault('r',relowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_class JOIN pg_namespace n ON n.oid=relnamespace WHERE n.nspname='public' AND relkind IN ('r','p') ORDER BY relname")).rows;
   const policies = (await pool.query("SELECT c.relname, polname, polcmd, polpermissive, pg_get_expr(polqual,polrelid) AS predicate, pg_get_expr(polwithcheck,polrelid) AS check_predicate FROM pg_policy JOIN pg_class c ON c.oid=polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,polname")).rows;
-  const functions = (await pool.query("SELECT proname, pg_get_function_identity_arguments(p.oid) AS args, pg_get_functiondef(p.oid) AS definition, coalesce(proacl,acldefault('f',proowner))::text AS acl FROM pg_proc p JOIN pg_namespace n ON n.oid=pronamespace WHERE n.nspname='public' AND prokind='f' ORDER BY proname,args")).rows;
+  const functions = (await pool.query("SELECT proname, pg_get_function_identity_arguments(p.oid) AS args, pg_get_functiondef(p.oid) AS definition, ARRAY(SELECT entry::text FROM unnest(coalesce(proacl,acldefault('f',proowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_proc p JOIN pg_namespace n ON n.oid=pronamespace WHERE n.nspname='public' AND prokind='f' ORDER BY proname,args")).rows;
   const constraints = (await pool.query("SELECT c.relname, conname, contype, convalidated, condeferrable, condeferred, pg_get_constraintdef(k.oid) AS definition FROM pg_constraint k JOIN pg_class c ON c.oid=conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,conname")).rows;
   // pg_dump reparses CHECK DDL and PostgreSQL flattens associative leading AND
   // groups. Round-trip both sides through the same native parser; never strip
@@ -45,16 +45,18 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
     // pg_dump can omit a redundant explicit owner-only ACL and restore NULL
     // (default owner privileges). Preserve effective grants, not storage form.
     await normalizer.query('CREATE TEMP TABLE audit_restore_acl_probe(id integer)');
-    const probeAcl = async () => (await normalizer.query("SELECT coalesce(relacl,acldefault('r',relowner))::text AS acl FROM pg_class WHERE oid='pg_temp.audit_restore_acl_probe'::regclass")).rows[0].acl;
+    const probeAcl = async () => (await normalizer.query("SELECT ARRAY(SELECT entry::text FROM unnest(coalesce(relacl,acldefault('r',relowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_class WHERE oid='pg_temp.audit_restore_acl_probe'::regclass")).rows[0].acl;
     try {
       const defaultAcl = await probeAcl();
       await normalizer.query('REVOKE ALL ON audit_restore_acl_probe FROM PUBLIC');
-      assert.equal(await probeAcl(),defaultAcl,'redundant PUBLIC revocation retains default effective owner ACL');
+      assert.deepEqual(await probeAcl(),defaultAcl,'redundant PUBLIC revocation retains default effective owner ACL');
       await normalizer.query(`GRANT SELECT ON audit_restore_acl_probe TO ${role}`);
-      assert.notEqual(await probeAcl(),defaultAcl,'added grant must remain detectable');
+      assert.notDeepEqual(await probeAcl(),defaultAcl,'added grant must remain detectable');
       await normalizer.query(`REVOKE SELECT ON audit_restore_acl_probe FROM ${role}`);
-      assert.equal(await probeAcl(),defaultAcl,'revoked extra grant restores exact effective ACL');
-      console.log('AUDIT_ACL_CANONICALIZATION_PASS '+JSON.stringify({defaultAndExplicitOwnerEquivalent:true,addedGrantDetected:true}));
+      assert.deepEqual(await probeAcl(),defaultAcl,'revoked extra grant restores exact effective ACL');
+      const orders=(await normalizer.query("SELECT ARRAY(SELECT entry::text FROM unnest(acldefault('f',current_user::regrole)) AS grants(entry) ORDER BY entry::text) AS forward, ARRAY(SELECT entry::text FROM unnest(acldefault('f',current_user::regrole)) AS grants(entry) ORDER BY entry::text DESC) AS reversed")).rows[0];
+      assert.deepEqual(orders.forward,[...orders.reversed].sort(),'function grant order must not change effective permission identity');
+      console.log('AUDIT_ACL_CANONICALIZATION_PASS '+JSON.stringify({defaultAndExplicitOwnerEquivalent:true,grantOrderNormalized:true,addedGrantDetected:true}));
     } finally { await normalizer.query('DROP TABLE audit_restore_acl_probe'); }
     const grouped = await canonicalCheck('merchant_channels', 'CHECK (((char_length(merchant_id) >= 1) AND (char_length(merchant_id) <= 200)) AND (char_length(page_id) >= 1))');
     const flat = await canonicalCheck('merchant_channels', 'CHECK ((char_length(merchant_id) >= 1) AND (char_length(merchant_id) <= 200) AND (char_length(page_id) >= 1))');
