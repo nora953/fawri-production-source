@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-360–365 (2026-10-14 Baghdad)
+
+Latest [SEQ-360–365](SEQ_360_365_FULL_SNAPSHOT_CSS_20261014.md). **Next SEQ-366**. Audit only; application/original tests/schema unchanged.
+
+ActualVite main/App/support/emergency snapshots ×AR/EN/KU ×390/1280: headc311d48e16baf1c361775a9fb0ab1e1e5683fb49/merge33ddb076cd9657fa9a8db45b8f8b9c7def27eae1, run38498401910/job115639330331: **12newbaselinePASS/0FAIL**,42allowedGET/deviceheaders/0POST/runtimeerrors,12captures reviewed/persisted. Additional2diagnosticPASS run38498978000/job115641143612: test-onlycatalogCSSdisable returnsbadges702.69/547.92px→40px andexpands titles;4before/aftercaptures. No apprepair.
+
+New **UI-KU-CATALOG-CSS-SPILLOVER-001 LOW/OPEN/NATIVE_CAUSE_CONFIRMED**: broadcatalogSorani640–1399rule matchessecuritybadge onbothsnapshots at1280. Mobilecrampedheader notattributed tothatmedia rule. ExistingSoraniOct/AM datefinding extendedtoemergencysnapshot, noduplicate. Currentseq365CSV222baseline:78PASS_BOUNDED_FULL_APP/144NOT_RUN.18negative+2diagnosticcases outsidebaseline. No realcookie/grant/backend/RLS/read-onlysecurity/timer/deeptab certification; fallbackfonts.21selectors unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-354–359 (2026-10-14 Baghdad)
 
 Latest [SEQ-354–359](SEQ_354_359_FULL_ADMIN_ROUTES_20261014.md). **Next SEQ-360**. Audit only; application/original tests/schema unchanged.
@@ -931,3 +940,10 @@ OwnerRecoveryPage initialkey1stage, actualfullAppsixlocale/viewportcases: semant
 ## I18N-MONITOR-SORANI-DATE-001 — LOW / OPEN / NATIVE_VISUAL_CONFIRMED
 
 Sorani work-monitor Last activity showsEnglish Oct/AM inactualfullApp390/1280captures for synthetic2026-10-14T00:00:00Z. formatDate usesIntlDateTimeFormat ckb-IQ; localefallbackcauseinferred, resolvedOptionsnotcaptured. Native mixed-language presentation proof only, nottimezone/security/allplatform failure. TwoPNGdetails/bounds inSEQ-354–359; no repair. Distinctfromdate-picker/billinglocalization surfaces.
+
+
+## UI-KU-CATALOG-CSS-SPILLOVER-001 — LOW / OPEN / NATIVE_CAUSE_CONFIRMED
+
+Globalindexcatalog-kurdish-layout-fix.css640–1399Sorani selector appliesflex1 1 28rem tofirstheaderchild, which is40pxshieldbadge inbothsnapshotpages. Native1280badgewidths702.6875/547.921875; test-onlystylesheetdisable gives40px andtitlewidth254.6875/99.921875→917.375/607.84375.2ownedbrowsercausalcontrolsPASS,source/appunchanged. Presentation/usabilitygap,notauth/writebypass; mobilecrampingnotattributedtothismedia rule. SEQ-360–365 has16captures/fullbounds. No repair.
+
+I18N-MONITOR-SORANI-DATE-001 evidenceextension: emergency snapshot generated_at showsEnglishOct/AM inbothSoraniUIR-011captures; sourceusesckb-IQ/dateformatter. Sameexistingdatefinding, no newduplicate. Nativevisualproof, notresolvedOptions/alltimezone proof.

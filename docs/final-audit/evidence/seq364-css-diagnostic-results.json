@@ -1,0 +1,181 @@
+{
+  "head": "bbb419bd3e4a094f2afcdbbda7780e810ac801a3",
+  "mergeCheckout": "3761b6aad070bf14e655e18839b719d49f9ae03e",
+  "run": 38498978000,
+  "job": 115641143612,
+  "cases": {
+    "passed": 2,
+    "failed": 0
+  },
+  "baselineCredit": 0,
+  "evidence": {
+    "browser": "Chrome/154.0.8037.97",
+    "source": "3761b6aad070bf14e655e18839b719d49f9ae03e",
+    "results": [
+      {
+        "name": "UID-010-CSS-ku-1280",
+        "status": "PASS",
+        "details": {
+          "path": "/admin/support-preview/owned-preview-session",
+          "lang": "ku",
+          "width": 1280,
+          "before": {
+            "badgeWidth": 702.6875,
+            "badgeFlex": "1 1 448px",
+            "titleWidth": 254.6875,
+            "scroll": 1280
+          },
+          "after": {
+            "badgeWidth": 40,
+            "badgeFlex": "0 1 auto",
+            "titleWidth": 917.375,
+            "scroll": 1280
+          },
+          "capture": "UID-010-CSS-ku-1280.png",
+          "afterCapture": "UID-010-CSS-ku-1280-after.png",
+          "testOnlyStylesheetDisabled": true
+        },
+        "capture": "UID-010-CSS-ku-1280.png"
+      },
+      {
+        "name": "UID-011-CSS-ku-1280",
+        "status": "PASS",
+        "details": {
+          "path": "/admin/emergency-access/owned-emergency-request/snapshot",
+          "lang": "ku",
+          "width": 1280,
+          "before": {
+            "badgeWidth": 547.921875,
+            "badgeFlex": "1 1 448px",
+            "titleWidth": 99.921875,
+            "scroll": 1280
+          },
+          "after": {
+            "badgeWidth": 40,
+            "badgeFlex": "0 1 auto",
+            "titleWidth": 607.84375,
+            "scroll": 1280
+          },
+          "capture": "UID-011-CSS-ku-1280.png",
+          "afterCapture": "UID-011-CSS-ku-1280-after.png",
+          "testOnlyStylesheetDisabled": true
+        },
+        "capture": "UID-011-CSS-ku-1280.png"
+      }
+    ],
+    "unexpectedRequests": [],
+    "apiCalls": [
+      {
+        "id": "UID-010-CSS-ku-1280",
+        "path": "/api/auth/admin/me",
+        "method": "GET",
+        "deviceHeaderPresent": true
+      },
+      {
+        "id": "UID-010-CSS-ku-1280",
+        "path": "/api/auth/admin/support-preview/owned-preview-session/snapshot",
+        "method": "GET",
+        "deviceHeaderPresent": true
+      },
+      {
+        "id": "UID-010-CSS-ku-1280",
+        "path": "/api/auth/admin/support-preview/owned-preview-session/snapshot",
+        "method": "GET",
+        "deviceHeaderPresent": true
+      },
+      {
+        "id": "UID-011-CSS-ku-1280",
+        "path": "/api/auth/admin/me",
+        "method": "GET",
+        "deviceHeaderPresent": true
+      },
+      {
+        "id": "UID-011-CSS-ku-1280",
+        "path": "/api/auth/admin/me",
+        "method": "GET",
+        "deviceHeaderPresent": true
+      },
+      {
+        "id": "UID-011-CSS-ku-1280",
+        "path": "/api/auth/admin/support/tickets",
+        "method": "GET",
+        "deviceHeaderPresent": true
+      },
+      {
+        "id": "UID-011-CSS-ku-1280",
+        "path": "/api/auth/admin/emergency-read-access/requests/owned-emergency-request/snapshot",
+        "method": "GET",
+        "deviceHeaderPresent": true
+      }
+    ],
+    "limits": "Actual built Vite main/App/router/providers/pages/CSS at support/emergency snapshot paths with synthetic assistant/owner API identities, AR/EN/KU x390/1280. Fresh storage percase, current synthetic GET owner/data responses, native Chrome, same-origin owned static SPA fallback. External Google fonts blocked by CSP/DNS; fallback fonts, no backend/API/auth/OTP/provider or pixel/manual visual/accessibility certificate. Assertions cover title/direction/overflow/primary controls/syntheticowner bootstrap/device headers/matching synthetic snapshot/store/incident/basic controls. Screenshots saved as workflow artifact."
+  },
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+    },
+    {
+      "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+    },
+    {
+      "name": "Run corepack enable",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+    },
+    {
+      "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+    },
+    {
+      "name": "Install locked dependencies without lifecycle scripts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+    },
+    {
+      "name": "Build actual full production frontend",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+    },
+    {
+      "name": "Test full App public route language viewport and navigation",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7
+    },
+    {
+      "name": "Preserve owned route screenshots and details",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8
+    },
+    {
+      "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 15
+    },
+    {
+      "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 16
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 17
+    }
+  ]
+}

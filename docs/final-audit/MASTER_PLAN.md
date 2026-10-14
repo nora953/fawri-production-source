@@ -1,5 +1,14 @@
 # Fawri final audit — master plan
 
+## Authoritative continuation — SEQ-360–365 (2026-10-14 Baghdad)
+
+Latest [SEQ-360–365](SEQ_360_365_FULL_SNAPSHOT_CSS_20261014.md). **Next SEQ-366**. Audit only; application/original tests/schema unchanged.
+
+ActualVite main/App/support/emergency snapshots ×AR/EN/KU ×390/1280: headc311d48e16baf1c361775a9fb0ab1e1e5683fb49/merge33ddb076cd9657fa9a8db45b8f8b9c7def27eae1, run38498401910/job115639330331: **12newbaselinePASS/0FAIL**,42allowedGET/deviceheaders/0POST/runtimeerrors,12captures reviewed/persisted. Additional2diagnosticPASS run38498978000/job115641143612: test-onlycatalogCSSdisable returnsbadges702.69/547.92px→40px andexpands titles;4before/aftercaptures. No apprepair.
+
+New **UI-KU-CATALOG-CSS-SPILLOVER-001 LOW/OPEN/NATIVE_CAUSE_CONFIRMED**: broadcatalogSorani640–1399rule matchessecuritybadge onbothsnapshots at1280. Mobilecrampedheader notattributed tothatmedia rule. ExistingSoraniOct/AM datefinding extendedtoemergencysnapshot, noduplicate. Currentseq365CSV222baseline:78PASS_BOUNDED_FULL_APP/144NOT_RUN.18negative+2diagnosticcases outsidebaseline. No realcookie/grant/backend/RLS/read-onlysecurity/timer/deeptab certification; fallbackfonts.21selectors unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-354–359 (2026-10-14 Baghdad)
 
 Latest [SEQ-354–359](SEQ_354_359_FULL_ADMIN_ROUTES_20261014.md). **Next SEQ-360**. Audit only; application/original tests/schema unchanged.
