@@ -322,6 +322,14 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   assert.equal(directoryBody.merchants.some((item: any) => item.id === merchantId), true);
   assert.equal(directoryBody.assistants.some((item: any) => item.id === trustedId), true);
 
+  // Audit-only direct directory authorization assertions; isolated PostgreSQL fixture.
+  const untrustedDirectory = await fetch(
+    `${baseUrl}/api/auth/admin/emergency-read-access/directory`,
+    { headers: { Cookie: untrustedCookie } },
+  );
+  assert.equal(untrustedDirectory.status, 403);
+  assert.equal((await body(untrustedDirectory)).code, "EMERGENCY_AUTHORIZATION_REQUIRED");
+
   const untrustedAttempt = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/requests`,
     {
