@@ -1,3 +1,15 @@
+## Verified normalized Meta reply envelope admission — 2026-10-15 Baghdad
+
+Accepted source `cfc9e279bb7022716b79f9fa55484b52fbbdc841`, Draft PR #547. Isolated run `38654600094`, job `116161483164`, merge checkout `57d157e7c7846229d92d25dc581a5e95bac8ddeb`: **279 PASS / 0 FAIL / 0 SKIP**, 51 unique files / 53 invocations. All 14 observed workflows succeeded. Counts include parents and repeated runtime invocations; overlapping workflows are not added. Meta run `38654600099`, job `116161259617` also succeeds; identity suite has 16 passing tests including parent.
+
+Original signed app/encrypted queue/live worker under a restricted nonowner role rejects thirteen malformed identity/envelope cases before changes to nine exact domain snapshots or provider calls beyond the valid signed second-tenant control's one call. New guards require object `page`, one entry, one messaging event and no boolean `is_echo=true`, matching normalized original reply ingress. Existing media/collision/restart/restore tests pass. Pooled isolation/context reset passes.
+
+Baseline `7e10c21252df4c284401ea9f2c13187d7f4ffe83`, Meta run `38654095685`, job `116159663016`: 11 PASS / 5 FAIL including parent. Wrong object, echo, extra entry and extra message all completed, each called the provider and changed seven domain snapshots including subscription/reply ledger. No tenant bypass or external exploit is established; later events were ignored, not demonstrated executed. First repair `47f57938` passed all sixteen identity tests but failed the old captioned-image direct fixture missing object `page`; accepted source adds that field only and preserves media suppression/storage assertions.
+
+Full schema restore and owned container/volume cleanup succeeded: 33 migrations, 95 tables, 45 policies, 8 functions; fingerprint `793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498`. TypeScript/syntax/diff checks pass. Report `P0_META_ENVELOPE_ADMISSION_20261015.md`; immutable evidence `evidence/P0_META_ENVELOPE_ADMISSION_RESULTS_20261015.json` preserves baseline and corrected proof.
+
+Prior documentation checkpoint `6cff5bb5` has 10 successful and 4 cancelled workflows, not full acceptance. These cancellations do not invalidate the separately completed 275-test source proof. Providers are synthetic local services. No schema/RLS/grants or hosted rollout change; #535 remains open. Recipient/derived-event identity and broader precommit process termination remain separate audit candidates. PR stays draft; no merge or deployment.
+
 ## Verified Meta webhook-body identity admission — 2026-10-15 Baghdad
 
 Accepted source `15a2b0d6e83eb6aec8fc4f284cc8a6ab24c630d3`, Draft PR #547. Isolated run `38653303268`, job `116157339326`, merge checkout `60d64af543b42ddc31c216a74f48665b5b804972`: **275 PASS / 0 FAIL / 0 SKIP**, 51 unique files / 53 invocations. All 14 observed workflows succeeded. Counts include parent tests and repeated runtime invocations; overlapping workflow counts are not added. Meta run `38653303727`, job `116157046053` also succeeded; the identity suite has 12 passing tests including its parent.
