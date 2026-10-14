@@ -1,0 +1,4 @@
+## Prepared original encrypted Meta job identity admission — 2026-10-15 Baghdad
+
+Prior documentationhead3582eb911d743a159d704574f1c1b7848372079a verified14/14CI SUCCESS. Test-only extension: original encrypted enqueue/claim/decrypt/liveworker under restrictedrole with two connected ownedchannels and signedforeign positivecontrol. CanonicalrowA/payloadB, canonicalevent/payloadalias, missingevent mustdeadletter META_JOB_PAYLOAD_INVALID before any of9domain tables change ornewGraph call. Snapshots count+SHA256 of actualSQL rows; queue/audit lifecycle remainsallowed. Originalapp/worker reused, no auth/handler replacement; Graph/embedding synthetic. Syntax/diffPASS; runtimeNOT_RUN. Source parseJob choosespayload identities beforeensureInboundState; laterworkerguard may be too late. Requireactualproof, no source-only defectclosure or implied externalexploit.
+

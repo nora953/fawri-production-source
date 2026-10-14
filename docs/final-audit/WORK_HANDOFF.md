@@ -1,3 +1,7 @@
+## Prepared original encrypted Meta job identity admission — 2026-10-15 Baghdad
+
+Prior documentationhead3582eb911d743a159d704574f1c1b7848372079a verified14/14CI SUCCESS. Test-only extension: original encrypted enqueue/claim/decrypt/liveworker under restrictedrole with two connected ownedchannels and signedforeign positivecontrol. CanonicalrowA/payloadB, canonicalevent/payloadalias, missingevent mustdeadletter META_JOB_PAYLOAD_INVALID before any of9domain tables change ornewGraph call. Snapshots count+SHA256 of actualSQL rows; queue/audit lifecycle remainsallowed. Originalapp/worker reused, no auth/handler replacement; Graph/embedding synthetic. Syntax/diffPASS; runtimeNOT_RUN. Source parseJob choosespayload identities beforeensureInboundState; laterworkerguard may be too late. Requireactualproof, no source-only defectclosure or implied externalexploit.
+
 ## Verified original Meta DLQ/refund-enqueue restart gap — 2026-10-15 Baghdad
 
 Draft PR547 acceptedsource2af43ccec88b4588584018c0cb2c2b1691fe3758; isolated38648764448/job116142085204 mergecheckoutb0d294eb95c5c5e84679b88d9cdb10a874b281a1 SUCCESS:263PASS/0FAIL/0SKIP,50unique files/52invocations. Newactualworkerrestart4PASS(parent+3stages); all14observed workflowsSUCCESS. Prior documentationheadf759a31 all14CI SUCCESS. Fullrestore33migrations/95tables/45policies/8functions same793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498 and ownedcleanupPASS. Test-only source changes; no production app/schema/RLS/grants change.
