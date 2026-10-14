@@ -506,7 +506,7 @@ export async function createSaasBillingCheckout(input: {
   const now = input.now || new Date();
   const plan = getSaasPlan(input.plan);
 
-  return transaction(async (client) => {
+  const reserved = await transaction(async (client) => {
     // Serialize same-merchant checkout creation before reading the idempotency
     // key; a missing row cannot be protected by SELECT ... FOR UPDATE alone.
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))", [
@@ -636,43 +636,14 @@ export async function createSaasBillingCheckout(input: {
       if (!providerRequestId) {
         fail("SAAS_BILLING_PROVIDER_STATE_INVALID", "SuperQi sandbox request ID is missing", 503);
       }
-      const payment = await createSuperQiSandboxPayment(
-        {
-          requestId: providerRequestId,
+      return {
+        providerReservation: {
           orderId,
+          providerRequestId,
           amountIqd: plan.monthly_price_iqd,
         },
-        input.providerFetch,
-      );
-      const attached = await client.query(
-        `UPDATE saas_billing_orders
-            SET provider_checkout_ref = $2,
-                metadata = metadata || $3::jsonb,
-                updated_at = $4
-          WHERE id = $1 AND provider = 'superqi_sandbox'
-          RETURNING id`,
-        [
-          orderId,
-          payment.paymentId,
-          JSON.stringify({ provider_form_url: payment.formUrl }),
-          now,
-        ],
-      );
-      if (attached.rows.length !== 1) {
-        fail("SAAS_BILLING_PROVIDER_REFERENCE_FAILED", "SuperQi sandbox reference was not attached", 503);
-      }
-      const order = await loadOrder(client, orderId, true);
-      if (!order) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
-      return {
-        order,
-        duplicate: false,
-        checkout: {
-          provider: "superqi_sandbox" as const,
-          checkout_reference: payment.paymentId,
-          redirect_url: payment.formUrl,
-          test_only: true as const,
-        },
       };
+
     }
 
     const order = await loadOrder(client, orderId, true);
@@ -687,6 +658,50 @@ export async function createSaasBillingCheckout(input: {
       },
     };
   });
+  if ("providerReservation" in reserved) {
+    const reservation = reserved.providerReservation;
+    const payment = await createSuperQiSandboxPayment(
+      {
+        requestId: reservation.providerRequestId,
+        orderId: reservation.orderId,
+        amountIqd: reservation.amountIqd,
+      },
+      input.providerFetch,
+    );
+    return transaction(async (client) => {
+      const attached = await client.query(
+        `UPDATE saas_billing_orders
+            SET provider_checkout_ref = $2,
+                metadata = metadata || $3::jsonb,
+                updated_at = $4
+          WHERE id = $1 AND provider = 'superqi_sandbox'
+            AND status = 'pending' AND provider_checkout_ref IS NULL
+          RETURNING id`,
+        [
+          reservation.orderId,
+          payment.paymentId,
+          JSON.stringify({ provider_form_url: payment.formUrl }),
+          now,
+        ],
+      );
+      if (attached.rows.length !== 1) {
+        fail("SAAS_BILLING_PROVIDER_REFERENCE_FAILED", "SuperQi sandbox reference was not attached", 503);
+      }
+      const order = await loadOrder(client, reservation.orderId, true);
+      if (!order) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
+      return {
+        order,
+        duplicate: false,
+        checkout: {
+          provider: "superqi_sandbox" as const,
+          checkout_reference: payment.paymentId,
+          redirect_url: payment.formUrl,
+          test_only: true as const,
+        },
+      };
+    });
+  }
+  return reserved;
 }
 
 export async function listMerchantSaasBillingOrders(
