@@ -24,6 +24,32 @@ const cashier = await import('../src/services/cashierBillingAuthority.ts');
 const { handleSuperQiSandboxWebhook } = await import('../src/services/superQiSandboxWebhook.ts');
 const { superQiWebhookSigningPayload } = await import('../src/services/superQiSandboxTransport.ts');
 
+test('verified orphan SuperQi payment is retryable, not acknowledged as ignored', async () => {
+  const requestId = randomUUID();
+  const paymentId = `synthetic-orphan-${randomUUID()}`;
+  const payload = {
+    requestId, paymentId, status: 'SUCCESS', canceled: false,
+    amount: 3900, confirmedAmount: 3900, currency: 'IQD',
+    creationDate: '2026-08-11T13:30:00',
+  };
+  const signer = createSign('RSA-SHA256');
+  signer.update(superQiWebhookSigningPayload(payload), 'utf8');
+  signer.end();
+  const signature = signer.sign(privateKey).toString('base64');
+  let statusCalls = 0;
+  const providerFetch = async (url, init) => {
+    assert.equal(init.method, 'GET');
+    assert.equal(url, `https://uat-sandbox-3ds-api.qi.iq/api/v1/payment/${paymentId}/status`);
+    statusCalls++;
+    return { ok: true, status: 200, async json() { return payload; } };
+  };
+  await assert.rejects(
+    () => handleSuperQiSandboxWebhook({ payload, signature, fetchImpl: providerFetch }),
+    error => error.code === 'SUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND' && error.status === 503,
+  );
+  assert.equal(statusCalls, 1);
+});
+
 test('checkout retry preserves provider identity after external creation and SQL attachment failure', async t => {
   const ids = [], faults = [];
   t.after(async () => cleanupResources([
