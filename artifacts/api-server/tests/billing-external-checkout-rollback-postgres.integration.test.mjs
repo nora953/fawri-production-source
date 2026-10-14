@@ -50,6 +50,46 @@ test('verified orphan SuperQi payment is retryable, not acknowledged as ignored'
   assert.equal(statusCalls, 1);
 });
 
+test('unresolved SuperQi reservations remain pending after checkout expiry in SaaS and cashier', async () => {
+  const merchantId = `unresolved-reservation-${randomUUID()}`;
+  await pool.query(
+    "INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",
+    [merchantId, `+1994${String(randomInt(0, 100000000)).padStart(8, '0')}`],
+  );
+  try {
+    await pool.query(
+      "INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",
+      [merchantId],
+    );
+    for (const [kind, table, list] of [
+      ['saas', 'saas_billing_orders', saas.listMerchantSaasBillingOrders],
+      ['cashier', 'cashier_billing_orders', cashier.listMerchantCashierBillingOrders],
+    ]) {
+      const orderId = `unresolved-${kind}-${randomUUID()}`;
+      const expires = new Date('2025-01-01T00:00:00Z');
+      if (kind === 'saas') {
+        await pool.query(
+          `INSERT INTO saas_billing_orders (id,merchant_id,operation,requested_plan,amount_iqd,currency,catalog_version,provider,status,idempotency_key,provider_checkout_ref,request_expires_at,metadata,created_at,updated_at)
+           VALUES ($1,$2,'activate','silver',3900,'IQD',1,'superqi_sandbox','pending',$3,NULL,$4,$5::jsonb,NOW(),NOW())`,
+          [orderId, merchantId, randomUUID(), expires, JSON.stringify({ provider_request_id: randomUUID() })],
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO cashier_billing_orders (id,merchant_id,operation,current_seats,requested_seats,resulting_seats,unit_price_iqd,amount_iqd,currency,billing_period_start,billing_period_end,grace_duration_seconds,status,idempotency_key,provider,provider_checkout_ref,request_expires_at,metadata,created_at,updated_at)
+           VALUES ($1,$2,'activate',0,1,1,3900,3900,'IQD',NOW(),NOW()+INTERVAL '1 month',604800,'pending',$3,'superqi_sandbox',NULL,$4,$5::jsonb,NOW(),NOW())`,
+          [orderId, merchantId, randomUUID(), expires, JSON.stringify({ provider_request_id: randomUUID() })],
+        );
+      }
+      await list(merchantId);
+      const result = await pool.query(`SELECT status FROM ${table} WHERE id=$1`, [orderId]);
+      assert.equal(result.rows[0]?.status, 'pending', `${kind}: unresolved provider request must not silently expire`);
+      await pool.query(`DELETE FROM ${table} WHERE id=$1`, [orderId]);
+    }
+  } finally {
+    await pool.query('DELETE FROM accounts WHERE id=$1', [merchantId]);
+  }
+});
+
 test('checkout retry preserves provider identity after external creation and SQL attachment failure', async t => {
   const ids = [], faults = [];
   t.after(async () => cleanupResources([
