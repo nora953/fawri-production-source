@@ -5,6 +5,7 @@ on:
       - '.github/workflows/audit-emergency-postgres.yml'
       - 'artifacts/api-server/tests/emergency-read-access-postgres.integration.test.ts'
       - 'scripts/execute-disposable-postgres-audit.mjs'
+      - 'scripts/run-isolated-postgres-audit.sh'
   workflow_dispatch:
 permissions:
   contents: read
