@@ -40,3 +40,11 @@ test('invalid framing and unsupported boundaries fail closed',() => {
   const invalid=Buffer.alloc(5); invalid[0]=67; invalid.writeUInt32BE(3,1);
   assert.throws(() => commitResponseFilter(1)(invalid));
 });
+
+test('deferred operator fault forwards authentication commits and arms at a complete payment frame boundary',()=>{
+  let armed=false;const filter=commitResponseFilter(2,()=>armed);
+  const auth=Buffer.concat([commit,ready,commit,ready]);assert.deepEqual(filter(auth).forward,auth);
+  armed=true;
+  assert.deepEqual(filter(Buffer.concat([commit,ready])).forward,Buffer.concat([commit,ready]));
+  const dropped=filter(Buffer.concat([commit,ready]));assert.equal(dropped.newDrop,true);assert.equal(dropped.forward.length,0);
+});

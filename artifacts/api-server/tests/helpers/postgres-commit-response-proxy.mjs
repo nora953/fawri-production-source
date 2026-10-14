@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 // Backend protocol frames can be split or coalesced by TCP. Never search raw
 // chunks: only a complete CommandComplete with the exact COMMIT tag counts.
-export function commitResponseFilter(boundary) {
+export function commitResponseFilter(boundary, shouldCount = () => true) {
+  assert.equal(typeof shouldCount,'function');
   assert.ok([1,2].includes(boundary));
   let buffer = Buffer.alloc(0), commits = 0, dropped = false;
   return chunk => {
@@ -16,7 +17,7 @@ export function commitResponseFilter(boundary) {
       if (buffer.length < length + 1) break;
       const frame = buffer.subarray(0,length+1);
       buffer = buffer.subarray(length+1);
-      if (frame[0] === 67 && frame.subarray(5).equals(Buffer.from('COMMIT\0'))) {
+      if (frame[0] === 67 && frame.subarray(5).equals(Buffer.from('COMMIT\0')) && shouldCount()) {
         commits++;
         if (commits === boundary) {
           dropped = true;
@@ -32,12 +33,14 @@ export function commitResponseFilter(boundary) {
 
 // Caller has already attested the owned network-none PostgreSQL namespace.
 // Destination is deliberately fixed; no host, credential or URL is logged.
-export async function startOwnedCommitResponseProxy(boundary, onDrop) {
+export async function startOwnedCommitResponseProxy(boundary, onDrop, {deferUntilArmed = false} = {}) {
+  assert.equal(typeof deferUntilArmed,'boolean');
+  let armed = !deferUntilArmed;
   const sockets = new Set();
   let notice = Promise.resolve();
   const server = net.createServer(downstream => {
     const upstream = net.createConnection({host:'127.0.0.1',port:5432});
-    const filter = commitResponseFilter(boundary);
+    const filter = commitResponseFilter(boundary, () => armed);
     sockets.add(downstream); sockets.add(upstream);
     const destroy = () => { downstream.destroy(); upstream.destroy(); };
     for (const socket of [downstream,upstream]) {
@@ -66,6 +69,7 @@ export async function startOwnedCommitResponseProxy(boundary, onDrop) {
   });
   return {
     port:server.address().port,
+    arm() { armed = true; },
     async close() {
       for (const socket of sockets) socket.destroy();
       await new Promise((resolve,reject) => server.close(error => error ? reject(error) : resolve()));
