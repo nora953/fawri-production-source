@@ -581,7 +581,9 @@ export async function createCashierBillingCheckout(input: {
     const pending = await operationalQueryRows<{ id: string }>(
       client,
       `SELECT id FROM cashier_billing_orders
-        WHERE merchant_id = $1 AND status = 'pending'
+        WHERE merchant_id = $1 AND (status = 'pending' OR (status = 'paid_reconciliation_required'
+          AND EXISTS (SELECT 1 FROM cashier_billing_events e
+            WHERE e.order_id = cashier_billing_orders.id AND e.status = 'received')))
         LIMIT 1 FOR UPDATE`,
       [merchantId],
     );
@@ -1053,9 +1055,12 @@ export async function applyVerifiedCashierBillingProviderEvent(
   const merchantId = discovery[0].merchant_id;
 
   let sqlFailure: unknown;
-  const outcome = await withMerchantOperationalTransaction(
-    merchantId,
-    async (client) => {
+  const processEvent = async (
+    client: OperationalQueryTarget,
+    receiptOnly: boolean,
+  ): Promise<Awaited<ReturnType<typeof applyVerifiedCashierBillingProviderEvent>>> => {
+      // Checkout locks the merchant before subscription/order rows; use that order.
+      await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
       await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `${input.provider}:${eventId}`,
       ]);
@@ -1129,6 +1134,7 @@ export async function applyVerifiedCashierBillingProviderEvent(
         retryReceived &&
         (order.status !== "paid_reconciliation_required" ||
           order.metadata.reconciliation_event_id !== eventId ||
+          input.amountIqd !== order.amount_iqd ||
           order.provider_payment_ref !== paymentRef)
       ) {
         fail(
@@ -1328,6 +1334,21 @@ export async function applyVerifiedCashierBillingProviderEvent(
       }
 
       await eventRecord("received", null);
+      if (receiptOnly) {
+        if (!retryReceived) {
+          await client.query(
+            `UPDATE cashier_billing_orders
+               SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
+                   paid_at = $3, updated_at = $3, metadata = metadata || $4::jsonb
+             WHERE id = $1 AND merchant_id = $5`,
+            [order.id, paymentRef, input.occurredAt, JSON.stringify({ reconciliation_code: "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION", reconciliation_event_id: eventId }), merchantId],
+          );
+        }
+        const received = await loadOrder(client, order.id, true);
+        if (!received) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "billing order not found", 503);
+        return { status: "reconciliation_required" as const, order: received,
+          reasonCode: "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION" };
+      }
       await client.query("SAVEPOINT billing_entitlement");
       try {
         const applied = await applyPaidOrder(
@@ -1409,8 +1430,12 @@ export async function applyVerifiedCashierBillingProviderEvent(
           reasonCode,
         };
       }
-    },
-  );
+  };
+  // Admission and application retain the same merchant-scoped transaction API.
+  const admitted = await withMerchantOperationalTransaction(merchantId, (client) => processEvent(client, true));
+  if (admitted.status !== "reconciliation_required" ||
+      admitted.reasonCode !== "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;
+  const outcome = await withMerchantOperationalTransaction(merchantId, (client) => processEvent(client, false));
   // Throw only after COMMIT: the provider retries while durable receipt survives.
   if (sqlFailure) throw sqlFailure;
   return outcome;

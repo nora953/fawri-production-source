@@ -19,6 +19,17 @@ const compensation = await import(
   "../src/services/postgresCashierCompensationSyncAuthority.js"
 );
 
+// PostgreSQL provisions credentials with microsecond timestamps. Round upward
+// on the same clock so a millisecond JS event cannot precede its credential.
+async function fixtureOperationTime(offsetMs = 0): Promise<string> {
+  const result = await pool.query(
+    "SELECT ceil(extract(epoch FROM clock_timestamp()) * 1000)::float8 AS now_ms",
+  );
+  const millis = Number(result.rows[0].now_ms);
+  assert.ok(Number.isSafeInteger(millis));
+  return new Date(millis + offsetMs).toISOString();
+}
+
 async function createMerchant(suffix: string) {
   const phone = `+96477${crypto.randomInt(0, 100_000_000)
     .toString()
@@ -194,7 +205,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   const saleId = `sale-${suffix}`;
   const saleLineId = `sale-line-${suffix}`;
   const saleMovementId = `sale-move-${suffix}`;
-  const soldAt = new Date().toISOString();
+  const soldAt = await fixtureOperationTime();
   const saleSnapshot = {
     sale_id: saleId,
     operation_id: saleOperationId,
@@ -337,7 +348,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   const returnOperationId = `return-op-${suffix}`;
   const returnId = `return-${suffix}`;
   const returnMovementId = `return-move-${suffix}`;
-  const returnedAt = new Date(Date.now() + 1_000).toISOString();
+  const returnedAt = await fixtureOperationTime(1_000);
   const returnSnapshot = {
     refund_pricing_version: 2,
     return_id: returnId,
@@ -536,7 +547,7 @@ test("cashier full void restores stock to the original sale location even after 
   const saleId = `void-sale-${suffix}`;
   const saleLineId = `void-sale-line-${suffix}`;
   const saleMovementId = `void-sale-move-${suffix}`;
-  const soldAt = new Date().toISOString();
+  const soldAt = await fixtureOperationTime();
   const saleSnapshot = {
     sale_id: saleId,
     operation_id: saleOperationId,
@@ -638,7 +649,7 @@ test("cashier full void restores stock to the original sale location even after 
 
   const voidOperationId = `void-op-${suffix}`;
   const voidMovementId = `void-move-${suffix}`;
-  const voidedAt = new Date(Date.now() + 1_000).toISOString();
+  const voidedAt = await fixtureOperationTime(1_000);
   const voidBody = {
     cloud_merchant_id: merchantId,
     local_merchant_id: localMerchantId,

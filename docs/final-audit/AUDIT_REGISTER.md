@@ -1,3 +1,31 @@
+## Verified actual PostgreSQL wire response loss — 2026-10-14
+
+DraftPR538 tested source **abe851db0bf40ecf2dcf294dc73f5a32c6c78a44**: isolated38550530635/job115807106721 **189PASS/0FAIL/0SKIP**,42unique files/44invocations; receipt recovery15PASS including four actual TCP dropped-COMMIT-response cases. All **26/26 observed workflow runs SUCCESS**. Admin corrected lane38550531165/job11580754187941PASS includes original admin proof1PASS; overlaps tenant batch, adds no unique credit. Framing4PASS separate from SQL total.
+
+Product correction: lib/db/src/index.ts drains active-client and idle-pool connection error events, preserves failed query/transaction rejection, and reports only bounded SQLSTATE. Wire proxy observes actual server COMMIT CommandComplete, withholds it/ReadyForQuery and closes TCP; authority returns controlled failure, independent parent sees committed state and fresh concurrent next-day processes apply exactly once or both duplicate, preserving original paid_at. All original billing/process/backend/known-COMMIT-rejection and cashier-history assertions retained. Legacy global-admin service/push-force lane replaced with reusable attested network-none runner, guard preserved.
+
+Preserved failures: c4acd6cb isolated38549209533/job115802750100184PASS/5FAIL (four wire cases plus parent);38c41f26 broad25/26PASS, global-admin38549878445/job115804963066 rejected missing attestation before DB import. Corrected source above proves the fixes; prior attempts are not relabeled green. [Report](P0_WIRE_COMMIT_ACCEPTANCE_20261014.md), [machine evidence](evidence/P0_WIRE_COMMIT_RESULTS_20261014.json).
+
+Wire acknowledgment boundary now covered under523; issue staysOPEN for unmatched verified-payment durable inbox/operator reconciliation.535 staysOPEN for full downstream signed restricted-role Meta and hosted grant review. No UI baseline credit, whole-audit percentage or release-ready claim. No merge/deploy/hosted mutation/real provider/payment. This documentation checkpoint leaves tested application/test/workflow source unchanged.
+
+---
+
+## Verified COMMIT caller-outcome checkpoint — 2026-10-14
+
+Draft PR538 tested source **d418feaf63288411b0b135a6d0c50ad3bdb9caf7**. Owned offline PostgreSQL run38525448026/job115724620052: **185PASS/0FAIL/0SKIP**,42unique files/44invocations. Receipt suite11PASS includes four new driver08006 outcomes after successful actual receipt/entitlement COMMIT, fresh concurrent next-day processes, one entitlement and original paid_at. **13/13 observed workflows SUCCESS**. Cashier history fixture2PASS with database-clock rounding, original location/stock/catalog/idempotency checks intact. Prior documentation-head30020abf lifecycle failure38524878617/job115722776644 is preserved; never claim that head was wholly green.
+
+Proof is injected driver outcome after actual server COMMIT, not a proxy dropping wire acknowledgment frames. Issue523 remainsOPEN for true transport proof and unmatched verified payment inbox;535 remainsOPEN for full downstream restricted-role Meta/grant acceptance. No production source change in this acceptance revision, no merge/deploy/hosted writes/real provider actions; no UI baseline credit or release-ready claim. [Report](P0_COMMIT_ACK_ACCEPTANCE_20261014.md), [machine evidence](evidence/P0_COMMIT_ACK_RESULTS_20261014.json).
+
+---
+
+## Verified durable payment receipt checkpoint — 2026-10-14
+
+Draft PR538, tested source **7302359705a509cc25cefbc3f6e14849b0f68508**: isolated run38524397545/job115721219577 **181PASS/0FAIL/0SKIP**,42unique files/44invocations; **12/12 observed workflows SUCCESS**. New receipt recovery suite7PASS covers four process/backend interruptions, two known admission-COMMIT failures, fresh concurrent next-day retries, original payment time, unresolved-receipt checkout barriers and one entitlement. Admission commits before application; merchant-first locks align checkout. Prior8ad83ea typecheck/barrier failures remain recorded, corrected without weakening lifecycle assertions.
+
+Evidence: [receipt report](P0_DURABLE_RECEIPT_ADMISSION_20261014.md), [machine results](evidence/P0_DURABLE_RECEIPT_RESULTS_20261014.json). Owned offline PostgreSQL/fake providers only; this does not change the UI audit baseline or imply release readiness. No merge/deploy/hosted database/grants/real payment actions. Issues523/535 stay OPEN for unmatched orphan inbox, ambiguous successful COMMIT acknowledgment loss and full downstream restricted-role Meta/grant acceptance.
+
+---
+
 
 ## Authoritative continuation — SEQ-366–371 (2026-10-14 Baghdad)
 
