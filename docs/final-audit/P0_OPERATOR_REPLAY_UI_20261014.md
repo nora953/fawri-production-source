@@ -1,3 +1,9 @@
+# Accepted bounded operator review and replay UI — 2026-10-14
+
+DraftPR545 tested4e95b72e27fa60ba2a59da2c8569854c196eccee. Browser38629698500/job116077862920, mergec62a528ea2a000e671693d6f67b9290d3d2b3e97:36PASS/0FAIL (11new+25existing). 7/7 observed workflows SUCCESS for tested source. Local frontend typecheck/build and9clienttestsPASS, policyPASS. Actual mounted AdminPage/controller/rolecalculator/shell/view/i18n/productionCSS and synthetic GET/POST; no hookstub. Botflow3languages, financecashier intent/confirmation, keyboardconfirm/cancel-focus, no-writecancel, editinvalidate, conflicts/denial, uncertainsyntheticack/noautoretry/freshreviewduplicate, navigationlock/permissionunmount and failedreceipt exclusionPASS.
+
+Earlier35case proof overlaps and is not added to36. [Machine evidence](evidence/P0_OPERATOR_REPLAY_UI_RESULTS_20261014.json). Backend544 real HTTP/SQL grant proof separate; no new operatorTCP/process uncertainty or fullmainapp/mobile/accessibility/baseline certification. No backend/migration/hosted/provider/payment/merge/deploy change. Documentation checkpoint preserves testedsource; pre-existing unrelated capture modification excluded.523/535 remainOPEN as below.
+
 # Operator receipt review and execution UI — 2026-10-14
 
 Stacked on Draft544/dec8497f, whose documentation head26/26 observed workflowsSUCCESS. Receipt cards expose controls only for SuperQi payment_succeeded. Operator supplies an explicitly known existing authority/order ID; neither merchant nor amount is editable or inferred from suffixes. This unit adds no order discovery/mapping repair. All strings Arabic/English/Sorani.
