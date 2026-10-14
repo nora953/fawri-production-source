@@ -1,3 +1,4 @@
+import VerifiedReceiptReview from '@/components/admin/VerifiedReceiptReview';
 /**
  * AdminPage — Protected admin control panel (MVP).
  * PRODUCTION TODO: Replace localStorage session with secure server-side admin auth.
@@ -359,6 +360,8 @@ export function AdminPageView({ model }: { model: AdminPageViewModel }) {
             canInspectSessions={canInspectSessions}
             onActiveCountChange={setSupportActiveCount}
           />
+        ) : tab === "verified_receipts" ? (
+          canManageSubscriptions ? <VerifiedReceiptReview key={currentAdmin.id} /> : null
         ) : tab === "logs" ? (
           <LogsTab logs={logs} />
         ) : tab === "administrators" && canManageAdmins ? (

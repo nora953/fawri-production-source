@@ -51,6 +51,7 @@ const TAB_ICONS: Record<string, LucideIcon> = {
   administrators: UsersRound,
   deletion_requests: Trash2,
   logs: ScrollText,
+  verified_receipts: ScrollText,
 };
 
 export function AdminPageShell({ model }: AdminPageShellProps) {
