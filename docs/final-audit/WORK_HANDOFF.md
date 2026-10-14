@@ -1,3 +1,9 @@
+## Inbox SQL acceptance / restore correction pending
+
+Source70375a57 inbox6PASS actual PostgreSQL. Isolated38552702941/job115814249369 restore verify failed only new table ACL storage form (explicit default owner vs NULL default after dump). Keep PUBLIC revocation/RLS/function bounds; normalize effective default ACL and strengthen function ACL comparison, test changed grant detection. Corrected runtime pendingCI. Report P0_VERIFIED_RECEIPT_INBOX_20261014.md.
+
+---
+
 ## Active verified receipt inbox — 2026-10-14
 
 Branch fix/p0-verified-provider-receipt-inbox-20261014 stacked on538/441d1016. Add migration0029 canonical snapshot/stage, bounded non-PUBLIC receipt admission and signed/gateway-confirmed persist-before-order webhook integration. No tenant guess or grant from inbox alone; first time/idempotency preserved. New SQL suite pending CI; local typecheck/build/transport/syntax/canonical30PASS. See P0_VERIFIED_RECEIPT_INBOX_20261014.md. Next inspect actual receipts/security/recovery evidence, then operator authorization/retention/grant rollout523 and restricted downstreamMeta535.
