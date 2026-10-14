@@ -66,7 +66,7 @@ async function findBillingOrder(input: {
   requestId: string;
 }): Promise<BillingOrderMatch | null> {
   const saasResult = await pool.query(
-    `SELECT id, amount_iqd
+    `SELECT id, amount_iqd, provider_checkout_ref, metadata->>'provider_request_id' AS provider_request_id
        FROM saas_billing_orders
       WHERE provider = $1
         AND (
@@ -99,6 +99,11 @@ async function findBillingOrder(input: {
     );
   }
   if (saasResult.rows[0]) {
+    const candidate = saasResult.rows[0];
+    if (candidate.provider_request_id !== input.requestId ||
+        (candidate.provider_checkout_ref !== null && candidate.provider_checkout_ref !== input.paymentId)) {
+      throw new SuperQiSandboxProviderError("SUPERQI_SANDBOX_ORDER_IDENTITY_MISMATCH", "confirmed provider identity conflicts with billing order", 409);
+    }
     return {
       authority: "bot_subscription",
       id: required(saasResult.rows[0].id, 180),
@@ -118,6 +123,7 @@ async function findBillingOrder(input: {
 async function attachProviderPaymentReference(
   order: BillingOrderMatch,
   paymentId: string,
+  requestId: string,
 ): Promise<void> {
   const table =
     order.authority === "cashier_subscription"
@@ -147,8 +153,10 @@ async function attachProviderPaymentReference(
       WHERE id = $1
         AND provider = $3
         AND (provider_checkout_ref IS NULL OR provider_checkout_ref = $2)
+        AND metadata->>'provider_request_id' = $4
+        AND amount_iqd = $5
       RETURNING id`,
-    [order.id, paymentId, SUPERQI_SANDBOX_PROVIDER],
+    [order.id, paymentId, SUPERQI_SANDBOX_PROVIDER, requestId, order.amount_iqd],
   );
   if (updated.rows.length !== 1) {
     throw new SuperQiSandboxProviderError(
@@ -284,7 +292,10 @@ export async function handleSuperQiSandboxWebhook(input: {
       503,
     );
   }
-  await attachProviderPaymentReference(order, confirmed.paymentId);
+  if (order.amount_iqd !== settledAmount) {
+    throw new SuperQiSandboxProviderError("SUPERQI_SANDBOX_ORDER_AMOUNT_MISMATCH", "confirmed amount conflicts with billing order", 409);
+  }
+  await attachProviderPaymentReference(order, confirmed.paymentId, confirmed.requestId);
 
   const commonEvent = {
     provider: SUPERQI_SANDBOX_PROVIDER,

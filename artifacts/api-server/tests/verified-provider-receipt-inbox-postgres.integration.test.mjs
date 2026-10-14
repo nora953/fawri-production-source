@@ -73,6 +73,54 @@ test('confirmed provider inbox preserves unmatched payment evidence without gues
     assert.equal((await receipts(p.paymentId)).length,1);
   });
 
+  for(const kind of ['saas','cashier'])for(const conflict of ['request_mismatch','payment_mismatch','request_missing','amount_mismatch'])await t.test(`${kind}: ${conflict} keeps receipt but cannot attach or grant; reviewed mapping replay applies once`,async()=>{
+    const merchantId=`binding-merchant-${randomUUID()}`;merchantIds.push(merchantId);
+    await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[merchantId,`+1994${String(randomInt(0,100000000)).padStart(8,'0')}`]);
+    await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",[merchantId]);
+    const checkout=kind==='saas'
+      ?await saas.createSaasBillingCheckout({merchantId,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'})
+      :await cashier.createCashierBillingCheckout({merchantId,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'});
+    const p=payload(checkout.order.amount_iqd+(conflict==='amount_mismatch'?1:0));
+    const orders=kind==='saas'?'saas_billing_orders':'cashier_billing_orders';
+    const apps=kind==='saas'?'saas_entitlement_applications':'cashier_entitlement_applications';
+    const subscription=kind==='saas'?'subscriptions':'merchant_cashier_subscriptions';
+    const wrongPayment=`synthetic-other-${randomUUID()}`;
+    await pool.query(`UPDATE ${orders} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=(metadata-'provider_request_id')||$3::jsonb WHERE id=$1`,[checkout.order.id,conflict==='payment_mismatch'?wrongPayment:p.paymentId,JSON.stringify(conflict==='request_missing'?{}:{provider_request_id:conflict==='request_mismatch'?randomUUID():p.requestId})]);
+    const snapshot=async()=>(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0];
+    const before=await snapshot(),first=new Date(),later=new Date(first.getTime()+86400000);
+    const input={payload:p,signature:signatureOf(p),fetchImpl:fakeStatus(p)};
+    const code=conflict==='amount_mismatch'?'SUPERQI_SANDBOX_ORDER_AMOUNT_MISMATCH':kind==='saas'?'SUPERQI_SANDBOX_ORDER_IDENTITY_MISMATCH':'CASHIER_BILLING_ORDER_IDENTITY_MISMATCH';
+    await assert.rejects(()=>handle({...input,receivedAt:first}),error=>error.code===code&&error.status===409);
+    await assert.rejects(()=>handle({...input,receivedAt:later}),error=>error.code===code&&error.status===409);
+    assert.deepEqual(await snapshot(),before,'identity failure must not change order fields');
+    assert.equal((await receipts(p.paymentId)).length,1);
+    assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,0);
+    assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${subscription} WHERE merchant_id=$1`,[merchantId])).rows[0].n,0);
+    if(conflict!=='amount_mismatch'){
+      // Owned fixture restores original confirmed identities; no product manual mapping API.
+      await pool.query(`UPDATE ${orders} SET provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[checkout.order.id,p.paymentId,JSON.stringify({provider_request_id:p.requestId})]);
+      const results=await Promise.all([handle({...input,receivedAt:later}),handle({...input,receivedAt:later})]);
+      assert.deepEqual(results.map(result=>result.outcome.status).sort(),['applied','duplicate']);
+      assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,1);
+      assert.equal(new Date((await snapshot()).paid_at).getTime(),first.getTime());
+    }
+    console.log('VERIFIED_ORDER_IDENTITY_BINDING_PROOF '+JSON.stringify({kind,conflict,receiptDurable:true,conflictOrderUnchanged:true,conflictEntitlementGrants:0,recovery:conflict==='amount_mismatch'?'blocked':'once_using_first_receipt'}));
+  });
+
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: matching request with unassigned payment reference remains recoverable`,async()=>{
+    const merchantId=`binding-null-${randomUUID()}`;merchantIds.push(merchantId);
+    await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[merchantId,`+1995${String(randomInt(0,100000000)).padStart(8,'0')}`]);
+    await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",[merchantId]);
+    const checkout=kind==='saas'
+      ?await saas.createSaasBillingCheckout({merchantId,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'})
+      :await cashier.createCashierBillingCheckout({merchantId,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'});
+    const p=payload(checkout.order.amount_iqd),orders=kind==='saas'?'saas_billing_orders':'cashier_billing_orders';
+    await pool.query(`UPDATE ${orders} SET provider='superqi_sandbox',provider_checkout_ref=NULL,metadata=metadata||$2::jsonb WHERE id=$1`,[checkout.order.id,JSON.stringify({provider_request_id:p.requestId})]);
+    const result=await handle({payload:p,signature:signatureOf(p),fetchImpl:fakeStatus(p)});
+    assert.equal(result.outcome.status,'applied');
+    assert.equal((await pool.query(`SELECT provider_checkout_ref FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0].provider_checkout_ref,p.paymentId);
+  });
+
   for(const kind of ['saas','cashier'])await t.test(`${kind}: orphan commit survives concurrent redelivery and restored order applies once using first receipt time`,async()=>{
     const merchantId=`inbox-merchant-${randomUUID()}`;merchantIds.push(merchantId);
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[merchantId,`+1993${String(randomInt(0,100000000)).padStart(8,'0')}`]);
