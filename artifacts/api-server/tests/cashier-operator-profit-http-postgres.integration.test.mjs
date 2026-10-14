@@ -144,6 +144,13 @@ test('isolated operator report profit permission boundary', async t => {
     assert.ok(products.every(product=>product.gross_profit_minor===undefined),
       'HTTP response exposes product gross profit without reports.profit');
   });
+  await t.test('no reports.profit permission redacts nested cost-coverage metadata',async()=>{
+    const products=ordinary.body.report.by_currency[0].top_products;
+    assert.ok(products.length>0,'fixture must contain a product');
+    assert.ok(products.every(product=>product.profit_status==='unavailable' &&
+      product.cost_known_affected_units===0 && product.cost_unknown_affected_units===0),
+      'HTTP response exposes product cost-coverage metadata without reports.profit');
+  });
   await t.test('no reports.profit permission does not expose a profitable-product ranking',async()=>{
     assert.equal(ordinary.body.report.by_currency[0].top_profitable_products.length,0,
       'HTTP response exposes ranking by hidden profit without reports.profit');
