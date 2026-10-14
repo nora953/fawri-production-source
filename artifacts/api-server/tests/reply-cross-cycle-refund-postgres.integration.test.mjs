@@ -31,6 +31,8 @@ test('late old-cycle refund cannot erase a new-cycle reply debit', async t => {
   assert.equal(before.base_replies_used, 1);
   assert.equal(before.base_replies_remaining, 3999);
   const refund = await refundMerchantAutoReplyAuthoritative(oldEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:03:00Z'));
+  assert.equal(refund.refunded, false, 'old-cycle base debit must not refund into renewed cycle');
+  assert.equal(refund.reason, 'refund_cycle_mismatch');
   const after = await authority.getCurrentSubscriptionPostgres(merchantId, new Date('2026-09-12T00:04:00Z'));
   console.log('REPLY_CROSS_CYCLE_RESULT ' + JSON.stringify({ refund, beforeUsed: before.base_replies_used, afterUsed: after.base_replies_used, beforeRemaining: before.base_replies_remaining, afterRemaining: after.base_replies_remaining }));
   // New-cycle usage must stay attributable to the new event. Historical refund
