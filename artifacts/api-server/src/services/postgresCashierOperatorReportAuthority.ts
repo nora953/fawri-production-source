@@ -66,6 +66,14 @@ function redactProfit(report: CashierCentralReport): CashierCentralReport {
         gross_profit_minor: undefined,
         cost_known_net_units: 0,
         cost_unknown_net_units: 0,
+        top_products: currency.top_products.map((product) => ({
+          ...product,
+          profit_status: "unavailable",
+          gross_profit_minor: undefined,
+          cost_known_affected_units: 0,
+          cost_unknown_affected_units: 0,
+        })),
+        top_profitable_products: [],
       }),
     ),
   };
