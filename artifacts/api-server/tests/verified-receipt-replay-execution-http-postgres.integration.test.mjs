@@ -144,7 +144,7 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
   });
   for(const f of fixtures.filter(f=>f.scenario==='normal'))await t.test(`${f.kind}: concurrent real HTTP replay applies once and duplicate retains exact original receipt timestamp`,async()=>{
     const before=(await audits()).length;const results=await Promise.all([request(owner,f),request(finance,f)]);
-    assert.ok(results.every(result=>result.response.status===200));assert.deepEqual(results.map(result=>result.body.status).sort(),['applied','duplicate']);
+    assert.ok(results.every(result=>result.response.status===200),JSON.stringify(results.map(result=>({status:result.response.status,code:result.body.code}))));assert.deepEqual(results.map(result=>result.body.status).sort(),['applied','duplicate']);
     for(const result of results){assert.deepEqual(Object.keys(result.body).sort(),['authority','ok','order_id','receipt_event_id','status']);const output=JSON.stringify(result.body);for(const ref of references)assert.equal(output.includes(ref),false);}
     assert.equal((await applications(f)).length,1);assert.equal((await eventState(f)).length,1);
     assert.equal(await exactTime(f),'2026-10-14T12:00:00.123456Z');
@@ -158,7 +158,7 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
     assert.deepEqual(await eventState(f),[{status:'received'}]);assert.equal((await applications(f)).length,0);
     assert.equal((await admin.query(`SELECT status FROM ${f.table} WHERE id=$1`,[f.order.id])).rows[0].status,'paid_reconciliation_required');
     await admin.query(`DROP TRIGGER ${name} ON ${table}`);
-    const results=await Promise.all([request(owner,f),request(finance,f)]);assert.ok(results.every(result=>result.response.status===200));assert.deepEqual(results.map(result=>result.body.status).sort(),['applied','duplicate']);
+    const results=await Promise.all([request(owner,f),request(finance,f)]);assert.ok(results.every(result=>result.response.status===200),JSON.stringify(results.map(result=>({status:result.response.status,code:result.body.code}))));assert.deepEqual(results.map(result=>result.body.status).sort(),['applied','duplicate']);
     assert.equal((await applications(f)).length,1);assert.equal(await exactTime(f),'2026-10-14T12:00:00.123456Z');
   });
   await t.test('current permission SHARE lock serializes revocation behind the entitlement commit',async()=>{

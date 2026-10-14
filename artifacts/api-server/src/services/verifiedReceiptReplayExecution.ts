@@ -22,6 +22,8 @@ export async function executeVerifiedReceiptReplay(actor:{id:string;sessionId:st
         if(error.code==='42501'&&error.message==='verified receipt operator not authorized')throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_PERMISSION_REQUIRED',403);
         if(error.code==='23514'&&error.message==='verified receipt replay conflict')throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_CONFLICT',409);
       }
+      const sqlstate=error&&typeof error==='object'&&'code' in error&&typeof error.code==='string'&&/^[A-Z0-9]{5}$/.test(error.code)?error.code:'unknown';
+      console.warn('RECEIPT_REPLAY_AUTHORIZATION_SQL_FAILURE '+JSON.stringify({phase:client===database?'admission':'transaction',sqlstate}));
       throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_UNAVAILABLE',503);
     }
   };
@@ -35,7 +37,10 @@ export async function executeVerifiedReceiptReplay(actor:{id:string;sessionId:st
   const event={provider:'superqi_sandbox' as const,providerEventId:receipt.provider_event_id,orderId:receipt.order_id,eventType:'payment_succeeded' as const,
     signatureVerified:true as const,payloadHash:receipt.payload_hash,occurredAt:new Date(receipt.first_received_at),amountIqd:receipt.amount_iqd,currency:'IQD' as const,providerPaymentRef:receipt.payment_ref};
   // Original receipt admission and entitlement phases remain separate durable commits.
-  const outcome=intent.authority==='bot_subscription'?await applyVerifiedSaasBillingProviderEvent(event,scope):await applyVerifiedCashierBillingProviderEvent(event,scope);
+  let outcome;
+  try {outcome=intent.authority==='bot_subscription'?await applyVerifiedSaasBillingProviderEvent(event,scope):await applyVerifiedCashierBillingProviderEvent(event,scope);}
+  catch(error){const code=error&&typeof error==='object'&&'code' in error&&typeof error.code==='string'&&/^[A-Z0-9_]{1,80}$/.test(error.code)?error.code:'unknown';console.warn('RECEIPT_REPLAY_APPLICATION_FAILURE '+JSON.stringify({authority:intent.authority,code}));throw error;}
+
   if(!['applied','duplicate'].includes(outcome.status))throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_RECONCILIATION_REQUIRED',409);
   return {status:outcome.status,receipt_event_id:eventId,order_id:receipt.order_id,authority:intent.authority};
 }
