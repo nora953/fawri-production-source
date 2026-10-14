@@ -1,3 +1,4 @@
+import type {BillingReplayScope} from './billingReplayScope';
 import crypto from "node:crypto";
 import {
   createSuperQiSandboxPayment,
@@ -738,6 +739,7 @@ async function recordEvent(
   merchantId: string,
   status: "received" | "applied" | "rejected",
   appliedAt: Date | null,
+  receiptTimestamp?: string,
 ): Promise<void> {
   await client.query(
     `INSERT INTO saas_billing_events (
@@ -753,8 +755,8 @@ async function recordEvent(
       input.eventType,
       requiredText(input.payloadHash, 128),
       status,
-      input.occurredAt,
-      appliedAt,
+      receiptTimestamp ?? input.occurredAt,
+      appliedAt===null?null:(receiptTimestamp ?? appliedAt),
       new Date(),
     ],
   );
@@ -762,6 +764,7 @@ async function recordEvent(
 
 export async function applyVerifiedSaasBillingProviderEvent(
   input: VerifiedSaasBillingProviderEvent,
+  replay?: BillingReplayScope,
 ): Promise<SaasBillingApplicationOutcome> {
   const configuredProvider = getSaasBillingProviderState(input.provider);
   const providerEventAllowed =
@@ -799,18 +802,19 @@ export async function applyVerifiedSaasBillingProviderEvent(
   }
 
   const database = await pool();
-  const owner = await database.query(
-    `SELECT merchant_id FROM saas_billing_orders WHERE id = $1 LIMIT 2`, [orderId],
-  );
-  if (owner.rows.length !== 1) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
-  const merchantId = String(owner.rows[0].merchant_id);
+  const owner = replay ? null : await database.query(
+    `SELECT merchant_id FROM saas_billing_orders WHERE id = $1 LIMIT 2`, [orderId]);
+  if (!replay && owner?.rows.length !== 1) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
+  const merchantId = replay ? requiredText(replay.merchantId,180) : String(owner!.rows[0].merchant_id);
   let sqlFailure: unknown;
   const processEvent = async (client: DatabaseClient, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
+    if(replay) await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchantId]);
     // Match checkout and plan-cycle ordering before acquiring billing row locks.
     await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
       `${input.provider}:${eventId}`,
     ]);
+    if(replay) await replay.authorize(client);
     const duplicateEvent = await client.query(
       `SELECT order_id, status, payload_hash, event_type, occurred_at FROM saas_billing_events
         WHERE provider = $1 AND provider_event_id = $2 LIMIT 2`,
@@ -842,6 +846,9 @@ export async function applyVerifiedSaasBillingProviderEvent(
             "SaaS billing order not found",
             404,
           );
+        if(replay && (order.merchant_id!==merchantId || order.metadata.provider_request_id!==replay.requestId ||
+            order.provider_checkout_ref!==input.providerPaymentRef || order.amount_iqd!==input.amountIqd))
+          fail("SAAS_BILLING_REPLAY_IDENTITY_CONFLICT","receipt replay order identity changed",409);
         return { status: "duplicate" as const, order };
       }
     }
@@ -849,6 +856,9 @@ export async function applyVerifiedSaasBillingProviderEvent(
     const order = await loadOrder(client, orderId, true);
     if (!order)
       fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
+    if(replay && (order.merchant_id!==merchantId || order.metadata.provider_request_id!==replay.requestId ||
+            order.provider_checkout_ref!==input.providerPaymentRef || order.amount_iqd!==input.amountIqd))
+          fail("SAAS_BILLING_REPLAY_IDENTITY_CONFLICT","receipt replay order identity changed",409);
     const retryReceived = duplicateEvent.rows[0]?.status === "received";
     if (
       retryReceived &&
@@ -887,7 +897,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
           [input.provider, eventId, status, appliedAt],
         );
       } else {
-        await recordEvent(client, input, order.merchant_id, status, appliedAt);
+        await recordEvent(client, input, order.merchant_id, status, appliedAt, replay?.firstReceivedAt);
       }
     };
 
@@ -915,7 +925,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
                 cancelled_at = CASE WHEN $2 = 'cancelled' THEN $3 ELSE cancelled_at END,
                 updated_at = $3
           WHERE id = $1`,
-        [order.id, nextStatus, input.occurredAt],
+        [order.id, nextStatus, (replay?.firstReceivedAt ?? input.occurredAt)],
       );
       await eventRecord("applied", input.occurredAt);
       const updated = await loadOrder(client, order.id, true);
@@ -956,12 +966,12 @@ export async function applyVerifiedSaasBillingProviderEvent(
           requiredText(input.providerRefundRef, 300),
           input.amountIqd,
           requiredText(input.reasonCode || "provider_refund", 160),
-          input.occurredAt,
+          (replay?.firstReceivedAt ?? input.occurredAt),
         ],
       );
       await client.query(
         `UPDATE saas_billing_orders SET status = 'refunded', updated_at = $2 WHERE id = $1`,
-        [order.id, input.occurredAt],
+        [order.id, (replay?.firstReceivedAt ?? input.occurredAt)],
       );
       await eventRecord("applied", input.occurredAt);
       const updated = await loadOrder(client, order.id, true);
@@ -1016,7 +1026,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
         [
           order.id,
           paymentRef,
-          input.occurredAt,
+          (replay?.firstReceivedAt ?? input.occurredAt),
           JSON.stringify({
             reconciliation_code: "SAAS_BILLING_AMOUNT_MISMATCH",
             received_amount_iqd: input.amountIqd,
@@ -1082,7 +1092,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
             SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
                 paid_at = $3, updated_at = $3
           WHERE id = $1`,
-        [order.id, paymentRef, input.occurredAt],
+        [order.id, paymentRef, (replay?.firstReceivedAt ?? input.occurredAt)],
       );
       await eventRecord("rejected", null);
       const updated = await loadOrder(client, order.id, true);
@@ -1107,7 +1117,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
              SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
                  paid_at = $3, updated_at = $3, metadata = metadata || $4::jsonb
            WHERE id = $1`,
-          [order.id, paymentRef, input.occurredAt, JSON.stringify({ reconciliation_code: "SAAS_BILLING_RECEIPT_PENDING_APPLICATION", reconciliation_event_id: eventId })],
+          [order.id, paymentRef, (replay?.firstReceivedAt ?? input.occurredAt), JSON.stringify({ reconciliation_code: "SAAS_BILLING_RECEIPT_PENDING_APPLICATION", reconciliation_event_id: eventId })],
         );
       }
       const received = await loadOrder(client, order.id, true);
@@ -1115,6 +1125,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
       return { status: "reconciliation_required" as const, order: received,
         reasonCode: "SAAS_BILLING_RECEIPT_PENDING_APPLICATION" };
     }
+    if(replay) await replay.authorize(client);
     await client.query("SAVEPOINT billing_entitlement");
     try {
       const applied = await applySubscriptionPlanCycleInTransaction(client, {
@@ -1142,19 +1153,19 @@ export async function applyVerifiedSaasBillingProviderEvent(
           order.catalog_version,
           input.provider,
           paymentRef,
-          input.occurredAt,
+          (replay?.firstReceivedAt ?? input.occurredAt),
         ],
       );
       await client.query(
         `UPDATE saas_billing_orders
             SET status = 'paid', provider_payment_ref = $2, paid_at = $3, updated_at = $3
           WHERE id = $1`,
-        [order.id, paymentRef, input.occurredAt],
+        [order.id, paymentRef, (replay?.firstReceivedAt ?? input.occurredAt)],
       );
       await client.query(
         `UPDATE saas_billing_events SET status = 'applied', applied_at = $3
           WHERE provider = $1 AND provider_event_id = $2`,
-        [input.provider, eventId, input.occurredAt],
+        [input.provider, eventId, (replay?.firstReceivedAt ?? input.occurredAt)],
       );
       const updated = await loadOrder(client, order.id, true);
       if (!updated)
@@ -1186,7 +1197,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
         [
           order.id,
           paymentRef,
-          input.occurredAt,
+          (replay?.firstReceivedAt ?? input.occurredAt),
           JSON.stringify({
             reconciliation_code: reasonCode,
             reconciliation_event_id: domainFailure ? null : eventId,

@@ -1,3 +1,4 @@
+import type {BillingReplayScope} from './billingReplayScope';
 import crypto from "node:crypto";
 import {
   createSuperQiSandboxPayment,
@@ -747,6 +748,7 @@ async function applyPaidOrder(
   order: CashierBillingOrderRecord,
   paymentRef: string,
   occurredAt: Date,
+  receiptTimestamp?: string,
 ): Promise<{ subscriptionId: string; version: number }> {
   let subscription = await loadSubscription(target, order.merchant_id, true);
   const expectedVersion = Number(order.metadata.subscription_version ?? 0);
@@ -797,7 +799,7 @@ async function applyPaidOrder(
           new Date(order.billing_period_start),
           new Date(order.billing_period_end),
           graceSeconds,
-          occurredAt,
+          (receiptTimestamp ?? occurredAt),
         ],
       );
       resultingVersion = 1;
@@ -826,7 +828,7 @@ async function applyPaidOrder(
           new Date(order.billing_period_start),
           new Date(order.billing_period_end),
           graceSeconds,
-          occurredAt,
+          (receiptTimestamp ?? occurredAt),
           expectedVersion,
         ],
       );
@@ -887,7 +889,7 @@ async function applyPaidOrder(
                 updated_at = $4
           WHERE merchant_id = $1 AND id = $2 AND version = $5
           RETURNING version`,
-        [order.merchant_id, subscriptionId, order.resulting_seats, occurredAt, expectedVersion],
+        [order.merchant_id, subscriptionId, order.resulting_seats, (receiptTimestamp ?? occurredAt), expectedVersion],
       );
       if (rows.length !== 1) fail("CASHIER_SUBSCRIPTION_VERSION_CONFLICT", "cashier subscription changed concurrently", 409);
       resultingVersion = Number(rows[0].version);
@@ -938,7 +940,7 @@ async function applyPaidOrder(
           new Date(order.billing_period_start),
           new Date(order.billing_period_end),
           graceSeconds,
-          occurredAt,
+          (receiptTimestamp ?? occurredAt),
           expectedVersion,
         ],
       );
@@ -966,7 +968,7 @@ async function applyPaidOrder(
       order.amount_iqd,
       order.provider,
       paymentRef,
-      occurredAt,
+      (receiptTimestamp ?? occurredAt),
     ],
   );
   await target.query(
@@ -985,7 +987,7 @@ async function applyPaidOrder(
       previousVersion,
       resultingVersion,
       JSON.stringify({ billing_order_id: order.id }),
-      occurredAt,
+      (receiptTimestamp ?? occurredAt),
     ],
   );
   return { subscriptionId, version: resultingVersion };
@@ -993,6 +995,7 @@ async function applyPaidOrder(
 
 export async function applyVerifiedCashierBillingProviderEvent(
   input: VerifiedCashierBillingProviderEvent,
+  replay?: BillingReplayScope,
 ): Promise<{
   status:
     | "applied"
@@ -1040,20 +1043,10 @@ export async function applyVerifiedCashierBillingProviderEvent(
     : "";
 
   const pool = await operationalDatabasePool();
-  const discovery = await operationalQueryRows<{ merchant_id: string }>(
-    pool,
-    `SELECT merchant_id FROM cashier_billing_orders WHERE id = $1 LIMIT 2`,
-    [orderId],
-  );
-  if (discovery.length !== 1) {
-    fail(
-      "CASHIER_BILLING_ORDER_NOT_FOUND",
-      "cashier billing order not found",
-      404,
-    );
-  }
-  const merchantId = discovery[0].merchant_id;
-
+  const discovery = replay ? [] : await operationalQueryRows<{merchant_id:string}>(pool,
+    `SELECT merchant_id FROM cashier_billing_orders WHERE id = $1 LIMIT 2`,[orderId]);
+  if (!replay && discovery.length !== 1) fail("CASHIER_BILLING_ORDER_NOT_FOUND","cashier billing order not found",404);
+  const merchantId = replay ? requiredText(replay.merchantId,"merchant_id",200) : discovery[0].merchant_id;
   let sqlFailure: unknown;
   const processEvent = async (
     client: OperationalQueryTarget,
@@ -1064,6 +1057,7 @@ export async function applyVerifiedCashierBillingProviderEvent(
       await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `${input.provider}:${eventId}`,
       ]);
+      if(replay) await replay.authorize(client);
       const duplicate = await operationalQueryRows<{
         order_id: string;
         status: string;
@@ -1104,6 +1098,9 @@ export async function applyVerifiedCashierBillingProviderEvent(
               "cashier billing order not found",
               404,
             );
+          if(replay && (order.merchant_id!==merchantId || order.metadata.provider_request_id!==replay.requestId ||
+            order.provider_checkout_ref!==input.providerPaymentRef || order.amount_iqd!==input.amountIqd))
+          fail("CASHIER_BILLING_REPLAY_IDENTITY_CONFLICT","receipt replay order identity changed",409);
           const application = await operationalQueryRows<{
             subscription_id: string;
           }>(
@@ -1129,6 +1126,9 @@ export async function applyVerifiedCashierBillingProviderEvent(
           "cashier billing order not found",
           404,
         );
+      if(replay && (order.merchant_id!==merchantId || order.metadata.provider_request_id!==replay.requestId ||
+            order.provider_checkout_ref!==input.providerPaymentRef || order.amount_iqd!==input.amountIqd))
+          fail("CASHIER_BILLING_REPLAY_IDENTITY_CONFLICT","receipt replay order identity changed",409);
       const retryReceived = duplicate[0]?.status === "received";
       if (
         retryReceived &&
@@ -1185,8 +1185,8 @@ export async function applyVerifiedCashierBillingProviderEvent(
             input.eventType,
             requiredText(input.payloadHash, "payload_hash", 128),
             status,
-            input.occurredAt,
-            appliedAt,
+            (replay?.firstReceivedAt ?? input.occurredAt),
+            appliedAt===null?null:(replay?.firstReceivedAt ?? appliedAt),
             new Date(),
           ],
         );
@@ -1211,7 +1211,7 @@ export async function applyVerifiedCashierBillingProviderEvent(
                 failed_at = CASE WHEN $2 = 'failed' THEN $3 ELSE failed_at END,
                 updated_at = $3
           WHERE id = $1 AND merchant_id = $4`,
-          [order.id, status, input.occurredAt, merchantId],
+          [order.id, status, (replay?.firstReceivedAt ?? input.occurredAt), merchantId],
         );
         await eventRecord("applied", input.occurredAt);
         const updated = await loadOrder(client, order.id, true);
@@ -1269,7 +1269,7 @@ export async function applyVerifiedCashierBillingProviderEvent(
           [
             order.id,
             paymentRef,
-            input.occurredAt,
+            (replay?.firstReceivedAt ?? input.occurredAt),
             JSON.stringify({
               reconciliation_code: "CASHIER_BILLING_AMOUNT_MISMATCH",
               received_amount_iqd: input.amountIqd,
@@ -1316,7 +1316,7 @@ export async function applyVerifiedCashierBillingProviderEvent(
                 paid_at = $3,
                 updated_at = $3
           WHERE id = $1 AND merchant_id = $4`,
-          [order.id, paymentRef, input.occurredAt, merchantId],
+          [order.id, paymentRef, (replay?.firstReceivedAt ?? input.occurredAt), merchantId],
         );
         await eventRecord("rejected", null);
         const updated = await loadOrder(client, order.id, true);
@@ -1341,7 +1341,7 @@ export async function applyVerifiedCashierBillingProviderEvent(
                SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
                    paid_at = $3, updated_at = $3, metadata = metadata || $4::jsonb
              WHERE id = $1 AND merchant_id = $5`,
-            [order.id, paymentRef, input.occurredAt, JSON.stringify({ reconciliation_code: "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION", reconciliation_event_id: eventId }), merchantId],
+            [order.id, paymentRef, (replay?.firstReceivedAt ?? input.occurredAt), JSON.stringify({ reconciliation_code: "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION", reconciliation_event_id: eventId }), merchantId],
           );
         }
         const received = await loadOrder(client, order.id, true);
@@ -1349,13 +1349,14 @@ export async function applyVerifiedCashierBillingProviderEvent(
         return { status: "reconciliation_required" as const, order: received,
           reasonCode: "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION" };
       }
+      if(replay) await replay.authorize(client);
       await client.query("SAVEPOINT billing_entitlement");
       try {
         const applied = await applyPaidOrder(
           client,
           order,
           paymentRef,
-          input.occurredAt,
+          input.occurredAt, replay?.firstReceivedAt,
         );
         await client.query(
           `UPDATE cashier_billing_orders
@@ -1365,12 +1366,12 @@ export async function applyVerifiedCashierBillingProviderEvent(
                 applied_at = $3,
                 updated_at = $3
           WHERE id = $1 AND merchant_id = $4`,
-          [order.id, paymentRef, input.occurredAt, merchantId],
+          [order.id, paymentRef, (replay?.firstReceivedAt ?? input.occurredAt), merchantId],
         );
         await client.query(
           `UPDATE cashier_billing_events SET status = 'applied', applied_at = $3
           WHERE provider = $1 AND provider_event_id = $2`,
-          [input.provider, eventId, input.occurredAt],
+          [input.provider, eventId, (replay?.firstReceivedAt ?? input.occurredAt)],
         );
         const updated = await loadOrder(client, order.id, true);
         if (!updated)
@@ -1404,7 +1405,7 @@ export async function applyVerifiedCashierBillingProviderEvent(
           [
             order.id,
             paymentRef,
-            input.occurredAt,
+            (replay?.firstReceivedAt ?? input.occurredAt),
             JSON.stringify({
               reconciliation_code: reasonCode,
               reconciliation_event_id: domainFailure ? null : eventId,
