@@ -151,4 +151,4 @@ finally {
 }
 if(infrastructureError)evidence.infrastructureError=infrastructureError;
 console.log('AUDIT_FULL_EMERGENCY_WORKSPACE_RESULT '+JSON.stringify(evidence));
-if(infrastructureError||evidence.results.length!==30||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
+if(infrastructureError||evidence.results.length!==36||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
