@@ -1,3 +1,11 @@
+## Prepared original Meta deadletter/refund enqueue restart gap — 2026-10-15 Baghdad
+
+Authorized Draft PR547 test-only extension. Prior documentationheadf759a31ea050d3cdfbc9a66c7b993cbfb2baca52 verified14/14CI SUCCESS; prior accepted259 reused, no additivecredit. New owned restricted-role process hosts original signed app/queue/liveworker. Passive real SQL/result observer (promise and callback forms forwarded unchanged) arms existing exactCOMMIT wireproxy only after target job transitions to dead_letter/META_REPLY_FAILED. Actual backend COMMIT response withheld, IPC notice, selfSIGKILL beforeoriginal failJob returns/onDeadLetter refundenqueue. Parent must independently prove committedfailedjob1, safe requeuepolicy, debit1/no credit/no refundjob and1localGraph confirmedfailure.
+
+Fresh original workerstartup must discover debt through original recovery/list/decrypt/enqueue, process1refundjob and1credit, block originalreplyrequeue/noextraGraph. Two concurrent fresh restarts must retain1refundjob/unchanged exactcredit ledger and bothbalances20, other tenant unchanged, nakedtenantreads0/contextreset. Graph/embedding synthetic only; afterownedfixture created_at chronology remainsvalid. Syntax/diff and5existingproxytestsPASS; newSQL NOT_RUN untilCI. No middleware/route/worker/authorizationreplacement or production source/schema/RLS/grants change.
+
+This is targetedpostcommitkill at actualworkerDLQ/refundenqueuegap, not arbitrarycrash/fullscheduler/realprovider or hostedrollout. Dedicated hostileencryptedpayload/rowtenant mismatch runtimecase and broaderprecommitprocesskill stillseparateOPEN. No merge/deploy/hostedDB/payment authorized.
+
 ## Verified restricted Meta restore COMMIT-ack/process recovery — 2026-10-15 Baghdad
 
 Draft PR547 accepted sourceb62ab0e663da9064596856d2dd21a8e8a9f73fe0. Isolated38646289223/job116133845970, mergecheckout10f23f7e37c250f8ea02fbaa17efee1c26640488 SUCCESS:259PASS/0FAIL/0SKIP,49unique files/51invocations; new scopedrestorewire6PASS(parent+4faultcases+1chronology). All14observed workflowsSUCCESS. Prior documentationhead686730c2 also14/14CI SUCCESS. Fullrestore33migrations/95tables/45policies/8functions matching793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498 and ownedcleanupPASS. No production source/schema/RLS/grants changed for this unit.

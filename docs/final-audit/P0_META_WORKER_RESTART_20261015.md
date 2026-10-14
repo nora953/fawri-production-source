@@ -1,0 +1,8 @@
+## Prepared original Meta deadletter/refund enqueue restart gap — 2026-10-15 Baghdad
+
+Authorized Draft PR547 test-only extension. Prior documentationheadf759a31ea050d3cdfbc9a66c7b993cbfb2baca52 verified14/14CI SUCCESS; prior accepted259 reused, no additivecredit. New owned restricted-role process hosts original signed app/queue/liveworker. Passive real SQL/result observer (promise and callback forms forwarded unchanged) arms existing exactCOMMIT wireproxy only after target job transitions to dead_letter/META_REPLY_FAILED. Actual backend COMMIT response withheld, IPC notice, selfSIGKILL beforeoriginal failJob returns/onDeadLetter refundenqueue. Parent must independently prove committedfailedjob1, safe requeuepolicy, debit1/no credit/no refundjob and1localGraph confirmedfailure.
+
+Fresh original workerstartup must discover debt through original recovery/list/decrypt/enqueue, process1refundjob and1credit, block originalreplyrequeue/noextraGraph. Two concurrent fresh restarts must retain1refundjob/unchanged exactcredit ledger and bothbalances20, other tenant unchanged, nakedtenantreads0/contextreset. Graph/embedding synthetic only; afterownedfixture created_at chronology remainsvalid. Syntax/diff and5existingproxytestsPASS; newSQL NOT_RUN untilCI. No middleware/route/worker/authorizationreplacement or production source/schema/RLS/grants change.
+
+This is targetedpostcommitkill at actualworkerDLQ/refundenqueuegap, not arbitrarycrash/fullscheduler/realprovider or hostedrollout. Dedicated hostileencryptedpayload/rowtenant mismatch runtimecase and broaderprecommitprocesskill stillseparateOPEN. No merge/deploy/hostedDB/payment authorized.
+
