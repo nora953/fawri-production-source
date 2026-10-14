@@ -1,3 +1,9 @@
+## Active audited operator receipt read — 2026-10-14
+
+Branch fix/p0-audited-operator-receipt-read-20261014 stacked on539/caafd5f2. Adds permission-checked no-store bounded/redacted GET API and non-PUBLIC SQL read capability with current admin recheck+atomic durable audit. No receipt/entitlement mutation or merchant table access. Actual restricted-role HTTP suite pendingCI; local typecheck/build/syntax/canonical31PASS. See P0_OPERATOR_RECEIPT_READ_20261014.md. Next validate real denials/redaction/precise pagination/audit-failure then operatorUI/manual reconciliation/retention/hosted grants523 and full restricted downstreamMeta535.
+
+---
+
 ## Verified unmatched provider receipt admission — 2026-10-14
 
 DraftPR539, branch fix/p0-verified-provider-receipt-inbox-20261014, stacked on538/441d1016. **Tested source e1681e4f462e013d7b0837c5482de17ff879b2e5**: isolated38554285754/job115819667019 **195PASS/0FAIL/0SKIP**,43unique files/45invocations; new inbox6PASS. **29/29 observed workflow runs SUCCESS**. Signed synthetic/gateway-confirmed SaaS/cashier orphan persists1receipt/0entitlement, concurrent duplicate preserves first time and identity, exact restored mapping replay applies1entitlement. Invalid signatures/confirmed-state mismatch create0; SQL failure rejects; restricted role cannot enumerate/directly mutate or use non-PUBLIC admission without explicit owned capability grant.

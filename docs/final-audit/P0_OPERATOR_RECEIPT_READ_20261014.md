@@ -1,0 +1,16 @@
+# P0 audited operator receipt directory — prepared 2026-10-14
+
+Branch fix/p0-audited-operator-receipt-read-20261014, parent draftPR539/caafd5f2 (all29 observed parent documentation workflows SUCCESS). Last tested parente1681e4f isolated195PASS/0FAIL/0SKIP. No merge/deploy/hosted migration/grant/provider/payment.
+
+## Read-only operator API
+GET /api/auth/admin/billing/verified-receipts is mounted in the actual auth-security router. Requires PostgreSQL admin authority, real secure admin session/trusted device and existing manage_subscriptions permission. Actor ID comes only from validated session context; unknown query fields including actor overrides rejected. Owner implicit permission or authorised finance assistant. Default20/max50 results, paired precise keyset cursor across microsecond timestamps and event IDs; no offset/unbounded enumeration. No-store response. Lists verified receipt evidence (not a classified unresolved queue), exposing event identity/type/amount/first-time and only last8 reference characters when references are longer than8; short references hidden. No full reference/hash/raw payload/signature/merchant guess.
+
+Migration0030 introduces bounded SECURITY DEFINER read capability with fixed pg_catalog search_path and qualified tables; PUBLIC EXECUTE revoked. Trusted authenticated-operator backend only, never a merchant SQL grant. Rechecks active admin account/profile, enabled flag, password-change state and owner role or current manage_subscriptions grant, holding shared account/profile/permission locks until transaction completes. Inserts database_admin_access_audits row before returning receipts; audit failure rolls back and discloses nothing. Read does not mutate receipts/orders/subscriptions/entitlements. No RLS/table grant relaxation. Future schema-owner/capability deployment grants require review; not performed on hosted DB.
+
+## Actual HTTP/SQL proof — NOT_RUN pending CI
+Owned offline suite holds owner fixture connection while application pool starts a synthetic NOLOGIN/NOBYPASSRLS/non-owner role with broad table grants and explicit read-capability grant. Uses real route, secure session middleware, actual PostgreSQL session/device validation and real loopback HTTP. No auth stubs. Checks anonymous/forged/wrong-device/merchant/unpermitted assistant denial, owner pagination across123001/123002/123003microseconds, exact redaction and one durable audit per page, finance permission, invalid bounds/actor/cursors before audit, SQL permission recheck on disabled/revoked actors, audit SQL failure503/no receipts, unchanged complete receipt snapshots and global entitlement count. Direct table read remains0. Original public capability denial and restoration checks retained.
+
+This is the actual new router plus real middleware/DB under a controlled Express host, not the entire rendered frontend/main application acceptance. Operator UI/manual reconciliation/write approvals/receipt ownership-retention and hosted grant rollout remain523; full downstream signed restricted-role Meta535 separate.
+
+## Local validation
+API typecheck/build PASS; new MJS syntax/diff PASS; canonical31migration history with manual SQL stage/snapshot generated, no historical change. Actual HTTP/SQL NOT_RUN until CI; no local Docker/PostgreSQL. Do not infer runtime results from compilation.
