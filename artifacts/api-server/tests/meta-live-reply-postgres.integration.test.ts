@@ -582,7 +582,7 @@ await t.test("same Meta message id with different image content is rejected as a
   );
 
   await assert.rejects(
-    () => intents.preparePostgresMetaAutoReply(changedJob),
+    () => intents.preparePostgresMetaAutoReply(second.job),
     (error: unknown) => {
       assert.equal(
         (error as { code?: string }).code,
