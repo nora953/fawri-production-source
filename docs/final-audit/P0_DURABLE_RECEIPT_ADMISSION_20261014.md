@@ -1,3 +1,11 @@
+## Verified durable payment receipt checkpoint — 2026-10-14
+
+Draft PR538, tested source **7302359705a509cc25cefbc3f6e14849b0f68508**: isolated run38524397545/job115721219577 **181PASS/0FAIL/0SKIP**,42unique files/44invocations; **12/12 observed workflows SUCCESS**. New receipt recovery suite7PASS covers four process/backend interruptions, two known admission-COMMIT failures, fresh concurrent next-day retries, original payment time, unresolved-receipt checkout barriers and one entitlement. Admission commits before application; merchant-first locks align checkout. Prior8ad83ea typecheck/barrier failures remain recorded, corrected without weakening lifecycle assertions.
+
+Evidence: [receipt report](P0_DURABLE_RECEIPT_ADMISSION_20261014.md), [machine results](evidence/P0_DURABLE_RECEIPT_RESULTS_20261014.json). Owned offline PostgreSQL/fake providers only; this does not change the UI audit baseline or imply release readiness. No merge/deploy/hosted database/grants/real payment actions. Issues523/535 stay OPEN for unmatched orphan inbox, ambiguous successful COMMIT acknowledgment loss and full downstream restricted-role Meta/grant acceptance.
+
+---
+
 # P0 durable receipt admission — verified first revision 2026-10-14
 
 Parent PR537 / bc3b670e documentation checkpoint; last tested parent a696046b had174PASS/0FAIL isolated and27/27 workflows SUCCESS. Issue523, new branch fix/p0-durable-payment-receipt-admission-20261014. No merge/deployment/hosted mutation.
@@ -18,10 +26,10 @@ All child processes, backends (exact synthetic marker/PID/current database), tri
 API typecheck/build PASS; new parent/child/runner MJS syntax PASS; disposable guard15PASS/0FAIL; diff whitespace PASS. Actual owned offline CI at a42a1ef7346b36bf1ea7fbe63e03c50fec1dff94: run38523168059/job115717325651 SUCCESS, new suite7PASS/0FAIL, aggregate181PASS/0FAIL/0SKIP across42unique files/44invocations. All12 observed PR workflows SUCCESS. Four interruption and two deferred-COMMIT proof markers confirmed. Local environment has no Docker/PostgreSQL.
 
 ## Remaining limitations
-True unmatched orphan inbox/operator workflow and ambiguous receipt COMMIT response loss still require acceptance work under523. A server dying before any successful receipt COMMIT cannot claim a receipt is durable; provider/operator retry remains required. New application phase may fail after receipt commits and must leave pending/reconciliation work, not granted access. Follow-up merchant checkout barrier assertions await CI; do not infer complete P0 or release readiness from selected tests. Meta downstream full restricted-role/hosted grant acceptance535 remains separate.
+True unmatched orphan inbox/operator workflow and ambiguous receipt COMMIT response loss still require acceptance work under523. A server dying before any successful receipt COMMIT cannot claim a receipt is durable; provider/operator retry remains required. New application phase may fail after receipt commits and must leave pending/reconciliation work, not granted access. Follow-up merchant checkout barriers passed; do not infer complete P0 or release readiness from selected tests. Meta downstream full restricted-role/hosted grant acceptance535 remains separate.
 
 ## Checkout and lock-order follow-up
-New-key checkout is rejected while paid_reconciliation_required exists; the original idempotency key returns the original order. Both receipt phases and SaaS checkout acquire the merchant row before billing orders to match cashier checkout and avoid lock inversion. The process recovery suite checks the unresolved-receipt barrier and one-order count before recovery. This follow-up passed local typecheck/build/syntax; its changed runtime assertions await a new CI run.
+New-key checkout is rejected while paid_reconciliation_required exists; the original idempotency key returns the original order. Both receipt phases and SaaS checkout acquire the merchant row before billing orders to match cashier checkout and avoid lock inversion. The process recovery suite checks the unresolved-receipt barrier and one-order count before recovery. This follow-up passed local typecheck/build/syntax; its changed runtime assertions passed at7302359705a509cc25cefbc3f6e14849b0f68508.
 
 ## Follow-up failure and correction
 Source8ad83ea CI detected TS2558 on the database wrapper generic and an overbroad cashier checkout barrier. Local chained commands had masked the failed typecheck exit; that validation claim is withdrawn for8ad83ea. Corrected wrapper query uses the supported unparameterized API; barrier requires an actual received event on a reconciliation order, preserving existing late/mismatch checkout behavior while blocking durable work (including SQL application failures). Re-run typecheck as a standalone command and preserve all original lifecycle assertions.

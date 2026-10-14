@@ -1,10 +1,12 @@
-# Active P0 durable receipt admission — 2026-10-14
+## Verified durable payment receipt checkpoint — 2026-10-14
 
-Branch fix/p0-durable-payment-receipt-admission-20261014, parent draftPR537/bc3b670e; issue523. Previous verified sourcea696046b174/0 and27/27 CI is baseline only. Admission split verified at a42a1ef7346b36bf1ea7fbe63e03c50fec1dff94: isolated181PASS/0FAIL/0SKIP,42unique files/44invocations, new process suite7PASS, all12 observed workflows SUCCESS. Draft PR538.
+Draft PR538, tested source **7302359705a509cc25cefbc3f6e14849b0f68508**: isolated run38524397545/job115721219577 **181PASS/0FAIL/0SKIP**,42unique files/44invocations; **12/12 observed workflows SUCCESS**. New receipt recovery suite7PASS covers four process/backend interruptions, two known admission-COMMIT failures, fresh concurrent next-day retries, original payment time, unresolved-receipt checkout barriers and one entitlement. Admission commits before application; merchant-first locks align checkout. Prior8ad83ea typecheck/barrier failures remain recorded, corrected without weakening lifecycle assertions.
 
-Prepared implementation commits received event/payment reconciliation before second entitlement transaction, preserving event/order/payment locks, first time, unique keys, merchant context and SAVEPOINT regression behavior. New owned PostgreSQL suite proves process/backend interruption then two fresh-process next-day replays, plus deferred admission-COMMIT failure. Parent/child attest before imports; exact owned markers/PIDs and comprehensive cleanup. Local typecheck/build/syntax/guard15PASS. See P0_DURABLE_RECEIPT_ADMISSION_20261014.md.
+Evidence: [receipt report](P0_DURABLE_RECEIPT_ADMISSION_20261014.md), [machine results](evidence/P0_DURABLE_RECEIPT_RESULTS_20261014.json). Owned offline PostgreSQL/fake providers only; this does not change the UI audit baseline or imply release readiness. No merge/deploy/hosted database/grants/real payment actions. Issues523/535 stay OPEN for unmatched orphan inbox, ambiguous successful COMMIT acknowledgment loss and full downstream restricted-role Meta/grant acceptance.
 
-Follow-up adds pending-reconciliation checkout barrier and merchant-first lock ordering, with fresh assertions in process recovery. Local typecheck/build/syntax PASS; publish follow-up and inspect new isolated logs before claiming it verified. Never weaken old tests. On failure distinguish fixture from product; record exact source/run/state. After bounded recovery proof, address unmatched orphan/ambiguous commit acknowledgment and pending-receipt checkout barriers under523, then full downstream restricted-role Meta535. No main merge/deploy/live DB/grants or real providers authorized; publishing code/tests/docs and draftPR/CI to the same repo already explicitly approved.
+---
+
+Next: continue bounded acceptance under523 (orphan inbox/ambiguous commit), and535 (full downstream restricted-role Meta). Do not restart completed receipt recovery. This documentation checkpoint leaves tested application/test source unchanged.
 
 ---
 
