@@ -147,6 +147,8 @@ function parseJob(job: DurableJob): ParsedMetaJob {
   const messaging = Array.isArray(entry.messaging) ? entry.messaging : [];
   const event = eventRecord(messaging[0]);
   const sender = eventRecord(event.sender);
+  const recipientProvided = Object.prototype.hasOwnProperty.call(event, "recipient");
+  const bodyRecipientId = text(eventRecord(event.recipient).id);
   const message = eventRecord(event.message);
   const inbound = parseMetaInboundMessage(message);
   const customerText = inbound?.text || null;
@@ -183,6 +185,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     entries.length !== 1 ||
     messaging.length !== 1 ||
     message.is_echo === true ||
+    (recipientProvided && bodyRecipientId !== pageId) ||
     !rowMerchantId ||
     !rowEventId ||
     !eventId ||
