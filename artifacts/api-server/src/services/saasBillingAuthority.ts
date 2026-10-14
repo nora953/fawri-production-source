@@ -658,7 +658,7 @@ export async function createSaasBillingCheckout(input: {
       },
     };
   });
-  if ("providerReservation" in reserved) {
+  if ("providerReservation" in reserved && reserved.providerReservation) {
     const reservation = reserved.providerReservation;
     const payment = await createSuperQiSandboxPayment(
       {
