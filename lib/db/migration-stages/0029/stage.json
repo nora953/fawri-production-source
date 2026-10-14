@@ -1,0 +1,10 @@
+{
+  "index": 29,
+  "name": "verified_provider_payment_receipts",
+  "when": 1791936000001,
+  "mode": "reviewed_sql",
+  "preimage_files": [
+    "verified-payment-receipts.ts"
+  ],
+  "sql_sha256": "6fe3305db9c2faee0ad76b7a176f8b87447b092e8f7ac34223bdc7de490f3cf5"
+}

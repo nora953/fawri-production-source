@@ -1,3 +1,25 @@
+## Verified unmatched provider receipt admission — 2026-10-14
+
+DraftPR539, branch fix/p0-verified-provider-receipt-inbox-20261014, stacked on538/441d1016. **Tested source e1681e4f462e013d7b0837c5482de17ff879b2e5**: isolated38554285754/job115819667019 **195PASS/0FAIL/0SKIP**,43unique files/45invocations; new inbox6PASS. **29/29 observed workflow runs SUCCESS**. Signed synthetic/gateway-confirmed SaaS/cashier orphan persists1receipt/0entitlement, concurrent duplicate preserves first time and identity, exact restored mapping replay applies1entitlement. Invalid signatures/confirmed-state mismatch create0; SQL failure rejects; restricted role cannot enumerate/directly mutate or use non-PUBLIC admission without explicit owned capability grant.
+
+Migration0029, canonical30 history/snapshot/reviewed SQL hash/preimage included. Global unassigned identity evidence, no tenant guess/raw payload/signature/credential, immutable provider/event/payment/request/type/amount/hash and first time. Admission before lookup; unknown order remains retryable503, never grants from inbox alone. Trusted bounded SECURITY DEFINER function fixed search_path, qualified table, deny-by-default RLS, PUBLIC EXECUTE revoked; no hosted grants/migration performed.
+
+Full restore30migrations/95tables/45policies/5functions and restricted tenant readsPASS; seed/verify fingerprints identical. Effective ACL entries expand defaults and sort without dropping grants; temporary added-grant probe detects real changes; receipt function stays non-PUBLIC after restore. Preserved first70375a57 and second6461059a attempts194PASS/1FAIL each, inbox6PASS: table default-vs-explicit ACL and legacy function grant-order representation only. Stronger final checks replace storage-form comparison while retaining overall fingerprint assertion. Native ordering correction805a68bd was superseded before runtime acceptance; never credit it as tested.
+
+[Receipt report](P0_VERIFIED_RECEIPT_INBOX_20261014.md), [machine evidence](evidence/P0_VERIFIED_RECEIPT_INBOX_RESULTS_20261014.json). Issue523 staysOPEN for operator API/UI authorization, manual reconciliation/ownership/retention and reviewed hosted function owner/runtime grant rollout;535 staysOPEN for full downstream signed restricted-role Meta. SuperQi remains sandbox-only/production-forbidden. No merge/deploy/hosted writes/real payment, UI baseline credit, whole-audit percentage or release-ready claim. This documentation checkpoint leaves tested app/SQL/test/workflow source unchanged.
+
+---
+
+Next concrete unit: read-only operator inbox access with explicit admin permission/audit context, scoped disclosure and no automatic entitlement from stored receipt; then reviewed manual reconciliation, ownership/retention and capability rollout under523. Full downstream signed restricted-role Meta under535 remains next P0 domain. Do not repeat verified durable billing/driver/real-wire/orphan admission/restore unless new source or fault. Code/tests/docs/Draft PR/CI publication to this repo is already authorized; no main merge or hosted actions.
+
+---
+
+## Active verified receipt inbox — 2026-10-14
+
+Branch fix/p0-verified-provider-receipt-inbox-20261014 stacked on538/441d1016. Add migration0029 canonical snapshot/stage, bounded non-PUBLIC receipt admission and signed/gateway-confirmed persist-before-order webhook integration. No tenant guess or grant from inbox alone; first time/idempotency preserved. New SQL suite pending CI; local typecheck/build/transport/syntax/canonical30PASS. See P0_VERIFIED_RECEIPT_INBOX_20261014.md. Next inspect actual receipts/security/recovery evidence, then operator authorization/retention/grant rollout523 and restricted downstreamMeta535.
+
+---
+
 ## Verified actual PostgreSQL wire response loss — 2026-10-14
 
 DraftPR538 tested source **abe851db0bf40ecf2dcf294dc73f5a32c6c78a44**: isolated38550530635/job115807106721 **189PASS/0FAIL/0SKIP**,42unique files/44invocations; receipt recovery15PASS including four actual TCP dropped-COMMIT-response cases. All **26/26 observed workflow runs SUCCESS**. Admin corrected lane38550531165/job11580754187941PASS includes original admin proof1PASS; overlaps tenant batch, adds no unique credit. Framing4PASS separate from SQL total.

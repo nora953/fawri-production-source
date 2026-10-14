@@ -24,9 +24,10 @@ const cashier = await import('../src/services/cashierBillingAuthority.ts');
 const { handleSuperQiSandboxWebhook } = await import('../src/services/superQiSandboxWebhook.ts');
 const { superQiWebhookSigningPayload } = await import('../src/services/superQiSandboxTransport.ts');
 
-test('verified orphan SuperQi payment is retryable, not acknowledged as ignored', async () => {
+test('verified orphan SuperQi payment is retryable, not acknowledged as ignored', async t => {
   const requestId = randomUUID();
   const paymentId = `synthetic-orphan-${randomUUID()}`;
+  t.after(() => pool.query('DELETE FROM verified_provider_payment_receipts WHERE payment_ref=$1', [paymentId]));
   const payload = {
     requestId, paymentId, status: 'SUCCESS', canceled: false,
     amount: 3900, confirmedAmount: 3900, currency: 'IQD',
