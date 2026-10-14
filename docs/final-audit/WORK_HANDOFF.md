@@ -1,3 +1,19 @@
+## Verified audited operator receipt read — 2026-10-14
+
+DraftPR540, branch fix/p0-audited-operator-receipt-read-20261014 stacked on539/caafd5f2. **Tested source a79b600713af94633761a1e59333324284d5e671**: isolated38598864396/job115972566934 **201PASS/0FAIL/0SKIP**,44unique files/46invocations; operator HTTP6PASS. **27/27 observed workflows SUCCESS**. Real new route+secure session middleware+PostgreSQL under controlled Express host, restricted NOLOGIN/NOBYPASSRLS/non-owner application role; no auth stubs or entire-frontend acceptance claim.
+
+GET /api/auth/admin/billing/verified-receipts requires PostgreSQL admin authority, secure device-bound session and manage_subscriptions permission. Actor from validated context only; DB rechecks active/enabled/password-ready profile and owner/current permission under shared locks. Bounded/redacted pages preserve microsecond cursor precision; no full references/hash/signature/guessed merchant. Durable scoped audit commits before response; injected audit failure503/no receipt data. Direct table access remains denied; receipt snapshots/global entitlement count unchanged. Trusted-backend read capability non-PUBLIC, no RLS relaxation/merchant grant. Migration0030/canonical31PASS. Full restore31migrations/95tables/45policies/6functions and identical fingerprint/restricted tenant readsPASS; both receipt capabilities remain non-PUBLIC.
+
+Preserved failures:44837e83 isolated38597073031/job115966439784195PASS/1FAIL (device fixture omitted approver, no HTTP credit);0fb0156d isolated38598060193/job115969804431200PASS/1FAIL (operator5PASS then fatal cleanup hook). Correct complete trust via original authority and delete only owned device dependencies before owned accounts; constraints/all acceptance/cleanup assertions retained. [Report](P0_OPERATOR_RECEIPT_READ_20261014.md), [machine evidence](evidence/P0_OPERATOR_RECEIPT_READ_RESULTS_20261014.json).
+
+Issue523 remainsOPEN for frontend/operator manual actions, provider reconfirmation/ownership-retention and reviewed hosted owner/runtime grant rollout;535 remainsOPEN for full downstream signed restricted-role Meta. No merge/deploy/hosted writes/real provider/payment, UI baseline credit, whole-audit percentage or release-ready claim. Documentation-only checkpoint leaves tested app/SQL/test/workflow source unchanged.
+
+---
+
+Next concrete unit: frontend operator receipt review and safe manual reconciliation design/action authorization, with fresh provider confirmation and no owner guess or grant from inbox alone; ownership/retention and reviewed capability rollout under523. Full downstream signed restricted-role Meta535 remains separate P0 acceptance. Do not repeat verified receipt admission/real-wire/operator read/restore absent changed source/new fault. Code/tests/docs/Draft PR/CI publication already authorized; no main merge/hosted actions.
+
+---
+
 ## Verified unmatched provider receipt admission — 2026-10-14
 
 DraftPR539, branch fix/p0-verified-provider-receipt-inbox-20261014, stacked on538/441d1016. **Tested source e1681e4f462e013d7b0837c5482de17ff879b2e5**: isolated38554285754/job115819667019 **195PASS/0FAIL/0SKIP**,43unique files/45invocations; new inbox6PASS. **29/29 observed workflow runs SUCCESS**. Signed synthetic/gateway-confirmed SaaS/cashier orphan persists1receipt/0entitlement, concurrent duplicate preserves first time and identity, exact restored mapping replay applies1entitlement. Invalid signatures/confirmed-state mismatch create0; SQL failure rejects; restricted role cannot enumerate/directly mutate or use non-PUBLIC admission without explicit owned capability grant.

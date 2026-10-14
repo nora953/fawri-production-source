@@ -74,6 +74,7 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
   assert.equal(tables.find(x => x.relname === 'merchant_channels').relrowsecurity, true);
   assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_admit_verified_payment_receipt(text,text,text,text,integer,text,timestamptz)','EXECUTE') AS allowed",[role])).rows[0].allowed,false,'restored non-PUBLIC receipt capability must remain inaccessible to tenant runtime');
 
+  assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)','EXECUTE') AS allowed",[role])).rows[0].allowed,false,'restored operator read capability must remain non-PUBLIC');
   const components = { tables, policies, functions, constraints, indexes, migrations, channels };
   const fingerprint = createHash('sha256').update(JSON.stringify(components)).digest('hex');
   let before;

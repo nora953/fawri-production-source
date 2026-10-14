@@ -26,6 +26,7 @@ import merchantNotificationsPgRouter from "./merchant-notifications-pg";
 import merchantRealtimePgRouter from "./merchant-realtime-pg";
 import subscriptionEntitlementPgRouter from "./subscription-entitlement-pg";
 import saasBillingRouter from "./saas-billing";
+import verifiedReceiptOperatorRouter from "./auth-verified-receipts-postgres-routes";
 
 const router = Router();
 startPostgresSupportRuntimeCutover();
@@ -52,6 +53,7 @@ const recoveryNoStore = (_req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+router.use(verifiedReceiptOperatorRouter as any);
 router.use(saasBillingRouter as any);
 router.use(subscriptionEntitlementPgRouter as any);
 router.use(merchantNotificationsPgRouter as any);
