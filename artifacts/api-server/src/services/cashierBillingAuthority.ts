@@ -665,7 +665,7 @@ export async function createCashierBillingCheckout(input: {
       next_full_renewal_amount_iqd: plan.nextFullRenewalAmountIqd,
     };
   });
-  if ("providerReservation" in reserved) {
+  if ("providerReservation" in reserved && reserved.providerReservation) {
     const reservation = reserved.providerReservation;
     const payment = await createSuperQiSandboxPayment(
       {
