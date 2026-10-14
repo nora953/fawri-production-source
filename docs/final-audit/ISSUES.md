@@ -962,3 +962,8 @@ I18N-MONITOR-SORANI-DATE-001 evidenceextension: emergency snapshot generated_at 
 ## EMERGENCY-AUDIT-STATUS-MISREPORT-001 — MEDIUM / OPEN / NATIVE_DOM_CONFIRMED
 
 SEQ-366–371 full original App owner overview valid:false still renders localized healthy audit-chain text in all6 AR/EN/KU×390/1280 DOM probes. Three mobile390 chain-card PNGs corroborate; desktop card visibility not certified. AdminEmergencyAccessPage.tsx:658–663 unconditionally renders green shield/text.auditValid, ignoring boolean while showing event_count. PostgreSQL source verifier can return false, owner overview propagates it and HTTP handler serializes200; no actual SQL corruption/HTTP-tamper experiment or unauthorized-access proof. Legacy JSON path verifies/refuses503 before valid:true, not a bypass. SeverityMEDIUM for misleading security integrity indication. Original6 diagnostic locator failures preserved; corrected6-case-only diagnostic verifies reproduction. No application fix. Evidence [SEQ-366–371](SEQ_366_371_EMERGENCY_WORKSPACE_INTEGRITY_20261014.md), seq369/seq370 native results/captures. Owner desktop-card clipping potential remains separate TRIAGE.
+
+
+## P0 verified-payment SQL recovery continuation — 2026-10-14
+
+Issue #523 / BILLING-SQL-RECONCILIATION-032 remains OPEN. New local branch `fix/p0-verified-payment-sql-recovery-20261014` based on #533/2733cadae. SaaS/cashier savepoint recovery and exact-event concurrent replay regression prepared; API typecheck/build and guard15/15 PASS, real PostgreSQL NOT RUN for new code. Publication rejected by automatic approval review; no remote commit/PR/CI evidence. See active header in `WORK_HANDOFF.md` for design, limitations, exact next actions and publication blocker. P0 is not complete; no percentage recalculated.

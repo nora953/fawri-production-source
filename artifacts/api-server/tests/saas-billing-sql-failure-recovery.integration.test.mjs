@@ -42,7 +42,15 @@ test('verified payment SQL failure retains reconciliation evidence and supports 
   await t.test('failed transaction rolls back entitlement and exact event retry applies once', async () => {
     assert.equal(applications, 0);
     assert.equal(subscriptions, 0);
-    assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(event)).status, 'applied');
+    await assert.rejects(() => billing.applyVerifiedSaasBillingProviderEvent({ ...event, payloadHash: 'f'.repeat(64) }), error => error.code === 'SAAS_BILLING_PROVIDER_EVENT_COLLISION');
+    await assert.rejects(() => billing.applyVerifiedSaasBillingProviderEvent({ ...event, providerEventId: randomUUID(), providerPaymentRef: randomUUID(), amountIqd: 1 }), error => error.code === 'SAAS_BILLING_ORDER_NOT_PAYABLE');
+    assert.equal((await pool.query('SELECT provider_payment_ref FROM saas_billing_orders WHERE id=$1', [event.orderId])).rows[0].provider_payment_ref, event.providerPaymentRef);
+    // The same verified webhook can be delivered after checkout TTL has elapsed.
+    const redelivered = { ...event, occurredAt: new Date(event.occurredAt.getTime() + 86400000) };
+    const retries = await Promise.all([billing.applyVerifiedSaasBillingProviderEvent(redelivered), billing.applyVerifiedSaasBillingProviderEvent(redelivered)]);
+    assert.deepEqual(retries.map(result => result.status).sort(), ['applied', 'duplicate']);
+    assert.equal(new Date((await pool.query('SELECT paid_at FROM saas_billing_orders WHERE id=$1', [event.orderId])).rows[0].paid_at).getTime(), event.occurredAt.getTime());
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_billing_events WHERE provider_event_id=$1', [event.providerEventId])).rows[0].count, 1);
     assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(event)).status, 'duplicate');
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [checkout.order.id])).rows[0].count, 1);
   });

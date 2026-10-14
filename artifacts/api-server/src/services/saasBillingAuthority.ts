@@ -774,7 +774,11 @@ export async function applyVerifiedSaasBillingProviderEvent(
     );
   }
   if (input.signatureVerified !== true) {
-    fail("SAAS_BILLING_SIGNATURE_INVALID", "billing provider signature is invalid", 401);
+    fail(
+      "SAAS_BILLING_SIGNATURE_INVALID",
+      "billing provider signature is invalid",
+      401,
+    );
   }
   if (!subscriptionPostgresAuthorityRequired()) {
     fail(
@@ -790,12 +794,13 @@ export async function applyVerifiedSaasBillingProviderEvent(
     fail("SAAS_BILLING_CURRENCY_MISMATCH", "billing currency mismatch", 409);
   }
 
-  return transaction(async (client) => {
+  let sqlFailure: unknown;
+  const outcome = await transaction(async (client) => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
       `${input.provider}:${eventId}`,
     ]);
     const duplicateEvent = await client.query(
-      `SELECT order_id FROM saas_billing_events
+      `SELECT order_id, status, payload_hash, event_type, occurred_at FROM saas_billing_events
         WHERE provider = $1 AND provider_event_id = $2 LIMIT 2`,
       [input.provider, eventId],
     );
@@ -807,22 +812,89 @@ export async function applyVerifiedSaasBillingProviderEvent(
           409,
         );
       }
-      const order = await loadOrder(client, orderId, true);
-      if (!order) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
-      return { status: "duplicate" as const, order };
+      if (
+        duplicateEvent.rows[0].payload_hash !== input.payloadHash ||
+        duplicateEvent.rows[0].event_type !== input.eventType
+      ) {
+        fail(
+          "SAAS_BILLING_PROVIDER_EVENT_COLLISION",
+          "provider event payload changed on replay",
+          409,
+        );
+      }
+      if (duplicateEvent.rows[0].status !== "received") {
+        const order = await loadOrder(client, orderId, true);
+        if (!order)
+          fail(
+            "SAAS_BILLING_ORDER_NOT_FOUND",
+            "SaaS billing order not found",
+            404,
+          );
+        return { status: "duplicate" as const, order };
+      }
     }
 
     const order = await loadOrder(client, orderId, true);
-    if (!order) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
+    if (!order)
+      fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
+    const retryReceived = duplicateEvent.rows[0]?.status === "received";
+    if (
+      retryReceived &&
+      (order.status !== "paid_reconciliation_required" ||
+        order.metadata.reconciliation_event_id !== eventId ||
+        order.provider_payment_ref !==
+          requiredText(input.providerPaymentRef, 300))
+    ) {
+      fail(
+        "SAAS_BILLING_PROVIDER_EVENT_COLLISION",
+        "received payment does not match reconciliation work",
+        409,
+      );
+    }
+    if (retryReceived) {
+      // HTTP redelivery time changes; retain the first verified receipt's time.
+      input = { ...input, occurredAt: timestamp(duplicateEvent.rows[0].occurred_at) };
+    }
+    // Unresolved paid work may only be resumed by its original received event.
+    if (order.status === "paid_reconciliation_required" && !retryReceived) {
+      fail("SAAS_BILLING_ORDER_NOT_PAYABLE", "paid reconciliation requires the original received event or operator review", 409);
+    }
     if (order.provider !== input.provider) {
       fail("SAAS_BILLING_PROVIDER_MISMATCH", "billing provider mismatch", 409);
     }
 
-    if (input.eventType === "payment_failed" || input.eventType === "payment_cancelled") {
-      if (order.status === "paid" || order.status === "refunded") {
-        fail("SAAS_BILLING_TERMINAL_CONFLICT", "paid billing order cannot be failed or cancelled", 409);
+    const eventRecord = async (
+      status: "received" | "applied" | "rejected",
+      appliedAt: Date | null,
+    ) => {
+      if (retryReceived) {
+        await client.query(
+          `UPDATE saas_billing_events SET status = $3, applied_at = $4
+            WHERE provider = $1 AND provider_event_id = $2`,
+          [input.provider, eventId, status, appliedAt],
+        );
+      } else {
+        await recordEvent(client, input, order.merchant_id, status, appliedAt);
       }
-      const nextStatus = input.eventType === "payment_failed" ? "failed" : "cancelled";
+    };
+
+    if (
+      input.eventType === "payment_failed" ||
+      input.eventType === "payment_cancelled"
+    ) {
+      if (
+        order.status === "paid" ||
+        order.status === "refunded" ||
+        order.status === "paid_reconciliation_required"
+      ) {
+        fail(
+          "SAAS_BILLING_TERMINAL_CONFLICT",
+          "paid billing order cannot be failed or cancelled",
+          409,
+        );
+      }
+      const nextStatus =
+        input.eventType === "payment_failed" ? "failed" : "cancelled";
       await client.query(
         `UPDATE saas_billing_orders
             SET status = $2,
@@ -832,18 +904,31 @@ export async function applyVerifiedSaasBillingProviderEvent(
           WHERE id = $1`,
         [order.id, nextStatus, input.occurredAt],
       );
-      await recordEvent(client, input, order.merchant_id, "applied", input.occurredAt);
+      await eventRecord("applied", input.occurredAt);
       const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
+      if (!updated)
+        fail(
+          "SAAS_BILLING_ORDER_NOT_FOUND",
+          "SaaS billing order not found",
+          503,
+        );
       return { status: nextStatus as "failed" | "cancelled", order: updated };
     }
 
     if (input.eventType === "refund_settled") {
       if (!input.providerRefundRef || order.status !== "paid") {
-        fail("SAAS_BILLING_REFUND_INVALID", "billing refund state is invalid", 409);
+        fail(
+          "SAAS_BILLING_REFUND_INVALID",
+          "billing refund state is invalid",
+          409,
+        );
       }
       if (input.amountIqd !== order.amount_iqd) {
-        fail("SAAS_BILLING_REFUND_AMOUNT_INVALID", "V1 requires a full-cycle refund matching the paid order amount", 409);
+        fail(
+          "SAAS_BILLING_REFUND_AMOUNT_INVALID",
+          "V1 requires a full-cycle refund matching the paid order amount",
+          409,
+        );
       }
       await client.query(
         `INSERT INTO saas_billing_refunds (
@@ -865,13 +950,21 @@ export async function applyVerifiedSaasBillingProviderEvent(
         `UPDATE saas_billing_orders SET status = 'refunded', updated_at = $2 WHERE id = $1`,
         [order.id, input.occurredAt],
       );
-      await recordEvent(client, input, order.merchant_id, "applied", input.occurredAt);
+      await eventRecord("applied", input.occurredAt);
       const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
-      return { status: "refunded", order: updated };
+      if (!updated)
+        fail(
+          "SAAS_BILLING_ORDER_NOT_FOUND",
+          "SaaS billing order not found",
+          503,
+        );
+      return { status: "refunded" as const, order: updated };
     }
 
     const paymentRef = requiredText(input.providerPaymentRef, 300);
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+      `${input.provider}:saas-payment:${paymentRef}`,
+    ]);
     const paymentCollision = await client.query(
       `SELECT id FROM saas_billing_orders
         WHERE provider = $1 AND provider_payment_ref = $2 AND id <> $3
@@ -888,9 +981,16 @@ export async function applyVerifiedSaasBillingProviderEvent(
     // An already-settled payment is immutable: a later mismatched event must
     // never demote it to reconciliation or overwrite its provider payment ref.
     if (order.status === "paid" || order.status === "refunded") {
-      if (input.amountIqd !== order.amount_iqd ||
-          (order.provider_payment_ref && order.provider_payment_ref !== paymentRef)) {
-        fail("SAAS_BILLING_TERMINAL_CONFLICT", "settled billing order cannot be changed by a conflicting payment event", 409);
+      if (
+        input.amountIqd !== order.amount_iqd ||
+        (order.provider_payment_ref &&
+          order.provider_payment_ref !== paymentRef)
+      ) {
+        fail(
+          "SAAS_BILLING_TERMINAL_CONFLICT",
+          "settled billing order cannot be changed by a conflicting payment event",
+          409,
+        );
       }
     }
     if (input.amountIqd !== order.amount_iqd) {
@@ -910,9 +1010,14 @@ export async function applyVerifiedSaasBillingProviderEvent(
           }),
         ],
       );
-      await recordEvent(client, input, order.merchant_id, "rejected", null);
+      await eventRecord("rejected", null);
       const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
+      if (!updated)
+        fail(
+          "SAAS_BILLING_ORDER_NOT_FOUND",
+          "SaaS billing order not found",
+          503,
+        );
       return {
         status: "reconciliation_required" as const,
         order: updated,
@@ -929,19 +1034,36 @@ export async function applyVerifiedSaasBillingProviderEvent(
         status: "duplicate" as const,
         order,
         ...(application.rows[0]
-          ? { subscriptionId: requiredText(application.rows[0].subscription_id, 180) }
+          ? {
+              subscriptionId: requiredText(
+                application.rows[0].subscription_id,
+                180,
+              ),
+            }
           : {}),
       };
     }
     // Proactive expiry must not discard a later verified payment: persist it
     // as reconciliation work without activating the expired entitlement.
-    if (order.status !== "pending" && order.status !== "expired") {
-      fail("SAAS_BILLING_ORDER_NOT_PAYABLE", "billing order is not payable", 409, {
-        status: order.status,
-      });
+    if (
+      order.status !== "pending" &&
+      order.status !== "expired" &&
+      !retryReceived
+    ) {
+      fail(
+        "SAAS_BILLING_ORDER_NOT_PAYABLE",
+        "billing order is not payable",
+        409,
+        {
+          status: order.status,
+        },
+      );
     }
 
-    if (order.status === "expired" || timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()) {
+    if (
+      order.status === "expired" ||
+      timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()
+    ) {
       await client.query(
         `UPDATE saas_billing_orders
             SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
@@ -949,16 +1071,23 @@ export async function applyVerifiedSaasBillingProviderEvent(
           WHERE id = $1`,
         [order.id, paymentRef, input.occurredAt],
       );
-      await recordEvent(client, input, order.merchant_id, "rejected", null);
+      await eventRecord("rejected", null);
       const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
+      if (!updated)
+        fail(
+          "SAAS_BILLING_ORDER_NOT_FOUND",
+          "SaaS billing order not found",
+          503,
+        );
       return {
-        status: "reconciliation_required",
+        status: "reconciliation_required" as const,
         order: updated,
         reasonCode: "SAAS_BILLING_ORDER_EXPIRED_AFTER_PAYMENT",
       };
     }
 
+    await eventRecord("received", null);
+    await client.query("SAVEPOINT billing_entitlement");
     try {
       const applied = await applySubscriptionPlanCycleInTransaction(client, {
         merchantId: order.merchant_id,
@@ -994,16 +1123,32 @@ export async function applyVerifiedSaasBillingProviderEvent(
           WHERE id = $1`,
         [order.id, paymentRef, input.occurredAt],
       );
-      await recordEvent(client, input, order.merchant_id, "applied", input.occurredAt);
+      await client.query(
+        `UPDATE saas_billing_events SET status = 'applied', applied_at = $3
+          WHERE provider = $1 AND provider_event_id = $2`,
+        [input.provider, eventId, input.occurredAt],
+      );
       const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
+      if (!updated)
+        fail(
+          "SAAS_BILLING_ORDER_NOT_FOUND",
+          "SaaS billing order not found",
+          503,
+        );
+      await client.query("RELEASE SAVEPOINT billing_entitlement");
       return {
         status: "applied" as const,
         order: updated,
         subscriptionId: applied.subscriptionId,
       };
     } catch (error) {
-      if (!(error instanceof SubscriptionPlanCycleError)) throw error;
+      await client.query("ROLLBACK TO SAVEPOINT billing_entitlement");
+      await client.query("RELEASE SAVEPOINT billing_entitlement");
+      const domainFailure = error instanceof SubscriptionPlanCycleError;
+      const reasonCode = domainFailure
+        ? error.code
+        : "SAAS_BILLING_ENTITLEMENT_SQL_FAILURE";
+      if (!domainFailure) sqlFailure = error;
       await client.query(
         `UPDATE saas_billing_orders
             SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
@@ -1014,21 +1159,35 @@ export async function applyVerifiedSaasBillingProviderEvent(
           order.id,
           paymentRef,
           input.occurredAt,
-          JSON.stringify({ reconciliation_code: error.code }),
+          JSON.stringify({
+            reconciliation_code: reasonCode,
+            reconciliation_event_id: domainFailure ? null : eventId,
+          }),
         ],
       );
-      await recordEvent(client, input, order.merchant_id, "rejected", null);
+      await client.query(
+        `UPDATE saas_billing_events SET status = $3, applied_at = NULL
+          WHERE provider = $1 AND provider_event_id = $2`,
+        [input.provider, eventId, domainFailure ? "rejected" : "received"],
+      );
       const updated = await loadOrder(client, order.id, true);
-      if (!updated) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
+      if (!updated)
+        fail(
+          "SAAS_BILLING_ORDER_NOT_FOUND",
+          "SaaS billing order not found",
+          503,
+        );
       return {
         status: "reconciliation_required" as const,
         order: updated,
-        reasonCode: error.code,
+        reasonCode,
       };
     }
   });
+  // Throw only after COMMIT: the provider retries while durable receipt survives.
+  if (sqlFailure) throw sqlFailure;
+  return outcome;
 }
-
 export async function getPaidBillingReferenceForSubscription(input: {
   merchantId: string;
   subscriptionId: string;

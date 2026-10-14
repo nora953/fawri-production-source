@@ -1,3 +1,53 @@
+# Active P0 repair checkpoint — 2026-10-14
+
+This section supersedes historical audit-only instructions below. Current user handoff authorizes P0 repairs, draft PRs and isolated CI; no merge, deploy, hosted DB mutations or real payments.
+
+## Current state
+- Parent branch: `fix/p0-superqi-unresolved-reservation-expiry-20261014`, PR #533, baseline `2733cadae016742460282a9e200d15033db36be5`.
+- Active branch: `fix/p0-verified-payment-sql-recovery-20261014`; linked parent issue #523.
+- Baseline isolated PostgreSQL run: https://github.com/nora953/fawri-production-source/actions/runs/38515760515, job 115694070345, overall FAILURE.
+- Local code changes prepared: both billing authorities now insert a received event before an entitlement savepoint. SQL failure rolls back only entitlement changes, commits reconciliation order/payment reference and received event, then rethrows original error AFTER commit. Exact received-event replay may resume only the matching reconciliation event/payment. Event locks, order locks and payment uniqueness remain; SaaS adds payment advisory lock. Changed payload/type replay is rejected.
+- Existing fault tests keep P0001, no subscription/application after failure, one durable receipt, safe replay and duplicate checks. Added concurrent exact replay (one applied/one duplicate) and changed-payload denial.
+
+## Validation
+| Test | Scope | Commit | Environment | Database | Result | Evidence | Finding | Next action |
+|---|---|---|---|---|---|---|---|---|
+| disposable-postgres-test-guard | Test safety | This checkpoint | Local Node | None | PASS | `node --test scripts/disposable-postgres-test-guard.test.mjs`: 15 pass/0 fail | Guard remains closed to unapproved targets | Reuse |
+| node --check (two edited integration MJS files) | Fixture syntax | This checkpoint | Local Node | None | PASS | Both exit 0 | Parses only | Execute PostgreSQL CI |
+| SaaS/cashier SQL recovery + concurrent retry | Payment durability | This checkpoint | GitHub offline disposable PostgreSQL | PostgreSQL | NOT RUN | Await draft PR CI | No runtime success claimed | Inspect exact P0001 state and replay counts |
+
+## Open limitations and next actions
+1. Inspect typecheck/build and isolated PostgreSQL results for the new draft PR. Do not count targeted passes as full P0 success.
+2. SQL receipt recovery is bounded to errors recoverable with SAVEPOINT. Connection loss/commit failure, process death before commit and unmatched orphan payments still require a separately committed durable inbox/provider reconciliation design. This change does not certify those paths.
+3. Keep #523 OPEN until all acceptance criteria are proven. Inspect remaining cashier licensing, restricted Meta ingress, billing/refund failures from current logs.
+4. Do not rerun already-proven checkout attachment/unresolved reservation proofs without changed scope; aggregate CI may run them as regression.
+5. Source note: historical WORK_HANDOFF below ended at 2026-10-12 and is stale relative to PR #533 discussion. Resume from this section and linked current PR/issue evidence.
+
+## Local validation and publication blocker (2026-10-14)
+- API typecheck: PASS, `corepack pnpm --filter @workspace/api-server run typecheck` exit 0. Initial TS2322 literal widening was corrected; earlier failure is retained in session history.
+- API build: PASS, `corepack pnpm --filter @workspace/api-server run build` exit 0.
+- TypeScript transpilation: both edited authority files parse with 0 syntax diagnostics.
+- Actual baseline job logs independently inspected: SaaS `BILLING_SQL_FAULT_STATE` and cashier `CASHIER_SQL_FAULT_STATE` each show P0001, pending order, 0 events, 0 applications, 0 subscriptions. Checkout regression suite 9 PASS /0 FAIL; recovery remains failing in baseline.
+- Code checkpoint `47f7179` is LOCAL ONLY. Push was rejected by automatic approval review: private source/audit material to unverified external GitHub destination; attached instructions were not recognized as clear publishing authorization. No connector workaround attempted. No new draft PR, no new CI run, no PostgreSQL PASS claimed.
+- Next action requires explicit confirmation to publish this branch/code/tests/docs to `nora953/fawri-production-source`, create a draft PR against #533 branch, and run existing disposable CI. No main merge or deploy.
+- Local environment has no Docker/psql, so approved guarded PostgreSQL runtime tests are BLOCKED here. Do not bypass guard or use hosted Neon staging.
+
+## Follow-up local hardening — 2026-10-14
+- Found and closed a source-level overwrite path: a distinct mismatched successful event could rewrite the payment reference of an order already awaiting reconciliation. Both authorities now deny distinct events for reconciliation orders; only the original received event may resume automatic application. Operator reconciliation is separate.
+- Corrected cashier regression placement: new changed-payload/concurrent retry assertions had been inserted into the earlier applied-order test instead of SQL-fault recovery. Restored the existing applied-order test, placed additions after the SQL fault, and added distinct-event overwrite denial plus unchanged-payment-reference assertion in both recovery tests.
+- Re-ran edited MJS syntax checks, API typecheck and API build: PASS. Actual PostgreSQL tests still NOT RUN.
+- User said continue after publication question. Automatic review again rejected push because this did not explicitly authorize the named private-code payload and GitHub destination. No alternate publishing tool used. Await explicit destination/payload authorization.
+
+## Redelivery-time recovery correction — 2026-10-14
+Source review of `superQiSandboxWebhook.ts:276` confirms `occurredAt` is receipt time (`receivedAt || new Date()`), so exact provider-event redelivery changes it. Before this correction, a SQL-failed payment received before checkout expiry could be rejected as expired on later redelivery, and SaaS period dates could drift. Received-event replay now restores `occurred_at` from the persisted event after order/payment/event identity validation in both authorities. Concurrent replay regressions simulate delivery one day later and require one application/one duplicate, unchanged original paid_at, one event and one entitlement. This is source-confirmed risk plus prepared regression, NOT PostgreSQL runtime proof.
+
+Local API typecheck/build, MJS syntax and diff whitespace checks PASS after this change. SQL recovery remains NOT RUN; no remote publication has occurred. Need explicit user authorization naming code/tests/audit-doc payload and `nora953/fawri-production-source` destination before retrying publication. No alternative egress attempted.
+
+## Publication authorized — 2026-10-14
+User explicitly approved publishing code/tests/audit documentation to `nora953/fawri-production-source`, opening a draft PR and running CI. Earlier approval blockers above are historical and resolved. Native git push cannot authenticate in this environment; use the connected GitHub API to publish the exact reviewed tree. No merge/deployment authorized. CI not yet executed for this correction.
+
+---
+
 
 ## Authoritative continuation — SEQ-366–371 (2026-10-14 Baghdad)
 
