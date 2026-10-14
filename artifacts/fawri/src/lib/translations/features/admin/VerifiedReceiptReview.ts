@@ -1,7 +1,7 @@
 export const VERIFIED_RECEIPT_REVIEW_COPY = {
   "en": {
     "title": "Verified payment receipts",
-    "description": "Review only. This list includes verified receipts; it does not indicate an unresolved payment or activate a subscription.",
+    "description": "This list includes verified receipts. To reprocess one, review an existing matching billing order and confirm execution.",
     "loading": "Loading receipts…",
     "empty": "No receipts on this page.",
     "denied": "Your session or permission no longer allows receipt review.",
@@ -19,7 +19,7 @@ export const VERIFIED_RECEIPT_REVIEW_COPY = {
   },
   "ar": {
     "title": "إيصالات الدفع المتحقّقة",
-    "description": "للمراجعة فقط. تضم القائمة الإيصالات المتحقّقة؛ ولا تعني وجود دفعة غير معالجة أو تفعيل اشتراك.",
+    "description": "تضم القائمة الإيصالات المتحقّقة. لإعادة معالجة إيصال، راجع طلب فوترة موجودًا ومتطابقًا ثم أكّد التنفيذ.",
     "loading": "جارٍ تحميل الإيصالات…",
     "empty": "لا توجد إيصالات في هذه الصفحة.",
     "denied": "لم تعد الجلسة أو الصلاحية تسمح بمراجعة الإيصالات.",
@@ -37,7 +37,7 @@ export const VERIFIED_RECEIPT_REVIEW_COPY = {
   },
   "ku": {
     "title": "پسووڵە پشتڕاستکراوەکانی پارەدان",
-    "description": "تەنها بۆ پێداچوونەوە. ئەم لیستە پسووڵە پشتڕاستکراوەکان دەگرێتەوە؛ واتای پارەدانی چارەسەرنەکراو یان چالاککردنی بەشداری نییە.",
+    "description": "ئەم لیستە پسووڵە پشتڕاستکراوەکان دەگرێتەوە. بۆ پرۆسەکردنەوە، داواکارییەکی هەبوو و گونجاو بپشکنە و جێبەجێکردن پشتڕاست بکەوە.",
     "loading": "پسووڵەکان بار دەکرێن…",
     "empty": "لە ئەم پەڕەیە پسووڵە نییە.",
     "denied": "دانیشتن یان دەسەڵاتەکەت ڕێگە بە پێداچوونەوە نادات.",
