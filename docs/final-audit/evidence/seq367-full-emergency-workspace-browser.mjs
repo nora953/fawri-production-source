@@ -95,7 +95,7 @@ try {
     await cdp('Runtime.enable');await cdp('Page.enable');await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<600});
     await cdp('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.clear();sessionStorage.clear();localStorage.setItem('fawri_lang',${JSON.stringify(lang)});`});
     await cdp('Page.navigate',{url:origin+path+'?audit='+id});
-    const ready=route.mode==='load-failure'?text.loadError:route.mode==='denied'?text.noAuthorization:route.mode==='assistant'?expected.assistant[lang].title:expected.owner[lang].title;
+    const ready=route.mode==='load-failure'?text.loadError:route.mode==='denied'?text.noAuthorization:['assistant','revoked-poll'].includes(route.mode)?expected.assistant[lang].title:expected.owner[lang].title;
     await waitFor(()=>evaluate(cdp,`document.body.textContent.includes(${JSON.stringify(ready)})`),15000,id+' route fixture mounted');
     await waitFor(()=>apiCalls.some(x=>x.id===id&&x.path==='/api/auth/admin/me'));await delay(400);
     async function snapshot(suffix=''){
