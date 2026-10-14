@@ -1,3 +1,21 @@
+# VERIFIED P0 continuation checkpoint — 2026-10-14
+
+Active draft PR537: fix/p0-meta-bounded-rls-resolver-20261014. **Tested source a696046b124af05421895d4b1fe2f27769f1c34e**; this documentation-only checkpoint does not change tested app/SQL/test source. Draft stack: PR534 payment recovery, PR536 historical scanner fixture, PR537 bounded Meta resolver/HTTP and controlled worker fixture; older PR533 checkout foundation remains unmerged.
+
+**Final verified result:** isolated38520772813/job115709702562 SUCCESS **174PASS/0FAIL/0SKIP,41unique files/43invocations**. Restricted Meta8PASS includes signed realHTTP signature→operational middleware under restricted role. All7offline migration chains29migrations and owned cleanupPASS. Billing/cashier/tenant/meta-bot/restore/Node22 subsetsPASS. **27/27 workflow runs on tested a696046b SUCCESS**, including schema38520772844, security38520772794 and complete Meta pipeline38520772699. Machine-readable per-suite/run records: evidence/P0_SELECTED_RESULTS_20261014.json. Reports: P0_PAYMENT_SQL_RECOVERY_20261014.md, P0_HISTORY_FIXTURE_20261014.md, P0_META_BOUNDED_RESOLVER_20261014.md.
+
+**Do not repeat/restart:** P0001 payment persistence + concurrent/next-day/idempotent recovery, checkout attachment identity, scoped resolver role grants/denials, canonical29migration reproducibility and exact historical fixture scan are proven at the source above. Prior missing-stage, scanner64span and poll-race failures remain preserved, not erased. Reopen only on changed source/config or new assertion.
+
+**Remaining P0 / exact next actions:**
+1. Issue523: split durable receipt admission COMMIT from entitlement transaction; preserve original identity/hash/payment/time and prove owned process/backend interruption after receipt commit, restart recovery, concurrent replay, failed receipt COMMIT/unacknowledged error and orphan reconciliation. No provider I/O in transaction; no real providers or hosted DB.
+2. Issue535: signed request through COMPLETE actual application/manual/queue/subscription/worker with restricted role. Current restricted HTTP fixture has controlled final acceptance handler. The complete Meta pipeline passed its own test environment and is not that restricted-role proof.
+3. Reviewed function owner/RLS/explicit runtime EXECUTE rollout; no live grant performed. Keep RLS/NOBYPASSRLS, no PUBLIC execute/global admin workaround.
+4. Reconcile remaining P0 acceptance register before P1; do not infer whole readiness/percentage from174or27. Issues523/535 stayOPEN; no main merge/deploy/live migration granted.
+
+**Handoff:** start here and current PR537/Issues523+535; use a696 source proof above. Any later docs-only head need not duplicate the large SQL suite solely to validate documentation; CI may auto-trigger, record it as pending until observed. User explicitly authorized publishing code/tests/docs to nora953/fawri-production-source and draftPR/CI; do not ask again for that same scope.
+
+---
+
 # Active P0 final pipeline verification — 2026-10-14
 
 PR537, branch fix/p0-meta-bounded-rls-resolver-20261014. Testedsourcef63bac89: isolated38519930732/job115707060578174PASS/0FAIL,43invocations/41unique; restricted resolver+signed HTTP8PASS. Schema38519930628/security38519930757SUCCESS. Signature→operational role boundary only; downstream/full app not covered by that test.

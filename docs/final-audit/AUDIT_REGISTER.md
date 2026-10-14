@@ -856,3 +856,8 @@ Issue #523 / BILLING-SQL-RECONCILIATION-032 remains OPEN. New local branch `fix/
 ## Verified P0 SQL recovery — 2026-10-14
 
 Supersedes earlier local-only/NOT_RUN checkpoint: PR534/da4d0c05, isolated38517736663/job115700230288:168PASS/3FAIL,43invocations/41unique. Cashier SQL6/0 and SaaS SQL3/0 PASS, checkout9/0 PASS; remaining selected runtime failure is Meta FA-I-006/issue535 (2functional+parent). Security history1synthetic-fixture finding separately classified. See P0_PAYMENT_SQL_RECOVERY_20261014.md and active WORK_HANDOFF header. Issue523/P0 stay OPEN for broader acceptance; no merge/deploy or percentage claim.
+
+
+## VERIFIED P0 execution checkpoint — 2026-10-14
+
+Sourcea696046b, PR537 (stack534/536): isolated38520772813/job115709702562 **174PASS/0FAIL/0SKIP,41unique/43invocations**, restricted resolver+signed HTTP8PASS, seven29migration chains/cleanupPASS. **27/27 CI runsSUCCESS** on this source, including complete Meta pipeline38520772699, schema38520772844 and security38520772794. Exact source/results/limits in WORK_HANDOFF.md and evidence/P0_SELECTED_RESULTS_20261014.json. SQL application recovery and RLS routing fixes are verified drafts, main unchanged. Remaining523 receipt-before-application interruption/inbox and535 complete downstream signed restricted-role/hosted execute rollout remainOPEN. No wholeP0 completion/percentage or release clearance. Later docs-only checkpoint does not alter tested source; no unnecessary SQL rerun required solely for wording.
