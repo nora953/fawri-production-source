@@ -1,3 +1,4 @@
+import { VERIFIED_RECEIPT_REVIEW_COPY } from '@/lib/translations/features/admin/VerifiedReceiptReview';
 /**
  * AdminPage — Protected admin control panel (MVP).
  * PRODUCTION TODO: Replace localStorage session with secure server-side admin auth.
@@ -1476,7 +1477,8 @@ export function useAdminPageController() {
       (tab === "administrators" && canManageAdmins) ||
       (tab === "deletion_requests" && isOwnerAdmin) ||
       (tab === "support" && canManageSupport) ||
-      (tab === "logs" && canViewLogs);
+      (tab === "logs" && canViewLogs) ||
+      (tab === "verified_receipts" && canManageSubscriptions);
 
     if (currentTabAllowed) return;
 
@@ -1486,6 +1488,7 @@ export function useAdminPageController() {
     else if (canManageAdmins) setTab("administrators");
   }, [
     canManageAdmins,
+    canManageSubscriptions,
     canManageSupport,
     canViewLogs,
     canViewMerchantData,
@@ -1495,6 +1498,7 @@ export function useAdminPageController() {
 
   // ── Tabs config ───────────────────────────────────────────────────────────────
   const TABS = [
+    ...(canManageSubscriptions ? [{id: "verified_receipts", label: VERIFIED_RECEIPT_REVIEW_COPY[lang].title, filter: "VERIFIED_RECEIPTS"}] : []),
     ...(canViewMerchantData ? [
     {
       id: "all",
@@ -1560,7 +1564,7 @@ export function useAdminPageController() {
   const filteredMerchants =
     tab === "deletion_requests"
       ? merchants.filter((merchant) => Boolean(getPendingDeletionRequest(merchant.id)))
-      : tab !== "logs" && tab !== "administrators" && tab !== "support"
+      : tab !== "verified_receipts" && tab !== "logs" && tab !== "administrators" && tab !== "support"
         ? getFiltered(currentTab?.filter)
         : [];
   const uniqueActivities = [
@@ -1568,6 +1572,7 @@ export function useAdminPageController() {
   ].filter(Boolean);
 
   const tabCount = (t: (typeof TABS)[0]) => {
+    if (t.filter === "VERIFIED_RECEIPTS") return 0;
     if (t.filter === "LOGS") return logs.length;
     if (t.filter === "SUPPORT") return supportActiveCount;
     if (t.filter === "DELETION_REQUESTS") {
