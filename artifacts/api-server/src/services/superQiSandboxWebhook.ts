@@ -248,7 +248,14 @@ export async function handleSuperQiSandboxWebhook(input: {
     requestId: confirmed.requestId,
   });
   if (!order) {
-    return { status: "ignored", reason: "order_not_found" };
+    // A verified terminal provider payment must not be acknowledged as ignored:
+    // its local checkout may have rolled back after remote creation. Returning
+    // a retryable error preserves provider redelivery/reconciliation instead.
+    throw new SuperQiSandboxProviderError(
+      "SUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND",
+      "verified provider payment has no durable matching billing order; retry after reconciliation",
+      503,
+    );
   }
   await attachProviderPaymentReference(order, confirmed.paymentId);
 
