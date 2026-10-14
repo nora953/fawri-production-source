@@ -691,6 +691,15 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   assert.equal(revoked.status, 200);
   assert.equal((await body(revoked)).authorization.can_request, false);
 
+  for (const endpoint of ["overview", "directory"]) {
+    const response = await fetch(
+      `${baseUrl}/api/auth/admin/emergency-read-access/${endpoint}`,
+      { headers: { Cookie: trustedCookie } },
+    );
+    assert.equal(response.status, 403);
+    assert.equal((await body(response)).code, "EMERGENCY_AUTHORIZATION_REQUIRED");
+  }
+
   const afterRevocation = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/requests`,
     {
