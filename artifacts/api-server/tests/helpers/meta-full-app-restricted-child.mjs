@@ -12,6 +12,7 @@ const knowledge=await import('../../src/services/ai/knowledgeDecisionEngine.ts')
 knowledge.configureKnowledgeEmbeddingProvider({providerId:'synthetic-meta-app',model:'synthetic-meta-app-v1',dimensions:2,async embed(){return [1,0];}});
 const {default:app}=await import('../../src/app.ts');
 const {startMetaWebhookWorker}=await import('../../src/services/metaWebhookWorker.ts');
+const {getCurrentSubscriptionPostgres}=await import('../../src/services/postgresSubscriptionEntitlement.ts');
 const {withMerchantOperationalTransaction}=await import('../../src/services/operationalPostgresAuthority.ts');
 const server=await new Promise((resolve,reject)=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));s.once('error',reject);});
 // Deterministically drive the original worker's runOnce, including original
@@ -22,8 +23,19 @@ let stopping=false;
 process.on('message',async task=>{
   try{
     if(task.command==='run'){await send({id:task.id,ran:await worker.runOnce()});}
+    else if(task.command==='subscriptions'){
+      for(const merchantId of task.merchants){
+        const subscription=await getCurrentSubscriptionPostgres(merchantId);
+        assert.equal(subscription?.merchant_id,merchantId);
+        assert.equal(subscription.status,'active');
+        assert.equal(subscription.base_replies_remaining,20);
+        assert.equal((await pool.query("SELECT NULLIF(current_setting('fawri.tenant_id',true),'') AS tenant")).rows[0].tenant,null);
+        assert.equal((await pool.query('SELECT count(*)::int AS n FROM subscriptions')).rows[0].n,0);
+      }
+      await send({id:task.id,subscriptionsVisible:true,contextReset:true});
+    }
     else if(task.command==='isolation'){
-      const tables=['merchant_channels','background_jobs','background_job_payloads','messages','reply_ledger'];
+      const tables=['merchant_channels','background_jobs','background_job_payloads','messages','reply_ledger','subscriptions','subscription_reply_batches'];
       for(const table of tables)assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${table}`)).rows[0].n,0);
       for(const merchantId of task.merchants){
         const rows=await withMerchantOperationalTransaction(merchantId,c=>c.query('SELECT merchant_id FROM merchant_channels'));

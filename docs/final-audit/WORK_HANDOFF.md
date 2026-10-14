@@ -1,3 +1,13 @@
+## PR547 publication explicitly authorized — 2026-10-15 Baghdad
+
+User explicitly authorized code/docs publication to nora953/fawri-production-source within PR547 and CI. Local original-function transaction tests5PASS added; source TypeScript and six existing contracts alreadyPASS. Restricted SQL acceptance remains pending. Do not count new local adapter tests as SQL/RLS or whole-audit acceptance. Event-only restore/globallist concerns remain open.
+
+## Meta actual-app restricted-role failure and prepared repair — 2026-10-14
+
+Remote Draft PR547 head039fe108d19e30cf92dcbcfa4edf3343329879be remains unchanged. Isolated run38633527935/job116090836480 failed original worker subscription admission; signed ingress/queue/isolation passed. Five of seven workflows succeeded; do not claim Meta acceptance. Root source cause: merchant-identified subscription transactions omitted transaction-local tenant context, hiding subscriptions under RLS. Local repair commit a8fdeb912fa32380adba0fa351b15476ed16d34e adds tenant-local context to current-read/reserve/emergency/action only. Existing policies/role grants/ledger locks unchanged. TypeScript noEmit PASS; existing six static cutover/realtime contract tests PASS; these are not SQL proof. pnpm workspace command refused cross-worktree symlink layout, direct installed TypeScript passed without dependency mutation.
+
+Git push to the known PR547 branch was rejected by automatic approval review as sensitive egress requiring explicit destination authorization. Remote SHA independently confirmed unchanged. Do not retry via an alternate tool to bypass review. User confirmation required for publication to nora953/fawri-production-source and CI. Full actual-app SQL acceptance NOT_RUN for repair. Event-only refund/release restore and global subscription list remain separate unscoped-authority concerns; no acceptance credit. No hosted grants/DB/provider/merge/deploy action. Original worktree and unrelated modified capture preserved; repair in isolated worktree fawri-meta-repair. Next: publish authorized repair, inspect actual restricted-role worker CI, then extend failed-transport refund/release under explicit verified tenant scope.
+
 ## Verified actual operator HTTP PostgreSQL wire recovery — 2026-10-14
 
 Draft PR546, branch test/p0-operator-replay-wire-recovery-20261014 stacked on545/d15aa5fd. Accepted2e3acfea62c6c7e1ad14e2f088e33fb0998ba3d8; isolated38631830513/job116085119744, merge71db03cc64f5916b81806d96c14a8de2810ab5c8:240PASS/0FAIL/0SKIP,47unique files/49invocations. New operator suite5PASS (parent+4cases);7/7 observed workflowsSUCCESS. Prior545 documentation head7CI SUCCESS verified. Totals overlap earlier proofs; no additive/whole-audit percentage.

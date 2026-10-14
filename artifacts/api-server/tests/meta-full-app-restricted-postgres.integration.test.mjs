@@ -69,6 +69,11 @@ test('signed actual Meta app reaches original manual filter, tenant queue and li
     await pool.query(`REVOKE EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) FROM ${role}`);
     try{await denial(await post(pages[0],'revoked'),503);}finally{await pool.query(`GRANT EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) TO ${role}`);}
   });
+  await t.test('original subscription authority sees each owned tenant and clears pooled context before ingress',async()=>{
+    const proof=await command('subscriptions',{merchants});
+    assert.equal(proof.subscriptionsVisible,true);assert.equal(proof.contextReset,true);
+    assert.deepEqual(await jobs(),[]);assert.equal(await debits(),0);assert.equal(sends.length,0);
+  });
   await t.test('two tenant signed deliveries queue once before any reservation or transport',async()=>{
     for(let i=0;i<2;i++){assert.equal((await post(pages[i],`auto-${i}`)).status,200);assert.equal((await post(pages[i],`auto-${i}`)).status,200);}
     const queued=await jobs();assert.equal(queued.length,2);assert.ok(queued.every(j=>j.status==='queued'&&j.attempts===0));assert.deepEqual(queued.map(j=>j.merchant_id).sort(),[...merchants].sort());assert.equal(await debits(),0);assert.equal(sends.length,0);
