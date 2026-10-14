@@ -1,0 +1,6 @@
+## Prepared restricted Meta restore COMMIT-ack/process recovery — 2026-10-15 Baghdad
+
+Test-only extension on authorized Draft PR547. New guarded offline suite invokes original refund/release wrappers in fresh nonowner/NOBYPASSRLS processes, uses existing ownedTCP exact COMMIT CommandComplete filter after role/read-denial checks. Four cases: refund/release with handled COMMIT-ack loss or selfSIGKILL immediately after withheld actual committed response. Independent parent SQL mustprove1credit/restoredbalance, immutable debit; wrongtenant denial; two fresh-process concurrent duplicate retries mustleave original credit/time/metadata unchanged and resettenantcontext. Source syntax/diffPASS; PostgreSQL NOT_RUN pendingCI. No production source/SQL/RLS/grants change.
+
+This covers original scoped restore primitive across TCP/process loss at its COMMIT, not full-worker interruption between deadletter and refundenqueue, initial-precommit rollback, arbitrary processdeath or actual Meta/provider traffic. Prior actualsignedworker13PASS/aggregate253 reused separately. Next full-worker refund-discovery restart gap and hostilepayload/rowtenant mismatch cases remainOPEN. No merge/deploy/hosted writes.
+

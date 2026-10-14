@@ -1,3 +1,9 @@
+## Prepared restricted Meta restore COMMIT-ack/process recovery — 2026-10-15 Baghdad
+
+Test-only extension on authorized Draft PR547. New guarded offline suite invokes original refund/release wrappers in fresh nonowner/NOBYPASSRLS processes, uses existing ownedTCP exact COMMIT CommandComplete filter after role/read-denial checks. Four cases: refund/release with handled COMMIT-ack loss or selfSIGKILL immediately after withheld actual committed response. Independent parent SQL mustprove1credit/restoredbalance, immutable debit; wrongtenant denial; two fresh-process concurrent duplicate retries mustleave original credit/time/metadata unchanged and resettenantcontext. Source syntax/diffPASS; PostgreSQL NOT_RUN pendingCI. No production source/SQL/RLS/grants change.
+
+This covers original scoped restore primitive across TCP/process loss at its COMMIT, not full-worker interruption between deadletter and refundenqueue, initial-precommit rollback, arbitrary processdeath or actual Meta/provider traffic. Prior actualsignedworker13PASS/aggregate253 reused separately. Next full-worker refund-discovery restart gap and hostilepayload/rowtenant mismatch cases remainOPEN. No merge/deploy/hosted writes.
+
 ## Verified restricted Meta refund and postreservation release — 2026-10-15 Baghdad
 
 Draft PR547 accepted source0efc5c547b201ec80031901f540d4d91cf38d494. Isolated run38644555624/job116128093363, mergecheckout08dd6779604d091d352b5d417055f73d5c16cd5e SUCCESS:253PASS/0FAIL/0SKIP,48unique files/50invocations. Original actual-app suite13PASS(parent+12cases), superseding prior10 withoutaddingruns. All14 observed workflowsSUCCESS; previous documentationhead35a4a3 all12CI SUCCESS. Fullrestore33migrations/95tables/45policies/8functions identical793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498, ownedcleanupPASS.
