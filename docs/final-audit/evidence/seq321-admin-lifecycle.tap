@@ -1,0 +1,104 @@
+TAP version 13
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# Subtest: current admin lifecycle HTTP boundaries on owned SQL
+    # Subtest: assistant cannot list or create administrators
+    ok 1 - assistant cannot list or create administrators
+      ---
+      duration_ms: 61.991482
+      type: 'test'
+      ...
+    # Subtest: owner invalid assistant input creates no account
+    ok 2 - owner invalid assistant input creates no account
+      ---
+      duration_ms: 8.475573
+      type: 'test'
+      ...
+    # Subtest: owner creates assistant with zero grants and mandatory password change
+    ok 3 - owner creates assistant with zero grants and mandatory password change
+      ---
+      duration_ms: 59.347132
+      type: 'test'
+      ...
+    # Subtest: duplicate assistant phone is rejected without second account
+    ok 4 - duplicate assistant phone is rejected without second account
+      ---
+      duration_ms: 42.917129
+      type: 'test'
+      ...
+    # Subtest: work monitor is owner-only and excludes foreign sessions and private material
+    ok 5 - work monitor is owner-only and excludes foreign sessions and private material
+      ---
+      duration_ms: 19.709045
+      type: 'test'
+      ...
+    # Subtest: HTTP trust refuses third device and preserves existing trusted devices
+    ok 6 - HTTP trust refuses third device and preserves existing trusted devices
+      ---
+      duration_ms: 63.796262
+      type: 'test'
+      ...
+    # Subtest: logout-all rejects assistant actor and owner target
+    ok 7 - logout-all rejects assistant actor and owner target
+      ---
+      duration_ms: 12.275611
+      type: 'test'
+      ...
+    # Subtest: owner logout-all revokes both assistant devices and preserves other accounts
+    ok 8 - owner logout-all revokes both assistant devices and preserves other accounts
+      ---
+      duration_ms: 27.874117
+      type: 'test'
+      ...
+    # Subtest: wrong owner reset password leaves hash versions flag and session unchanged
+    ok 9 - wrong owner reset password leaves hash versions flag and session unchanged
+      ---
+      duration_ms: 43.868248
+      type: 'test'
+      ...
+    # Subtest: temporary password mismatch leaves account and session unchanged
+    ok 10 - temporary password mismatch leaves account and session unchanged
+      ---
+      duration_ms: 43.794221
+      type: 'test'
+      ...
+    # Subtest: valid owner password reset changes SQL hash flag versions and revokes cookie
+    ok 11 - valid owner password reset changes SQL hash flag versions and revokes cookie
+      ---
+      duration_ms: 155.108049
+      type: 'test'
+      ...
+    # Subtest: fresh temporary-password session exposes identity but blocks operational access
+    ok 12 - fresh temporary-password session exposes identity but blocks operational access
+      ---
+      duration_ms: 12.045964
+      type: 'test'
+      ...
+    # Subtest: forced change cannot reuse temporary password and preserves live session
+    ok 13 - forced change cannot reuse temporary password and preserves live session
+      ---
+      duration_ms: 42.263965
+      type: 'test'
+      ...
+# ADMIN_LIFECYCLE_OBSERVATIONS {"cases":14,"results":[{"name":"assistant cannot list or create administrators","status":"PASS","details":{"list":403,"create":403,"noNewAccount":true}},{"name":"owner invalid assistant input creates no account","status":"PASS","details":{"status":400,"noNewAccount":true}},{"name":"owner creates assistant with zero grants and mandatory password change","status":"PASS","details":{"status":201,"role":"assistant_admin","grants":0,"mustChange":true}},{"name":"duplicate assistant phone is rejected without second account","status":"PASS","details":{"status":409,"accountRows":1}},{"name":"work monitor is owner-only and excludes foreign sessions and private material","status":"PASS","details":{"anonymous":401,"assistant":403,"owner":200,"ownedSessions":1,"privateFieldsAbsent":true}},{"name":"HTTP trust refuses third device and preserves existing trusted devices","status":"PASS","details":{"status":409,"trusted":2,"thirdPending":true}},{"name":"logout-all rejects assistant actor and owner target","status":"PASS","details":{"assistant":403,"ownerTarget":404,"ownerActive":true}},{"name":"owner logout-all revokes both assistant devices and preserves other accounts","status":"PASS","details":{"status":200,"revoked":2,"targetCookies":401,"otherAccounts":200}},{"name":"wrong owner reset password leaves hash versions flag and session unchanged","status":"PASS","details":{"status":401,"stateUnchanged":true,"sessionActive":true}},{"name":"temporary password mismatch leaves account and session unchanged","status":"PASS","details":{"status":400,"stateUnchanged":true}},{"name":"valid owner password reset changes SQL hash flag versions and revokes cookie","status":"PASS","details":{"status":200,"passwordUpdated":true,"mustChange":true,"versionsIncremented":true,"oldHTTP":401}},{"name":"fresh temporary-password session exposes identity but blocks operational access","status":"PASS","details":{"identity":200,"operations":403,"reason":"ADMIN_PASSWORD_CHANGE_REQUIRED"}},{"name":"forced change cannot reuse temporary password and preserves live session","status":"PASS","details":{"status":409,"unchanged":true}},{"name":"forced password change clears flag revokes cookie and fresh session regains granted access","status":"PASS","details":{"status":200,"flagCleared":true,"oldHTTP":401,"freshOperations":200,"ownerStillAuthorized":true}}],"noLegacyJSON":true}
+    # Subtest: forced password change clears flag revokes cookie and fresh session regains granted access
+    ok 14 - forced password change clears flag revokes cookie and fresh session regains granted access
+      ---
+      duration_ms: 138.713596
+      type: 'test'
+      ...
+    1..14
+ok 1 - current admin lifecycle HTTP boundaries on owned SQL
+  ---
+  duration_ms: 2224.153782
+  type: 'test'
+  ...
+1..1
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2658.332146

@@ -1,3 +1,4 @@
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { randomUUID } from "node:crypto";
@@ -5,6 +6,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+
+if (process.env.DATABASE_URL) await assertDisposablePostgres();
 
 test("merchant deletion honors RLS for quiescence, purge and physical cleanup", { timeout: 60_000 }, async () => {
   const originalUrl = process.env.DATABASE_URL;

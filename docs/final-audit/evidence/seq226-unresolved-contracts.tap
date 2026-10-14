@@ -1,0 +1,4756 @@
+TAP version 13
+# Subtest: Auth v2 browser transport sends the stable device id to every same-origin API request
+ok 1 - Auth v2 browser transport sends the stable device id to every same-origin API request
+  ---
+  duration_ms: 4.454362
+  type: 'test'
+  ...
+# Subtest: merchant realtime SSE uses the Auth v2 fetch transport instead of native EventSource
+ok 2 - merchant realtime SSE uses the Auth v2 fetch transport instead of native EventSource
+  ---
+  duration_ms: 1.020896
+  type: 'test'
+  ...
+# Subtest: operational routes remain behind the global Auth v2 compatibility boundary
+ok 3 - operational routes remain behind the global Auth v2 compatibility boundary
+  ---
+  duration_ms: 3.088571
+  type: 'test'
+  ...
+# Subtest: cashier sync validates cash received and change without breaking legacy queued cash sales
+ok 4 - cashier sync validates cash received and change without breaking legacy queued cash sales
+  ---
+  duration_ms: 5.123248
+  type: 'test'
+  ...
+# Subtest: validated cash tender becomes immutable idempotency evidence and canonical order metadata
+ok 5 - validated cash tender becomes immutable idempotency evidence and canonical order metadata
+  ---
+  duration_ms: 1.379225
+  type: 'test'
+  ...
+# Subtest: server parser preserves tender fields only after exact validation
+ok 6 - server parser preserves tender fields only after exact validation
+  ---
+  duration_ms: 0.848782
+  type: 'test'
+  ...
+# Subtest: cashier compensation sync is merchant-authenticated and separate from sale sync
+ok 7 - cashier compensation sync is merchant-authenticated and separate from sale sync
+  ---
+  duration_ms: 4.725611
+  type: 'test'
+  ...
+# Subtest: cashier compensation replays before inventory and uses one PostgreSQL transaction
+ok 8 - cashier compensation replays before inventory and uses one PostgreSQL transaction
+  ---
+  duration_ms: 1.251357
+  type: 'test'
+  ...
+# Subtest: return reconciliation derives refund and restock from immutable original sale evidence
+ok 9 - return reconciliation derives refund and restock from immutable original sale evidence
+  ---
+  duration_ms: 1.229474
+  type: 'test'
+  ...
+# Subtest: void reconciliation restores original tracked stock without bypassing terminal order lifecycle
+ok 10 - void reconciliation restores original tracked stock without bypassing terminal order lifecycle
+  ---
+  duration_ms: 1.969095
+  type: 'test'
+  ...
+# Subtest: operator browser classifies return and void and ACKs only after complete server acceptance
+ok 11 - operator browser classifies return and void and ACKs only after complete server acceptance
+  ---
+  duration_ms: 1.015178
+  type: 'test'
+  ...
+# Subtest: activation is explicit, database-targeted and defaults to preflight
+ok 12 - activation is explicit, database-targeted and defaults to preflight
+  ---
+  duration_ms: 0.844726
+  type: 'test'
+  ...
+# Subtest: activation is bound to two explicit reviewed staff identities and roles
+ok 13 - activation is bound to two explicit reviewed staff identities and roles
+  ---
+  duration_ms: 0.194337
+  type: 'test'
+  ...
+# Subtest: activation requires canonical 0015 and a live paired station
+ok 14 - activation requires canonical 0015 and a live paired station
+  ---
+  duration_ms: 0.125625
+  type: 'test'
+  ...
+# Subtest: activation grants cashier 10-percent-style authority separately from manager approval authority
+ok 15 - activation grants cashier 10-percent-style authority separately from manager approval authority
+  ---
+  duration_ms: 0.923873
+  type: 'test'
+  ...
+# Subtest: activation serializes staff authority writes and keeps session snapshots coherent
+ok 16 - activation serializes staff authority writes and keeps session snapshots coherent
+  ---
+  duration_ms: 0.288155
+  type: 'test'
+  ...
+# Subtest: override approval schema is canonical, sale-bound, one-operation-only, expiring and auditable
+ok 17 - override approval schema is canonical, sale-bound, one-operation-only, expiring and auditable
+  ---
+  duration_ms: 5.257466
+  type: 'test'
+  ...
+# Subtest: canonical migration expands PostgreSQL permission authority for manual discount and override
+ok 18 - canonical migration expands PostgreSQL permission authority for manual discount and override
+  ---
+  duration_ms: 1.07779
+  type: 'test'
+  ...
+# Subtest: override issuance requires another active manager, explicit permission, policy and PIN
+ok 19 - override issuance requires another active manager, explicit permission, policy and PIN
+  ---
+  duration_ms: 0.758449
+  type: 'test'
+  ...
+# Subtest: manager approval is checked immediately against the selected discount type and current sale base
+ok 20 - manager approval is checked immediately against the selected discount type and current sale base
+  ---
+  duration_ms: 2.142601
+  type: 'test'
+  ...
+# Subtest: approval is bound to tenant, station, operator, operation, amount and normalized reason
+ok 21 - approval is bound to tenant, station, operator, operation, amount and normalized reason
+  ---
+  duration_ms: 0.72542
+  type: 'test'
+  ...
+# Subtest: delayed sync validates approval against sale creation time instead of sync wall clock
+ok 22 - delayed sync validates approval against sale creation time instead of sync wall clock
+  ---
+  duration_ms: 0.784658
+  type: 'test'
+  ...
+# Subtest: consumed approval remains retry-safe only for its exact operation and sale window
+ok 23 - consumed approval remains retry-safe only for its exact operation and sale window
+  ---
+  duration_ms: 0.677249
+  type: 'test'
+  ...
+# Subtest: operator routes expose eligible approvers and PIN-backed approval issuance
+ok 24 - operator routes expose eligible approvers and PIN-backed approval issuance
+  ---
+  duration_ms: 0.638341
+  type: 'test'
+  ...
+# Subtest: sale sync accepts manager proof only when employee limit is exceeded
+ok 25 - sale sync accepts manager proof only when employee limit is exceeded
+  ---
+  duration_ms: 0.649449
+  type: 'test'
+  ...
+# Subtest: live readiness is database-targeted and read only
+ok 26 - live readiness is database-targeted and read only
+  ---
+  duration_ms: 1.051311
+  type: 'test'
+  ...
+# Subtest: live readiness requires explicit discount and override authority
+ok 27 - live readiness requires explicit discount and override authority
+  ---
+  duration_ms: 0.175028
+  type: 'test'
+  ...
+# Subtest: live readiness requires a paired station with a live credential
+ok 28 - live readiness requires a paired station with a live credential
+  ---
+  duration_ms: 0.109762
+  type: 'test'
+  ...
+# Subtest: live readiness exposes configuration blockers without identities or PIN material
+ok 29 - live readiness exposes configuration blockers without identities or PIN material
+  ---
+  duration_ms: 0.191343
+  type: 'test'
+  ...
+# Subtest: canonical 0015 migration stage reproduces the committed SQL authority exactly
+ok 30 - canonical 0015 migration stage reproduces the committed SQL authority exactly
+  ---
+  duration_ms: 5.772456
+  type: 'test'
+  ...
+# Subtest: guarded 0015 apply is exact-target, database-bound and exposes a read-only preflight
+ok 31 - guarded 0015 apply is exact-target, database-bound and exposes a read-only preflight
+  ---
+  duration_ms: 1.632974
+  type: 'test'
+  ...
+# Subtest: canonical cashier discount override schema is ready only when every authority fact is present
+ok 32 - canonical cashier discount override schema is ready only when every authority fact is present
+  ---
+  duration_ms: 0.363376
+  type: 'test'
+  ...
+# Subtest: manually created tables without canonical 0015 migration history fail readiness
+ok 33 - manually created tables without canonical 0015 migration history fail readiness
+  ---
+  duration_ms: 0.132956
+  type: 'test'
+  ...
+# Subtest: legacy cashier permission constraint without manual discount grants fails readiness
+ok 34 - legacy cashier permission constraint without manual discount grants fails readiness
+  ---
+  duration_ms: 0.10852
+  type: 'test'
+  ...
+# Subtest: missing approval evidence column fails closed
+ok 35 - missing approval evidence column fails closed
+  ---
+  duration_ms: 0.315336
+  type: 'test'
+  ...
+# Subtest: missing tenant-bound approval constraint fails closed
+ok 36 - missing tenant-bound approval constraint fails closed
+  ---
+  duration_ms: 0.18322
+  type: 'test'
+  ...
+# Subtest: manual discount permissions exist but are never granted by role presets
+ok 37 - manual discount permissions exist but are never granted by role presets
+  ---
+  duration_ms: 9.048634
+  type: 'test'
+  ...
+# Subtest: discount policy defaults fail closed and caps by percentage plus optional amount
+not ok 38 - discount policy defaults fail closed and caps by percentage plus optional amount
+  ---
+  duration_ms: 2.810907
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/cashier-manual-discount-policy.test.mjs:22:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /Math\.floor\(\s*\(total \* input\.policy\.max_percentage_bps\) \/ 10_000/. Input:
+    
+    'export type CashierManualDiscountPolicy = {\n' +
+      '  enabled: boolean;\n' +
+      '  max_percentage_bps: number;\n' +
+      '  max_amount_minor: number | null;\n' +
+      '  can_approve_override: boolean;\n' +
+      '};\n' +
+      '\n' +
+      "export type CashierManualDiscountKind = 'amount' | 'percentage';\n" +
+      '\n' +
+      'export const DISABLED_CASHIER_MANUAL_DISCOUNT_POLICY: CashierManualDiscountPolicy = {\n' +
+      '  enabled: false,\n' +
+      '  max_percentage_bps: 0,\n' +
+      '  max_amount_minor: null,\n' +
+      '  can_approve_override: false,\n' +
+      '};\n' +
+      '\n' +
+      'export class CashierDiscountPolicyError extends Error {\n' +
+      '  readonly code: string;\n' +
+      '\n' +
+      '  constructor(code: string, message: string) {\n' +
+      '    super(message);\n' +
+      "    this.name = 'CashierDiscountPolicyError';\n" +
+      '    this.code = code;\n' +
+      '  }\n' +
+      '}\n' +
+      '\n' +
+      'function safeInteger(value: unknown, field: string, minimum: number, maximum: number): number {\n' +
+      "  const number = typeof value === 'number' ? value : Number(value);\n" +
+      '  if (!Number.isSafeInteger(number) || number < minimum || number > maximum) {\n' +
+      '    throw new CashierDiscountPolicyError(\n' +
+      "      'CASHIER_DISCOUNT_POLICY_INVALID',\n" +
+      '      `${field} is invalid`,\n' +
+      '    );\n' +
+      '  }\n' +
+      '  return number;\n' +
+      '}\n' +
+      '\n' +
+      'function requiredPercentageBps(value: unknown): number {\n' +
+      '  if (\n' +
+      '    value === undefined\n' +
+      '    || value === null\n' +
+      "    || (typeof value === 'string' && value.trim() === '')\n" +
+      '  ) {\n' +
+      '    throw new CashierDiscountPolicyError(\n' +
+      "      'CASHIER_DISCOUNT_POLICY_INVALID',\n" +
+      "      'max_percentage_bps is required when manual discount is enabled',\n" +
+      '    );\n' +
+      '  }\n' +
+      "  return safeInteger(value, 'max_percentage_bps', 0, 10_000);\n" +
+      '}\n' +
+      '\n' +
+      'function requiredAmountMinor(value: unknown): number {\n' +
+      '  if (\n' +
+      '    value === undefined\n' +
+      '    || value === null\n' +
+      "    || (typeof value === 'string' && value.trim() === '')\n" +
+      '  ) {\n' +
+      '    throw new CashierDiscountPolicyError(\n' +
+      "      'CASHIER_DISCOUNT_POLICY_INVALID',\n" +
+      "      'max_amount_minor is required when manual discount is enabled',\n" +
+      '    );\n' +
+      '  }\n' +
+      "  return safeInteger(value, 'max_amount_minor', 1, Number.MAX_SAFE_INTEGER);\n" +
+      '}\n' +
+      '\n' +
+      'export function normalizeCashierManualDiscountPolicy(\n' +
+      '  value: unknown,\n' +
+      '): CashierManualDiscountPolicy {\n' +
+      '  if (value === undefined || value === null) {\n' +
+      '    return { ...DISABLED_CASHIER_MANUAL_DISCOUNT_POLICY };\n' +
+      '  }\n' +
+      "  if (typeof value !== 'object' || Array.isArray(value)) {\n" +
+      '    throw new CashierDiscountPolicyError(\n' +
+      "      'CASHIER_DISCOUNT_POLICY_INVALID',\n" +
+      "      'cashier discount policy must be an object',\n" +
+      '    );\n' +
+      '  }\n' +
+      '  const input = value as Record<string, unknown>;\n' +
+      '  const enabled = input.enabled === true;\n' +
+      '  const maxPercentageBps = enabled\n' +
+      '    ? requiredPercentageBps(input.max_percentage_bps)\n' +
+      "    : safeInteger(input.max_percentage_bps ?? 0, 'max_percentage_bps', 0, 10_000);\n" +
+      '  const maxAmountMinor = enabled\n' +
+      '    ? requiredAmountMinor(input.max_amount_minor)\n' +
+      "    : input.max_amount_minor === undefined || input.max_amount_minor === null || input.max_amount_minor === ''\n" +
+      '      ? null\n' +
+      "      : safeInteger(input.max_amount_minor, 'max_amount_minor', 0, Number.MAX_SAFE_INTEGER);\n" +
+      '  const canApproveOverride = input.can_approve_override === true;\n' +
+      '\n' +
+      '  if (!enabled) {\n' +
+      '    return { ...DISABLED_CASHIER_MANUAL_DISCOUNT_POLICY };\n' +
+      '  }\n' +
+      '  return {\n' +
+      '    enabled: true,\n' +
+      '    max_percentage_bps: maxPercentageBps,\n' +
+      '    max_amount_minor: maxAmountMinor,\n' +
+      '    can_approve_override: canApproveOverride,\n' +
+      '  };\n' +
+      '}\n' +
+      '\n' +
+      'export function restrictCashierManualDiscountPolicyForRole(\n' +
+      '  policy: CashierManualDiscountPolicy,\n' +
+      '  role: unknown,\n' +
+      '): CashierManualDiscountPolicy {\n' +
+      "  if (role === 'manager') {\n" +
+      '    return { ...policy };\n' +
+      '  }\n' +
+      '  return {\n' +
+      '    ...policy,\n' +
+      '    can_approve_override: false,\n' +
+      '  };\n' +
+      '}\n' +
+      '\n' +
+      'function percentageLimitMinor(total: number, policy: CashierManualDiscountPolicy): number {\n' +
+      '  const limit = Math.floor((total * policy.max_percentage_bps) / 10_000);\n' +
+      '  if (!Number.isSafeInteger(limit) || limit < 0) {\n' +
+      '    throw new CashierDiscountPolicyError(\n' +
+      "      'CASHIER_DISCOUNT_POLICY_INVALID',\n" +
+      "      'cashier percentage discount limit is invalid',\n" +
+      '    );\n' +
+      '  }\n' +
+      '  return Math.min(total, limit);\n' +
+      '}\n' +
+      '\n' +
+      'export function cashierManualDiscountLimitMinor(input: {\n' +
+      '  postPromotionTotalMinor: number;\n' +
+      '  policy: CashierManualDiscountPolicy;\n' +
+      '  kind?: CashierManualDiscountKind;\n' +
+      '}): number {\n' +
+      '  const total = safeInteger(\n' +
+      '    input.postPromotionTotalMinor,\n' +
+      "    'post_promotion_total_minor',\n" +
+      '    0,\n' +
+      '    Number.MAX_SAFE_INTEGER,\n' +
+      '  );\n' +
+      '  if (!input.policy.enabled || total === 0) return 0;\n' +
+      '\n' +
+      '  const percentLimit = percentageLimitMinor(total, input.policy);\n' +
+      '  const amountLimit = input.policy.max_amount_minor === null\n' +
+      '    ? 0\n' +
+      '    : Math.min(total, input.policy.max_amount_minor);\n' +
+      '\n' +
+      "  if (input.kind === 'amount') return amountLimit;\n" +
+      "  if (input.kind === 'percentage') return percentLimit;\n" +
+      '\n' +
+      '  // Compatibility only for durable sales created before discount kind became\n' +
+      '  // explicit. Fail conservatively by retaining the historical stricter limit.\n' +
+      '  return Math.min(percentLimit, amountLimit);\n' +
+      '}\n' +
+      '\n' +
+      'export function cashierManualDiscountWithinPolicy(input: {\n' +
+      '  postPromotionTotalMinor: number;\n' +
+      '  manualDiscountMinor: number;\n' +
+      '  policy: CashierManualDiscountPolicy;\n' +
+      '  kind?: CashierManualDiscountKind;\n' +
+      '}): boolean {\n' +
+      '  const discount = safeInteger(\n' +
+      '    input.manualDiscountMinor,\n' +
+      "    'manual_discount_minor',\n" +
+      '    0,\n' +
+      '    Number.MAX_SAFE_INTEGER,\n' +
+      '  );\n' +
+      '  return discount <= cashierManualDiscountLimitMinor({\n' +
+      '    postPromotionTotalMinor: input.postPromotionTotalMinor,\n' +
+      '    policy: input.policy,\n' +
+      '    kind: input.kind,\n' +
+      '  });\n' +
+      '}\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    export type CashierManualDiscountPolicy = {
+      enabled: boolean;
+      max_percentage_bps: number;
+      max_amount_minor: number | null;
+      can_approve_override: boolean;
+    };
+    
+    export type CashierManualDiscountKind = 'amount' | 'percentage';
+    
+    export const DISABLED_CASHIER_MANUAL_DISCOUNT_POLICY: CashierManualDiscountPolicy = {
+      enabled: false,
+      max_percentage_bps: 0,
+      max_amount_minor: null,
+      can_approve_override: false,
+    };
+    
+    export class CashierDiscountPolicyError extends Error {
+      readonly code: string;
+    
+      constructor(code: string, message: string) {
+        super(message);
+        this.name = 'CashierDiscountPolicyError';
+        this.code = code;
+      }
+    }
+    
+    function safeInteger(value: unknown, field: string, minimum: number, maximum: number): number {
+      const number = typeof value === 'number' ? value : Number(value);
+      if (!Number.isSafeInteger(number) || number < minimum || number > maximum) {
+        throw new CashierDiscountPolicyError(
+          'CASHIER_DISCOUNT_POLICY_INVALID',
+          `${field} is invalid`,
+        );
+      }
+      return number;
+    }
+    
+    function requiredPercentageBps(value: unknown): number {
+      if (
+        value === undefined
+        || value === null
+        || (typeof value === 'string' && value.trim() === '')
+      ) {
+        throw new CashierDiscountPolicyError(
+          'CASHIER_DISCOUNT_POLICY_INVALID',
+          'max_percentage_bps is required when manual discount is enabled',
+        );
+      }
+      return safeInteger(value, 'max_percentage_bps', 0, 10_000);
+    }
+    
+    function requiredAmountMinor(value: unknown): number {
+      if (
+        value === undefined
+        || value === null
+        || (typeof value === 'string' && value.trim() === '')
+      ) {
+        throw new CashierDiscountPolicyError(
+          'CASHIER_DISCOUNT_POLICY_INVALID',
+          'max_amount_minor is required when manual discount is enabled',
+        );
+      }
+      return safeInteger(value, 'max_amount_minor', 1, Number.MAX_SAFE_INTEGER);
+    }
+    
+    export function normalizeCashierManualDiscountPolicy(
+      value: unknown,
+    ): CashierManualDiscountPolicy {
+      if (value === undefined || value === null) {
+        return { ...DISABLED_CASHIER_MANUAL_DISCOUNT_POLICY };
+      }
+      if (typeof value !== 'object' || Array.isArray(value)) {
+        throw new CashierDiscountPolicyError(
+          'CASHIER_DISCOUNT_POLICY_INVALID',
+          'cashier discount policy must be an object',
+        );
+      }
+      const input = value as Record<string, unknown>;
+      const enabled = input.enabled === true;
+      const maxPercentageBps = enabled
+        ? requiredPercentageBps(input.max_percentage_bps)
+        : safeInteger(input.max_percentage_bps ?? 0, 'max_percentage_bps', 0, 10_000);
+      const maxAmountMinor = enabled
+        ? requiredAmountMinor(input.max_amount_minor)
+        : input.max_amount_minor === undefined || input.max_amount_minor === null || input.max_amount_minor === ''
+          ? null
+          : safeInteger(input.max_amount_minor, 'max_amount_minor', 0, Number.MAX_SAFE_INTEGER);
+      const canApproveOverride = input.can_approve_override === true;
+    
+      if (!enabled) {
+        return { ...DISABLED_CASHIER_MANUAL_DISCOUNT_POLICY };
+      }
+      return {
+        enabled: true,
+        max_percentage_bps: maxPercentageBps,
+        max_amount_minor: maxAmountMinor,
+        can_approve_override: canApproveOverride,
+      };
+    }
+    
+    export function restrictCashierManualDiscountPolicyForRole(
+      policy: CashierManualDiscountPolicy,
+      role: unknown,
+    ): CashierManualDiscountPolicy {
+      if (role === 'manager') {
+        return { ...policy };
+      }
+      return {
+        ...policy,
+        can_approve_override: false,
+      };
+    }
+    
+    function percentageLimitMinor(total: number, policy: CashierManualDiscountPolicy): number {
+      const limit = Math.floor((total * policy.max_percentage_bps) / 10_000);
+      if (!Number.isSafeInteger(limit) || limit < 0) {
+        throw new CashierDiscountPolicyError(
+          'CASHIER_DISCOUNT_POLICY_INVALID',
+          'cashier percentage discount limit is invalid',
+        );
+      }
+      return Math.min(total, limit);
+    }
+    
+    export function cashierManualDiscountLimitMinor(input: {
+      postPromotionTotalMinor: number;
+      policy: CashierManualDiscountPolicy;
+      kind?: CashierManualDiscountKind;
+    }): number {
+      const total = safeInteger(
+        input.postPromotionTotalMinor,
+        'post_promotion_total_minor',
+        0,
+        Number.MAX_SAFE_INTEGER,
+      );
+      if (!input.policy.enabled || total === 0) return 0;
+    
+      const percentLimit = percentageLimitMinor(total, input.policy);
+      const amountLimit = input.policy.max_amount_minor === null
+        ? 0
+        : Math.min(total, input.policy.max_amount_minor);
+    
+      if (input.kind === 'amount') return amountLimit;
+      if (input.kind === 'percentage') return percentLimit;
+    
+      // Compatibility only for durable sales created before discount kind became
+      // explicit. Fail conservatively by retaining the historical stricter limit.
+      return Math.min(percentLimit, amountLimit);
+    }
+    
+    export function cashierManualDiscountWithinPolicy(input: {
+      postPromotionTotalMinor: number;
+      manualDiscountMinor: number;
+      policy: CashierManualDiscountPolicy;
+      kind?: CashierManualDiscountKind;
+    }): boolean {
+      const discount = safeInteger(
+        input.manualDiscountMinor,
+        'manual_discount_minor',
+        0,
+        Number.MAX_SAFE_INTEGER,
+      );
+      return discount <= cashierManualDiscountLimitMinor({
+        postPromotionTotalMinor: input.postPromotionTotalMinor,
+        policy: input.policy,
+        kind: input.kind,
+      });
+    }
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/cashier-manual-discount-policy.test.mjs:27:10)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: discount policy persistence is tenant scoped and missing schema fails closed
+ok 39 - discount policy persistence is tenant scoped and missing schema fails closed
+  ---
+  duration_ms: 3.293549
+  type: 'test'
+  ...
+# Subtest: discount policy schema is canonical migration 0015 and validates percent amount and permission authority
+ok 40 - discount policy schema is canonical migration 0015 and validates percent amount and permission authority
+  ---
+  duration_ms: 2.322697
+  type: 'test'
+  ...
+# Subtest: out-of-band cashier discount DDL is disabled
+ok 41 - out-of-band cashier discount DDL is disabled
+  ---
+  duration_ms: 0.722656
+  type: 'test'
+  ...
+# Subtest: cashier catalog snapshot is derived only from the authenticated merchant context
+ok 42 - cashier catalog snapshot is derived only from the authenticated merchant context
+  ---
+  duration_ms: 3.968795
+  type: 'test'
+  ...
+# Subtest: cashier browser refuses cross-merchant catalog payloads before replacing local catalog
+ok 43 - cashier browser refuses cross-merchant catalog payloads before replacing local catalog
+  ---
+  duration_ms: 1.414137
+  type: 'test'
+  ...
+# Subtest: cashier sale cannot resolve or mutate a product owned by another merchant
+not ok 44 - cashier sale cannot resolve or mutate a product owned by another merchant
+  ---
+  duration_ms: 3.156377
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/cashier-merchant-catalog-isolation.test.mjs:62:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /UPDATE products[\s\S]{0,260}WHERE merchant_id = \$1 AND id = \$2/. Input:
+    
+    'import {\n' +
+      '  evaluateCashierHistoricalOperationAuthorityInTransaction,\n' +
+      '  recordCashierOperationTimelineInTransaction,\n' +
+      '} from "./cashierHistoricalOperationAuthority";\n' +
+      'import crypto from "node:crypto";\n' +
+      'import { catalogCommerceFromMetadata } from "./catalogCommerceMetadata";\n' +
+      'import {\n' +
+      '  operationalPostgresAuthorityRequired,\n' +
+      '  operationalQueryRows,\n' +
+      '  withMerchantOperationalTransaction,\n' +
+      '  type OperationalQueryTarget,\n' +
+      '} from "./operationalPostgresAuthority";\n' +
+      '\n' +
+      'const CASHIER_SCHEMA_VERSION = 1;\n' +
+      'const MAX_ENVELOPES = 128;\n' +
+      'const MAX_LINES = 100;\n' +
+      'const MAX_TEXT = 500;\n' +
+      '\n' +
+      'type CashierEnvelope = {\n' +
+      '  schema_version: number;\n' +
+      '  operation_id: string;\n' +
+      '  device_id: string;\n' +
+      '  device_sequence: number;\n' +
+      '  entity_type: string;\n' +
+      '  entity_id: string;\n' +
+      '  operation: string;\n' +
+      '  occurred_at: string;\n' +
+      '  payload: unknown;\n' +
+      '};\n' +
+      '\n' +
+      'type CashierPromotionSnapshot = {\n' +
+      '  promotion_id: string;\n' +
+      '  promotion_name: string;\n' +
+      '  effect: string;\n' +
+      '  promotion_version?: number;\n' +
+      '  percentage_bps?: number;\n' +
+      '  amount_minor?: number;\n' +
+      '};\n' +
+      '\n' +
+      'type CashierSaleLine = {\n' +
+      '  line_id: string;\n' +
+      '  product_id: string;\n' +
+      '  variant_id?: string;\n' +
+      '  product_name_snapshot: string;\n' +
+      '  variant_name_snapshot?: string;\n' +
+      '  sku_snapshot?: string;\n' +
+      '  barcode_snapshot?: string;\n' +
+      '  catalog_version?: number;\n' +
+      '  unit_cost_minor?: number;\n' +
+      '  quantity: number;\n' +
+      '  base_unit_price_minor: number;\n' +
+      '  effective_unit_price_minor: number;\n' +
+      '  discount_minor: number;\n' +
+      '  line_total_minor: number;\n' +
+      '  promotion?: CashierPromotionSnapshot;\n' +
+      '};\n' +
+      '\n' +
+      'type CashierSale = {\n' +
+      '  sale_id: string;\n' +
+      '  operation_id: string;\n' +
+      '  local_merchant_id: string;\n' +
+      '  cloud_merchant_id?: string;\n' +
+      '  device_id: string;\n' +
+      '  device_sequence: number;\n' +
+      '  source: "cashier";\n' +
+      '  status: "completed";\n' +
+      '  lines: CashierSaleLine[];\n' +
+      '  subtotal_minor: number;\n' +
+      '  promotion_discount_minor?: number;\n' +
+      '  manual_discount_kind?: "amount" | "percentage";\n' +
+      '  manual_discount_minor?: number;\n' +
+      '  manual_discount_reason?: string;\n' +
+      '  discount_minor: number;\n' +
+      '  total_minor: number;\n' +
+      '  currency_code: "IQD";\n' +
+      '  currency_fraction_digits: 0;\n' +
+      '  payment_method: "cash" | "card" | "electronic" | "other";\n' +
+      '  payment_status: "paid" | "pending";\n' +
+      '  cash_tendered_minor?: number;\n' +
+      '  change_due_minor?: number;\n' +
+      '  payment_provider?: string;\n' +
+      '  payment_reference?: string;\n' +
+      '  note?: string;\n' +
+      '  occurred_at: string;\n' +
+      '};\n' +
+      '\n' +
+      'type CashierMovement = {\n' +
+      '  movement_id: string;\n' +
+      '  operation_id: string;\n' +
+      '  local_merchant_id: string;\n' +
+      '  cloud_merchant_id?: string;\n' +
+      '  device_id: string;\n' +
+      '  device_sequence: number;\n' +
+      '  product_id: string;\n' +
+      '  variant_id?: string;\n' +
+      '  delta: number;\n' +
+      '  reason: "sale";\n' +
+      '  related_sale_id: string;\n' +
+      '  note?: string;\n' +
+      '  occurred_at: string;\n' +
+      '};\n' +
+      '\n' +
+      'type ValidatedBundle = {\n' +
+      '  cloudMerchantId: string;\n' +
+      '  localMerchantId: string;\n' +
+      '  deviceId: string;\n' +
+      '  deviceSequence: number;\n' +
+      '  operationId: string;\n' +
+      '  sale: CashierSale;\n' +
+      '  movements: Map<string, CashierMovement>;\n' +
+      '  envelopes: CashierEnvelope[];\n' +
+      '  requestHash: string;\n' +
+      '};\n' +
+      '\n' +
+      'type ProductRow = {\n' +
+      '  id: string;\n' +
+      '  quantity: number;\n' +
+      '  low_stock_threshold: number;\n' +
+      '  version: number;\n' +
+      '  status: string;\n' +
+      '  metadata: Record<string, unknown> | null;\n' +
+      '};\n' +
+      '\n' +
+      'type VariantRow = {\n' +
+      '  id: string;\n' +
+      '  quantity: number;\n' +
+      '};\n' +
+      '\n' +
+      'type LocationLevelRow = {\n' +
+      '  id: string;\n' +
+      '  quantity: number;\n' +
+      '  version: number;\n' +
+      '};\n' +
+      '\n' +
+      'type ExistingOrderRow = {\n' +
+      '  id: string;\n' +
+      '  source_channel: string;\n' +
+      '  fulfillment_location_id: string | null;\n' +
+      '  metadata: Record<string, unknown> | null;\n' +
+      '};\n' +
+      '\n' +
+      'export type CashierSaleSyncResult = {\n' +
+      '  operation_id: string;\n' +
+      '  order_id: string;\n' +
+      '  device_sequence: number;\n' +
+      '  replayed: boolean;\n' +
+      '  inventory_mutation_count: number;\n' +
+      '  accepted_entity_ids: string[];\n' +
+      '};\n' +
+      '\n' +
+      'export class CashierSyncError extends Error {\n' +
+      '  readonly code: string;\n' +
+      '  readonly status: number;\n' +
+      '  readonly details?: Record<string, unknown>;\n' +
+      '\n' +
+      '  constructor(\n' +
+      '    code: string,\n' +
+      '    message: string,\n' +
+      '    status = 409,\n' +
+      '    details?: Record<string, unknown>,\n' +
+      '  ) {\n' +
+      '    super(message);\n' +
+      '    this.name = "CashierSyncError";\n' +
+      '    this.code = code;\n' +
+      '    this.status = status;\n' +
+      '    this.details = details;\n' +
+      '  }\n' +
+      '}\n' +
+      '\n' +
+      'function record(value: unknown): Record<string, unknown> {\n' +
+      '  return value && typeof value === "object" && !Array.isArray(value)\n' +
+      '    ? (value as Record<string, unknown>)\n' +
+      '    : {};\n' +
+      '}\n' +
+      '\n' +
+      'function identifier(value: unknown, field: string, maxLength = 200): string {\n' +
+      '  const normalized = String(value ?? "").normalize("NFKC").trim();\n' +
+      '  if (!normalized || normalized.length > maxLength || /[\\u0000-\\u001f\\u007f]/.test(normalized)) {\n' +
+      '    throw new CashierSyncError(\n' +
+      '      "CASHIER_SYNC_INVALID",\n' +
+      '      `${field} is invalid`,\n' +
+      '      400,\n' +
+      '      { field },\n' +
+      '    );\n' +
+      '  }\n' +
+      '  return normalized;\n' +
+      '}\n' +
+      '\n' +
+      'function optionalText(value: unknown, field: string, maxLength = MAX_TEXT): string | undefined {\n' +
+      '  if (value === undefined || value === null || value === "") return undefined;\n' +
+      '  return identifier(value, field, maxLength);\n' +
+      '}\n' +
+      '\n' +
+      'function positiveInteger(value: unknown, field: string): number {\n' +
+      '  const parsed = Number(value);\n' +
+      '  if (!Number.isSafeInteger(parsed) || parsed <= 0) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} is invalid`, 400, { field });\n' +
+      '  }\n' +
+      '  return parsed;\n' +
+      '}\n' +
+      '\n' +
+      'function nonNegativeInteger(value: unknown, field: string): number {\n' +
+      '  const parsed = Number(value);\n' +
+      '  if (!Number.isSafeInteger(parsed) || parsed < 0) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} is invalid`, 400, { field });\n' +
+      '  }\n' +
+      '  return parsed;\n' +
+      '}\n' +
+      '\n' +
+      'function signedInteger(value: unknown, field: string): number {\n' +
+      '  const parsed = Number(value);\n' +
+      '  if (!Number.isSafeInteger(parsed) || parsed === 0) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} is invalid`, 400, { field });\n' +
+      '  }\n' +
+      '  return parsed;\n' +
+      '}\n' +
+      '\n' +
+      'function instant(value: unknown, field: string): string {\n' +
+      '  const parsed = new Date(String(value ?? ""));\n' +
+      '  if (!Number.isFinite(parsed.getTime())) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} is invalid`, 400, { field });\n' +
+      '  }\n' +
+      '  return parsed.toISOString();\n' +
+      '}\n' +
+      '\n' +
+      'function safeMultiply(left: number, right: number, field: string): number {\n' +
+      '  const result = left * right;\n' +
+      '  if (!Number.isSafeInteger(result) || result < 0) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} overflow`, 400, { field });\n' +
+      '  }\n' +
+      '  return result;\n' +
+      '}\n' +
+      '\n' +
+      'function safeAdd(left: number, right: number, field: string): number {\n' +
+      '  const result = left + right;\n' +
+      '  if (!Number.isSafeInteger(result) || result < 0) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} overflow`, 400, { field });\n' +
+      '  }\n' +
+      '  return result;\n' +
+      '}\n' +
+      '\n' +
+      'function canonicalize(value: unknown): unknown {\n' +
+      '  if (Array.isArray(value)) return value.map(canonicalize);\n' +
+      '  if (value && typeof value === "object") {\n' +
+      '    return Object.fromEntries(\n' +
+      '      Object.entries(value as Record<string, unknown>)\n' +
+      '        .sort(([left], [right]) => left.localeCompare(right))\n' +
+      '        .map(([key, item]) => [key, canonicalize(item)]),\n' +
+      '    );\n' +
+      '  }\n' +
+      '  return value;\n' +
+      '}\n' +
+      '\n' +
+      'function sha256(value: unknown): string {\n' +
+      '  return crypto\n' +
+      '    .createHash("sha256")\n' +
+      '    .update(typeof value === "string" ? value : JSON.stringify(canonicalize(value)))\n' +
+      '    .digest("hex");\n' +
+      '}\n' +
+      '\n' +
+      'function itemKey(productId: string, variantId?: string): string {\n' +
+      '  return `${productId}\\u0000${variantId || ""}`;\n' +
+      '}\n' +
+      '\n' +
+      'function parsePromotion(value: unknown): CashierPromotionSnapshot | undefined {\n' +
+      '  if (value === undefined || value === null) return undefined;\n' +
+      '  const raw = record(value);\n' +
+      '  const effect = identifier(raw.effect, "promotion.effect", 64);\n' +
+      '  if (!["percentage_off", "fixed_amount_off", "fixed_price", "free_delivery"].includes(effect)) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", "promotion effect is invalid", 400);\n' +
+      '  }\n' +
+      '  return {\n' +
+      '    promotion_id: identifier(raw.promotion_id, "promotion.id"),\n' +
+      '    promotion_name: identifier(raw.promotion_name, "promotion.name", 300),\n' +
+      '    effect,\n' +
+      '    ...(raw.promotion_version !== undefined\n' +
+      '      ? { promotion_version: positiveInteger(raw.promotion_version, "promotion.version") }\n' +
+      '      : {}),\n' +
+      '    ...(raw.percentage_bps !== undefined\n' +
+      '      ? { percentage_bps: positiveInteger(raw.percentage_bps, "promotion.percentage_bps") }\n' +
+      '      : {}),\n' +
+      '    ...(raw.amount_minor !== undefined\n' +
+      '      ? { amount_minor: nonNegativeInteger(raw.amount_minor, "promotion.amount_minor") }\n' +
+      '      : {}),\n' +
+      '  };\n' +
+      '}\n' +
+      '\n' +
+      'function parseSaleLine(value: unknown): CashierSaleLine {\n' +
+      '  const raw = record(value);\n' +
+      '  const quantity = positiveInteger(raw.quantity, "line.quantity");\n' +
+      '  const base = nonNegativeInteger(raw.base_unit_price_minor, "line.base_unit_price_minor");\n' +
+      '  const effective = nonNegativeInteger(\n' +
+      '    raw.effective_unit_price_minor,\n' +
+      '    "line.effective_unit_price_minor",\n' +
+      '  );\n' +
+      '  const discount = nonNegativeInteger(raw.discount_minor, "line.discount_minor");\n' +
+      '  const lineTotal = nonNegativeInteger(raw.line_total_minor, "line.line_total_minor");\n' +
+      '  if (effective > base) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", "effective price exceeds base price", 400);\n' +
+      '  }\n' +
+      '  const baseTotal = safeMultiply(base, quantity, "line.base_total");\n' +
+      '  const effectiveTotal = safeMultiply(effective, quantity, "line.effective_total");\n' +
+      '  if (lineTotal !== effectiveTotal || discount !== baseTotal - effectiveTotal) {\n' +
+      '    throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale line totals are inconsistent", 400);\n' +
+      '  }\n' +
+      '  return {\n' +
+      '    line_id: identifier(raw.line_id, "line.line_id"),\n' +
+      '    product_id: identifier(raw.product_id, "line.product_id"),\n' +
+      '    ...(raw.variant_id ? { variant_id: identifier(raw.variant_id, "line.variant_id") } : {}),\n' +
+      '    product_name_snapshot: identifier(raw.product_name_snapshot, "line.product_name_snapshot", 300),\n' +
+      '    ...(raw.variant_name_snapshot\n' +
+      '      ? { variant_name_snapshot: identifier(raw.variant_name_snapshot, "line.variant_name_snapshot", 300) }\n' +
+      '      : {}),\n' +
+      '    ...(raw.sku_snapshot ? { sku_snapshot: identifier(raw.sku_snapshot, "line.sku_snapshot", 160) } : {}),\n' +
+      '    ...(raw.barcode_snapshot\n' +
+      '      ? { barcode_snapshot: identifier(raw.barcode_snapshot, "line.barcode_snapshot", 160) }\n' +
+      '      : {}),\n' +
+      '    ...(raw.catalog_version !== undefined\n' +
+      '      ? { catalog_version: positiveInteger(raw.catalog_version, "line.catalog_version") }\n' +
+      '      : {}),\n' +
+      '    ...(raw.unit_cost_minor !== undefined\n' +
+      '     '... 35663 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    import {
+      evaluateCashierHistoricalOperationAuthorityInTransaction,
+      recordCashierOperationTimelineInTransaction,
+    } from "./cashierHistoricalOperationAuthority";
+    import crypto from "node:crypto";
+    import { catalogCommerceFromMetadata } from "./catalogCommerceMetadata";
+    import {
+      operationalPostgresAuthorityRequired,
+      operationalQueryRows,
+      withMerchantOperationalTransaction,
+      type OperationalQueryTarget,
+    } from "./operationalPostgresAuthority";
+    
+    const CASHIER_SCHEMA_VERSION = 1;
+    const MAX_ENVELOPES = 128;
+    const MAX_LINES = 100;
+    const MAX_TEXT = 500;
+    
+    type CashierEnvelope = {
+      schema_version: number;
+      operation_id: string;
+      device_id: string;
+      device_sequence: number;
+      entity_type: string;
+      entity_id: string;
+      operation: string;
+      occurred_at: string;
+      payload: unknown;
+    };
+    
+    type CashierPromotionSnapshot = {
+      promotion_id: string;
+      promotion_name: string;
+      effect: string;
+      promotion_version?: number;
+      percentage_bps?: number;
+      amount_minor?: number;
+    };
+    
+    type CashierSaleLine = {
+      line_id: string;
+      product_id: string;
+      variant_id?: string;
+      product_name_snapshot: string;
+      variant_name_snapshot?: string;
+      sku_snapshot?: string;
+      barcode_snapshot?: string;
+      catalog_version?: number;
+      unit_cost_minor?: number;
+      quantity: number;
+      base_unit_price_minor: number;
+      effective_unit_price_minor: number;
+      discount_minor: number;
+      line_total_minor: number;
+      promotion?: CashierPromotionSnapshot;
+    };
+    
+    type CashierSale = {
+      sale_id: string;
+      operation_id: string;
+      local_merchant_id: string;
+      cloud_merchant_id?: string;
+      device_id: string;
+      device_sequence: number;
+      source: "cashier";
+      status: "completed";
+      lines: CashierSaleLine[];
+      subtotal_minor: number;
+      promotion_discount_minor?: number;
+      manual_discount_kind?: "amount" | "percentage";
+      manual_discount_minor?: number;
+      manual_discount_reason?: string;
+      discount_minor: number;
+      total_minor: number;
+      currency_code: "IQD";
+      currency_fraction_digits: 0;
+      payment_method: "cash" | "card" | "electronic" | "other";
+      payment_status: "paid" | "pending";
+      cash_tendered_minor?: number;
+      change_due_minor?: number;
+      payment_provider?: string;
+      payment_reference?: string;
+      note?: string;
+      occurred_at: string;
+    };
+    
+    type CashierMovement = {
+      movement_id: string;
+      operation_id: string;
+      local_merchant_id: string;
+      cloud_merchant_id?: string;
+      device_id: string;
+      device_sequence: number;
+      product_id: string;
+      variant_id?: string;
+      delta: number;
+      reason: "sale";
+      related_sale_id: string;
+      note?: string;
+      occurred_at: string;
+    };
+    
+    type ValidatedBundle = {
+      cloudMerchantId: string;
+      localMerchantId: string;
+      deviceId: string;
+      deviceSequence: number;
+      operationId: string;
+      sale: CashierSale;
+      movements: Map<string, CashierMovement>;
+      envelopes: CashierEnvelope[];
+      requestHash: string;
+    };
+    
+    type ProductRow = {
+      id: string;
+      quantity: number;
+      low_stock_threshold: number;
+      version: number;
+      status: string;
+      metadata: Record<string, unknown> | null;
+    };
+    
+    type VariantRow = {
+      id: string;
+      quantity: number;
+    };
+    
+    type LocationLevelRow = {
+      id: string;
+      quantity: number;
+      version: number;
+    };
+    
+    type ExistingOrderRow = {
+      id: string;
+      source_channel: string;
+      fulfillment_location_id: string | null;
+      metadata: Record<string, unknown> | null;
+    };
+    
+    export type CashierSaleSyncResult = {
+      operation_id: string;
+      order_id: string;
+      device_sequence: number;
+      replayed: boolean;
+      inventory_mutation_count: number;
+      accepted_entity_ids: string[];
+    };
+    
+    export class CashierSyncError extends Error {
+      readonly code: string;
+      readonly status: number;
+      readonly details?: Record<string, unknown>;
+    
+      constructor(
+        code: string,
+        message: string,
+        status = 409,
+        details?: Record<string, unknown>,
+      ) {
+        super(message);
+        this.name = "CashierSyncError";
+        this.code = code;
+        this.status = status;
+        this.details = details;
+      }
+    }
+    
+    function record(value: unknown): Record<string, unknown> {
+      return value && typeof value === "object" && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : {};
+    }
+    
+    function identifier(value: unknown, field: string, maxLength = 200): string {
+      const normalized = String(value ?? "").normalize("NFKC").trim();
+      if (!normalized || normalized.length > maxLength || /[\u0000-\u001f\u007f]/.test(normalized)) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_INVALID",
+          `${field} is invalid`,
+          400,
+          { field },
+        );
+      }
+      return normalized;
+    }
+    
+    function optionalText(value: unknown, field: string, maxLength = MAX_TEXT): string | undefined {
+      if (value === undefined || value === null || value === "") return undefined;
+      return identifier(value, field, maxLength);
+    }
+    
+    function positiveInteger(value: unknown, field: string): number {
+      const parsed = Number(value);
+      if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} is invalid`, 400, { field });
+      }
+      return parsed;
+    }
+    
+    function nonNegativeInteger(value: unknown, field: string): number {
+      const parsed = Number(value);
+      if (!Number.isSafeInteger(parsed) || parsed < 0) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} is invalid`, 400, { field });
+      }
+      return parsed;
+    }
+    
+    function signedInteger(value: unknown, field: string): number {
+      const parsed = Number(value);
+      if (!Number.isSafeInteger(parsed) || parsed === 0) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} is invalid`, 400, { field });
+      }
+      return parsed;
+    }
+    
+    function instant(value: unknown, field: string): string {
+      const parsed = new Date(String(value ?? ""));
+      if (!Number.isFinite(parsed.getTime())) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} is invalid`, 400, { field });
+      }
+      return parsed.toISOString();
+    }
+    
+    function safeMultiply(left: number, right: number, field: string): number {
+      const result = left * right;
+      if (!Number.isSafeInteger(result) || result < 0) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} overflow`, 400, { field });
+      }
+      return result;
+    }
+    
+    function safeAdd(left: number, right: number, field: string): number {
+      const result = left + right;
+      if (!Number.isSafeInteger(result) || result < 0) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", `${field} overflow`, 400, { field });
+      }
+      return result;
+    }
+    
+    function canonicalize(value: unknown): unknown {
+      if (Array.isArray(value)) return value.map(canonicalize);
+      if (value && typeof value === "object") {
+        return Object.fromEntries(
+          Object.entries(value as Record<string, unknown>)
+            .sort(([left], [right]) => left.localeCompare(right))
+            .map(([key, item]) => [key, canonicalize(item)]),
+        );
+      }
+      return value;
+    }
+    
+    function sha256(value: unknown): string {
+      return crypto
+        .createHash("sha256")
+        .update(typeof value === "string" ? value : JSON.stringify(canonicalize(value)))
+        .digest("hex");
+    }
+    
+    function itemKey(productId: string, variantId?: string): string {
+      return `${productId}\u0000${variantId || ""}`;
+    }
+    
+    function parsePromotion(value: unknown): CashierPromotionSnapshot | undefined {
+      if (value === undefined || value === null) return undefined;
+      const raw = record(value);
+      const effect = identifier(raw.effect, "promotion.effect", 64);
+      if (!["percentage_off", "fixed_amount_off", "fixed_price", "free_delivery"].includes(effect)) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "promotion effect is invalid", 400);
+      }
+      return {
+        promotion_id: identifier(raw.promotion_id, "promotion.id"),
+        promotion_name: identifier(raw.promotion_name, "promotion.name", 300),
+        effect,
+        ...(raw.promotion_version !== undefined
+          ? { promotion_version: positiveInteger(raw.promotion_version, "promotion.version") }
+          : {}),
+        ...(raw.percentage_bps !== undefined
+          ? { percentage_bps: positiveInteger(raw.percentage_bps, "promotion.percentage_bps") }
+          : {}),
+        ...(raw.amount_minor !== undefined
+          ? { amount_minor: nonNegativeInteger(raw.amount_minor, "promotion.amount_minor") }
+          : {}),
+      };
+    }
+    
+    function parseSaleLine(value: unknown): CashierSaleLine {
+      const raw = record(value);
+      const quantity = positiveInteger(raw.quantity, "line.quantity");
+      const base = nonNegativeInteger(raw.base_unit_price_minor, "line.base_unit_price_minor");
+      const effective = nonNegativeInteger(
+        raw.effective_unit_price_minor,
+        "line.effective_unit_price_minor",
+      );
+      const discount = nonNegativeInteger(raw.discount_minor, "line.discount_minor");
+      const lineTotal = nonNegativeInteger(raw.line_total_minor, "line.line_total_minor");
+      if (effective > base) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "effective price exceeds base price", 400);
+      }
+      const baseTotal = safeMultiply(base, quantity, "line.base_total");
+      const effectiveTotal = safeMultiply(effective, quantity, "line.effective_total");
+      if (lineTotal !== effectiveTotal || discount !== baseTotal - effectiveTotal) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale line totals are inconsistent", 400);
+      }
+      return {
+        line_id: identifier(raw.line_id, "line.line_id"),
+        product_id: identifier(raw.product_id, "line.product_id"),
+        ...(raw.variant_id ? { variant_id: identifier(raw.variant_id, "line.variant_id") } : {}),
+        product_name_snapshot: identifier(raw.product_name_snapshot, "line.product_name_snapshot", 300),
+        ...(raw.variant_name_snapshot
+          ? { variant_name_snapshot: identifier(raw.variant_name_snapshot, "line.variant_name_snapshot", 300) }
+          : {}),
+        ...(raw.sku_snapshot ? { sku_snapshot: identifier(raw.sku_snapshot, "line.sku_snapshot", 160) } : {}),
+        ...(raw.barcode_snapshot
+          ? { barcode_snapshot: identifier(raw.barcode_snapshot, "line.barcode_snapshot", 160) }
+          : {}),
+        ...(raw.catalog_version !== undefined
+          ? { catalog_version: positiveInteger(raw.catalog_version, "line.catalog_version") }
+          : {}),
+        ...(raw.unit_cost_minor !== undefined
+          ? { unit_cost_minor: nonNegativeInteger(raw.unit_cost_minor, "line.unit_cost_minor") }
+          : {}),
+        quantity,
+        base_unit_price_minor: base,
+        effective_unit_price_minor: effective,
+        discount_minor: discount,
+        line_total_minor: lineTotal,
+        ...(raw.promotion ? { promotion: parsePromotion(raw.promotion) } : {}),
+      };
+    }
+    
+    function parseSale(value: unknown): CashierSale {
+      const raw = record(value);
+      if (!Array.isArray(raw.lines) || raw.lines.length === 0 || raw.lines.length > MAX_LINES) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale lines are invalid", 400);
+      }
+      const source = identifier(raw.source, "sale.source", 32);
+      const status = identifier(raw.status, "sale.status", 32);
+      if (source !== "cashier" || status !== "completed") {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale lifecycle is invalid", 400);
+      }
+      const currencyCode = identifier(raw.currency_code, "sale.currency_code", 3);
+      const fractionDigits = Number(raw.currency_fraction_digits);
+      if (currencyCode !== "IQD" || fractionDigits !== 0) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_CURRENCY_UNSUPPORTED",
+          "cashier cloud sync currently accepts IQD minor units only",
+          409,
+        );
+      }
+      const paymentMethod = identifier(raw.payment_method, "sale.payment_method", 32);
+      const paymentStatus = identifier(raw.payment_status, "sale.payment_status", 32);
+      if (!["cash", "card", "electronic", "other"].includes(paymentMethod)) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "payment method is invalid", 400);
+      }
+      if (!["paid", "pending"].includes(paymentStatus)) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "payment status is invalid", 400);
+      }
+      if (paymentMethod === "cash" && paymentStatus !== "paid") {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "cash cashier sales must be paid", 400);
+      }
+      const lines = raw.lines.map(parseSaleLine);
+      const lineIds = new Set<string>();
+      const itemKeys = new Set<string>();
+      let subtotal = 0;
+      let promotionDiscount = 0;
+      let postPromotionTotal = 0;
+      for (const line of lines) {
+        if (lineIds.has(line.line_id)) {
+          throw new CashierSyncError("CASHIER_SYNC_INVALID", "duplicate sale line id", 400);
+        }
+        lineIds.add(line.line_id);
+        const key = itemKey(line.product_id, line.variant_id);
+        if (itemKeys.has(key)) {
+          throw new CashierSyncError("CASHIER_SYNC_INVALID", "duplicate sale catalog item", 400);
+        }
+        itemKeys.add(key);
+        subtotal = safeAdd(
+          subtotal,
+          safeMultiply(line.base_unit_price_minor, line.quantity, "sale.subtotal"),
+          "sale.subtotal",
+        );
+        promotionDiscount = safeAdd(
+          promotionDiscount,
+          line.discount_minor,
+          "sale.promotion_discount",
+        );
+        postPromotionTotal = safeAdd(
+          postPromotionTotal,
+          line.line_total_minor,
+          "sale.post_promotion_total",
+        );
+      }
+    
+      const claimedSubtotal = nonNegativeInteger(raw.subtotal_minor, "sale.subtotal_minor");
+      const manualDiscount = raw.manual_discount_minor === undefined
+        ? 0
+        : nonNegativeInteger(raw.manual_discount_minor, "sale.manual_discount_minor");
+      const manualDiscountReason = raw.manual_discount_reason === undefined
+        ? undefined
+        : optionalText(raw.manual_discount_reason, "sale.manual_discount_reason", 200);
+      const manualDiscountKindRaw = raw.manual_discount_kind === undefined
+        ? undefined
+        : identifier(raw.manual_discount_kind, "sale.manual_discount_kind", 32);
+      const manualDiscountKind = manualDiscountKindRaw === undefined
+        ? undefined
+        : manualDiscountKindRaw === "amount" || manualDiscountKindRaw === "percentage"
+          ? manualDiscountKindRaw
+          : (() => {
+              throw new CashierSyncError(
+                "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
+                "manual discount type is invalid",
+                400,
+              );
+            })();
+      if (manualDiscount > postPromotionTotal) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
+          "manual discount exceeds post-promotion total",
+          409,
+        );
+      }
+      if (manualDiscount > 0 && !manualDiscountReason) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_MANUAL_DISCOUNT_REASON_REQUIRED",
+          "manual discount reason is required",
+          409,
+        );
+      }
+      if (manualDiscount === 0 && (manualDiscountReason || manualDiscountKind)) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
+          "manual discount metadata is not allowed without a discount",
+          400,
+        );
+      }
+      const totalDiscount = safeAdd(
+        promotionDiscount,
+        manualDiscount,
+        "sale.total_discount",
+      );
+      const finalTotal = postPromotionTotal - manualDiscount;
+      if (!Number.isSafeInteger(finalTotal) || finalTotal < 0) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
+          "manual discount total is invalid",
+          409,
+        );
+      }
+      const claimedPromotionDiscount = raw.promotion_discount_minor === undefined
+        ? promotionDiscount
+        : nonNegativeInteger(raw.promotion_discount_minor, "sale.promotion_discount_minor");
+      const claimedDiscount = nonNegativeInteger(raw.discount_minor, "sale.discount_minor");
+      const claimedTotal = nonNegativeInteger(raw.total_minor, "sale.total_minor");
+      if (
+        claimedSubtotal !== subtotal ||
+        claimedPromotionDiscount !== promotionDiscount ||
+        claimedDiscount !== totalDiscount ||
+        claimedTotal !== finalTotal ||
+        subtotal - totalDiscount !== finalTotal ||
+        subtotal - promotionDiscount !== postPromotionTotal
+      ) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale totals are inconsistent", 400);
+      }
+    
+      let cashTenderedMinor: number | undefined;
+      let changeDueMinor: number | undefined;
+      const hasCashTenderMetadata =
+        raw.cash_tendered_minor !== undefined || raw.change_due_minor !== undefined;
+      if (paymentMethod === "cash") {
+        if (hasCashTenderMetadata) {
+          if (raw.cash_tendered_minor === undefined || raw.change_due_minor === undefined) {
+            throw new CashierSyncError(
+              "CASHIER_SYNC_INVALID",
+              "cash tender metadata must include received cash and change",
+              400,
+            );
+          }
+          cashTenderedMinor = nonNegativeInteger(
+            raw.cash_tendered_minor,
+            "sale.cash_tendered_minor",
+          );
+          changeDueMinor = nonNegativeInteger(raw.change_due_minor, "sale.change_due_minor");
+          if (cashTenderedMinor < claimedTotal) {
+            throw new CashierSyncError(
+              "CASHIER_SYNC_CASH_TENDER_INSUFFICIENT",
+              "cash received is less than the sale total",
+              409,
+            );
+          }
+          const expectedChange = cashTenderedMinor - claimedTotal;
+          if (!Number.isSafeInteger(expectedChange) || changeDueMinor !== expectedChange) {
+            throw new CashierSyncError(
+              "CASHIER_SYNC_CASH_CHANGE_INVALID",
+              "cash change does not match the sale total",
+              409,
+            );
+          }
+        }
+      } else if (hasCashTenderMetadata) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_INVALID",
+          "cash tender metadata is allowed only for cash payments",
+          400,
+        );
+      }
+    
+      return {
+        sale_id: identifier(raw.sale_id, "sale.sale_id"),
+        operation_id: identifier(raw.operation_id, "sale.operation_id"),
+        local_merchant_id: identifier(raw.local_merchant_id, "sale.local_merchant_id"),
+        ...(raw.cloud_merchant_id
+          ? { cloud_merchant_id: identifier(raw.cloud_merchant_id, "sale.cloud_merchant_id") }
+          : {}),
+        device_id: identifier(raw.device_id, "sale.device_id"),
+        device_sequence: positiveInteger(raw.device_sequence, "sale.device_sequence"),
+        source: "cashier",
+        status: "completed",
+        lines,
+        subtotal_minor: claimedSubtotal,
+        promotion_discount_minor: claimedPromotionDiscount,
+        ...(manualDiscount > 0
+          ? {
+              ...(manualDiscountKind ? { manual_discount_kind: manualDiscountKind } : {}),
+              manual_discount_minor: manualDiscount,
+              manual_discount_reason: manualDiscountReason,
+            }
+          : {}),
+        discount_minor: claimedDiscount,
+        total_minor: claimedTotal,
+        currency_code: "IQD",
+        currency_fraction_digits: 0,
+        payment_method: paymentMethod as CashierSale["payment_method"],
+        payment_status: paymentStatus as CashierSale["payment_status"],
+        ...(cashTenderedMinor !== undefined
+          ? { cash_tendered_minor: cashTenderedMinor }
+          : {}),
+        ...(changeDueMinor !== undefined ? { change_due_minor: changeDueMinor } : {}),
+        ...(raw.payment_provider
+          ? { payment_provider: optionalText(raw.payment_provider, "sale.payment_provider", 100) }
+          : {}),
+        ...(raw.payment_reference
+          ? { payment_reference: optionalText(raw.payment_reference, "sale.payment_reference", 200) }
+          : {}),
+        ...(raw.note ? { note: optionalText(raw.note, "sale.note", MAX_TEXT) } : {}),
+        occurred_at: instant(raw.occurred_at, "sale.occurred_at"),
+      };
+    }
+    
+    function parseMovement(value: unknown): CashierMovement {
+      const raw = record(value);
+      const reason = identifier(raw.reason, "movement.reason", 64);
+      if (reason !== "sale") {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale sync accepts sale movements only", 400);
+      }
+      return {
+        movement_id: identifier(raw.movement_id, "movement.movement_id"),
+        operation_id: identifier(raw.operation_id, "movement.operation_id"),
+        local_merchant_id: identifier(raw.local_merchant_id, "movement.local_merchant_id"),
+        ...(raw.cloud_merchant_id
+          ? { cloud_merchant_id: identifier(raw.cloud_merchant_id, "movement.cloud_merchant_id") }
+          : {}),
+        device_id: identifier(raw.device_id, "movement.device_id"),
+        device_sequence: positiveInteger(raw.device_sequence, "movement.device_sequence"),
+        product_id: identifier(raw.product_id, "movement.product_id"),
+        ...(raw.variant_id ? { variant_id: identifier(raw.variant_id, "movement.variant_id") } : {}),
+        delta: signedInteger(raw.delta, "movement.delta"),
+        reason: "sale",
+        related_sale_id: identifier(raw.related_sale_id, "movement.related_sale_id"),
+        ...(raw.note ? { note: optionalText(raw.note, "movement.note", MAX_TEXT) } : {}),
+        occurred_at: instant(raw.occurred_at, "movement.occurred_at"),
+      };
+    }
+    
+    function parseEnvelope(value: unknown): CashierEnvelope {
+      const raw = record(value);
+      const schemaVersion = Number(raw.schema_version);
+      if (schemaVersion !== CASHIER_SCHEMA_VERSION) {
+        throw new CashierSyncError("CASHIER_SYNC_SCHEMA_UNSUPPORTED", "cashier sync schema is unsupported", 409);
+      }
+      const operation = identifier(raw.operation, "envelope.operation", 32);
+      if (operation !== "append") {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale sync requires append envelopes", 400);
+      }
+      return {
+        schema_version: schemaVersion,
+        operation_id: identifier(raw.operation_id, "envelope.operation_id"),
+        device_id: identifier(raw.device_id, "envelope.device_id"),
+        device_sequence: positiveInteger(raw.device_sequence, "envelope.device_sequence"),
+        entity_type: identifier(raw.entity_type, "envelope.entity_type", 64),
+        entity_id: identifier(raw.entity_id, "envelope.entity_id"),
+        operation,
+        occurred_at: instant(raw.occurred_at, "envelope.occurred_at"),
+        payload: raw.payload,
+      };
+    }
+    
+    export function validateCashierSaleSyncBundle(body: unknown): ValidatedBundle {
+      const raw = record(body);
+      const cloudMerchantId = identifier(raw.cloud_merchant_id, "cloud_merchant_id");
+      const localMerchantId = identifier(raw.local_merchant_id, "local_merchant_id");
+      const deviceId = identifier(raw.device_id, "device_id");
+      const operationId = identifier(raw.operation_id, "operation_id");
+      const deviceSequence = positiveInteger(raw.device_sequence, "device_sequence");
+      if (!Array.isArray(raw.envelopes) || raw.envelopes.length === 0 || raw.envelopes.length > MAX_ENVELOPES) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sync envelopes are invalid", 400);
+      }
+      const envelopes = raw.envelopes.map(parseEnvelope);
+      for (const envelope of envelopes) {
+        if (
+          envelope.operation_id !== operationId ||
+          envelope.device_id !== deviceId ||
+          envelope.device_sequence !== deviceSequence
+        ) {
+          throw new CashierSyncError("CASHIER_SYNC_INVALID", "envelope operation identity mismatch", 400);
+        }
+        if (envelope.entity_type !== "sale" && envelope.entity_type !== "inventory_movement") {
+          throw new CashierSyncError("CASHIER_SYNC_ENTITY_UNSUPPORTED", "sale sync bundle contains an unsupported entity", 409);
+        }
+      }
+      const saleEnvelopes = envelopes.filter((item) => item.entity_type === "sale");
+      if (saleEnvelopes.length !== 1) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale sync requires exactly one sale envelope", 400);
+      }
+      const sale = parseSale(saleEnvelopes[0].payload);
+      if (
+        saleEnvelopes[0].entity_id !== sale.sale_id ||
+        sale.operation_id !== operationId ||
+        sale.local_merchant_id !== localMerchantId ||
+        sale.device_id !== deviceId ||
+        sale.device_sequence !== deviceSequence ||
+        sale.occurred_at !== saleEnvelopes[0].occurred_at
+      ) {
+        throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale envelope payload mismatch", 400);
+      }
+      if (sale.cloud_merchant_id && sale.cloud_merchant_id !== cloudMerchantId) {
+        throw new CashierSyncError("CASHIER_SYNC_TENANT_MISMATCH", "sale cloud merchant mismatch", 403);
+      }
+      const movements = new Map<string, CashierMovement>();
+      for (const envelope of envelopes.filter((item) => item.entity_type === "inventory_movement")) {
+        const movement = parseMovement(envelope.payload);
+        if (
+          envelope.entity_id !== movement.movement_id ||
+          movement.operation_id !== operationId ||
+          movement.local_merchant_id !== localMerchantId ||
+          movement.device_id !== deviceId ||
+          movement.device_sequence !== deviceSequence ||
+          movement.related_sale_id !== sale.sale_id ||
+          movement.occurred_at !== envelope.occurred_at
+        ) {
+          throw new CashierSyncError("CASHIER_SYNC_INVALID", "inventory movement payload mismatch", 400);
+        }
+        if (movement.cloud_merchant_id && movement.cloud_merchant_id !== cloudMerchantId) {
+          throw new CashierSyncError("CASHIER_SYNC_TENANT_MISMATCH", "movement cloud merchant mismatch", 403);
+        }
+        const key = itemKey(movement.product_id, movement.variant_id);
+        if (movements.has(key)) {
+          throw new CashierSyncError("CASHIER_SYNC_INVALID", "duplicate inventory movement", 400);
+        }
+        movements.set(key, movement);
+      }
+      const normalizedForHash = {
+        schema_version: CASHIER_SCHEMA_VERSION,
+        cloud_merchant_id: cloudMerchantId,
+        local_merchant_id: localMerchantId,
+        device_id: deviceId,
+        device_sequence: deviceSequence,
+        operation_id: operationId,
+        sale,
+        movements: [...movements.values()].sort((left, right) =>
+          itemKey(left.product_id, left.variant_id).localeCompare(itemKey(right.product_id, right.variant_id)),
+        ),
+      };
+      return {
+        cloudMerchantId,
+        localMerchantId,
+        deviceId,
+        deviceSequence,
+        operationId,
+        sale,
+        movements,
+        envelopes,
+        requestHash: sha256(normalizedForHash),
+      };
+    }
+    
+    function metadataCashier(metadata: Record<string, unknown> | null): Record<string, unknown> {
+      return record(record(metadata).cashier_sync);
+    }
+    
+    function inventoryStatus(currentStatus: string, quantity: number, lowStockThreshold: number): string {
+      if (currentStatus === "draft" || currentStatus === "hidden_from_fawri") return currentStatus;
+      if (quantity === 0) return "out_of_stock";
+      if (quantity <= lowStockThreshold) return "low_stock";
+      return "available";
+    }
+    
+    async function loadExistingOrder(
+      target: OperationalQueryTarget,
+      merchantId: string,
+      orderId: string,
+    ): Promise<ExistingOrderRow | null> {
+      const rows = await operationalQueryRows<ExistingOrderRow>(
+        target,
+        `SELECT id, source_channel, fulfillment_location_id, metadata
+           FROM orders
+          WHERE merchant_id = $1 AND id = $2
+          LIMIT 1
+          FOR UPDATE`,
+        [merchantId, orderId],
+      );
+      return rows[0] || null;
+    }
+    
+    async function requireCashierStationLocation(
+      target: OperationalQueryTarget,
+      params: {
+        merchantId: string;
+        stationId: string;
+        requestedLocationId?: string;
+      },
+    ): Promise<string> {
+      const rows = await operationalQueryRows<{ location_id: string | null }>(
+        target,
+        `SELECT location_id
+           FROM merchant_cashier_stations
+          WHERE merchant_id = $1
+            AND id = $2
+            AND status = 'active'
+          LIMIT 1
+          FOR UPDATE`,
+        [params.merchantId, params.stationId],
+      );
+      const locationId = rows[0]?.location_id || "";
+      if (!locationId) {
+        throw new CashierSyncError(
+          "CASHIER_LOCATION_BINDING_REQUIRED",
+          "cashier station is not bound to an active merchant location",
+          409,
+        );
+      }
+      if (
+        params.requestedLocationId &&
+        params.requestedLocationId !== locationId
+      ) {
+        throw new CashierSyncError(
+          "CASHIER_LOCATION_BINDING_MISMATCH",
+          "cashier location does not match the authorized station",
+          409,
+          {
+            requested_location_id: params.requestedLocationId,
+            bound_location_id: locationId,
+          },
+        );
+      }
+      return locationId;
+    }
+    
+    async function assertDeviceSequenceUnused(
+      target: OperationalQueryTarget,
+      bundle: ValidatedBundle,
+    ): Promise<void> {
+      const rows = await operationalQueryRows<{ id: string; metadata: Record<string, unknown> | null }>(
+        target,
+        `SELECT id, metadata
+           FROM orders
+          WHERE merchant_id = $1
+            AND source_channel = 'cashier'
+            AND metadata->'cashier_sync'->>'device_id' = $2
+            AND metadata->'cashier_sync'->>'device_sequence' = $3
+          LIMIT 1
+          FOR UPDATE`,
+        [bundle.cloudMerchantId, bundle.deviceId, String(bundle.deviceSequence)],
+      );
+      if (rows[0] && rows[0].id !== bundle.sale.sale_id) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_DEVICE_SEQUENCE_CONFLICT",
+          "cashier device sequence was already used by another sale",
+          409,
+          { existing_order_id: rows[0].id },
+        );
+      }
+    }
+    
+    async function applyInventoryForLine(
+      target: OperationalQueryTarget,
+      bundle: ValidatedBundle,
+      line: CashierSaleLine,
+      locationId: string,
+    ): Promise<boolean> {
+      const products = await operationalQueryRows<ProductRow>(
+        target,
+        `SELECT id, quantity, low_stock_threshold, version, status, metadata
+           FROM products
+          WHERE merchant_id = $1 AND id = $2 AND deleted_at IS NULL
+          LIMIT 1
+          FOR UPDATE`,
+        [bundle.cloudMerchantId, line.product_id],
+      );
+      const product = products[0];
+      if (!product) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_PRODUCT_NOT_FOUND",
+          "cashier sale product no longer exists",
+          409,
+          { product_id: line.product_id },
+        );
+      }
+    
+      const variants = await operationalQueryRows<VariantRow>(
+        target,
+        `SELECT id, quantity
+           FROM product_variants
+          WHERE merchant_id = $1 AND product_id = $2
+          ORDER BY id
+          FOR UPDATE`,
+        [bundle.cloudMerchantId, line.product_id],
+      );
+    
+      const tracked = catalogCommerceFromMetadata(product.metadata).track_inventory;
+      const movement = bundle.movements.get(itemKey(line.product_id, line.variant_id));
+      if (!tracked) {
+        if (movement) {
+          throw new CashierSyncError(
+            "CASHIER_SYNC_MOVEMENT_MISMATCH",
+            "non-inventory item must not include a stock movement",
+            409,
+          );
+        }
+        return false;
+      }
+    
+      if (!movement || movement.delta !== -line.quantity) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_MOVEMENT_MISMATCH",
+          "sale inventory movement does not match sale quantity",
+          409,
+        );
+      }
+      if (
+        movement.product_id !== line.product_id ||
+        movement.variant_id !== line.variant_id ||
+        movement.related_sale_id !== bundle.sale.sale_id
+      ) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_MOVEMENT_MISMATCH",
+          "sale inventory movement identity mismatch",
+          409,
+        );
+      }
+    
+      let legacyVariant: VariantRow | undefined;
+      if (variants.length > 0) {
+        if (!line.variant_id) {
+          throw new CashierSyncError(
+            "CASHIER_SYNC_VARIANT_REQUIRED",
+            "variant id is required",
+            409,
+            { product_id: line.product_id },
+          );
+        }
+        legacyVariant = variants.find((item) => item.id === line.variant_id);
+        if (!legacyVariant) {
+          throw new CashierSyncError(
+            "CASHIER_SYNC_VARIANT_NOT_FOUND",
+            "cashier sale variant no longer exists",
+            409,
+            {
+              product_id: line.product_id,
+              variant_id: line.variant_id,
+            },
+          );
+        }
+      } else if (line.variant_id) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_VARIANT_NOT_FOUND",
+          "cashier sale variant no longer exists",
+          409,
+          {
+            product_id: line.product_id,
+            variant_id: line.variant_id,
+          },
+        );
+      }
+    
+      const levels = await operationalQueryRows<LocationLevelRow>(
+        target,
+        `SELECT id, quantity, version
+           FROM location_inventory_levels
+          WHERE merchant_id = $1
+            AND location_id = $2
+            AND product_id = $3
+            AND variant_id IS NOT DISTINCT FROM $4::text
+          LIMIT 1
+          FOR UPDATE`,
+        [
+          bundle.cloudMerchantId,
+          locationId,
+          line.product_id,
+          line.variant_id || null,
+        ],
+      );
+      const level = levels[0];
+      if (!level) {
+        throw new CashierSyncError(
+          "CASHIER_LOCATION_INVENTORY_UNALLOCATED",
+          "cashier location has no inventory allocation for this item",
+          409,
+          {
+            location_id: locationId,
+            product_id: line.product_id,
+            ...(line.variant_id ? { variant_id: line.variant_id } : {}),
+          },
+        );
+      }
+    
+      const before = Number(level.quantity);
+      const after = before - line.quantity;
+      const expectedVersion = Number(level.version);
+      if (
+        !Number.isSafeInteger(before) ||
+        before < 0 ||
+        !Number.isSafeInteger(after) ||
+        after < 0 ||
+        !Number.isSafeInteger(expectedVersion) ||
+        expectedVersion <= 0
+      ) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_NEGATIVE_STOCK",
+          "location stock is insufficient for cashier sale",
+          409,
+          {
+            location_id: locationId,
+            product_id: line.product_id,
+            ...(line.variant_id ? { variant_id: line.variant_id } : {}),
+            current_quantity: before,
+            requested_quantity: line.quantity,
+          },
+        );
+      }
+      const resultingVersion = expectedVersion + 1;
+    
+      const updatedLevel = await operationalQueryRows<{ id: string }>(
+        target,
+        `UPDATE location_inventory_levels
+            SET quantity = $5,
+                version = version + 1,
+                updated_at = now()
+          WHERE merchant_id = $1
+            AND location_id = $2
+            AND product_id = $3
+            AND variant_id IS NOT DISTINCT FROM $4::text
+            AND version = $6
+          RETURNING id`,
+        [
+          bundle.cloudMerchantId,
+          locationId,
+          line.product_id,
+          line.variant_id || null,
+          after,
+          expectedVersion,
+        ],
+      );
+      if (updatedLevel.length !== 1) {
+        throw new CashierSyncError(
+          "CASHIER_LOCATION_INVENTORY_VERSION_CONFLICT",
+          "location inventory changed during cashier reconciliation",
+          409,
+          {
+            location_id: locationId,
+            product_id: line.product_id,
+            ...(line.variant_id ? { variant_id: line.variant_id } : {}),
+          },
+        );
+      }
+    
+      await target.query(
+        `UPDATE merchant_locations
+            SET inventory_fresh_at = now(),
+                updated_at = GREATEST(updated_at, now())
+          WHERE merchant_id = $1 AND id = $2`,
+        [bundle.cloudMerchantId, locationId],
+      );
+    
+      const legacyProductBefore = Number(product.quantity);
+      if (!Number.isSafeInteger(legacyProductBefore) || legacyProductBefore < 0) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_PRODUCT_STATE_INVALID",
+          "legacy catalog inventory projection is invalid",
+          500,
+          { product_id: line.product_id },
+        );
+      }
+      const legacyProductAfter = Math.max(
+        0,
+        legacyProductBefore - line.quantity,
+      );
+    
+      if (legacyVariant && line.variant_id) {
+        const legacyVariantBefore = Number(legacyVariant.quantity);
+        if (!Number.isSafeInteger(legacyVariantBefore) || legacyVariantBefore < 0) {
+          throw new CashierSyncError(
+            "CASHIER_SYNC_PRODUCT_STATE_INVALID",
+            "legacy variant inventory projection is invalid",
+            500,
+            {
+              product_id: line.product_id,
+              variant_id: line.variant_id,
+            },
+          );
+        }
+        await target.query(
+          `UPDATE product_variants
+              SET quantity = GREATEST(quantity - $4, 0),
+                  updated_at = now()
+            WHERE merchant_id = $1 AND product_id = $2 AND id = $3`,
+          [
+            bundle.cloudMerchantId,
+            line.product_id,
+            line.variant_id,
+            line.quantity,
+          ],
+        );
+      }
+    
+      const nextStatus = inventoryStatus(
+        product.status,
+        legacyProductAfter,
+        Number(product.low_stock_threshold),
+      );
+      const updatedProduct = await operationalQueryRows<{ id: string }>(
+        target,
+        `UPDATE products
+            SET quantity = GREATEST(quantity - $3, 0),
+                status = $4,
+                updated_at = now()
+          WHERE merchant_id = $1
+            AND id = $2
+            AND version = $5
+            AND deleted_at IS NULL
+          RETURNING id`,
+        [
+          bundle.cloudMerchantId,
+          line.product_id,
+          line.quantity,
+          nextStatus,
+          Number(product.version),
+        ],
+      );
+      if (updatedProduct.length !== 1) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_PRODUCT_VERSION_CONFLICT",
+          "catalog definition changed during cashier reconciliation",
+          409,
+          { product_id: line.product_id },
+        );
+      }
+    
+      const keyHash = sha256(
+        `cashier-sale:${bundle.cloudMerchantId}:${locationId}:${bundle.operationId}:${line.line_id}`,
+      );
+      await target.query(
+        `INSERT INTO inventory_mutations (
+           id, merchant_id, location_id, product_id, variant_id, mutation_type,
+           before_quantity, after_quantity, expected_version, resulting_version,
+           actor_type, actor_account_id, reason_code, idempotency_key_hash,
+           request_hash, created_at
+         ) VALUES (
+           $1,$2,$3,$4,$5,'adjust',$6,$7,$8,$9,
+           'cashier',NULL,$10,$11,$12,$13
+         )`,
+        [
+          `cashier_mut_${keyHash.slice(0, 40)}`,
+          bundle.cloudMerchantId,
+          locationId,
+          line.product_id,
+          line.variant_id || null,
+          before,
+          after,
+          expectedVersion,
+          resultingVersion,
+          "cashier_sale_sync",
+          keyHash,
+          bundle.requestHash,
+          new Date(bundle.sale.occurred_at),
+        ],
+      );
+    
+      bundle.movements.delete(itemKey(line.product_id, line.variant_id));
+      return true;
+    }
+    
+    function orderPayment(sale: CashierSale): {
+      method: "cash_on_delivery" | "other";
+      status: "paid" | "electronic_pending";
+      verifiedAt: Date | null;
+      confirmationSource: "merchant_confirmed" | null;
+    } {
+      if (sale.payment_method === "cash") {
+        return {
+          method: "cash_on_delivery",
+          status: "paid",
+          verifiedAt: new Date(sale.occurred_at),
+          confirmationSource: "merchant_confirmed",
+        };
+      }
+      if (sale.payment_status === "paid") {
+        return {
+          method: "other",
+          status: "paid",
+          verifiedAt: new Date(sale.occurred_at),
+          confirmationSource: "merchant_confirmed",
+        };
+      }
+      return {
+        method: "other",
+        status: "electronic_pending",
+        verifiedAt: null,
+        confirmationSource: null,
+      };
+    }
+    
+    async function insertCanonicalOrder(
+      target: OperationalQueryTarget,
+      bundle: ValidatedBundle,
+      locationId: string,
+    ): Promise<void> {
+      const payment = orderPayment(bundle.sale);
+      const metadata = {
+        cashier_sync: {
+          schema_version: CASHIER_SCHEMA_VERSION,
+          operation_id: bundle.operationId,
+          request_hash: bundle.requestHash,
+          local_merchant_id: bundle.localMerchantId,
+          device_id: bundle.deviceId,
+          location_id: locationId,
+          device_sequence: String(bundle.deviceSequence),
+          sale_id: bundle.sale.sale_id,
+          occurred_at: bundle.sale.occurred_at,
+          currency_code: bundle.sale.currency_code,
+          currency_fraction_digits: bundle.sale.currency_fraction_digits,
+          subtotal_minor: bundle.sale.subtotal_minor,
+          ...(bundle.sale.promotion_discount_minor !== undefined
+            ? { promotion_discount_minor: bundle.sale.promotion_discount_minor }
+            : {}),
+          ...(bundle.sale.manual_discount_minor !== undefined
+            ? {
+                ...(bundle.sale.manual_discount_kind
+                  ? { manual_discount_kind: bundle.sale.manual_discount_kind }
+                  : {}),
+                manual_discount_minor: bundle.sale.manual_discount_minor,
+                manual_discount_reason: bundle.sale.manual_discount_reason,
+              }
+            : {}),
+          discount_minor: bundle.sale.discount_minor,
+          total_minor: bundle.sale.total_minor,
+          ...(bundle.sale.cash_tendered_minor !== undefined
+            ? { cash_tendered_minor: bundle.sale.cash_tendered_minor }
+            : {}),
+          ...(bundle.sale.change_due_minor !== undefined
+            ? { change_due_minor: bundle.sale.change_due_minor }
+            : {}),
+          sale_snapshot: bundle.sale,
+        },
+      };
+      await target.query(
+        `INSERT INTO orders (
+           id, merchant_id, fulfillment_location_id, customer_name, status, payment_method, payment_status,
+           subtotal_iqd, delivery_fee_iqd, total_iqd, source_channel, version,
+           notes, payment_verified_at, payment_confirmation_source,
+           payment_provider, payment_provider_transaction_ref,
+           confirmed_at, delivered_at, metadata, created_at, updated_at
+         ) VALUES (
+           $1,$2,$3,'Cashier sale','delivered',$4,$5,$6,0,$6,'cashier',1,
+           $7,$8,$9,$10,$11,$12,$12,$13::jsonb,$12,$12
+         )`,
+        [
+          bundle.sale.sale_id,
+          bundle.cloudMerchantId,
+          locationId,
+          payment.method,
+          payment.status,
+          bundle.sale.total_minor,
+          bundle.sale.note || null,
+          payment.verifiedAt,
+          payment.confirmationSource,
+          bundle.sale.payment_provider || null,
+          bundle.sale.payment_reference || null,
+          new Date(bundle.sale.occurred_at),
+          JSON.stringify(metadata),
+        ],
+      );
+      for (const line of bundle.sale.lines) {
+        await target.query(
+          `INSERT INTO order_items (
+             id, order_id, merchant_id, product_id, product_variant_id,
+             product_name_snapshot, variant_snapshot, quantity, unit_price_iqd,
+             line_total_iqd, created_at
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11)`,
+          [
+            line.line_id,
+            bundle.sale.sale_id,
+            bundle.cloudMerchantId,
+            line.product_id,
+            line.variant_id || null,
+            line.product_name_snapshot,
+            JSON.stringify({
+              ...(line.variant_name_snapshot ? { name: line.variant_name_snapshot } : {}),
+              ...(line.sku_snapshot ? { sku: line.sku_snapshot } : {}),
+              ...(line.barcode_snapshot ? { barcode: line.barcode_snapshot } : {}),
+              ...(line.catalog_version ? { catalog_version: line.catalog_version } : {}),
+              ...(line.unit_cost_minor !== undefined ? { unit_cost_minor: line.unit_cost_minor } : {}),
+              base_unit_price_minor: line.base_unit_price_minor,
+              effective_unit_price_minor: line.effective_unit_price_minor,
+              discount_minor: line.discount_minor,
+              ...(line.promotion ? { promotion: line.promotion } : {}),
+            }),
+            line.quantity,
+            line.effective_unit_price_minor,
+            line.line_total_minor,
+            new Date(bundle.sale.occurred_at),
+          ],
+        );
+      }
+    }
+    
+    export async function syncCashierSaleAuthoritative(params: {
+      merchantId: unknown;
+      locationId?: unknown;
+      body: unknown;
+    }): Promise<CashierSaleSyncResult> {
+      const merchantId = identifier(params.merchantId, "merchant_id");
+      const requestedLocationId =
+        params.locationId === undefined
+          ? undefined
+          : identifier(params.locationId, "location_id");
+      if (!operationalPostgresAuthorityRequired()) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_POSTGRES_REQUIRED",
+          "cashier cloud sync requires PostgreSQL operational authority",
+          503,
+        );
+      }
+      const bundle = validateCashierSaleSyncBundle(params.body);
+      if (bundle.cloudMerchantId !== merchantId) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_TENANT_MISMATCH",
+          "authenticated merchant does not match cashier device binding",
+          403,
+        );
+      }
+    
+      return withMerchantOperationalTransaction(merchantId, async (client) => {
+        await client.query(
+          "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+          [`cashier-device:${merchantId}:${bundle.deviceId}`],
+        );
+        const historicalAuthority =
+          await evaluateCashierHistoricalOperationAuthorityInTransaction({
+            target: client,
+            merchantId,
+            deviceId: bundle.deviceId,
+            occurredAt: bundle.sale.occurred_at,
+          });
+        if (!historicalAuthority.allowed) {
+          throw new CashierSyncError(
+            historicalAuthority.code,
+            historicalAuthority.reason,
+            403,
+          );
+        }
+        const timeline = await recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId: bundle.deviceId,
+          deviceSequence: bundle.deviceSequence,
+          operationId: bundle.operationId,
+          operationKind: "sale",
+          occurredAt: bundle.sale.occurred_at,
+          authority: historicalAuthority,
+        });
+        if (!timeline.allowed) {
+          throw new CashierSyncError(timeline.code, timeline.reason, 409);
+        }
+        const locationId = await requireCashierStationLocation(client, {
+          merchantId,
+          stationId: historicalAuthority.stationId,
+          ...(requestedLocationId ? { requestedLocationId } : {}),
+        });
+        const existing = await loadExistingOrder(client, merchantId, bundle.sale.sale_id);
+        if (existing) {
+          const cashierMetadata = metadataCashier(existing.metadata);
+          if (
+            existing.source_channel !== "cashier" ||
+            String(cashierMetadata.operation_id || "") !== bundle.operationId ||
+            String(cashierMetadata.request_hash || "") !== bundle.requestHash ||
+            String(cashierMetadata.device_id || "") !== bundle.deviceId ||
+            (String(cashierMetadata.location_id || existing.fulfillment_location_id || "") &&
+              String(cashierMetadata.location_id || existing.fulfillment_location_id || "") !== locationId) ||
+            String(cashierMetadata.device_sequence || "") !== String(bundle.deviceSequence)
+          ) {
+            throw new CashierSyncError(
+              "CASHIER_SYNC_IDEMPOTENCY_CONFLICT",
+              "cashier sale identifier was already used with different content",
+              409,
+            );
+          }
+          return {
+            operation_id: bundle.operationId,
+            order_id: existing.id,
+            device_sequence: bundle.deviceSequence,
+            replayed: true,
+            inventory_mutation_count: 0,
+            accepted_entity_ids: bundle.envelopes.map((item) => item.entity_id),
+          };
+        }
+    
+        await assertDeviceSequenceUnused(client, bundle);
+        let inventoryMutationCount = 0;
+        for (const line of bundle.sale.lines) {
+          if (await applyInventoryForLine(client, bundle, line, locationId)) {
+            inventoryMutationCount += 1;
+          }
+        }
+        if (bundle.movements.size !== 0) {
+          throw new CashierSyncError(
+            "CASHIER_SYNC_MOVEMENT_MISMATCH",
+            "cashier sale bundle contains extra inventory movements",
+            409,
+            { remaining_movements: bundle.movements.size },
+          );
+        }
+        await insertCanonicalOrder(client, bundle, locationId);
+        return {
+          operation_id: bundle.operationId,
+          order_id: bundle.sale.sale_id,
+          device_sequence: bundle.deviceSequence,
+          replayed: false,
+          inventory_mutation_count: inventoryMutationCount,
+          accepted_entity_ids: bundle.envelopes.map((item) => item.entity_id),
+        };
+      });
+    }
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/cashier-merchant-catalog-isolation.test.mjs:88:10)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: a paired cashier device cannot silently rebind to another merchant
+ok 45 - a paired cashier device cannot silently rebind to another merchant
+  ---
+  duration_ms: 2.685463
+  type: 'test'
+  ...
+# Subtest: cashier schema enforces one open shift per station and staff plus one live operator per station
+ok 46 - cashier schema enforces one open shift per station and staff plus one live operator per station
+  ---
+  duration_ms: 3.597667
+  type: 'test'
+  ...
+# Subtest: concurrent operator login unique conflicts map to stable cashier 409 errors at the API boundary
+ok 47 - concurrent operator login unique conflicts map to stable cashier 409 errors at the API boundary
+  ---
+  duration_ms: 1.562055
+  type: 'test'
+  ...
+# Subtest: cashier sales remain durable internal evidence instead of merchant orders
+ok 48 - cashier sales remain durable internal evidence instead of merchant orders
+  ---
+  duration_ms: 1.082998
+  type: 'test'
+  ...
+# Subtest: cashier evidence cannot be opened or mutated through merchant Order API
+ok 49 - cashier evidence cannot be opened or mutated through merchant Order API
+  ---
+  duration_ms: 0.236639
+  type: 'test'
+  ...
+# Subtest: cashier runtime expires only short-lived cashier authorities
+ok 50 - cashier runtime expires only short-lived cashier authorities
+  ---
+  duration_ms: 0.822694
+  type: 'test'
+  ...
+# Subtest: every cashier route passes expiry reconciliation before cashier routers
+ok 51 - every cashier route passes expiry reconciliation before cashier routers
+  ---
+  duration_ms: 0.172595
+  type: 'test'
+  ...
+# Subtest: discount override role hardening trusts the stored staff role and locks the row
+ok 52 - discount override role hardening trusts the stored staff role and locks the row
+  ---
+  duration_ms: 4.129692
+  type: 'test'
+  ...
+# Subtest: non-manager cleanup removes only override authority and clears the stored policy flag
+ok 53 - non-manager cleanup removes only override authority and clears the stored policy flag
+  ---
+  duration_ms: 3.24037
+  type: 'test'
+  ...
+# Subtest: non-manager cleanup also scrubs override permission from active session snapshots
+ok 54 - non-manager cleanup also scrubs override permission from active session snapshots
+  ---
+  duration_ms: 0.837656
+  type: 'test'
+  ...
+# Subtest: optional discount policy table compatibility uses a savepoint and catches only undefined-table
+ok 55 - optional discount policy table compatibility uses a savepoint and catches only undefined-table
+  ---
+  duration_ms: 0.845808
+  type: 'test'
+  ...
+# Subtest: both staff creation and update enforce the discount override role invariant
+ok 56 - both staff creation and update enforce the discount override role invariant
+  ---
+  duration_ms: 1.509798
+  type: 'test'
+  ...
+# Subtest: cashier history reconciliation is fail-closed and database-targeted
+ok 57 - cashier history reconciliation is fail-closed and database-targeted
+  ---
+  duration_ms: 1.108104
+  type: 'test'
+  ...
+# Subtest: reconciliation validates physical schema before touching history
+ok 58 - reconciliation validates physical schema before touching history
+  ---
+  duration_ms: 0.18312
+  type: 'test'
+  ...
+# Subtest: reconciliation writes only migration metadata under a transaction lock
+ok 59 - reconciliation writes only migration metadata under a transaction lock
+  ---
+  duration_ms: 0.797506
+  type: 'test'
+  ...
+# Subtest: reconciliation preserves cashier data and canonical migration hashes
+ok 60 - reconciliation preserves cashier data and canonical migration hashes
+  ---
+  duration_ms: 0.199264
+  type: 'test'
+  ...
+# Subtest: durable station refresh restores only the current active device binding
+ok 61 - durable station refresh restores only the current active device binding
+  ---
+  duration_ms: 1.065772
+  type: 'test'
+  ...
+# Subtest: explicit station revocation and operator-session expiry remain authoritative
+ok 62 - explicit station revocation and operator-session expiry remain authoritative
+  ---
+  duration_ms: 0.968619
+  type: 'test'
+  ...
+# Subtest: cashier sale compatibility sync is merchant-authenticated and mounted before legacy API fallback
+ok 63 - cashier sale compatibility sync is merchant-authenticated and mounted before legacy API fallback
+  ---
+  duration_ms: 4.573557
+  type: 'test'
+  ...
+# Subtest: cashier sale reconciliation is one PostgreSQL transaction with durable replay before inventory
+ok 64 - cashier sale reconciliation is one PostgreSQL transaction with durable replay before inventory
+  ---
+  duration_ms: 1.582064
+  type: 'test'
+  ...
+# Subtest: server derives stock decrement from sale lines and rejects extra or missing movement evidence
+ok 65 - server derives stock decrement from sale lines and rejects extra or missing movement evidence
+  ---
+  duration_ms: 1.773646
+  type: 'test'
+  ...
+# Subtest: manual discount type is durable from checkout through local and cloud sale evidence
+ok 66 - manual discount type is durable from checkout through local and cloud sale evidence
+  ---
+  duration_ms: 1.920544
+  type: 'test'
+  ...
+# Subtest: operator browser deletes a local outbox operation only after complete server acknowledgement
+ok 67 - operator browser deletes a local outbox operation only after complete server acknowledgement
+  ---
+  duration_ms: 0.878746
+  type: 'test'
+  ...
+# Subtest: cashier keeps one operator-aware manual sync action and auto-syncs real POS operations while online
+ok 68 - cashier keeps one operator-aware manual sync action and auto-syncs real POS operations while online
+  ---
+  duration_ms: 1.313618
+  type: 'test'
+  ...
+# Subtest: clean deployment gate proves the migrated schema with the PostgreSQL-only merchant journey
+not ok 69 - clean deployment gate proves the migrated schema with the PostgreSQL-only merchant journey
+  ---
+  duration_ms: 1.64012
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/clean-deployment-postgres-only-contract.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /POSTGRES_DB: fawri_ci/. Input:
+    
+    'name: Clean deployment golden gate\n' +
+      '\n' +
+      'on:\n' +
+      '  pull_request:\n' +
+      '    paths:\n' +
+      '      - "artifacts/api-server/**"\n' +
+      '      - "artifacts/fawri/**"\n' +
+      '      - "lib/db/**"\n' +
+      '      - "package.json"\n' +
+      '      - "pnpm-lock.yaml"\n' +
+      '      - "pnpm-workspace.yaml"\n' +
+      '      - ".github/workflows/clean-deployment-golden-gate.yml"\n' +
+      '  workflow_dispatch:\n' +
+      '\n' +
+      'permissions:\n' +
+      '  contents: read\n' +
+      '\n' +
+      'concurrency:\n' +
+      '  group: clean-deployment-golden-${{ github.event.pull_request.number || github.ref }}\n' +
+      '  cancel-in-progress: true\n' +
+      '\n' +
+      'jobs:\n' +
+      '  clean-deployment:\n' +
+      '    uses: ./.github/workflows/audit-isolated-postgres.yml\n' +
+      '    with:\n' +
+      '      suite: http\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    name: Clean deployment golden gate
+    
+    on:
+      pull_request:
+        paths:
+          - "artifacts/api-server/**"
+          - "artifacts/fawri/**"
+          - "lib/db/**"
+          - "package.json"
+          - "pnpm-lock.yaml"
+          - "pnpm-workspace.yaml"
+          - ".github/workflows/clean-deployment-golden-gate.yml"
+      workflow_dispatch:
+    
+    permissions:
+      contents: read
+    
+    concurrency:
+      group: clean-deployment-golden-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    
+    jobs:
+      clean-deployment:
+        uses: ./.github/workflows/audit-isolated-postgres.yml
+        with:
+          suite: http
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/clean-deployment-postgres-only-contract.test.mjs:15:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.start (node:internal/test_runner/test:1242:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+# Subtest: duration expiry records the policy cutoff and repairs legacy notice times
+ok 70 - duration expiry records the policy cutoff and repairs legacy notice times
+  ---
+  duration_ms: 0.857485
+  type: 'test'
+  ...
+# Subtest: production Meta conversation context persists and reloads trusted catalog references
+not ok 71 - production Meta conversation context persists and reloads trusted catalog references
+  ---
+  duration_ms: 2.076754
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/knowledge-product-conversation-memory-contract.test.mjs:14:1'
+  failureType: 'testCodeFailure'
+  error: 'the trusted server-loaded recent message set must reach the knowledge engine'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    import crypto from "node:crypto";
+    import type { DurableJob } from "./durableJobQueue";
+    import { decideMetaKnowledgeReply } from "./metaKnowledgeDecisionBoundary";
+    
+    import {
+      withMerchantOperationalTransaction,
+      type OperationalSqlClient,
+    } from "./operationalPostgresAuthority";
+    import type { KnowledgeConversationMessage } from "./knowledge/types";
+    import {
+      parseMetaInboundMessage,
+      selectMetaInboundImageUrl,
+      selectMetaInboundAudioUrl,
+      selectMetaInboundVideoUrl,
+      selectMetaInboundSafeMediaManifest,
+    } from "./metaInboundMessage";
+    import {
+      getMetaImageUnderstandingService,
+    } from "./metaImageUnderstandingRuntime";
+    import {
+      getMetaAudioUnderstandingService,
+    } from "./metaAudioUnderstandingRuntime.js";
+    import { understandTrustedMetaVideoForReply } from "./metaVideoReplyGrounding.js";
+    import { TrustedMediaCatalogMatcher } from "./mediaCatalogMatcher";
+    import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
+    import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
+    
+    export type PreparedPostgresMetaAutoReply =
+      | {
+          action: "suppress";
+          eventId: string;
+          merchantId: string;
+          conversationId: string;
+          code: string;
+        }
+      | {
+          action: "send";
+          eventId: string;
+          merchantId: string;
+          conversationId: string;
+          inboundEventId: string;
+          sourceCustomerMessageId: string;
+          replyIntentId: string;
+          replyMessageId: string;
+          pageId: string;
+          recipientId: string;
+          messageText: string;
+          handoffAfterReply: boolean;
+        };
+    
+    const trustedMediaCatalogMatcher = new TrustedMediaCatalogMatcher();
+    
+    type ParsedMetaJob = {
+      eventId: string;
+      merchantId: string;
+      pageId: string;
+      senderId: string;
+      externalMessageId: string;
+      customerText: string | null;
+      storageText: string;
+      contentKind: "text" | "image" | "audio" | "video" | "shared_post" | "document" | "location" | "sticker";
+      attachmentCount: number;
+      contentIdentityHash: string | null;
+      imageUrl: string | null;
+      audioUrl: string | null;
+      videoUrl: string | null;
+      mediaManifest: {
+        imageUrl: string | null;
+        audioUrl: string | null;
+        videoUrl: string | null;
+      } | null;
+      replyToMessageId: string | null;
+      webhookBody: Record<string, unknown>;
+      createdAt: string;
+    };
+    
+    type ConversationRow = {
+      id: string;
+      status: "auto_replying" | "needs_reply" | "manual" | "closed";
+      assigned_to_human: boolean;
+      metadata?: Record<string, unknown> | null;
+    };
+    
+    type ReplyMessageRow = {
+      id: string;
+      text: string;
+      status: string;
+      metadata: Record<string, unknown> | null;
+    };
+    
+    export type ConversationContextRow = {
+      sender: "customer" | "fawri" | "merchant";
+      text: string;
+      created_at: Date | string;
+      metadata: Record<string, unknown> | null;
+    };
+    
+    function text(value: unknown): string {
+      return String(value ?? "").trim();
+    }
+    
+    function digest(value: string): string {
+      return crypto.createHash("sha256").update(value).digest("hex");
+    }
+    
+    function stableJson(value: unknown): string {
+      if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+      if (value && typeof value === "object") {
+        const record = value as Record<string, unknown>;
+        return `{${Object.keys(record)
+          .sort()
+          .map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`)
+          .join(",")}}`;
+      }
+      return JSON.stringify(value) ?? "null";
+    }
+    
+    function eventRecord(value: unknown): Record<string, unknown> {
+      return value && typeof value === "object" && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : {};
+    }
+    
+    function eventTimestamp(value: unknown): string {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        const date = new Date(value);
+        if (Number.isFinite(date.getTime())) return date.toISOString();
+      }
+      const date = new Date(String(value ?? ""));
+      return Number.isFinite(date.getTime())
+        ? date.toISOString()
+        : new Date().toISOString();
+    }
+    
+    function parseJob(job: DurableJob): ParsedMetaJob {
+      const payload = job.payload || {};
+      const eventId = text(payload.event_id || job.dedupe_key);
+      const merchantId = text(payload.merchant_id || job.merchant_id);
+      const pageId = text(payload.page_id);
+      const senderId = text(payload.sender_id);
+      const externalMessageId = text(payload.external_message_id);
+      const webhookBody = eventRecord(payload.webhook_body);
+      const entries = Array.isArray(webhookBody.entry) ? webhookBody.entry : [];
+      const entry = eventRecord(entries[0]);
+      const messaging = Array.isArray(entry.messaging) ? entry.messaging : [];
+      const event = eventRecord(messaging[0]);
+      const sender = eventRecord(event.sender);
+      const message = eventRecord(event.message);
+      const inbound = parseMetaInboundMessage(message);
+      const customerText = inbound?.text || null;
+      const storageText = inbound?.storageText || "";
+      const contentKind = inbound?.kind ?? "unsupported";
+      const imageUrl = inbound
+        ? selectMetaInboundImageUrl(inbound)
+        : null;
+      const audioUrl = inbound
+        ? selectMetaInboundAudioUrl(inbound)
+        : null;
+      const videoUrl = inbound ? selectMetaInboundVideoUrl(inbound) : null;
+      const mediaManifest = inbound
+        ? selectMetaInboundSafeMediaManifest(inbound)
+        : null;
+      const contentIdentityHash =
+        inbound && inbound.attachments.length > 0
+          ? digest(
+              stableJson(
+                inbound.attachments.map((attachment) => ({
+                  type: attachment.type,
+                  url: attachment.url,
+                  title: attachment.title,
+                })),
+              ),
+            )
+          : null;
+      const bodyPageId = text(entry.id);
+      const bodySenderId = text(sender.id);
+      const bodyMessageId = text(message.mid);
+    
+      if (
+        !eventId ||
+        !merchantId ||
+        !pageId ||
+        !senderId ||
+        !externalMessageId ||
+        !inbound ||
+        (contentKind === "unsupported" ||
+          contentKind === "shared_post" ||
+          contentKind === "document" ||
+          contentKind === "location" ||
+          contentKind === "sticker") ||
+        inbound.attachments.some((attachment) =>
+          !["image", "audio", "video"].includes(attachment.type.toLowerCase()),
+        ) ||
+        !storageText ||
+        storageText.length > 2_000 ||
+        (customerText !== null && customerText.length > 2_000) ||
+        (bodyPageId && bodyPageId !== pageId) ||
+        (bodySenderId && bodySenderId !== senderId) ||
+        (bodyMessageId && bodyMessageId !== externalMessageId)
+      ) {
+        throw Object.assign(new Error("Meta reply job payload is invalid"), {
+          code: "META_JOB_PAYLOAD_INVALID",
+        });
+      }
+    
+      return {
+        eventId,
+        merchantId,
+        pageId,
+        senderId,
+        externalMessageId,
+        customerText,
+        storageText,
+        contentKind,
+        attachmentCount: inbound.attachments.length,
+        contentIdentityHash,
+        imageUrl,
+        audioUrl,
+        videoUrl,
+        mediaManifest,
+        replyToMessageId: inbound.replyToMessageId,
+        webhookBody,
+        createdAt: eventTimestamp(event.timestamp),
+      };
+    }
+    
+    function conversationId(senderId: string): string {
+      return `messenger-${senderId}`;
+    }
+    
+    function inboundEventId(eventId: string): string {
+      return `channel-inbound-${digest(eventId).slice(0, 40)}`;
+    }
+    
+    function replyIntentId(eventId: string): string {
+      return `auto:${eventId}`;
+    }
+    
+    function replyEventId(eventId: string): string {
+      return `reply:${eventId}`;
+    }
+    
+    function replyMessageId(eventId: string): string {
+      return `msg-fawri-auto-${digest(eventId).slice(0, 40)}`;
+    }
+    
+    function customerMessageId(eventId: string): string {
+      return `msg-customer-${digest(eventId).slice(0, 40)}`;
+    }
+    
+    async function findReplyMessage(
+      client: OperationalSqlClient,
+      merchantId: string,
+      eventId: string,
+    ): Promise<ReplyMessageRow | null> {
+      const result = await client.query<ReplyMessageRow>(
+        `SELECT id, text, status::text AS status, metadata
+           FROM messages
+          WHERE merchant_id = $1 AND external_event_id = $2
+          LIMIT 1`,
+        [merchantId, replyEventId(eventId)],
+      );
+      return result.rows[0] || null;
+    }
+    
+    async function ensureInboundState(
+      parsed: ParsedMetaJob,
+      job: DurableJob,
+    ): Promise<{
+      conversation: ConversationRow;
+      conversationId: string;
+      inboundEventId: string;
+      customerInserted: boolean;
+      existingReply: ReplyMessageRow | null;
+      sourceCustomerMessageId: string;
+      repliedToInternalMessageId: string | null;
+    }> {
+      return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
+        const channelResult = await client.query<{ id: string }>(
+          `SELECT id
+             FROM merchant_channels
+            WHERE merchant_id = $1
+              AND platform = 'messenger'
+              AND page_id = $2
+              AND status = 'connected'
+            LIMIT 2`,
+          [parsed.merchantId, parsed.pageId],
+        );
+        if (channelResult.rows.length !== 1) {
+          throw Object.assign(new Error("Meta Messenger channel is unavailable"), {
+            code: "META_CHANNEL_UNAVAILABLE",
+          });
+        }
+        const channelId = channelResult.rows[0].id;
+        const inboundId = inboundEventId(parsed.eventId);
+        const payloadHash = digest(stableJson(parsed.webhookBody));
+    
+        await client.query(
+          `INSERT INTO channel_inbound_events
+            (id, merchant_id, channel_id, provider, external_event_id,
+             payload_hash, enqueue_job_id, received_at, enqueue_committed_at)
+           VALUES ($1, $2, $3, 'messenger', $4, $5, $6, $7::timestamptz, now())
+           ON CONFLICT (provider, external_event_id) DO NOTHING`,
+          [
+            inboundId,
+            parsed.merchantId,
+            channelId,
+            parsed.eventId,
+            payloadHash,
+            job.id,
+            parsed.createdAt,
+          ],
+        );
+        const inbound = await client.query<{
+          id: string;
+          merchant_id: string;
+          channel_id: string;
+          payload_hash: string;
+        }>(
+          `SELECT id, merchant_id, channel_id, payload_hash
+             FROM channel_inbound_events
+            WHERE merchant_id = $1 AND provider = 'messenger'
+              AND external_event_id = $2
+            LIMIT 1`,
+          [parsed.merchantId, parsed.eventId],
+        );
+        const inboundRow = inbound.rows[0];
+        if (
+          !inboundRow ||
+          inboundRow.channel_id !== channelId ||
+          inboundRow.payload_hash !== payloadHash
+        ) {
+          throw Object.assign(new Error("Meta event identity collision detected"), {
+            code: "META_EVENT_IDENTITY_COLLISION",
+          });
+        }
+    
+        const existingConversation = await client.query<ConversationRow>(
+          `SELECT id, status::text AS status, assigned_to_human, metadata
+             FROM conversations
+            WHERE merchant_id = $1 AND channel_id = $2 AND customer_external_id = $3
+            LIMIT 1
+            FOR UPDATE`,
+          [parsed.merchantId, channelId, parsed.senderId],
+        );
+        let conversation = existingConversation.rows[0];
+        if (!conversation) {
+          const id = conversationId(parsed.senderId);
+          const inserted = await client.query<ConversationRow>(
+            `INSERT INTO conversations
+              (id, merchant_id, channel_id, external_conversation_id,
+               customer_external_id, customer_handle, status, assigned_to_human,
+               needs_training, last_message_at, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $4, $4, 'auto_replying', FALSE, FALSE,
+                     $5::timestamptz, $5::timestamptz, $5::timestamptz)
+             ON CONFLICT (merchant_id, channel_id, customer_external_id)
+             DO UPDATE SET
+               last_message_at = GREATEST(COALESCE(conversations.last_message_at, EXCLUDED.last_message_at), EXCLUDED.last_message_at),
+               updated_at = GREATEST(conversations.updated_at, EXCLUDED.updated_at)
+             RETURNING id, status::text AS status, assigned_to_human`,
+            [id, parsed.merchantId, channelId, parsed.senderId, parsed.createdAt],
+          );
+          conversation = inserted.rows[0];
+        }
+        if (!conversation) {
+          throw Object.assign(new Error("Meta conversation is unavailable"), {
+            code: "META_CONVERSATION_UNAVAILABLE",
+          });
+        }
+    
+        let repliedToInternalMessageId: string | null = null;
+        if (parsed.replyToMessageId) {
+          const repliedTo = await client.query<{ id: string }>(
+            `SELECT id
+               FROM messages
+              WHERE merchant_id = $1
+                AND conversation_id = $2
+                AND external_message_id = $3
+              LIMIT 2`,
+            [parsed.merchantId, conversation.id, parsed.replyToMessageId],
+          );
+          if (repliedTo.rows.length !== 1) {
+            throw Object.assign(new Error("Meta replied-to message is unavailable"), {
+              code: "META_REPLY_CONTEXT_UNAVAILABLE",
+            });
+          }
+          repliedToInternalMessageId = repliedTo.rows[0].id;
+        }
+    
+        if (conversation.status === "closed") {
+          const reopened = await client.query<ConversationRow>(
+            `UPDATE conversations
+                SET status = 'auto_replying', assigned_to_human = FALSE,
+                    closed_at = NULL, updated_at = now()
+              WHERE merchant_id = $1 AND id = $2
+              RETURNING id, status::text AS status, assigned_to_human, metadata`,
+            [parsed.merchantId, conversation.id],
+          );
+          conversation = reopened.rows[0] || conversation;
+        }
+    
+        const existingCustomer = await client.query<{
+          id: string;
+          conversation_id: string;
+          text: string;
+          metadata: Record<string, unknown> | null;
+        }>(
+          `SELECT id, conversation_id, text, metadata
+             FROM messages
+            WHERE merchant_id = $1 AND external_message_id = $2
+            LIMIT 1`,
+          [parsed.merchantId, parsed.externalMessageId],
+        );
+        let customerInserted = false;
+        let sourceCustomerMessageId = existingCustomer.rows[0]?.id || "";
+    
+        if (!existingCustomer.rows[0]) {
+          const inserted = await client.query<{ id: string }>(
+            `INSERT INTO messages
+              (id, merchant_id, conversation_id, external_message_id,
+               external_event_id, sender, text, status, counted_as_auto_reply,
+               metadata, created_at)
+             VALUES ($1, $2, $3, $4, $5, 'customer', $6, 'received', FALSE,
+                     $7::jsonb, $8::timestamptz)
+             ON CONFLICT DO NOTHING
+             RETURNING id`,
+            [
+              customerMessageId(parsed.eventId),
+              parsed.merchantId,
+              conversation.id,
+              parsed.externalMessageId,
+              parsed.eventId,
+              parsed.storageText,
+              JSON.stringify({
+                ...(parsed.contentKind === "text" && parsed.attachmentCount === 0
+                  ? {}
+                  : {
+                      media: {
+                        content_kind: parsed.contentKind,
+                        attachment_count: parsed.attachmentCount,
+                        has_attachment: parsed.attachmentCount > 0,
+                        content_identity_hash: parsed.contentIdentityHash,
+                      },
+                    }),
+                ...(parsed.replyToMessageId
+                  ? { reply_to_external_message_id: parsed.replyToMessageId }
+                  : {}),
+              }),
+              parsed.createdAt,
+            ],
+          );
+          customerInserted = inserted.rows.length === 1;
+          sourceCustomerMessageId =
+            inserted.rows[0]?.id || customerMessageId(parsed.eventId);
+        } else {
+          const existingMedia =
+            existingCustomer.rows[0].metadata?.media &&
+            typeof existingCustomer.rows[0].metadata.media === "object" &&
+            !Array.isArray(existingCustomer.rows[0].metadata.media)
+              ? (existingCustomer.rows[0].metadata.media as Record<string, unknown>)
+              : null;
+          const existingContentIdentityHash =
+            typeof existingMedia?.content_identity_hash === "string"
+              ? existingMedia.content_identity_hash
+              : null;
+          const existingReplyToMessageId =
+            typeof existingCustomer.rows[0].metadata?.reply_to_external_message_id === "string"
+              ? existingCustomer.rows[0].metadata.reply_to_external_message_id
+              : null;
+    
+          if (
+            existingCustomer.rows[0].conversation_id !== conversation.id ||
+            existingCustomer.rows[0].text !== parsed.storageText ||
+            existingContentIdentityHash !== parsed.contentIdentityHash ||
+            existingReplyToMessageId !== parsed.replyToMessageId
+          ) {
+            throw Object.assign(new Error("Meta message identity collision detected"), {
+              code: "META_MESSAGE_IDENTITY_COLLISION",
+            });
+          }
+        }
+    
+        await client.query(
+          `UPDATE conversations
+              SET last_message_at = GREATEST(COALESCE(last_message_at, $3::timestamptz), $3::timestamptz),
+                  updated_at = GREATEST(updated_at, $3::timestamptz),
+                  metadata = CASE
+                    WHEN $4::boolean THEN jsonb_set(
+                      COALESCE(metadata, '{}'::jsonb),
+                      '{latest_customer_message_id}',
+                      to_jsonb($5::text),
+                      true
+                    )
+                    ELSE metadata
+                  END
+            WHERE merchant_id = $1 AND id = $2`,
+          [
+            parsed.merchantId,
+            conversation.id,
+            parsed.createdAt,
+            customerInserted,
+            sourceCustomerMessageId,
+          ],
+        );
+    
+        return {
+          conversation,
+          conversationId: conversation.id,
+          inboundEventId: inboundRow.id,
+          customerInserted,
+          existingReply: await findReplyMessage(client, parsed.merchantId, parsed.eventId),
+          sourceCustomerMessageId,
+          repliedToInternalMessageId,
+        };
+      });
+    }
+    
+    export function mapConversationContextRow(row: ConversationContextRow): KnowledgeConversationMessage {
+          const metadata =
+            row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+              ? row.metadata
+              : {};
+          const matchedRecordId = text(metadata.matched_record_id);
+          const reasonCode = text(metadata.reason_code);
+    
+          const media =
+            metadata.media &&
+            typeof metadata.media === "object" &&
+            !Array.isArray(metadata.media)
+              ? metadata.media as Record<string, unknown>
+              : null;
+    
+          const imageSha256 =
+            media && typeof media.image_sha256 === "string"
+              ? media.image_sha256.trim()
+              : "";
+          const visionProviderId =
+            media && typeof media.vision_provider_id === "string"
+              ? media.vision_provider_id.trim()
+              : "";
+          const visionModel =
+            media && typeof media.vision_model === "string"
+              ? media.vision_model.trim()
+              : "";
+          const matchConfidence = media?.match_confidence;
+          const audioTranscript =
+            row.sender === "customer" &&
+            media &&
+            typeof media.audio_transcript === "string" &&
+            media.audio_transcript.trim().length > 0 &&
+            media.audio_transcript.trim().length <= 2_000 &&
+            typeof media.audio_sha256 === "string" &&
+            /^[a-f0-9]{64}$/i.test(media.audio_sha256) &&
+            typeof media.transcription_provider_id === "string" &&
+            media.transcription_provider_id.trim().length > 0 &&
+            typeof media.transcription_model === "string" &&
+            media.transcription_model.trim().length > 0
+              ? media.audio_transcript.trim()
+              : "";
+    
+          const videoSha256 =
+            media && typeof media.video_sha256 === "string"
+              ? media.video_sha256.trim()
+              : "";
+          const videoVisionProviderId =
+            media && typeof media.video_vision_provider_id === "string"
+              ? media.video_vision_provider_id.trim()
+              : "";
+          const videoVisionModel =
+            media && typeof media.video_vision_model === "string"
+              ? media.video_vision_model.trim()
+              : "";
+    
+          const trustedImageCatalogRef =
+            /^[a-f0-9]{64}$/i.test(imageSha256) &&
+            Boolean(visionProviderId) &&
+            Boolean(visionModel) &&
+            typeof matchConfidence === "number" &&
+            Number.isFinite(matchConfidence) &&
+            matchConfidence >= 0 &&
+            matchConfidence <= 1;
+    
+          const trustedVideoCatalogRef =
+            /^[a-f0-9]{64}$/i.test(videoSha256) &&
+            Boolean(videoVisionProviderId) &&
+            Boolean(videoVisionModel);
+    
+          const trustedCatalogRef =
+            row.sender === "customer" &&
+            Boolean(matchedRecordId) &&
+            (trustedImageCatalogRef || trustedVideoCatalogRef);
+    
+          const createdAt = new Date(row.created_at).toISOString();
+          return {
+            sender: row.sender,
+            // Audio transcripts are customer-authored speech. Video observations are
+            // model-generated visual evidence and must never masquerade as customer text.
+            text: audioTranscript || text(row.text),
+            createdAt,
+            ...(matchedRecordId ? { matchedRecordId } : {}),
+            ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
+            ...(reasonCode ? { reasonCode } : {}),
+          };
+    
+    }
+    
+    async function loadRecentConversationContext(
+      merchantId: string,
+      conversationIdValue: string,
+      currentCustomerMessageId: string,
+    ): Promise<KnowledgeConversationMessage[]> {
+      return withMerchantOperationalTransaction(merchantId, async (client) => {
+        const result = await client.query<ConversationContextRow>(
+          `SELECT sender::text AS sender, text, created_at, metadata
+             FROM messages
+            WHERE merchant_id = $1
+              AND conversation_id = $2
+              AND id <> $3
+              AND sender IN ('customer', 'fawri', 'merchant')
+              AND status IN ('received', 'sent')
+            ORDER BY created_at DESC, id DESC
+            LIMIT 8`,
+          [merchantId, conversationIdValue, currentCustomerMessageId],
+        );
+    
+        return result.rows.reverse().map(mapConversationContextRow);
+      });
+    }
+    
+    function existingSendIntent(
+      parsed: ParsedMetaJob,
+      inboundId: string,
+      conversationIdValue: string,
+      existing: ReplyMessageRow,
+    ): PreparedPostgresMetaAutoReply {
+      return {
+        action: "send",
+        eventId: parsed.eventId,
+        merchantId: parsed.merchantId,
+        conversationId: conversationIdValue,
+        inboundEventId: inboundId,
+        sourceCustomerMessageId:
+          text(existing.metadata?.source_customer_message_id) ||
+          customerMessageId(parsed.eventId),
+        replyIntentId: replyIntentId(parsed.eventId),
+        replyMessageId: existing.id,
+        pageId: parsed.pageId,
+        recipientId: parsed.senderId,
+        messageText: existing.text,
+        handoffAfterReply: existing.metadata?.handoff_after_reply === true,
+      };
+    }
+    
+    export async function preparePostgresMetaAutoReply(
+      job: DurableJob,
+    ): Promise<PreparedPostgresMetaAutoReply> {
+      const parsed = parseJob(job);
+      const inbound = await ensureInboundState(parsed, job);
+    
+      if (inbound.customerInserted) {
+        try {
+          await notifyMerchantNewCustomerMessagePostgres({
+            merchantId: parsed.merchantId,
+            conversationId: inbound.conversationId,
+            sourceEventId: parsed.eventId,
+            createdAt: parsed.createdAt,
+          });
+        } catch {
+          console.error("Meta customer message notification failed", {
+            code: "OPERATIONAL_NOTIFICATION_UNAVAILABLE",
+            merchant_id: parsed.merchantId,
+            conversation_id: inbound.conversationId,
+          });
+        }
+      }
+    
+      if (inbound.existingReply) {
+        return existingSendIntent(
+          parsed,
+          inbound.inboundEventId,
+          inbound.conversationId,
+          inbound.existingReply,
+        );
+      }
+    
+      if (
+        inbound.conversation.status === "manual" ||
+        inbound.conversation.assigned_to_human
+      ) {
+        return {
+          action: "suppress",
+          eventId: parsed.eventId,
+          merchantId: parsed.merchantId,
+          conversationId: inbound.conversationId,
+          code: "CONVERSATION_MANUAL_TAKEOVER",
+        };
+      }
+    
+      const mixedMediaRequested = parsed.attachmentCount > 1;
+      if (mixedMediaRequested && !parsed.mediaManifest) {
+        return {
+          action: "suppress",
+          eventId: parsed.eventId,
+          merchantId: parsed.merchantId,
+          conversationId: inbound.conversationId,
+          code: "META_MEDIA_MANIFEST_INVALID",
+        };
+      }
+    
+      const processingImageUrl =
+        parsed.mediaManifest?.imageUrl ?? parsed.imageUrl;
+      const processingAudioUrl =
+        parsed.mediaManifest?.audioUrl ?? parsed.audioUrl;
+      const processingVideoUrl =
+        parsed.mediaManifest?.videoUrl ?? parsed.videoUrl;
+    
+      const trustedVideo = await understandTrustedMetaVideoForReply({
+        merchantId: parsed.merchantId,
+        conversationId: inbound.conversationId,
+        sourceCustomerMessageId: inbound.sourceCustomerMessageId,
+        videoUrl: processingVideoUrl,
+        contentIdentityHash: parsed.contentIdentityHash,
+      });
+      const trustedVideoUnderstood = trustedVideo.understood;
+      const trustedVideoMatchedRecordId = trustedVideo.matchedRecordId;
+      const trustedVideoAlternatives = trustedVideo.alternatives;
+    
+      let trustedAudioTranscript: string | null = null;
+      let trustedAudioUnderstood = false;
+    
+      if (processingAudioUrl) {
+        const persistedAudio =
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              const result = await client.query<{
+                metadata: Record<string, unknown> | null;
+              }>(
+                `SELECT metadata
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3
+                    AND sender = 'customer'
+                  LIMIT 1`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                ],
+              );
+              const metadata = result.rows[0]?.metadata;
+              const media =
+                metadata &&
+                typeof metadata === "object" &&
+                !Array.isArray(metadata) &&
+                metadata.media &&
+                typeof metadata.media === "object" &&
+                !Array.isArray(metadata.media)
+                  ? metadata.media as Record<string, unknown>
+                  : null;
+              if (!media) return null;
+    
+              const transcript =
+                typeof media.audio_transcript === "string"
+                  ? media.audio_transcript.trim()
+                  : "";
+              const audioSha256 =
+                typeof media.audio_sha256 === "string"
+                  ? media.audio_sha256.trim()
+                  : "";
+              const providerId =
+                typeof media.transcription_provider_id === "string"
+                  ? media.transcription_provider_id.trim()
+                  : "";
+              const model =
+                typeof media.transcription_model === "string"
+                  ? media.transcription_model.trim()
+                  : "";
+              const sameContent =
+                typeof media.content_identity_hash === "string" &&
+                media.content_identity_hash === parsed.contentIdentityHash;
+    
+              if (
+                !sameContent ||
+                !transcript ||
+                transcript.length > 2_000 ||
+                !/^[a-f0-9]{64}$/i.test(audioSha256) ||
+                !providerId ||
+                providerId.length > 160 ||
+                !model ||
+                model.length > 160
+              ) {
+                return null;
+              }
+              return transcript;
+            },
+          );
+    
+        if (persistedAudio) {
+          trustedAudioTranscript = persistedAudio;
+          trustedAudioUnderstood = true;
+        } else {
+          const audioService = getMetaAudioUnderstandingService();
+          if (audioService) {
+            let understood = null;
+            try {
+              understood = await audioService.understand({
+                merchantId: parsed.merchantId,
+                audioUrl: processingAudioUrl,
+              });
+            } catch {
+              console.error("Meta audio understanding failed", {
+                code: "META_MEDIA_PROVIDER_UNAVAILABLE",
+                media_kind: "audio",
+                merchant_id: parsed.merchantId,
+                conversation_id: inbound.conversationId,
+                source_message_id: inbound.sourceCustomerMessageId,
+              });
+              // Provider/network/transcription failure is not trusted evidence.
+              // Fail closed below instead of crashing the durable reply worker.
+            }
+            const transcript = understood?.transcript?.trim() || "";
+            const hasSafeProvenance =
+              transcript.length > 0 &&
+              transcript.length <= 2_000 &&
+              typeof understood?.audioSha256 === "string" &&
+              /^[a-f0-9]{64}$/i.test(understood.audioSha256) &&
+              typeof understood?.transcriptionProviderId === "string" &&
+              understood.transcriptionProviderId.trim().length > 0 &&
+              understood.transcriptionProviderId.length <= 160 &&
+              typeof understood?.transcriptionModel === "string" &&
+              understood.transcriptionModel.trim().length > 0 &&
+              understood.transcriptionModel.length <= 160;
+    
+            if (understood && hasSafeProvenance) {
+              await withMerchantOperationalTransaction(
+                parsed.merchantId,
+                async (client) => {
+                  const customer = await client.query<{
+                    metadata: Record<string, unknown> | null;
+                  }>(
+                    `SELECT metadata
+                       FROM messages
+                      WHERE merchant_id = $1
+                        AND id = $2
+                        AND conversation_id = $3
+                        AND sender = 'customer'
+                      FOR UPDATE`,
+                    [
+                      parsed.merchantId,
+                      inbound.sourceCustomerMessageId,
+                      inbound.conversationId,
+                    ],
+                  );
+                  const metadata = customer.rows[0]?.metadata;
+                  const media =
+                    metadata &&
+                    typeof metadata === "object" &&
+                    !Array.isArray(metadata) &&
+                    metadata.media &&
+                    typeof metadata.media === "object" &&
+                    !Array.isArray(metadata.media)
+                      ? metadata.media as Record<string, unknown>
+                      : null;
+                  if (
+                    !media ||
+                    media.content_identity_hash !== parsed.contentIdentityHash
+                  ) {
+                    throw Object.assign(
+                      new Error("Meta audio content identity changed"),
+                      { code: "META_MESSAGE_IDENTITY_COLLISION" },
+                    );
+                  }
+                  const nextMetadata = {
+                    ...metadata,
+                    media: {
+                      ...media,
+                      audio_transcript: transcript,
+                      audio_sha256: understood.audioSha256,
+                      transcription_provider_id: understood.transcriptionProviderId,
+                      transcription_model: understood.transcriptionModel,
+                    },
+                  };
+                  await client.query(
+                    `UPDATE messages
+                        SET metadata = $4::jsonb
+                      WHERE merchant_id = $1
+                        AND id = $2
+                        AND conversation_id = $3`,
+                    [
+                      parsed.merchantId,
+                      inbound.sourceCustomerMessageId,
+                      inbound.conversationId,
+                      JSON.stringify(nextMetadata),
+                    ],
+                  );
+                },
+              );
+              trustedAudioTranscript = transcript;
+              trustedAudioUnderstood = true;
+            }
+          }
+        }
+      }
+    
+      let trustedImageUnderstood = false;
+      let trustedImageMatchedRecordId: string | null = null;
+      let trustedImageAlternatives: Array<{
+        productId: string;
+        variantId?: string;
+        confidence: number;
+      }> = [];
+    
+      const safeProcessingImageUrl = processingImageUrl;
+      if (safeProcessingImageUrl) {
+        const persistedImageResult =
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              const result = await client.query<{
+                metadata: Record<string, unknown> | null;
+              }>(
+                `SELECT metadata
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3
+                    AND sender = 'customer'
+                  LIMIT 1`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                ],
+              );
+    
+              const metadata = result.rows[0]?.metadata;
+              if (
+                !metadata ||
+                typeof metadata !== "object" ||
+                Array.isArray(metadata)
+              ) {
+                return null;
+              }
+    
+              const media =
+                metadata.media &&
+                typeof metadata.media === "object" &&
+                !Array.isArray(metadata.media)
+                  ? metadata.media as Record<string, unknown>
+                  : null;
+    
+              if (!media) return null;
+    
+              const sameContent =
+                typeof media.content_identity_hash === "string" &&
+                media.content_identity_hash === parsed.contentIdentityHash;
+    
+              const hasTrustedMatch =
+                typeof metadata.matched_record_id === "string" &&
+                metadata.matched_record_id.trim().length > 0;
+    
+              const hasSafeProvenance =
+                typeof media.image_sha256 === "string" &&
+                media.image_sha256.trim().length > 0 &&
+                typeof media.vision_provider_id === "string" &&
+                media.vision_provider_id.trim().length > 0 &&
+                typeof media.vision_model === "string" &&
+                media.vision_model.trim().length > 0 &&
+                typeof media.match_confidence === "number" &&
+                Number.isFinite(media.match_confidence) &&
+                media.match_confidence >= 0 &&
+                media.match_confidence <= 1;
+    
+              if (!sameContent || !hasTrustedMatch || !hasSafeProvenance) {
+                return null;
+              }
+    
+              return metadata.matched_record_id as string;
+            },
+          );
+    
+        const persistedImageAlternatives =
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              const result = await client.query<{
+                metadata: Record<string, unknown> | null;
+              }>(
+                `SELECT metadata
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3
+                    AND sender = 'customer'
+                  LIMIT 1`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                ],
+              );
+    
+              const metadata = result.rows[0]?.metadata;
+              if (
+                !metadata ||
+                typeof metadata !== "object" ||
+                Array.isArray(metadata)
+              ) {
+                return null;
+              }
+    
+              const media =
+                metadata.media &&
+                typeof metadata.media === "object" &&
+                !Array.isArray(metadata.media)
+                  ? metadata.media as Record<string, unknown>
+                  : null;
+    
+              if (!media) return null;
+    
+              const sameContent =
+                typeof media.content_identity_hash === "string" &&
+                media.content_identity_hash === parsed.contentIdentityHash;
+    
+              const hasSafeProvenance =
+                typeof media.image_sha256 === "string" &&
+                /^[a-f0-9]{64}$/i.test(media.image_sha256) &&
+                typeof media.vision_provider_id === "string" &&
+                media.vision_provider_id.trim().length > 0 &&
+                media.vision_provider_id.length <= 160 &&
+                typeof media.vision_model === "string" &&
+                media.vision_model.trim().length > 0 &&
+                media.vision_model.length <= 160;
+    
+              if (
+                !sameContent ||
+                !hasSafeProvenance ||
+                !Array.isArray(media.visual_alternatives) ||
+                media.visual_alternatives.length === 0
+              ) {
+                return null;
+              }
+    
+              const candidates = [];
+    
+              for (const value of media.visual_alternatives) {
+                if (
+                  !value ||
+                  typeof value !== "object" ||
+                  Array.isArray(value)
+                ) {
+                  return null;
+                }
+    
+                const alternative = value as Record<string, unknown>;
+                const productId =
+                  typeof alternative.product_id === "string"
+                    ? alternative.product_id.trim()
+                    : "";
+                const variantId =
+                  typeof alternative.variant_id === "string"
+                    ? alternative.variant_id.trim()
+                    : "";
+                const confidence = alternative.confidence;
+    
+                if (
+                  !productId ||
+                  typeof confidence !== "number" ||
+                  !Number.isFinite(confidence) ||
+                  confidence < 0 ||
+                  confidence > 1
+                ) {
+                  return null;
+                }
+    
+                candidates.push({
+                  productId,
+                  ...(variantId ? { variantId } : {}),
+                  confidence,
+                });
+              }
+    
+              return candidates;
+            },
+          );
+    
+        let trustedPersistedImageResult: string | null = null;
+    
+        if (persistedImageResult) {
+          const productMatch =
+            /^catalog-product:([^:]+)$/.exec(persistedImageResult);
+          const variantMatch =
+            /^catalog-variant:([^:]+):([^:]+)$/.exec(persistedImageResult);
+    
+          const persistedCandidate = productMatch
+            ? {
+                productId: productMatch[1],
+                confidence: 1,
+              }
+            : variantMatch
+              ? {
+                  productId: variantMatch[1],
+                  variantId: variantMatch[2],
+                  confidence: 1,
+                }
+              : null;
+    
+          if (persistedCandidate) {
+            const revalidatedPersistedMatch =
+              await trustedMediaCatalogMatcher.resolve({
+                merchantId: parsed.merchantId,
+                candidates: [persistedCandidate],
+              });
+    
+            if (
+              revalidatedPersistedMatch?.matchedRecordId ===
+              persistedImageResult
+            ) {
+              trustedPersistedImageResult = persistedImageResult;
+            }
+          }
+        }
+    
+        trustedImageUnderstood = Boolean(trustedPersistedImageResult);
+        trustedImageMatchedRecordId = trustedPersistedImageResult;
+    
+        if (
+          !trustedPersistedImageResult &&
+          persistedImageAlternatives
+        ) {
+          const revalidatedAlternatives =
+            await trustedMediaCatalogMatcher.resolveAlternatives({
+              merchantId: parsed.merchantId,
+              candidates: persistedImageAlternatives,
+            });
+    
+          const persistedIdentities = persistedImageAlternatives
+            .map((alternative) =>
+              `${alternative.productId}:${alternative.variantId ?? ""}:${alternative.confidence}`,
+            )
+            .sort();
+    
+          const revalidatedIdentities = revalidatedAlternatives
+            .map((alternative) =>
+              `${alternative.productId}:${alternative.variantId ?? ""}:${alternative.confidence}`,
+            )
+            .sort();
+    
+          const alternativesMatch =
+            persistedIdentities.length === revalidatedIdentities.length &&
+            persistedIdentities.every(
+              (identity, index) =>
+                identity === revalidatedIdentities[index],
+            );
+    
+          if (alternativesMatch) {
+            trustedImageAlternatives = revalidatedAlternatives;
+            trustedImageUnderstood = true;
+          }
+        }
+    
+        const imageService =
+          trustedPersistedImageResult || trustedImageAlternatives.length > 0
+            ? null
+            : getMetaImageUnderstandingService();
+    
+        if (imageService) {
+          const imageInput = {
+            merchantId: parsed.merchantId,
+            imageUrl: safeProcessingImageUrl,
+          };
+    
+          let understoodWithAlternatives = null;
+          let legacyUnderstood = null;
+          try {
+            understoodWithAlternatives =
+              typeof imageService.understandWithAlternatives === "function"
+                ? await imageService.understandWithAlternatives(imageInput)
+                : null;
+            legacyUnderstood =
+              typeof imageService.understandWithAlternatives === "function"
+                ? null
+                : await imageService.understand(imageInput);
+          } catch {
+            console.error("Meta image understanding failed", {
+              code: "META_MEDIA_PROVIDER_UNAVAILABLE",
+              media_kind: "image",
+              merchant_id: parsed.merchantId,
+              conversation_id: inbound.conversationId,
+              source_message_id: inbound.sourceCustomerMessageId,
+            });
+            // Provider/network/decoder failure is not trusted media evidence.
+            // Fail closed below instead of crashing the durable reply worker.
+          }
+    
+          const understood =
+            understoodWithAlternatives?.exactMatch ?? legacyUnderstood ?? null;
+    
+          if (
+            understoodWithAlternatives &&
+            !understood &&
+            understoodWithAlternatives.alternatives.length > 0
+          ) {
+            const trustedAlternatives =
+              await trustedMediaCatalogMatcher.resolveAlternatives({
+                merchantId: parsed.merchantId,
+                candidates: understoodWithAlternatives.alternatives,
+              });
+    
+            const hasSafeAlternativeProvenance =
+              typeof understoodWithAlternatives.imageSha256 === "string" &&
+              /^[a-f0-9]{64}$/i.test(understoodWithAlternatives.imageSha256) &&
+              typeof understoodWithAlternatives.visionProviderId === "string" &&
+              understoodWithAlternatives.visionProviderId.trim().length > 0 &&
+              understoodWithAlternatives.visionProviderId.length <= 160 &&
+              typeof understoodWithAlternatives.visionModel === "string" &&
+              understoodWithAlternatives.visionModel.trim().length > 0 &&
+              understoodWithAlternatives.visionModel.length <= 160;
+    
+            if (hasSafeAlternativeProvenance && trustedAlternatives.length > 0) {
+              trustedImageAlternatives = trustedAlternatives;
+              trustedImageUnderstood = true;
+    
+              await withMerchantOperationalTransaction(
+                parsed.merchantId,
+                async (client) => {
+                  const customer = await client.query<{
+                    id: string;
+                    metadata: Record<string, unknown> | null;
+                  }>(
+                    `SELECT id, metadata
+                       FROM messages
+                      WHERE merchant_id = $1
+                        AND id = $2
+                        AND conversation_id = $3
+                        AND sender = 'customer'
+                      LIMIT 1
+                      FOR UPDATE`,
+                    [
+                      parsed.merchantId,
+                      inbound.sourceCustomerMessageId,
+                      inbound.conversationId,
+                    ],
+                  );
+    
+                  const row = customer.rows[0];
+                  if (!row) {
+                    throw Object.assign(
+                      new Error("Meta customer message is unavailable"),
+                      { code: "META_CUSTOMER_MESSAGE_UNAVAILABLE" },
+                    );
+                  }
+    
+                  const metadata =
+                    row.metadata &&
+                    typeof row.metadata === "object" &&
+                    !Array.isArray(row.metadata)
+                      ? row.metadata
+                      : {};
+    
+                  const media =
+                    metadata.media &&
+                    typeof metadata.media === "object" &&
+                    !Array.isArray(metadata.media)
+                      ? metadata.media as Record<string, unknown>
+                      : {};
+    
+                  const storedContentIdentityHash =
+                    typeof media.content_identity_hash === "string"
+                      ? media.content_identity_hash
+                      : null;
+    
+                  if (
+                    !parsed.contentIdentityHash ||
+                    storedContentIdentityHash !== parsed.contentIdentityHash
+                  ) {
+                    throw Object.assign(
+                      new Error("Meta image content identity changed"),
+                      { code: "META_MESSAGE_IDENTITY_COLLISION" },
+                    );
+                  }
+    
+                  const nextMetadata = {
+                    ...metadata,
+                    media: {
+                      ...media,
+                      image_sha256: understoodWithAlternatives.imageSha256,
+                      vision_provider_id:
+                        understoodWithAlternatives.visionProviderId,
+                      vision_model: understoodWithAlternatives.visionModel,
+                      visual_alternatives: trustedAlternatives.map(
+                        (alternative) => ({
+                          product_id: alternative.productId,
+                          ...(alternative.variantId
+                            ? { variant_id: alternative.variantId }
+                            : {}),
+                          confidence: alternative.confidence,
+                        }),
+                      ),
+                    },
+                  };
+    
+                  await client.query(
+                    `UPDATE messages
+                        SET metadata = $4::jsonb
+                      WHERE merchant_id = $1
+                        AND id = $2
+                        AND conversation_id = $3`,
+                    [
+                      parsed.merchantId,
+                      inbound.sourceCustomerMessageId,
+                      inbound.conversationId,
+                      JSON.stringify(nextMetadata),
+                    ],
+                  );
+                },
+              );
+            }
+          }
+    
+          if (understood) {
+            const revalidatedMatch =
+              await trustedMediaCatalogMatcher.resolve({
+                merchantId: parsed.merchantId,
+                candidates: [
+                  {
+                    productId: understood.productId,
+                    ...(understood.variantId
+                      ? { variantId: understood.variantId }
+                      : {}),
+                    confidence: understood.confidence,
+                  },
+                ],
+              });
+    
+            const hasSafeRuntimeProvenance =
+              typeof understood.imageSha256 === "string" &&
+              /^[a-f0-9]{64}$/i.test(understood.imageSha256) &&
+              typeof understood.visionProviderId === "string" &&
+              understood.visionProviderId.trim().length > 0 &&
+              understood.visionProviderId.length <= 160 &&
+              typeof understood.visionModel === "string" &&
+              understood.visionModel.trim().length > 0 &&
+              understood.visionModel.length <= 160 &&
+              typeof understood.confidence === "number" &&
+              Number.isFinite(understood.confidence) &&
+              understood.confidence >= 0 &&
+              understood.confidence <= 1;
+    
+            const trustedUnderstood =
+              hasSafeRuntimeProvenance &&
+              revalidatedMatch &&
+              revalidatedMatch.matchedRecordId === understood.matchedRecordId
+                ? revalidatedMatch
+                : null;
+    
+            if (trustedUnderstood) {
+              trustedImageUnderstood = true;
+              trustedImageMatchedRecordId =
+                trustedUnderstood.matchedRecordId;
+    
+              await withMerchantOperationalTransaction(
+                parsed.merchantId,
+                async (client) => {
+                const customer = await client.query<{
+                  id: string;
+                  metadata: Record<string, unknown> | null;
+                }>(
+                  `SELECT id, metadata
+                     FROM messages
+                    WHERE merchant_id = $1
+                      AND id = $2
+                      AND conversation_id = $3
+                      AND sender = 'customer'
+                    LIMIT 1
+                    FOR UPDATE`,
+                  [
+                    parsed.merchantId,
+                    inbound.sourceCustomerMessageId,
+                    inbound.conversationId,
+                  ],
+                );
+    
+                const row = customer.rows[0];
+                if (!row) {
+                  throw Object.assign(
+                    new Error("Meta customer message is unavailable"),
+                    { code: "META_CUSTOMER_MESSAGE_UNAVAILABLE" },
+                  );
+                }
+    
+                const metadata =
+                  row.metadata &&
+                  typeof row.metadata === "object" &&
+                  !Array.isArray(row.metadata)
+                    ? row.metadata
+                    : {};
+    
+                const media =
+                  metadata.media &&
+                  typeof metadata.media === "object" &&
+                  !Array.isArray(metadata.media)
+                    ? metadata.media as Record<string, unknown>
+                    : {};
+    
+                const storedContentIdentityHash =
+                  typeof media.content_identity_hash === "string"
+                    ? media.content_identity_hash
+                    : null;
+    
+                if (
+                  !parsed.contentIdentityHash ||
+                  storedContentIdentityHash !== parsed.contentIdentityHash
+                ) {
+                  throw Object.assign(
+                    new Error("Meta image content identity changed"),
+                    { code: "META_MESSAGE_IDENTITY_COLLISION" },
+                  );
+                }
+    
+                const nextMetadata = {
+                  ...metadata,
+                  matched_record_id: trustedUnderstood.matchedRecordId,
+                  media: {
+                    ...media,
+                    image_sha256: understood.imageSha256,
+                    vision_provider_id: understood.visionProviderId,
+                    vision_model: understood.visionModel,
+                    match_confidence: understood.confidence,
+                  },
+                };
+    
+                await client.query(
+                  `UPDATE messages
+                      SET metadata = $4::jsonb
+                    WHERE merchant_id = $1
+                      AND id = $2
+                      AND conversation_id = $3`,
+                  [
+                    parsed.merchantId,
+                    inbound.sourceCustomerMessageId,
+                    inbound.conversationId,
+                    JSON.stringify(nextMetadata),
+                  ],
+                );
+                },
+              );
+            }
+          }
+        }
+      }
+    
+      if (inbound.conversation.status === "needs_reply") {
+        return {
+          action: "suppress",
+          eventId: parsed.eventId,
+          merchantId: parsed.merchantId,
+          conversationId: inbound.conversationId,
+          code: "CONVERSATION_NEEDS_REPLY",
+        };
+      }
+    
+      if (mixedMediaRequested && !parsed.customerText) {
+        return {
+          action: "suppress",
+          eventId: parsed.eventId,
+          merchantId: parsed.merchantId,
+          conversationId: inbound.conversationId,
+          code: "META_MEDIA_PROCESSING_UNAVAILABLE",
+        };
+      }
+    
+      // Only actual customer-authored or customer-spoken language belongs in the
+      // customer intent. Video text is grounded visual observation produced by the
+      // vision pipeline, not a transcript of words the customer said.
+      const trustedIntentParts = [
+        parsed.customerText,
+        trustedAudioUnderstood ? trustedAudioTranscript : null,
+      ].filter((part): part is string => Boolean(part?.trim()));
+    
+      const effectiveCustomerText =
+        trustedIntentParts.length > 0
+          ? [...new Set(trustedIntentParts.map((part) => part.trim()))].join("\n")
+          : null;
+    
+      const atomicMediaUnderstood =
+        !mixedMediaRequested ||
+        Boolean(
+          parsed.mediaManifest &&
+          (!parsed.mediaManifest.imageUrl || trustedImageUnderstood) &&
+          (!parsed.mediaManifest.audioUrl || trustedAudioUnderstood) &&
+          (!parsed.mediaManifest.videoUrl || trustedVideoUnderstood),
+        );
+    
+      const trustedImageTextMessage =
+        parsed.contentKind === "text" &&
+        Boolean(parsed.customerText) &&
+        parsed.attachmentCount > 0 &&
+        trustedImageUnderstood &&
+        (Boolean(trustedImageMatchedRecordId) ||
+          trustedImageAlternatives.length > 0);
+    
+      if (
+        !atomicMediaUnderstood ||
+        (parsed.contentKind !== "text" &&
+          !trustedAudioUnderstood &&
+          !trustedVideoUnderstood) ||
+        !effectiveCustomerText ||
+        (parsed.attachmentCount > 0 &&
+          !trustedImageTextMessage &&
+          !trustedAudioUnderstood &&
+          !trustedVideoUnderstood)
+      ) {
+        if (!trustedImageUnderstood) {
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              await client.query(
+                `UPDATE conversations
+                    SET status = 'needs_reply', assigned_to_human = FALSE,
+                        needs_training = FALSE, updated_at = now()
+                  WHERE merchant_id = $1 AND id = $2 AND status = 'auto_replying'`,
+                [parsed.merchantId, inbound.conversationId],
+              );
+            },
+          );
+        }
+    
+        return {
+          action: "suppress",
+          eventId: parsed.eventId,
+          merchantId: parsed.merchantId,
+          conversationId: inbound.conversationId,
+          code: "META_MEDIA_PROCESSING_UNAVAILABLE",
+        };
+      }
+    
+      const recentMessages = await loadRecentConversationContext(
+        parsed.merchantId,
+        inbound.conversationId,
+        inbound.sourceCustomerMessageId,
+      );
+    
+      if (inbound.repliedToInternalMessageId) {
+        const repliedTo = await withMerchantOperationalTransaction(
+          parsed.merchantId,
+          async (client) => client.query<ConversationContextRow>(
+            `SELECT sender::text AS sender, text, created_at, metadata
+               FROM messages
+              WHERE merchant_id = $1 AND conversation_id = $2 AND id = $3
+                AND sender IN ('customer', 'fawri', 'merchant')
+                AND status IN ('received', 'sent')
+              LIMIT 1`,
+            [parsed.merchantId, inbound.conversationId, inbound.repliedToInternalMessageId],
+          ),
+        );
+        const target = repliedTo.rows[0];
+        if (target) {
+          const mappedTarget = mapConversationContextRow(target);
+          const alreadyPresent = recentMessages.some(
+            (message) =>
+              message.createdAt === mappedTarget.createdAt &&
+              message.sender === mappedTarget.sender &&
+              message.text === mappedTarget.text,
+          );
+          if (!alreadyPresent) {
+            recentMessages.unshift(mappedTarget);
+          }
+        }
+      }
+    
+      if (trustedImageTextMessage && trustedImageMatchedRecordId) {
+        recentMessages.push({
+          sender: "customer",
+          text: parsed.customerText || effectiveCustomerText,
+          createdAt: parsed.createdAt,
+          matchedRecordId: trustedImageMatchedRecordId,
+          trustedCatalogRef: true,
+        });
+      }
+    
+      if (trustedVideoMatchedRecordId) {
+        recentMessages.push({
+          sender: "customer",
+          text: effectiveCustomerText,
+          createdAt: parsed.createdAt,
+          matchedRecordId: trustedVideoMatchedRecordId,
+          trustedCatalogRef: true,
+        });
+      }
+    
+      const decision = await decideMetaKnowledgeReply({
+          merchantId: parsed.merchantId,
+          customerText: effectiveCustomerText,
+          requestId: parsed.eventId,
+          conversationId: inbound.conversationId,
+          customerExternalId: parsed.senderId,
+          recentMessages,
+          ...((trustedImageAlternatives[0] || trustedVideoAlternatives[0])
+            ? {
+                // Keep the singular field for backward compatibility while the
+                // ranked set enables authoritative stock fallback across similar
+                // current-merchant catalog candidates.
+                trustedVisualAlternative:
+                  trustedImageAlternatives[0] || trustedVideoAlternatives[0],
+                trustedVisualAlternatives:
+                  trustedImageAlternatives.length > 0
+                    ? trustedImageAlternatives
+                    : trustedVideoAlternatives,
+              }
+            : {}),
+        });
+    
+      const answerText = text(decision.answerText);
+      if (decision.action === "no_answer" || !answerText) {
+        await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
+          await client.query(
+            `UPDATE conversations
+                SET status = 'needs_reply', assigned_to_human = FALSE,
+                    needs_training = TRUE, updated_at = now()
+              WHERE merchant_id = $1 AND id = $2 AND status = 'auto_replying'`,
+            [parsed.merchantId, inbound.conversationId],
+          );
+        });
+        return {
+          action: "suppress",
+          eventId: parsed.eventId,
+          merchantId: parsed.merchantId,
+          conversationId: inbound.conversationId,
+          code: text(decision.reasonCode) || "KNOWLEDGE_NO_ANSWER",
+        };
+      }
+    
+      const handoff = decision.action === "handoff";
+      const replyType = decision.stage === "ai_fallback"
+        ? "ai"
+        : handoff || decision.stage === "clarification"
+          ? "fallback"
+          : "database";
+    
+      let knowledgeGapConversationId = "";
+      const prepared = await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
+        const currentConversation = await client.query<ConversationRow>(
+          `SELECT id, status::text AS status, assigned_to_human, metadata
+             FROM conversations
+            WHERE merchant_id = $1 AND id = $2
+            FOR UPDATE`,
+          [parsed.merchantId, inbound.conversationId],
+        );
+        const current = currentConversation.rows[0];
+        const existing = await findReplyMessage(client, parsed.merchantId, parsed.eventId);
+        if (existing) {
+          return existingSendIntent(
+            parsed,
+            inbound.inboundEventId,
+            inbound.conversationId,
+            existing,
+          );
+        }
+        const latestCustomerMessageId = text(
+          current?.metadata?.latest_customer_message_id,
+        );
+        if (
+          !current ||
+          latestCustomerMessageId !== inbound.sourceCustomerMessageId
+        ) {
+          return {
+            action: "suppress" as const,
+            eventId: parsed.eventId,
+            merchantId: parsed.merchantId,
+            conversationId: inbound.conversationId,
+            code: "CONVERSATION_CONTEXT_SUPERSEDED",
+          };
+        }
+        if (
+          current.status === "manual" ||
+          current.status === "needs_reply" ||
+          current.assigned_to_human
+        ) {
+          return {
+            action: "suppress" as const,
+            eventId: parsed.eventId,
+            merchantId: parsed.merchantId,
+            conversationId: inbound.conversationId,
+            code: "CONVERSATION_MANUAL_TAKEOVER",
+          };
+        }
+    
+        const messageId = replyMessageId(parsed.eventId);
+        await client.query(
+          `INSERT INTO messages
+            (id, merchant_id, conversation_id, external_event_id,
+             sender, text, status, reply_type, counted_as_auto_reply, metadata)
+           VALUES ($1, $2, $3, $4, 'fawri', $5, 'queued', $6::reply_type,
+                   FALSE, $7::jsonb)
+           ON CONFLICT DO NOTHING`,
+          [
+            messageId,
+            parsed.merchantId,
+            inbound.conversationId,
+            replyEventId(parsed.eventId),
+            answerText,
+            replyType,
+            JSON.stringify({
+              knowledge_stage: decision.stage,
+              knowledge_source: decision.source,
+              reason_code: decision.reasonCode,
+              confidence: decision.confidence,
+              matched_record_id: decision.matchedRecordId,
+              grounding_record_ids: decision.groundingRecordIds || [],
+              source_customer_message_id: inbound.sourceCustomerMessageId,
+              training_request_id: decision.trainingRequestId,
+              handoff_after_reply: handoff,
+            }),
+          ],
+        );
+    
+        if (handoff) {
+          await client.query(
+            `UPDATE conversations
+                SET status = 'manual', assigned_to_human = TRUE,
+                    needs_training = TRUE, updated_at = now()
+              WHERE merchant_id = $1 AND id = $2`,
+            [parsed.merchantId, inbound.conversationId],
+          );
+    
+          if (
+            [
+              "AUTHORITATIVE_FACT_UNAVAILABLE",
+              "NO_TRUSTED_ANSWER",
+              "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",
+            ].includes(decision.reasonCode) &&
+            decision.trainingRequestId
+          ) {
+            knowledgeGapConversationId = current.id;
+          }
+        }
+    
+        const persisted = await findReplyMessage(client, parsed.merchantId, parsed.eventId);
+        if (!persisted || persisted.text !== answerText) {
+          throw Object.assign(new Error("Meta reply intent could not be persisted"), {
+            code: "META_REPLY_INTENT_PERSIST_FAILED",
+          });
+        }
+        return existingSendIntent(
+          parsed,
+          inbound.inboundEventId,
+          inbound.conversationId,
+          persisted,
+        );
+      });
+      // Release the reply transaction's connection before the notification opens
+      // its own transaction. Only notify after the handoff was committed.
+      if (knowledgeGapConversationId && decision.trainingRequestId) {
+        try {
+          await notifyMerchantKnowledgeGapPostgres({
+            merchantId: parsed.merchantId,
+            trainingRequestId: decision.trainingRequestId,
+            conversationId: knowledgeGapConversationId,
+          });
+        } catch {
+          console.error("Meta knowledge gap notification failed", {
+            code: "OPERATIONAL_NOTIFICATION_UNAVAILABLE",
+            merchant_id: parsed.merchantId,
+            conversation_id: knowledgeGapConversationId,
+            training_request_id: decision.trainingRequestId,
+          });
+        }
+      }
+      return prepared;
+    }
+    
+    export async function suppressPreparedPostgresMetaAutoReply(input: {
+      merchantId: string;
+      replyMessageId: string;
+      conversationId: string;
+    }): Promise<void> {
+      await withMerchantOperationalTransaction(input.merchantId, async (client) => {
+        await client.query(
+          `DELETE FROM messages
+            WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3
+              AND sender = 'fawri' AND status = 'queued'
+              AND external_message_id IS NULL`,
+          [input.merchantId, input.replyMessageId, input.conversationId],
+        );
+      });
+    }
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/knowledge-product-conversation-memory-contract.test.mjs:33:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.start (node:internal/test_runner/test:1242:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+# Subtest: merchant password recovery verifies OTP before accepting a new password
+ok 72 - merchant password recovery verifies OTP before accepting a new password
+  ---
+  duration_ms: 3.77555
+  type: 'test'
+  ...
+# Subtest: owner admin provisioning CLI reads stdin in a Node 24 compatible way
+ok 73 - owner admin provisioning CLI reads stdin in a Node 24 compatible way
+  ---
+  duration_ms: 0.790356
+  type: 'test'
+  ...
+# Subtest: PostgreSQL entitlement router owns admin subscription realtime
+ok 74 - PostgreSQL entitlement router owns admin subscription realtime
+  ---
+  duration_ms: 3.777763
+  type: 'test'
+  ...
+# Subtest: PostgreSQL admin subscription stream is bounded for session revalidation
+ok 75 - PostgreSQL admin subscription stream is bounded for session revalidation
+  ---
+  duration_ms: 1.072653
+  type: 'test'
+  ...
+# Subtest: frontend consumes PostgreSQL snapshot events and reconnects
+ok 76 - frontend consumes PostgreSQL snapshot events and reconnects
+  ---
+  duration_ms: 0.893909
+  type: 'test'
+  ...
+# Subtest: PostgreSQL auth router owns merchant realtime before legacy retirement
+ok 77 - PostgreSQL auth router owns merchant realtime before legacy retirement
+  ---
+  duration_ms: 4.771129
+  type: 'test'
+  ...
+# Subtest: PostgreSQL merchant realtime is session-bound and authority-derived
+ok 78 - PostgreSQL merchant realtime is session-bound and authority-derived
+  ---
+  duration_ms: 1.534414
+  type: 'test'
+  ...
+# Subtest: PostgreSQL merchant realtime is bounded for session revalidation
+ok 79 - PostgreSQL merchant realtime is bounded for session revalidation
+  ---
+  duration_ms: 0.855462
+  type: 'test'
+  ...
+# Subtest: merchant unread realtime count is exact and uncapped
+ok 80 - merchant unread realtime count is exact and uncapped
+  ---
+  duration_ms: 1.370622
+  type: 'test'
+  ...
+# Subtest: frontend consumes merchant realtime endpoint and canonical event names
+ok 81 - frontend consumes merchant realtime endpoint and canonical event names
+  ---
+  duration_ms: 0.621167
+  type: 'test'
+  ...
+# Subtest: production rollback policy keeps database recovery fail-safe and provider-neutral
+ok 82 - production rollback policy keeps database recovery fail-safe and provider-neutral
+  ---
+  duration_ms: 0.955539
+  type: 'test'
+  ...
+# Subtest: production readiness documentation keeps provider-neutral core semantics
+not ok 83 - production readiness documentation keeps provider-neutral core semantics
+  ---
+  duration_ms: 1.807978
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/production-readiness-doc-contract.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /AI\/Knowledge providers are optional external integrations/. Input:
+    
+    '# Fawri V1 production release readiness\n' +
+      '\n' +
+      '## Purpose\n' +
+      '\n' +
+      'This document separates **code/runtime readiness** from **real production launch readiness**. A green repository validation does not by itself prove that external production providers, credentials, backups, or cloud permissions exist.\n' +
+      '\n' +
+      '## Current integrated code status\n' +
+      '\n' +
+      'The original validated release-candidate tree `92290d3f97e3ece81525a0b92d668d129e9df5ed` completed 38/38 final integration checks with 0 failures and was merged to `main` through PR #256.\n' +
+      '\n' +
+      'Repository hardening was later merged through PR #281 at:\n' +
+      '\n' +
+      '`5f402a332ef6b9d145aeec326f7800a4e8147ffb`\n' +
+      '\n' +
+      "That maintenance work intentionally preserved runtime behavior while reorganizing translation authority and extracting cashier-compensation validation from the only executable file above the repository's 1,800-line critical threshold. Because source organization changed, current `main` is no longer byte-for-byte identical to the older release-candidate tree. The final PR #281 head passed the repository audits, focused typechecks/contracts, and all 13 GitHub Actions workflows. PR #282 then advanced documentation only.\n" +
+      '\n' +
+      'Repository-owned build, typecheck, migration/schema, security, routing, online-order, cashier, merchant/admin/subscription journey, settings, Meta cutover, Knowledge readiness, and related integration gates therefore remain code-ready at the current checkpoint.\n' +
+      '\n' +
+      'This does **not** mean the live production environment is ready. The remaining work is dominated by deployment-time infrastructure, provider credentials/approvals, production backup/restore proof, supported SaaS billing onboarding, and final manual staging/UI validation.\n' +
+      '\n' +
+      '## Explicit production release gate\n' +
+      '\n' +
+      'Production should set:\n' +
+      '\n' +
+      '```text\n' +
+      'NODE_ENV=production\n' +
+      'FAWRI_DEPLOYMENT_MODE=production\n' +
+      '```\n' +
+      '\n' +
+      'Production is fail-closed by default: API startup stops before application traffic if required runtime configuration is incomplete. Staging and development must opt out explicitly with `FAWRI_DEPLOYMENT_MODE=staging` or `development`. `FAWRI_PRODUCTION_RELEASE_GATE=required` remains a legacy compatibility marker but production safety no longer depends on it.\n' +
+      '\n' +
+      'Required **Fawri Core runtime** selections include:\n' +
+      '\n' +
+      '- PostgreSQL operational authority: `FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required`\n' +
+      '- a dedicated PostgreSQL runtime role that is not `SUPERUSER`, does not have `BYPASSRLS`, and does not own tenant-protected tables; startup verifies these properties and verifies RLS is enabled on the production tenant-table contract\n' +
+      '- PostgreSQL subscription authority: `FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required`\n' +
+      '- PostgreSQL merchant Auth sessions: `FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required`\n' +
+      '- strong `FAWRI_AUTH_SECURITY_SECRET`\n' +
+      '- safe HTTPS `FAWRI_ALLOWED_ORIGINS`\n' +
+      '- `FAWRI_SERVICE_VERSION`\n' +
+      '- strong `FAWRI_OBSERVABILITY_BEARER_TOKEN`\n' +
+      '- core background workers enabled\n' +
+      '\n' +
+      'Meta, AI/Knowledge providers, AWS KMS for Meta credentials, SaaS billing, production backup/restore, and durable support-image storage are **external launch integrations/blockers**, not prerequisites for starting the provider-neutral Fawri Core. Until Meta is intentionally activated, keep `FAWRI_META_CUTOVER_READY=0`, `FAWRI_META_REPLY_TRANSPORT=disabled`, and `FAWRI_META_CREDENTIAL_PROVIDER=disabled`. When an external integration is activated, its own fail-closed readiness contract applies.\n' +
+      '\n' +
+      'The release gate reports only safe error codes. Secret values must never be returned in readiness responses or startup logs.\n' +
+      '\n' +
+      'A non-secret deployment template is provided at `.env.production.example`. It is documentation only: real values must be populated through the deployment secret store/workload identity and must never be committed.\n' +
+      '\n' +
+      '## Meta production activation\n' +
+      '\n' +
+      'Meta OAuth is fail-closed by default. `/api/meta/login` and `/api/meta/callback` become reachable only when the PostgreSQL/KMS/live-send activation contract is explicitly configured. The repository contains no Replit callback fallback.\n' +
+      '\n' +
+      'Production requirements outside source control remain:\n' +
+      '\n' +
+      '- Meta application approved/configured for the intended production use;\n' +
+      '- real `META_APP_ID`, `META_APP_SECRET`, `META_CONFIG_ID`, `META_VERIFY_TOKEN`;\n' +
+      '- production HTTPS callback registered with Meta and exactly matching `META_REDIRECT_URI`;\n' +
+      '- webhook subscription/configuration for the production app/pages;\n' +
+      '- AWS workload identity/IAM and KMS key policy permitting the documented decrypt operation;\n' +
+      '- wrapped production DEK manifest generated and stored through the deployment secret system.\n' +
+      '\n' +
+      'Do not validate these by committing credentials or sending test traffic from CI.\n' +
+      '\n' +
+      '## Knowledge production activation\n' +
+      '\n' +
+      'The OpenAI-backed Knowledge providers are optional external integrations and are not required for provider-neutral Fawri Core startup. When AI/Knowledge is intentionally activated, configure the selected `FAWRI_KNOWLEDGE_*_PROVIDER` values and provide `OPENAI_API_KEY` through the deployment secret store. Repository tests use non-real/injected values only.\n' +
+      '\n' +
+      '## SaaS subscription billing blocker\n' +
+      '\n' +
+      "Fawri's SaaS billing authority is server-authoritative, but the currently implemented checkout providers are not a production payment path:\n" +
+      '\n' +
+      '- `superqi_sandbox` is test-only and production-forbidden;\n' +
+      '- `fastpay` remains `merchant_setup_required` until Fawri receives the official merchant onboarding/credentials and supported integration contract.\n' +
+      '\n' +
+      'Therefore **automated production SaaS subscription purchase/renewal is an external launch blocker**. Do not invent provider endpoints, signatures, settlement behavior, or success callbacks.\n' +
+      '\n' +
+      'Merchant-customer payments are a separate domain. Fawri does not custody merchant-customer funds; manual merchant confirmation is supported and future provider evidence is provider-neutral.\n' +
+      '\n' +
+      '## Production backup/restore blocker\n' +
+      '\n' +
+      "The repository's current backup/restore scripts and runbook intentionally support disposable validation targets only. They are not production backup infrastructure.\n" +
+      '\n' +
+      'Before launch, the owner/infrastructure environment must provide and prove:\n' +
+      '\n' +
+      '- the actual production PostgreSQL backup mechanism;\n' +
+      '- backup encryption/access controls and retention policy;\n' +
+      '- the actual production object/media backup mechanism if object storage is used;\n' +
+      '- restore to an isolated recovery target;\n' +
+      '- a documented restore drill with integrity verification;\n' +
+      '- RPO/RTO ownership and alerting.\n' +
+      '\n' +
+      'A disposable local drill is useful regression evidence but does not satisfy this production requirement.\n' +
+      '\n' +
+      '## Durable support-image storage blocker\n' +
+      '\n' +
+      'The runtime release gate also reports:\n' +
+      '\n' +
+      '`SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`\n' +
+      '\n' +
+      'Support images are currently stored through a filesystem-backed storage path. Production must prove that the selected hosting environment provides durable persistent storage with restart/redeploy survival, private access, retention/deletion behavior, multi-instance consistency where applicable, and backup/restore coverage. If the production host is ephemeral, a durable storage-provider implementation must be completed before launch.\n' +
+      '\n' +
+      '\n' +
+      '## Release sequence\n' +
+      '\n' +
+      '1. Merge only code that passes repository typecheck/build, migrations, PostgreSQL runtime integration, Meta live-transport regressions, and release-gate tests.\n' +
+      '2. Prepare production PostgreSQL and apply the committed migration chain through the latest version using a migration-owner role. Provision a separate restricted runtime role with the required grants; the runtime role must not be superuser, must not have BYPASSRLS, and must not own tenant-protected tables.\n' +
+      '3. Configure production secrets through the deployment secret store, never source control.\n' +
+      '4. Configure AWS KMS/IAM and validate bootstrap/readiness from the production workload.\n' +
+      '5. Configure the Meta production application/callback/webhook and verify OAuth against a controlled test merchant/page.\n' +
+      '6. Configure OpenAI credentials and confirm Knowledge readiness.\n' +
+      '7. Establish and prove production backup/restore.\n' +
+      '8. Prove durable support-image storage for the selected production hosting model.\n' +
+      '9. Complete a production SaaS billing-provider integration only from official provider documentation/credentials.\n' +
+      '10. Set `FAWRI_DEPLOYMENT_MODE=production` and require startup plus `/ops/readiness` to be ready before routing traffic.\n' +
+      '11. Run controlled end-to-end smoke tests and observe queues/DLQ/alerts before general launch.\n' +
+      '\n' +
+      '## Current readiness interpretation\n' +
+      '\n' +
+      'Repository validation establishes **Fawri Core production-runtime code readiness** for the integrated tree. This document intentionally avoids pinning that statement to an obsolete historical `main` SHA; the current branch/commit and required CI evidence are the release source of truth.\n' +
+      '\n' +
+      'It must not claim **production launch readiness** while any of the following remain unresolved:\n' +
+      '\n' +
+      '- `SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE`\n' +
+      '- `PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED`\n' +
+      '- `SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`\n' +
+      '- production PostgreSQL deployment/migration proof and restricted runtime-role grants,\n' +
+      '- production AWS KMS/IAM/wrapped-DEK readiness,\n' +
+      '- production Meta application/OAuth/webhook/live-send readiness,\n' +
+      '- production OpenAI credential/readiness,\n' +
+      '- final full-stack staging and manual UI/UX validation,\n' +
+      '- production release-gate and controlled smoke-test evidence.\n' +
+      '\n' +
+      'Actual credentials, cloud permissions, provider approvals, production backups, and live-provider behavior are deployment-time evidence and must never be represented by repository test fixtures.\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    # Fawri V1 production release readiness
+    
+    ## Purpose
+    
+    This document separates **code/runtime readiness** from **real production launch readiness**. A green repository validation does not by itself prove that external production providers, credentials, backups, or cloud permissions exist.
+    
+    ## Current integrated code status
+    
+    The original validated release-candidate tree `92290d3f97e3ece81525a0b92d668d129e9df5ed` completed 38/38 final integration checks with 0 failures and was merged to `main` through PR #256.
+    
+    Repository hardening was later merged through PR #281 at:
+    
+    `5f402a332ef6b9d145aeec326f7800a4e8147ffb`
+    
+    That maintenance work intentionally preserved runtime behavior while reorganizing translation authority and extracting cashier-compensation validation from the only executable file above the repository's 1,800-line critical threshold. Because source organization changed, current `main` is no longer byte-for-byte identical to the older release-candidate tree. The final PR #281 head passed the repository audits, focused typechecks/contracts, and all 13 GitHub Actions workflows. PR #282 then advanced documentation only.
+    
+    Repository-owned build, typecheck, migration/schema, security, routing, online-order, cashier, merchant/admin/subscription journey, settings, Meta cutover, Knowledge readiness, and related integration gates therefore remain code-ready at the current checkpoint.
+    
+    This does **not** mean the live production environment is ready. The remaining work is dominated by deployment-time infrastructure, provider credentials/approvals, production backup/restore proof, supported SaaS billing onboarding, and final manual staging/UI validation.
+    
+    ## Explicit production release gate
+    
+    Production should set:
+    
+    ```text
+    NODE_ENV=production
+    FAWRI_DEPLOYMENT_MODE=production
+    ```
+    
+    Production is fail-closed by default: API startup stops before application traffic if required runtime configuration is incomplete. Staging and development must opt out explicitly with `FAWRI_DEPLOYMENT_MODE=staging` or `development`. `FAWRI_PRODUCTION_RELEASE_GATE=required` remains a legacy compatibility marker but production safety no longer depends on it.
+    
+    Required **Fawri Core runtime** selections include:
+    
+    - PostgreSQL operational authority: `FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required`
+    - a dedicated PostgreSQL runtime role that is not `SUPERUSER`, does not have `BYPASSRLS`, and does not own tenant-protected tables; startup verifies these properties and verifies RLS is enabled on the production tenant-table contract
+    - PostgreSQL subscription authority: `FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required`
+    - PostgreSQL merchant Auth sessions: `FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required`
+    - strong `FAWRI_AUTH_SECURITY_SECRET`
+    - safe HTTPS `FAWRI_ALLOWED_ORIGINS`
+    - `FAWRI_SERVICE_VERSION`
+    - strong `FAWRI_OBSERVABILITY_BEARER_TOKEN`
+    - core background workers enabled
+    
+    Meta, AI/Knowledge providers, AWS KMS for Meta credentials, SaaS billing, production backup/restore, and durable support-image storage are **external launch integrations/blockers**, not prerequisites for starting the provider-neutral Fawri Core. Until Meta is intentionally activated, keep `FAWRI_META_CUTOVER_READY=0`, `FAWRI_META_REPLY_TRANSPORT=disabled`, and `FAWRI_META_CREDENTIAL_PROVIDER=disabled`. When an external integration is activated, its own fail-closed readiness contract applies.
+    
+    The release gate reports only safe error codes. Secret values must never be returned in readiness responses or startup logs.
+    
+    A non-secret deployment template is provided at `.env.production.example`. It is documentation only: real values must be populated through the deployment secret store/workload identity and must never be committed.
+    
+    ## Meta production activation
+    
+    Meta OAuth is fail-closed by default. `/api/meta/login` and `/api/meta/callback` become reachable only when the PostgreSQL/KMS/live-send activation contract is explicitly configured. The repository contains no Replit callback fallback.
+    
+    Production requirements outside source control remain:
+    
+    - Meta application approved/configured for the intended production use;
+    - real `META_APP_ID`, `META_APP_SECRET`, `META_CONFIG_ID`, `META_VERIFY_TOKEN`;
+    - production HTTPS callback registered with Meta and exactly matching `META_REDIRECT_URI`;
+    - webhook subscription/configuration for the production app/pages;
+    - AWS workload identity/IAM and KMS key policy permitting the documented decrypt operation;
+    - wrapped production DEK manifest generated and stored through the deployment secret system.
+    
+    Do not validate these by committing credentials or sending test traffic from CI.
+    
+    ## Knowledge production activation
+    
+    The OpenAI-backed Knowledge providers are optional external integrations and are not required for provider-neutral Fawri Core startup. When AI/Knowledge is intentionally activated, configure the selected `FAWRI_KNOWLEDGE_*_PROVIDER` values and provide `OPENAI_API_KEY` through the deployment secret store. Repository tests use non-real/injected values only.
+    
+    ## SaaS subscription billing blocker
+    
+    Fawri's SaaS billing authority is server-authoritative, but the currently implemented checkout providers are not a production payment path:
+    
+    - `superqi_sandbox` is test-only and production-forbidden;
+    - `fastpay` remains `merchant_setup_required` until Fawri receives the official merchant onboarding/credentials and supported integration contract.
+    
+    Therefore **automated production SaaS subscription purchase/renewal is an external launch blocker**. Do not invent provider endpoints, signatures, settlement behavior, or success callbacks.
+    
+    Merchant-customer payments are a separate domain. Fawri does not custody merchant-customer funds; manual merchant confirmation is supported and future provider evidence is provider-neutral.
+    
+    ## Production backup/restore blocker
+    
+    The repository's current backup/restore scripts and runbook intentionally support disposable validation targets only. They are not production backup infrastructure.
+    
+    Before launch, the owner/infrastructure environment must provide and prove:
+    
+    - the actual production PostgreSQL backup mechanism;
+    - backup encryption/access controls and retention policy;
+    - the actual production object/media backup mechanism if object storage is used;
+    - restore to an isolated recovery target;
+    - a documented restore drill with integrity verification;
+    - RPO/RTO ownership and alerting.
+    
+    A disposable local drill is useful regression evidence but does not satisfy this production requirement.
+    
+    ## Durable support-image storage blocker
+    
+    The runtime release gate also reports:
+    
+    `SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`
+    
+    Support images are currently stored through a filesystem-backed storage path. Production must prove that the selected hosting environment provides durable persistent storage with restart/redeploy survival, private access, retention/deletion behavior, multi-instance consistency where applicable, and backup/restore coverage. If the production host is ephemeral, a durable storage-provider implementation must be completed before launch.
+    
+    
+    ## Release sequence
+    
+    1. Merge only code that passes repository typecheck/build, migrations, PostgreSQL runtime integration, Meta live-transport regressions, and release-gate tests.
+    2. Prepare production PostgreSQL and apply the committed migration chain through the latest version using a migration-owner role. Provision a separate restricted runtime role with the required grants; the runtime role must not be superuser, must not have BYPASSRLS, and must not own tenant-protected tables.
+    3. Configure production secrets through the deployment secret store, never source control.
+    4. Configure AWS KMS/IAM and validate bootstrap/readiness from the production workload.
+    5. Configure the Meta production application/callback/webhook and verify OAuth against a controlled test merchant/page.
+    6. Configure OpenAI credentials and confirm Knowledge readiness.
+    7. Establish and prove production backup/restore.
+    8. Prove durable support-image storage for the selected production hosting model.
+    9. Complete a production SaaS billing-provider integration only from official provider documentation/credentials.
+    10. Set `FAWRI_DEPLOYMENT_MODE=production` and require startup plus `/ops/readiness` to be ready before routing traffic.
+    11. Run controlled end-to-end smoke tests and observe queues/DLQ/alerts before general launch.
+    
+    ## Current readiness interpretation
+    
+    Repository validation establishes **Fawri Core production-runtime code readiness** for the integrated tree. This document intentionally avoids pinning that statement to an obsolete historical `main` SHA; the current branch/commit and required CI evidence are the release source of truth.
+    
+    It must not claim **production launch readiness** while any of the following remain unresolved:
+    
+    - `SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE`
+    - `PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED`
+    - `SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`
+    - production PostgreSQL deployment/migration proof and restricted runtime-role grants,
+    - production AWS KMS/IAM/wrapped-DEK readiness,
+    - production Meta application/OAuth/webhook/live-send readiness,
+    - production OpenAI credential/readiness,
+    - final full-stack staging and manual UI/UX validation,
+    - production release-gate and controlled smoke-test evidence.
+    
+    Actual credentials, cloud permissions, provider approvals, production backups, and live-provider behavior are deployment-time evidence and must never be represented by repository test fixtures.
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq225/artifacts/api-server/tests/production-readiness-doc-contract.test.mjs:20:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.start (node:internal/test_runner/test:1242:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+# Subtest: SaaS billing is structurally separate from merchant customer payments
+ok 84 - SaaS billing is structurally separate from merchant customer payments
+  ---
+  duration_ms: 5.263805
+  type: 'test'
+  ...
+# Subtest: merchant checkout never accepts client-supplied amount or paid state
+ok 85 - merchant checkout never accepts client-supplied amount or paid state
+  ---
+  duration_ms: 1.051541
+  type: 'test'
+  ...
+# Subtest: fake provider is test-only and production remains activation-gated
+ok 86 - fake provider is test-only and production remains activation-gated
+  ---
+  duration_ms: 3.117309
+  type: 'test'
+  ...
+# Subtest: manual and paid plan cycles share one mutation authority
+ok 87 - manual and paid plan cycles share one mutation authority
+  ---
+  duration_ms: 3.662304
+  type: 'test'
+  ...
+# Subtest: service guarantee recognizes only immutable billing applications
+ok 88 - service guarantee recognizes only immutable billing applications
+  ---
+  duration_ms: 1.058171
+  type: 'test'
+  ...
+# Subtest: auth v2 mounts PostgreSQL subscription authority before legacy business routes
+ok 89 - auth v2 mounts PostgreSQL subscription authority before legacy business routes
+  ---
+  duration_ms: 0.983721
+  type: 'test'
+  ...
+# Subtest: live Meta entitlement paths route through authority switches
+ok 90 - live Meta entitlement paths route through authority switches
+  ---
+  duration_ms: 1.168924
+  type: 'test'
+  ...
+# Subtest: required authority wrappers are explicit and never fall back after PostgreSQL selection
+ok 91 - required authority wrappers are explicit and never fall back after PostgreSQL selection
+  ---
+  duration_ms: 0.439609
+  type: 'test'
+  ...
+# Subtest: SuperQi sandbox adapter is sandbox-only and server-authoritative
+ok 92 - SuperQi sandbox adapter is sandbox-only and server-authoritative
+  ---
+  duration_ms: 1.468557
+  type: 'test'
+  ...
+1..92
+# tests 92
+# suites 0
+# pass 87
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1440.183621

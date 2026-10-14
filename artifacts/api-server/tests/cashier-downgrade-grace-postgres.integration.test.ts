@@ -1,21 +1,12 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import test from "node:test";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
-if (DATABASE_URL) {
-  const parsed = new URL(DATABASE_URL);
-  assert.ok(
-    parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost",
-    "cashier downgrade regression only permits local PostgreSQL",
-  );
-  assert.equal(
-    parsed.pathname.replace(/^\//, ""),
-    "fawri_ci",
-    "cashier downgrade regression only permits the fawri_ci database",
-  );
-}
+if (DATABASE_URL) await assertDisposablePostgres();
 
 function randomPhone(): string {
   return `+9647${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
@@ -57,14 +48,10 @@ test(
     ]);
 
     let merchantId = "";
-    t.after(async () => {
-      if (merchantId) {
-        await pool
-          .query("DELETE FROM accounts WHERE id = $1", [merchantId])
-          .catch(() => undefined);
-      }
-      await pool.end();
-    });
+    t.after(async () => cleanupResources([
+      ['fixture account', async () => { if (merchantId) await pool.query('DELETE FROM accounts WHERE id=$1', [merchantId]); }],
+      ['pool', () => pool.end()],
+    ]));
 
     const merchant = await merchantAccounts.upsertPendingMerchantAuthoritative({
       phone: randomPhone(),
@@ -121,6 +108,16 @@ test(
     });
     assert.equal(scheduled.licensed_seats, 3);
     assert.equal(scheduled.scheduled_licensed_seats, 1);
+
+    const switched = await entitlement.scheduleCashierDowngradeAuthoritative({
+      merchantId, targetSeats: 1, keepStationIds: [stations[1].id], expectedVersion: scheduled.version,
+    });
+    const changed = (await pool.query('SELECT station_id,status,release_effective_at FROM cashier_station_seat_assignments WHERE merchant_id=$1', [merchantId])).rows;
+    assert.equal(changed.find(row => row.station_id === stations[1].id)?.status, 'active', 'explicit new retention cancels scheduled release');
+    assert.equal(changed.find(row => row.station_id === stations[1].id)?.release_effective_at, null);
+    assert.equal(changed.find(row => row.station_id === stations[0].id)?.status, 'release_scheduled');
+    await assert.rejects(() => entitlement.scheduleCashierDowngradeAuthoritative({ merchantId, targetSeats: 1, keepStationIds: [stations[0].id], expectedVersion: scheduled.version }), (error: unknown) => (error as { code?: string }).code === 'CASHIER_SUBSCRIPTION_VERSION_CONFLICT');
+    await entitlement.scheduleCashierDowngradeAuthoritative({ merchantId, targetSeats: 1, keepStationIds: [stations[0].id], expectedVersion: switched.version });
 
     await pool.query(
       `UPDATE merchant_cashier_subscriptions

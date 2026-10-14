@@ -19,7 +19,8 @@ The drill must never use Production, Replit, hosted PostgreSQL, cloud object sto
 - `FAWRI_ALLOW_DISPOSABLE_POSTGRES_RESTORE=1`.
 - A loopback-only PostgreSQL URL.
 - A restore database named `fawri_restore_target` or `fawri_restore_drill_*`.
-- A single read-only verification `SELECT` without comments or statement separators.
+- A verification `SELECT count(*) FROM table` with an unquoted table identifier (optional unquoted schema). Functions, predicates, joins, locking, SELECT INTO, comments and statement separators are rejected.
+- No URL query/fragment options; subprocesses discard inherited `PG*` routing variables.
 - A backup whose manifest format, size, and SHA-256 all match before restore begins.
 
 Failures are generic and database URLs/credentials are redacted from command errors.

@@ -275,6 +275,19 @@ export function isKnownHistoricalRestoreRejectionFixture(finding, objectPath, ob
     finding.rule === "credential-url" && finding.index === 1078 && finding.length === 47;
 }
 
+// Fabricated rejection inputs from this audit were never used for a connection.
+// Pin only these six finding locations in two immutable historical test blobs;
+// changed content, new blobs, other files and all other secret rules still fail.
+export function isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId) {
+  if (normalizeRepositoryPath(objectPath) !== "scripts/disposable-postgres-test-guard.test.mjs" ||
+      finding.rule !== "credential-url") return false;
+  const locations = {
+    "3b9dcc6db1985e1e41012cbcb303571eae35fbc7": [[915, 40], [1001, 45], [4904, 48]],
+    "4bf20ca2d792ccf8630595bd5f001c7887dcc60e": [[915, 40], [1001, 45], [5023, 48]],
+  };
+  return (locations[objectId] || []).some(([index, length]) => finding.index === index && finding.length === length);
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -351,7 +364,8 @@ function scanHistory(root) {
       if (
         isKnownTestFixtureCredentialUrl(objectText, finding, objectPath) ||
         isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath) ||
-        isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId)
+        isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,

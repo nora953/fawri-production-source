@@ -9,6 +9,7 @@ import {
   isKnownTestFixtureCredentialUrl,
   isKnownHistoricalScannerSelfTestCredentialUrl,
   isKnownHistoricalRestoreRejectionFixture,
+  isKnownHistoricalDisposableGuardFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -300,5 +301,22 @@ test("historical restore fixture exception is pinned to one immutable finding", 
     { ...finding, rule: "meta-access-token" },
   ]) {
     assert.equal(isKnownHistoricalRestoreRejectionFixture(changed, file, blob), false);
+  }
+});
+
+test("historical disposable guard fixtures match exact immutable locations only", () => {
+  const file = "scripts/disposable-postgres-test-guard.test.mjs";
+  const entries = [
+    ["3b9dcc6db1985e1e41012cbcb303571eae35fbc7", [[915, 40], [1001, 45], [4904, 48]]],
+    ["4bf20ca2d792ccf8630595bd5f001c7887dcc60e", [[915, 40], [1001, 45], [5023, 48]]],
+  ];
+  for (const [blob, locations] of entries) for (const [index, length] of locations) {
+    const finding = { rule: "credential-url", index, length };
+    assert.equal(isKnownHistoricalDisposableGuardFixture(finding, file, blob), true);
+    assert.equal(isKnownHistoricalDisposableGuardFixture(finding, file, "0".repeat(40)), false);
+    assert.equal(isKnownHistoricalDisposableGuardFixture(finding, "scripts/another.test.mjs", blob), false);
+    assert.equal(isKnownHistoricalDisposableGuardFixture({ ...finding, index: index + 1 }, file, blob), false);
+    assert.equal(isKnownHistoricalDisposableGuardFixture({ ...finding, length: length + 1 }, file, blob), false);
+    assert.equal(isKnownHistoricalDisposableGuardFixture({ ...finding, rule: "private-key" }, file, blob), false);
   }
 });

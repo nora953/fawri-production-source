@@ -1,0 +1,44 @@
+TAP version 13
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# Subtest: current Authv2 device and permission HTTP boundaries on owned SQL
+    # Subtest: permission removal revokes live device session and fresh cookie lacks access
+    ok 1 - permission removal revokes live device session and fresh cookie lacks access
+      ---
+      duration_ms: 68.541164
+      type: 'test'
+      ...
+    # Subtest: invalid enabled value cannot mutate profile or revoke session
+    ok 2 - invalid enabled value cannot mutate profile or revoke session
+      ---
+      duration_ms: 6.791064
+      type: 'test'
+      ...
+    # Subtest: disable revokes current cookie and blocks profile access
+    ok 3 - disable revokes current cookie and blocks profile access
+      ---
+      duration_ms: 13.447328
+      type: 'test'
+      ...
+# DEVICE_HTTP_OBSERVATIONS {"cases":4,"results":[{"name":"permission removal revokes live device session and fresh cookie lacks access","status":"PASS","details":{"oldHTTP":401,"newRestrictedHTTP":403,"newIdentityHTTP":200}},{"name":"invalid enabled value cannot mutate profile or revoke session","status":"PASS","details":{"status":400,"enabled":true,"sessionActive":true}},{"name":"disable revokes current cookie and blocks profile access","status":"PASS","details":{"disabled":true,"revoked":true,"identityHTTP":401}},{"name":"reenable permits fresh session without reviving revoked cookies","status":"PASS","details":{"oldCookiesHTTP":401,"freshIdentityHTTP":200,"freshPermissionsHTTP":403}}],"noLegacyJSON":true}
+    # Subtest: reenable permits fresh session without reviving revoked cookies
+    ok 4 - reenable permits fresh session without reviving revoked cookies
+      ---
+      duration_ms: 24.089613
+      type: 'test'
+      ...
+    1..4
+ok 1 - current Authv2 device and permission HTTP boundaries on owned SQL
+  ---
+  duration_ms: 1151.298825
+  type: 'test'
+  ...
+1..1
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1364.6811

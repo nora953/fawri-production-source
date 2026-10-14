@@ -1,3 +1,5 @@
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -6,6 +8,8 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+
+if (process.env.DATABASE_URL) await assertDisposablePostgres();
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "");
 assert.ok(DATABASE_URL, "DATABASE_URL is required");
@@ -115,19 +119,17 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   async function cleanup(): Promise<void> {
     const ids = [merchantAId, merchantBId].filter(Boolean);
     if (ids.length === 0) return;
-    await pool
-      .query("DELETE FROM accounts WHERE id = ANY($1::text[])", [ids])
-      .catch(() => undefined);
+    await pool.query("DELETE FROM accounts WHERE id = ANY($1::text[])", [ids]);
   }
 
-  t.after(async () => {
-    if (server) {
-      await new Promise<void>((resolve) => server?.close(() => resolve()));
-    }
-    await cleanup();
-    await pool.end();
-    await rm(runtimeDirectory, { recursive: true, force: true });
-  });
+  t.after(async () => cleanupResources([
+    ["server", async () => {
+      if (server) await new Promise<void>((resolve, reject) => server?.close((error) => error ? reject(error) : resolve()));
+    }],
+    ["fixture accounts", cleanup],
+    ["pool", () => pool.end()],
+    ["temporary directory", () => rm(runtimeDirectory, { recursive: true, force: true })],
+  ]));
 
   const phoneCollision = await pool.query(
     "SELECT id FROM accounts WHERE phone = ANY($1::text[]) LIMIT 1",

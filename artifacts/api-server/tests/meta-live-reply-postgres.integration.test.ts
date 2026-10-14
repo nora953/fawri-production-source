@@ -4,6 +4,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
+await assertDisposablePostgres();
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-meta-live-pg-"));
 process.env.FAWRI_DATA_DIR = dataDir;
@@ -15,6 +18,11 @@ process.env.FAWRI_AUTH_SECURITY_SECRET = "meta-live-test-auth-secret-32-bytes-mi
 
 const dbModule = await import("@workspace/db");
 const pool = dbModule.pool;
+await test('isolated Meta bot and AI lifecycle with injected providers', async t => {
+t.after(async () => cleanupResources([
+  ['pool', () => pool.end()],
+  ['data directory', () => fs.rmSync(dataDir, { recursive: true, force: true })],
+]));
 const accounts = await import("../src/services/postgresMerchantAccountAuthority.js");
 const settings = await import("../src/services/postgresMerchantSettingsAuthority.js");
 const channels = await import("../src/services/postgresMetaChannelAuthority.js");
@@ -185,7 +193,7 @@ const suffixB = `B-${runId}`;
 const pageA = `page-live-a-${runId}`;
 const pageB = `page-live-b-${runId}`;
 
-await test("seed isolated live Meta merchants and encrypted channels", async () => {
+await t.test("seed isolated live Meta merchants and encrypted channels", async () => {
   merchantA = await seedMerchant(phoneA, suffixA);
   merchantB = await seedMerchant(phoneB, suffixB);
   await channels.connectMetaChannelAuthoritative({
@@ -216,7 +224,7 @@ await test("seed isolated live Meta merchants and encrypted channels", async () 
   );
 });
 
-await test("image-only Meta reply reaches the PostgreSQL intent as media instead of malformed text", async () => {
+await t.test("image-only Meta reply reaches the PostgreSQL intent as media instead of malformed text", async () => {
   const senderId = `customer-live-image-${runId}`;
   const eventId = `event-live-image-${runId}`;
   const mid = `mid-live-image-${runId}`;
@@ -311,7 +319,7 @@ await test("image-only Meta reply reaches the PostgreSQL intent as media instead
 
 
 
-await test("configured image understanding receives the transient Meta image URL and persists only trusted derived identity", async () => {
+await t.test("configured image understanding receives the transient Meta image URL and persists only trusted derived identity", async () => {
   const senderId = `customer-live-understood-image-${runId}`;
   const eventId = `event-live-understood-image-${runId}`;
   const mid = `mid-live-understood-image-${runId}`;
@@ -443,7 +451,7 @@ await test("configured image understanding receives the transient Meta image URL
   }
 });
 
-await test("Meta text with an image attachment is suppressed until the attachment is processed", async () => {
+await t.test("Meta text with an image attachment is suppressed until the attachment is processed", async () => {
   const senderId = `customer-live-caption-image-${runId}`;
   const eventId = `event-live-caption-image-${runId}`;
   const mid = `mid-live-caption-image-${runId}`;
@@ -511,7 +519,7 @@ await test("Meta text with an image attachment is suppressed until the attachmen
   );
 });
 
-await test("same Meta message id with different image content is rejected as an identity collision", async () => {
+await t.test("same Meta message id with different image content is rejected as an identity collision", async () => {
   const senderId = `customer-media-collision-${runId}`;
   const mid = `mid-media-collision-${runId}`;
 
@@ -598,7 +606,7 @@ await test("same Meta message id with different image content is rejected as an 
 });
 
 
-await test("forged image runtime result is never persisted as a trusted catalog identity", async () => {
+await t.test("forged image runtime result is never persisted as a trusted catalog identity", async () => {
   const senderId = `customer-media-forged-${runId}`;
   const eventId = `event-media-forged-${runId}`;
   const mid = `mid-media-forged-${runId}`;
@@ -684,7 +692,7 @@ await test("forged image runtime result is never persisted as a trusted catalog 
 });
 
 
-await test("authoritative image catalog identity with malformed runtime provenance is not persisted as trusted", async () => {
+await t.test("authoritative image catalog identity with malformed runtime provenance is not persisted as trusted", async () => {
   const senderId = `customer-media-malformed-provenance-${runId}`;
   const eventId = `event-media-malformed-provenance-${runId}`;
   const mid = `mid-media-malformed-provenance-${runId}`;
@@ -798,7 +806,7 @@ await test("authoritative image catalog identity with malformed runtime provenan
 });
 
 
-await test("same understood Meta image is redelivered without duplicate storage or duplicate image understanding", async () => {
+await t.test("same understood Meta image is redelivered without duplicate storage or duplicate image understanding", async () => {
   const senderId = `customer-media-redelivery-${runId}`;
   const mid = `mid-media-redelivery-${runId}`;
   const url = "https://example.invalid/media-redelivery-same.jpg";
@@ -940,7 +948,7 @@ await test("same understood Meta image is redelivered without duplicate storage 
   }
 });
 
-await test("tampered persisted image catalog identity is revalidated instead of trusted on redelivery", async () => {
+await t.test("tampered persisted image catalog identity is revalidated instead of trusted on redelivery", async () => {
   const senderId = `customer-media-tampered-persisted-${runId}`;
   const mid = `mid-media-tampered-persisted-${runId}`;
   const url = "https://example.invalid/media-tampered-persisted.jpg";
@@ -1091,7 +1099,7 @@ await test("tampered persisted image catalog identity is revalidated instead of 
 });
 
 
-await test("live PostgreSQL transport sends once and deduplicates provider success", async () => {
+await t.test("live PostgreSQL transport sends once and deduplicates provider success", async () => {
   const queued = await enqueueReply({
     merchantId: merchantA.account.id,
     pageId: pageA,
@@ -1170,7 +1178,7 @@ await test("live PostgreSQL transport sends once and deduplicates provider succe
   );
 });
 
-await test("confirmed provider rejection retries safely without consuming a second reply", async () => {
+await t.test("confirmed provider rejection retries safely without consuming a second reply", async () => {
   const queued = await enqueueReply({
     merchantId: merchantA.account.id,
     pageId: pageA,
@@ -1230,7 +1238,7 @@ await test("confirmed provider rejection retries safely without consuming a seco
   assert.equal(ledger.rows[0].credits, 0);
 });
 
-await test("uncertain provider outcome blocks automatic resend", async () => {
+await t.test("uncertain provider outcome blocks automatic resend", async () => {
   const queued = await enqueueReply({
     merchantId: merchantA.account.id,
     pageId: pageA,
@@ -1281,7 +1289,7 @@ await test("uncertain provider outcome blocks automatic resend", async () => {
   assert.equal(state?.status, "uncertain");
 });
 
-await test("expired Meta reply claims reconcile without risking duplicate delivery", async () => {
+await t.test("expired Meta reply claims reconcile without risking duplicate delivery", async () => {
   const senderId = `customer-live-reconcile-${runId}`;
   const eventId = `event-live-reconcile-${runId}`;
   const queued = await enqueueReply({
@@ -1340,7 +1348,7 @@ await test("expired Meta reply claims reconcile without risking duplicate delive
   if (blocked.action === "dead_letter") assert.equal(blocked.code, "META_REPLY_OUTCOME_UNCERTAIN");
 });
 
-await test("stable knowledge gap hands off and notifies only the owning merchant", async () => {
+await t.test("stable knowledge gap hands off and notifies only the owning merchant", async () => {
   const senderId = `customer-live-knowledge-gap-${runId}`;
   const eventId = `event-live-knowledge-gap-1-${runId}`;
 
@@ -1458,7 +1466,7 @@ await test("stable knowledge gap hands off and notifies only the owning merchant
 });
 
 
-await test("merchant manual reply learns a stable knowledge gap and later auto-replies without tenant leakage", async () => {
+await t.test("merchant manual reply learns a stable knowledge gap and later auto-replies without tenant leakage", async () => {
   const senderId = `customer-live-learning-cycle-${runId}`;
   const firstEventId = `event-live-learning-cycle-first-${runId}`;
   const merchantReply = "Yes. Gift wrapping is available on request.";
@@ -1707,7 +1715,7 @@ await test("merchant manual reply learns a stable knowledge gap and later auto-r
 });
 
 
-await test("security handoff does not create a knowledge-gap notification", async () => {
+await t.test("security handoff does not create a knowledge-gap notification", async () => {
   const senderId = `customer-live-prompt-injection-${runId}`;
   const eventId = `event-live-prompt-injection-1-${runId}`;
 
@@ -1790,7 +1798,7 @@ await test("security handoff does not create a knowledge-gap notification", asyn
   assert.equal(notification.rows[0].count, 0);
 });
 
-await test("manual takeover suppresses only that conversation before reservation", async () => {
+await t.test("manual takeover suppresses only that conversation before reservation", async () => {
   const channel = await raw(
     "SELECT id FROM merchant_channels WHERE merchant_id = $1 AND page_id = $2",
     [merchantA.account.id, pageA],
@@ -1841,7 +1849,7 @@ await test("manual takeover suppresses only that conversation before reservation
   assert.equal(customerMessage.rows[0].count, 1);
 });
 
-await test("manual takeover never sends an inbound image to the image understanding service", async () => {
+await t.test("manual takeover never sends an inbound image to the image understanding service", async () => {
   const channel = await raw(
     "SELECT id FROM merchant_channels WHERE merchant_id = $1 AND page_id = $2",
     [merchantA.account.id, pageA],
@@ -1952,7 +1960,7 @@ await test("manual takeover never sends an inbound image to the image understand
   }
 });
 
-await test("a prepared reply is suppressed when a newer customer message supersedes its conversation context", async () => {
+await t.test("a prepared reply is suppressed when a newer customer message supersedes its conversation context", async () => {
   const timestamp = Date.parse("2026-09-25T00:00:00.000Z");
   const senderId = `customer-live-race-${runId}`;
   const queuedA = await enqueueReply({
@@ -2030,7 +2038,7 @@ await test("a prepared reply is suppressed when a newer customer message superse
   assert.equal(ledger.rows[0].credits, 1);
 });
 
-await test("Meta PostgreSQL conversation memory reloads a sent catalog variant reference for a follow-up", async () => {
+await t.test("Meta PostgreSQL conversation memory reloads a sent catalog variant reference for a follow-up", async () => {
   const productId = `prd-meta-memory-${runId}`;
   const variantId = `var-meta-memory-blue-${runId}`;
   const senderId = `customer-meta-memory-${runId}`;
@@ -2145,7 +2153,7 @@ await test("Meta PostgreSQL conversation memory reloads a sent catalog variant r
 
 
 
-await test("Meta conversation memory reloads a trusted image catalog match for a later text follow-up", async () => {
+await t.test("Meta conversation memory reloads a trusted image catalog match for a later text follow-up", async () => {
   const productId = `prd-meta-image-memory-${runId}`;
   const senderId = `customer-meta-image-memory-${runId}`;
   const imageEventId = `event-meta-image-memory-first-${runId}`;
@@ -2333,7 +2341,7 @@ await test("Meta conversation memory reloads a trusted image catalog match for a
 });
 
 
-await test("trusted image catalog match answers a text question in the same Meta message", async () => {
+await t.test("trusted image catalog match answers a text question in the same Meta message", async () => {
   const productId = `prd-meta-image-same-turn-${runId}`;
   const senderId = `customer-meta-image-same-turn-${runId}`;
   const eventId = `event-meta-image-same-turn-${runId}`;
@@ -2498,7 +2506,7 @@ await test("trusted image catalog match answers a text question in the same Meta
 });
 
 
-await test("failed image understanding can retry the same Meta image and persist a later trusted match", async () => {
+await t.test("failed image understanding can retry the same Meta image and persist a later trusted match", async () => {
   const senderId = `customer-media-retry-${runId}`;
   const mid = `mid-media-retry-${runId}`;
   const url = "https://example.invalid/media-retry-same.jpg";
@@ -2662,7 +2670,7 @@ await test("failed image understanding can retry the same Meta image and persist
 });
 
 
-await test("live worker suppresses image-only Meta input before entitlement debit", async () => {
+await t.test("live worker suppresses image-only Meta input before entitlement debit", async () => {
   const senderId = `customer-live-worker-image-${runId}`;
   const eventId = `event-live-worker-image-${runId}`;
   const mid = `mid-live-worker-image-${runId}`;
@@ -2845,7 +2853,7 @@ await test("live worker suppresses image-only Meta input before entitlement debi
   assert.equal(customer.rows[0].needs_training, false);
 });
 
-await test("trusted visual alternative is kept separate from exact matched_record_id", async () => {
+await t.test("trusted visual alternative is kept separate from exact matched_record_id", async () => {
   const productId = `prd-meta-visual-alt-${runId}`;
   const senderId = `customer-meta-visual-alt-${runId}`;
   const eventId = `event-meta-visual-alt-${runId}`;
@@ -3046,7 +3054,7 @@ await test("trusted visual alternative is kept separate from exact matched_recor
 });
 
 
-await test("visual alternative from another merchant is rejected before persistence", async () => {
+await t.test("visual alternative from another merchant is rejected before persistence", async () => {
   const foreignProductId = `prd-meta-visual-alt-foreign-${runId}`;
   const senderId = `customer-meta-visual-alt-foreign-${runId}`;
   const eventId = `event-meta-visual-alt-foreign-${runId}`;
@@ -3180,7 +3188,7 @@ await test("visual alternative from another merchant is rejected before persiste
 });
 
 
-await test("visual alternative with allow_fawri_reply false is rejected before persistence", async () => {
+await t.test("visual alternative with allow_fawri_reply false is rejected before persistence", async () => {
   const blockedProductId = `prd-meta-visual-alt-blocked-${runId}`;
   const senderId = `customer-meta-visual-alt-blocked-${runId}`;
   const eventId = `event-meta-visual-alt-blocked-${runId}`;
@@ -3314,7 +3322,7 @@ await test("visual alternative with allow_fawri_reply false is rejected before p
 });
 
 
-await test("visual alternative with a variant owned by another product is rejected before persistence", async () => {
+await t.test("visual alternative with a variant owned by another product is rejected before persistence", async () => {
   const productAId = `prd-meta-visual-alt-variant-a-${runId}`;
   const productBId = `prd-meta-visual-alt-variant-b-${runId}`;
   const variantAId = `var-meta-visual-alt-variant-a-${runId}`;
@@ -3481,7 +3489,7 @@ await test("visual alternative with a variant owned by another product is reject
   }
 });
 
-await test("failed visual alternative understanding can retry the same Meta image and persist a later trusted alternative", async () => {
+await t.test("failed visual alternative understanding can retry the same Meta image and persist a later trusted alternative", async () => {
   const senderId = `customer-visual-alt-retry-${runId}`;
   const mid = `mid-visual-alt-retry-${runId}`;
   const imageUrl =
@@ -3671,7 +3679,7 @@ await test("failed visual alternative understanding can retry the same Meta imag
   }
 });
 
-await test("same trusted visual alternatives are reused on redelivery without duplicate image understanding", async () => {
+await t.test("same trusted visual alternatives are reused on redelivery without duplicate image understanding", async () => {
   const senderId = `customer-visual-alt-redelivery-${runId}`;
   const mid = `mid-visual-alt-redelivery-${runId}`;
   const imageUrl =
@@ -3865,7 +3873,7 @@ await test("same trusted visual alternatives are reused on redelivery without du
   }
 });
 
-await test("persisted visual alternatives with any malformed entry force fresh image understanding", async () => {
+await t.test("persisted visual alternatives with any malformed entry force fresh image understanding", async () => {
   const senderId = `customer-visual-alt-malformed-extra-${runId}`;
   const mid = `mid-visual-alt-malformed-extra-${runId}`;
   const imageUrl =
@@ -4051,7 +4059,7 @@ await test("persisted visual alternatives with any malformed entry force fresh i
   }
 });
 
-await test("tampered persisted visual alternative is revalidated instead of trusted on redelivery", async () => {
+await t.test("tampered persisted visual alternative is revalidated instead of trusted on redelivery", async () => {
   const senderId = `customer-visual-alt-tampered-${runId}`;
   const mid = `mid-visual-alt-tampered-${runId}`;
   const imageUrl =
@@ -4241,7 +4249,7 @@ await test("tampered persisted visual alternative is revalidated instead of trus
   }
 });
 
-await test("visual alternative with malformed image provenance is rejected before persistence", async () => {
+await t.test("visual alternative with malformed image provenance is rejected before persistence", async () => {
   const productId = `prd-meta-visual-alt-bad-provenance-${runId}`;
   const senderId = `customer-meta-visual-alt-bad-provenance-${runId}`;
   const eventId = `event-meta-visual-alt-bad-provenance-${runId}`;
@@ -4370,7 +4378,7 @@ await test("visual alternative with malformed image provenance is rejected befor
   }
 });
 
-await test("ranked visual alternatives fall back to a fulfillable merchant product without exposing total stock", async () => {
+await t.test("ranked visual alternatives fall back to a fulfillable merchant product without exposing total stock", async () => {
   const firstProductId = `prd-meta-visual-stock-first-${runId}`;
   const secondProductId = `prd-meta-visual-stock-second-${runId}`;
   const senderId = `customer-meta-visual-stock-${runId}`;
@@ -4583,7 +4591,7 @@ await test("ranked visual alternatives fall back to a fulfillable merchant produ
 });
 
 
-await test("mixed image and audio with explicit text requires every attachment to be understood", async () => {
+await t.test("mixed image and audio with explicit text requires every attachment to be understood", async () => {
   const senderId = `customer-live-mixed-image-audio-${runId}`;
   const eventId = `event-live-mixed-image-audio-${runId}`;
   const mid = `mid-live-mixed-image-audio-${runId}`;
@@ -4669,7 +4677,7 @@ await test("mixed image and audio with explicit text requires every attachment t
   }
 });
 
-await test("text plus trusted audio composes the transcript into the knowledge intent", async () => {
+await t.test("text plus trusted audio composes the transcript into the knowledge intent", async () => {
   const senderId = `customer-live-text-audio-compose-${runId}`;
   const eventId = `event-live-text-audio-compose-${runId}`;
   const mid = `mid-live-text-audio-compose-${runId}`;
@@ -4737,7 +4745,7 @@ await test("text plus trusted audio composes the transcript into the knowledge i
   }
 });
 
-await test("video visual observation is not flattened into customer-authored intent", async () => {
+await t.test("video visual observation is not flattened into customer-authored intent", async () => {
   const senderId = `customer-live-video-intent-boundary-${runId}`;
   const eventId = `event-live-video-intent-boundary-${runId}`;
   const mid = `mid-live-video-intent-boundary-${runId}`;
@@ -4819,7 +4827,7 @@ await test("video visual observation is not flattened into customer-authored int
   }
 });
 
-await test("persisted video observation without complete provenance is not trusted", async () => {
+await t.test("persisted video observation without complete provenance is not trusted", async () => {
   const senderId = `customer-live-video-provenance-${runId}`;
   const eventId = `event-live-video-provenance-${runId}`;
   const mid = `mid-live-video-provenance-${runId}`;
@@ -4881,7 +4889,7 @@ await test("persisted video observation without complete provenance is not trust
 
 
 
-await test("text plus image audio and video fails closed when any attachment is not understood", async () => {
+await t.test("text plus image audio and video fails closed when any attachment is not understood", async () => {
   const senderId = `customer-live-all-media-partial-${runId}`;
   const eventId = `event-live-all-media-partial-${runId}`;
   const mid = `mid-live-all-media-partial-${runId}`;
@@ -4994,7 +5002,7 @@ await test("text plus image audio and video fails closed when any attachment is 
   }
 });
 
-await test("duplicate media type is rejected before any partial media understanding", async () => {
+await t.test("duplicate media type is rejected before any partial media understanding", async () => {
   const senderId = `customer-live-duplicate-media-${runId}`;
   const eventId = `event-live-duplicate-media-${runId}`;
   const mid = `mid-live-duplicate-media-${runId}`;
@@ -5063,7 +5071,7 @@ await test("duplicate media type is rejected before any partial media understand
   }
 });
 
-await test("unsupported inbound attachment kinds are rejected before reply preparation", async () => {
+await t.test("unsupported inbound attachment kinds are rejected before reply preparation", async () => {
   const cases = [
     { label: "shared-post", attachment: { type: "share", payload: { url: "https://example.invalid/post" } } },
     { label: "document", attachment: { type: "document", payload: { url: "https://example.invalid/file.pdf" } } },
@@ -5111,7 +5119,7 @@ await test("unsupported inbound attachment kinds are rejected before reply prepa
   }
 });
 
-await test("reply context must resolve uniquely inside the same merchant conversation", async () => {
+await t.test("reply context must resolve uniquely inside the same merchant conversation", async () => {
   const senderId = `customer-live-reply-context-${runId}`;
   const missingEventId = `event-live-reply-context-missing-${runId}`;
   const missingMid = `mid-live-reply-context-missing-${runId}`;
@@ -5204,7 +5212,7 @@ await test("reply context must resolve uniquely inside the same merchant convers
   );
 });
 
-await test("same external message id cannot be replayed with a different reply target", async () => {
+await t.test("same external message id cannot be replayed with a different reply target", async () => {
   const senderId = `customer-live-reply-replay-${runId}`;
   const targetOneEvent = `event-live-reply-target-one-${runId}`;
   const targetOneMid = `mid-live-reply-target-one-${runId}`;
@@ -5245,7 +5253,7 @@ await test("same external message id cannot be replayed with a different reply t
   );
 });
 
-await test("unsafe single-media URLs fail closed before any understanding service", async () => {
+await t.test("unsafe single-media URLs fail closed before any understanding service", async () => {
   const cases = [
     { label: "http-image", attachment: { type: "image", payload: { url: "http://example.invalid/unsafe-single.jpg" } } },
     { label: "credentialed-audio", attachment: { type: "audio", payload: { url: "https://user:secret@example.invalid/unsafe-single.mp3" } } },
@@ -5320,7 +5328,7 @@ await test("unsafe single-media URLs fail closed before any understanding servic
   }
 });
 
-await test("unsafe mixed-media URLs are rejected before any understanding service", async () => {
+await t.test("unsafe mixed-media URLs are rejected before any understanding service", async () => {
   const cases = [
     {
       label: "http-image",
@@ -5422,7 +5430,7 @@ await test("unsafe mixed-media URLs are rejected before any understanding servic
   }
 });
 
-await test("media provider exceptions fail closed without crashing the reply preparation", async () => {
+await t.test("media provider exceptions fail closed without crashing the reply preparation", async () => {
   const cases = [
     { label: "image", attachment: { type: "image", payload: { url: "https://example.invalid/provider-error.jpg" } } },
     { label: "audio", attachment: { type: "audio", payload: { url: "https://example.invalid/provider-error.mp3" } } },
@@ -5490,7 +5498,7 @@ await test("media provider exceptions fail closed without crashing the reply pre
   }
 });
 
-await test("mixed media provider failure is atomic when sibling providers succeed", async () => {
+await t.test("mixed media provider failure is atomic when sibling providers succeed", async () => {
   const failingKinds = ["image", "audio", "video"] as const;
 
   for (const failingKind of failingKinds) {
@@ -5635,7 +5643,7 @@ await test("mixed media provider failure is atomic when sibling providers succee
   }
 });
 
-await test("mixed media without explicit text remains fail closed", async () => {
+await t.test("mixed media without explicit text remains fail closed", async () => {
   const senderId = `customer-live-mixed-no-text-${runId}`;
   const eventId = `event-live-mixed-no-text-${runId}`;
   const mid = `mid-live-mixed-no-text-${runId}`;
@@ -5721,7 +5729,7 @@ await test("mixed media without explicit text remains fail closed", async () => 
   }
 });
 
-await test("audio-only Meta reply persists trusted transcript, hides media URL, and reuses transcription on same message", async () => {
+await t.test("audio-only Meta reply persists trusted transcript, hides media URL, and reuses transcription on same message", async () => {
   const senderId = `customer-live-audio-${runId}`;
   const firstEventId = `event-live-audio-first-${runId}`;
   const secondEventId = `event-live-audio-second-${runId}`;
@@ -5829,7 +5837,7 @@ await test("audio-only Meta reply persists trusted transcript, hides media URL, 
   }
 });
 
-await test("manual takeover never sends inbound audio to transcription", async () => {
+await t.test("manual takeover never sends inbound audio to transcription", async () => {
   const channel = await raw(
     "SELECT id FROM merchant_channels WHERE merchant_id = $1 AND page_id = $2",
     [merchantA.account.id, pageA],
@@ -5898,7 +5906,7 @@ await test("manual takeover never sends inbound audio to transcription", async (
   }
 });
 
-await test("missing connected Messenger channel fails closed before conversation creation", async () => {
+await t.test("missing connected Messenger channel fails closed before conversation creation", async () => {
   const senderId = `customer-missing-channel-${runId}`;
   const eventId = `event-missing-channel-${runId}`;
   const mid = `mid-missing-channel-${runId}`;
@@ -5917,7 +5925,7 @@ await test("missing connected Messenger channel fails closed before conversation
   assert.equal(Number(conversations.rows[0].count), 0);
 });
 
-await test("same provider event id with changed payload fails closed as identity collision", async () => {
+await t.test("same provider event id with changed payload fails closed as identity collision", async () => {
   const senderId = `customer-event-collision-${runId}`;
   const eventId = `event-collision-${runId}`;
   const firstMid = `mid-event-collision-a-${runId}`;
@@ -5947,7 +5955,27 @@ await test("same provider event id with changed payload fails closed as identity
 });
 
 
-test.after(async () => {
-  await pool.end();
-  fs.rmSync(dataDir, { recursive: true, force: true });
+
+
+await t.test("duplicate reservation after subscription suspension cannot invoke provider send", async () => {
+  const queued = await enqueueReply({ merchantId: merchantA.account.id, pageId: pageA, senderId: `audit-suspended-${runId}`, eventId: `audit-suspended-event-${runId}`, mid: `audit-suspended-mid-${runId}` });
+  const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+  assert.equal(prepared.action, 'send');
+  if (prepared.action !== 'send') return;
+  const { reserveMerchantAutoReplyAuthoritative } = await import('../src/services/merchantReplyEntitlementAuthority.js');
+  assert.equal((await reserveMerchantAutoReplyAuthoritative(merchantA.account.id, prepared.eventId)).allowed, true);
+  const prior = (await raw('SELECT status FROM subscriptions WHERE merchant_id=$1', [merchantA.account.id])).rows[0].status;
+  let sends = 0;
+  try {
+    await raw("UPDATE subscriptions SET status='suspended' WHERE merchant_id=$1", [merchantA.account.id]);
+    const duplicate = await reserveMerchantAutoReplyAuthoritative(merchantA.account.id, prepared.eventId);
+    console.log('REPLY_SUSPENDED_DUPLICATE ' + JSON.stringify(duplicate));
+    const transport = await liveTransport.createPostgresMetaWebhookReplyTransport({ prepared, sendText: async () => { sends++; return { status: 'sent', providerMessageId: 'synthetic-never-sent', recipientId: prepared.recipientId }; } });
+    const currentSettings = await settings.getMerchantOperationalSettingsAuthoritative(prepared.merchantId);
+    await assert.rejects(() => transport.send({ eventId: prepared.eventId, merchantId: prepared.merchantId, settingsVersion: currentSettings.version, beforeSend: async () => {} }), (error: unknown) => (error as { code?: string }).code === 'MERCHANT_AUTO_REPLY_DISABLED');
+    assert.equal(sends, 0);
+  } finally {
+    await raw('UPDATE subscriptions SET status=$2 WHERE merchant_id=$1', [merchantA.account.id, prior]);
+  }
+});
 });

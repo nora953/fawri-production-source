@@ -1,0 +1,41 @@
+{
+  "baseline": "6ef87566bb55f6d6c9d7fc17698e4af210980482",
+  "node": "v24.19.0",
+  "environment": {
+    "NODE_ENV": "test",
+    "DATABASE_URL": "ABSENT"
+  },
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "docs/final-audit/evidence/seq233-235-worker.test.mjs"
+      ],
+      "exit": 1,
+      "counts": {
+        "tests": 7,
+        "pass": 6,
+        "fail": 1,
+        "skipped": 0
+      }
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "docs/final-audit/evidence/seq236-237-monitor.test.mjs"
+      ],
+      "exit": 1,
+      "counts": {
+        "tests": 8,
+        "pass": 4,
+        "fail": 4,
+        "skipped": 0
+      }
+    }
+  ],
+  "limits": "Final verification rerun replaces original results, not added to totals."
+}

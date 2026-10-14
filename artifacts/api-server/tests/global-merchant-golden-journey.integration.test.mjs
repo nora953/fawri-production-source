@@ -1,12 +1,16 @@
+import { cleanupResources, stopTestChild } from "./helpers/cleanup-resources.mjs";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { spawn } from "node:child_process";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, readdir } from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+
+if (process.env.DATABASE_URL) await assertDisposablePostgres();
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(testDir, "..");
@@ -14,29 +18,6 @@ const serverEntry = path.join(apiRoot, "dist", "index.mjs");
 
 function suffix() {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-}
-
-function temporaryCompatibilityMerchant({ merchantId, phone, password }) {
-  return {
-    id: merchantId,
-    owner_name: "Golden Journey Owner",
-    store_name: "Golden Journey Store",
-    phone,
-    password,
-    activity_type: "retail",
-    status: "approved",
-    account_status: "approved",
-    onboarding_status: "channel_connected",
-    trial_status: "active",
-    signup_source: "direct",
-    requested_plan: null,
-    language: "en",
-    theme_preference: "auto",
-    created_at: "2026-08-30T00:00:00.000Z",
-    otp_verified: true,
-    warning_stage: 0,
-    retention_status: "protected",
-  };
 }
 
 async function reservePort() {
@@ -234,8 +215,17 @@ test(
     const dataDirectory = path.join(os.tmpdir(), `fawri-golden-journey-${id}`);
     const runtimeDirectory = path.join(dataDirectory, "runtime");
 
+    let child;
+    t.after(async () => cleanupResources([
+      ["server", () => stopTestChild(child)],
+      ["fixture accounts", async () => {
+        await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
+      }],
+      ["pool", () => pool.end()],
+      ["temporary directory", () => rm(dataDirectory, { recursive: true, force: true })],
+    ]));
+
     await mkdir(runtimeDirectory, { recursive: true });
-    await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
     const phoneCollision = await pool.query(
       "SELECT id FROM accounts WHERE phone = $1 LIMIT 1",
       [phone],
@@ -318,35 +308,10 @@ test(
       ],
     );
 
-    // Temporary compatibility-only identity fixture for the pre-#139 baseline.
-    // Operational catalog, cashier, inventory, report, session, and order state
-    // must remain PostgreSQL-backed. Remove this fixture after PR #139 lands.
-    await writeFile(
-      path.join(dataDirectory, "merchants.json"),
-      JSON.stringify(
-        {
-          merchants: [
-            temporaryCompatibilityMerchant({ merchantId, phone, password }),
-          ],
-          subscriptions: [],
-          otps: [],
-          admin_logs: [],
-          merchant_notifications: [],
-          support_tickets: [],
-          deletion_requests: [],
-          channel_overrides: {},
-          admin_notes: {},
-        },
-        null,
-        2,
-      ),
-      "utf8",
-    );
-
     const port = await reservePort();
     const baseUrl = `http://127.0.0.1:${port}`;
     let serverOutput = "";
-    const child = spawn(process.execPath, [serverEntry], {
+    child = spawn(process.execPath, [serverEntry], {
       cwd: runtimeDirectory,
       env: {
         ...process.env,
@@ -372,13 +337,6 @@ test(
     });
     child.stderr?.on("data", (chunk) => {
       serverOutput += chunk.toString();
-    });
-
-    t.after(async () => {
-      if (child.exitCode === null) child.kill("SIGTERM");
-      await rm(dataDirectory, { recursive: true, force: true });
-      await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]).catch(() => {});
-      await pool.end();
     });
 
     await waitForServer(baseUrl, child, () => serverOutput);
@@ -666,25 +624,7 @@ test(
     assert.equal(expiredOperator.response.status, 401, JSON.stringify(expiredOperator.body));
     assert.equal(expiredOperator.body?.code, "CASHIER_OPERATOR_SESSION_INVALID");
 
-    const legacyState = JSON.parse(
-      await import("node:fs/promises").then(({ readFile }) =>
-        readFile(path.join(dataDirectory, "merchants.json"), "utf8"),
-      ),
-    );
-    assert.equal(legacyState.merchants.length, 1);
-    assert.equal(legacyState.merchants[0].id, merchantId);
-    for (const forbiddenKey of [
-      "products",
-      "orders",
-      "cashier_staff",
-      "cashier_stations",
-      "inventory_mutations",
-    ]) {
-      assert.equal(
-        Object.prototype.hasOwnProperty.call(legacyState, forbiddenKey),
-        false,
-        `${forbiddenKey} must not become a legacy operational authority`,
-      );
-    }
+    const legacyJson = (await readdir(dataDirectory)).filter(name => name.endsWith(".json"));
+    assert.deepEqual(legacyJson, [], "merchant/cashier journey must not create any root-level legacy JSON authority");
   },
 );

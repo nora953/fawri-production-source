@@ -1,0 +1,41 @@
+{
+  "initial": {
+    "commit": "8249bb57529dcee7fb4ced93cac2e8aaf8a0b8f5",
+    "run": 38431552219,
+    "job": 115414742362,
+    "status": "HARNESS_IMPORT_BLOCKED",
+    "businessAssertionsExecuted": 0,
+    "reason": "tsx root CJS does not allow top-level await in .ts; corrected audit fixture only",
+    "proof": [
+      "AUDIT_ISOLATION_PROOF {\"suite\":\"seq282-catalog-archive-postgres.test.ts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"2ccc6c8265e47198976a7d312b0f0cb7e9d7e8aeed761e451ef4281e1e007b14\",\"networkNamespace\":\"net:[4026532272]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_MIGRATIONS_PASS count=28",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "CATALOG_ARCHIVE_SUITE_RESULT {\"file\":\"seq282-catalog-archive-postgres.test.ts\",\"runtime\":\"v24.21.0\",\"exit\":1,\"summaryComplete\":true,\"passed\":0,\"failed\":1,\"skipped\":0,\"cleanup\":true}"
+    ],
+    "ownedCleanup": "SUCCESS"
+  },
+  "corrected": {
+    "commit": "ce48910f71cfd910c0b86fe24aa9fdb805083cec",
+    "run": 38431991119,
+    "job": 115416248457,
+    "status": "COMPLETE",
+    "passed": 1,
+    "failed": 1,
+    "skipped": 0,
+    "proof": [
+      "AUDIT_ISOLATION_PROOF {\"suite\":\"seq282-catalog-archive-postgres.test.mts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"87548deb4d272d32d57259a38a7aae7a20db7e277b95c46facb666a9df8c0282\",\"networkNamespace\":\"net:[4026532272]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_MIGRATIONS_PASS count=28",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "# CATALOG_ARCHIVE_OBSERVATION {\"scenario\":\"successful-archive\",\"historyUnchanged\":true,\"archivedRowRetained\":true,\"hiddenAfterRebuild\":true}",
+      "# CATALOG_ARCHIVE_OBSERVATION {\"scenario\":\"marker-fault\",\"requestRejected\":true,\"beforeVersion\":2,\"afterVersion\":3,\"nameChanged\":true,\"visibleVariantCount\":1,\"variantQuantity\":0,\"archiveMarked\":false,\"historyUnchanged\":true}",
+      "CATALOG_ARCHIVE_SUITE_RESULT {\"file\":\"seq282-catalog-archive-postgres.test.mts\",\"runtime\":\"v24.21.0\",\"exit\":1,\"summaryComplete\":true,\"passed\":1,\"failed\":1,\"skipped\":0,\"cleanup\":true}"
+    ],
+    "ownedCleanup": "SUCCESS",
+    "limitations": "Injected SQL marker fault on owned synthetic DB. Not a claim that this fault has happened on hosted database."
+  }
+}

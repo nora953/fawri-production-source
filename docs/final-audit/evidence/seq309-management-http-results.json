@@ -1,0 +1,246 @@
+{
+  "initial": {
+    "source": "3a9e23b26887276def1fe815c4d2c643f88939c9",
+    "run": 38444329802,
+    "job": 115458651247,
+    "status": "AUDIT_FIXTURE_AUTH_BLOCKED",
+    "businessCasesExecuted": 0,
+    "parentTap": {
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    "reason": "AUTH_POSTGRES_OWNER_DEVICE_REQUIRED at owner session issuance",
+    "proof": [
+      "AUDIT_ISOLATION_PROOF {\"suite\":\"seq306-management-http-postgres.test.mts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"2f5d671edb36e67fec7960caf97f2cc5821337871364519871b16dbea7fba3f9\",\"networkNamespace\":\"net:[4026532273]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_MIGRATIONS_PASS count=28",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "MANAGEMENT_HTTP_SUITE_RESULT {\"file\":\"seq306-management-http-postgres.test.mts\",\"runtime\":\"v24.21.0\",\"exit\":1,\"summaryComplete\":true,\"passed\":0,\"failed\":1,\"skipped\":0,\"cleanup\":true}"
+    ],
+    "ownedCleanup": "SUCCESS"
+  },
+  "corrected": {
+    "source": "cc27ff5aef9d2e8e9347c0604e53efa23d2c19a7",
+    "run": 38444767251,
+    "job": 115460157268,
+    "status": "COMPLETE",
+    "businessCases": {
+      "passed": 15,
+      "failed": 0,
+      "notRun": 0
+    },
+    "rawTap": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "parentCases": 1
+    },
+    "observations": {
+      "cases": 15,
+      "results": [
+        {
+          "name": "unauthenticated management read is denied",
+          "status": "PASS",
+          "details": {
+            "status": 401
+          }
+        },
+        {
+          "name": "assistant permission matrix restricts read and allows granted list",
+          "status": "PASS",
+          "details": {
+            "ungranted": 403,
+            "granted": 200
+          }
+        },
+        {
+          "name": "granted assistant approves merchant authoritatively",
+          "status": "PASS",
+          "details": {
+            "status": 200
+          }
+        },
+        {
+          "name": "note and channel override write to SQL without legacy JSON",
+          "status": "PASS",
+          "details": {
+            "noteRows": 1,
+            "overrideRows": 1
+          }
+        },
+        {
+          "name": "assistant suspension revokes merchant HTTP session and pauses subscription",
+          "status": "PASS",
+          "details": {
+            "revokedSession": true,
+            "merchantHTTP": 401
+          }
+        },
+        {
+          "name": "assistant creates one deletion request and duplicate is denied",
+          "status": "PASS",
+          "details": {
+            "created": 201,
+            "duplicate": 409
+          }
+        },
+        {
+          "name": "assistant cannot review owner deletion request",
+          "status": "PASS",
+          "details": {
+            "status": 403,
+            "pending": true
+          }
+        },
+        {
+          "name": "owner rejects first review and a new request is allowed",
+          "status": "PASS",
+          "details": {
+            "rejected": true,
+            "newCreated": true
+          }
+        },
+        {
+          "name": "assistant cannot spoof owner body to complete deletion",
+          "status": "PASS",
+          "details": {
+            "status": 403
+          }
+        },
+        {
+          "name": "owner incorrect password cannot complete deletion",
+          "status": "PASS",
+          "details": {
+            "status": 401,
+            "pending": true
+          }
+        },
+        {
+          "name": "owner complete deletion anonymizes fixture and removes its operational rows",
+          "status": "PASS",
+          "details": {
+            "closed": true,
+            "anonymized": true,
+            "operationalRowsGone": true,
+            "subscriptionRetained": true,
+            "auditRows": 1
+          }
+        },
+        {
+          "name": "assistant cannot invoke owner session revocation",
+          "status": "PASS",
+          "details": {
+            "status": 403
+          }
+        },
+        {
+          "name": "owner cannot revoke another account session under assistant target",
+          "status": "PASS",
+          "details": {
+            "status": 404,
+            "ownerSessionActive": true
+          }
+        },
+        {
+          "name": "owner incorrect password cannot revoke assistant session",
+          "status": "PASS",
+          "details": {
+            "status": 401,
+            "assistantSessionActive": true
+          }
+        },
+        {
+          "name": "owner valid revoke invalidates assistant cookie at real HTTP middleware",
+          "status": "PASS",
+          "details": {
+            "revoked": true,
+            "assistantHTTP": 401
+          }
+        }
+      ],
+      "noLegacyJSON": true
+    },
+    "proof": [
+      "AUDIT_ISOLATION_PROOF {\"suite\":\"seq306-management-http-postgres.test.mts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"69ab31df53dcea9887bff0f6525edd4322433382fa795656a2648b8ff1ff20c5\",\"networkNamespace\":\"net:[4026532273]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_MIGRATIONS_PASS count=28",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "MANAGEMENT_HTTP_SUITE_RESULT {\"file\":\"seq306-management-http-postgres.test.mts\",\"runtime\":\"v24.21.0\",\"exit\":0,\"summaryComplete\":true,\"passed\":16,\"failed\":0,\"skipped\":0,\"cleanup\":true}"
+    ],
+    "jobSteps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1
+      },
+      {
+        "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2
+      },
+      {
+        "name": "Run corepack enable",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3
+      },
+      {
+        "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4
+      },
+      {
+        "name": "Install frozen dependencies without lifecycle scripts",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5
+      },
+      {
+        "name": "Check audit execution syntax",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6
+      },
+      {
+        "name": "Execute actual management-http management and owner session boundaries assertions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7
+      },
+      {
+        "name": "Destroy owned containers and anonymous volumes even on failure",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 8
+      },
+      {
+        "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 15
+      },
+      {
+        "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 16
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 17
+      }
+    ],
+    "ownedCleanup": "SUCCESS"
+  },
+  "limitations": "Actual aggregate Authv2 router/HTTP/SQL on owned superuser cluster with seeded trusted devices; no interactive deviceOTP/provider credentials/production RLS/fullApp/nativeUI clearance."
+}

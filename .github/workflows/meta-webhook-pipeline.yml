@@ -137,7 +137,7 @@ jobs:
           artifacts/api-server/tests/meta-webhook-operational-cutoff.test.ts
           artifacts/api-server/tests/manual-conversation-runtime.test.ts
 
-      - name: Test Meta audio understanding and PostgreSQL reply integration
+      - name: Test Meta audio understanding and provider wiring
         run: >-
           pnpm exec tsx --test
           artifacts/api-server/tests/meta-inbound-message.test.ts
@@ -146,7 +146,9 @@ jobs:
           artifacts/api-server/tests/meta-audio-understanding-service.test.ts
           artifacts/api-server/tests/meta-audio-understanding-runtime.test.ts
           artifacts/api-server/tests/production-runtime-provider-wiring.test.ts
-          artifacts/api-server/tests/meta-live-reply-postgres.integration.test.ts
+
+      - name: Prove PostgreSQL Meta replies and knowledge lifecycle in an owned offline cluster
+        run: bash scripts/run-isolated-postgres-audit.sh meta-bot
 
       - name: Test Meta video understanding
         run: >-

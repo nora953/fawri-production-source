@@ -1,0 +1,173 @@
+{
+  "initial": {
+    "source": "e412b4ed8e40e73048ae758a0b3c37cb3821eb1c",
+    "run": 38484571902,
+    "job": 115595011417,
+    "status": "PARTIAL_WITH_AUDIT_ENDPOINT_EXPECTATION_FAILURE",
+    "businessCases": {
+      "passed": 6,
+      "fixtureFailed": 1,
+      "notRun": 3
+    },
+    "rawTap": {
+      "passed": 6,
+      "failed": 2,
+      "skipped": 0,
+      "parentFailed": 1
+    },
+    "reason": "Case7 admin cookie queried merchant /me and incorrectly expected200; actual route requires merchant session. Corrected audit-only to /admin/me.",
+    "proof": [
+      "AUDIT_ISOLATION_PROOF {\"suite\":\"seq312-device-http-postgres.test.mts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"aecca2b1411e5aa44fd038bef117a8420c22059df3a69a37038b00b5f4e7df4c\",\"networkNamespace\":\"net:[4026532319]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_MIGRATIONS_PASS count=28",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DEVICE_HTTP_SUITE_RESULT {\"file\":\"seq312-device-http-postgres.test.mts\",\"runtime\":\"v24.21.0\",\"exit\":1,\"summaryComplete\":true,\"passed\":6,\"failed\":2,\"skipped\":0,\"cleanup\":true}"
+    ],
+    "ownedCleanup": "SUCCESS"
+  },
+  "remaining": {
+    "source": "65bd43a462b8f46271ee39b9bad3e08c770f4a26",
+    "run": 38484821000,
+    "job": 115595809185,
+    "status": "COMPLETE",
+    "businessCases": {
+      "passed": 4,
+      "failed": 0,
+      "notRun": 0
+    },
+    "rawTap": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "parentPassed": 1
+    },
+    "observations": {
+      "cases": 4,
+      "results": [
+        {
+          "name": "permission removal revokes live device session and fresh cookie lacks access",
+          "status": "PASS",
+          "details": {
+            "oldHTTP": 401,
+            "newRestrictedHTTP": 403,
+            "newIdentityHTTP": 200
+          }
+        },
+        {
+          "name": "invalid enabled value cannot mutate profile or revoke session",
+          "status": "PASS",
+          "details": {
+            "status": 400,
+            "enabled": true,
+            "sessionActive": true
+          }
+        },
+        {
+          "name": "disable revokes current cookie and blocks profile access",
+          "status": "PASS",
+          "details": {
+            "disabled": true,
+            "revoked": true,
+            "identityHTTP": 401
+          }
+        },
+        {
+          "name": "reenable permits fresh session without reviving revoked cookies",
+          "status": "PASS",
+          "details": {
+            "oldCookiesHTTP": 401,
+            "freshIdentityHTTP": 200,
+            "freshPermissionsHTTP": 403
+          }
+        }
+      ],
+      "noLegacyJSON": true
+    },
+    "proof": [
+      "AUDIT_ISOLATION_PROOF {\"suite\":\"seq312-device-http-postgres.test.mts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"3eeb266741a7e2db3993c492ea029c5fb8c6ca6c068f6907d65b32dd43ded200\",\"networkNamespace\":\"net:[4026532366]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DISPOSABLE_MIGRATIONS_PASS count=28",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+      "DEVICE_HTTP_SUITE_RESULT {\"file\":\"seq312-device-http-postgres.test.mts\",\"runtime\":\"v24.21.0\",\"exit\":0,\"summaryComplete\":true,\"passed\":5,\"failed\":0,\"skipped\":0,\"cleanup\":true}"
+    ],
+    "ownedCleanup": "SUCCESS",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1
+      },
+      {
+        "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2
+      },
+      {
+        "name": "Run corepack enable",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3
+      },
+      {
+        "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4
+      },
+      {
+        "name": "Install frozen dependencies without lifecycle scripts",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5
+      },
+      {
+        "name": "Check audit execution syntax",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6
+      },
+      {
+        "name": "Execute actual device-http device trust and live permission boundaries assertions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7
+      },
+      {
+        "name": "Destroy owned containers and anonymous volumes even on failure",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 8
+      },
+      {
+        "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 15
+      },
+      {
+        "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 16
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 17
+      }
+    ]
+  },
+  "distinctFinal": {
+    "passed": 10,
+    "applicationFailed": 0,
+    "notRun": 0
+  },
+  "limits": "Six initial cases not rerun. Fresh disposable remaining fixture recreates required second-device and revoked first-device state with actual services; these prerequisites are not counted. Initial failed case is superseded by corrected remaining case, not counted as new application finding."
+}

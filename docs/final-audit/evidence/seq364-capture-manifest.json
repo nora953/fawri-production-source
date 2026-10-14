@@ -1,0 +1,42 @@
+{
+  "head": "bbb419bd3e4a094f2afcdbbda7780e810ac801a3",
+  "mergeCheckout": "3761b6aad070bf14e655e18839b719d49f9ae03e",
+  "run": 38498978000,
+  "job": 115641143612,
+  "artifact": {
+    "id": 11865385760,
+    "digest": "sha256:9da09c766d75bcd0d4a04c11dd2b38eb6ac9ea9ac74cc214ede70a755a8232f5",
+    "expires": "2026-11-13T02:04:22Z"
+  },
+  "visualReview": "4before/after nativecaptures inspected; test-onlycatalogstylesheetdisable restores40pxbadge and titlewidth; no applicationrepair",
+  "captures": [
+    {
+      "path": "docs/final-audit/evidence/seq364-captures/UID-010-CSS-ku-1280-after.png",
+      "sha256": "5f72ba28872994a9e77058422d8909f626496514062ad499474fd19f1e039386",
+      "gitBlob": "188ce60f4f4bf416cf9eb9e4f8bef41a66c14d3b",
+      "width": 1280,
+      "height": 844
+    },
+    {
+      "path": "docs/final-audit/evidence/seq364-captures/UID-010-CSS-ku-1280.png",
+      "sha256": "63bee65ecdf33eeb93b3e0d5c783ba9819d466f751130575262b3c8de15c8c3e",
+      "gitBlob": "d512c9f9c987095b3d93a9d60a4e1945c445dc1a",
+      "width": 1280,
+      "height": 844
+    },
+    {
+      "path": "docs/final-audit/evidence/seq364-captures/UID-011-CSS-ku-1280-after.png",
+      "sha256": "b2570056913408ba06790698bf0441ef99819423ffa84e49d829e4c7c841054e",
+      "gitBlob": "e71a89b0be7e6de42f4411ea6c324c64d0480835",
+      "width": 1280,
+      "height": 844
+    },
+    {
+      "path": "docs/final-audit/evidence/seq364-captures/UID-011-CSS-ku-1280.png",
+      "sha256": "de2d487707cfd4e3304013dc764f92c7af39ffb0f490163fd47317c1470b2081",
+      "gitBlob": "86a75033113c2d9057455658fb6d0f875cbc67b0",
+      "width": 1280,
+      "height": 844
+    }
+  ]
+}

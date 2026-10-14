@@ -1,0 +1,106 @@
+TAP version 13
+# (node:12) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: SEQ267 valid preview commits viewed-section update and releases once
+ok 1 - SEQ267 valid preview commits viewed-section update and releases once
+  ---
+  duration_ms: 4.129263
+  type: 'test'
+  ...
+# Subtest: SEQ267 deliberately unbound preview accepts same-admin caller without bound session
+ok 2 - SEQ267 deliberately unbound preview accepts same-admin caller without bound session
+  ---
+  duration_ms: 3.233186
+  type: 'test'
+  ...
+# Subtest: SEQ267 missing denied before update
+ok 3 - SEQ267 missing denied before update
+  ---
+  duration_ms: 1.912619
+  type: 'test'
+  ...
+# Subtest: SEQ267 foreign-admin denied before update
+ok 4 - SEQ267 foreign-admin denied before update
+  ---
+  duration_ms: 0.876723
+  type: 'test'
+  ...
+# Subtest: SEQ267 foreign-session denied before update
+ok 5 - SEQ267 foreign-session denied before update
+  ---
+  duration_ms: 2.125445
+  type: 'test'
+  ...
+# Subtest: SEQ267 ended denied before update
+ok 6 - SEQ267 ended denied before update
+  ---
+  duration_ms: 0.8329
+  type: 'test'
+  ...
+# Subtest: SEQ268 observation: omitted caller session passes persisted nonempty session binding
+ok 7 - SEQ268 observation: omitted caller session passes persisted nonempty session binding
+  ---
+  duration_ms: 0.886997
+  type: 'test'
+  ...
+# Subtest: SEQ268 acceptance: persisted binding requires nonempty caller session
+not ok 8 - SEQ268 acceptance: persisted binding requires nonempty caller session
+  ---
+  duration_ms: 1.626192
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq266/docs/final-audit/evidence/seq267-270-preview-transactions.test.mjs:45:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'SUPPORT_PREVIEW_SESSION_MISMATCH'
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq266/docs/final-audit/evidence/seq267-270-preview-transactions.test.mjs:46:20)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ269 observation: expired validation denies access but rolls back ended marker
+ok 9 - SEQ269 observation: expired validation denies access but rolls back ended marker
+  ---
+  duration_ms: 1.146472
+  type: 'test'
+  ...
+# Subtest: SEQ269 acceptance: expired session termination survives failed validation
+not ok 10 - SEQ269 acceptance: expired session termination survives failed validation
+  ---
+  duration_ms: 1.380363
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq266/docs/final-audit/evidence/seq267-270-preview-transactions.test.mjs:51:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001: expiry UPDATE undone by rejection
+    
+    'active' !== 'ended'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'ended'
+  actual: 'active'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq266/docs/final-audit/evidence/seq267-270-preview-transactions.test.mjs:52:182)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ270 commit failure rolls viewed-section adapter state back and releases
+ok 11 - SEQ270 commit failure rolls viewed-section adapter state back and releases
+  ---
+  duration_ms: 1.169639
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 9
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 206.748781

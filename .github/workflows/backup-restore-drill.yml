@@ -79,7 +79,7 @@ jobs:
           POSTGRES_PASSWORD: fawri_ci
           POSTGRES_DB: fawri_backup_source
         ports:
-          - 5432:5432
+          - 127.0.0.1:5432:5432
         options: >-
           --health-cmd "pg_isready -U fawri_ci -d fawri_backup_source"
           --health-interval 5s
@@ -110,6 +110,23 @@ jobs:
           scripts/backup-postgresql.test.mjs
           scripts/restore-postgresql.test.mjs
           scripts/backup-object-storage.test.mjs
+
+      - name: Verify workflow-owned fresh service before database writes
+        env:
+          DRILL_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          test "$(docker inspect -f '{{.Config.Image}}' "$DRILL_CONTAINER_ID")" = postgres:16-alpine
+          test "$(docker inspect -f '{{.State.Running}}' "$DRILL_CONTAINER_ID")" = true
+          docker inspect -f '{{json .NetworkSettings.Ports}}' "$DRILL_CONTAINER_ID" > "$RUNNER_TEMP/drill-ports.json"
+          node - "$RUNNER_TEMP/drill-ports.json" <<'NODE'
+          const fs = require('node:fs');
+          const ports = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          const target = ports['5432/tcp'];
+          if (target?.length !== 1 || target[0].HostIp !== '127.0.0.1' || target[0].HostPort !== '5432') throw new Error('restore drill must use workflow-owned loopback service');
+          console.log('RESTORE_SERVICE_OWNERSHIP_PASS');
+          NODE
+          test "$(psql "$SOURCE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select current_database() = 'fawri_backup_source' and current_user = 'fawri_ci' and (select count(*) from pg_tables where schemaname = 'public') = 0")" = t
+          echo 'RESTORE_FRESH_DATABASE_PASS'
 
       - name: Create disposable PostgreSQL source and restore targets
         run: |
@@ -243,9 +260,11 @@ jobs:
       - name: Cleanup disposable drill state
         if: always()
         run: |
-          psql "postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 <<'SQL' || true
+          drill_cleanup_status=0
+          psql "postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 <<'SQL' || drill_cleanup_status=1
           drop database if exists fawri_restore_target with (force);
           drop database if exists fawri_backup_source with (force);
           SQL
-          rm -rf "$RUNNER_TEMP/fawri-backup-drill" "$RUNNER_TEMP/fawri-object-drill" restore-drill-artifact
+          rm -rf "$RUNNER_TEMP/fawri-backup-drill" "$RUNNER_TEMP/fawri-object-drill" restore-drill-artifact || drill_cleanup_status=1
+          test "$drill_cleanup_status" = 0
           echo "Disposable backup/restore drill state cleaned up"

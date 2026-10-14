@@ -1,0 +1,72 @@
+TAP version 13
+# (node:12) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: SEQ279 pending consent approve commits matching tenant
+ok 1 - SEQ279 pending consent approve commits matching tenant
+  ---
+  duration_ms: 5.231296
+  type: 'test'
+  ...
+# Subtest: SEQ279 pending consent reject commits matching tenant
+ok 2 - SEQ279 pending consent reject commits matching tenant
+  ---
+  duration_ms: 3.641304
+  type: 'test'
+  ...
+# Subtest: SEQ279 invalid decision rejects before database
+ok 3 - SEQ279 invalid decision rejects before database
+  ---
+  duration_ms: 2.116074
+  type: 'test'
+  ...
+# Subtest: SEQ279 foreign merchant cannot decide request
+ok 4 - SEQ279 foreign merchant cannot decide request
+  ---
+  duration_ms: 2.260218
+  type: 'test'
+  ...
+# Subtest: SEQ279 already decided request rejects without overwrite
+ok 5 - SEQ279 already decided request rejects without overwrite
+  ---
+  duration_ms: 1.333514
+  type: 'test'
+  ...
+# Subtest: SEQ279 observation: expired consent denies and rolls back expired marker
+ok 6 - SEQ279 observation: expired consent denies and rolls back expired marker
+  ---
+  duration_ms: 1.182097
+  type: 'test'
+  ...
+# Subtest: SEQ279 acceptance: expired consent marker survives denial
+not ok 7 - SEQ279 acceptance: expired consent marker survives denial
+  ---
+  duration_ms: 2.871569
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq274/docs/final-audit/evidence/seq279-consent-transactions.test.mjs:46:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    existing SUPPORT-PREVIEW-EXPIRY-ROLLBACK-001 also affects canonical consent expiry
+    + actual - expected
+
+    + 'pending'
+    - 'expired'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'expired'
+  actual: 'pending'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq274/docs/final-audit/evidence/seq279-consent-transactions.test.mjs:47:154)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 197.731682

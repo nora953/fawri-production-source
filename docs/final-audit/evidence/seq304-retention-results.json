@@ -1,0 +1,91 @@
+{
+  "source": "29be3ed302f1d307129a3999b1e978f8fb20ee19",
+  "run": 38442860689,
+  "job": 115453629407,
+  "runtime": "v24.21.0",
+  "passed": 8,
+  "failed": 0,
+  "skipped": 0,
+  "proof": [
+    "AUDIT_ISOLATION_PROOF {\"suite\":\"seq302-retention-postgres.test.mts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"3de75c8538adf3117c2c1d32f06dad6eae740a1e9b949a0529d2fb582f11cb0d\",\"networkNamespace\":\"net:[4026532273]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+    "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "DISPOSABLE_MIGRATIONS_PASS count=28",
+    "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "# RETENTION_OBSERVATION {\"scenario\":\"suspend-repeat\",\"revokedSessions\":1,\"versionsIncrementOnce\":true,\"otherTenantUnchanged\":true}",
+    "# RETENTION_OBSERVATION {\"scenario\":\"revocation-fault\",\"requestRejected\":true,\"allSelectedLifecycleStateUnchanged\":true}",
+    "# RETENTION_OBSERVATION {\"scenario\":\"concurrent-deletion-request\",\"pendingRequests\":1,\"auditRows\":1,\"duplicateRejected\":true}",
+    "RETENTION_SUITE_RESULT {\"file\":\"seq302-retention-postgres.test.mts\",\"runtime\":\"v24.21.0\",\"exit\":0,\"summaryComplete\":true,\"passed\":8,\"failed\":0,\"skipped\":0,\"cleanup\":true}"
+  ],
+  "jobSteps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+    },
+    {
+      "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+    },
+    {
+      "name": "Run corepack enable",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+    },
+    {
+      "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+    },
+    {
+      "name": "Install frozen dependencies without lifecycle scripts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+    },
+    {
+      "name": "Check audit execution syntax",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+    },
+    {
+      "name": "Execute actual retention suspension renewal and rollback assertions",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7
+    },
+    {
+      "name": "Destroy owned containers and anonymous volumes even on failure",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8
+    },
+    {
+      "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 15
+    },
+    {
+      "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 16
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 17
+    }
+  ],
+  "ownedCleanup": "SUCCESS",
+  "limitations": "Actual owned service/SQL/Authv2 session issuance; not mounted HTTP/real owner or assistant authorization/least privilege RLS/purge/provider proof; original old-phone test unchanged."
+}

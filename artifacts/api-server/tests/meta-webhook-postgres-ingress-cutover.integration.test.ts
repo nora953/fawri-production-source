@@ -1,9 +1,13 @@
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+
+if (process.env.DATABASE_URL) await assertDisposablePostgres();
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
@@ -125,15 +129,13 @@ test(
     const pageId = `page-pg-ingress-${proof}`;
     let merchantId = "";
 
-    t.after(async () => {
-      if (merchantId) {
-        await pool
-          .query("DELETE FROM accounts WHERE id = $1", [merchantId])
-          .catch(() => undefined);
-      }
-      await pool.end();
-      fs.rmSync(dataDir, { recursive: true, force: true });
-    });
+    t.after(async () => cleanupResources([
+      ["fixture accounts", async () => {
+        if (merchantId) await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
+      }],
+      ["pool", () => pool.end()],
+      ["temporary directory", () => fs.rmSync(dataDir, { recursive: true, force: true })],
+    ]));
 
     const collision = await pool.query(
       "SELECT id FROM accounts WHERE phone = $1 LIMIT 1",

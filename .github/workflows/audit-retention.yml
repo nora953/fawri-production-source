@@ -1,0 +1,39 @@
+name: Merchant retention current-fixture PostgreSQL audit
+on:
+  pull_request:
+    paths:
+      - 'docs/final-audit/evidence/seq302-*'
+      - '.github/workflows/audit-retention.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: retention-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  retention-cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label residual-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Check audit execution syntax
+        run: |
+          node --check docs/final-audit/evidence/seq302-execute-retention.mjs
+          bash -n docs/final-audit/evidence/seq302-run-owned-retention.sh
+      - name: Execute actual retention suspension renewal and rollback assertions
+        run: bash docs/final-audit/evidence/seq302-run-owned-retention.sh seq302-retention-postgres.test.mts
+      - name: Destroy owned containers and anonymous volumes even on failure
+        if: always()
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi

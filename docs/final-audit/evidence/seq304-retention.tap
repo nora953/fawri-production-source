@@ -1,0 +1,63 @@
+TAP version 13
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# Subtest: warning2 persists read-only without suspending account
+ok 1 - warning2 persists read-only without suspending account
+  ---
+  duration_ms: 82.011662
+  type: 'test'
+  ...
+# RETENTION_OBSERVATION {"scenario":"suspend-repeat","revokedSessions":1,"versionsIncrementOnce":true,"otherTenantUnchanged":true}
+# Subtest: overdue suspension revokes sessions once and preserves other tenant
+ok 2 - overdue suspension revokes sessions once and preserves other tenant
+  ---
+  duration_ms: 105.907257
+  type: 'test'
+  ...
+# Subtest: renewal restores retention suspension with 0 replies but never revives old session
+ok 3 - renewal restores retention suspension with 0 replies but never revives old session
+  ---
+  duration_ms: 50.217625
+  type: 'test'
+  ...
+# Subtest: renewal restores retention suspension with 10 replies but never revives old session
+ok 4 - renewal restores retention suspension with 10 replies but never revives old session
+  ---
+  duration_ms: 50.794292
+  type: 'test'
+  ...
+# Subtest: administrative suspension stays suspended and current renewal blocks retention deletion
+ok 5 - administrative suspension stays suspended and current renewal blocks retention deletion
+  ---
+  duration_ms: 86.470195
+  type: 'test'
+  ...
+# Subtest: closed account cannot be revived by a future subscription
+ok 6 - closed account cannot be revived by a future subscription
+  ---
+  duration_ms: 43.013036
+  type: 'test'
+  ...
+# RETENTION_OBSERVATION {"scenario":"revocation-fault","requestRejected":true,"allSelectedLifecycleStateUnchanged":true}
+# Subtest: SQL session-revocation fault rolls back all suspension changes
+ok 7 - SQL session-revocation fault rolls back all suspension changes
+  ---
+  duration_ms: 51.702154
+  type: 'test'
+  ...
+# RETENTION_OBSERVATION {"scenario":"concurrent-deletion-request","pendingRequests":1,"auditRows":1,"duplicateRejected":true}
+# Subtest: concurrent deletion requests create one pending request and one audit row
+ok 8 - concurrent deletion requests create one pending request and one audit row
+  ---
+  duration_ms: 96.278426
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1657.255167

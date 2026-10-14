@@ -1,21 +1,12 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import test from "node:test";
+import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
-if (DATABASE_URL) {
-  const parsed = new URL(DATABASE_URL);
-  assert.ok(
-    parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost",
-    "cashier subscription regression only permits local PostgreSQL",
-  );
-  assert.equal(
-    parsed.pathname.replace(/^\//, ""),
-    "fawri_ci",
-    "cashier subscription regression only permits the fawri_ci database",
-  );
-}
+if (DATABASE_URL) await assertDisposablePostgres();
 
 function randomPhone(): string {
   return `+9647${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
@@ -54,14 +45,10 @@ test(
 
     const merchantIds: string[] = [];
 
-    t.after(async () => {
-      for (const merchantId of merchantIds) {
-        await pool
-          .query("DELETE FROM accounts WHERE id = $1", [merchantId])
-          .catch(() => undefined);
-      }
-      await pool.end();
-    });
+    t.after(async () => cleanupResources([
+      ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id = ANY($1::text[])', [merchantIds])],
+      ['pool', () => pool.end()],
+    ]));
 
     async function createMerchant(label: string) {
       const id = suffix();
@@ -147,6 +134,9 @@ test(
         error.code === "CASHIER_LICENSED_SEAT_LIMIT_REACHED",
     );
 
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM merchant_cashier_stations WHERE merchant_id=$1', [noCashierMerchant])).rows[0].count, 0, 'unlicensed create must roll back station insert');
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM merchant_cashier_stations WHERE merchant_id=$1', [cashierOnlyMerchant])).rows[0].count, 1, 'exhausted seat must not leave orphan station');
+
     // Upgrade authority to two seats, leaving exactly one unassigned seat.
     await pool.query(
       `UPDATE merchant_cashier_subscriptions
@@ -186,6 +176,11 @@ test(
       [cashierOnlyMerchant],
     );
     assert.equal(Number(assignmentCount.rows[0].count), 2);
+
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM merchant_cashier_stations WHERE merchant_id=$1', [cashierOnlyMerchant])).rows[0].count, 2, 'losing concurrent creation must roll back station insert');
+    const rejection = concurrent.find(result => result.status === 'rejected');
+    assert.ok(rejection && rejection.status === 'rejected');
+    assert.equal(rejection.reason.code, 'CASHIER_LICENSED_SEAT_LIMIT_REACHED');
 
     // A different merchant cannot reuse another tenant's station/seat.
     await activateCashier(otherMerchant, 1);

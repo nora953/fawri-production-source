@@ -45,6 +45,10 @@ function assertDisposableRestoreUrl(rawUrl) {
   if (!new Set(["postgres:", "postgresql:"]).has(parsed.protocol)) {
     throw new Error("Disposable PostgreSQL restore URL must use PostgreSQL");
   }
+  // libpq URL parameters can override the hostname validated below.
+  if (parsed.search || parsed.hash) {
+    throw new Error("Disposable PostgreSQL URL options are forbidden");
+  }
   if (!SAFE_LOCAL_HOSTS.has(parsed.hostname)) {
     throw new Error("PostgreSQL restore target must be loopback-only and disposable");
   }
@@ -56,8 +60,10 @@ function assertDisposableRestoreUrl(rawUrl) {
 
 function assertSafeVerificationSql(sql) {
   const normalized = String(sql).trim();
-  if (!/^select\b/i.test(normalized) || /;|--|\/\*/.test(normalized)) {
-    throw new Error("Restore verification SQL must be one read-only SELECT without comments or statement separators");
+  // A SELECT prefix alone allows writable functions and SELECT INTO. The
+  // disposable drill needs only a row count, so permit that narrow grammar.
+  if (!/^select\s+count\s*\(\s*\*\s*\)\s+from\s+(?:[a-z_][a-z0-9_]*\.)?[a-z_][a-z0-9_]*$/i.test(normalized)) {
+    throw new Error("Restore verification SQL must be one read-only SELECT count(*) from an unquoted table identifier");
   }
 }
 
@@ -69,6 +75,8 @@ function run(command, args, capture = false) {
   const result = spawnSync(command, args, {
     stdio: ["ignore", "pipe", "pipe"],
     encoding: "utf8",
+    // PGHOSTADDR/PGSERVICE/PGOPTIONS must not override the disposable URL.
+    env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))),
   });
   if (result.error) throw new Error(`${command} could not start: ${redact(result.error.message)}`);
   if (result.status !== 0) {

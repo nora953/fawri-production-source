@@ -37,7 +37,7 @@ async function seedMerchant(): Promise<void> {
     `INSERT INTO accounts (
        id, kind, phone, password_hash, state, language, phone_verified,
        password_version, security_version, session_version, created_at, updated_at
-     ) VALUES ($1, 'merchant', '07700000991', 'test-only-hash', 'active', 'ar', TRUE, 1, 1, 1, NOW(), NOW())`,
+     ) VALUES ($1, 'merchant', '+9647700000991', 'test-only-hash', 'active', 'ar', TRUE, 1, 1, 1, NOW(), NOW())`,
     [merchantId],
   );
   await pool.query(

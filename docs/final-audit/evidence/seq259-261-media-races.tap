@@ -1,0 +1,58 @@
+TAP version 13
+# (node:23) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: SEQ259 single precommit deletion failure removes own prepared manifest without storage operations
+ok 1 - SEQ259 single precommit deletion failure removes own prepared manifest without storage operations
+  ---
+  duration_ms: 4.990975
+  type: 'test'
+  ...
+# Subtest: SEQ260 observation: losing concurrent deletion unlinks successful attempt pending recovery
+ok 2 - SEQ260 observation: losing concurrent deletion unlinks successful attempt pending recovery
+  ---
+  duration_ms: 2.95407
+  type: 'test'
+  ...
+# Subtest: SEQ260 acceptance: rollback of concurrent loser preserves winner durable pending cleanup
+not ok 3 - SEQ260 acceptance: rollback of concurrent loser preserves winner durable pending cleanup
+  ---
+  duration_ms: 3.094316
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-seq258/docs/final-audit/evidence/seq259-261-media-races.test.mjs:44:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    MEDIA-CLEANUP-CONCURRENT-UNLINK-001: loser removes winner recovery intent
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-seq258/docs/final-audit/evidence/seq259-261-media-races.test.mjs:45:40)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ261 observation: late failed retry overwrites newer completed cleanup
+ok 4 - SEQ261 observation: late failed retry overwrites newer completed cleanup
+  ---
+  duration_ms: 2.77839
+  type: 'test'
+  ...
+# Subtest: SEQ261 repeated idempotent retry recovers reopened pending state
+ok 5 - SEQ261 repeated idempotent retry recovers reopened pending state
+  ---
+  duration_ms: 2.77121
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 143.374758

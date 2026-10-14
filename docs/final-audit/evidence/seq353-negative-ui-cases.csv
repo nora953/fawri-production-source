@@ -1,0 +1,19 @@
+case_id,scope,status,evidence,baseline_credit
+UIN-OTP-MISSING-ar-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-OTP-MISSING-ar-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-OTP-MISSING-en-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-OTP-MISSING-en-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-OTP-MISSING-ku-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-OTP-MISSING-ku-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-PENDING-503-ar-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-PENDING-503-ar-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-PENDING-503-en-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-PENDING-503-en-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-PENDING-503-ku-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-PENDING-503-ku-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-RECOVERY-REJECT-ar-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-RECOVERY-REJECT-ar-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-RECOVERY-REJECT-en-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-RECOVERY-REJECT-en-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-RECOVERY-REJECT-ku-390,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
+UIN-RECOVERY-REJECT-ku-1280,extra fullApp negative state outside222defaultbaseline,PASS,seq351-full-negative-route-results.json,0
