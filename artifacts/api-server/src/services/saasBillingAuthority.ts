@@ -862,6 +862,14 @@ export async function applyVerifiedSaasBillingProviderEvent(
         409,
       );
     }
+    // An already-settled payment is immutable: a later mismatched event must
+    // never demote it to reconciliation or overwrite its provider payment ref.
+    if (order.status === "paid" || order.status === "refunded") {
+      if (input.amountIqd !== order.amount_iqd ||
+          (order.provider_payment_ref && order.provider_payment_ref !== paymentRef)) {
+        fail("SAAS_BILLING_TERMINAL_CONFLICT", "settled billing order cannot be changed by a conflicting payment event", 409);
+      }
+    }
     if (input.amountIqd !== order.amount_iqd) {
       await client.query(
         `UPDATE saas_billing_orders
