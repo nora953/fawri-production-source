@@ -1,5 +1,14 @@
 # Current evidence inventory — baseline 7e0da5eb, SEQ-224
 
+## Authoritative continuation — SEQ-336–341 (2026-10-14 Baghdad)
+
+Latest [SEQ-336–341](SEQ_336_341_FULL_ENTRY_ROUTES_20261014.md). **Next SEQ-342**. Sixsequentialstages/auditonly; application/originaltests/schemaunchanged.
+
+FullactualVite main/App/router/providers/landing/login/signup onChrome154: head925abe7ca26d2d1b536a3b579d27f7fadc99036d/merge1cb7742870daab9d788697f3b0c2cd8b10bddf7d, run38491939756/job115618926761. **18newdistinctPASS/0FAIL** xAR/EN/KU x390/1280. Exacttitle/direction/overflow/CTA/formstructure/passwordinputtypes/empty-signupdisabled/scrollsubmit/destinationpath+exacttitle;0API/0runtimeexceptions.30captures reviewed+persisted (18initial+12submitviews, not30cases). No newcanonicalfinding; metadata/priorissuesremainOPEN.
+
+Currentseq341CSV:222baselinecases,36PASS_BOUNDED_FULL_APP/186NOT_RUN. Prior18notrerun. Fallbackfonts/guestonly; submittedcredentials/OTP/provider/backend/allbelowfold/fulltranslation/accessibility notcertified.21selectors unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED. NextOTP/pending/recoveryfixture applicability/authenticatedroles.
+
+
 ## Authoritative continuation — SEQ-330–335 (2026-10-14 Baghdad)
 
 Latest [SEQ-330–335](SEQ_330_335_FULL_PUBLIC_ROUTES_20261014.md). **Next SEQ-336**. Six sequentialstages/auditonly; application/originaltests/schema unchanged.
