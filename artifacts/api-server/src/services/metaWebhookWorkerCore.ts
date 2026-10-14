@@ -63,7 +63,8 @@ function validateJob(job: DurableJob): {
   const eventId = text(payload.event_id);
   const merchantId = text(payload.merchant_id || job.merchant_id);
   const externalMessageId = text(payload.external_message_id);
-  if (!eventId || !merchantId || !externalMessageId) {
+  if (!eventId || !merchantId || !externalMessageId ||
+      (text(job.merchant_id) && merchantId !== text(job.merchant_id))) {
     throw jobError(
       "META_JOB_PAYLOAD_INVALID",
       "Meta job identity is invalid",
@@ -150,6 +151,8 @@ async function releaseAndSuppress(input: {
   const released = await releaseMerchantAutoReplyReservationAuthoritative(
     input.eventId,
     input.code,
+    new Date(),
+    input.merchantId,
   );
   if (
     !released.released &&

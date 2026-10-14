@@ -925,15 +925,25 @@ export async function restoreMerchantAutoReplyPostgres(
   eventId: string,
   restore: ReplyRestoreKind,
   now: Date = new Date(),
+  expectedMerchantId?: string,
 ): Promise<ReplyRestoreResult> {
   const normalizedEventId = String(eventId || "").trim();
   if (!normalizedEventId) return { restored: false, reason: "event_id_missing" };
 
-  return withTransaction(async (client) => {
+  const scopedMerchantId = expectedMerchantId === undefined
+    ? null : requiredText(expectedMerchantId, 160);
+  const transaction = scopedMerchantId
+    ? <T>(work: (client: TransactionClient) => Promise<T>) =>
+        withMerchantSubscriptionTransaction(scopedMerchantId, work)
+    : withTransaction;
+  return transaction(async (client) => {
     await advisoryEventLock(client, normalizedEventId);
     const ledger = await readEventLedger(client, normalizedEventId);
     if (!ledger.debit) {
       return { restored: false, reason: "reservation_not_found" };
+    }
+    if (scopedMerchantId && ledger.debit.merchant_id !== scopedMerchantId) {
+      return { restored: false, reason: "reservation_identity_invalid" };
     }
     if (ledger.credit) {
       return {

@@ -15,11 +15,12 @@ const {pool}=await import('@workspace/db');
 const accounts=await import('../src/services/postgresMerchantAccountAuthority.ts');
 const settings=await import('../src/services/postgresMerchantSettingsAuthority.ts');
 const channels=await import('../src/services/postgresMetaChannelAuthority.ts');
+const entitlement=await import('../src/services/postgresSubscriptionEntitlement.ts');
 const {default:express}=await import('express');
 
 test('signed actual Meta app reaches original manual filter, tenant queue and live worker under restricted RLS',{timeout:120000},async t=>{
   const suffix=randomUUID().replaceAll('-',''),role=`meta_app_${suffix}`,marker=`meta-app-owned-${suffix}`;
-  const merchants=[],pages=[],tokens=[],sends=[];let child,graph,roleCreated=false;
+  const merchants=[],pages=[],tokens=[],sends=[],confirmedFailures=[];let child,graph,roleCreated=false;
   t.after(async()=>cleanupResources([
     ['owned child',async()=>{if(child&&child.exitCode===null){try{await command('stop');}finally{await stopTestChild(child);}}}],
     ['owned backends',()=>pool.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE application_name=$1 AND datname=current_database() AND pid<>pg_backend_pid()',[marker])],
@@ -45,6 +46,7 @@ test('signed actual Meta app reaches original manual filter, tenant queue and li
   const fake=express();fake.use(express.json());fake.post('/v22.0/:page/messages',(req,res)=>{
     const i=pages.indexOf(req.params.page);const valid=i>=0&&req.headers.authorization===`Bearer ${tokens[i]}`&&String(req.body.recipient?.id||'').startsWith('customer-meta-app-')&&/التوصيل|رسوم/.test(String(req.body.message?.text||''));
     if(!valid){res.status(400).json({error:{code:100}});return;}
+    if(req.body.recipient.id.includes('confirmed-failure')){confirmedFailures.push(req.body.recipient.id);res.status(400).json({error:{code:100}});return;}
     sends.push({page:i,recipient:req.body.recipient.id});res.json({recipient_id:req.body.recipient.id,message_id:`synthetic-provider-message-${sends.length}`});
   });
   graph=await new Promise((r,j)=>{const s=fake.listen(0,'127.0.0.1',()=>r(s));s.once('error',j);});
@@ -97,9 +99,45 @@ test('signed actual Meta app reaches original manual filter, tenant queue and li
     const result=await post(pages[1],'expired');assert.equal(result.status,200);assert.equal((await command('run')).ran,true);
     const job=(await jobs()).find(j=>j.dedupe_key===result.event);assert.equal(job.status,'completed');assert.equal(job.result.delivery_status,'suppressed');assert.equal(job.result.suppression_code,'MERCHANT_SUBSCRIPTION_EXPIRED');assert.equal(await debits(),2);assert.equal(sends.length,2);
   });
+  const credits=async()=>(await pool.query("SELECT count(*)::int AS n FROM reply_ledger WHERE merchant_id=ANY($1::text[]) AND direction='credit'",[merchants])).rows[0].n;
+  const balance=async()=>(await pool.query('SELECT base_replies_used,base_replies_remaining FROM subscriptions WHERE merchant_id=$1',[merchants[0]])).rows[0];
+  let refundedEvent,releasedEvent;
+  await t.test('actual live worker refunds confirmed provider failure once under restricted RLS',async()=>{
+    const result=await post(pages[0],'confirmed-failure');refundedEvent=result.event;assert.equal(result.status,200);
+    await pool.query('UPDATE background_jobs SET max_attempts=1 WHERE merchant_id=$1 AND dedupe_key=$2',[merchants[0],result.event]);
+    assert.equal((await command('run')).ran,true);
+    assert.equal(confirmedFailures.length,1);assert.equal(sends.length,2);assert.equal(await debits(),3);assert.equal(await credits(),0);
+    const wrong=await entitlement.restoreMerchantAutoReplyPostgres(result.event,{kind:'refund',reasonCode:'META_REPLY_FAILED'},new Date(),merchants[1]);
+    assert.deepEqual(wrong,{restored:false,reason:'reservation_identity_invalid'});assert.equal(await credits(),0);
+    const denied=await command('restore',{kind:'refund',event:result.event,merchant:merchants[1]});
+    assert.equal(denied.result.reason,'reservation_not_found');assert.equal(await credits(),0);
+    const pending=(await jobs()).find(j=>j.dedupe_key===`meta-refund:${result.event}`);assert.equal(pending.status,'queued');
+    assert.equal((await command('run')).ran,true);
+    assert.equal((await jobs()).find(j=>j.dedupe_key===`meta-refund:${result.event}`).result.refund_status,'refunded');
+    assert.equal(await credits(),1);assert.deepEqual(await balance(),{base_replies_used:1,base_replies_remaining:19});
+    const replay=await Promise.all([command('restore',{kind:'refund',event:result.event,merchant:merchants[0]}),command('restore',{kind:'refund',event:result.event,merchant:merchants[0]})]);
+    assert.ok(replay.every(r=>!r.result.refunded&&r.result.reason==='already_refunded'));assert.equal(await credits(),1);
+  });
+  await t.test('actual postreservation settings cutoff releases once without Graph send',async()=>{
+    const event=`meta:${pages[0]}:mid-meta-app-release-${suffix}`;releasedEvent=event;
+    assert.equal((await command('arm-release',{event})).armed,true);assert.equal((await post(pages[0],'release')).status,200);
+    assert.equal((await command('run')).ran,true);
+    const released=(await jobs()).find(j=>j.dedupe_key===event);assert.equal(released.status,'completed');assert.equal(released.result.delivery_status,'suppressed');
+    assert.equal(await debits(),4);assert.equal(await credits(),2);assert.equal(sends.length,2);assert.equal(confirmedFailures.length,1);
+    assert.deepEqual(await balance(),{base_replies_used:1,base_replies_remaining:19});
+    const replay=await Promise.all([command('restore',{kind:'release',event,merchant:merchants[0]}),command('restore',{kind:'release',event,merchant:merchants[0]})]);
+    assert.ok(replay.every(r=>!r.result.released&&r.result.reason==='already_released'));assert.equal(await credits(),2);
+  });
+  await t.test('another tenant cannot restore either owned event or change balances',async()=>{
+    for(const [kind,event] of [['refund',refundedEvent],['release',releasedEvent]]){
+      assert.ok(event);const result=await command('restore',{kind,event,merchant:merchants[1]});
+      assert.equal(result.result.reason,'reservation_not_found');
+    }
+    assert.equal(await credits(),2);assert.equal(await debits(),4);assert.deepEqual(await balance(),{base_replies_used:1,base_replies_remaining:19});
+  });
   await t.test('all original downstream transactions reset pooled tenant context',async()=>{
     const proof=await command('isolation',{merchants});assert.equal(proof.isolated,true);assert.equal(proof.contextReset,true);
     assert.equal(existsSync(path.join(dataDir,'merchants.json')),false);assert.equal(existsSync(path.join(dataDir,'meta-channels.json')),false);
   });
-  console.log('META_FULL_APP_RESTRICTED_PROOF '+JSON.stringify({actualApp:true,signedHttp:true,restrictedRole:true,originalManualFilter:true,originalQueue:true,originalLiveWorker:true,localGraphTransport:true,tenantCount:2,sends:2,debits:2,manualInboundOnce:true,expiredSuppressed:true,unknownDisconnectedDenied:true,revokedCapabilityDenied:true,tenantContextReset:true,noLegacyMerchantChannelAuthority:true}));
+  console.log('META_FULL_APP_RESTRICTED_PROOF '+JSON.stringify({actualApp:true,signedHttp:true,restrictedRole:true,originalManualFilter:true,originalQueue:true,originalLiveWorker:true,localGraphTransport:true,tenantCount:2,sends:2,debits:4,credits:2,confirmedFailureRefundOnce:true,postreservationReleaseOnce:true,crossTenantRestoreDenied:true,manualInboundOnce:true,expiredSuppressed:true,unknownDisconnectedDenied:true,revokedCapabilityDenied:true,tenantContextReset:true,noLegacyMerchantChannelAuthority:true}));
 });

@@ -11,6 +11,7 @@ export async function refundMerchantAutoReplyAuthoritative(
   eventId: string,
   confirmedFailureCode: "META_REPLY_FAILED",
   now: Date = new Date(),
+  expectedMerchantId?: string,
 ): Promise<ReplyRefundResult> {
   if (!subscriptionPostgresAuthorityRequired()) {
     return refundMerchantAutoReplyLegacy(eventId, confirmedFailureCode, now);
@@ -20,6 +21,7 @@ export async function refundMerchantAutoReplyAuthoritative(
     eventId,
     { kind: "refund", reasonCode: confirmedFailureCode },
     now,
+    expectedMerchantId,
   );
   return result.restored
     ? {

@@ -17,12 +17,27 @@ const {withMerchantOperationalTransaction}=await import('../../src/services/oper
 const server=await new Promise((resolve,reject)=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));s.once('error',reject);});
 // Deterministically drive the original worker's runOnce, including original
 // claim, decrypt, live handler, reservation, transport and completion paths.
-const worker=startMetaWebhookWorker(server.address().port);
+const {updateMerchantOperationalSettingsAuthoritative,getMerchantOperationalSettingsAuthoritative}=await import('../../src/services/postgresMerchantSettingsAuthority.ts');
+const {refundMerchantAutoReplyAuthoritative}=await import('../../src/services/merchantReplyRefundAuthority.ts');
+const {releaseMerchantAutoReplyReservationAuthoritative}=await import('../../src/services/merchantReplyReservationReleaseAuthority.ts');
+let releaseEvent=null;
+const worker=startMetaWebhookWorker(server.address().port,{replyHooks:{async afterReservation({job}){
+  if(job.payload?.event_id!==releaseEvent)return;
+  releaseEvent=null;
+  const current=await getMerchantOperationalSettingsAuthoritative(job.merchant_id);
+  await updateMerchantOperationalSettingsAuthoritative({merchantId:job.merchant_id,expectedVersion:current.version,patch:{auto_reply_enabled:false}});
+}}});
 async function send(m){if(process.connected)await new Promise(r=>process.send(m,()=>r()));}
 let stopping=false;
 process.on('message',async task=>{
   try{
     if(task.command==='run'){await send({id:task.id,ran:await worker.runOnce()});}
+    else if(task.command==='arm-release'){releaseEvent=task.event;await send({id:task.id,armed:true});}
+    else if(task.command==='restore'){
+      const restore=task.kind==='refund'?refundMerchantAutoReplyAuthoritative:releaseMerchantAutoReplyReservationAuthoritative;
+      const result=await restore(task.event,task.kind==='refund'?'META_REPLY_FAILED':'MERCHANT_AUTO_REPLY_DISABLED',new Date(),task.merchant);
+      await send({id:task.id,result});
+    }
     else if(task.command==='subscriptions'){
       for(const merchantId of task.merchants){
         const subscription=await getCurrentSubscriptionPostgres(merchantId);

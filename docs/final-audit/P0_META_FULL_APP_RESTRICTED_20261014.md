@@ -1,3 +1,9 @@
+## Prepared restricted Meta refund/release extension — 2026-10-15 Baghdad
+
+Prior documentation head35a4a354adc241107bbacc799bd1dde29fc37434 verified12/12CI SUCCESS. Prior actualapp10PASS/aggregate250PASS reused, not repeated credit. New restore accepts explicit expectedmerchant and uses transaction-local scope before ledger lookup; checks ledgermerchant even under owner role. Worker refund passes durable jobmerchant and rejects payload mismatch; postreservation release passes validated jobmerchant. Existing event-only compatibility retained for older trusted administrative callers; global event discovery/missingrefund recovery remains separate unverified authority scope.
+
+Prepared actual-app tests: signed ingress to original liveworker, owned Graph400 confirmedfailure + maxattempts1 -> original refundjob/oncecredit; original afterReservation hook toggles actual merchantsettings -> release/nosend; concurrent duplicate restore under restricted child -> noextra credit; wrongtenant attempt before refund mustnotcredit under restricted or owner role; pooled context reset. Provider synthetic, no hosted activity. TypeScript/syntax/local transaction5PASS; new SQL NOT_RUN until CI. Do not claim this extension accepted. Continue on authorized PR547.
+
 ## Verified signed actual Meta app / restricted subscription RLS — 2026-10-15 Baghdad
 
 Draft PR547 accepted source f7c88b16633b1a2435a0c9470fac1f90d736fca4. Isolated run38642887506/job116122514964 SUCCESS:250PASS/0FAIL/0SKIP,48unique files/50invocations; actual-app Meta suite10PASS (parent+9cases). All12 observed workflowsSUCCESS. Local original-function transaction adapter5PASS and existing static contracts6PASS remain separate/overlapping, not additive SQL proof. Full restore33migrations/95tables/45policies/8functions fingerprint793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498 identical seed/verify; owned cleanupPASS.

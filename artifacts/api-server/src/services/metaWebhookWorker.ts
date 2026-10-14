@@ -111,7 +111,9 @@ async function processMetaReplyRefundJob(
   job: DurableJob,
 ): Promise<Record<string, unknown>> {
   const eventId = text(job.payload?.event_id || job.dedupe_key);
-  if (!eventId) {
+  const merchantId = text(job.merchant_id);
+  const payloadMerchantId = text(job.payload?.merchant_id);
+  if (!eventId || !merchantId || (payloadMerchantId && payloadMerchantId !== merchantId)) {
     throw jobError(
       "META_REFUND_JOB_INVALID",
       "Meta refund job identity is invalid",
@@ -125,6 +127,8 @@ async function processMetaReplyRefundJob(
     refund = await refundMerchantAutoReplyAuthoritative(
       eventId,
       "META_REPLY_FAILED",
+      new Date(),
+      merchantId,
     );
   } catch {
     throw jobError(
