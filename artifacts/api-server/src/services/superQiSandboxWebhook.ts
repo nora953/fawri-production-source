@@ -167,7 +167,7 @@ async function attachProviderPaymentReference(
   }
 }
 
-function providerEventId(input: {
+export function superQiConfirmedProviderEventId(input: {
   paymentId: string;
   status: string;
   canceled: boolean;
@@ -254,7 +254,7 @@ export async function handleSuperQiSandboxWebhook(input: {
   const settledAmount = amount(confirmed.confirmedAmount ?? confirmed.amount);
   const eventType: "payment_succeeded" | "payment_failed" | "payment_cancelled" =
     confirmed.canceled ? "payment_cancelled" : confirmed.status === "SUCCESS" ? "payment_succeeded" : "payment_failed";
-  const eventId = providerEventId(confirmed);
+  const eventId = superQiConfirmedProviderEventId(confirmed);
   const payloadHash = superQiWebhookPayloadHash(input.payload);
   const receivedAt = input.receivedAt || new Date();
   if (!Number.isFinite(receivedAt.getTime())) {
