@@ -1446,9 +1446,9 @@ export async function discoverCashierBillingOrderByProviderReference(input: {
   requestId: string;
 }): Promise<{ id: string; amount_iqd: number } | null> {
   const database = await operationalDatabasePool();
-  const rows = await operationalQueryRows<{ id: string; amount_iqd: number | string }>(
+  const rows = await operationalQueryRows<{ id: string; amount_iqd: number | string; provider_checkout_ref: string | null; provider_request_id: string | null }>(
     database,
-    `SELECT id, amount_iqd
+    `SELECT id, amount_iqd, provider_checkout_ref, metadata->>'provider_request_id' AS provider_request_id
        FROM cashier_billing_orders
       WHERE provider = $1
         AND (
@@ -1461,6 +1461,10 @@ export async function discoverCashierBillingOrderByProviderReference(input: {
   );
   if (rows.length > 1) {
     fail("CASHIER_BILLING_ORDER_AMBIGUOUS", "provider payment maps to multiple cashier orders", 503);
+  }
+  if (rows[0] && (rows[0].provider_request_id !== input.requestId ||
+      (rows[0].provider_checkout_ref !== null && rows[0].provider_checkout_ref !== input.paymentId))) {
+    fail("CASHIER_BILLING_ORDER_IDENTITY_MISMATCH", "confirmed provider identity conflicts with cashier order", 409);
   }
   return rows[0]
     ? { id: rows[0].id, amount_iqd: Number(rows[0].amount_iqd) }
