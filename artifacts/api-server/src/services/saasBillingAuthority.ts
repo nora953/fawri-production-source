@@ -550,7 +550,7 @@ export async function createSaasBillingCheckout(input: {
         if (!existing.provider_checkout_ref || !redirectUrl) {
           fail(
             "SAAS_BILLING_PROVIDER_CHECKOUT_INCOMPLETE",
-            "SuperQi sandbox checkout is incomplete; use a new checkout request",
+            "SuperQi sandbox checkout is incomplete; retain this idempotency key and reconcile provider state before retrying",
             503,
           );
         }
