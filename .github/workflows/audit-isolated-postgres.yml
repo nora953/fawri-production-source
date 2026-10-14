@@ -12,6 +12,21 @@ on:
       - 'artifacts/api-server/tests/cashier-*.integration.test.*'
       - '.github/workflows/audit-isolated-postgres.yml'
   workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Disposable PostgreSQL test suite (priority, emergency, cashier, billing, tenant, meta-bot, full-restore, node22-http)'
+        required: true
+        default: emergency
+        type: choice
+        options:
+          - emergency
+          - priority
+          - cashier
+          - billing
+          - tenant
+          - meta-bot
+          - full-restore
+          - node22-http
   workflow_call:
     inputs:
       suite:
