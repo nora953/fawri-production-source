@@ -1,3 +1,11 @@
+# Accepted bounded authorized replay execution — 2026-10-14
+
+DraftPR544 tested1df0e82185e130d86f4b42c831a189c28fd663bb. Isolated38610296207/job116011585090235PASS/0FAIL/0SKIP,46unique files/48invocations; newexecution12PASS. 26/26 observed workflows SUCCESS for tested source. Restore33migrations/95tables/45policies/8functions, identical fingerprint/restrictedreads/non-PUBLICexecutioncapPASS. LocalAPI typecheck/build/syntax/canonical33 and5transporttestsPASS; historicalmetadata unchanged.
+
+Actual router+real adminsession/device/origin+restrictedtenant SQL/injectedfreshprovider. Concurrent SaaS/cashier once-only grant/duplicate, partialSQLfailure durable receivedevent then retry, permission+session/mapping changes duringprovider denial, auditfault beforeprovider, SHAREpermissionlock serializing revocation behindgrantPASS. Fiveowned reviewed orders receive applications; rawreceipts immutable/private; paidtimestamps preserve raworiginalmicroseconds. No fullmainapp/frontend or new operator-specific transportuncertainty/expiry-device-race proof. Prior generic wire proof remains separate.
+
+Both failedfixture attempts228PASS/7FAIL preserved below and in [machine evidence](evidence/P0_RECEIPT_REPLAY_EXECUTION_RESULTS_20261014.json). Documentation checkpoint preserves testedsource.523 staysOPEN for frontendworkflow/transportextensions/ownership-retention/reviewedgrantrollout;535 separate. No hosted DB/grant/provider/payment, merge/deploy, UIbaselinepercent orreleaseclaim.
+
 # Authorized receipt replay execution — 2026-10-14
 
 Stacked on Draft543/f343649b (previous docshead24/24 observed workflowsSUCCESS). POST /api/auth/admin/billing/verified-receipts/:eventId/replay accepts only expected existing authority/order. Requires allowed nonempty origin and secure device-bound admin manage_subscriptions. No merchant/amount override, mapping repair/order creation or review-response token as authority.
