@@ -1170,10 +1170,12 @@ export async function applyVerifiedCashierBillingProviderEvent(
         reasonCode: "CASHIER_BILLING_AMOUNT_MISMATCH",
       };
     }
-    if (order.status !== "pending") {
+    // A verified late payment for an already expired order is reconciliation work,
+    // never permission to activate an expired cashier entitlement.
+    if (order.status !== "pending" && order.status !== "expired") {
       fail("CASHIER_BILLING_ORDER_NOT_PAYABLE", "cashier billing order is not payable", 409);
     }
-    if (timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()) {
+    if (order.status === "expired" || timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()) {
       await client.query(
         `UPDATE cashier_billing_orders
             SET status = 'paid_reconciliation_required',
