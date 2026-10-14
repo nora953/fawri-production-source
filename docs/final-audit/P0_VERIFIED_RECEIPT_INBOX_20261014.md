@@ -1,3 +1,15 @@
+## Verified unmatched provider receipt admission — 2026-10-14
+
+DraftPR539, branch fix/p0-verified-provider-receipt-inbox-20261014, stacked on538/441d1016. **Tested source e1681e4f462e013d7b0837c5482de17ff879b2e5**: isolated38554285754/job115819667019 **195PASS/0FAIL/0SKIP**,43unique files/45invocations; new inbox6PASS. **29/29 observed workflow runs SUCCESS**. Signed synthetic/gateway-confirmed SaaS/cashier orphan persists1receipt/0entitlement, concurrent duplicate preserves first time and identity, exact restored mapping replay applies1entitlement. Invalid signatures/confirmed-state mismatch create0; SQL failure rejects; restricted role cannot enumerate/directly mutate or use non-PUBLIC admission without explicit owned capability grant.
+
+Migration0029, canonical30 history/snapshot/reviewed SQL hash/preimage included. Global unassigned identity evidence, no tenant guess/raw payload/signature/credential, immutable provider/event/payment/request/type/amount/hash and first time. Admission before lookup; unknown order remains retryable503, never grants from inbox alone. Trusted bounded SECURITY DEFINER function fixed search_path, qualified table, deny-by-default RLS, PUBLIC EXECUTE revoked; no hosted grants/migration performed.
+
+Full restore30migrations/95tables/45policies/5functions and restricted tenant readsPASS; seed/verify fingerprints identical. Effective ACL entries expand defaults and sort without dropping grants; temporary added-grant probe detects real changes; receipt function stays non-PUBLIC after restore. Preserved first70375a57 and second6461059a attempts194PASS/1FAIL each, inbox6PASS: table default-vs-explicit ACL and legacy function grant-order representation only. Stronger final checks replace storage-form comparison while retaining overall fingerprint assertion. Native ordering correction805a68bd was superseded before runtime acceptance; never credit it as tested.
+
+[Receipt report](P0_VERIFIED_RECEIPT_INBOX_20261014.md), [machine evidence](evidence/P0_VERIFIED_RECEIPT_INBOX_RESULTS_20261014.json). Issue523 staysOPEN for operator API/UI authorization, manual reconciliation/ownership/retention and reviewed hosted function owner/runtime grant rollout;535 staysOPEN for full downstream signed restricted-role Meta. SuperQi remains sandbox-only/production-forbidden. No merge/deploy/hosted writes/real payment, UI baseline credit, whole-audit percentage or release-ready claim. This documentation checkpoint leaves tested app/SQL/test/workflow source unchanged.
+
+---
+
 # P0 verified provider receipt inbox — prepared 2026-10-14
 
 New branch fix/p0-verified-provider-receipt-inbox-20261014, stacked on draftPR538/441d1016. Last tested parent abe851db had189PASS/0FAIL/0SKIP,26/26 CI SUCCESS; parent documentation CI441d1016 was still finishing at start. No merge/deploy/hosted migration/grants/real provider/payment.
