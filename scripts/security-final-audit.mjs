@@ -288,6 +288,15 @@ export function isKnownHistoricalDisposableGuardFixture(finding, objectPath, obj
   return (locations[objectId] || []).some(([index, length]) => finding.index === index && finding.length === length);
 }
 
+// This immutable fixture deliberately supplies a synthetic reserved.invalid URL to
+// the pre-import guard and asserts rejection before any application DB import.
+// Scope one exact historical finding; changed blobs/files/rules remain failures.
+export function isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId) {
+  return objectId === "202a9fc041cb2cde0e8169683a6eb9eb7478e130" &&
+    normalizeRepositoryPath(objectPath) === "docs/final-audit/evidence/seq241-entrypoint-fences.test.mjs" &&
+    finding.rule === "credential-url" && finding.index === 641 && finding.length === 64;
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -365,7 +374,8 @@ function scanHistory(root) {
         isKnownTestFixtureCredentialUrl(objectText, finding, objectPath) ||
         isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath) ||
         isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId) ||
-        isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId)
+        isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,

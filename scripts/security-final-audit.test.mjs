@@ -10,6 +10,7 @@ import {
   isKnownHistoricalScannerSelfTestCredentialUrl,
   isKnownHistoricalRestoreRejectionFixture,
   isKnownHistoricalDisposableGuardFixture,
+  isKnownHistoricalEntrypointFenceFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -318,5 +319,27 @@ test("historical disposable guard fixtures match exact immutable locations only"
     assert.equal(isKnownHistoricalDisposableGuardFixture({ ...finding, index: index + 1 }, file, blob), false);
     assert.equal(isKnownHistoricalDisposableGuardFixture({ ...finding, length: length + 1 }, file, blob), false);
     assert.equal(isKnownHistoricalDisposableGuardFixture({ ...finding, rule: "private-key" }, file, blob), false);
+  }
+});
+
+
+test("historical entrypoint rejection fixture exception is pinned to one immutable finding", () => {
+  const file = "docs/final-audit/evidence/seq241-entrypoint-fences.test.mjs";
+  const blob = "202a9fc041cb2cde0e8169683a6eb9eb7478e130";
+  const finding = { rule: "credential-url", index: 641, length: 64 };
+  assert.equal(isKnownHistoricalEntrypointFenceFixture(finding, file, blob), true);
+  for (const changedBlob of [undefined, "0".repeat(40)]) {
+    assert.equal(isKnownHistoricalEntrypointFenceFixture(finding, file, changedBlob), false);
+  }
+  for (const changedFile of ["scripts/security-final-audit.test.mjs", "docs/final-audit/evidence/another.mjs"]) {
+    assert.equal(isKnownHistoricalEntrypointFenceFixture(finding, changedFile, blob), false);
+  }
+  for (const changedFinding of [
+    { ...finding, index: 642 },
+    { ...finding, length: 65 },
+    { ...finding, rule: "private-key" },
+    { ...finding, rule: "meta-access-token" },
+  ]) {
+    assert.equal(isKnownHistoricalEntrypointFenceFixture(changedFinding, file, blob), false);
   }
 });
