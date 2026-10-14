@@ -1,5 +1,14 @@
 # Fawri final audit — issue and decision ledger
 
+## Authoritative continuation — SEQ-354–359 (2026-10-14 Baghdad)
+
+Latest [SEQ-354–359](SEQ_354_359_FULL_ADMIN_ROUTES_20261014.md). **Next SEQ-360**. Audit only; application/original tests/schema unchanged.
+
+Full actualVite main/App/globalauthvalidator/previewlauncher/owner-setup/workmonitor ×AR/EN/KU ×390/1280: head9f9fe04a278a366b7235bd5731a3cb0efd9645f2/merge03fd41d1a3b23cb25ed56816342811de6e79e620, run38494339483/job115626569603. **12newbaselinePASS/0FAIL**,12captures reviewed/persisted.48allowlistedGET/deviceheaders present; title/direction/overflow/disabledemptygeneration/syntheticassistanttarget PASS;0unexpectedPOST/runtimeerrors. No realcookie/backend-role/SQLproof.
+
+New **I18N-MONITOR-SORANI-DATE-001 LOW/OPEN/NATIVE_VISUAL_CONFIRMED**: Sorani activity date showsEnglish Oct/AM inbothviewportcaptures; sourceusesckb-IQ/Intl fallbackcauseinferred, notresolvedOptionsconfirmed. PriorfindingsOPEN. Currentseq359CSV222cases:66PASS_BOUNDED_FULL_APP/156NOT_RUN; extra18negativestatesoutsidebaseline.21selectors unchanged; wholepercentage **NOT_YET_MEASURABLE**, releaseBLOCKED.
+
+
 ## Authoritative continuation — SEQ-348–353 (2026-10-14 Baghdad)
 
 Latest [SEQ-348–353](SEQ_348_353_FULL_NEGATIVE_ROUTES_20261014.md). **Next SEQ-354**. Audit only; application/original tests/schema unchanged.
@@ -917,3 +926,8 @@ Current artifacts/fawri/index.html:7/10/13 description, og:description and twitt
 ## A11Y-OWNER-RECOVERY-HEADING-001 — LOW / OPEN / DOM_CONFIRMED
 
 OwnerRecoveryPage initialkey1stage, actualfullAppsixlocale/viewportcases: semantic h1–h6 count0 despite visibleportalTitle. OwnerRecoveryPage.tsx:203 usesCardTitle; card.tsx rendersdiv. Headingnavigationstructuralgap, notcredentialbypass/fullWCAG assessment. NativeDOM/source/captures inSEQ-342–347. No repair;18basicbaselinePASSdoesnotcloseaccessibilitygap.
+
+
+## I18N-MONITOR-SORANI-DATE-001 — LOW / OPEN / NATIVE_VISUAL_CONFIRMED
+
+Sorani work-monitor Last activity showsEnglish Oct/AM inactualfullApp390/1280captures for synthetic2026-10-14T00:00:00Z. formatDate usesIntlDateTimeFormat ckb-IQ; localefallbackcauseinferred, resolvedOptionsnotcaptured. Native mixed-language presentation proof only, nottimezone/security/allplatform failure. TwoPNGdetails/bounds inSEQ-354–359; no repair. Distinctfromdate-picker/billinglocalization surfaces.
