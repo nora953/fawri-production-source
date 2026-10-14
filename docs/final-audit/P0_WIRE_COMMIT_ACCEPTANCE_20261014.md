@@ -1,3 +1,9 @@
+## Verified transport correction — 2026-10-14
+
+Tested38c41f26575b3c23935c9cdcf0dba1bec07996e5 isolated38549878533/job115804963824 SUCCESS:189PASS/0FAIL/0SKIP,42unique files/44invocations. Receipt suite15PASS; four actual TCP COMMIT-drop markers confirm server commit, zero CommandComplete delivered, caller failure, fresh-process one entitlement and original time. Framing4PASS. Broad CI25/26SUCCESS, only legacy admin lane failed guard before DB import; correction below awaits CI. Actual transport boundary covered, unmatched inbox523 and full downstream restricted-role Meta535 remainOPEN. Previousc4acd6cb184PASS/5FAIL is preserved, not relabeled green. No deployment/hosted mutation/merge/real provider.
+
+---
+
 # P0 PostgreSQL wire COMMIT acknowledgment loss — 2026-10-14
 
 Continuation of draftPR538, parentf696827b documentation head (all13 observed workflows SUCCESS). Previous tested d418feaf had185PASS/0FAIL/0SKIP. This revision changes test helpers, response-framing unit tests and CI registration only, no production application/schema.
@@ -17,3 +23,6 @@ If wire acceptance passes, record that transport boundary as covered without clo
 
 ## First transport run and product correction
 Sourcec4acd6cb isolated38549209533/job115802750100 executed real wire drops but all four wire cases failed the controlled failure-message assertion (receipt suite10PASS/5FAIL including parent). The safe server-COMMIT/drop marker and child nonzero exit were observed; no child application failure message arrived. pg leased clients can emit an additional connection error after query rejection; without a client error listener that event terminates the process. lib/db/src/index.ts now installs active-client and idle-pool error handlers. Handlers emit only a bounded SQLSTATE, never driver messages, credentials, URLs or query values. Query/transaction failures still reject; pg discards failed connections. Original wire failure-message assertion retained. This revision now changes production DB connection-event handling, not billing grants/schema. Corrected actual runtime pending CI; prior failed run preserved.
+
+## Legacy admin workflow guard failure
+Source38c41f26 broader lib/db CI triggered global-admin38549878445/job115804963066. Old workflow used a published service PostgreSQL and push-force schema setup, then ran guarded admin-auth-router entrypoint without attestation; guard rejected before application DB import. This is lane configuration failure, not admin authorization regression. Replace service/push-force with unchanged API typecheck plus reusable attested network-none suite tenant (contains original admin test). Guard and original assertions remain intact; duplicate lane proof adds no baseline credit. Current wire result must finish before publishing lane correction.
