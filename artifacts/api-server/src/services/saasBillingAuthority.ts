@@ -507,6 +507,12 @@ export async function createSaasBillingCheckout(input: {
   const plan = getSaasPlan(input.plan);
 
   return transaction(async (client) => {
+    // Serialize same-merchant checkout creation before reading the idempotency
+    // key; a missing row cannot be protected by SELECT ... FOR UPDATE alone.
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))", [
+      merchantId,
+      `saas-checkout:${idempotencyKey}`,
+    ]);
     await client.query(
       `UPDATE saas_billing_orders
           SET status = 'expired', updated_at = $2
