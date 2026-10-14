@@ -84,7 +84,7 @@ test('original Meta worker precommit SIGKILL rolls back inbound state and retrie
     committedLedger=await ledger();assert.equal(committedLedger.length,1);assert.equal(committedLedger[0].direction,'debit');
     const b=await balances();assert.equal(b.find(x=>x.merchant_id===merchants[0]).base_replies_remaining,19);assert.equal(b.find(x=>x.merchant_id===merchants[1]).base_replies_remaining,20);
     assert.equal((await pool.query('SELECT count(*)::int AS n FROM channel_inbound_events WHERE merchant_id=$1 AND external_event_id=$2',[merchants[0],event])).rows[0].n,1);
-    assert.equal((await pool.query("SELECT count(*)::int AS n FROM messages WHERE merchant_id=$1 AND external_event_id=$2 AND sender='fawri' AND status='sent'",[merchants[0],event])).rows[0].n,1);
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM messages WHERE merchant_id=$1 AND external_event_id=$2 AND sender='fawri' AND status='sent'",[merchants[0],`reply:${event}`])).rows[0].n,1);
     assert.equal((await fresh.command('isolation')).contextReset,true);assert.equal((await fresh.command('run')).ran,false);committedState=await snapshot();
     assert.equal((await fresh.command('stop')).stopped,true);await fresh.done;
   });
