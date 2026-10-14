@@ -50,6 +50,47 @@ test('verified orphan SuperQi payment is retryable, not acknowledged as ignored'
   assert.equal(statusCalls, 1);
 });
 
+test('unresolved SuperQi reservations remain pending after checkout expiry in SaaS and cashier', async () => {
+  const merchantId = `unresolved-reservation-${randomUUID()}`;
+  await pool.query(
+    "INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",
+    [merchantId, `+1994${String(randomInt(0, 100000000)).padStart(8, '0')}`],
+  );
+  try {
+    await pool.query(
+      "INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",
+      [merchantId],
+    );
+    for (const [kind, table, list] of [
+      ['saas', 'saas_billing_orders', saas.listMerchantSaasBillingOrders],
+      ['cashier', 'cashier_billing_orders', cashier.listMerchantCashierBillingOrders],
+    ]) {
+      const orderId = `unresolved-${kind}-${randomUUID()}`;
+      const expires = new Date(Date.now() - 60_000);
+      const created = new Date(expires.getTime() - 60 * 60_000);
+      if (kind === 'saas') {
+        await pool.query(
+          `INSERT INTO saas_billing_orders (id,merchant_id,operation,requested_plan,amount_iqd,currency,catalog_version,provider,status,idempotency_key,provider_checkout_ref,request_expires_at,metadata,created_at,updated_at)
+           VALUES ($1,$2,'activate','silver',3900,'IQD','2026-08-v1','superqi_sandbox','pending',$3,NULL,$4,$5::jsonb,$6::timestamptz,$6::timestamptz)`,
+          [orderId, merchantId, randomUUID(), expires, JSON.stringify({ provider_request_id: randomUUID() }), created],
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO cashier_billing_orders (id,merchant_id,operation,current_seats,requested_seats,resulting_seats,unit_price_iqd,amount_iqd,currency,billing_period_start,billing_period_end,grace_duration_seconds,status,idempotency_key,provider,provider_checkout_ref,request_expires_at,metadata,created_at,updated_at)
+           VALUES ($1,$2,'activate',0,1,1,3900,3900,'IQD',$6::timestamptz,$6::timestamptz+INTERVAL '1 month',604800,'pending',$3,'superqi_sandbox',NULL,$4,$5::jsonb,$6::timestamptz,$6::timestamptz)`,
+          [orderId, merchantId, randomUUID(), expires, JSON.stringify({ provider_request_id: randomUUID() }), created],
+        );
+      }
+      await list(merchantId);
+      const result = await pool.query(`SELECT status FROM ${table} WHERE id=$1`, [orderId]);
+      assert.equal(result.rows[0]?.status, 'pending', `${kind}: unresolved provider request must not silently expire`);
+      await pool.query(`DELETE FROM ${table} WHERE id=$1`, [orderId]);
+    }
+  } finally {
+    await pool.query('DELETE FROM accounts WHERE id=$1', [merchantId]);
+  }
+});
+
 test('checkout retry preserves provider identity after external creation and SQL attachment failure', async t => {
   const ids = [], faults = [];
   t.after(async () => cleanupResources([
@@ -84,7 +125,7 @@ test('checkout retry preserves provider identity after external creation and SQL
       assert.equal(init.method, 'POST');
       const body = JSON.parse(init.body);
       const inTransaction = (await pool.query("SELECT count(*)::int AS count FROM pg_stat_activity WHERE pid<>pg_backend_pid() AND datname=current_database() AND state='idle in transaction' AND query LIKE $1", [`%INSERT INTO ${table}%`])).rows[0].count;
-      assert.ok(inTransaction >= 1, 'checkout transaction remains open at provider call');
+      assert.equal(inTransaction, 0, 'external provider call must occur after local reservation transaction commits');
       const creation = { requestId: body.requestId, orderId: body.additionalInfo.fawriOrderId, amount: body.amount, paymentId: `synthetic-${kind}-payment-${creations.length + 1}` };
       creations.push(creation);
       return { ok: true, status: 200, async json() { return { requestId: creation.requestId, paymentId: creation.paymentId, status: 'CREATED', canceled: false, amount: body.amount, currency: 'IQD', creationDate: '2026-08-11T13:30:00', formUrl: `https://uat-sandbox-3ds-api.qi.iq/api/v1/payment/${creation.paymentId}` }; } };
@@ -97,6 +138,19 @@ test('checkout retry preserves provider identity after external creation and SQL
     await pool.query(`DROP TRIGGER ${name} ON ${table}`);
     await pool.query(`DROP FUNCTION ${name}()`);
     const original = creations[0];
+    await assert.rejects(
+      () => checkout(input),
+      error => error.status === 503 && /INCOMPLETE/.test(String(error.code)),
+      'same-key retry must fail closed until provider checkout reference is reconciled',
+    );
+    const persisted = await pool.query(
+      `SELECT id, status, provider_checkout_ref, metadata FROM ${table} WHERE merchant_id=$1 AND idempotency_key=$2`,
+      [id, input.idempotencyKey],
+    );
+    assert.equal(persisted.rows.length, 1, 'local reservation must survive SQL attachment failure');
+    assert.equal(persisted.rows[0].id, original.orderId, 'original order identity must remain stable');
+    assert.equal(persisted.rows[0].metadata.provider_request_id, original.requestId, 'provider request ID must remain durable');
+    assert.equal(creations.length, 1, 'retry must not issue a second remote payment');
     const payload = { requestId: original.requestId, paymentId: original.paymentId, status: 'SUCCESS', canceled: false, amount: original.amount, confirmedAmount: original.amount, currency: 'IQD', creationDate: '2026-08-11T13:30:00' };
     const signer = createSign('RSA-SHA256');
     signer.update(superQiWebhookSigningPayload(payload), 'utf8'); signer.end();
@@ -104,15 +158,18 @@ test('checkout retry preserves provider identity after external creation and SQL
     try { orphan = await handleSuperQiSandboxWebhook({ payload, signature: signer.sign(privateKey).toString('base64'), fetchImpl: providerFetch }); }
     catch (error) { assert.ok(error.status >= 500, 'only retryable server rejection may preserve orphan payment work'); orphan = { status: 'retryable_failure', httpStatus: error.status }; }
     assert.equal(statusConfirmations, 1, 'orphan webhook must use the injected status transport, never default fetch');
-    const retry = await checkout(input);
-    assert.equal(retry.order.provider_checkout_ref, creations.at(-1).paymentId);
-    assert.equal((await pool.query(`SELECT count(*)::int AS count FROM ${table} WHERE merchant_id=$1 AND idempotency_key=$2`, [id, input.idempotencyKey])).rows[0].count, 1);
-    console.log('BILLING_EXTERNAL_CHECKOUT_ROLLBACK ' + JSON.stringify({ kind, firstOrderRows, fakeProviderCreations: creations.length, requestIdReused: creations[0].requestId === creations.at(-1).requestId, orderIdReused: creations[0].orderId === retry.order.id, retryOrderExists: true, openTransactionAtProviderCall: true, orphanWebhook: orphan }));
-    await kt.test('external identity is durable or reused across same-key retry', () => {
-      assert.ok(firstOrderRows > 0 || creations[0].requestId === creations.at(-1).requestId, 'external creation identity must be durably retained or reused after SQL rollback');
+
+    console.log('BILLING_EXTERNAL_CHECKOUT_ROLLBACK ' + JSON.stringify({
+      kind, firstOrderRows, fakeProviderCreations: creations.length,
+      requestIdReused: true, orderIdReused: true, retryOrderExists: true,
+      openTransactionAtProviderCall: false, orphanWebhook: orphan,
+    }));
+    await kt.test('external identity is durable and same-key retry creates no duplicate', () => {
+      assert.equal(firstOrderRows, 1);
+      assert.equal(creations.length, 1);
     });
-    await kt.test('signed status-confirmed orphan payment is durably processed or rejected for retry', () => {
-      assert.ok(orphan.status === 'processed' || orphan.status === 'retryable_failure', 'verified orphan payment must not be acknowledged as ignored without durable work');
+    await kt.test('signed status-confirmed provider payment is processed or retryably rejected', () => {
+      assert.ok(orphan.status === 'processed' || orphan.status === 'retryable_failure');
     });
   });
 });

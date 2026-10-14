@@ -486,12 +486,13 @@ export async function createCashierBillingCheckout(input: {
   const now = input.now || new Date();
   const provider = resolveSaasBillingCheckoutProvider(input.provider);
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  const reserved = await withMerchantOperationalTransaction(merchantId, async (client) => {
     await assertApprovedMerchant(client, merchantId);
     await client.query(
       `UPDATE cashier_billing_orders
           SET status = 'expired', updated_at = $2
-        WHERE merchant_id = $1 AND status = 'pending' AND request_expires_at <= $2`,
+        WHERE merchant_id = $1 AND status = 'pending' AND request_expires_at <= $2
+          AND NOT (provider = 'superqi_sandbox' AND provider_checkout_ref IS NULL)`,
       [merchantId, now],
     );
 
@@ -640,41 +641,15 @@ export async function createCashierBillingCheckout(input: {
       if (!providerRequestId) {
         fail("CASHIER_BILLING_PROVIDER_STATE_INVALID", "cashier provider request ID is missing", 503);
       }
-      const payment = await createSuperQiSandboxPayment(
-        {
-          requestId: providerRequestId,
-          orderId,
-          amountIqd: plan.amountIqd,
-        },
-        input.providerFetch,
-      );
-      await client.query(
-        `UPDATE cashier_billing_orders
-            SET provider_checkout_ref = $2,
-                metadata = metadata || $3::jsonb,
-                updated_at = $4
-          WHERE id = $1 AND merchant_id = $5`,
-        [
-          orderId,
-          payment.paymentId,
-          JSON.stringify({ provider_form_url: payment.formUrl }),
-          now,
-          merchantId,
-        ],
-      );
-      const order = await loadOrder(client, orderId, true);
-      if (!order) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 503);
       return {
-        order,
-        duplicate: false,
-        checkout: {
-          provider: "superqi_sandbox" as const,
-          checkout_reference: payment.paymentId,
-          redirect_url: payment.formUrl,
-          test_only: true as const,
+        providerReservation: {
+          orderId,
+          providerRequestId,
+          amountIqd: plan.amountIqd,
+          nextFullRenewalAmountIqd: plan.nextFullRenewalAmountIqd,
         },
-        next_full_renewal_amount_iqd: plan.nextFullRenewalAmountIqd,
       };
+
     }
 
     const order = await loadOrder(client, orderId, true);
@@ -690,6 +665,53 @@ export async function createCashierBillingCheckout(input: {
       next_full_renewal_amount_iqd: plan.nextFullRenewalAmountIqd,
     };
   });
+  if ("providerReservation" in reserved && reserved.providerReservation) {
+    const reservation = reserved.providerReservation;
+    const payment = await createSuperQiSandboxPayment(
+      {
+        requestId: reservation.providerRequestId,
+        orderId: reservation.orderId,
+        amountIqd: reservation.amountIqd,
+      },
+      input.providerFetch,
+    );
+    return withMerchantOperationalTransaction(merchantId, async (client) => {
+      const attached = await client.query(
+        `UPDATE cashier_billing_orders
+            SET provider_checkout_ref = $2,
+                metadata = metadata || $3::jsonb,
+                updated_at = $4
+          WHERE id = $1 AND merchant_id = $5
+            AND provider = 'superqi_sandbox' AND status = 'pending'
+            AND provider_checkout_ref IS NULL
+          RETURNING id`,
+        [
+          reservation.orderId,
+          payment.paymentId,
+          JSON.stringify({ provider_form_url: payment.formUrl }),
+          now,
+          merchantId,
+        ],
+      );
+      if (attached.rows.length !== 1) {
+        fail("CASHIER_BILLING_PROVIDER_REFERENCE_FAILED", "SuperQi sandbox reference was not attached", 503);
+      }
+      const order = await loadOrder(client, reservation.orderId, true);
+      if (!order) fail("CASHIER_BILLING_ORDER_NOT_FOUND", "cashier billing order not found", 503);
+      return {
+        order,
+        duplicate: false,
+        checkout: {
+          provider: "superqi_sandbox" as const,
+          checkout_reference: payment.paymentId,
+          redirect_url: payment.formUrl,
+          test_only: true as const,
+        },
+        next_full_renewal_amount_iqd: reservation.nextFullRenewalAmountIqd,
+      };
+    });
+  }
+  return reserved;
 }
 
 export async function listMerchantCashierBillingOrders(
@@ -701,7 +723,8 @@ export async function listMerchantCashierBillingOrders(
       await client.query(
         `UPDATE cashier_billing_orders
             SET status = 'expired', updated_at = now()
-          WHERE merchant_id = $1 AND status = 'pending' AND request_expires_at <= now()`,
+          WHERE merchant_id = $1 AND status = 'pending' AND request_expires_at <= now()
+          AND NOT (provider = 'superqi_sandbox' AND provider_checkout_ref IS NULL)`,
         [merchantId],
       );
       const rows = await operationalQueryRows<Record<string, unknown>>(
@@ -1113,6 +1136,11 @@ export async function applyVerifiedCashierBillingProviderEvent(
         { existing_order_id: paymentRefCollision[0].id },
       );
     }
+    // A settled entitlement is immutable: a later conflicting payment notification
+    // must not downgrade an already applied order into reconciliation.
+    if (order.status === "applied") {
+      return { status: "duplicate" as const, order };
+    }
     if (input.amountIqd !== order.amount_iqd) {
       await client.query(
         `UPDATE cashier_billing_orders
@@ -1142,13 +1170,12 @@ export async function applyVerifiedCashierBillingProviderEvent(
         reasonCode: "CASHIER_BILLING_AMOUNT_MISMATCH",
       };
     }
-    if (order.status === "applied") {
-      return { status: "duplicate" as const, order };
-    }
-    if (order.status !== "pending") {
+    // A verified late payment for an already expired order is reconciliation work,
+    // never permission to activate an expired cashier entitlement.
+    if (order.status !== "pending" && order.status !== "expired") {
       fail("CASHIER_BILLING_ORDER_NOT_PAYABLE", "cashier billing order is not payable", 409);
     }
-    if (timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()) {
+    if (order.status === "expired" || timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()) {
       await client.query(
         `UPDATE cashier_billing_orders
             SET status = 'paid_reconciliation_required',
