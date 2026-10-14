@@ -362,6 +362,17 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   assert.equal(authorization.status, 200);
   assert.equal((await body(authorization)).authorization.can_critical_self_activate, true);
 
+  // Audit-only authorized assistant directory scope: merchant directory, no owner assistants list.
+  const trustedDirectory = await fetch(
+    `${baseUrl}/api/auth/admin/emergency-read-access/directory`,
+    { headers: { Cookie: trustedCookie } },
+  );
+  assert.equal(trustedDirectory.status, 200);
+  const trustedDirectoryBody = await body(trustedDirectory);
+  assert.equal(trustedDirectoryBody.is_owner, false);
+  assert.equal(trustedDirectoryBody.merchants.some((item: any) => item.id === merchantId), true);
+  assert.equal(Array.isArray(trustedDirectoryBody.assistants) && trustedDirectoryBody.assistants.length > 0, false);
+
   const requested = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/requests`,
     {
