@@ -11,7 +11,7 @@ Object.assign(process.env,{
 });
 const {pool}=await import('@workspace/db');
 const {authPostgresSessionAuthority:authority}=await import('../src/services/authPostgresSessionAuthority.ts');
-const {registerAdminDeviceAuthoritative}=await import('../src/services/postgresAdminSecurityAuthority.ts');
+const {registerAdminDeviceAuthoritative,setAdminDeviceTrustAuthoritative}=await import('../src/services/postgresAdminSecurityAuthority.ts');
 const {default:router}=await import('../src/routes/auth-verified-receipts-postgres-routes.ts');
 const {enforceAuthOrigin}=await import('../src/middleware/authSession.ts');
 const capability='public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)';
@@ -66,7 +66,8 @@ test('real HTTP receipt directory requires trusted admin permission and durable 
   for(const actor of [owner,finance,denied,merchant]){
     if(actor.kind==='admin'){
       const device=await registerAdminDeviceAuthoritative({accountId:actor.id,accountKind:'admin',deviceId:actor.device,deviceLabel:'Synthetic'});
-      await admin.query("UPDATE trusted_devices SET status='trusted',trust_slot=1,trusted_at=now() WHERE id=$1",[device.id]);
+      const trusted=await setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:owner.id});
+      assert.equal(trusted.status,'trusted');
     }
     actor.session=await authority.issueSession({accountId:actor.id,accountKind:actor.kind,tenantId:actor.id,deviceId:actor.device,deviceLabel:'Synthetic',...(actor.kind==='admin'?{adminRole:actor.adminRole,permissions:actor.permissions}:{})});
   }

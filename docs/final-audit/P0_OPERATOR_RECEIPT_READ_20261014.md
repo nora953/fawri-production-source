@@ -14,3 +14,6 @@ This is the actual new router plus real middleware/DB under a controlled Express
 
 ## Local validation
 API typecheck/build PASS; new MJS syntax/diff PASS; canonical31migration history with manual SQL stage/snapshot generated, no historical change. Actual HTTP/SQL NOT_RUN until CI; no local Docker/PostgreSQL. Do not infer runtime results from compilation.
+
+## First CI fixture correction
+Source44837e83 isolated38597073031/job115966439784 failed new HTTP suite before requests with23514 trusted_devices_trust_state_check: fixture direct UPDATE omitted trusted_by_account_id. Other existing SQL suites passed; broad26/27 workflows SUCCESS. Use existing setAdminDeviceTrustAuthoritative with owned owner actor to establish complete valid trust state. Device constraint, secure-session middleware, all permission/audit/redaction assertions unchanged. New operator runtime NOT_RUN until corrected CI; first setup failure retained.
