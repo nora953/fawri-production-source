@@ -22,3 +22,6 @@ True unmatched orphan inbox/operator workflow and ambiguous receipt COMMIT respo
 
 ## Checkout and lock-order follow-up
 New-key checkout is rejected while paid_reconciliation_required exists; the original idempotency key returns the original order. Both receipt phases and SaaS checkout acquire the merchant row before billing orders to match cashier checkout and avoid lock inversion. The process recovery suite checks the unresolved-receipt barrier and one-order count before recovery. This follow-up passed local typecheck/build/syntax; its changed runtime assertions await a new CI run.
+
+## Follow-up failure and correction
+Source8ad83ea CI detected TS2558 on the database wrapper generic and an overbroad cashier checkout barrier. Local chained commands had masked the failed typecheck exit; that validation claim is withdrawn for8ad83ea. Corrected wrapper query uses the supported unparameterized API; barrier requires an actual received event on a reconciliation order, preserving existing late/mismatch checkout behavior while blocking durable work (including SQL application failures). Re-run typecheck as a standalone command and preserve all original lifecycle assertions.

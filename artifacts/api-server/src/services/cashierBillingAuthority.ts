@@ -581,7 +581,9 @@ export async function createCashierBillingCheckout(input: {
     const pending = await operationalQueryRows<{ id: string }>(
       client,
       `SELECT id FROM cashier_billing_orders
-        WHERE merchant_id = $1 AND status IN ('pending', 'paid_reconciliation_required')
+        WHERE merchant_id = $1 AND (status = 'pending' OR (status = 'paid_reconciliation_required'
+          AND EXISTS (SELECT 1 FROM cashier_billing_events e
+            WHERE e.order_id = cashier_billing_orders.id AND e.status = 'received')))
         LIMIT 1 FOR UPDATE`,
       [merchantId],
     );

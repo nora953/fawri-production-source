@@ -581,7 +581,9 @@ export async function createSaasBillingCheckout(input: {
 
     const pendingResult = await client.query(
       `${ORDER_SELECT}
-        WHERE merchant_id = $1 AND status IN ('pending', 'paid_reconciliation_required')
+        WHERE merchant_id = $1 AND (status = 'pending' OR (status = 'paid_reconciliation_required'
+          AND EXISTS (SELECT 1 FROM saas_billing_events e
+            WHERE e.order_id = saas_billing_orders.id AND e.status = 'received')))
         LIMIT 2 FOR UPDATE`,
       [merchantId],
     );
@@ -797,11 +799,11 @@ export async function applyVerifiedSaasBillingProviderEvent(
   }
 
   const database = await pool();
-  const owner = await database.query<{ merchant_id: string }>(
+  const owner = await database.query(
     `SELECT merchant_id FROM saas_billing_orders WHERE id = $1 LIMIT 2`, [orderId],
   );
   if (owner.rows.length !== 1) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
-  const merchantId = owner.rows[0].merchant_id;
+  const merchantId = String(owner.rows[0].merchant_id);
   let sqlFailure: unknown;
   const processEvent = async (client: DatabaseClient, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
     // Match checkout and plan-cycle ordering before acquiring billing row locks.
