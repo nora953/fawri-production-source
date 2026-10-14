@@ -71,13 +71,13 @@ test('unresolved SuperQi reservations remain pending after checkout expiry in Sa
       if (kind === 'saas') {
         await pool.query(
           `INSERT INTO saas_billing_orders (id,merchant_id,operation,requested_plan,amount_iqd,currency,catalog_version,provider,status,idempotency_key,provider_checkout_ref,request_expires_at,metadata,created_at,updated_at)
-           VALUES ($1,$2,'activate','silver',3900,'IQD','2026-08-v1','superqi_sandbox','pending',$3,NULL,$4,$5::jsonb,$6,$6)`,
+           VALUES ($1,$2,'activate','silver',3900,'IQD','2026-08-v1','superqi_sandbox','pending',$3,NULL,$4,$5::jsonb,$6::timestamptz,$6::timestamptz)`,
           [orderId, merchantId, randomUUID(), expires, JSON.stringify({ provider_request_id: randomUUID() }), created],
         );
       } else {
         await pool.query(
           `INSERT INTO cashier_billing_orders (id,merchant_id,operation,current_seats,requested_seats,resulting_seats,unit_price_iqd,amount_iqd,currency,billing_period_start,billing_period_end,grace_duration_seconds,status,idempotency_key,provider,provider_checkout_ref,request_expires_at,metadata,created_at,updated_at)
-           VALUES ($1,$2,'activate',0,1,1,3900,3900,'IQD',$6,$6+INTERVAL '1 month',604800,'pending',$3,'superqi_sandbox',NULL,$4,$5::jsonb,$6,$6)`,
+           VALUES ($1,$2,'activate',0,1,1,3900,3900,'IQD',$6::timestamptz,$6::timestamptz+INTERVAL '1 month',604800,'pending',$3,'superqi_sandbox',NULL,$4,$5::jsonb,$6::timestamptz,$6::timestamptz)`,
           [orderId, merchantId, randomUUID(), expires, JSON.stringify({ provider_request_id: randomUUID() }), created],
         );
       }
