@@ -910,13 +910,15 @@ export async function applyVerifiedSaasBillingProviderEvent(
           : {}),
       };
     }
-    if (order.status !== "pending") {
+    // Proactive expiry must not discard a later verified payment: persist it
+    // as reconciliation work without activating the expired entitlement.
+    if (order.status !== "pending" && order.status !== "expired") {
       fail("SAAS_BILLING_ORDER_NOT_PAYABLE", "billing order is not payable", 409, {
         status: order.status,
       });
     }
 
-    if (timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()) {
+    if (order.status === "expired" || timestamp(order.request_expires_at).getTime() < input.occurredAt.getTime()) {
       await client.query(
         `UPDATE saas_billing_orders
             SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
