@@ -549,7 +549,7 @@ export async function createCashierBillingCheckout(input: {
         if (!existing.provider_checkout_ref || !redirectUrl) {
           fail(
             "CASHIER_BILLING_PROVIDER_CHECKOUT_INCOMPLETE",
-            "cashier payment checkout is incomplete; use a new idempotency key",
+            "cashier payment checkout is incomplete; retain this idempotency key and reconcile provider state before retrying",
             503,
           );
         }
