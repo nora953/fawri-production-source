@@ -134,8 +134,10 @@ function eventTimestamp(value: unknown): string {
 
 function parseJob(job: DurableJob): ParsedMetaJob {
   const payload = job.payload || {};
-  const eventId = text(payload.event_id || job.dedupe_key);
-  const merchantId = text(payload.merchant_id || job.merchant_id);
+  const rowMerchantId = text(job.merchant_id);
+  const rowEventId = text(job.dedupe_key);
+  const eventId = text(payload.event_id);
+  const merchantId = text(payload.merchant_id || rowMerchantId);
   const pageId = text(payload.page_id);
   const senderId = text(payload.sender_id);
   const externalMessageId = text(payload.external_message_id);
@@ -177,7 +179,11 @@ function parseJob(job: DurableJob): ParsedMetaJob {
   const bodyMessageId = text(message.mid);
 
   if (
+    !rowMerchantId ||
+    !rowEventId ||
     !eventId ||
+    merchantId !== rowMerchantId ||
+    eventId !== rowEventId ||
     !merchantId ||
     !pageId ||
     !senderId ||

@@ -64,13 +64,13 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     const webhook={object:'page',entry:[{id:target,messaging:[{sender:{id:sender},recipient:{id:target},timestamp:Date.now(),message:{mid:messageId,text:'كم سعر التوصيل؟'}}]}]};
     return {event:`meta:${target}:${messageId}`,payload:{event_id:`meta:${target}:${messageId}`,page_id:target,merchant_id:merchants[i],external_message_id:messageId,sender_id:sender,webhook_body:webhook}};
   }
-  let worker;
+  let worker,positivePassed=false;const deniedKinds=new Set();
   await t.test('signed legitimate foreign channel is connected and original worker sends/debits once',async()=>{
     worker=await start();const valid=bodyFor(1,'positive'),body=JSON.stringify(valid.payload.webhook_body);
     const response=await fetch(`http://127.0.0.1:${worker.info.port}/api/meta/webhook`,{method:'POST',headers:{'Content-Type':'application/json','Connection':'close','X-Hub-Signature-256':`sha256=${createHmac('sha256',secret).update(body).digest('hex')}`},body});assert.equal(response.status,200);
     assert.equal((await worker.command('run')).ran,true);assert.equal(providerCalls,1);
     const b=await balances();assert.equal(b.find(x=>x.merchant_id===merchants[1]).base_replies_used,1);
-    assert.equal((await pool.query("SELECT count(*)::int AS n FROM messages WHERE merchant_id=$1 AND sender='fawri' AND status='sent'",[merchants[1]])).rows[0].n,1);
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM messages WHERE merchant_id=$1 AND sender='fawri' AND status='sent'",[merchants[1]])).rows[0].n,1);positivePassed=true;
   });
   for(const kind of ['merchant','event','missing_event'])await t.test(`${kind} identity conflict is rejected before all nine domain surfaces`,async()=>{
     const value=bodyFor(kind==='merchant'?1:0,kind);
@@ -83,11 +83,13 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     assert.equal(enqueued.job.merchant_id,merchants[0]);
     assert.equal((await worker.command('run')).ran,true);
     const row=(await pool.query('SELECT status,last_error_code FROM background_jobs WHERE id=$1',[enqueued.job.id])).rows[0];
+    const after=await domainSnapshot();
+    console.log('META_JOB_IDENTITY_OBSERVATION '+JSON.stringify({kind,status:row.status,errorCode:row.last_error_code,changedDomainTables:tables.filter(table=>JSON.stringify(after[table])!==JSON.stringify(before[table])),providerCallsBefore:calls,providerCallsAfter:providerCalls}));
     assert.deepEqual(row,{status:'dead_letter',last_error_code:'META_JOB_PAYLOAD_INVALID'});
-    assert.equal(providerCalls,calls);assert.deepEqual(await domainSnapshot(),before);
+    assert.equal(providerCalls,calls);assert.deepEqual(after,before);deniedKinds.add(kind);
   });
   await t.test('original pooled worker retains tenant isolation after every denial',async()=>{
     const proof=await worker.command('isolation');assert.equal(proof.isolated,true);assert.equal(proof.contextReset,true);
-    console.log('META_JOB_IDENTITY_PROOF '+JSON.stringify({originalLiveWorker:true,restrictedRole:true,originalEncryptedQueue:true,validForeignChannelPositive:true,tenantMismatchDenied:true,eventMismatchDenied:true,missingEventDenied:true,domainSurfacesUnchanged:9,providerCalls:1,contextReset:true}));
+    if(positivePassed&&deniedKinds.size===3)console.log('META_JOB_IDENTITY_PROOF '+JSON.stringify({originalLiveWorker:true,restrictedRole:true,originalEncryptedQueue:true,validForeignChannelPositive:true,tenantMismatchDenied:true,eventMismatchDenied:true,missingEventDenied:true,domainSurfacesUnchanged:9,providerCalls,contextReset:true}));
   });
 });
