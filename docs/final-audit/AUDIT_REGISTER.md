@@ -1,3 +1,15 @@
+## Verified Meta webhook-body identity admission — 2026-10-15 Baghdad
+
+Accepted source `15a2b0d6e83eb6aec8fc4f284cc8a6ab24c630d3`, Draft PR #547. Isolated run `38653303268`, job `116157339326`, merge checkout `60d64af543b42ddc31c216a74f48665b5b804972`: **275 PASS / 0 FAIL / 0 SKIP**, 51 unique files / 53 invocations. All 14 observed workflows succeeded. Counts include parent tests and repeated runtime invocations; overlapping workflow counts are not added. Meta run `38653303727`, job `116157046053` also succeeded; the identity suite has 12 passing tests including its parent.
+
+The original signed app, encrypted queue and restricted live worker reject nine malformed jobs: row/payload merchant and event conflicts, missing explicit event, and conflicting or missing body page/sender/message identifiers. Every denial returns `META_JOB_PAYLOAD_INVALID`, preserves exact snapshots of nine domain tables and keeps provider calls at 1 for the valid signed second-tenant positive control. Pooled isolation/context reset passes. Repair requires body identifiers to equal the already-required explicit payload fields before SQL preparation.
+
+Baseline `22f62bbe06af99546c0870de25560671749e98da`, Meta run `38653087929`, job `116156323167`: 8 PASS / 4 FAIL including parent. Each of three missing body identifiers wrongly completed with one provider call and changes to conversations, messages, inbound events, outbound deliveries, notifications, subscriptions and reply ledger. Tenant/event row and payload were consistent, so no tenant bypass or external exploit is demonstrated. Body conflicts already rejected correctly.
+
+Full restore and owned container/volume cleanup succeeded; 33 migrations, 95 tables, 45 policies, 8 functions, fingerprint `793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498`. Local TypeScript/syntax/diff checks passed. Report: `P0_META_WEBHOOK_BODY_IDENTITY_20261015.md`; immutable machine evidence: `evidence/P0_META_WEBHOOK_BODY_IDENTITY_RESULTS_20261015.json`.
+
+Documentation checkpoint `9dd839d` had 13 successes and a cancelled isolated run; it is not counted as 14/14 acceptance. Graph/embedding are synthetic. No schema/RLS/grants or hosted rollout changes. #535 remains open for hosted capability review. Next audit candidates: object/recipient/echo/cardinality/envelope semantics and broader precommit termination; these identifier tests do not close those scopes. PR remains draft, without merge/deployment.
+
 ## Verified Meta durable job identity admission — 2026-10-15 Baghdad
 
 Draft PR #547 accepted source `f76f4db29811864cd885aa4fb0eafd5577e490e2`; isolated run `38652116750`, job `116153247325`, merge checkout `71db6931587456b44938ec43135c3b6f84a55b05`: **269 PASS / 0 FAIL / 0 SKIP**, 51 unique files / 53 invocations. All 14 observed workflows succeeded. Counts include parent tests and repeated runtime invocations; overlapping workflow counts are not added. The new identity suite contributes 6 passing tests including its parent.
