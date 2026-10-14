@@ -1,3 +1,9 @@
+## Wire transport failure correction in progress
+
+Sourcec4acd6cb isolated38549209533/job115802750100 failed four wire cases at controlled failure-message assertion after actual server COMMIT/drop marker. Correct production DB pooled-client error event handling in lib/db/src/index.ts; keep query rejections and all original recovery assertions. Real corrected runtime NOT_RUN pending CI; see P0_WIRE_COMMIT_ACCEPTANCE_20261014.md. No hosted action/merge/deploy.
+
+---
+
 ## Active wire COMMIT response acceptance — 2026-10-14
 
 DraftPR538 continuation fromf696827b (all13observed workflowsSUCCESS). Four new real TCP response-loss cases use attested loopback proxy and independent direct parent reads; no production source/schema change. Local framing4PASS/typecheck/syntaxPASS; actualwireSQL NOT_RUN pending CI. See P0_WIRE_COMMIT_ACCEPTANCE_20261014.md. Preserve existing driver/process/backend/COMMIT rollback proofs. After wire proof, next unmatched payment inbox under523 and full downstream restricted Meta535; do not repeat old work.
