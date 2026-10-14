@@ -105,7 +105,15 @@ try {
     }
     const initial=await snapshot();capture=initial.capture;const v=initial.v;assert.ok(v.text.includes(ready));
     let recovered=null,diagnostic=null;
-    if(route.mode==='denied'){
+    if(route.mode==='revoked-poll'){
+     assert.ok(v.comboboxes>=3 && v.textareas===1,'authorized controls absent before revocation');
+     state.revoked=true;
+     await waitFor(()=>apiCalls.some(x=>x.id===id&&x.path.endsWith('/directory')&&x.status===403),16000,id+' actual silent poll');
+     await delay(500);
+     const after=await snapshot('-revoked');
+     assert.equal(after.v.comboboxes,0,'revoked assistant retains merchant selectors after HTTP403');
+     assert.equal(after.v.textareas,0,'revoked assistant retains request form after HTTP403');
+    }else if(route.mode==='denied'){
      assert.equal(v.comboboxes,0);assert.equal(v.textareas,0);assert.equal(v.text.includes(text.authorizationsTitle),false);assert.equal(v.text.includes('OWNED_ASSISTANT_DIRECTORY'),false);
     }else if(route.mode==='load-failure'){
      assert.equal(v.text.includes('OWNED_PRIVATE_FAILURE_SENTINEL'),false);assert.equal(v.comboboxes,0);assert.equal(v.textareas,0);assert.ok(v.buttons.some(b=>normal(b.text)===normal(text.retry)));
