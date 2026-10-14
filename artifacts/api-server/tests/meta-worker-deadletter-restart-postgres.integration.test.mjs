@@ -65,7 +65,18 @@ test('actual signed Meta worker restart discovers refund after committed DLQ gap
     const b=await balances();assert.equal(b.find(x=>x.merchant_id===merchants[0]).base_replies_remaining,19);assert.equal(b.find(x=>x.merchant_id===merchants[1]).base_replies_remaining,20);
   });
   await t.test('fresh original worker discovers committed failure and restores exactly one credit',async()=>{
-    const fresh=await start();assert.equal((await fresh.command('run')).ran,true);
+    const fresh=await start();
+    // IPC readiness means the original worker was constructed, not that its
+    // asynchronous startup refund scan has finished. Observe its real enqueue.
+    let discovered;const deadline=Date.now()+10000;
+    while(Date.now()<deadline){
+      discovered=(await jobs()).find(j=>j.type==='meta.reply.refund'&&j.dedupe_key===`meta-refund:${event}`);
+      if(discovered)break;
+      await new Promise(r=>setTimeout(r,25));
+    }
+    assert.ok(discovered,'original startup must create owed refund within owned deadline');assert.equal(discovered.status,'queued');
+    assert.equal((await ledger()).filter(x=>x.direction==='credit').length,0);
+    assert.equal((await fresh.command('run')).ran,true);
     const rows=await jobs();assert.equal(rows.length,2);const refund=rows.find(j=>j.type==='meta.reply.refund');assert.equal(refund.status,'completed');assert.equal(refund.attempts,1);assert.equal(refund.result.refund_status,'refunded');
     assert.equal(rows.find(j=>j.type==='meta.webhook.reply').result._fawri_requeue_policy,'blocked');
     committedLedger=await ledger();assert.equal(committedLedger.length,2);assert.equal(committedLedger.filter(x=>x.direction==='credit').length,1);

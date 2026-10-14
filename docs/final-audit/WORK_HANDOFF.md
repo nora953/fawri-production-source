@@ -1,3 +1,8 @@
+
+## Explicit original startup recovery barrier
+
+Secondsourcec570b143 (ownedpoll60000ms) Meta pipeline38648214205/job116140261289 newrestart1PASS/3FAIL: samefirst manualrunfalse, then subsequent freshworkers could process the queuedrefund. Foundation succeeded. Original constructor starts recoverMissingRefundJobs asynchronously; IPCready means constructed, not scancomplete. runOnce enumerates/claims before afterRecovery handlerbarrier, so an emptyinitialclaim is valid while scanstill createsjob. Test now boundedlyobserves original refundjob appearance (10s/25ms ownedSQL polling), requires queuedstatus/no credit beforemanualrun, then retains run=true, all1job/credit/ledger/isolationchecks. No fixtureinsert/refundmock or runtime/readinesschange. Preserve bothfailedattempts; correctedacceptance pendingCI.
+
 ## Meta worker restart first attempt/polling fixture correction — 2026-10-15 Baghdad
 
 88cbe8b2 newrestart Meta pipeline38647618893/job1161382863321PASS/3FAIL(parentincluded): originalDLQcommit/selfSIGKILL/no-refundgapPASS; freshworker manualrunfalse while downstreamownedSQL alreadyhas1credit; dependentledger comparisonfailed againstundefined afterearlyassert. Original explicitworkerconstructor starts500msinterval despitebootstrapdisableflag. Fixture nowsets60000ms as priororiginalworker tests, no app/polling/acceptance change. PendingCI; accepted259baseline separate.
