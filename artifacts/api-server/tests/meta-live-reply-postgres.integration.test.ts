@@ -467,6 +467,7 @@ await t.test("Meta text with an image attachment is suppressed until the attachm
       external_message_id: mid,
       sender_id: senderId,
       webhook_body: {
+        object: "page",
         entry: [
           {
             id: pageA,

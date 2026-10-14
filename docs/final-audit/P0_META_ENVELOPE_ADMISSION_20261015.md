@@ -1,3 +1,7 @@
+## First repair runtime result and fixture correction
+
+Source `47f579383d6189d40c97e25dfe806bc80445e305`, Meta run `38654357087`, job `116160480801`: all 16 identity tests pass, including positive control, thirteen denials and pooled isolation. Existing restart, restore, full-app and knowledge suites pass. The larger live-reply suite fails its captioned-image case because that direct-enqueue fixture omitted `object: "page"`; actual ingress always supplies it. Add the normalized object only to that fixture, retain all media suppression/storage assertions and all four malformed-envelope denials. No production guard relaxation. Final CI acceptance pending.
+
 ## Runtime finding and prepared repair
 
 Baseline `7e10c21252df4c284401ea9f2c13187d7f4ffe83`, Meta run `38654095685`, job `116159663016`: identity suite 11 PASS / 5 FAIL including parent. The prior nine denials pass. Wrong object, echo, extra entry and extra message all wrongly complete, each adding one provider call (1→2→3→4→5), changing seven domain snapshots including subscription/reply ledger. The first event and canonical row/payload tenant match; no cross-tenant execution or external exploit is demonstrated. Later events are ignored, not proven executed.
