@@ -41,6 +41,37 @@ if(process.env.FAWRI_TEST_META_DEADLETTER_CRASH==='1'){
     return connect.apply(this,args).then(observe);
   };
 }
+if(process.env.FAWRI_TEST_META_PRECOMMIT_CRASH==='1'){
+  // Forward real native queries unchanged. Kill only after PostgreSQL has
+  // acknowledged this owned INSERT, before control returns to the transaction.
+  const connect=pool.connect;
+  function observe(client){
+    const query=client.query,release=client.release;
+    client.query=function(...args){
+      if(typeof args.at(-1)==='function')return query.apply(this,args);
+      return (async()=>{
+        const sql=typeof args[0]==='string'?args[0]:args[0]?.text||'';
+        const values=Array.isArray(args[1])?args[1]:args[0]?.values||[];
+        const result=await query.apply(this,args);
+        if(/INSERT INTO channel_inbound_events/.test(sql)&&values[3]===process.env.FAWRI_TEST_META_RESTART_EVENT&&result.rowCount===1){
+          await send({type:'inbound-precommit-kill',insertAcknowledged:true,rowCount:result.rowCount,commitIssued:false});
+          process.kill(process.pid,'SIGKILL');
+        }
+        return result;
+      })();
+    };
+    client.release=function(...args){client.query=query;client.release=release;return release.apply(this,args);};
+    return client;
+  }
+  pool.connect=function(...args){
+    if(typeof args[0]==='function'){
+      const callback=args[0];return connect.call(this,(error,client)=>{
+        if(error)return callback(error);observe(client);callback(null,client,client.release);
+      });
+    }
+    return connect.apply(this,args).then(observe);
+  };
+}
 const flags=(await pool.query("SELECT current_user AS role,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
 assert.deepEqual(flags,{role:process.env.FAWRI_TEST_META_ROLE,rolsuper:false,rolbypassrls:false,owns_table:false});
 const knowledge=await import('../../src/services/ai/knowledgeDecisionEngine.ts');
