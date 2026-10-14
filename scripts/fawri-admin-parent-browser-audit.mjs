@@ -53,13 +53,16 @@ async function check(name, fn) {
 try {
  const states=new Map(), unexpected=[];
  const ticket={id:'synthetic-ticket',merchant_id:'synthetic-merchant',merchant_name:'Synthetic Store',merchant_phone:'+19955550000',subject:'Parent authority audit',category:'technical',status:'in_progress',assigned_admin_id:'synthetic-admin',assigned_admin_name:'Synthetic Admin',created_at:'2026-10-12T00:00:00Z',updated_at:'2026-10-12T00:00:00Z',waiting_on:'admin',messages:[{id:'message',sender_type:'merchant',sender_id:'synthetic-merchant',sender_name:'Synthetic Merchant',body:'AUDIT_PARENT_SUPPORT_MESSAGE',created_at:'2026-10-12T00:00:00Z'}],inspection_requests:[]};
- function admin(role){return {id:'synthetic-admin',owner_name:'Audit '+role,phone:'+19955550001',is_admin:true,admin_role:role==='owner'?'owner_admin':'assistant_admin',must_change_password:role==='password',permissions:role==='support'||role==='password'?['manage_support']:role==='inspector'?['manage_support','inspect_merchant_sessions']:role==='logs'?['view_logs']:[]};}
+ function admin(role){return {id:'synthetic-admin',owner_name:'Audit '+role,phone:'+19955550001',is_admin:true,admin_role:role==='owner'?'owner_admin':'assistant_admin',must_change_password:role==='password',permissions:role==='support'||role==='password'?['manage_support']:role==='inspector'?['manage_support','inspect_merchant_sessions']:role==='logs'?['view_logs']:role==='finance'?['manage_subscriptions']:[]};}
  const entry=`import React from 'react';import {createRoot} from 'react-dom/client';
  import AdminPage from './artifacts/fawri/src/pages/AdminPage.tsx';
  import {I18nProvider} from './artifacts/fawri/src/lib/i18n.tsx';
  import {getAdminSupportText} from './artifacts/fawri/src/components/admin/AdminSupportTab.tsx';
  import {getAdminText} from './artifacts/fawri/src/lib/admin-translations.ts';
- localStorage.clear();sessionStorage.clear();localStorage.setItem('fawri_lang','en');
+ import {VERIFIED_RECEIPT_REVIEW_COPY} from './artifacts/fawri/src/lib/translations/features/admin/VerifiedReceiptReview.ts';
+ const auditLang=new URLSearchParams(location.search).get('lang')||'en';
+ globalThis.auditReceipt=VERIFIED_RECEIPT_REVIEW_COPY[auditLang];
+ localStorage.clear();sessionStorage.clear();localStorage.setItem('fawri_lang',auditLang);
  // Suppress legacy local imports in this fresh synthetic owner; those endpoints
  // are outside this UI permission test, and non-GET requests other than synthetic logout fail closed.
  localStorage.setItem('fawri_admin_data_migrated_v1_synthetic-admin','done');
@@ -84,6 +87,14 @@ try {
    return send(status,state.role==='malformed'?{ok:true,admin:{is_admin:false}}:status===200?{ok:true,admin:admin(state.role)}:{ok:false});
   }
   if(req.url==='/api/auth/admin/support/tickets')return send(200,{ok:true,tickets:[ticket],active_count:1});
+  if(req.url.startsWith('/api/auth/admin/billing/verified-receipts?')){
+   assert.ok(req.headers['x-fawri-device-id'],'real device header required');
+   res.setHeader('Cache-Control','no-store');
+   if(state.receiptStatus)return send(state.receiptStatus,{ok:false,error:'SENSITIVE_FIXTURE_DRIVER_DETAIL'});
+   const cursor=new URL(req.url,'http://synthetic').searchParams.get('cursor');
+   if(cursor!==null&&cursor!=='synthetic_opaque_cursor')return send(400,{ok:false});
+   return send(200,{ok:true,receipts:state.emptyReceipts?[]:[{provider:'superqi_sandbox',provider_event_id:cursor?'RECEIPT_SECOND_PAGE':'RECEIPT_FIRST_PAGE',event_type:'paid',amount_iqd:25000,first_received_at:'2026-10-14T12:00:00.123456Z',payment_ref_suffix:'12345678',request_ref_suffix:null,payment_ref:'FORBIDDEN_FULL_REFERENCE',payload_hash:'FORBIDDEN_PAYLOAD_HASH'}],next_cursor:state.emptyReceipts||cursor?null:'synthetic_opaque_cursor'});
+  }
   const responses={
    '/api/auth/admin/emergency-read-access/overview':{ok:true,is_owner:state.role==='owner',authorization:{can_request:false},requests:[]},
    '/api/auth/merchants':{ok:true,merchants:[]},
@@ -109,9 +120,9 @@ try {
  evidence.browser=(await(await fetch(`http://127.0.0.1:${port}/json/version`)).json()).Browser;
 
  let sequence=0;
- async function tab(role){
+ async function tab(role,lang='en'){
   const key=String(++sequence),state={role,calls:[],meCalls:0};states.set(key,state);
-  const url=origin+`/admin?case=${key}`;
+  const url=origin+`/admin?case=${key}&lang=${lang}`;
   const target=await(await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`,{method:'PUT'})).json();
   const cdp=await connect(target.webSocketDebuggerUrl);await cdp('Runtime.enable');
   await cdp('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
@@ -162,8 +173,65 @@ try {
    return {...value,meCalls:t.state.meCalls,limits:'Synthetic GET auth fixture; no backend authorization or race-window write proof.'};
   }finally{await closed(t);}
  });
+
+ const receiptRequests=t=>t.state.calls.filter(path=>path.startsWith('/api/auth/admin/billing/verified-receipts?'));
+ async function receiptClick(c,label){
+  const point=await evaluate(c,`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===auditReceipt[${JSON.stringify(label)}]);if(!b||b.disabled)return null;const r=b.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  assert.ok(point,'enabled receipt control '+label);
+  await c('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
+  await c('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
+ }
+ async function openReceipts(t){
+  await waitFor(()=>evaluate(t.cdp,`Array.from(document.querySelectorAll('aside nav button')).some(b=>b.textContent.includes(auditReceipt.title))`));
+  const point=await evaluate(t.cdp,`(()=>{const b=Array.from(document.querySelectorAll('aside nav button')).find(b=>b.textContent.includes(auditReceipt.title));const r=b.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await t.cdp('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
+  await t.cdp('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
+  await waitFor(()=>receiptRequests(t).length>0);
+ }
+ for(const lang of ['en','ar','ku'])await check(`actual receipt review owner pagination ${lang}`,async()=>{
+  const t=await tab('owner',lang);
+  try{
+   await openReceipts(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
+   assert.equal(await evaluate(t.cdp,`document.querySelector('[aria-labelledby=receipt-review-title]').dir`),lang==='en'?'ltr':'rtl');
+   assert.equal(await evaluate(t.cdp,`document.body.textContent.includes(auditReceipt.description)`),true);
+   assert.equal(await evaluate(t.cdp,`document.body.textContent.includes('2026-10-14T12:00:00.123456Z')&&document.body.textContent.includes('…12345678')`),true);
+   assert.equal(await evaluate(t.cdp,`/FORBIDDEN_FULL_REFERENCE|FORBIDDEN_PAYLOAD_HASH/.test(document.body.textContent)`),false);
+   await receiptClick(t.cdp,'next');await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_SECOND_PAGE')&&!document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
+   assert.ok(receiptRequests(t).at(-1).includes('cursor=synthetic_opaque_cursor'));
+   await receiptClick(t.cdp,'previous');await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
+   t.state.emptyReceipts=true;await receiptClick(t.cdp,'refresh');await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReceipt.empty)&&!document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
+   return {lang,requests:receiptRequests(t),redacted:true,pagination:true,empty:true};
+  }finally{await closed(t);}
+ });
+ for(const role of ['support','logs','none','password'])await check(`actual receipt review denied ${role}`,async()=>{
+  const t=await tab(role);try{
+   await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(${JSON.stringify('Audit '+role)})`));await delay(200);
+   assert.equal(await evaluate(t.cdp,`Array.from(document.querySelectorAll('aside nav button')).some(b=>b.textContent.includes(auditReceipt.title))`),false);
+   assert.equal(receiptRequests(t).length,0);return {requests:0};
+  }finally{await closed(t);}
+ });
+ for(const status of [403,503])await check(`actual receipt review HTTP ${status} clears previous data`,async()=>{
+  const t=await tab('finance');try{
+   await openReceipts(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
+   t.state.receiptStatus=status;await receiptClick(t.cdp,'refresh');
+   await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReceipt.${status===403?'denied':'unavailable'})`));
+   assert.equal(await evaluate(t.cdp,`/RECEIPT_FIRST_PAGE|SENSITIVE_FIXTURE_DRIVER_DETAIL/.test(document.body.textContent)`),false);
+   t.state.receiptStatus=null;await receiptClick(t.cdp,'refresh');await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
+   return {status,cleared:true,recovered:true};
+  }finally{await closed(t);}
+ });
+ await check('actual receipt review permission refresh unmounts data',async()=>{
+  const t=await tab('finance');try{
+   await openReceipts(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
+   const before=t.state.meCalls;t.state.role='logs';await evaluate(t.cdp,'window.dispatchEvent(new Event("focus"));true');
+   await waitFor(()=>t.state.meCalls>before);
+   await waitFor(()=>evaluate(t.cdp,`!document.querySelector('[aria-labelledby=receipt-review-title]')&&!document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));
+   const calls=receiptRequests(t).length;await delay(200);assert.equal(receiptRequests(t).length,calls);
+   return {unmounted:true,requestsStopped:true};
+  }finally{await closed(t);}
+ });
  assert.deepEqual(unexpected,[],'unexpected or mutating synthetic requests');
- evidence.limits='Actual mounted AdminPage/controller/shell/view/i18n/CSS; synthetic loopback HTTP, desktop English. No real auth server, App router wrapper, hosted grant, full visual/accessibility or backend write proof.';
+ evidence.limits='Actual mounted AdminPage/controller/shell/view/i18n/CSS; synthetic loopback HTTP, desktop English plus receipt review English/Arabic/Sorani. No real auth server, App router wrapper, hosted grant, full visual/accessibility or backend write proof.';
 } catch(e){infrastructureError=e.message;}
 finally {
   for(const ws of sockets)ws.close();
@@ -180,4 +248,4 @@ finally {
 
 if(infrastructureError)evidence.infrastructureError=infrastructureError;
 console.log('AUDIT_ADMIN_PARENT_RESULT '+JSON.stringify(evidence));
-if(infrastructureError||evidence.results.length!==15||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
+if(infrastructureError||evidence.results.length!==25||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
