@@ -16,6 +16,29 @@ process.on('message', async task => {
   try {
     if (!['saas', 'cashier'].includes(task.kind) || !/^receipt-owned-[a-f0-9-]+$/.test(task.marker)) throw new Error('invalid synthetic child task');
     pool.options.application_name = task.marker;
+    if (task.commitAcknowledgmentLoss) {
+      if (![1,2].includes(task.commitAcknowledgmentLoss)) throw new Error('invalid synthetic commit boundary');
+      let commits = 0;
+      pool.on('connect', client => {
+        const originalQuery = client.query;
+        client.query = function (...args) {
+          const sql = typeof args[0] === 'string' ? args[0] : args[0]?.text;
+          if (sql?.trim().toUpperCase() !== 'COMMIT') return originalQuery.apply(this,args);
+          return (async () => {
+            const result = await originalQuery.apply(this,args);
+            commits++;
+            if (commits === task.commitAcknowledgmentLoss) {
+              // The real server COMMIT succeeded; inject only the driver's
+              // outcome delivered to the authority. This is not a wire proxy.
+              await send({type:'commit-ack-loss',boundary:commits,serverCommitCompleted:true});
+              throw Object.assign(new Error('synthetic lost commit acknowledgment'),{code:'08006'});
+            }
+            return result;
+          })();
+        };
+      });
+    }
+
     const authority = await import(`../../src/services/${task.kind}BillingAuthority.ts`);
     const apply = task.kind === 'saas' ? authority.applyVerifiedSaasBillingProviderEvent : authority.applyVerifiedCashierBillingProviderEvent;
     const result = await apply({...task.event, occurredAt: new Date(task.event.occurredAt)});

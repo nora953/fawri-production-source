@@ -1,3 +1,9 @@
+## Active COMMIT acknowledgment acceptance — 2026-10-14
+
+DraftPR538 acceptance continuation, no production code change. Adds four actual SQL COMMIT / injected driver08006 cases and fresh-process replay. Also corrects cashier history fixture clock precision after documentation-head lifecycle38524878617/job115722776644 failed a credential-at-operation boundary. Previous tested73023597181/0 stays historical, not proof of current changes. Local typecheck/syntax PASS; new runtime NOT_RUN pending CI. See P0_COMMIT_ACK_ACCEPTANCE_20261014.md. Issue523/535 stayOPEN, no hosted mutations/merge/deploy.
+
+---
+
 ## Verified durable payment receipt checkpoint — 2026-10-14
 
 Draft PR538, tested source **7302359705a509cc25cefbc3f6e14849b0f68508**: isolated run38524397545/job115721219577 **181PASS/0FAIL/0SKIP**,42unique files/44invocations; **12/12 observed workflows SUCCESS**. New receipt recovery suite7PASS covers four process/backend interruptions, two known admission-COMMIT failures, fresh concurrent next-day retries, original payment time, unresolved-receipt checkout barriers and one entitlement. Admission commits before application; merchant-first locks align checkout. Prior8ad83ea typecheck/barrier failures remain recorded, corrected without weakening lifecycle assertions.
