@@ -1,3 +1,9 @@
+## Current authoritative continuation — SEQ-385 (2026-10-14)
+
+Latest verified [SEQ-385](SEQ_385_EMERGENCY_HTTP_COVERAGE_GATE_20261014.md); preceding documented checkpoints [SEQ-378](SEQ_378_CROSS_CYCLE_REFUND_EVIDENCE_20261014.md), [SEQ-379](SEQ_379_CASHIER_BILLING_NEGATIVE_RECONCILIATION_20261014.md), [SEQ-380–381](SEQ_380_381_EXTERNAL_BILLING_REPLAY_EVIDENCE_20261014.md), [SEQ-383](SEQ_383_EMERGENCY_DIRECTORY_AUTH_BOUNDARY_20261014.md). SEQ-382 and SEQ-384 findings were preserved in PR #520 comments, not standalone checkpoint files. Do not infer all intermediate stages were runtime executed.
+
+Current priority: execute pre-existing emergency HTTP integration suite in **guarded disposable PostgreSQL CI**; then fill missing actual GET directory 403/200 and original App revocation/browser proof. Existing suite already covers owner directory, unauthorized request, authorization, snapshot and revocation assertions at source level, but its execution in run38506114912 is **NOT VERIFIED**. No code repair before comprehensive audit signoff. Existing baseline UI 84/222 bounded PASS, 138 NOT_RUN (37.84% of UI baseline only). Overall audit percentage NOT_YET_MEASURABLE; release BLOCKED.
+
 
 ## Authoritative continuation — SEQ-366–371 (2026-10-14 Baghdad)
 
