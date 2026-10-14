@@ -294,7 +294,7 @@ export function isKnownHistoricalDisposableGuardFixture(finding, objectPath, obj
 export function isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId) {
   return objectId === "202a9fc041cb2cde0e8169683a6eb9eb7478e130" &&
     normalizeRepositoryPath(objectPath) === "docs/final-audit/evidence/seq241-entrypoint-fences.test.mjs" &&
-    finding.rule === "credential-url" && finding.index === 641 && finding.length === 64;
+    finding.rule === "credential-url" && finding.index === 641 && finding.length === 54;
 }
 
 function scanHistory(root) {

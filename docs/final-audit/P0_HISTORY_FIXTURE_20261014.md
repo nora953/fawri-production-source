@@ -9,3 +9,7 @@ Read-only blob inspection confirms synthetic credential identities at a reserved
 Correction follows existing immutable historical fixture policy: one exact blob/path/rule/index/length predicate. Changed blob/file/index/length or any other secret rule is not suppressed. No broad hostname/path allowlist, no history rewriting, no rule disabled. Tests cover positive immutable case and all these negative mutations.
 
 Local validation: 20PASS/0FAIL for security-final-audit.test.mjs, ci-run-redacted.test.mjs and http-security-contract.test.mjs. Tracked repository scan PASS1916files/0findings; policy PASS87workflows/0violations. Local checkout is shallow, so no complete-history PASS claimed locally. Full GitHub history gate awaits this security PR CI. This changes scanner false-positive classification, not application RLS or billing source. Payment SQL evidence remains da4d0c05 unchanged.
+
+
+## First CI failure and corrected detector span
+Security PR536/71598be7 run38518405312/job115702306876 retained the same one finding. Diagnosis: initial pinned length64 included the URL path, while the real credential-url detector ends at host and reports index641/length54. Predicate corrected to54; test now constructs the synthetic rejection URL with URL fields and invokes actual findSensitiveText, asserting its real54span before exception/mutation tests. Original CI failure retained; no green history proof claimed until corrected run completes. No broadening of blob/path/rule/location scope.
