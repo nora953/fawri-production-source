@@ -1,3 +1,11 @@
+# Accepted bounded audited receipt replay review — 2026-10-14
+
+DraftPR543 tested36e34b0250c9e5551cfe36eada09bbc0c91fca49. Isolated38605943109/job115996722476223PASS/0FAIL/0SKIP,45unique files/47invocations; newreview12PASS.24/24 observed workflowsSUCCESS. Local APItypecheck/build/syntax/canonical32 and5transporttestsPASS. Fullrestore32migrations/95tables/45policies/7functions, matching fingerprint/restrictedreadsPASS; rawreview capability remains non-PUBLIC. Historicalmigration metadata unchanged.
+
+Actual new HTTProute+real secureadmin middleware/device/origin/currentpermission+SQL under restrictednonowner/NOBYPASSRLS role, controlled Express host, injectedfreshprovider. Revokedpermission/mappingchanged duringI/O deny finalreview. AuditSQLfault prevents provideraccess/disclosure. Both authorities/concurrentreviews leave fullreceipt/order snapshots and globalentitlements unchanged. Resultapplied:false, no execution or future grant authorization. No authstubs or fullmainapp/UI proof. [Machine evidence](evidence/P0_RECEIPT_REPLAY_REVIEW_RESULTS_20261014.json).
+
+Documentation-only checkpoint preserves testedsource.523 staysOPEN for separately scopedtenant-aware execution/currentpermissionthroughgrant, frontend action andretention/grantrollout;535 separate. No hosted DB/grant/provider/payment, merge/deploy, UIbaselinepercent orrelease-readyclaim.
+
 # Audited receipt replay review prerequisite — 2026-10-14
 
 Stacked on DraftPR542/59c01d7d (documentation head11/11 observed workflowsSUCCESS). Adds POST /api/auth/admin/billing/verified-receipts/:eventId/replay-review: trusted device-bound current admin manage_subscriptions permission and origin middleware, strict authority/order_id intent only, no actor/merchant/amount override. This step reviews an existing expected order; it does not execute reconciliation, apply payment, repair mapping or authorize a future grant.
