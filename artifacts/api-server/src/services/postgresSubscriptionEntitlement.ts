@@ -889,7 +889,7 @@ export async function reserveMerchantAutoReplyPostgres(
           "meta_auto_reply_reservation",
           normalizedEventId,
           repliesRemaining,
-          JSON.stringify({ source }),
+          JSON.stringify({ source, cycle_starts_at: row.starts_at.toISOString() }),
           now,
         ],
       );
@@ -957,6 +957,17 @@ export async function restoreMerchantAutoReplyPostgres(
       return { restored: false, reason: "subscription_not_found" };
     }
     const row = toSubscriptionRow(result[0]);
+
+    // A renewal can reuse the same subscription row. Never refund an old
+    // base-reply debit into a later cycle, or a legacy debit without an
+    // explicit cycle marker whose ownership cannot be proven.
+    if (!debit.reply_batch_id) {
+      const debitCycleStart = debit.metadata?.cycle_starts_at;
+      if (typeof debitCycleStart !== "string" ||
+          debitCycleStart !== row.starts_at.toISOString()) {
+        return { restored: false, reason: "refund_cycle_mismatch" };
+      }
+    }
 
     if (debit.reply_batch_id) {
       const batchResult = await queryRows<Record<string, unknown>>(

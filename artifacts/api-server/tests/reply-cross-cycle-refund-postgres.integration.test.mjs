@@ -31,10 +31,23 @@ test('late old-cycle refund cannot erase a new-cycle reply debit', async t => {
   assert.equal(before.base_replies_used, 1);
   assert.equal(before.base_replies_remaining, 3999);
   const refund = await refundMerchantAutoReplyAuthoritative(oldEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:03:00Z'));
+  assert.equal(refund.refunded, false, 'old-cycle base debit must not refund into renewed cycle');
+  assert.equal(refund.reason, 'refund_cycle_mismatch');
   const after = await authority.getCurrentSubscriptionPostgres(merchantId, new Date('2026-09-12T00:04:00Z'));
   console.log('REPLY_CROSS_CYCLE_RESULT ' + JSON.stringify({ refund, beforeUsed: before.base_replies_used, afterUsed: after.base_replies_used, beforeRemaining: before.base_replies_remaining, afterRemaining: after.base_replies_remaining }));
   // New-cycle usage must stay attributable to the new event. Historical refund
   // policy may reject or reconcile separately, but cannot erase this debit.
   assert.equal(after.base_replies_used, before.base_replies_used);
   assert.equal(after.base_replies_remaining, before.base_replies_remaining);
+  // A valid refund within the active cycle must still restore exactly one
+  // debit. This guards against an over-broad fail-closed cycle check.
+  const currentRefund = await refundMerchantAutoReplyAuthoritative(newEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:05:00Z'));
+  assert.equal(currentRefund.refunded, true);
+  const restored = await authority.getCurrentSubscriptionPostgres(merchantId, new Date('2026-09-12T00:06:00Z'));
+  assert.equal(restored.base_replies_used, 0);
+  assert.equal(restored.base_replies_remaining, 4000);
+  const replay = await refundMerchantAutoReplyAuthoritative(newEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:07:00Z'));
+  assert.equal(replay.refunded, false);
+  assert.equal(replay.reason, 'already_refunded');
+  console.log('REPLY_SAME_CYCLE_REFUND_RESULT ' + JSON.stringify({ currentRefund, used: restored.base_replies_used, remaining: restored.base_replies_remaining, replay }));
 });
