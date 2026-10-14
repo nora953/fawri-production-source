@@ -179,6 +179,10 @@ function parseJob(job: DurableJob): ParsedMetaJob {
   const bodyMessageId = text(message.mid);
 
   if (
+    webhookBody.object !== "page" ||
+    entries.length !== 1 ||
+    messaging.length !== 1 ||
+    message.is_echo === true ||
     !rowMerchantId ||
     !rowEventId ||
     !eventId ||
