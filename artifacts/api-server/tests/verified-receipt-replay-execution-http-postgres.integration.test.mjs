@@ -64,12 +64,14 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
     await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[id,`+1996${String(randomInt(0,100000000)).padStart(8,'0')}`]);
     await admin.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",[id]);
     const checkout=kind==='saas'?await saas.createSaasBillingCheckout({merchantId:id,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'}):await cashier.createCashierBillingCheckout({merchantId:id,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'});
-    const payload={paymentId:`synthetic-replay-${randomUUID()}`,requestId:randomUUID(),status:'SUCCESS',canceled:false,amount:checkout.order.amount_iqd,confirmedAmount:checkout.order.amount_iqd,currency:'IQD',creationDate:'2026-10-14T12:00:00Z'};
+    const firstReceivedAt=new Date(Date.parse(checkout.order.created_at)+100).toISOString().replace(/(\.\d{3})Z$/,'$1456Z');
+    assert.ok(Date.parse(firstReceivedAt)>Date.parse(checkout.order.created_at),'owned receipt must follow original order creation');
+    const payload={paymentId:`synthetic-replay-${randomUUID()}`,requestId:randomUUID(),status:'SUCCESS',canceled:false,amount:checkout.order.amount_iqd,confirmedAmount:checkout.order.amount_iqd,currency:'IQD',creationDate:new Date(Date.parse(checkout.order.created_at)+50).toISOString()};
     const event=superQiConfirmedProviderEventId(payload);events.push(event);references.push(payload.paymentId,payload.requestId);
     const table=kind==='saas'?'saas_billing_orders':'cashier_billing_orders';
     await admin.query(`UPDATE ${table} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[checkout.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
-    await admin.query("INSERT INTO verified_provider_payment_receipts VALUES('superqi_sandbox',$1,$2,$3,'payment_succeeded',$4,$5,$6)",[event,payload.paymentId,payload.requestId,payload.amount,superQiWebhookPayloadHash(payload),'2026-10-14T12:00:00.123456Z']);
-    fixtures.push({kind,scenario,table,payload,event,order:checkout.order,body:{authority:kind==='saas'?'bot_subscription':'cashier_subscription',order_id:checkout.order.id}});
+    await admin.query("INSERT INTO verified_provider_payment_receipts VALUES('superqi_sandbox',$1,$2,$3,'payment_succeeded',$4,$5,$6)",[event,payload.paymentId,payload.requestId,payload.amount,superQiWebhookPayloadHash(payload),firstReceivedAt]);
+    fixtures.push({kind,scenario,table,payload,event,firstReceivedAt,order:checkout.order,body:{authority:kind==='saas'?'bot_subscription':'cashier_subscription',order_id:checkout.order.id}});
   }
   const orderSnapshot=async()=>Promise.all(fixtures.map(async f=>(await admin.query(`SELECT * FROM ${f.table} WHERE id=$1`,[f.order.id])).rows[0]));
   const originalOrders=await orderSnapshot();
@@ -147,7 +149,7 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
     assert.ok(results.every(result=>result.response.status===200),JSON.stringify(results.map(result=>({status:result.response.status,code:result.body.code}))));assert.deepEqual(results.map(result=>result.body.status).sort(),['applied','duplicate']);
     for(const result of results){assert.deepEqual(Object.keys(result.body).sort(),['authority','ok','order_id','receipt_event_id','status']);const output=JSON.stringify(result.body);for(const ref of references)assert.equal(output.includes(ref),false);}
     assert.equal((await applications(f)).length,1);assert.equal((await eventState(f)).length,1);
-    assert.equal(await exactTime(f),'2026-10-14T12:00:00.123456Z');
+    assert.equal(await exactTime(f),f.firstReceivedAt);
     const duplicate=await request(owner,f);assert.equal(duplicate.body.status,'duplicate');assert.equal((await applications(f)).length,1);assert.ok((await audits()).length>before);
   });
   for(const f of fixtures.filter(f=>f.scenario==='fault'))await t.test(`${f.kind}: SQL entitlement fault retains received event then concurrent HTTP retry applies once`,async()=>{
@@ -159,7 +161,7 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
     assert.equal((await admin.query(`SELECT status FROM ${f.table} WHERE id=$1`,[f.order.id])).rows[0].status,'paid_reconciliation_required');
     await admin.query(`DROP TRIGGER ${name} ON ${table}`);
     const results=await Promise.all([request(owner,f),request(finance,f)]);assert.ok(results.every(result=>result.response.status===200),JSON.stringify(results.map(result=>({status:result.response.status,code:result.body.code}))));assert.deepEqual(results.map(result=>result.body.status).sort(),['applied','duplicate']);
-    assert.equal((await applications(f)).length,1);assert.equal(await exactTime(f),'2026-10-14T12:00:00.123456Z');
+    assert.equal((await applications(f)).length,1);assert.equal(await exactTime(f),f.firstReceivedAt);
   });
   await t.test('current permission SHARE lock serializes revocation behind the entitlement commit',async()=>{
     const f=fixtures.find(f=>f.kind==='cashier'&&f.scenario==='hold'),table='cashier_entitlement_applications',name=`execution_hold_${randomUUID().replaceAll('-','')}`,marker=randomInt(100000000,200000000);faults.push({table,name});
