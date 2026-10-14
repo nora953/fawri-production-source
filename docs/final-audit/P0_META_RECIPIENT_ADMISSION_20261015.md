@@ -1,3 +1,9 @@
+## Structure gate and admission module extraction
+
+First repair `c433439991bfe816a9a13e6681a6fecc7e115378`, quality run `38655684372`, job `116164762558`: translation/structure audit rejects the intent service at 1802 lines (critical threshold 1800); build/typecheck jobs pass. Extract the pure admission parser, parsed type and shared deterministic digest/JSON helpers into `metaReplyJobAdmission.ts` (176 lines). The intent service is now 1634 lines and imports them before SQL preparation.
+
+Local exact extraction comparison against the committed parser/helper text passes after only export/name normalization. TypeScript and unchanged structure audit pass (`TRANSLATION_STRUCTURE_AUDIT_CLEAN`); thresholds/checks are retained. No SQL, provider, grant or runtime behavior changes from extraction. Full corrected CI acceptance still pending.
+
 ## Runtime finding and prepared conditional repair
 
 Baseline source `8bdb14cfb305b373dee98ca6933d020c08988e77`, Meta run `38655454807`, job `116164017803`: identity suite 16 PASS / 4 FAIL including parent. Both valid controls pass: signed second-tenant channel and original encrypted job with omitted recipient. All thirteen earlier denials pass. Each malformed supplied recipient completes and adds one provider call (2→3→4→5), changes seven domain snapshots including subscription/reply ledger. No foreign-tenant writes or wrong outbound destination demonstrated: canonical page/sender still route the reply, while the supplied inbound recipient is ignored.
