@@ -63,7 +63,7 @@ try {
    const url=new URL(req.url,'http://loopback');
    if(req.method==='GET'&&['/api/auth/admin/me','/api/auth/admin/support/tickets','/api/auth/admin/emergency-read-access/overview','/api/auth/admin/emergency-read-access/directory'].includes(url.pathname)){
     const id=new URL(req.headers.referer||'http://loopback').searchParams.get('audit');const state=states.get(id);assert.ok(state,'owned named case fixture required');
-    const owner=['owner','invalid-chain'].includes(state.mode);const status=state.mode==='load-failure'&&state.failing&&url.pathname.includes('/emergency-read-access/')?503:200;
+    const owner=['owner','invalid-chain'].includes(state.mode);const status=state.mode==='revoked-poll'&&state.revoked&&url.pathname.endsWith('/directory')?403:state.mode==='load-failure'&&state.failing&&url.pathname.includes('/emergency-read-access/')?503:200;
     apiCalls.push({id,path:url.pathname,method:'GET',status,deviceHeaderPresent:Boolean(req.headers['x-fawri-device-id'])});
     let body;if(status!==200)body={ok:false,error:'OWNED_PRIVATE_FAILURE_SENTINEL'};
     else if(url.pathname.endsWith('/me'))body={ok:true,admin:{id:owner?'owned-route-owner':'owned-route-assistant',owner_name:'Owned synthetic admin',admin_role:owner?'owner_admin':'assistant_admin',permissions:owner?[]:['manage_support'],must_change_password:false,admin_enabled:true}};
