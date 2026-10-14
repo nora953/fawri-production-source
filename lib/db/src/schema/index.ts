@@ -25,3 +25,4 @@ export * from "./audit";
 export * from "./emergency";
 export * from "./migrations";
 export * from "./jobs";
+export * from "./verified-payment-receipts";

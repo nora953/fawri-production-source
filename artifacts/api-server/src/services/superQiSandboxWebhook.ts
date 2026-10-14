@@ -243,6 +243,33 @@ export async function handleSuperQiSandboxWebhook(input: {
     );
   }
 
+  const settledAmount = amount(confirmed.confirmedAmount ?? confirmed.amount);
+  const eventType: "payment_succeeded" | "payment_failed" | "payment_cancelled" =
+    confirmed.canceled ? "payment_cancelled" : confirmed.status === "SUCCESS" ? "payment_succeeded" : "payment_failed";
+  const eventId = providerEventId(confirmed);
+  const payloadHash = superQiWebhookPayloadHash(input.payload);
+  const receivedAt = input.receivedAt || new Date();
+  if (!Number.isFinite(receivedAt.getTime())) {
+    throw new SuperQiSandboxProviderError("SUPERQI_SANDBOX_WEBHOOK_INVALID", "webhook receipt time is invalid", 400);
+  }
+  // Autocommit before resolving ownership: a missing order or later application
+  // failure must not erase independently confirmed payment evidence.
+  let firstReceivedAt: Date;
+  try {
+    const receipt = await pool.query(
+      `SELECT public.fawri_admit_verified_payment_receipt($1,$2,$3,$4,$5,$6,$7) AS first_received_at`,
+      [eventId, confirmed.paymentId, confirmed.requestId, eventType, settledAmount, payloadHash, receivedAt],
+    );
+    const persisted = receipt.rows[0].first_received_at;
+    firstReceivedAt = persisted instanceof Date ? persisted : new Date(String(persisted));
+    if (!Number.isFinite(firstReceivedAt.getTime())) throw new Error("verified receipt timestamp unavailable");
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+      throw new SuperQiSandboxProviderError("SUPERQI_SANDBOX_RECEIPT_IDENTITY_COLLISION", "verified payment receipt identity changed on replay", 409);
+    }
+    throw error;
+  }
+
   const order = await findBillingOrder({
     paymentId: confirmed.paymentId,
     requestId: confirmed.requestId,
@@ -259,21 +286,14 @@ export async function handleSuperQiSandboxWebhook(input: {
   }
   await attachProviderPaymentReference(order, confirmed.paymentId);
 
-  const settledAmount = confirmed.confirmedAmount ?? confirmed.amount;
-  const eventType: "payment_succeeded" | "payment_failed" | "payment_cancelled" =
-    confirmed.canceled
-      ? "payment_cancelled"
-      : confirmed.status === "SUCCESS"
-        ? "payment_succeeded"
-        : "payment_failed";
   const commonEvent = {
     provider: SUPERQI_SANDBOX_PROVIDER,
-    providerEventId: providerEventId(confirmed),
+    providerEventId: eventId,
     orderId: order.id,
     eventType,
     signatureVerified: true as const,
-    payloadHash: superQiWebhookPayloadHash(input.payload),
-    occurredAt: input.receivedAt || new Date(),
+    payloadHash,
+    occurredAt: firstReceivedAt,
     amountIqd: amount(settledAmount),
     currency: "IQD" as const,
     providerPaymentRef: confirmed.paymentId,

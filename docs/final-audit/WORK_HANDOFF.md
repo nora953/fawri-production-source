@@ -1,3 +1,9 @@
+## Active verified receipt inbox — 2026-10-14
+
+Branch fix/p0-verified-provider-receipt-inbox-20261014 stacked on538/441d1016. Add migration0029 canonical snapshot/stage, bounded non-PUBLIC receipt admission and signed/gateway-confirmed persist-before-order webhook integration. No tenant guess or grant from inbox alone; first time/idempotency preserved. New SQL suite pending CI; local typecheck/build/transport/syntax/canonical30PASS. See P0_VERIFIED_RECEIPT_INBOX_20261014.md. Next inspect actual receipts/security/recovery evidence, then operator authorization/retention/grant rollout523 and restricted downstreamMeta535.
+
+---
+
 ## Verified actual PostgreSQL wire response loss — 2026-10-14
 
 DraftPR538 tested source **abe851db0bf40ecf2dcf294dc73f5a32c6c78a44**: isolated38550530635/job115807106721 **189PASS/0FAIL/0SKIP**,42unique files/44invocations; receipt recovery15PASS including four actual TCP dropped-COMMIT-response cases. All **26/26 observed workflow runs SUCCESS**. Admin corrected lane38550531165/job11580754187941PASS includes original admin proof1PASS; overlaps tenant batch, adds no unique credit. Framing4PASS separate from SQL total.
