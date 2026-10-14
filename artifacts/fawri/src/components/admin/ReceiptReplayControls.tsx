@@ -11,6 +11,8 @@ export default function ReceiptReplayControls({eventId,disabled,onBusyChange}:{e
   const [status,setStatus]=React.useState<'idle'|'busy'|'verified'|'applied'|'duplicate'|'denied'|'conflict'|'unavailable'|'uncertain'>('idle');
   const [reviewed,setReviewed]=React.useState<ReceiptReplayIntent|null>(null),[confirm,setConfirm]=React.useState(false);
   const active=React.useRef<AbortController|null>(null);
+  const confirmButton=React.useRef<HTMLButtonElement>(null),executeButton=React.useRef<HTMLButtonElement>(null),wasConfirm=React.useRef(false);
+  React.useEffect(()=>{if(confirm)confirmButton.current?.focus();else if(wasConfirm.current)executeButton.current?.focus();wasConfirm.current=confirm;},[confirm]);
   React.useEffect(()=>()=>{active.current?.abort();},[]);
   const invalidate=()=>{setReviewed(null);setConfirm(false);setStatus('idle');};
   const valid=(authority==='bot_subscription'||authority==='cashier_subscription')&&order.trim().length>0&&order.trim().length<=180;
@@ -37,13 +39,13 @@ export default function ReceiptReplayControls({eventId,disabled,onBusyChange}:{e
     <div role="status" aria-live="polite" className="text-sm">{status==='idle'?null:text[status]}</div>
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" disabled={disabled||!valid||status==='busy'||status==='denied'} onClick={()=>void act('replay-review')}>{text.review}</Button>
-      {reviewed&&<Button disabled={disabled} onClick={()=>setConfirm(true)}>{text.execute}</Button>}
+      {reviewed&&<Button ref={executeButton} disabled={disabled} onClick={()=>setConfirm(true)}>{text.execute}</Button>}
       <Button variant="ghost" disabled={disabled||status==='busy'} onClick={()=>{setOpen(false);invalidate();}}>{text.close}</Button>
     </div>
     {confirm&&reviewed&&<div role="alertdialog" aria-modal="false" aria-labelledby={`${id}-confirm`} className="space-y-2 rounded-lg border p-3">
       <h3 id={`${id}-confirm`} className="font-semibold">{text.confirmTitle}</h3><p className="text-sm">{text.confirmBody}</p>
       <dl className="text-sm"><dt>{text.authority}</dt><dd>{reviewed.authority==='bot_subscription'?text.bot:text.cashier}</dd><dt>{text.order}</dt><dd dir="ltr" data-fawri-preserve-digits="true" className="break-all">{reviewed.order_id}</dd></dl>
-      <div className="flex gap-2"><Button disabled={disabled} onClick={()=>void act('replay')}>{text.confirm}</Button><Button variant="outline" onClick={()=>setConfirm(false)}>{text.cancel}</Button></div>
+      <div className="flex gap-2"><Button ref={confirmButton} disabled={disabled} onClick={()=>void act('replay')}>{text.confirm}</Button><Button variant="outline" onClick={()=>setConfirm(false)}>{text.cancel}</Button></div>
     </div>}
   </div>;
 }

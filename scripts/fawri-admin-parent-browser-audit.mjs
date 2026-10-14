@@ -267,11 +267,15 @@ try {
    await fillReplay(t);assert.equal(executed(t).length,0);await reviewReplay(t);
    await replayClick(t.cdp,'execute');await waitFor(()=>evaluate(t.cdp,`Boolean(document.querySelector('[role=alertdialog]'))`));
    assert.equal(await evaluate(t.cdp,`document.querySelector('[role=alertdialog]').textContent.includes('synthetic-existing-order-123')`),true,'exact technical order digits');
-   await replayClick(t.cdp,'cancel');assert.equal(executed(t).length,0,'cancel cannot execute');
+   await waitFor(()=>evaluate(t.cdp,`document.activeElement?.textContent.trim()===auditReplay.confirm`));
+   await replayClick(t.cdp,'cancel');assert.equal(executed(t).length,0,'cancel cannot execute');await waitFor(()=>evaluate(t.cdp,`document.activeElement?.textContent.trim()===auditReplay.execute`));
    await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.applied)`));assert.equal(executed(t).length,1);
    await reviewReplay(t);await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.duplicate)`));assert.equal(t.state.appliedIntents.size,1);
    return {lang,reviewBeforeExecute:true,explicitConfirm:true,cancelledWrites:0,syntheticApplications:1,duplicateVisible:true};
   }finally{await closed(t);}
+ });
+ await check('actual finance cashier replay retains explicit cashier intent through confirmation',async()=>{
+  const t=await tab('finance');try{await fillReplay(t,'cashier_subscription','synthetic-cashier-order-456');await reviewReplay(t);await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.applied)`));assert.equal(executed(t).length,1);assert.deepEqual(executed(t)[0].body,{authority:'cashier_subscription',order_id:'synthetic-cashier-order-456'});return {authority:'cashier_subscription',explicitIntent:true,syntheticApplications:1};}finally{await closed(t);}
  });
  await check('actual operator intent edit invalidates completed review',async()=>{
   const t=await tab('finance');try{await fillReplay(t,'cashier_subscription');await reviewReplay(t);
@@ -319,4 +323,4 @@ finally {
 
 if(infrastructureError)evidence.infrastructureError=infrastructureError;
 console.log('AUDIT_ADMIN_PARENT_RESULT '+JSON.stringify(evidence));
-if(infrastructureError||evidence.results.length!==35||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
+if(infrastructureError||evidence.results.length!==36||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
