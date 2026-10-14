@@ -72,10 +72,18 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     const b=await balances();assert.equal(b.find(x=>x.merchant_id===merchants[1]).base_replies_used,1);
     assert.equal((await pool.query("SELECT count(*)::int AS n FROM messages WHERE merchant_id=$1 AND sender='fawri' AND status='sent'",[merchants[1]])).rows[0].n,1);positivePassed=true;
   });
-  for(const kind of ['merchant','event','missing_event'])await t.test(`${kind} identity conflict is rejected before all nine domain surfaces`,async()=>{
+  const cases=['merchant','event','missing_event','body_page_conflict','body_sender_conflict','body_message_conflict','body_page_missing','body_sender_missing','body_message_missing'];
+  for(const kind of cases)await t.test(`${kind} identity conflict is rejected before all nine domain surfaces`,async()=>{
     const value=bodyFor(kind==='merchant'?1:0,kind);
     const canonical=kind==='event'?`canonical-${value.event}`:value.event;
     if(kind==='missing_event')delete value.payload.event_id;
+    const entry=value.payload.webhook_body.entry[0],message=entry.messaging[0];
+    if(kind==='body_page_conflict')entry.id=`${page}-foreign`;
+    if(kind==='body_sender_conflict')message.sender.id=`foreign-sender-${suffix}`;
+    if(kind==='body_message_conflict')message.message.mid=`foreign-message-${suffix}`;
+    if(kind==='body_page_missing')delete entry.id;
+    if(kind==='body_sender_missing')delete message.sender.id;
+    if(kind==='body_message_missing')delete message.message.mid;
     const before=await domainSnapshot(),calls=providerCalls;
     const enqueued=await queue.enqueueDurableJobAuthoritative({type:'meta.webhook.reply',merchantId:merchants[0],dedupeKey:canonical,maxAttempts:1,payload:value.payload});
     // Real encrypted payload is associated with the canonical row tenant. The
@@ -90,6 +98,6 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
   });
   await t.test('original pooled worker retains tenant isolation after every denial',async()=>{
     const proof=await worker.command('isolation');assert.equal(proof.isolated,true);assert.equal(proof.contextReset,true);
-    if(positivePassed&&deniedKinds.size===3)console.log('META_JOB_IDENTITY_PROOF '+JSON.stringify({originalLiveWorker:true,restrictedRole:true,originalEncryptedQueue:true,validForeignChannelPositive:true,tenantMismatchDenied:true,eventMismatchDenied:true,missingEventDenied:true,domainSurfacesUnchanged:9,providerCalls,contextReset:true}));
+    if(positivePassed&&deniedKinds.size===cases.length)console.log('META_JOB_IDENTITY_PROOF '+JSON.stringify({originalLiveWorker:true,restrictedRole:true,originalEncryptedQueue:true,validForeignChannelPositive:true,tenantMismatchDenied:true,eventMismatchDenied:true,missingEventDenied:true,webhookBodyConflictAndMissingDenied:true,deniedCaseCount:deniedKinds.size,domainSurfacesUnchanged:9,providerCalls,contextReset:true}));
   });
 });
