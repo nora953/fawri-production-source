@@ -85,7 +85,7 @@ try {
  const port=await waitFor(async()=>Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]));
  evidence.browser=(await(await fetch(`http://127.0.0.1:${port}/json/version`)).json()).Browser;
  const normal=s=>String(s).replace(/[٠-٩]/g,x=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[۰-۹]/g,x=>String('۰۱۲۳۴۵۶۷۸۹'.indexOf(x))).replace(/\s+/g,' ').trim();
- const modes=[{prefix:'UIR-012',mode:'owner',baselineCredit:1},{prefix:'UIE-012-ASSISTANT',mode:'assistant',baselineCredit:0},{prefix:'UIE-012-DENIED',mode:'denied',baselineCredit:0},{prefix:'UIE-012-LOAD',mode:'load-failure',baselineCredit:0},{prefix:'UID-012-CHAIN',mode:'invalid-chain',baselineCredit:0}];
+ const modes=[{prefix:'UIE-012-REVOKED-POLL',mode:'revoked-poll',baselineCredit:0},{prefix:'UIR-012',mode:'owner',baselineCredit:1},{prefix:'UIE-012-ASSISTANT',mode:'assistant',baselineCredit:0},{prefix:'UIE-012-DENIED',mode:'denied',baselineCredit:0},{prefix:'UIE-012-LOAD',mode:'load-failure',baselineCredit:0},{prefix:'UID-012-CHAIN',mode:'invalid-chain',baselineCredit:0}];
  for(const route of modes)for(const lang of ['ar','en','ku'])for(const width of [390,1280]){
   const id=`${route.prefix}-${lang}-${width}`;let capture;const text=expected.page[lang];const path='/admin/emergency-access';const state={mode:route.mode,failing:route.mode==='load-failure'};states.set(id,state);
   await check(id,async()=>{
