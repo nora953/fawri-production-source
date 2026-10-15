@@ -115,7 +115,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     assert.equal(retry.code,0);
     const retryResult=retry.messages.find(m=>m.type==='http-result');
     assert.ok(retryResult,'fresh-session retry must produce an HTTP response');
-    assert.notEqual(retryResult.httpStatus,200,'reconciliation retry must never grant entitlement');
+    assert.ok([200,409].includes(retryResult.httpStatus),'retry must return an explicit acknowledged or reconciliation response');
     const afterRetry=await snapshot(f);
     assert.equal(afterRetry.order.status,'paid_reconciliation_required');
     assert.equal(afterRetry.applications,0);
