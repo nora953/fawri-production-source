@@ -21,7 +21,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
 
   t.after(async () => {
     try {
-      await client.query("RESET ROLE");
+      await client.query("RESET SESSION AUTHORIZATION");
       await client.query(`DROP OWNED BY ${probeRole}`);
       await client.query(`DROP ROLE IF EXISTS ${probeRole}`);
     } finally {
@@ -73,11 +73,26 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   assert.equal(predicateProbe.rows[0]?.other_tenant, false);
   await client.query(`SELECT set_config('fawri.tenant_id', '', false)`);
 
+  await t.test("privileged authenticated login is rejected despite a restricted current role", async () => {
+    const identity = (await client.query("SELECT session_user AS login, current_user AS active, (SELECT rolsuper FROM pg_roles WHERE rolname=session_user) AS privileged")).rows[0];
+    assert.equal(identity.active, probeRole);
+    assert.notEqual(identity.login, probeRole);
+    assert.equal(identity.privileged, true, "owned disposable cluster must use its bootstrap role");
+    await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
+      {code: "PRODUCTION_DATABASE_SESSION_SUPERUSER_FORBIDDEN"});
+  });
+  await client.query("RESET SESSION AUTHORIZATION");
+  await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+
   const readiness = await getProductionDatabaseRlsReadiness(client);
 
   assert.equal(readiness.roleName, probeRole);
   assert.equal(readiness.superuser, false);
   assert.equal(readiness.bypassRls, false);
+  assert.equal(readiness.sessionRoleName, probeRole);
+  assert.equal(readiness.sessionSuperuser, false);
+  assert.equal(readiness.sessionBypassRls, false);
+  assert.deepEqual(readiness.sessionOwnedTables, []);
   assert.deepEqual(readiness.ownedTenantTables, []);
   assert.deepEqual(
     readiness.missingOrUnprotectedTenantTables,
@@ -105,13 +120,13 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   ]) {
     for (const drift of ["disabled RLS", "runtime ownership"]) {
       await t.test(`${table}: rejects ${drift}`, async () => {
-        await client.query("RESET ROLE");
+        await client.query("RESET SESSION AUTHORIZATION");
         await client.query("BEGIN");
         try {
           await client.query(drift === "disabled RLS"
             ? `ALTER TABLE public.${table} DISABLE ROW LEVEL SECURITY`
             : `ALTER TABLE public.${table} OWNER TO ${probeRole}`);
-          await client.query(`SET ROLE ${probeRole}`);
+          await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
           const actual = await client.query<{ active: boolean }>(
             "SELECT row_security_active($1::regclass) AS active", [`public.${table}`],
           );
@@ -126,10 +141,10 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
               : "PRODUCTION_DATABASE_RUNTIME_TABLE_OWNER_FORBIDDEN" },
           );
         } finally {
-          await client.query("RESET ROLE");
+          await client.query("RESET SESSION AUTHORIZATION");
           await client.query("ROLLBACK");
         }
-        await client.query(`SET ROLE ${probeRole}`);
+        await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
         await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
       });
     }
@@ -168,7 +183,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     },
   ]) {
     await t.test(scenario.name, async () => {
-      await client.query("RESET ROLE");
+      await client.query("RESET SESSION AUTHORIZATION");
       await client.query("BEGIN");
       try {
         await client.query(`CREATE ROLE ${ownerRole} NOLOGIN NOSUPERUSER NOBYPASSRLS`);
@@ -176,7 +191,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
         await client.query(`GRANT USAGE ON SCHEMA public TO ${ownerRole}`);
         await client.query(`ALTER TABLE public.merchant_channels OWNER TO ${ownerRole}`);
         for (const grant of scenario.grants) await client.query(grant);
-        await client.query(`SET ROLE ${scenario.role}`);
+        await client.query(`SET SESSION AUTHORIZATION ${scenario.role}`);
         const actualRls = await client.query<{ active: boolean }>(
           "SELECT row_security_active('public.merchant_channels') AS active",
         );
@@ -193,9 +208,42 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
         }
       } finally {
         // Roll back ownership and grants together, even when a regression fails.
-        await client.query("RESET ROLE");
+        await client.query("RESET SESSION AUTHORIZATION");
         await client.query("ROLLBACK");
       }
     });
   }
+  for (const kind of ["bypass", "owner"]) {
+    await t.test(`authenticated ${kind} role remains unsafe after SET ROLE`, async () => {
+      const login = "fawri_session_authority_probe";
+      await client.query("RESET SESSION AUTHORIZATION");
+      await client.query("BEGIN");
+      try {
+        await client.query(`CREATE ROLE ${login} NOLOGIN NOSUPERUSER ${kind === "bypass" ? "BYPASSRLS" : "NOBYPASSRLS"}`);
+        await client.query(`GRANT ${probeRole} TO ${login} WITH INHERIT FALSE, SET TRUE`);
+        if (kind === "owner") await client.query(`ALTER TABLE public.verified_provider_payment_receipts OWNER TO ${login}`);
+        await client.query(`SET SESSION AUTHORIZATION ${login}`);
+        await client.query(`SET ROLE ${probeRole}`);
+        const state = await getProductionDatabaseRlsReadiness(client);
+        assert.equal(state.roleName, probeRole);
+        assert.equal(state.superuser, false);
+        assert.equal(state.bypassRls, false);
+        assert.deepEqual(state.ownedTenantTables, []);
+        assert.equal(state.sessionRoleName, login);
+        assert.equal(state.sessionBypassRls, kind === "bypass");
+        assert.deepEqual(state.sessionOwnedTables, kind === "owner" ? ["verified_provider_payment_receipts"] : []);
+        await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
+          {code: kind === "bypass" ? "PRODUCTION_DATABASE_SESSION_BYPASSRLS_FORBIDDEN" : "PRODUCTION_DATABASE_SESSION_TABLE_OWNER_FORBIDDEN"});
+        assert.equal((await client.query("SELECT row_security_active('public.verified_provider_payment_receipts') AS active")).rows[0].active, true);
+        await client.query("RESET ROLE");
+        assert.equal((await client.query("SELECT row_security_active('public.verified_provider_payment_receipts') AS active")).rows[0].active, false);
+      } finally {
+        await client.query("RESET SESSION AUTHORIZATION");
+        await client.query("ROLLBACK");
+      }
+      await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+      await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
+    });
+  }
+
 });

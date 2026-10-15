@@ -64,6 +64,10 @@ export type ProductionDatabaseRlsReadiness = {
   roleName: string;
   superuser: boolean;
   bypassRls: boolean;
+  sessionRoleName: string;
+  sessionSuperuser: boolean;
+  sessionBypassRls: boolean;
+  sessionOwnedTables: string[];
   // Legacy field names retained for callers; include capability-only tables.
   ownedTenantTables: string[];
   missingOrUnprotectedTenantTables: string[];
@@ -100,6 +104,10 @@ export async function getProductionDatabaseRlsReadiness(
     role_name: string;
     role_superuser: boolean;
     role_bypass_rls: boolean;
+    session_role_name: string;
+    session_role_superuser: boolean;
+    session_role_bypass_rls: boolean;
+    session_owned_tables: string[] | null;
     owned_tenant_tables: string[] | null;
     missing_or_unprotected_tenant_tables: string[] | null;
   }>(
@@ -112,6 +120,9 @@ export async function getProductionDatabaseRlsReadiness(
          FROM pg_roles
         WHERE rolname = current_user
      ),
+     session_role_state AS (
+       SELECT oid, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = session_user
+     ),
      table_state AS (
        SELECT
          expected.name,
@@ -123,7 +134,12 @@ export async function getProductionDatabaseRlsReadiness(
            pg_has_role((SELECT oid FROM role_state), tenant_table.relowner, 'USAGE')
            OR pg_has_role((SELECT oid FROM role_state), tenant_table.relowner, 'SET'),
            FALSE
-         ) AS owned_by_current_role
+         ) AS owned_by_current_role,
+         COALESCE(
+           pg_has_role((SELECT oid FROM session_role_state), tenant_table.relowner, 'USAGE')
+           OR pg_has_role((SELECT oid FROM session_role_state), tenant_table.relowner, 'SET'),
+           FALSE
+         ) AS owned_by_session_role
        FROM expected
        LEFT JOIN (
          SELECT c.oid, c.relname, c.relrowsecurity, c.relowner
@@ -137,6 +153,11 @@ export async function getProductionDatabaseRlsReadiness(
      SELECT
        public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
        current_user AS role_name,
+       session_user AS session_role_name,
+       COALESCE((SELECT rolsuper FROM session_role_state), TRUE) AS session_role_superuser,
+       COALESCE((SELECT rolbypassrls FROM session_role_state), TRUE) AS session_role_bypass_rls,
+       COALESCE((SELECT array_agg(name ORDER BY name) FROM table_state
+         WHERE owned_by_session_role), ARRAY[]::text[]) AS session_owned_tables,
        COALESCE((SELECT rolsuper FROM role_state), TRUE) AS role_superuser,
        COALESCE((SELECT rolbypassrls FROM role_state), TRUE) AS role_bypass_rls,
        COALESCE(
@@ -155,7 +176,7 @@ export async function getProductionDatabaseRlsReadiness(
   );
 
   const row = rows[0];
-  if (!row || !String(row.role_name || "").trim()) {
+  if (!row || !String(row.role_name || "").trim() || !String(row.session_role_name || "").trim()) {
     fail(
       "PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED",
       "production database role readiness could not be determined",
@@ -166,6 +187,10 @@ export async function getProductionDatabaseRlsReadiness(
     roleName: String(row.role_name).trim(),
     superuser: booleanValue(row.role_superuser),
     bypassRls: booleanValue(row.role_bypass_rls),
+    sessionRoleName: String(row.session_role_name).trim(),
+    sessionSuperuser: booleanValue(row.session_role_superuser),
+    sessionBypassRls: booleanValue(row.session_role_bypass_rls),
+    sessionOwnedTables: stringArray(row.session_owned_tables),
     ownedTenantTables: stringArray(row.owned_tenant_tables),
     missingOrUnprotectedTenantTables: stringArray(
       row.missing_or_unprotected_tenant_tables,
@@ -216,6 +241,20 @@ export async function assertProductionDatabaseRlsReady(
       "PRODUCTION_DATABASE_RUNTIME_TABLE_OWNER_FORBIDDEN",
       "production runtime database role must not own RLS-protected tables",
     );
+  }
+  // RESET ROLE can restore the authenticated account's privileges. A restricted
+  // current_user alone cannot certify a privileged connection as safe.
+  if (readiness.sessionSuperuser) {
+    fail("PRODUCTION_DATABASE_SESSION_SUPERUSER_FORBIDDEN",
+      "production authenticated database role must not be a superuser");
+  }
+  if (readiness.sessionBypassRls) {
+    fail("PRODUCTION_DATABASE_SESSION_BYPASSRLS_FORBIDDEN",
+      "production authenticated database role must not bypass row-level security");
+  }
+  if (readiness.sessionOwnedTables.length > 0) {
+    fail("PRODUCTION_DATABASE_SESSION_TABLE_OWNER_FORBIDDEN",
+      "production authenticated database role must not own RLS-protected tables");
   }
   if (readiness.missingOrUnprotectedTenantTables.length > 0) {
     fail(

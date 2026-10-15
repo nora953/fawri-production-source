@@ -28,6 +28,10 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
     role_name: "fawri_runtime",
+    session_role_name: "fawri_runtime",
+    session_role_superuser: false,
+    session_role_bypass_rls: false,
+    session_owned_tables: [],
     role_superuser: false,
     role_bypass_rls: false,
     owned_tenant_tables: [],
@@ -130,4 +134,13 @@ test("release readiness covers every committed RLS-enabled table", () => {
   assert.ok(migrated.size > 40, "must inspect the full migration history");
   const covered = new Set<string>(PRODUCTION_PROTECTED_RLS_TABLES);
   assert.deepEqual([...migrated].filter(name => !covered.has(name)).sort(), []);
+});
+
+test("production rejects a privileged authenticated session behind a restricted current role", async () => {
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_SUPERUSER_FORBIDDEN",
+    safeRow({session_role_name: "connection_owner", session_role_superuser: true}));
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_BYPASSRLS_FORBIDDEN",
+    safeRow({session_role_name: "connection_owner", session_role_bypass_rls: true}));
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_TABLE_OWNER_FORBIDDEN",
+    safeRow({session_role_name: "connection_owner", session_owned_tables: ["verified_provider_payment_receipts"]}));
 });
