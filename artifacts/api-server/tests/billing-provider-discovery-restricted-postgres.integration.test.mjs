@@ -49,7 +49,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
     try{await Promise.race([ready,done.then(()=>{throw Error('owned child exited before ready');}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('owned child startup timeout')),15000);})]);}finally{clearTimeout(timer);}
     child.send({payload,signature:signatureOf(payload),receivedAt:receivedAt.toISOString(),providerEnv,role});return done;
   }
-  for(const kind of ['saas','cashier'])await t.test(`${kind}: signed callback applies mapped payment with empty tenant and restricted role`,async()=>{
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: signed callback applies mapped payment with empty tenant and restricted role`,async kt=>{
     const merchantId=`discovery-${randomUUID()}`;merchantIds.push(merchantId);
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[merchantId,`+1991${String(randomInt(0,100000000)).padStart(8,'0')}`]);
     await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",[merchantId]);
@@ -100,7 +100,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
     // This matrix tests the original SQL capability with alternate fixture
     // ownership, before application. No callback timing or mapping mutation.
     for (const forced of [null,'verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders']) {
-      await t.test(`${kind}: restricted resolver owner, FORCE RLS on ${forced || 'none'}`,async()=>{
+      await kt.test(`${kind}: restricted resolver owner, FORCE RLS on ${forced || 'none'}`,async()=>{
         const client=await pool.connect(),owner=`billing_owner_${randomUUID().replaceAll('-','')}`;
         const protectedTables=['verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders'];
         const orderBefore=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0];

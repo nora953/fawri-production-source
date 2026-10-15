@@ -1,3 +1,15 @@
+# Continuation — billing owner matrix harness repair, CI pending
+
+Failed sourcef4a40de19b740c4215a65b6f74763dfb8560332b: isolated38783245985/job116588596546 failed;24otherworkflowsSUCCESS. Actual aggregate331PASS/0failed assertions/3CANCELLED/0SKIP,55unique/57invocations. New billing suite0PASS/0FAIL/3CANCELLED, parent120000ms timeout. Eight SQL owner cases NOT RUN, not SQL failures. Cause: new nested cases used root t.test, scheduling queued sibling while active SaaS child awaited it. DB-free150ms reproduction0PASS/0FAIL/3CANCELLED; current child kt.test fixed reproduction3PASS/0FAIL/0CANCELLED. EvidenceP0_BILLING_OWNER_MATRIX_BASELINE_20261015.json.
+
+Repair changes only test context (kt.test), preserves SQL/permission assertions and original timeouts. Audit runner now explicitly emits cancelled count and rejects nonzero cancellations; exit1 already prevented a false green. Syntax/whitespace PASS; actual repaired PostgreSQL CI PENDING at publication. Do not claim SQL owner matrix PASS until logs verify it.
+
+Independent read-only Railway refresh at2026-10-15T18:10Z confirms old main/d38d2922, deployment11f22954SUCCESS, one online replica, checkSuitesfalse, no Railway volumes/buckets or stagedwork; readiness200/ready with no DB role identity. No hosted changes. EvidenceP0_RAILWAY_READONLY_REFRESH_20261015_1810Z.json and updated hosted gate report. Previous Neon tool BLOCKED/protection403 UNKNOWN not retried. No implication of absent external storage or absent branch protection.
+
+Next exact action: inspect current source CI, confirm eight SQL owner cases and original signed application/duplicates, immutable receipt/no premature grants; obtain exact source/run/job/PASS/FAIL/CANCELLED counts. Record remaining hosted/policy gates. Provider mapping race remains NOT RUN; historical85/15 unmeasured; release NO-GO. Same Draft#550/branch. Last accepted sourcee61dd80a334PASS/25green, not this repaired source yet.
+
+---
+
 # Continuation — confirmed-provider resolver owner/FORCE-RLS matrix pending
 
 Parent43f48f0e725095f35676d6b81e8b1e07de66ca84; same Draft#550/branch. Previous accepted sourcee61dd80af7fbd87273b2e0f6be6baabc7d13ac89 reverified25/25workflowsSUCCESS,334PASS/0FAIL/0SKIP.
