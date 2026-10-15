@@ -95,7 +95,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     child.send({...f,role,marker,token,device:finance.device,pauseProvider:true});
     await deadline(paused,'provider pause');
     try{await revoke();}finally{child.send({type:'resume-provider'});}
-    return await deadline(done,'HTTP completion');
+    let finishTimer;try{return await Promise.race([done,new Promise((_,reject)=>{finishTimer=setTimeout(()=>reject(Error('operator HTTP completion timeout')),30000);})]);}finally{clearTimeout(finishTimer);}
   }
   const audits=async()=>(await pool.query("SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'",[finance.id])).rows[0].n;
   for(const kind of ['saas','cashier'])await t.test(`${kind}: revoked finance permission during provider I/O must not apply entitlement`,async()=>{
