@@ -30,6 +30,7 @@ export async function releaseMerchantAutoReplyReservationAuthoritative(
   eventId: string,
   reasonCode: MerchantReplyReleaseCode,
   now: Date = new Date(),
+  expectedMerchantId?: string,
 ): Promise<MerchantReplyReleaseResult> {
   if (!subscriptionPostgresAuthorityRequired()) {
     return releaseMerchantAutoReplyReservationLegacy(
@@ -43,6 +44,7 @@ export async function releaseMerchantAutoReplyReservationAuthoritative(
     eventId,
     postgresReleaseRestore(reasonCode),
     now,
+    expectedMerchantId,
   );
   return result.restored
     ? {

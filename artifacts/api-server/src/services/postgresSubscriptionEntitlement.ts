@@ -424,6 +424,18 @@ async function withTransaction<T>(
   }
 }
 
+// Tenant context belongs to this transaction only; pooled connections must not
+// retain another merchant's subscription authority after commit or rollback.
+async function withMerchantSubscriptionTransaction<T>(
+  merchantId: string,
+  work: (client: TransactionClient) => Promise<T>,
+): Promise<T> {
+  return withTransaction(async (client) => {
+    await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
+    return work(client);
+  });
+}
+
 function getBaghdadDateParts(value: Date) {
   const shifted = new Date(value.getTime() + BAGHDAD_UTC_OFFSET_MS);
   return {
@@ -690,7 +702,7 @@ export async function getCurrentSubscriptionPostgres(
   now: Date = new Date(),
 ): Promise<SubscriptionApiRecord | null> {
   const normalizedMerchantId = requiredText(merchantId, 160);
-  return withTransaction(async (client) => {
+  return withMerchantSubscriptionTransaction(normalizedMerchantId, async (client) => {
     const row = await loadSubscriptionRow(client, normalizedMerchantId, true);
     if (!row) return null;
     return apiRecord(await refreshLockedSubscription(client, row, now));
@@ -734,7 +746,7 @@ export async function reserveMerchantAutoReplyPostgres(
   }
 
   try {
-    return await withTransaction(async (client) => {
+    return await withMerchantSubscriptionTransaction(normalizedMerchantId, async (client) => {
       await advisoryEventLock(client, normalizedEventId);
       const existing = await readEventLedger(client, normalizedEventId);
       if (existing.debit) {
@@ -913,15 +925,25 @@ export async function restoreMerchantAutoReplyPostgres(
   eventId: string,
   restore: ReplyRestoreKind,
   now: Date = new Date(),
+  expectedMerchantId?: string,
 ): Promise<ReplyRestoreResult> {
   const normalizedEventId = String(eventId || "").trim();
   if (!normalizedEventId) return { restored: false, reason: "event_id_missing" };
 
-  return withTransaction(async (client) => {
+  const scopedMerchantId = expectedMerchantId === undefined
+    ? null : requiredText(expectedMerchantId, 160);
+  const transaction = scopedMerchantId
+    ? <T>(work: (client: TransactionClient) => Promise<T>) =>
+        withMerchantSubscriptionTransaction(scopedMerchantId, work)
+    : withTransaction;
+  return transaction(async (client) => {
     await advisoryEventLock(client, normalizedEventId);
     const ledger = await readEventLedger(client, normalizedEventId);
     if (!ledger.debit) {
       return { restored: false, reason: "reservation_not_found" };
+    }
+    if (scopedMerchantId && ledger.debit.merchant_id !== scopedMerchantId) {
+      return { restored: false, reason: "reservation_identity_invalid" };
     }
     if (ledger.credit) {
       return {
@@ -1116,7 +1138,7 @@ export async function activateEmergencyCreditPostgres(
   now: Date = new Date(),
 ): Promise<SubscriptionApiRecord> {
   const normalizedMerchantId = requiredText(merchantId, 160);
-  return withTransaction(async (client) => {
+  return withMerchantSubscriptionTransaction(normalizedMerchantId, async (client) => {
     await lockApprovedMerchant(client, normalizedMerchantId);
     const row = await loadSubscriptionRow(client, normalizedMerchantId, true);
     if (!row) fail("SUBSCRIPTION_NOT_FOUND", "subscription not found", 404);
@@ -1251,7 +1273,7 @@ export async function applySubscriptionActionPostgres(input: {
   const merchantId = requiredText(input.merchantId, 160);
   const now = input.now || new Date();
 
-  return withTransaction(async (client) => {
+  return withMerchantSubscriptionTransaction(merchantId, async (client) => {
     await lockApprovedMerchant(client, merchantId);
     const row = await loadSubscriptionRow(client, merchantId, true);
     if (!row) fail("SUBSCRIPTION_NOT_FOUND", "subscription not found", 404);
