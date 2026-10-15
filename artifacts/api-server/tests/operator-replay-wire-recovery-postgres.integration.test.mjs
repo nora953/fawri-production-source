@@ -98,6 +98,20 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     let finishTimer;try{return await Promise.race([done,new Promise((_,reject)=>{finishTimer=setTimeout(()=>reject(Error('operator HTTP completion timeout')),30000);})]);}finally{clearTimeout(finishTimer);}
   }
   const audits=async()=>(await pool.query("SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'",[finance.id])).rows[0].n;
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: expired checkout retains payment for reconciliation only`,async()=>{
+    const f=await fixture(kind),original=await receipt(f);
+    await pool.query(`UPDATE ${kinds[kind].orders} SET status='expired',request_expires_at=$2 WHERE id=$1`,[f.body.order_id,new Date(Date.parse(f.firstReceivedAt)-1000)]);
+    const response=await run(f);
+    assert.equal(response.code,0);
+    assert.equal(response.messages.find(m=>m.type==='http-result').httpStatus,409);
+    const state=await snapshot(f);
+    assert.equal(state.order.status,'paid_reconciliation_required');
+    assert.equal(state.order.paid_time,f.firstReceivedAt);
+    assert.equal(state.applications,0);
+    assert.equal(state.subscriptions,0);
+    assert.deepEqual(state.event,[{status:'rejected',time:f.firstReceivedAt}]);
+    assert.deepEqual(await receipt(f),original);
+  });
   for(const kind of ['saas','cashier'])await t.test(`${kind}: receipt from merchant A cannot be replayed against merchant B order`,async()=>{
     const first=await fixture(kind),second=await fixture(kind);
     assert.notEqual(first.merchantId,second.merchantId);
