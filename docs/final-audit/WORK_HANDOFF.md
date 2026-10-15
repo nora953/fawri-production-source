@@ -1,3 +1,13 @@
+# Latest continuation — reachable-role PASS; Meta owner matrix pending (2026-10-15)
+
+Accepted source `0c7c03abe889d65ba11317f66dbfa6c24ffe81c6`: **332 PASS / 0 FAIL / 0 SKIP**,55 unique files/57 invocations,25/25 observed workflows SUCCESS. Isolated run38779466489/job116575601617; Foundation38779466260/job116575597185. Merge checkout prefix5e406a2. RLS28 PASS includes actual direct/indirect SET activation and INHERIT-only denial control. Restore34migrations/95tables/45policies/9functions, matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Evidence: `evidence/P0_REACHABLE_PRIVILEGED_ROLE_RESULTS_20261015.json`.
+
+Next source in this commit adds only two Meta bounded resolver integration subtests: a restricted non-BYPASSRLS function/table owner works without FORCE RLS and raises42501 with FORCE RLS. Catalog identity/flags checked, original ownership/RLS restored with transaction rollback, then original resolver accepted again. Local node --check and git diff --check PASS. Actual PostgreSQL cases **NOT RUN / CI pending at publication**. This is bounded SQL capability coverage, not a new full app/worker or hosted acceptance claim; existing full-app proof retained.
+
+Next exact action: inspect CI for this commit and `meta-page-directory-restricted-rls.integration.test.mjs` in isolated run; obtain source SHA/run/job and exact count. Fix any real failure without changing RLS/owner protections, then update #535/#550 and this handoff. Previous 332 totals certify source0c7c03 only. No tests running locally. Provider mapping race remains NOT RUN; hosted gates remain unverified. Historical85/15 unmeasured, release NO-GO. Same branch and Draft#550, no main merge/deploy/hosted mutation.
+
+---
+
 # Continuation — SET-reachable privileged-role readiness (2026-10-15)
 
 Branch/PR remain `fix/p0-provider-receipt-order-discovery-20261015` / #550.
