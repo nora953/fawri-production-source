@@ -467,6 +467,7 @@ await t.test("Meta text with an image attachment is suppressed until the attachm
       external_message_id: mid,
       sender_id: senderId,
       webhook_body: {
+        object: "page",
         entry: [
           {
             id: pageA,
@@ -5933,23 +5934,19 @@ await t.test("same provider event id with changed payload fails closed as identi
   const first = await enqueueReply({ merchantId: merchantA.account.id, pageId: pageA, senderId, eventId, mid: firstMid, message: "first payload" });
   await intents.preparePostgresMetaAutoReply(first.job);
 
-  const second = await jobs.enqueueDurableJobAuthoritative({
-    type: "meta.webhook.reply",
-    dedupeKey: `${eventId}-changed`,
-    merchantId: merchantA.account.id,
-    maxAttempts: 5,
+  // Reuse the canonical durable identity so this case reaches the persisted
+  // inbound-event collision guard rather than the queue identity admission guard.
+  const changedJob = {
+    ...first.job,
     payload: {
-      event_id: eventId,
-      page_id: pageA,
-      merchant_id: merchantA.account.id,
+      ...first.job.payload,
       external_message_id: secondMid,
-      sender_id: senderId,
       webhook_body: webhookBody(pageA, senderId, secondMid, "changed payload"),
     },
-  });
+  };
 
   await assert.rejects(
-    () => intents.preparePostgresMetaAutoReply(second.job),
+    () => intents.preparePostgresMetaAutoReply(changedJob),
     (error: unknown) => (error as { code?: string }).code === "META_EVENT_IDENTITY_COLLISION",
   );
 });

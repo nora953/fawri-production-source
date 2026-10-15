@@ -1,0 +1,13 @@
+## First runtime result and assertion correction
+
+Source `036d961248582e7d644aecb9249bcadde9b141cf`, Meta run `38657174763`, job `116169580625`: new suite 1 PASS / 3 FAIL including parent. Actual acknowledged inbound INSERT/self-SIGKILL/backend rollback/exact nine-table equality/no-send/no-debit stage passed. Fresh original worker naturally expired and reconciled to retry, naturally became due, completed attempt 2 with one provider call, one debit, expected tenant balances and one inbound event; those assertions passed before the final outgoing-message query failed.
+
+The fixture queried outgoing `messages.external_event_id` with the incoming id, but production deliberately stores `reply:<event>`. Correct that query only. Dependent concurrency assertion failed against unset committedState after the earlier assertion; not evidence of duplicated delivery. No production fix or weakened acceptance. Corrected full SQL/CI acceptance pending. Syntax/diff checks pass.
+
+# Original Meta worker precommit process termination — 2026-10-15 Baghdad
+
+Prior documentation checkpoint `6bc6d4519fb290df7be3c67486bb282ed9b306f1` verified all 14 CI workflows successful. New test-only owned fault: original signed app/encrypted queue/live worker under nonowner/NOBYPASSRLS role is killed by SIGKILL after PostgreSQL acknowledges its target inbound INSERT but before transaction control can issue COMMIT. Passive native query/result observer forwards statements/results unchanged and matches the owned canonical event plus real rowCount=1.
+
+Parent must independently prove backend disconnect/rollback and exact equality across nine domain table snapshots; no provider call/debit. Original durable queue claim remains processing. Test uses supported 1000ms visibility timeout, waits for real SQL lease expiry, and lets a fresh original worker reconcile META_REPLY_NOT_STARTED. It waits for real retry availability rather than mutating status/timestamps, then requires exactly one successful send/debit on attempt 2. Two concurrent original fresh restarts must leave committed domain snapshots/ledger unchanged, no duplicate provider/credit/job, and pooled tenant context reset.
+
+Synthetic local Graph/embedding; no SQL result fabrication, handler replacement, transaction/queue-state manual settlement or production changes. Syntax/diff checks pending; actual SQL acceptance pending CI. This is bounded inbound preparation precommit failure, not every precommit instruction, arbitrary scheduler/hosted bootstrap or real-provider uncertainty. #535 hosted owner/runtime rollout remains open.
