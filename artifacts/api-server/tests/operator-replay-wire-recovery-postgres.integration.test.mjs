@@ -81,7 +81,39 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     child.send({...f,role,marker,token,device:finance.device,boundary});
     try{return await Promise.race([done,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('owned operator HTTP timeout')),30000);})]);}finally{clearTimeout(timer);}
   }
+  async function runPausedWithRevocation(f,revoke){
+    const token=await issue(),marker=`operator-wire-owned-${randomUUID()}`;markers.push(marker);
+    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
+    const messages=[];let readyResolve,pausedResolve;
+    const ready=new Promise(resolve=>{readyResolve=resolve;});
+    const paused=new Promise(resolve=>{pausedResolve=resolve;});
+    child.on('message',message=>{messages.push(message);if(message.type==='ready')readyResolve();if(message.type==='provider-paused')pausedResolve();});
+    child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
+    const done=new Promise(resolve=>{child.once('exit',(code,signal)=>resolve({code,signal,messages}));child.once('error',()=>resolve({code:'SPAWN_FAILURE',messages}));});
+    const deadline=async(p,label)=>{let timer;try{return await Promise.race([p,done.then(()=>{throw Error('operator child exited before '+label);}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('operator '+label+' timeout')),15000);})]);}finally{clearTimeout(timer);}};
+    await deadline(ready,'ready');
+    child.send({...f,role,marker,token,device:finance.device,pauseProvider:true});
+    await deadline(paused,'provider pause');
+    try{await revoke();}finally{child.send({type:'resume-provider'});}
+    return await deadline(done,'HTTP completion');
+  }
   const audits=async()=>(await pool.query("SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'",[finance.id])).rows[0].n;
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: revoked finance permission during provider I/O must not apply entitlement`,async()=>{
+    const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
+    const result=await runPausedWithRevocation(f,()=>pool.query("DELETE FROM admin_permissions WHERE admin_id=$1 AND permission='manage_subscriptions'",[finance.id]));
+    assert.equal(result.code,0,'original HTTP child must finish normally');
+    const response=result.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing HTTP response');
+    assert.ok([403,409].includes(response.httpStatus),`expected fail-closed revocation, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,1,'provider was called before revocation');
+    assert.deepEqual(await snapshot(f),before,'revoked operator must not apply payment');
+    assert.deepEqual(await receipt(f),originalReceipt,'verified receipt must remain immutable');
+    await pool.query("INSERT INTO admin_permissions(admin_id,permission) VALUES($1,'manage_subscriptions')",[finance.id]);
+    const recovered=await run(f),recovery=recovered.messages.find(m=>m.type==='http-result');
+    assert.equal(recovered.code,0);assert.equal(recovery.httpStatus,200);assert.equal(recovery.status,'applied');
+    const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    assert.equal(after.order.paid_time,f.firstReceivedAt);assert.deepEqual(await receipt(f),originalReceipt);
+  });
   for(const kind of ['saas','cashier'])for(const boundary of [1,2])await t.test(`${kind}: operator HTTP loses ${boundary===1?'billing receipt':'entitlement'} COMMIT acknowledgment and fresh-session retry stays once-only`,async()=>{
     const f=await fixture(kind),originalReceipt=await receipt(f),beforeAudits=await audits();
     const lost=await run(f,boundary);assert.equal(lost.code,0,'child must complete HTTP failure handling/cleanup');
