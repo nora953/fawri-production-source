@@ -1,3 +1,7 @@
+## Verified receipt boundary batch — 2026-10-15
+
+PR548/df31f752:260PASS/0FAIL/0SKIP,6/6workflowSUCCESS; directory9PASS including3new and parent. Previous257 and separate Meta287 overlap and must not be added. Historical85%/15% unchanged, not newly measured. Code change is tests only. Exact report/evidence and integration continuation in WORK_HANDOFF.
+
 ## P0 executed progress — 2026-10-15
 
 PR #548 accepted sourcebb0ac4e0: isolated38677861248/job116235459247 **257PASS/0FAIL/0SKIP**,49unique files/51invocations, all6 workflowsSUCCESS. New autocommit parser2PASS + signed inbox integration3PASS (including parent); original operator17 stillPASS. Counts overlap other workflow/branch suites; do not add to #547's separate287. No production/schema/grant changes. Local parser2/syntax/diff PASS; full restore and cleanupPASS. Read-only hosted readiness200/ready verified, without role/provider rollout proof.

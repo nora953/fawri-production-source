@@ -1,3 +1,7 @@
+## P0 receipt directory boundary delta — 2026-10-15
+
+PASS: PR548/df31f752, isolated38679137264/job116239445634, directory9/0/0 (3new), aggregate260/0/0 and6workflowsSUCCESS. Tied pagination/head insertion, restricted DML denial and deferred audit COMMIT/HTTP no-disclosure proven. Report P0_OPERATOR_RECEIPT_READ_20261014.md; evidence/P0_OPERATOR_RECEIPT_BOUNDARIES_20261015.json. Next integration in WORK_HANDOFF.
+
 ## P0 acceptance delta — 2026-10-15
 
 Verified inbox autocommit SELECT-response loss: PASS, source `bb0ac4e0`, PR #548, isolated run38677861248/job116235459247. New unit2PASS + integration3PASS (parent included); aggregate257/0/0, all6 workflows SUCCESS. Existing operator17 unchanged. Scope: signed sandbox handler, independent immutable inbox/zero-grant before mapping, concurrent once-only fresh-process recovery. Default disposable DB role, not hosted capability proof. [Report](P0_VERIFIED_INBOX_AUTOCOMMIT_WIRE_20261015.md); [machine evidence](evidence/P0_VERIFIED_INBOX_AUTOCOMMIT_RESULTS_20261015.json). Current next task in WORK_HANDOFF; older queue entries are history.

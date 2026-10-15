@@ -1,3 +1,13 @@
+## Latest executable acceptance — 2026-10-15 Baghdad
+
+PR #548 branch test/p0-operator-device-expiry-race-20261015, tested `df31f752d3e40792aed247728090e6f7342600c6`: isolated38679137264/job116239445634, merge53c2414a140050256229576a98f7c44291637121 SUCCESS **260PASS/0FAIL/0SKIP**, all6 workflowsSUCCESS. Directory HTTP suite9PASS includes3new tests: tied microsecond keyset pagination/new head, restricted direct evidence mutation denial across3 tenant contexts, and real deferred audit COMMIT failure after2native rows prepared with HTTP503/no disclosure. Earlier b0b3f4f2 first2 cases independently passed6 workflows. No new product defect or production/schema/grant change.
+
+Exact report: P0_OPERATOR_RECEIPT_READ_20261014.md (new dated section); immutable evidence: evidence/P0_OPERATOR_RECEIPT_BOUNDARIES_20261015.json. Syntax/diff checksPASS. This proves bounded discovery/access/durable HTTP audit, not privileged deletion policy, retention duration or order discovery/ownership repair. Historical P0 estimate85%/15% remains unmeasured; releaseNO-GO.
+
+Next exact unit: separate combined Draft integration of this billing/race source and #547/217a40c8 Meta source. Read-only merge assessment found no production/test/schema conflicts, only4audit docs plus suite selector. Keep548 billing array15entries and547 meta-bot array7entries, retain both evidence histories, then require actual combined CI. No main merge or deployment. Current548 code is already independently accepted; do not conflate separate-stack test counts. Documentation-only result checkpoint uses [skip ci] to avoid redundant CI; new integrated code source requires its own CI.
+
+Resume commands: git fetch origin test/p0-operator-device-expiry-race-20261015 test/p0-meta-full-app-restricted-20261014; inspect both actual heads before isolated integration. Existing targeted directory test requires owned disposable PG guard; never run with hosted DATABASE_URL.
+
 ## Verified inbox autocommit transport recovery — 2026-10-15 Baghdad
 
 Active branch `test/p0-operator-device-expiry-race-20261015`, Draft PR #548. Accepted source `bb0ac4e0f058930a8fa414694b1ca0e00563eddc` (test implementation c60ee2f9 plus reviewed base merge resolving only handoff conflict). Isolated run `38677861248`, job `116235459247`, merge checkout `6b587287e407de6542ae8e4c1cc89a92af11fd64`: **257 PASS / 0 FAIL / 0 SKIP**, 49 unique files / 51 invocations; all 6 observed workflows SUCCESS. New parser 2 PASS and new integration 3 PASS (parent + SaaS/cashier). Existing operator replay 17 PASS remains unchanged. Counts overlap earlier runs and include parents/repeated runtimes; no addition to separate #547 totals.

@@ -1,3 +1,7 @@
+## #523 bounded acceptance update — 2026-10-15
+
+Three additional directory/evidence/durable-audit boundaries PASS on df31f752 (run38679137264); no new production defect found. Restricted DML protection does not define a financial retention duration or authorize privileged deletion. Order discoverability/ownership repair, approved retention and hosted capabilities remain OPEN; combining accepted billing/Meta stacks into one tested Draft is next.
+
 ## #523 / #535 scope reconciliation — 2026-10-15
 
 #523 stays OPEN. Actual autocommit verified-inbox response-loss now PASS for SaaS/cashier (bb0ac4e0, run38677861248, new5 counted tests); existing explicit-COMMIT transport, durable inbox and operator17 proofs must not be rebuilt. No production defect reproduced by this new extension. Remaining: operator ownership/discoverability/retention and reviewed hosted capabilities.
