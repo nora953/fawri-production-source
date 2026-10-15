@@ -1,1 +1,0 @@
-Trigger the already-installed no-permissions verification workflow.

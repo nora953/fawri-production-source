@@ -1,8 +1,0 @@
-{
-  "all_top_level_api_test_files": 277,
-  "integration_files": 91,
-  "quality_ts_glob": 127,
-  "literal_reference_only": 109,
-  "unresolved_selector": 41,
-  "limits": "Literal filenames and the explicit quality TS glob only. Dynamic shell globs/package indirection can select unresolved files. Selection is NOT runtime execution or statement/branch coverage."
-}

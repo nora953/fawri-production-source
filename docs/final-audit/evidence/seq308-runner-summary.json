@@ -1,8 +1,0 @@
-{
-  "command": "node --test --test-reporter=tap docs/final-audit/evidence/seq308-runner-fences.test.mjs",
-  "runtime": "v24.19.0",
-  "passed": 4,
-  "failed": 0,
-  "skipped": 0,
-  "scope": "new fixed-file refusal controls, not business HTTP proof"
-}

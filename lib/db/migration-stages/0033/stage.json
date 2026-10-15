@@ -1,7 +1,0 @@
-{
-  "index": 33,
-  "name": "confirmed_provider_order_resolution",
-  "when": 1791936000005,
-  "mode": "manual_sql",
-  "preimage_files": []
-}

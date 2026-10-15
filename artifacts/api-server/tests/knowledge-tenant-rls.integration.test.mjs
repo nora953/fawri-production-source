@@ -15,10 +15,11 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
   const suffix = randomUUID().replaceAll("-", "").slice(0, 12);
   const role = `knowledge_rls_${suffix}`;
   const tenants = [`knowledge-a-${suffix}`, `knowledge-b-${suffix}`];
+  const runtimePassword = randomUUID().replaceAll("-", "");
   let runtimePool;
   let roleCreated = false;
   try {
-    await admin.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+    await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
     roleCreated = true;
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await admin.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
@@ -32,17 +33,18 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
         VALUES($1,$2,'custom','Gift wrapping?','gift wrapping','Yes','en')`, [`saved-${id}`, id]);
     }
 
-    // Authenticate with the disposable CI administrator, but start EVERY runtime
-    // connection as the restricted role. The application's real default pool and
-    // SQL adapter are used; no fake query client or database owner bypass is used.
+    // Every runtime connection authenticates as the owned restricted fixture role;
+    // administrator credentials remain exclusive to fixture setup and cleanup.
     const runtimeUrl = new URL(originalUrl);
-    runtimeUrl.searchParams.set("options", `-c role=${role}`);
+    runtimeUrl.username = role;
+    runtimeUrl.password = runtimePassword;
+    runtimeUrl.searchParams.delete("options");
     process.env.DATABASE_URL = runtimeUrl.toString();
     const db = await import("@workspace/db");
     runtimePool = db.pool;
     runtimePool.options.max = 1;
     runtimePool.options.connectionTimeoutMillis = 5_000;
-    assert.equal((await runtimePool.query("SELECT current_user AS name")).rows[0].name, role);
+    assert.deepEqual((await runtimePool.query("SELECT current_user AS active, session_user AS login")).rows[0], {active: role, login: role});
     const { assertProductionDatabaseRlsReady } = await import("../src/services/postgresRuntimeRlsSecurity.ts");
     await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required" });
     const knowledge = await import("../src/services/knowledge/postgresKnowledgeRuntime.ts");

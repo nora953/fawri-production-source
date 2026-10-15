@@ -1,8 +1,0 @@
-{
-  "baseline": "1db2beb108aea0b507012428cce7ab5129f388be",
-  "reviewed_source_files": 243,
-  "unresolved_queue": 41,
-  "new_literal_references": 7,
-  "integration_queue": 13,
-  "limits": "Literal search, plus manual review of executable test selectors and package indirection. No historical execution or statement coverage inference. No runtime DB import."
-}
