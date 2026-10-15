@@ -1,0 +1,11 @@
+# Verified receipt inbox autocommit response-loss acceptance — 2026-10-15 Baghdad
+
+Baseline PR #548 head `f496689f5e5a0b4cf8e298774ac548301a26ff23` verified 6/6 workflows successful. Prior executable operator suite remains 17 PASS; it is not rerun as new evidence. Existing billing process-recovery suite already covers actual explicit COMMIT acknowledgment loss at receipt/entitlement boundaries; this extension targets a different protocol boundary.
+
+`superQiSandboxWebhook` calls the separately committed inbox capability via autocommit `SELECT public.fawri_admit_verified_payment_receipt(...)` before order lookup. New owned TCP filter withholds the entire admission response until it observes the real successful SELECT completion and idle ReadyForQuery, then disconnects caller without delivering those frames. Unit tests verify every TCP split plus error/non-idle rejection. No server SQL/result is fabricated and the old explicit-COMMIT proxy is unchanged.
+
+For SaaS and cashier, actual signed sandbox handler plus synthetic status GET must fail to caller while independent SQL sees one immutable receipt, unchanged unmatched order and zero application/subscription. A fresh orphan retry retains that receipt. Parent then restores only the owned test order mapping (not a production repair endpoint); concurrent fresh processes must return applied/duplicate, with one application/subscription and original first receipt time. New integration uses default disposable database authority, not certification of hosted/restricted runtime grants.
+
+Local parser tests: 2 PASS / 0 FAIL. JavaScript syntax/diff checks PASS. New PostgreSQL integration: NOT RUN until CI. No production code or schema/grant change is justified by this test-only extension yet. #523 remains open for ownership/discoverability/retention and reviewed hosted capabilities.
+
+Cross-branch evidence: #547 source `217a40c8c6ed30c328202c51999028846189e6c1`, isolated `38657437452` / job `116170872527`: 287 PASS / 0 FAIL / 0 SKIP and 14 workflows successful. Actual full restricted-role Meta pipeline and inbound precommit SIGKILL/restart 4 PASS are proven there, not included in #548. Issue #535 comment `6183869401` reconciles this evidence and keeps hosted owner/RLS/EXECUTE rollout open. No merge/deploy.

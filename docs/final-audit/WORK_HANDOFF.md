@@ -1,3 +1,15 @@
+## Active P0 continuation — 2026-10-15 Baghdad
+
+Active branch `test/p0-operator-device-expiry-race-20261015`, Draft PR #548, verified baseline `f496689f5e5a0b4cf8e298774ac548301a26ff23`: 6/6 workflows SUCCESS (isolated run 38668164776). Prior executable 5bc84db8 operator suite 17/17 remains accepted; do not repeat it as new work. Older headers below are history, not the current task queue.
+
+Current executable extension: actual autocommit verified-inbox SELECT response loss, distinct from the already-present explicit COMMIT wire tests. New test `verified-inbox-wire-recovery-postgres.integration.test.mjs` plus autocommit frame-filter unit suite registered in billing batch. Local parser 2 PASS, syntax/diff PASS; PostgreSQL NOT RUN until new CI. See `P0_VERIFIED_INBOX_AUTOCOMMIT_WIRE_20261015.md` for precise oracle and scope. Next: inspect new CI, fix only proven failures, record source/run/job and immutable receipt/once-only grant outcomes.
+
+Read-only hosted refresh: Railway still deploys main/d38d2922, checkSuites=false, no mounted volumes/buckets or staged changes. Actual GET /ops/readiness returned 200/ready with PostgreSQL/configuration checks up; effective role/grants and newer billing/Meta hosted paths remain unverified. Neon tool list_projects returned Tool not found; BLOCKED, not a database defect. See hosted gate document. No settings/secrets/grants/deployment changed.
+
+Cross-branch #547 source 217a40c8: 287 PASS/0 FAIL/0 SKIP, all14 workflows SUCCESS, actual complete restricted-role Meta and new precommit rollback/natural retry/restart 4 PASS. #535 updated in comment6183869401; this code is not in #548. #523 comment6183869552 identifies the new SELECT-boundary gap without rebuilding existing durable inbox. P0 historical estimate85%/15% is unchanged, not a freshly measured completion. Hosted gates keep release NO-GO.
+
+Resume: git fetch origin test/p0-operator-device-expiry-race-20261015; inspect current head and its GitHub Actions. Local parser command: node --test artifacts/api-server/tests/postgres-autocommit-response-proxy.unit.test.mjs. Use guarded disposable CI billing batch for integration, never a hosted DATABASE_URL. Main merge/deploy/hosted migrations/grants remain unauthorized.
+
 ## Verified operator review/confirm/replay UI — 2026-10-14
 
 Draft PR545, branch fix/p0-operator-receipt-replay-ui-20261014 stacked on544/dec8497f. Tested4e95b72e27fa60ba2a59da2c8569854c196eccee; browser38629698500/job116077862920 mergecheckoutc62a528ea2a000e671693d6f67b9290d3d2b3e97:36PASS/0FAIL (11new+25existing). Localfrontend typecheck/build and9client testsPASS (5new+4existing); policyPASS. 7/7 observed workflows SUCCESS for tested source. Prior544 docshead26/26CI SUCCESS. No new backend or SQL proof credit.

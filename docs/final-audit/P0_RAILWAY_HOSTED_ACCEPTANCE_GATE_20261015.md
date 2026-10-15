@@ -1,3 +1,9 @@
+## Read-only refresh — 2026-10-15 06:40 Baghdad
+
+Railway inventory/config/deployment reads reconfirm main/d38d29229bed0f9575a98e7026e7819fe363bfd4, same successful deployment11f22954, checkSuites=false, no mounted volumes/buckets and no staged changes. GET https://fawri-web-production.up.railway.app/ops/readiness actually returned HTTP200: status ready; PostgreSQL authority up, production release configuration up. This closes only the previously unexecuted endpoint-read gate, not hosted grants, role identity, provider acceptance or deployment of newer PRs. Runtime role is not returned in that response.
+
+Neon list_projects again returns MCP Tool list_projects not found; hosted DB inventory stays BLOCKED. Branch-protection403 evidence remains UNKNOWN; no repeated permission probe. No variable values or credentials read, no infrastructure mutation. Release NO-GO remains.
+
 # P0 Railway hosted acceptance and rollout safety checkpoint (2026-10-15)
 
 Status: **read-only inventory completed; hosted acceptance NOT executed; rollout NOT authorized.**
