@@ -111,6 +111,16 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     assert.equal(state.subscriptions,0);
     assert.deepEqual(state.event,[{status:'rejected',time:f.firstReceivedAt}]);
     assert.deepEqual(await receipt(f),original);
+    const retry=await run(f);
+    assert.equal(retry.code,0);
+    const retryResult=retry.messages.find(m=>m.type==='http-result');
+    assert.ok(retryResult,'fresh-session retry must produce an HTTP response');
+    assert.notEqual(retryResult.httpStatus,200,'reconciliation retry must never grant entitlement');
+    const afterRetry=await snapshot(f);
+    assert.equal(afterRetry.order.status,'paid_reconciliation_required');
+    assert.equal(afterRetry.applications,0);
+    assert.equal(afterRetry.subscriptions,0);
+    assert.deepEqual(await receipt(f),original);
   });
   for(const kind of ['saas','cashier'])await t.test(`${kind}: receipt from merchant A cannot be replayed against merchant B order`,async()=>{
     const first=await fixture(kind),second=await fixture(kind);
