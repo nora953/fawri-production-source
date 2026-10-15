@@ -98,6 +98,24 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     let finishTimer;try{return await Promise.race([done,new Promise((_,reject)=>{finishTimer=setTimeout(()=>reject(Error('operator HTTP completion timeout')),30000);})]);}finally{clearTimeout(finishTimer);}
   }
   const audits=async()=>(await pool.query("SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'",[finance.id])).rows[0].n;
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: expired active session during provider I/O must not apply entitlement`,async()=>{
+    const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
+    const result=await runPausedWithRevocation(f,async(token)=>{
+      const expired=await authority.revokeSession(token,'admin','expired');
+      assert.equal(expired,true,'the in-flight operator session must expire');
+    });
+    assert.equal(result.code,0,'original HTTP child must finish normally');
+    const response=result.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing HTTP response');
+    assert.ok([401,403,409].includes(response.httpStatus),`expected fail-closed session expiry, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,1,'provider was called before session expiry');
+    assert.deepEqual(await snapshot(f),before,'expired session must not apply payment');
+    assert.deepEqual(await receipt(f),originalReceipt,'verified receipt must remain immutable');
+    const recovered=await run(f),recovery=recovered.messages.find(m=>m.type==='http-result');
+    assert.equal(recovered.code,0);assert.equal(recovery.httpStatus,200);assert.equal(recovery.status,'applied');
+    const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    assert.equal(after.order.paid_time,f.firstReceivedAt);assert.deepEqual(await receipt(f),originalReceipt);
+  });
   for(const kind of ['saas','cashier'])await t.test(`${kind}: revoked active session during provider I/O must not apply entitlement`,async()=>{
     const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
     const result=await runPausedWithRevocation(f,async(token)=>{
