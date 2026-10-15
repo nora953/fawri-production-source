@@ -98,6 +98,26 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     let finishTimer;try{return await Promise.race([done,new Promise((_,reject)=>{finishTimer=setTimeout(()=>reject(Error('operator HTTP completion timeout')),30000);})]);}finally{clearTimeout(finishTimer);}
   }
   const audits=async()=>(await pool.query("SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'",[finance.id])).rows[0].n;
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: revoked device trust during provider I/O must not apply entitlement`,async()=>{
+    const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
+    const result=await runPausedWithRevocation(f,async()=>{
+      const changed=await setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:false,actorAccountId:owner.id});
+      assert.equal(changed.status,'untrusted');
+    });
+    assert.equal(result.code,0,'original HTTP child must finish normally');
+    const response=result.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing HTTP response');
+    assert.ok([401,403,409].includes(response.httpStatus),`expected fail-closed device revocation, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,1,'provider was called before device trust revocation');
+    assert.deepEqual(await snapshot(f),before,'untrusted device must not apply payment');
+    assert.deepEqual(await receipt(f),originalReceipt,'verified receipt must remain immutable');
+    const restored=await setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:owner.id});
+    assert.equal(restored.status,'trusted');
+    const recovered=await run(f),recovery=recovered.messages.find(m=>m.type==='http-result');
+    assert.equal(recovered.code,0);assert.equal(recovery.httpStatus,200);assert.equal(recovery.status,'applied');
+    const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    assert.equal(after.order.paid_time,f.firstReceivedAt);assert.deepEqual(await receipt(f),originalReceipt);
+  });
   for(const kind of ['saas','cashier'])await t.test(`${kind}: revoked finance permission during provider I/O must not apply entitlement`,async()=>{
     const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
     const result=await runPausedWithRevocation(f,()=>pool.query("DELETE FROM admin_permissions WHERE admin_id=$1 AND permission='manage_subscriptions'",[finance.id]));
