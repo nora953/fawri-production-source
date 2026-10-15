@@ -32,6 +32,7 @@ function safeRow(overrides: Record<string, unknown> = {}) {
     session_role_superuser: false,
     session_role_bypass_rls: false,
     session_owned_tables: [],
+    session_reachable_privileged_roles: [],
     role_superuser: false,
     role_bypass_rls: false,
     owned_tenant_tables: [],
@@ -143,4 +144,9 @@ test("production rejects a privileged authenticated session behind a restricted 
     safeRow({session_role_name: "connection_owner", session_role_bypass_rls: true}));
   await rejectsWith("PRODUCTION_DATABASE_SESSION_TABLE_OWNER_FORBIDDEN",
     safeRow({session_role_name: "connection_owner", session_owned_tables: ["verified_provider_payment_receipts"]}));
+});
+
+test("production rejects a session able to activate a privileged role", async () => {
+  await rejectsWith("PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE",
+    safeRow({ session_reachable_privileged_roles: ["isolated_bypass_role"] }));
 });

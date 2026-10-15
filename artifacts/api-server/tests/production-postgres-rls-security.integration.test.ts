@@ -246,4 +246,44 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     });
   }
 
+  for (const mode of ["direct", "indirect", "inherit-only"]) {
+    await t.test(`privileged membership ${mode} readiness`, async () => {
+      const privileged = "fawri_reachable_privileged_probe";
+      const middle = "fawri_reachable_middle_probe";
+      await client.query("RESET SESSION AUTHORIZATION");
+      await client.query("BEGIN");
+      try {
+        await client.query(`CREATE ROLE ${privileged} NOLOGIN NOSUPERUSER BYPASSRLS`);
+        await client.query(`CREATE ROLE ${middle} NOLOGIN NOSUPERUSER NOBYPASSRLS`);
+        if (mode === "indirect") {
+          await client.query(`GRANT ${privileged} TO ${middle} WITH INHERIT FALSE, SET TRUE`);
+          await client.query(`GRANT ${middle} TO ${probeRole} WITH INHERIT FALSE, SET TRUE`);
+        } else {
+          await client.query(`GRANT ${privileged} TO ${probeRole} WITH INHERIT TRUE, SET ${mode === "direct" ? "TRUE" : "FALSE"}`);
+        }
+        await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+        const state = await getProductionDatabaseRlsReadiness(client);
+        assert.equal(state.sessionBypassRls, false);
+        assert.equal(state.bypassRls, false);
+        assert.deepEqual(state.sessionOwnedTables, []);
+        assert.deepEqual(state.ownedTenantTables, []);
+        assert.equal((await client.query("SELECT row_security_active('public.verified_provider_payment_receipts') AS active")).rows[0].active, true);
+        assert.deepEqual(state.sessionReachablePrivilegedRoles, mode === "inherit-only" ? [] : [privileged]);
+        if (mode === "inherit-only") {
+          await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
+        } else {
+          await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
+            {code: "PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE"});
+          await client.query(`SET ROLE ${privileged}`);
+          assert.equal((await client.query("SELECT row_security_active('public.verified_provider_payment_receipts') AS active")).rows[0].active, false);
+        }
+      } finally {
+        await client.query("RESET SESSION AUTHORIZATION");
+        await client.query("ROLLBACK");
+      }
+      await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+      await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
+    });
+  }
+
 });

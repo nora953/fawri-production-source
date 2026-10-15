@@ -1,3 +1,19 @@
+# Continuation — SET-reachable privileged-role readiness (2026-10-15)
+
+Branch/PR remain `fix/p0-provider-receipt-order-discovery-20261015` / #550.
+Parent documentation HEAD: `7c3591b2a29ddba3af2ee1d6cc245249da2da963`.
+Previous accepted code: `92ad7bbef94bda674194205220975d0220190856`; 329 PASS / 0 FAIL / 0 SKIP and 25 observed workflows SUCCESS, reverified on GitHub before this batch.
+
+New bounded change: readiness inspects session-user SET-reachable SUPERUSER/BYPASSRLS roles, including roles owning none of the protected tables. Direct current/session flags and ownership checks remain intact. No SQL migration, hosted grant, deployment, or secret changes.
+
+Evidence: added unit regression initially **8 PASS / 1 FAIL** (missing expected rejection), then **9 PASS / 0 FAIL** after repair; API TypeScript no-emit PASS; diff whitespace check PASS. Added three isolated PostgreSQL membership cases (direct SET, indirect SET, INHERIT TRUE/SET FALSE). They assert actual inbox `row_security_active` before/after allowed activation, with transactional fixture cleanup. **PostgreSQL tests NOT RUN locally; CI pending at publication.** No claim that these three cases pass until actual job logs verify them.
+
+Next: inspect CI on the commit containing this header, especially the isolated PostgreSQL audit and foundation jobs. Record exact source SHA/run/job IDs, real PASS/FAIL totals and any failures here and in #550/#523. Do not reuse the old 329 count as evidence for new code. If CI succeeds, assess capability function ownership readiness separately; provider mapping race remains NOT RUN as previously documented. Hosted acceptance remains unverified; P0 historical 85/15 remains unmeasured; release NO-GO.
+
+Resume: `git fetch origin fix/p0-provider-receipt-order-discovery-20261015`; inspect remote HEAD and workflow runs, then `git switch --detach FETCH_HEAD` only after preserving local work. Unit command: `node --import tsx --test artifacts/api-server/tests/production-postgres-rls-security.test.ts`. Typecheck: `node node_modules/typescript/bin/tsc --project artifacts/api-server/tsconfig.json --noEmit`.
+
+---
+
 ## Session and receipt RLS readiness accepted — 2026-10-15
 
 Draft#550 / fix/p0-provider-receipt-order-discovery-20261015, tested source `92ad7bbef94bda674194205220975d0220190856`: **25/25 workflows SUCCESS**. Isolated `38723072880` / job `116382166372`, checkout `8b9eaca442f46c605aabb85fee59d25a32707f18`: **329 PASS / 0 FAIL / 0 SKIP**,55unique/57invocations including parents/repeated runtimes. RLS25PASS; knowledge and deletion each1PASS using direct restricted LOGIN connections with current_user=session_user. Production gate checks current and session role superuser/BYPASSRLS/protected-table ownership; the protected inventory includes the global receipt inbox and an independent migration inventory test. Local unit8/0. Fullrestore/cleanupPASS, unchanged34migrations/95tables/45policies/9functions/fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Exact evidence: evidence/P0_SESSION_RLS_READINESS_RESULTS_20261015.json; report SEQ_377_P0_RLS_RESTORE_ADMIN_SYNC_READINESS_20261014.md. Current commands and remaining gates in WORK_HANDOFF. Historical85%/15% unmeasured; releaseNO-GO. Earlier pending headings below are superseded only by this accepted source.
