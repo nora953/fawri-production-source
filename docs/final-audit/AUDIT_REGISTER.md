@@ -1,3 +1,7 @@
+## P0 acceptance delta — 2026-10-15
+
+Verified inbox autocommit SELECT-response loss: PASS, source `bb0ac4e0`, PR #548, isolated run38677861248/job116235459247. New unit2PASS + integration3PASS (parent included); aggregate257/0/0, all6 workflows SUCCESS. Existing operator17 unchanged. Scope: signed sandbox handler, independent immutable inbox/zero-grant before mapping, concurrent once-only fresh-process recovery. Default disposable DB role, not hosted capability proof. [Report](P0_VERIFIED_INBOX_AUTOCOMMIT_WIRE_20261015.md); [machine evidence](evidence/P0_VERIFIED_INBOX_AUTOCOMMIT_RESULTS_20261015.json). Current next task in WORK_HANDOFF; older queue entries are history.
+
 ## Verified actual operator HTTP PostgreSQL wire recovery — 2026-10-14
 
 Draft PR546, branch test/p0-operator-replay-wire-recovery-20261014 stacked on545/d15aa5fd. Accepted2e3acfea62c6c7e1ad14e2f088e33fb0998ba3d8; isolated38631830513/job116085119744, merge71db03cc64f5916b81806d96c14a8de2810ab5c8:240PASS/0FAIL/0SKIP,47unique files/49invocations. New operator suite5PASS (parent+4cases);7/7 observed workflowsSUCCESS. Prior545 documentation head7CI SUCCESS verified. Totals overlap earlier proofs; no additive/whole-audit percentage.

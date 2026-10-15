@@ -1,3 +1,9 @@
+## #523 / #535 scope reconciliation — 2026-10-15
+
+#523 stays OPEN. Actual autocommit verified-inbox response-loss now PASS for SaaS/cashier (bb0ac4e0, run38677861248, new5 counted tests); existing explicit-COMMIT transport, durable inbox and operator17 proofs must not be rebuilt. No production defect reproduced by this new extension. Remaining: operator ownership/discoverability/retention and reviewed hosted capabilities.
+
+#535 full original restricted-role Meta pipeline already PASS on separate #547/217a40c8 (287/0/0,14 workflows); issue comment6183869401 reconciles stale scope. Hosted owner/RLS/EXECUTE rollout stays OPEN. Railway readiness endpoint200/ready is now observed, but old main/d38d2922 code, checkSuites=false, storage architecture and Neon tool unavailability retain release NO-GO. See WORK_HANDOFF and hosted gate; no percentages freshly measured.
+
 ## Verified actual operator HTTP PostgreSQL wire recovery — 2026-10-14
 
 Draft PR546, branch test/p0-operator-replay-wire-recovery-20261014 stacked on545/d15aa5fd. Accepted2e3acfea62c6c7e1ad14e2f088e33fb0998ba3d8; isolated38631830513/job116085119744, merge71db03cc64f5916b81806d96c14a8de2810ab5c8:240PASS/0FAIL/0SKIP,47unique files/49invocations. New operator suite5PASS (parent+4cases);7/7 observed workflowsSUCCESS. Prior545 documentation head7CI SUCCESS verified. Totals overlap earlier proofs; no additive/whole-audit percentage.

@@ -1,3 +1,9 @@
+## Executed acceptance — 2026-10-15
+
+Source `bb0ac4e0f058930a8fa414694b1ca0e00563eddc` (initial implementationc60ee2f9; reviewed base merge resolved only handoff conflict), PR #548. Isolated run38677861248/job116235459247, merge6b587287e407de6542ae8e4c1cc89a92af11fd64: new parser2PASS + integration3PASS/0FAIL/0SKIP including parent, aggregate257/0/0 across49unique files/51invocations. All6 workflowsSUCCESS. Original operator17 retained. Exact proof/CI/schema/cleanup metadata in evidence/P0_VERIFIED_INBOX_AUTOCOMMIT_RESULTS_20261015.json.
+
+Both SaaS/cashier show idleReadyObserved=true, admissionResponseDelivered=false, callerSuccess=false, independentReceiptCount=1, preMappingGrants=0, immutableReceipt=true, concurrent fresh statuses applied/duplicate and original receipt time preserved. No production repair was needed. Source syntax/diff and local parser checks passed. Earlier NOT RUN preparation below is superseded only by this executed acceptance. Default disposable authority; no hosted/restricted-grant claim.
+
 # Verified receipt inbox autocommit response-loss acceptance — 2026-10-15 Baghdad
 
 Baseline PR #548 head `f496689f5e5a0b4cf8e298774ac548301a26ff23` verified 6/6 workflows successful. Prior executable operator suite remains 17 PASS; it is not rerun as new evidence. Existing billing process-recovery suite already covers actual explicit COMMIT acknowledgment loss at receipt/entitlement boundaries; this extension targets a different protocol boundary.

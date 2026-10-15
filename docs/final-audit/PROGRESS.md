@@ -1,3 +1,9 @@
+## P0 executed progress — 2026-10-15
+
+PR #548 accepted sourcebb0ac4e0: isolated38677861248/job116235459247 **257PASS/0FAIL/0SKIP**,49unique files/51invocations, all6 workflowsSUCCESS. New autocommit parser2PASS + signed inbox integration3PASS (including parent); original operator17 stillPASS. Counts overlap other workflow/branch suites; do not add to #547's separate287. No production/schema/grant changes. Local parser2/syntax/diff PASS; full restore and cleanupPASS. Read-only hosted readiness200/ready verified, without role/provider rollout proof.
+
+Historical P0 estimate85%/15% unchanged, NOT newly measured. One new bounded transport proof does not imply a measured percentage increase. Remaining acceptance and commands in WORK_HANDOFF; report P0_VERIFIED_INBOX_AUTOCOMMIT_WIRE_20261015.md.
+
 ## Verified actual operator HTTP PostgreSQL wire recovery — 2026-10-14
 
 Draft PR546, branch test/p0-operator-replay-wire-recovery-20261014 stacked on545/d15aa5fd. Accepted2e3acfea62c6c7e1ad14e2f088e33fb0998ba3d8; isolated38631830513/job116085119744, merge71db03cc64f5916b81806d96c14a8de2810ab5c8:240PASS/0FAIL/0SKIP,47unique files/49invocations. New operator suite5PASS (parent+4cases);7/7 observed workflowsSUCCESS. Prior545 documentation head7CI SUCCESS verified. Totals overlap earlier proofs; no additive/whole-audit percentage.
