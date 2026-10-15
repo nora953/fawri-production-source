@@ -28,14 +28,14 @@ const resolverIdentity='public.fawri_resolve_confirmed_payment_order(text,text,t
 const functionIdentity='public.fawri_admit_verified_payment_receipt(text,text,text,text,integer,text,timestamptz)';
 
 test('verified provider callbacks discover mapped orders without global tenant access',{timeout:120000},async t=>{
-  const children=[],merchantIds=[],paymentRefs=[];const role=`billing_discovery_${randomUUID().replaceAll('-','')}`;
+  const children=[],merchantIds=[],paymentRefs=[];const role=`billing_discovery_${randomUUID().replaceAll('-','')}`,runtimePassword=randomUUID().replaceAll('-','');
   t.after(async()=>cleanupResources([
     ['owned children',async()=>{for(const child of children)await stopTestChild(child);}],
     ['owned inbox',()=>pool.query('DELETE FROM verified_provider_payment_receipts WHERE payment_ref=ANY($1::text[])',[paymentRefs])],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchantIds])],
     ['owned grants',()=>pool.query(`DROP OWNED BY ${role}`)],['owned role',()=>pool.query(`DROP ROLE ${role}`)],['pool',()=>pool.end()],
   ]));
-  await pool.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+  await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
   await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
   await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
@@ -47,7 +47,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
     child.on('message',message=>{messages.push(message);if(message.type==='ready')readyResolve();});child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
     const done=new Promise(resolve=>{child.once('exit',(code,signal)=>resolve({code,signal,messages}));child.once('error',()=>resolve({code:'SPAWN_FAILURE',messages}));});let timer;
     try{await Promise.race([ready,done.then(()=>{throw Error('owned child exited before ready');}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('owned child startup timeout')),15000);})]);}finally{clearTimeout(timer);}
-    child.send({payload,signature:signatureOf(payload),receivedAt:receivedAt.toISOString(),providerEnv,role});return done;
+    child.send({payload,signature:signatureOf(payload),receivedAt:receivedAt.toISOString(),providerEnv,role,runtimePassword});return done;
   }
   for(const kind of ['saas','cashier'])await t.test(`${kind}: signed callback applies mapped payment with empty tenant and restricted role`,async kt=>{
     const merchantId=`discovery-${randomUUID()}`;merchantIds.push(merchantId);

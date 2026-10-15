@@ -1,3 +1,15 @@
+# Continuation — owner matrix342PASS; direct LOGIN full-path CI pending
+
+Accepted sourcee91e6d96d30336566363193f0a381b72df505d89: isolated38784400239/job116592547147 SUCCESS,342PASS/0FAIL/0CANCELLED/0SKIP,55unique/57invocations,25/25observedworkflowsSUCCESS. Billing11PASS includes8owner/FORCE-RLS cases with original immutable receipts/no premature grants/signed handler/duplicates. Mergecheckout995c5cd. EvidenceP0_BILLING_OWNER_MATRIX_RESULTS_20261015.json; baselinef4a40de retained331PASS/3CANCELLED/workflowFAIL, no SQL failure claim. Runner emits explicit cancelled count.
+
+Current new source changes four fixture/helper files for actual Meta full-app/worker and signed billing handlers to use synthetic restricted LOGIN connections instead of root login plus startup SET ROLE. Per-run random hex passwords never logged; parent owns setup/cleanup. Children construct own URL, remove options, assert current_user=session_user=role after RESET ROLE, then run original production RLS readiness. Existing table flags, HTTP/provider/tenant/refund/receipt/application/duplicate assertions retained. SQL owner matrix still deliberately uses SET LOCAL ROLE on the owned setup client and remains bounded definer-owner proof. No production source or hosted changes.
+
+Local four-file node --check and git diff --check PASS; new PostgreSQL LOGIN full-path proof NOT RUN at publication / CI pending. Next exact action: inspect this source isolated audit, especially billing-provider-discovery-restricted-postgres.integration.test.mjs and meta-full-app-restricted-postgres.integration.test.mjs; confirm role/session/readiness and original full-path assertions actually execute. Counts should be measured from logs, not assumed or added to prior342. Record source/run/job and update523/535/550 and current audit headers.
+
+Railway readonly refresh remains old main/d38d2922/11f22954SUCCESS at18:10Z; readiness200/ready does not return runtime role; checkSuitesfalse/no Railway volumes/buckets. Previous Neon BLOCKED/protection UNKNOWN unchanged. Historical85/15 unmeasured, release NO-GO. Provider mapping race NOT RUN; no real payment, main merge, hosted grant/migration/deploy. Same #550 branch. Resume via git fetch origin fix/p0-provider-receipt-order-discovery-20261015 and inspect remote source/CI. Preserve explicit full-tree/blob equality and CAS publication checks.
+
+---
+
 # Continuation — billing owner matrix harness repair, CI pending
 
 Failed sourcef4a40de19b740c4215a65b6f74763dfb8560332b: isolated38783245985/job116588596546 failed;24otherworkflowsSUCCESS. Actual aggregate331PASS/0failed assertions/3CANCELLED/0SKIP,55unique/57invocations. New billing suite0PASS/0FAIL/3CANCELLED, parent120000ms timeout. Eight SQL owner cases NOT RUN, not SQL failures. Cause: new nested cases used root t.test, scheduling queued sibling while active SaaS child awaited it. DB-free150ms reproduction0PASS/0FAIL/3CANCELLED; current child kt.test fixed reproduction3PASS/0FAIL/0CANCELLED. EvidenceP0_BILLING_OWNER_MATRIX_BASELINE_20261015.json.
