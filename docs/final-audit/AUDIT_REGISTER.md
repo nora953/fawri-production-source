@@ -1,3 +1,7 @@
+## Combined-source acceptance — 2026-10-15
+
+PASS: Draft#549/8a694b43, isolated38679806273/job116241526105,307/0/0 across54unique/56invocations; all14 workflowsSUCCESS. Billing/operator, inbox transport, restricted directory/audit and full restricted Meta/process/wire paths now pass together. Report P0_COMBINED_BILLING_META_ACCEPTANCE_20261015.md; machine evidence P0_COMBINED_BILLING_META_RESULTS_20261015.json. No hosted/release clearance.
+
 ## P0 receipt directory boundary delta — 2026-10-15
 
 PASS: PR548/df31f752, isolated38679137264/job116239445634, directory9/0/0 (3new), aggregate260/0/0 and6workflowsSUCCESS. Tied pagination/head insertion, restricted DML denial and deferred audit COMMIT/HTTP no-disclosure proven. Report P0_OPERATOR_RECEIPT_READ_20261014.md; evidence/P0_OPERATOR_RECEIPT_BOUNDARIES_20261015.json. Next integration in WORK_HANDOFF.

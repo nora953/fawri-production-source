@@ -1,3 +1,7 @@
+## Current P0 source and remaining gates — 2026-10-15
+
+Draft#549/test/p0-integrated-billing-meta-20261015 tested8a694b43: combined billing/Meta307/0/0,14workflowsSUCCESS; full restore/cleanupPASS. Main unchanged. Next: remaining acceptance matrix, ownership/discovery/retention policy and reviewed hosted owner/grants/provider/storage/deployment controls. Hosted mutation/merge/deploy requires separate explicit approval. Older next-task headers below are historical. WORK_HANDOFF is current.
+
 ## Active combined-source validation — 2026-10-15
 
 Combined Draft branch test/p0-integrated-billing-meta-20261015 imports accepted billing#548 and Meta#547. Standalone proofs retained; integrated acceptance pending. Keep full15billing/7Meta suite selector. Next is actual combined CI, then remaining hosted/retention/ownership gates; no main merge/deploy. See WORK_HANDOFF.

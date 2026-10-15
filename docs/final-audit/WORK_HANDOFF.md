@@ -1,3 +1,15 @@
+## Current accepted integrated P0 candidate — 2026-10-15 Baghdad
+
+Active branch `test/p0-integrated-billing-meta-20261015`, Draft PR #549, depends on #548/#547. Tested `8a694b43b4583788f5be351ed7df410547a46167`: isolated38679806273/job116241526105, merge3e34bd5a8d35a1af2a1e4c9569b1fd3514083d4a SUCCESS **307PASS/0FAIL/0SKIP**,54unique files/56invocations; all14 observed workflowsSUCCESS. Meta38679806211/job116241526118 SUCCESS. Standalone source counts overlap and are not added. No runtime tests remain pending for this accepted source.
+
+Combined source contains billing/operator17, inbox autocommit transport, restricted directory9 (including deferred real audit COMMIT no-disclosure), original full restricted Meta, identity/envelope, refund/release wire loss and real precommit/DLQ process recovery. Full restore33/95/45/8 and owned cleanupPASS. Roles vary by suite; no claim all307 use restricted roles. Source/schema/application changes were already accepted parent fixes; integration conflicts were audit headers and selector only. Full15billing/7Meta suites retained.
+
+Exact report P0_COMBINED_BILLING_META_ACCEPTANCE_20261015.md and evidence/P0_COMBINED_BILLING_META_RESULTS_20261015.json. Parent billing #548 source df31f752 had260/0/0,6workflows; parent Meta#547/217a40c8 had287/0/0,14workflows. Both histories/evidence retained. Final result-only commit uses [skip ci], no redundant full CI; tested source stays8a694b43.
+
+Next exact work within authorized scope: reconcile remaining P0 acceptance matrix against this combined source. Order discoverability/ownership repair and retention duration/privileged deletion policy are not implemented by directory safeguards; do not invent mapping or deletion rules. Hosted owner/RLS/EXECUTE/grants/provider acceptance, deployment check gating and storage architecture remain OPEN. Read-only Railway still oldmain/d38d2922, readiness200/ready only; Neon Tool not found and main protection earlier403 UNKNOWN. No hosted mutation, main merge or deployment permitted without separate explicit approval. Historical85%/15% is not newly measured, releaseNO-GO.
+
+Resume commands: git fetch origin test/p0-integrated-billing-meta-20261015; inspect actual head and #549 comments. Syntax: node --check scripts/execute-disposable-postgres-audit.mjs. Guarded owned-container integration runner uses positional billing or meta-bot, never a hosted DATABASE_URL. Do not rerun accepted standalone suites absent changed source/new justified fault.
+
 ## Integrated P0 candidate — 2026-10-15 Baghdad
 
 New branch test/p0-integrated-billing-meta-20261015, separate Draft targeting PR548 branch. Parents: billing548 documentation65ebaf19373b4710c743662f4a8fc514639b1de4 (tested df31f752,260/0/0,6workflows) and Meta547 source217a40c8c6ed30c328202c51999028846189e6c1 (287/0/0,14workflows). No main merge or deployment. Current integrated acceptance NOT RUN until CI; never add standalone counts.

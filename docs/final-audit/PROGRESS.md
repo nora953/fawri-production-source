@@ -1,3 +1,7 @@
+## Combined P0 execution — 2026-10-15
+
+One integrated source8a694b43 now verified307PASS/0FAIL/0SKIP,14/14workflowSUCCESS (isolated38679806273),54unique/56invocations including parents/repeated runtimes. Not the sum of standalone260 and287. Three new directory safeguards independently accepted before integration. No hosted changes. Historical P0 estimate85%/15% unchanged, not measured from test counts. See combined acceptance report and WORK_HANDOFF.
+
 ## Verified receipt boundary batch — 2026-10-15
 
 PR548/df31f752:260PASS/0FAIL/0SKIP,6/6workflowSUCCESS; directory9PASS including3new and parent. Previous257 and separate Meta287 overlap and must not be added. Historical85%/15% unchanged, not newly measured. Code change is tests only. Exact report/evidence and integration continuation in WORK_HANDOFF.

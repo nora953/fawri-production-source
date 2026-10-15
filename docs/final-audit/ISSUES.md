@@ -1,3 +1,7 @@
+## Integrated #523/#535 evidence — 2026-10-15
+
+Combined Draft#549/8a694b43 passes307/0/0 and14workflows. This supersedes the need for a combined synthetic regression, not hosted rollout or ownership/retention policy. #523 keeps remaining policy/discovery/hosted acceptance OPEN; #535 keeps reviewed function owner/RLS/EXECUTE and hosted full path OPEN. No new product defect found by three directory boundaries or integration. Current next actions in WORK_HANDOFF.
+
 ## #523 bounded acceptance update — 2026-10-15
 
 Three additional directory/evidence/durable-audit boundaries PASS on df31f752 (run38679137264); no new production defect found. Restricted DML protection does not define a financial retention duration or authorize privileged deletion. Order discoverability/ownership repair, approved retention and hosted capabilities remain OPEN; combining accepted billing/Meta stacks into one tested Draft is next.
