@@ -98,6 +98,28 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     let finishTimer;try{return await Promise.race([done,new Promise((_,reject)=>{finishTimer=setTimeout(()=>reject(Error('operator HTTP completion timeout')),30000);})]);}finally{clearTimeout(finishTimer);}
   }
   const audits=async()=>(await pool.query("SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'",[finance.id])).rows[0].n;
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: receipt from merchant A cannot be replayed against merchant B order`,async()=>{
+    const first=await fixture(kind),second=await fixture(kind);
+    assert.notEqual(first.merchantId,second.merchantId);
+    const originalFirst=await receipt(first),originalSecond=await receipt(second);
+    const beforeFirst=await snapshot(first),beforeSecond=await snapshot(second);
+    const mismatched={...first,body:{...first.body,order_id:second.body.order_id}};
+    const denied=await run(mismatched);
+    assert.equal(denied.code,0,'HTTP child must handle tenant mismatch');
+    const response=denied.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing mismatch HTTP response');
+    assert.ok([403,404,409].includes(response.httpStatus),`cross-merchant replay must be rejected, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,0,'tenant mismatch must be rejected before provider I/O');
+    assert.deepEqual(await snapshot(first),beforeFirst);
+    assert.deepEqual(await snapshot(second),beforeSecond);
+    assert.deepEqual(await receipt(first),originalFirst);
+    assert.deepEqual(await receipt(second),originalSecond);
+    for(const f of [first,second]){
+      const valid=await run(f),result=valid.messages.find(m=>m.type==='http-result');
+      assert.equal(valid.code,0);assert.equal(result.httpStatus,200);assert.equal(result.status,'applied');
+      const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    }
+  });
   for(const kind of ['saas','cashier'])await t.test(`${kind}: expired active session during provider I/O must not apply entitlement`,async()=>{
     const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
     const result=await runPausedWithRevocation(f,async(token)=>{
