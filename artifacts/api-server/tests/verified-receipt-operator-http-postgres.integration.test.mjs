@@ -119,6 +119,69 @@ test('real HTTP receipt directory requires trusted admin permission and durable 
     await assert.rejects(()=>pool.query(readSql,[finance.id,2,null,null,randomUUID(),'a'.repeat(64)]),error=>error.code==='42501');
     assert.equal((await audits()).length,before);
   });
+  await t.test('equal-microsecond keyset pages retain every original receipt during a new head insertion',async()=>{
+    const added=[],prefix=`tie-event-${randomUUID()}`;
+    try{
+      for(let i=1;i<=4;i++){
+        const event=`${prefix}-${i}`;added.push(event);events.push(event);
+        await admin.query("INSERT INTO verified_provider_payment_receipts VALUES('superqi_sandbox',$1,$2,$3,'payment_succeeded',3900,$4,$5)",[event,`synthetic-tie-payment-${i}`,`synthetic-tie-request-${i}`,'d'.repeat(64),'2026-10-14T13:00:00.222222Z']);
+      }
+      const expected=(await admin.query('SELECT provider_event_id FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[]) ORDER BY first_received_at DESC,provider_event_id DESC',[events])).rows.map(row=>row.provider_event_id);
+      const first=await request(owner,'?limit=2');assert.equal(first.response.status,200);assert.equal(first.body.receipts.length,2);assert.ok(first.body.next_cursor);
+      assert.ok(first.body.receipts.every(row=>row.first_received_at==='2026-10-14T13:00:00.222222Z'));
+      const late=`head-event-${randomUUID()}`;added.push(late);events.push(late);
+      await admin.query("INSERT INTO verified_provider_payment_receipts VALUES('superqi_sandbox',$1,'synthetic-new-payment','synthetic-new-request','payment_succeeded',3900,$2,$3)",[late,'e'.repeat(64),'2026-10-14T14:00:00.333333Z']);
+      const seen=first.body.receipts.map(row=>row.provider_event_id);let cursor=first.body.next_cursor,pages=1;
+      while(cursor){assert.ok(pages<8,'pagination must terminate');const page=await request(owner,`?limit=2&cursor=${cursor}`);assert.equal(page.response.status,200);seen.push(...page.body.receipts.map(row=>row.provider_event_id));cursor=page.body.next_cursor;pages++;}
+      assert.deepEqual(seen,expected);assert.equal(new Set(seen).size,expected.length);assert.equal(seen.includes(late),false);
+      const refreshed=await request(owner,'?limit=1');assert.equal(refreshed.response.status,200);assert.equal(refreshed.body.receipts[0].provider_event_id,late);
+      console.log('VERIFIED_RECEIPT_DISCOVERY_PROOF '+JSON.stringify({restrictedRole:true,equalMicrosecondTieRows:4,concurrentHeadInsert:true,originalRowsOnce:seen.length,newHeadRequiresFreshBrowse:true,cursorChainTerminates:true}));
+    }finally{
+      await admin.query('DELETE FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[])',[added]);
+      for(const id of added){const index=events.indexOf(id);if(index!==-1)events.splice(index,1);}
+    }
+  });
+  await t.test('restricted role cannot rewrite delete or insert inbox evidence through direct table access',async()=>{
+    const before=await receiptSnapshot(),auditBefore=(await audits()).length,client=await pool.connect();
+    try{
+      for(const tenant of ['',owner.id,merchant.id]){
+        await client.query('BEGIN');
+        try{
+          await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[tenant]);
+          assert.equal((await client.query('SELECT * FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[])',[events])).rows.length,0);
+          assert.equal((await client.query("UPDATE verified_provider_payment_receipts SET payload_hash=$2 WHERE provider_event_id=ANY($1::text[])",[events,'f'.repeat(64)])).rowCount,0);
+          assert.equal((await client.query('DELETE FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[])',[events])).rowCount,0);
+        }finally{await client.query('ROLLBACK');}
+      }
+      await assert.rejects(()=>client.query("INSERT INTO verified_provider_payment_receipts VALUES('superqi_sandbox',$1,'synthetic-forged-payment','synthetic-forged-request','payment_succeeded',3900,$2,now())",[`blocked-${randomUUID()}`,'f'.repeat(64)]),error=>error.code==='42501');
+      assert.equal((await client.query("SELECT has_function_privilege(current_user,'public.fawri_admit_verified_payment_receipt(text,text,text,text,integer,text,timestamptz)','EXECUTE') AS allowed")).rows[0].allowed,false);
+      assert.equal((await client.query("SELECT NULLIF(current_setting('fawri.tenant_id',true),'') AS tenant")).rows[0].tenant,null);
+    }finally{client.release();}
+    assert.deepEqual(await receiptSnapshot(),before);assert.equal((await audits()).length,auditBefore);assert.equal(await entitlementCount(),originalEntitlements);
+    console.log('VERIFIED_RECEIPT_RETENTION_BOUNDARY_PROOF '+JSON.stringify({restrictedRole:true,tenantContexts:3,directUpdateRows:0,directDeleteRows:0,directInsertDenied:true,admissionCapabilityDenied:true,allReceiptFieldsUnchanged:true,entitlementGrants:0,contextReset:true}));
+  });
+  await t.test('deferred audit COMMIT failure with prepared receipt rows never discloses an HTTP result',async()=>{
+    const before=(await audits()).length,receiptBefore=await receiptSnapshot();faultName=`operator_deferred_${randomUUID().replaceAll('-','')}`;
+    try{
+      await admin.query(`CREATE FUNCTION ${faultName}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.reason_code='BILLING_VERIFIED_RECEIPTS_READ' AND NEW.admin_account_id=TG_ARGV[0] THEN RAISE EXCEPTION 'synthetic deferred audit commit failure' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$`);
+      await admin.query(`CREATE CONSTRAINT TRIGGER ${faultName} AFTER INSERT ON database_admin_access_audits DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION ${faultName}('${owner.id}')`);
+      // Prove the deferred fault occurs after the function can prepare rows:
+      // an explicit transaction sees them, then its real COMMIT is rejected.
+      const client=await pool.connect();
+      try{
+        await client.query('BEGIN');
+        assert.equal((await client.query(readSql,[owner.id,2,null,null,randomUUID(),'a'.repeat(64)])).rows.length,2);
+        await assert.rejects(()=>client.query('COMMIT'),error=>error.code==='P0001');
+      }finally{await client.query('ROLLBACK');client.release();}
+      assert.equal((await audits()).length,before);
+      const result=await request(owner,'?limit=2');assert.equal(result.response.status,503);assert.equal(result.body.receipts,undefined);assert.equal(result.body.next_cursor,undefined);
+      const encoded=JSON.stringify(result.body);for(const value of [...events,...references,'synthetic deferred audit commit failure','P0001'])assert.equal(encoded.includes(value),false);
+      assert.equal((await audits()).length,before);assert.deepEqual(await receiptSnapshot(),receiptBefore);assert.equal(await entitlementCount(),originalEntitlements);
+      console.log('VERIFIED_RECEIPT_DEFERRED_AUDIT_PROOF '+JSON.stringify({restrictedRole:true,realHttp:true,deferredConstraintTrigger:true,nativeRowsBeforeCommit:2,commitRejected:true,httpStatus:503,receiptResponse:false,auditRowsCommitted:0,receiptFieldsUnchanged:true,entitlementGrants:0}));
+    }finally{
+      await admin.query(`DROP TRIGGER IF EXISTS ${faultName} ON database_admin_access_audits`);await admin.query(`DROP FUNCTION IF EXISTS ${faultName}()`);faultName=undefined;
+    }
+  });
   await t.test('failed durable audit returns503 and no receipt response; reading does not mutate payment or grant entitlement',async()=>{
     const before=(await audits()).length;faultName=`operator_audit_${randomUUID().replaceAll('-','')}`;
     await admin.query(`CREATE FUNCTION ${faultName}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.reason_code='BILLING_VERIFIED_RECEIPTS_READ' AND NEW.admin_account_id=TG_ARGV[0] THEN RAISE EXCEPTION 'synthetic audit write failure' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$`);

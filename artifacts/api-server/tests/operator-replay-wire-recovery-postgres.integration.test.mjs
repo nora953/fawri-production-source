@@ -81,7 +81,141 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     child.send({...f,role,marker,token,device:finance.device,boundary});
     try{return await Promise.race([done,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('owned operator HTTP timeout')),30000);})]);}finally{clearTimeout(timer);}
   }
+  async function runPausedWithRevocation(f,revoke){
+    const token=await issue(),marker=`operator-wire-owned-${randomUUID()}`;markers.push(marker);
+    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
+    const messages=[];let readyResolve,pausedResolve;
+    const ready=new Promise(resolve=>{readyResolve=resolve;});
+    const paused=new Promise(resolve=>{pausedResolve=resolve;});
+    child.on('message',message=>{messages.push(message);if(message.type==='ready')readyResolve();if(message.type==='provider-paused')pausedResolve();});
+    child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
+    const done=new Promise(resolve=>{child.once('exit',(code,signal)=>resolve({code,signal,messages}));child.once('error',()=>resolve({code:'SPAWN_FAILURE',messages}));});
+    const deadline=async(p,label)=>{let timer;try{return await Promise.race([p,done.then(()=>{throw Error('operator child exited before '+label);}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('operator '+label+' timeout')),15000);})]);}finally{clearTimeout(timer);}};
+    await deadline(ready,'ready');
+    child.send({...f,role,marker,token,device:finance.device,pauseProvider:true});
+    await deadline(paused,'provider pause');
+    try{await revoke(token);}finally{child.send({type:'resume-provider'});}
+    let finishTimer;try{return await Promise.race([done,new Promise((_,reject)=>{finishTimer=setTimeout(()=>reject(Error('operator HTTP completion timeout')),30000);})]);}finally{clearTimeout(finishTimer);}
+  }
   const audits=async()=>(await pool.query("SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'",[finance.id])).rows[0].n;
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: expired checkout retains payment for reconciliation only`,async()=>{
+    const f=await fixture(kind),original=await receipt(f);
+    await pool.query(`UPDATE ${kinds[kind].orders} SET status='expired',created_at=$2,request_expires_at=$3 WHERE id=$1`,[f.body.order_id,new Date(Date.parse(f.firstReceivedAt)-86400000),new Date(Date.parse(f.firstReceivedAt)-1000)]);
+    const response=await run(f);
+    assert.equal(response.code,0);
+    assert.equal(response.messages.find(m=>m.type==='http-result').httpStatus,409);
+    const state=await snapshot(f);
+    assert.equal(state.order.status,'paid_reconciliation_required');
+    assert.equal(state.order.paid_time,f.firstReceivedAt);
+    assert.equal(state.applications,0);
+    assert.equal(state.subscriptions,0);
+    assert.deepEqual(state.event,[{status:'rejected',time:f.firstReceivedAt}]);
+    assert.deepEqual(await receipt(f),original);
+    const retry=await run(f);
+    assert.equal(retry.code,0);
+    const retryResult=retry.messages.find(m=>m.type==='http-result');
+    assert.ok(retryResult,'fresh-session retry must produce an HTTP response');
+    assert.ok([200,409].includes(retryResult.httpStatus),'retry must return an explicit acknowledged or reconciliation response');
+    const afterRetry=await snapshot(f);
+    assert.equal(afterRetry.order.status,'paid_reconciliation_required');
+    assert.equal(afterRetry.applications,0);
+    assert.equal(afterRetry.subscriptions,0);
+    assert.deepEqual(await receipt(f),original);
+  });
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: receipt from merchant A cannot be replayed against merchant B order`,async()=>{
+    const first=await fixture(kind),second=await fixture(kind);
+    assert.notEqual(first.merchantId,second.merchantId);
+    const originalFirst=await receipt(first),originalSecond=await receipt(second);
+    const beforeFirst=await snapshot(first),beforeSecond=await snapshot(second);
+    const mismatched={...first,body:{...first.body,order_id:second.body.order_id}};
+    const denied=await run(mismatched);
+    assert.equal(denied.code,0,'HTTP child must handle tenant mismatch');
+    const response=denied.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing mismatch HTTP response');
+    assert.ok([403,404,409].includes(response.httpStatus),`cross-merchant replay must be rejected, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,0,'tenant mismatch must be rejected before provider I/O');
+    assert.deepEqual(await snapshot(first),beforeFirst);
+    assert.deepEqual(await snapshot(second),beforeSecond);
+    assert.deepEqual(await receipt(first),originalFirst);
+    assert.deepEqual(await receipt(second),originalSecond);
+    for(const f of [first,second]){
+      const valid=await run(f),result=valid.messages.find(m=>m.type==='http-result');
+      assert.equal(valid.code,0);assert.equal(result.httpStatus,200);assert.equal(result.status,'applied');
+      const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    }
+  });
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: expired active session during provider I/O must not apply entitlement`,async()=>{
+    const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
+    const result=await runPausedWithRevocation(f,async(token)=>{
+      const expired=await authority.revokeSession(token,'admin','expired');
+      assert.equal(expired,true,'the in-flight operator session must expire');
+    });
+    assert.equal(result.code,0,'original HTTP child must finish normally');
+    const response=result.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing HTTP response');
+    assert.ok([401,403,409].includes(response.httpStatus),`expected fail-closed session expiry, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,1,'provider was called before session expiry');
+    assert.deepEqual(await snapshot(f),before,'expired session must not apply payment');
+    assert.deepEqual(await receipt(f),originalReceipt,'verified receipt must remain immutable');
+    const recovered=await run(f),recovery=recovered.messages.find(m=>m.type==='http-result');
+    assert.equal(recovered.code,0);assert.equal(recovery.httpStatus,200);assert.equal(recovery.status,'applied');
+    const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    assert.equal(after.order.paid_time,f.firstReceivedAt);assert.deepEqual(await receipt(f),originalReceipt);
+  });
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: revoked active session during provider I/O must not apply entitlement`,async()=>{
+    const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
+    const result=await runPausedWithRevocation(f,async(token)=>{
+      const revoked=await authority.revokeSession(token,'admin','manual_revocation');
+      assert.equal(revoked,true,'the in-flight operator session must be revoked');
+    });
+    assert.equal(result.code,0,'original HTTP child must finish normally');
+    const response=result.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing HTTP response');
+    assert.ok([401,403,409].includes(response.httpStatus),`expected fail-closed session revocation, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,1,'provider was called before session revocation');
+    assert.deepEqual(await snapshot(f),before,'revoked session must not apply payment');
+    assert.deepEqual(await receipt(f),originalReceipt,'verified receipt must remain immutable');
+    const recovered=await run(f),recovery=recovered.messages.find(m=>m.type==='http-result');
+    assert.equal(recovered.code,0);assert.equal(recovery.httpStatus,200);assert.equal(recovery.status,'applied');
+    const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    assert.equal(after.order.paid_time,f.firstReceivedAt);assert.deepEqual(await receipt(f),originalReceipt);
+  });
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: revoked device trust during provider I/O must not apply entitlement`,async()=>{
+    const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
+    const result=await runPausedWithRevocation(f,async()=>{
+      const changed=await setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:false,actorAccountId:owner.id});
+      assert.equal(changed.status,'revoked');
+    });
+    assert.equal(result.code,0,'original HTTP child must finish normally');
+    const response=result.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing HTTP response');
+    assert.ok([401,403,409].includes(response.httpStatus),`expected fail-closed device revocation, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,1,'provider was called before device trust revocation');
+    assert.deepEqual(await snapshot(f),before,'untrusted device must not apply payment');
+    assert.deepEqual(await receipt(f),originalReceipt,'verified receipt must remain immutable');
+    const restored=await setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:owner.id});
+    assert.equal(restored.status,'trusted');
+    const recovered=await run(f),recovery=recovered.messages.find(m=>m.type==='http-result');
+    assert.equal(recovered.code,0);assert.equal(recovery.httpStatus,200);assert.equal(recovery.status,'applied');
+    const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    assert.equal(after.order.paid_time,f.firstReceivedAt);assert.deepEqual(await receipt(f),originalReceipt);
+  });
+  for(const kind of ['saas','cashier'])await t.test(`${kind}: revoked finance permission during provider I/O must not apply entitlement`,async()=>{
+    const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
+    const result=await runPausedWithRevocation(f,()=>pool.query("DELETE FROM admin_permissions WHERE admin_id=$1 AND permission='manage_subscriptions'",[finance.id]));
+    assert.equal(result.code,0,'original HTTP child must finish normally');
+    const response=result.messages.find(m=>m.type==='http-result');
+    assert.ok(response,'missing HTTP response');
+    assert.ok([403,409].includes(response.httpStatus),`expected fail-closed revocation, got ${response.httpStatus}`);
+    assert.equal(response.providerCalls,1,'provider was called before revocation');
+    assert.deepEqual(await snapshot(f),before,'revoked operator must not apply payment');
+    assert.deepEqual(await receipt(f),originalReceipt,'verified receipt must remain immutable');
+    await pool.query("INSERT INTO admin_permissions(admin_id,permission) VALUES($1,'manage_subscriptions')",[finance.id]);
+    const recovered=await run(f),recovery=recovered.messages.find(m=>m.type==='http-result');
+    assert.equal(recovered.code,0);assert.equal(recovery.httpStatus,200);assert.equal(recovery.status,'applied');
+    const after=await snapshot(f);assert.equal(after.applications,1);assert.equal(after.subscriptions,1);
+    assert.equal(after.order.paid_time,f.firstReceivedAt);assert.deepEqual(await receipt(f),originalReceipt);
+  });
   for(const kind of ['saas','cashier'])for(const boundary of [1,2])await t.test(`${kind}: operator HTTP loses ${boundary===1?'billing receipt':'entitlement'} COMMIT acknowledgment and fresh-session retry stays once-only`,async()=>{
     const f=await fixture(kind),originalReceipt=await receipt(f),beforeAudits=await audits();
     const lost=await run(f,boundary);assert.equal(lost.code,0,'child must complete HTTP failure handling/cleanup');

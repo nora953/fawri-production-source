@@ -1,3 +1,11 @@
+## Current next unit — 2026-10-15
+
+Standalone billing/race/directory source df31f752 accepted260/0/0 with6workflows; Meta#547 separately accepted287/0/0 with14workflows. Next safe execution: separate combined Draft with both parents, preserve both selectors/evidence, verify integrated CI; no main merge/deploy. Then remaining ownership/retention/hosted capability gates. See WORK_HANDOFF.
+
+## Current P0 queue — 2026-10-15
+
+See current WORK_HANDOFF header and PR #548. Inbox autocommit SELECT-response loss now accepted (bb0ac4e0, run38677861248:257/0/0, all6 workflows); earlier operator17 and separate Meta#547 proofs remain distinct. Next: operator ownership/discoverability/retention, then reviewed hosted capabilities and sandbox acceptance. Historical85%/15% remains unmeasured, release NO-GO. Do not follow older next-task paragraphs below as if current.
+
 ## Verified actual operator HTTP PostgreSQL wire recovery — 2026-10-14
 
 Draft PR546, branch test/p0-operator-replay-wire-recovery-20261014 stacked on545/d15aa5fd. Accepted2e3acfea62c6c7e1ad14e2f088e33fb0998ba3d8; isolated38631830513/job116085119744, merge71db03cc64f5916b81806d96c14a8de2810ab5c8:240PASS/0FAIL/0SKIP,47unique files/49invocations. New operator suite5PASS (parent+4cases);7/7 observed workflowsSUCCESS. Prior545 documentation head7CI SUCCESS verified. Totals overlap earlier proofs; no additive/whole-audit percentage.

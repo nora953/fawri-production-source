@@ -1,3 +1,9 @@
+## Extended acceptance — 2026-10-15
+
+Source df31f752d3e40792aed247728090e6f7342600c6, PR548, isolated38679137264/job116239445634: directory9PASS/0FAIL/0SKIP (parent included), overall260/0/0, all6 workflowsSUCCESS. Three new boundaries pass:4equal-microsecond receipts paginate without skipping/duplicating7original rows despite a new head during browsing; restricted role cannot directly update/delete/insert evidence or call admission under3tenant contexts; a deferred audit constraint allows2native rows to be prepared but rejects real COMMIT, while original HTTP autocommit returns503 without rows/cursor/driver leak or committed audit. All receipt fields/entitlements unchanged. Earlier immediate audit fault and authorization/redaction assertions retained. No production change needed.
+
+Machine evidence: evidence/P0_OPERATOR_RECEIPT_BOUNDARIES_20261015.json. This is bounded directory discovery and unauthorized mutation protection, not order lookup/ownership repair, a retention-duration policy or protection against privileged schema owner. Next combined billing/Meta Draft acceptance is distinct from these standalone proofs. No hosted changes/merge/deploy.
+
 ## Verified audited operator receipt read — 2026-10-14
 
 DraftPR540, branch fix/p0-audited-operator-receipt-read-20261014 stacked on539/caafd5f2. **Tested source a79b600713af94633761a1e59333324284d5e671**: isolated38598864396/job115972566934 **201PASS/0FAIL/0SKIP**,44unique files/46invocations; operator HTTP6PASS. **27/27 observed workflows SUCCESS**. Real new route+secure session middleware+PostgreSQL under controlled Express host, restricted NOLOGIN/NOBYPASSRLS/non-owner application role; no auth stubs or entire-frontend acceptance claim.
