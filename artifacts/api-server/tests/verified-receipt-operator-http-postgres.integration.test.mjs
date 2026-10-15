@@ -160,6 +160,28 @@ test('real HTTP receipt directory requires trusted admin permission and durable 
     assert.deepEqual(await receiptSnapshot(),before);assert.equal((await audits()).length,auditBefore);assert.equal(await entitlementCount(),originalEntitlements);
     console.log('VERIFIED_RECEIPT_RETENTION_BOUNDARY_PROOF '+JSON.stringify({restrictedRole:true,tenantContexts:3,directUpdateRows:0,directDeleteRows:0,directInsertDenied:true,admissionCapabilityDenied:true,allReceiptFieldsUnchanged:true,entitlementGrants:0,contextReset:true}));
   });
+  await t.test('deferred audit COMMIT failure with prepared receipt rows never discloses an HTTP result',async()=>{
+    const before=(await audits()).length,receiptBefore=await receiptSnapshot();faultName=`operator_deferred_${randomUUID().replaceAll('-','')}`;
+    try{
+      await admin.query(`CREATE FUNCTION ${faultName}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.reason_code='BILLING_VERIFIED_RECEIPTS_READ' AND NEW.admin_account_id=TG_ARGV[0] THEN RAISE EXCEPTION 'synthetic deferred audit commit failure' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$`);
+      await admin.query(`CREATE CONSTRAINT TRIGGER ${faultName} AFTER INSERT ON database_admin_access_audits DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION ${faultName}('${owner.id}')`);
+      // Prove the deferred fault occurs after the function can prepare rows:
+      // an explicit transaction sees them, then its real COMMIT is rejected.
+      const client=await pool.connect();
+      try{
+        await client.query('BEGIN');
+        assert.equal((await client.query(readSql,[owner.id,2,null,null,randomUUID(),'a'.repeat(64)])).rows.length,2);
+        await assert.rejects(()=>client.query('COMMIT'),error=>error.code==='P0001');
+      }finally{await client.query('ROLLBACK');client.release();}
+      assert.equal((await audits()).length,before);
+      const result=await request(owner,'?limit=2');assert.equal(result.response.status,503);assert.equal(result.body.receipts,undefined);assert.equal(result.body.next_cursor,undefined);
+      const encoded=JSON.stringify(result.body);for(const value of [...events,...references,'synthetic deferred audit commit failure','P0001'])assert.equal(encoded.includes(value),false);
+      assert.equal((await audits()).length,before);assert.deepEqual(await receiptSnapshot(),receiptBefore);assert.equal(await entitlementCount(),originalEntitlements);
+      console.log('VERIFIED_RECEIPT_DEFERRED_AUDIT_PROOF '+JSON.stringify({restrictedRole:true,realHttp:true,deferredConstraintTrigger:true,nativeRowsBeforeCommit:2,commitRejected:true,httpStatus:503,receiptResponse:false,auditRowsCommitted:0,receiptFieldsUnchanged:true,entitlementGrants:0}));
+    }finally{
+      await admin.query(`DROP TRIGGER IF EXISTS ${faultName} ON database_admin_access_audits`);await admin.query(`DROP FUNCTION IF EXISTS ${faultName}()`);faultName=undefined;
+    }
+  });
   await t.test('failed durable audit returns503 and no receipt response; reading does not mutate payment or grant entitlement',async()=>{
     const before=(await audits()).length;faultName=`operator_audit_${randomUUID().replaceAll('-','')}`;
     await admin.query(`CREATE FUNCTION ${faultName}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.reason_code='BILLING_VERIFIED_RECEIPTS_READ' AND NEW.admin_account_id=TG_ARGV[0] THEN RAISE EXCEPTION 'synthetic audit write failure' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$`);
