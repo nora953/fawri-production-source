@@ -100,7 +100,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
   const audits=async()=>(await pool.query("SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'",[finance.id])).rows[0].n;
   for(const kind of ['saas','cashier'])await t.test(`${kind}: expired checkout retains payment for reconciliation only`,async()=>{
     const f=await fixture(kind),original=await receipt(f);
-    await pool.query(`UPDATE ${kinds[kind].orders} SET status='expired',request_expires_at=$2 WHERE id=$1`,[f.body.order_id,new Date(Date.parse(f.firstReceivedAt)-1000)]);
+    await pool.query(`UPDATE ${kinds[kind].orders} SET status='expired',created_at=$2,request_expires_at=$3 WHERE id=$1`,[f.body.order_id,new Date(Date.parse(f.firstReceivedAt)-86400000),new Date(Date.parse(f.firstReceivedAt)-1000)]);
     const response=await run(f);
     assert.equal(response.code,0);
     assert.equal(response.messages.find(m=>m.type==='http-result').httpStatus,409);
