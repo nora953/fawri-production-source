@@ -97,6 +97,47 @@ test('verified provider callbacks discover mapped orders without global tenant a
     await pool.query(`UPDATE ${otherTable} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[other.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
     await assertDenied('SUPERQI_SANDBOX_ORDER_AUTHORITY_COLLISION');
     await pool.query(`UPDATE ${otherTable} SET provider='test_fake' WHERE id=$1`,[other.order.id]);
+    // This matrix tests the original SQL capability with alternate fixture
+    // ownership, before application. No callback timing or mapping mutation.
+    for (const forced of [null,'verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders']) {
+      await t.test(`${kind}: restricted resolver owner, FORCE RLS on ${forced || 'none'}`,async()=>{
+        const client=await pool.connect(),owner=`billing_owner_${randomUUID().replaceAll('-','')}`;
+        const protectedTables=['verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders'];
+        const orderBefore=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0];
+        try {
+          await client.query('BEGIN');
+          await client.query(`CREATE ROLE ${owner} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+          await client.query(`GRANT USAGE ON SCHEMA public TO ${owner}`);
+          for (const table of protectedTables) {
+            await client.query(`ALTER TABLE public.${table} OWNER TO ${owner}`);
+            await client.query(`ALTER TABLE public.${table} ${table===forced?'FORCE':'NO FORCE'} ROW LEVEL SECURITY`);
+          }
+          await client.query(`ALTER FUNCTION ${resolverIdentity} OWNER TO ${owner}`);
+          await client.query(`SET LOCAL ROLE ${role}`);
+          const metadata=(await client.query("SELECT c.relname,c.relrowsecurity,c.relforcerowsecurity,p.proowner=c.relowner AS matching_owner,r.rolsuper,r.rolbypassrls FROM pg_proc p JOIN pg_roles r ON r.oid=p.proowner JOIN pg_class c ON c.relname=ANY($1::text[]) AND c.relnamespace='public'::regnamespace WHERE p.oid=$2::regprocedure ORDER BY c.relname",[protectedTables,resolverIdentity])).rows;
+          assert.deepEqual(metadata,protectedTables.slice().sort().map(relname=>({relname,relrowsecurity:true,relforcerowsecurity:relname===forced,matching_owner:true,rolsuper:false,rolbypassrls:false})));
+          assert.equal((await client.query('SELECT current_user AS role')).rows[0].role,role);
+          const resolve=()=>client.query('SELECT * FROM public.fawri_resolve_confirmed_payment_order($1,$2,$3,$4,$5,$6)',[admitted[0].provider_event_id,payload.paymentId,payload.requestId,admitted[0].event_type,payload.amount,admitted[0].payload_hash]);
+          if (forced) {
+            await assert.rejects(resolve,error=>error.code==='42501');
+          } else {
+            const resolved=(await resolve()).rows;
+            assert.equal(resolved.length,1);
+            assert.equal(resolved[0].order_id,checkout.order.id);
+            assert.equal(resolved[0].merchant_id,merchantId);
+            assert.equal(resolved[0].authority,kind==='saas'?'bot_subscription':'cashier_subscription');
+            assert.equal(new Date(resolved[0].first_received_at).getTime(),first.getTime());
+            assert.deepEqual((await client.query('SELECT (SELECT count(*)::int FROM saas_billing_orders) saas,(SELECT count(*)::int FROM cashier_billing_orders) cashier,(SELECT count(*)::int FROM verified_provider_payment_receipts) receipts')).rows[0],{saas:0,cashier:0,receipts:0});
+          }
+        } finally {
+          await client.query('ROLLBACK');client.release();
+        }
+        assert.deepEqual((await pool.query('SELECT * FROM verified_provider_payment_receipts WHERE payment_ref=$1',[payload.paymentId])).rows,admitted);
+        assert.deepEqual((await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0],orderBefore);
+        assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,0);
+        assert.equal((await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n,0);
+      });
+    }
     const result=await run(payload,first);assert.equal(result.code,0);const observation=result.messages.find(message=>message.type==='observation');assert.ok(observation,'child must complete independent role/context observations');
     const original=(await pool.query('SELECT * FROM verified_provider_payment_receipts WHERE payment_ref=$1',[payload.paymentId])).rows;assert.equal(original.length,1);assert.equal(new Date(original[0].first_received_at).getTime(),first.getTime());
     const applications=(await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,grants=(await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n;

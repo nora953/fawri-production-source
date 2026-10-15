@@ -1,3 +1,15 @@
+# Continuation — confirmed-provider resolver owner/FORCE-RLS matrix pending
+
+Parent43f48f0e725095f35676d6b81e8b1e07de66ca84; same Draft#550/branch. Previous accepted sourcee61dd80af7fbd87273b2e0f6be6baabc7d13ac89 reverified25/25workflowsSUCCESS,334PASS/0FAIL/0SKIP.
+
+This source adds eight nested SQL tests to billing-provider-discovery-restricted-postgres.integration.test.mjs: SaaS/cashier x restricted function/table owner with FORCE RLS on none, receipt inbox, SaaS orders, cashier orders. Only transaction-local synthetic ownership/flags are changed in the existing disposable offline fixture; no callback timing or provider mapping mutation. Actual original function result must match admitted identity/merchant/order/authority/original time; naked runtime reads0. Each FORCE case expects42501. After rollback, independent owner SQL must prove unchanged receipt/order and0applications/0subscriptions, before existing signed application/duplicate assertions execute.
+
+Local node --check and git diff --check PASS. New PostgreSQL cases NOT RUN at publication; CI pending. No production source/migration/grant changes. Next: inspect CI for this source, especially isolated audit billing suite; record exact source/run/job and counts. Preserve real failure if any, fix only demonstrated issue. Existing334 count does not certify this new source. Provider mapping race remains NOT RUN; hosted acceptance unverified; historical85/15 unmeasured; release NO-GO. No main/hosted changes.
+
+Resume: git fetch origin fix/p0-provider-receipt-order-discovery-20261015; inspect FETCH_HEAD/source and associated workflows. Use existing owned offline CI runner for actual SQL. Preserve full-tree/per-blob/CAS publication verification.
+
+---
+
 # Latest verified P0 continuation — 2026-10-15
 
 Draft #550 / branch `fix/p0-provider-receipt-order-discovery-20261015` accepted source **`e61dd80af7fbd87273b2e0f6be6baabc7d13ac89`**: **334 PASS / 0 FAIL / 0 SKIP**,55unique files/57invocations including parent/repeated-runtime counts; **25/25 observed workflows SUCCESS**. Isolated [38780417675](https://github.com/nora953/fawri-production-source/actions/runs/38780417675),job116578852357,mergecheckout458778f. RLS28PASS; Meta bounded resolver10PASS includes two new restricted-owner/FORCE-RLS cases. Full restore34migrations/95tables/45policies/9functions; matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Exact report: `P0_REACHABLE_ROLE_AND_META_OWNER_ACCEPTANCE_20261015.md`; machine evidence: `evidence/P0_META_CAPABILITY_OWNER_RESULTS_20261015.json`.
