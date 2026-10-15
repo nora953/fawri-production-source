@@ -61,6 +61,8 @@ try {
  import {getAdminText} from './artifacts/fawri/src/lib/admin-translations.ts';
  import {VERIFIED_RECEIPT_REVIEW_COPY} from './artifacts/fawri/src/lib/translations/features/admin/VerifiedReceiptReview.ts';
  const auditLang=new URLSearchParams(location.search).get('lang')||'en';
+ import {RECEIPT_REPLAY_COPY} from './artifacts/fawri/src/lib/translations/features/admin/ReceiptReplayControls.ts';
+ globalThis.auditReplay=RECEIPT_REPLAY_COPY[auditLang];
  globalThis.auditReceipt=VERIFIED_RECEIPT_REVIEW_COPY[auditLang];
  localStorage.clear();sessionStorage.clear();localStorage.setItem('fawri_lang',auditLang);
  // Suppress legacy local imports in this fresh synthetic owner; those endpoints
@@ -72,13 +74,27 @@ try {
  const bundle=await build({stdin:{contents:entry,loader:'tsx',resolveDir:process.cwd()},bundle:true,format:'iife',platform:'browser',write:false,outfile:'audit-admin.js',jsx:'automatic',alias:{'@':resolve('artifacts/fawri/src')},nodePaths:[resolve('artifacts/fawri/node_modules')],define:{'process.env.NODE_ENV':'"production"'}});
  const assets=resolve('artifacts/fawri/dist/public/assets'),css=(await readdir(assets)).filter(n=>n.endsWith('.css'));assert.ok(css.length);
  const styles=(await Promise.all(css.map(n=>readFile(join(assets,n),'utf8')))).join('\n');
- server=createServer((req,res)=>{
+ server=createServer(async(req,res)=>{
  res.setHeader('Content-Security-Policy',"default-src 'self';script-src 'self';style-src 'self' 'unsafe-inline';connect-src 'self';img-src 'none';font-src 'none';object-src 'none'");
  if(req.url.startsWith('/api/')){
   const ref=new URL(req.headers.referer||'http://synthetic/'),state=states.get(ref.searchParams.get('case'));
   res.setHeader('Content-Type','application/json; charset=utf-8');
   const send=(code,data)=>{res.statusCode=code;res.end(JSON.stringify(data));};
   if(state&&req.url==='/api/auth/admin/logout'&&req.method==='POST'){state.calls.push('POST '+req.url);return send(200,{ok:true});}
+  const replayMatch=req.url.match(/^\/api\/auth\/admin\/billing\/verified-receipts\/(RECEIPT_FIRST_PAGE|RECEIPT_SECOND_PAGE)\/(replay-review|replay)$/);
+  if(state&&req.method==='POST'&&replayMatch){
+   assert.ok(req.headers['x-fawri-device-id']);assert.equal(req.headers.origin,origin);
+   let raw='';for await(const chunk of req)raw+=chunk;const body=JSON.parse(raw);
+   assert.deepEqual(Object.keys(body).sort(),['authority','order_id']);assert.ok(['bot_subscription','cashier_subscription'].includes(body.authority));assert.ok(typeof body.order_id==='string'&&body.order_id.length>0&&body.order_id.length<=180);
+   state.calls.push('POST '+req.url);state.replayCalls??=[];state.replayCalls.push({action:replayMatch[2],event:replayMatch[1],body});
+   res.setHeader('Cache-Control','no-store');
+   if(state.actionDelay)await delay(state.actionDelay);
+   if(replayMatch[2]==='replay-review')return send(state.reviewStatus||200,state.reviewStatus?{ok:false,error:'SENSITIVE_FIXTURE_ERROR'}:{ok:true,status:'verified',applied:false,receipt_event_id:replayMatch[1],...body});
+   if(state.executeStatus)return send(state.executeStatus,{ok:false,error:'SENSITIVE_FIXTURE_ERROR'});
+   state.appliedIntents??=new Set();const identity=JSON.stringify({event:replayMatch[1],...body});const duplicate=state.appliedIntents.has(identity);state.appliedIntents.add(identity);
+   if(state.loseAck)return send(503,{ok:false,error:'SENSITIVE_FIXTURE_ERROR'});
+   return send(200,{ok:true,status:duplicate?'duplicate':'applied',receipt_event_id:replayMatch[1],...body});
+  }
   if(!state||req.method!=='GET'){unexpected.push({path:req.url,method:req.method,knownCase:Boolean(state)});return send(409,{ok:false});}
   state.calls.push(req.url);
   if(req.url==='/api/auth/admin/me'){
@@ -93,7 +109,7 @@ try {
    if(state.receiptStatus)return send(state.receiptStatus,{ok:false,error:'SENSITIVE_FIXTURE_DRIVER_DETAIL'});
    const cursor=new URL(req.url,'http://synthetic').searchParams.get('cursor');
    if(cursor!==null&&cursor!=='synthetic_opaque_cursor')return send(400,{ok:false});
-   return send(200,{ok:true,receipts:state.emptyReceipts?[]:[{provider:'superqi_sandbox',provider_event_id:cursor?'RECEIPT_SECOND_PAGE':'RECEIPT_FIRST_PAGE',event_type:'paid',amount_iqd:25000,first_received_at:'2026-10-14T12:00:00.123456Z',payment_ref_suffix:'12345678',request_ref_suffix:null,payment_ref:'FORBIDDEN_FULL_REFERENCE',payload_hash:'FORBIDDEN_PAYLOAD_HASH'}],next_cursor:state.emptyReceipts||cursor?null:'synthetic_opaque_cursor'});
+   return send(200,{ok:true,receipts:state.emptyReceipts?[]:[{provider:'superqi_sandbox',provider_event_id:cursor?'RECEIPT_SECOND_PAGE':'RECEIPT_FIRST_PAGE',event_type:state.receiptType||'payment_succeeded',amount_iqd:25000,first_received_at:'2026-10-14T12:00:00.123456Z',payment_ref_suffix:'12345678',request_ref_suffix:null,payment_ref:'FORBIDDEN_FULL_REFERENCE',payload_hash:'FORBIDDEN_PAYLOAD_HASH'}],next_cursor:state.emptyReceipts||cursor?null:'synthetic_opaque_cursor'});
   }
   const responses={
    '/api/auth/admin/emergency-read-access/overview':{ok:true,is_owner:state.role==='owner',authorization:{can_request:false},requests:[]},
@@ -176,7 +192,7 @@ try {
 
  const receiptRequests=t=>t.state.calls.filter(path=>path.startsWith('/api/auth/admin/billing/verified-receipts?'));
  async function receiptClick(c,label){
-  const point=await evaluate(c,`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===auditReceipt[${JSON.stringify(label)}]);if(!b||b.disabled)return null;const r=b.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  const point=await evaluate(c,`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===auditReceipt[${JSON.stringify(label)}]);if(!b||b.disabled)return null;b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
   assert.ok(point,'enabled receipt control '+label);
   await c('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
   await c('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
@@ -230,8 +246,67 @@ try {
    return {unmounted:true,requestsStopped:true};
   }finally{await closed(t);}
  });
+
+ async function replayClick(c,label){
+  const point=await evaluate(c,`(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===auditReplay[${JSON.stringify(label)}]);if(!b||b.disabled)return null;b.scrollIntoView({block:'center'});const r=b.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  assert.ok(point,'enabled replay control '+label);await c('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});await c('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
+ }
+ async function fillReplay(t,authority='bot_subscription',order='synthetic-existing-order-123'){
+  await openReceipts(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));await replayClick(t.cdp,'open');
+  assert.equal(await evaluate(t.cdp,`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===auditReplay.review).disabled`),true,'blank intent cannot be reviewed');
+  await evaluate(t.cdp,`(()=>{const select=document.querySelector('[data-replay-authority]');select.value=${JSON.stringify(authority)};select.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);
+  const point=await evaluate(t.cdp,`(()=>{const input=document.querySelector('[data-replay-order]');input.scrollIntoView({block:'center'});const r=input.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await t.cdp('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});await t.cdp('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});await t.cdp('Input.insertText',{text:order});
+  await waitFor(()=>evaluate(t.cdp,`!Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===auditReplay.review).disabled`));
+ }
+ async function reviewReplay(t){await replayClick(t.cdp,'review');await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.verified)`));}
+ async function executeReplay(t){await replayClick(t.cdp,'execute');await waitFor(()=>evaluate(t.cdp,`Boolean(document.querySelector('[role=alertdialog]'))`));await replayClick(t.cdp,'confirm');}
+ const executed=t=>(t.state.replayCalls||[]).filter(call=>call.action==='replay');
+ for(const lang of ['en','ar','ku'])await check(`actual operator replay review confirm execute and duplicate ${lang}`,async()=>{
+  const t=await tab('owner',lang);try{
+   await fillReplay(t);assert.equal(executed(t).length,0);await reviewReplay(t);
+   await replayClick(t.cdp,'execute');await waitFor(()=>evaluate(t.cdp,`Boolean(document.querySelector('[role=alertdialog]'))`));
+   assert.equal(await evaluate(t.cdp,`document.querySelector('[role=alertdialog]').textContent.includes('synthetic-existing-order-123')`),true,'exact technical order digits');
+   await waitFor(()=>evaluate(t.cdp,`document.activeElement?.textContent.trim()===auditReplay.confirm`));
+   await replayClick(t.cdp,'cancel');assert.equal(executed(t).length,0,'cancel cannot execute');await waitFor(()=>evaluate(t.cdp,`document.activeElement?.textContent.trim()===auditReplay.execute`));
+   await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.applied)`));assert.equal(executed(t).length,1);
+   await reviewReplay(t);await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.duplicate)`));assert.equal(t.state.appliedIntents.size,1);
+   return {lang,reviewBeforeExecute:true,explicitConfirm:true,cancelledWrites:0,syntheticApplications:1,duplicateVisible:true};
+  }finally{await closed(t);}
+ });
+ await check('actual finance cashier replay retains explicit cashier intent through confirmation',async()=>{
+  const t=await tab('finance');try{await fillReplay(t,'cashier_subscription','synthetic-cashier-order-456');await reviewReplay(t);await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.applied)`));assert.equal(executed(t).length,1);assert.deepEqual(executed(t)[0].body,{authority:'cashier_subscription',order_id:'synthetic-cashier-order-456'});return {authority:'cashier_subscription',explicitIntent:true,syntheticApplications:1};}finally{await closed(t);}
+ });
+ await check('actual operator intent edit invalidates completed review',async()=>{
+  const t=await tab('finance');try{await fillReplay(t,'cashier_subscription');await reviewReplay(t);
+   const point=await evaluate(t.cdp,`(()=>{const input=document.querySelector('[data-replay-order]');input.scrollIntoView({block:'center'});const r=input.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);await t.cdp('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});await t.cdp('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});await t.cdp('Input.insertText',{text:'-changed'});
+   await waitFor(()=>evaluate(t.cdp,`!Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===auditReplay.execute)`));assert.equal(executed(t).length,0);return {invalidated:true,writes:0};
+  }finally{await closed(t);}
+ });
+ await check('actual operator conflicting review never enables execution',async()=>{
+  const t=await tab('finance');try{t.state.reviewStatus=409;await fillReplay(t);await replayClick(t.cdp,'review');await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.conflict)`));assert.equal(executed(t).length,0);assert.equal(await evaluate(t.cdp,`Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===auditReplay.execute)`),false);return {writes:0};}finally{await closed(t);}
+ });
+ for(const status of [403,409])await check(`actual operator execute ${status} clears review and sensitive details`,async()=>{
+  const t=await tab('finance');try{await fillReplay(t);await reviewReplay(t);t.state.executeStatus=status;await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.${status===403?'denied':'conflict'})`));assert.equal(executed(t).length,1);assert.equal(await evaluate(t.cdp,`document.body.textContent.includes('SENSITIVE_FIXTURE_ERROR')||Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===auditReplay.execute)`),false);return {status,reviewCleared:true};}finally{await closed(t);}
+ });
+ await check('actual operator uncertain acknowledgement requires explicit fresh review and retry',async()=>{
+  const t=await tab('finance');try{await fillReplay(t);await reviewReplay(t);t.state.loseAck=true;await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.uncertain)`));await delay(200);assert.equal(executed(t).length,1,'no automatic execute retry');assert.equal(t.state.appliedIntents.size,1);
+   assert.equal(await evaluate(t.cdp,`document.body.textContent.includes(auditReplay.applied)||document.body.textContent.includes('SENSITIVE_FIXTURE_ERROR')`),false);
+   t.state.loseAck=false;await reviewReplay(t);await executeReplay(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes(auditReplay.duplicate)`));assert.equal(t.state.appliedIntents.size,1);return {uncertainVisible:true,automaticRetries:0,explicitReviewRetry:true,syntheticApplications:1};
+  }finally{await closed(t);}
+ });
+ await check('actual operator pending review locks navigation and permission removal ignores late response',async()=>{
+  const t=await tab('finance');try{await fillReplay(t);t.state.actionDelay=500;await replayClick(t.cdp,'review');await waitFor(()=>t.state.replayCalls?.length===1);
+   assert.equal(await evaluate(t.cdp,`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===auditReceipt.refresh).disabled`),true);
+   const before=t.state.meCalls;t.state.role='logs';await evaluate(t.cdp,'window.dispatchEvent(new Event("focus"));true');await waitFor(()=>t.state.meCalls>before);await waitFor(()=>evaluate(t.cdp,`!document.querySelector('[data-receipt-replay]')`));await delay(600);
+   assert.equal(await evaluate(t.cdp,`document.body.textContent.includes(auditReplay.verified)`),false);assert.equal(executed(t).length,0);return {navigationLocked:true,lateIgnored:true,writes:0};
+  }finally{await closed(t);}
+ });
+ await check('actual operator failed payment receipt offers no replay controls',async()=>{
+  const t=await tab('owner');try{t.state.receiptType='payment_failed';await openReceipts(t);await waitFor(()=>evaluate(t.cdp,`document.body.textContent.includes('RECEIPT_FIRST_PAGE')`));assert.equal(await evaluate(t.cdp,`Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===auditReplay.open)`),false);assert.equal(executed(t).length,0);return {writes:0};}finally{await closed(t);}
+ });
  assert.deepEqual(unexpected,[],'unexpected or mutating synthetic requests');
- evidence.limits='Actual mounted AdminPage/controller/shell/view/i18n/CSS; synthetic loopback HTTP, desktop English plus receipt review English/Arabic/Sorani. No real auth server, App router wrapper, hosted grant, full visual/accessibility or backend write proof.';
+ evidence.limits='Actual mounted AdminPage/controller/shell/view/i18n/CSS; synthetic loopback GET/POST HTTP, desktop English plus receipt review/replay English/Arabic/Sorani; simulated acknowledgements/applications only, no real backend payment/grant or transport commit-uncertainty proof. No real auth server, App router wrapper, hosted grant, full visual/accessibility or backend write proof.';
 } catch(e){infrastructureError=e.message;}
 finally {
   for(const ws of sockets)ws.close();
@@ -248,4 +323,4 @@ finally {
 
 if(infrastructureError)evidence.infrastructureError=infrastructureError;
 console.log('AUDIT_ADMIN_PARENT_RESULT '+JSON.stringify(evidence));
-if(infrastructureError||evidence.results.length!==25||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
+if(infrastructureError||evidence.results.length!==36||evidence.results.some(r=>r.status!=='PASS'))process.exitCode=1;
