@@ -1,3 +1,11 @@
+## 2026-10-15 — cashier RLS readiness coverage repair (CI pending)
+
+Combined Draft #549 / test/p0-integrated-billing-meta-20261015. New root cause: production readiness list predates migration0027 and omitted all7 cashier licensing/billing RLS tables. An otherwise restricted runtime could pass readiness despite owning these tables or their RLS being disabled. This is a release-gate detection gap, not evidence that hosted tables are unprotected.
+
+Regression before fix: production-postgres-rls-security.test.ts 5PASS/1FAIL (missing cashier contract). After adding7 tables:6PASS/0FAIL locally; diff checkPASS. Added14 real PostgreSQL transactional drift subtests (disable RLS and direct runtime ownership per table), each asserts actual row_security_active=false, exact readiness table and rejection code, then rolls back and proves restored safe acceptance. Actual SQL/CI NOT RUN until this source is published. No migrations, hosted writes or grants changed.
+
+Next: inspect isolated tenant batch and full source CI; record exact source/run/job. In parallel, reproduce known signed-provider order-discovery gap under restricted runtime (naked order queries have no tenant context); do not invent ownership mapping or broaden RLS. Prior combined8a694b/307PASS remains earlier-source evidence, not acceptance of this new source. Hosted/retention policy gates remain OPEN; historical85% unchanged, releaseNO-GO.
+
 ## Current accepted integrated P0 candidate — 2026-10-15 Baghdad
 
 Active branch `test/p0-integrated-billing-meta-20261015`, Draft PR #549, depends on #548/#547. Tested `8a694b43b4583788f5be351ed7df410547a46167`: isolated38679806273/job116241526105, merge3e34bd5a8d35a1af2a1e4c9569b1fd3514083d4a SUCCESS **307PASS/0FAIL/0SKIP**,54unique files/56invocations; all14 observed workflowsSUCCESS. Meta38679806211/job116241526118 SUCCESS. Standalone source counts overlap and are not added. No runtime tests remain pending for this accepted source.

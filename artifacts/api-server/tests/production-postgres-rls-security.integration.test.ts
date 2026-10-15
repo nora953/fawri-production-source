@@ -89,6 +89,50 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     assertProductionDatabaseRlsReady(productionEnv(), client),
   );
 
+  // Each change is transactional and rolled back: no customer rows are needed.
+  // The runtime must reject schema drift in every licensing/billing table,
+  // including domains introduced after the original readiness allowlist.
+  for (const table of [
+    "merchant_cashier_subscriptions",
+    "cashier_station_seat_assignments",
+    "cashier_billing_orders",
+    "cashier_billing_events",
+    "cashier_entitlement_applications",
+    "cashier_entitlement_audit_events",
+    "cashier_device_operation_timeline",
+  ]) {
+    for (const drift of ["disabled RLS", "runtime ownership"]) {
+      await t.test(`${table}: rejects ${drift}`, async () => {
+        await client.query("RESET ROLE");
+        await client.query("BEGIN");
+        try {
+          await client.query(drift === "disabled RLS"
+            ? `ALTER TABLE public.${table} DISABLE ROW LEVEL SECURITY`
+            : `ALTER TABLE public.${table} OWNER TO ${probeRole}`);
+          await client.query(`SET ROLE ${probeRole}`);
+          const actual = await client.query<{ active: boolean }>(
+            "SELECT row_security_active($1::regclass) AS active", [`public.${table}`],
+          );
+          assert.equal(actual.rows[0]?.active, false);
+          const state = await getProductionDatabaseRlsReadiness(client);
+          assert.deepEqual(drift === "disabled RLS"
+            ? state.missingOrUnprotectedTenantTables : state.ownedTenantTables, [table]);
+          await assert.rejects(
+            () => assertProductionDatabaseRlsReady(productionEnv(), client),
+            { code: drift === "disabled RLS"
+              ? "PRODUCTION_DATABASE_TENANT_RLS_REQUIRED"
+              : "PRODUCTION_DATABASE_RUNTIME_TABLE_OWNER_FORBIDDEN" },
+          );
+        } finally {
+          await client.query("RESET ROLE");
+          await client.query("ROLLBACK");
+        }
+        await client.query(`SET ROLE ${probeRole}`);
+        await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
+      });
+    }
+  }
+
   const ownerRole = "fawri_rls_owner_probe";
   const middleRole = "fawri_rls_middle_probe";
   for (const scenario of [
