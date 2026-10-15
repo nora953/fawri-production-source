@@ -1,3 +1,9 @@
+
+## Cross-PR continuation reconciliation — 2026-10-15 (documentation only)
+
+Latest independently verified Meta Draft PR #547 source `217a40c8c6ed30c328202c51999028846189e6c1`: all 14 GitHub Actions workflows SUCCESS. Isolated PostgreSQL [run 38657437452](https://github.com/nora953/fawri-production-source/actions/runs/38657437452), job `116170872527` SUCCESS. Exact job-log `meta-worker-precommit-restart-postgres.integration.test.mjs`: 4 PASS / 0 FAIL / 0 SKIP; separate Meta deadletter restart: 4 PASS / 0 FAIL / 0 SKIP. Evidence also saved in PR #547 comment #6181318809. **This checkpoint belongs to another stacked PR branch and is not a claim that these source changes are present on this branch.**
+
+P0 billing Issue #523 reconciled in comment #6181329394: PR539 orphan receipt admission, PR544 audited authorized replay and PR546 actual PostgreSQL COMMIT acknowledgement-loss have separate successful proofs; older Issue #523 text is stale. Still OPEN: expiry/device races, arbitrary process interruption beyond bounded tested points, orphan ownership/discoverability/retention, hosted capability/grant rollout. Meta Issue #535 full hosted/restricted downstream review remains OPEN. No merges/deploys or real providers. Do not add overlapping test counts or infer whole P0 percentage from workflow counts. Next work: isolate a specific remaining expiry/device race with executable regression test and document actual result.
 ## Verified operator review/confirm/replay UI — 2026-10-14
 
 Draft PR545, branch fix/p0-operator-receipt-replay-ui-20261014 stacked on544/dec8497f. Tested4e95b72e27fa60ba2a59da2c8569854c196eccee; browser38629698500/job116077862920 mergecheckoutc62a528ea2a000e671693d6f67b9290d3d2b3e97:36PASS/0FAIL (11new+25existing). Localfrontend typecheck/build and9client testsPASS (5new+4existing); policyPASS. 7/7 observed workflows SUCCESS for tested source. Prior544 docshead26/26CI SUCCESS. No new backend or SQL proof credit.
