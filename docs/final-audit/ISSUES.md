@@ -1,3 +1,9 @@
+## Cashier production RLS readiness acceptance — 2026-10-15
+
+Draft#549 source36f955e32d0f6f7284b5fcfb850ea117e0c00ee0, isolated38681113382/job116245665218:321PASS/0FAIL/0SKIP,54unique/56invocations;14/14workflowsSUCCESS. Runtime gate now includes all7 cashier licensing/billing RLS tables omitted after0027. Local baseline5PASS/1FAIL→repair6/0; actual RLS suite20/0/0 includes14new disabled-RLS/runtime-ownership drift cases and rollback-restored readiness. Fullrestore33migrations/95tables/45policies/8functions and cleanupPASS, identical fingerprint793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498. Exact report: SEQ_377_P0_RLS_RESTORE_ADMIN_SYNC_READINESS_20261014.md; evidence/P0_CASHIER_RLS_READINESS_RESULTS_20261015.json.
+
+Next executable unit is separate dependent Draft#550/fix/p0-provider-receipt-order-discovery-20261015, baseline1f3d743a78d7716b21b6e875e62e4fe477e324a4. It reproduces actual signed-provider callbacks under nonowner/NOBYPASSRLS/no tenant context, preserving durable receipt before desired success assertion. Baseline CI38681215276/job116245975903 still running at checkpoint; NOT RUN/PENDING until logs are inspected. Bounded receipt-backed existing-order resolution repair in progress locally, not accepted. No automatic ownership repair/deletion policy. Hosted owner/grants/provider/storage/deployment gates OPEN; historical85%/15% not newly measured, releaseNO-GO. No main merge/deploy/hosted migration/grants permitted without separate explicit approval.
+
 ## Integrated #523/#535 evidence — 2026-10-15
 
 Combined Draft#549/8a694b43 passes307/0/0 and14workflows. This supersedes the need for a combined synthetic regression, not hosted rollout or ownership/retention policy. #523 keeps remaining policy/discovery/hosted acceptance OPEN; #535 keeps reviewed function owner/RLS/EXECUTE and hosted full path OPEN. No new product defect found by three directory boundaries or integration. Current next actions in WORK_HANDOFF.
