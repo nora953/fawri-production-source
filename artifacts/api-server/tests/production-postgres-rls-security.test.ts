@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync, readdirSync } from "node:fs";
 import type { OperationalQueryTarget } from "../src/services/operationalPostgresAuthority";
 import {
   assertProductionDatabaseRlsReady,
   PRODUCTION_TENANT_RLS_TABLES,
+  PRODUCTION_PROTECTED_RLS_TABLES,
   ProductionDatabaseRlsSecurityError,
 } from "../src/services/postgresRuntimeRlsSecurity";
 
@@ -112,4 +114,20 @@ test("critical tenant domains remain part of the production RLS contract", () =>
   ]) {
     assert.equal(PRODUCTION_TENANT_RLS_TABLES.includes(name as never), true);
   }
+});
+
+// Independent migration inventory prevents new protected domains from silently
+// falling outside release readiness, including global capability-only tables.
+test("release readiness covers every committed RLS-enabled table", () => {
+  const directory = new URL("../../../lib/db/drizzle/", import.meta.url);
+  const migrated = new Set<string>();
+  for (const name of readdirSync(directory).filter(name => name.endsWith(".sql"))) {
+    const sql = readFileSync(new URL(name, directory), "utf8");
+    for (const match of sql.matchAll(/ALTER\s+TABLE\s+(?:public\.)?"?([a-z_]+)"?\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY/gi)) {
+      migrated.add(match[1]);
+    }
+  }
+  assert.ok(migrated.size > 40, "must inspect the full migration history");
+  const covered = new Set<string>(PRODUCTION_PROTECTED_RLS_TABLES);
+  assert.deepEqual([...migrated].filter(name => !covered.has(name)).sort(), []);
 });

@@ -1,3 +1,11 @@
+## Receipt inbox readiness coverage — 2026-10-15 (CI pending)
+
+Active Draft#550 / fix/p0-provider-receipt-order-discovery-20261015. New bounded repair: global capability-only verified_provider_payment_receipts was absent from runtime readiness's tenant-table inventory. Runtime ownership or disabled RLS on this table could therefore escape that readiness check. This is a code-level detection gap, not evidence of unsafe hosted grants.
+
+Added PRODUCTION_PROTECTED_RLS_TABLES combining tenant tables and the receipt inbox; legacy readiness field/error identifiers remain compatible. Added independent migration-inventory unit test covering every committed ENABLE ROW LEVEL SECURITY table, and two transactional PostgreSQL drift cases for inbox ownership/disabledRLS with rollback-restored readiness. Unit baseline6PASS/1FAIL identified only the inbox; repair7PASS/0FAIL locally. Diff checkPASS. Actual new PostgreSQL cases/CI NOT RUN until publication. No policy, migration or runtime grant changed.
+
+Next: inspect new source CI (especially tenant/RLS suite), save exact source/run/job and counters without assuming prior324PASS applies. Then continue receipt/function-owner readiness assessment. Earlier delegated provider mapping-race work remains NOT RUN; do not claim it completed. Hosted/retention/release gates remain OPEN, historical85%/15% not freshly measured. No main merge/deploy/hosted writes. Previous accepted sourcecd7408ee and its324/0/0 are preserved below.
+
 ## Current acceptance and handoff — 2026-10-15
 
 Active Draft #550, branch `fix/p0-provider-receipt-order-discovery-20261015`, base Draft #549. Tested code commit: `cd7408ee178393a5a63a02e6bbdc9a163cd54c00`. All **25/25 observed workflows SUCCESS**. Isolated run `38681867802`, job `116247985222`, merge checkout `181b04e212b5c98e8848652e56d4f517b19464e5`: **324 PASS / 0 FAIL / 0 SKIP**, 55 unique files / 57 invocations. Counts include parent tests and repeated runtimes; never add overlapping workflow totals.

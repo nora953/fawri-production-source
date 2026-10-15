@@ -53,10 +53,18 @@ export const PRODUCTION_TENANT_RLS_TABLES = [
   "knowledge_embeddings",
 ] as const;
 
+// The receipt inbox has no tenant column or tenant policy. Its capability-only
+// boundary still requires enabled RLS and a runtime that cannot own the table.
+export const PRODUCTION_PROTECTED_RLS_TABLES = [
+  ...PRODUCTION_TENANT_RLS_TABLES,
+  "verified_provider_payment_receipts",
+] as const;
+
 export type ProductionDatabaseRlsReadiness = {
   roleName: string;
   superuser: boolean;
   bypassRls: boolean;
+  // Legacy field names retained for callers; include capability-only tables.
   ownedTenantTables: string[];
   missingOrUnprotectedTenantTables: string[];
 };
@@ -143,7 +151,7 @@ export async function getProductionDatabaseRlsReadiness(
            WHERE NOT table_exists OR NOT rls_enabled),
          ARRAY[]::text[]
        ) AS missing_or_unprotected_tenant_tables`,
-    [Array.from(PRODUCTION_TENANT_RLS_TABLES)],
+    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES)],
   );
 
   const row = rows[0];
@@ -206,13 +214,13 @@ export async function assertProductionDatabaseRlsReady(
   if (readiness.ownedTenantTables.length > 0) {
     fail(
       "PRODUCTION_DATABASE_RUNTIME_TABLE_OWNER_FORBIDDEN",
-      "production runtime database role must not own tenant-protected tables",
+      "production runtime database role must not own RLS-protected tables",
     );
   }
   if (readiness.missingOrUnprotectedTenantTables.length > 0) {
     fail(
       "PRODUCTION_DATABASE_TENANT_RLS_REQUIRED",
-      "production tenant tables must exist with row-level security enabled",
+      "production protected tables must exist with row-level security enabled",
     );
   }
 }

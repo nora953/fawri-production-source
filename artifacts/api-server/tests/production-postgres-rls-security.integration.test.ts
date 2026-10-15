@@ -91,8 +91,10 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
 
   // Each change is transactional and rolled back: no customer rows are needed.
   // The runtime must reject schema drift in every licensing/billing table,
-  // including domains introduced after the original readiness allowlist.
+  // including domains introduced after the original readiness allowlist and
+  // the global capability-only receipt inbox.
   for (const table of [
+    "verified_provider_payment_receipts",
     "merchant_cashier_subscriptions",
     "cashier_station_seat_assignments",
     "cashier_billing_orders",
