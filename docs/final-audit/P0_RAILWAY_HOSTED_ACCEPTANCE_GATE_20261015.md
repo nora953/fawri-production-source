@@ -23,3 +23,8 @@ Status: **read-only inventory completed; hosted acceptance NOT executed; rollout
 
 ## Release decision
 **NO-GO for production rollout** until hosted restricted-role and sandbox end-to-end proof, deployment controls, storage durability, and required security evidence are verified. This document is a plan and inventory, not an assertion of executed hosted tests. Do not merge, deploy, rotate credentials or alter Railway settings merely to satisfy this checklist.
+
+## Evidence status update (2026-10-15)
+- GitHub branch-protection API query for `main` returned **403 Resource not accessible by integration**. Mark required status checks/branch protection **UNKNOWN**, not disabled; this is distinct from Railway's confirmed `checkSuites=false`.
+- Neon project-list connector returned a tool-unavailable error. Hosted Neon branches, runtime grants and database role remain **UNVERIFIED** by this pass; prior isolated PostgreSQL CI is not a substitute.
+- Documentation commit `3dc19b08d35d72a5887ecf286db1be941da4391c`: GitHub Actions run `38667410457` isolated PostgreSQL was still **IN PROGRESS** when checked, at synthetic Meta bot/AI lifecycle step. The other five workflows were **SUCCESS**. Recheck the exact SHA before marking all six green.
