@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import fs from './helpers/contract-source.mjs';
+import path from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(here, '..');
+const page = fs.readFileSync(
+  path.join(root, 'src/pages/dashboard/CashierManagementPage.tsx'),
+  'utf8',
+);
+
+test('station edit exposes explicit disable and enable controls', () => {
+  assert.match(page, /stationStatus:\s*'حالة المحطة'/);
+  assert.match(page, /disableStation:\s*'تعطيل المحطة'/);
+  assert.match(page, /enableStation:\s*'تفعيل المحطة'/);
+  assert.match(page, /const toggleStationStatus = async \(station: StationView\)/);
+  assert.match(page, /\/api\/cashier\/management\/stations\/\$\{encodeURIComponent\(station\.id\)\}/);
+  assert.match(page, /status: disabling \? 'disabled' : 'active'/);
+});
+
+test('disabling a station warns that pairing is revoked and offline authority cannot be edited while disabled', () => {
+  assert.match(page, /window\.confirm\(l\.disableStationWarning\)/);
+  assert.match(page, /تعطيل هذه المحطة سيفك ربط الجهاز فورًا/);
+  assert.match(page, /editingStation\.status !== 'active'/);
+  assert.match(page, /disabled=\{editingStation\.status !== 'active'\}/);
+});
+
+
+test('station management uses canonical merchant locations instead of legacy branch inputs', () => {
+  assert.match(page, /api\('\/api\/cashier\/management\/locations'\)/);
+  assert.match(page, /locationId:\s*stationLocationId/);
+  assert.match(page, /cashierStationCreationBody\(/);
+  assert.match(page, /body: JSON\.stringify\(stationCreateBody\)/);
+  assert.match(page, /locationLabel\(station\.location_id\)/);
+  assert.match(page, /locationFixedHint:/);
+  assert.match(page, /location\.is_default/);
+  assert.doesNotMatch(page, /branchKey:\s*'رمز الفرع'/);
+  assert.doesNotMatch(page, /\{l\.branchKey\}/);
+  assert.doesNotMatch(page, /\{l\.branchLabel\}/);
+});

@@ -1,0 +1,413 @@
+/* Cashier Visual QA baseline — presentation only. Functional behavior remains
+   protected by the cashier functional-freeze gate. */
+
+/* Arabic/RTL desktop identity cluster:
+   brand -> end shift -> online/offline.
+   The old operator/role/station sentence is intentionally hidden because it
+   duplicates internal session information and crowds the cashier header. */
+html[data-cashier-view='pos'] main > div > header {
+  position: relative;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding-block: 0.65rem !important;
+}
+
+html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
+  position: absolute !important;
+  top: 2rem !important;
+  left: auto !important;
+  right: auto !important;
+  inset-inline-start: 8rem !important;
+  transform: none !important;
+  z-index: 80 !important;
+  display: flex !important;
+  width: auto !important;
+  max-width: 10rem !important;
+  height: 32px;
+  min-height: 32px;
+  align-items: center !important;
+  justify-content: flex-start;
+  gap: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Keep the real logout action precisely centred on the same vertical axis as
+   the brand/status row, close to the brand while retaining deliberate space. */
+html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > button {
+  order: 1;
+  display: inline-flex !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  flex: 0 0 auto;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 0.72rem !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.65rem !important;
+  background: #fff !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04) !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+}
+
+/* Do not expose the verbose internal session sentence in the POS header. */
+html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > span {
+  display: none !important;
+}
+
+/* Move the existing runtime-derived connectivity badge to the LEFT of the end
+   shift action in RTL. Keep it a compact soft rectangle. */
+html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 16.25rem;
+  transform: translateY(-50%);
+  z-index: 81;
+  display: inline-flex;
+  height: 32px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.72rem !important;
+  border-radius: 0.625rem !important;
+  font-size: 0.75rem;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.035);
+  white-space: nowrap;
+}
+
+html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child.bg-emerald-50 {
+  border: 1px solid #a7f3d0 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child.bg-slate-100 {
+  border: 1px solid #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #475569 !important;
+}
+
+/* Session controls are absolute and therefore consume no page height. */
+html[data-cashier-operator-ready='1'] #cashier-root > div.relative > main {
+  min-height: 0;
+}
+
+/* General translated-label friendly header baseline. */
+html[data-cashier-view='pos'] main > div > header > div:last-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child {
+  gap: 0.45rem !important;
+  row-gap: 0.5rem !important;
+}
+
+html[data-cashier-view='pos'] main > div > header button,
+html[data-cashier-view='pos'] main > div > header a,
+html[data-cashier-view='pos'] main > div > header label {
+  min-height: 36px;
+}
+
+html[data-cashier-view='pos'] main > div > header label {
+  white-space: nowrap;
+  border-color: #e2e8f0 !important;
+  background: #f8fafc !important;
+}
+
+html[data-cashier-view='pos'] main > div > header select {
+  min-width: 68px;
+}
+
+html[data-cashier-view='pos'] main > div > header > div:first-child {
+  flex: 0 0 auto;
+}
+
+/* Compact cart cards: one calm row of four items per page. Names may use two
+   lines, while quantity and total always reserve their own lower row. */
+html[data-cashier-view='pos'] .cashier-cart-compact-panel {
+  min-width: 0;
+  min-height: 92px;
+  overflow: hidden !important;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-panel > div:last-child {
+  min-width: 0;
+  overflow: hidden;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-grid {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: stretch;
+  overflow: hidden !important;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-card {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 68px;
+  grid-template-rows: minmax(2.15rem, 1fr) 1.15rem;
+  align-content: stretch;
+  overflow: hidden;
+  padding: 0.48rem 0.55rem !important;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-name {
+  display: -webkit-box;
+  min-width: 0;
+  max-height: 2.6em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-meta {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem;
+  overflow: hidden;
+  line-height: 1.15;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-qty {
+  min-width: 1.25rem;
+  color: #64748b;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-price {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: #334155;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* No native scrollbar should appear inside the compact item strip. Navigation
+   is handled by the existing previous/next buttons whenever another page exists. */
+html[data-cashier-view='pos'] .cashier-cart-compact-panel,
+html[data-cashier-view='pos'] .cashier-cart-compact-panel * {
+  scrollbar-width: none;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-panel::-webkit-scrollbar,
+html[data-cashier-view='pos'] .cashier-cart-compact-panel *::-webkit-scrollbar {
+  display: none;
+}
+
+/* History and report subpages use the page header as their only chrome. The
+   operator dock is a POS-only shift control and must not float over these
+   read/compensation views. */
+html[data-cashier-view='history'] #cashier-root > div.relative > div.fixed:first-child,
+html[data-cashier-view='reports'] #cashier-root > div.relative > div.fixed:first-child {
+  display: none !important;
+}
+
+/* Keep operational subpages on the same desktop canvas as the cashier itself. */
+html[data-cashier-view='history'] main > div,
+html[data-cashier-view='reports'] main > div {
+  max-width: 1500px !important;
+}
+
+@media (min-width: 1024px) {
+  html[data-cashier-view='history'] main > div,
+  html[data-cashier-view='reports'] main > div {
+    padding: 1rem !important;
+  }
+}
+
+/* Sales history: dissolve the old status/back wrapper so the runtime-derived
+   connectivity badge sits directly beside the page identity. Push only the
+   navigation action to the far edge, matching the POS header hierarchy. */
+html[data-cashier-view='history'] main > div > header {
+  justify-content: flex-start !important;
+  gap: 0.65rem !important;
+  padding-block: 0.65rem !important;
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child {
+  display: contents !important;
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child > span {
+  display: inline-flex;
+  height: 32px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.72rem !important;
+  border-radius: 0.625rem !important;
+  font-size: 0.75rem;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.035);
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child > span.bg-emerald-50 {
+  border: 1px solid #a7f3d0 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child > span.bg-slate-100 {
+  border: 1px solid #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #475569 !important;
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child > a {
+  margin-inline-start: auto !important;
+  min-height: 36px;
+}
+
+/* Return controls are cashier actions, not inline links. Keep them clearly
+   touchable and visually subordinate to the final compensation action. */
+html[data-cashier-view='history'] section button.text-orange-600 {
+  min-height: 38px;
+  padding: 0.45rem 0.8rem !important;
+  border: 1px solid #fed7aa;
+  border-radius: 0.65rem;
+  background: #fff7ed;
+  color: #c2410c !important;
+  text-decoration: none !important;
+}
+
+html[data-cashier-view='history'] section button.text-orange-600:hover {
+  border-color: #fdba74;
+  background: #ffedd5;
+  color: #9a3412 !important;
+}
+
+html[data-cashier-view='history'] section div[dir='ltr'] > button.h-8.w-8 {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  min-width: 2.5rem !important;
+  min-height: 2.5rem !important;
+}
+
+html[data-cashier-view='history'] section div[dir='ltr'] > span.min-w-8 {
+  min-width: 2.25rem !important;
+}
+
+html[data-cashier-view='history'] main > div > div.grid > section:last-child button {
+  min-height: 40px;
+}
+
+/* Reports use the same quiet navigation style as History instead of presenting
+   Back as a destructive/primary black action. */
+html[data-cashier-view='reports'] main > div > header {
+  padding-block: 0.65rem !important;
+}
+
+html[data-cashier-view='reports'] main > div > header a[href='/cashier.html'] {
+  border: 1px solid #e2e8f0 !important;
+  background: #fff !important;
+  color: #334155 !important;
+  box-shadow: none !important;
+}
+
+html[data-cashier-view='reports'] main > div > header a[href='/cashier.html']:hover {
+  background: #f8fafc !important;
+}
+
+@media (max-width: 1023px) {
+  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
+    top: 1.9rem !important;
+    inset-inline-start: 7.5rem !important;
+    max-width: 9rem !important;
+  }
+
+  html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
+    inset-inline-start: 15rem;
+  }
+}
+
+@media (max-width: 639px) {
+  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
+    top: 1.8rem !important;
+    inset-inline-start: 7rem !important;
+    max-width: calc(100vw - 12rem) !important;
+    height: 30px;
+    min-height: 30px;
+  }
+
+  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > button {
+    height: 30px !important;
+    min-height: 30px !important;
+    padding-inline: 0.55rem !important;
+    font-size: 0.7rem;
+  }
+
+  html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
+    inset-inline-start: 13.5rem;
+    height: 30px;
+    min-height: 30px;
+    padding-inline: 0.55rem !important;
+    font-size: 0.7rem;
+  }
+
+  html[data-cashier-view='pos'] main > div > header > div:last-child {
+    width: 100%;
+    align-items: stretch !important;
+  }
+
+  html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child {
+    justify-content: flex-start !important;
+  }
+
+  html[data-cashier-view='pos'] .cashier-cart-compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html[data-cashier-view='pos'] .cashier-cart-compact-card {
+    min-height: 66px;
+  }
+
+  html[data-cashier-view='history'] main > div > header {
+    align-items: center !important;
+  }
+
+  html[data-cashier-view='history'] main > div > header > div:first-child {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  html[data-cashier-view='history'] main > div > header > div:first-child > div {
+    min-width: 0;
+  }
+
+  html[data-cashier-view='history'] main > div > header > div:first-child p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html[data-cashier-view='history'] main > div > header > div:last-child > a {
+    width: 100%;
+    margin-inline-start: 0 !important;
+    text-align: center;
+  }
+}

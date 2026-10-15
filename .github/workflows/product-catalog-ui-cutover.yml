@@ -1,0 +1,87 @@
+name: Product catalog UI cutover
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/fawri/cashier.html"
+      - "artifacts/fawri/src/main.tsx"
+      - "artifacts/fawri/src/cashierMain.tsx"
+      - "artifacts/fawri/src/styles/fawriLanguageAuthority.css"
+      - "artifacts/fawri/src/styles/fawriUiBaseline.css"
+      - "artifacts/fawri/src/lib/i18n.tsx"
+      - "artifacts/fawri/src/lib/catalogUiApi.ts"
+      - "artifacts/fawri/src/lib/catalogProductEditor.ts"
+      - "artifacts/fawri/src/lib/catalogVariantMatrix.ts"
+      - "artifacts/fawri/src/lib/catalogMediaUiApi.ts"
+      - "artifacts/fawri/src/lib/catalogEditorSession.ts"
+      - "artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx"
+      - "artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx"
+      - "artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx"
+      - "artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ProductsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ProductsWorkspacePage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CommerceCatalogPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/catalogEditorFullscreen.css"
+      - "artifacts/fawri/src/pages/dashboard/catalogEditorCardHarmony.css"
+      - "artifacts/fawri/src/pages/dashboard/productCardCompact.css"
+      - "artifacts/fawri/src/pages/dashboard/ImportProductsPage.tsx"
+      - "artifacts/fawri/tests/product-catalog-ui-cutover.test.ts"
+      - "artifacts/fawri/tests/catalog-editor-logic-hardening.test.ts"
+      - "artifacts/fawri/tests/catalog-editor-ux-hardening.test.ts"
+      - "artifacts/fawri/tests/catalog-authority-recovery-state.test.mjs"
+      - "artifacts/fawri/tests/fawri-language-ui-authority.test.ts"
+      - "artifacts/fawri/tests/catalog-product-card-layout.test.ts"
+      - "artifacts/api-server/src/routes/catalog-operations.ts"
+      - "artifacts/api-server/src/services/catalogInventoryRuntime.ts"
+      - "artifacts/api-server/src/services/catalogMediaStorage.ts"
+      - "artifacts/api-server/src/services/catalogProductNormalization.ts"
+      - "artifacts/api-server/src/services/postgresCatalogAuthority.ts"
+      - "artifacts/api-server/src/services/botCatalogAuthority.ts"
+      - "artifacts/api-server/tests/catalog-inventory.test.ts"
+      - "artifacts/api-server/tests/catalog-server-contract.test.mjs"
+      - "artifacts/api-server/tests/catalog-operation-error-classification-static.test.mjs"
+      - "artifacts/api-server/tests/catalog-variant-signature-guard-static.test.mjs"
+      - "artifacts/api-server/tests/catalog-variant-signature-apply-guard-static.test.mjs"
+      - "artifacts/api-server/tests/bot-catalog-authority.test.ts"
+      - "lib/db/drizzle/0012_catalog_variant_signature_guard.sql"
+      - "lib/db/drizzle/meta/_journal.json"
+      - "lib/db/scripts/catalog-variant-signature-readiness.mjs"
+      - "lib/db/scripts/catalog-variant-signature-migration-history-readiness.mjs"
+      - "lib/db/scripts/apply-catalog-variant-signature-guard.mjs"
+      - "scripts/validate-catalog-editor.mjs"
+      - ".github/workflows/product-catalog-ui-cutover.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-catalog-ui-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  catalog-ui-cutover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run catalog editor validation gate
+        run: node scripts/validate-catalog-editor.mjs

@@ -1,0 +1,28 @@
+/* Cashier reports visual polish — presentation only.
+   Keep KPI alignment consistent with the active page direction while preserving
+   LTR isolation inside monetary/count values for stable digit/currency order. */
+
+html[data-cashier-view='reports'] main section > div.grid > div {
+  min-width: 0;
+  text-align: start;
+}
+
+html[data-cashier-view='reports'] main section > div.grid > div > p:first-child {
+  text-align: start !important;
+}
+
+html[data-cashier-view='reports'] main section > div.grid > div > p.mt-2 {
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+
+/* The value itself remains LTR for money/count stability, but its box follows
+   the RTL card hierarchy instead of jumping to the opposite edge. */
+html[data-cashier-view='reports'] main[dir='rtl'] section > div.grid > div > p.mt-2 {
+  text-align: right !important;
+}
+
+html[data-cashier-view='reports'] main[dir='ltr'] section > div.grid > div > p.mt-2 {
+  text-align: left !important;
+}

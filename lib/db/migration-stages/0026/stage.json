@@ -1,0 +1,10 @@
+{
+  "index": 26,
+  "name": "global_e164_phone_identity",
+  "when": 1790640000000,
+  "mode": "reviewed_sql",
+  "preimage_files": [
+    "accounts.ts"
+  ],
+  "sql_sha256": "e0e515ce07fbdf95efa2e38d173464995355adaf20012bffb892f14ce4d7d011"
+}

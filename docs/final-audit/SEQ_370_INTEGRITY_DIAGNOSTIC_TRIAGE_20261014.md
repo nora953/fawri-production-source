@@ -1,0 +1,7 @@
+# SEQ-370 — bounded diagnostic harness correction
+
+Initial full-App run38500731533/job115646801848, source5841f30129f22ec8736fa826e7995d433232f449/merge d0244311d2e7fd57c7f5421ee22227ee8e29ac54:24 PASS (6 owner baseline +18 assistant/denied/load-retry extras),6 diagnostic FAIL because audit-card selector required .leading-none. This is a diagnostic harness locator failure, not six product failures or product clearance. Native initial screenshots remain preserved. Build/upload/cleanup successful, Chrome154.0.8037.97;234 GET,0unexpected. No passed-case rerun credit.
+
+CardTitle is rendered through cn/tailwind-merge with text-base supplied after leading-none; combined utility-class matching is brittle. New independent diagnostic script selects an exact localized leaf-div title under main, then its original card ancestor, requiring non-null title/card and checking the unhealthy response vs healthy text. Only six previous failed diagnostic cases re-executed; technical reason explicitly recorded. Original failed harness/result not rewritten. Application/original tests/schema unchanged.
+
+Denied mode from initial run is specifically a UI branch contract probe: overview authorization false with directory200. Actual PostgreSQL directory denies an unauthorized assistant403, so that fixture does not certify the real server denial route, caller privacy or backend authorization. Directory403 remains a separate unexecuted state. Manual503→GET retry and assistant controls are HTTP fixture observations only.

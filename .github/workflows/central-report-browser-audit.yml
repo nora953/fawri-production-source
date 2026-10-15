@@ -1,0 +1,44 @@
+name: Central cashier reactive report engineering audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/fawri-central-report-browser-audit.mjs'
+      - 'artifacts/fawri/src/pages/dashboard/CashierCentralReportsPage.tsx'
+      - 'artifacts/fawri/src/pages/dashboard/reports-print.css'
+      - '.github/workflows/central-report-browser-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: central-report-browser-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  actual-component-print:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install locked dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label report-print-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build actual frontend CSS
+        run: node scripts/ci-run-redacted.mjs --label report-print-build -- pnpm --dir artifacts/fawri run build
+      - name: Require PDF text consumer
+        run: |
+          if ! command -v pdftotext >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y poppler-utils
+          fi
+      - name: Test central report print, empty, error and real range recovery states
+        shell: bash
+        run: |
+          node --check scripts/fawri-central-report-browser-audit.mjs
+          audit_chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$audit_chrome"
+          FAWRI_AUDIT_CHROME="$audit_chrome" node scripts/fawri-central-report-browser-audit.mjs

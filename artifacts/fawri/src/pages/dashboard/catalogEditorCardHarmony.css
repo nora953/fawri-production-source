@@ -1,0 +1,390 @@
+/*
+ * Fawri reply availability now lives beside inventory tracking inside the
+ * compact Item Settings card. Keep the older page field hidden while the
+ * canonical page is progressively simplified; it reads/writes the same
+ * allow_fawri_reply form authority and must not appear twice to merchants.
+ */
+.products-workspace-polish .catalog-editor-fawri-field {
+  display: none !important;
+}
+
+.products-workspace-polish .catalog-editor-description-field {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch !important;
+  gap: 0.5rem !important;
+  align-self: stretch !important;
+  min-height: 0;
+}
+
+.products-workspace-polish .catalog-editor-description-field > textarea {
+  flex: 1 1 auto;
+  min-height: 7rem !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid hsl(var(--input));
+  background: hsl(var(--background));
+}
+
+/*
+ * Keep the merchant action language consistent across Products and Promotions:
+ * one strong orange primary action, one calm secondary action, and compact
+ * edit/delete controls with equal visual weight.
+ */
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button,
+.products-workspace-polish > .min-h-screen > .mx-auto > header > div:first-child > button {
+  min-height: 2.875rem !important;
+  border-radius: 0.875rem !important;
+  padding-inline: 1.15rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button:first-child,
+.products-workspace-polish > .min-h-screen > .mx-auto > header > div:first-child > button {
+  border: 1px solid rgb(249 115 22 / 0.28) !important;
+  background: rgb(249 115 22) !important;
+  color: white !important;
+  box-shadow: 0 8px 18px -12px rgb(249 115 22 / 0.9) !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button:first-child:hover,
+.products-workspace-polish > .min-h-screen > .mx-auto > header > div:first-child > button:hover {
+  transform: translateY(-1px);
+  background: rgb(234 88 12) !important;
+  box-shadow: 0 10px 22px -13px rgb(249 115 22 / 0.95) !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button:last-child {
+  border-color: hsl(var(--border)) !important;
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  box-shadow: 0 4px 14px -12px rgb(15 23 42 / 0.45) !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button:last-child:hover {
+  transform: translateY(-1px);
+  border-color: rgb(249 115 22 / 0.32) !important;
+  background: rgb(249 115 22 / 0.05) !important;
+}
+
+/* Product-card edit/delete controls: horizontal, equal size, no oversized red pill. */
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col {
+  flex-direction: row !important;
+  gap: 0.5rem !important;
+}
+
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col > button,
+.products-workspace-polish article > .p-5 > .flex > .flex.shrink-0.gap-2 > button {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  min-width: 2.5rem !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  box-shadow: 0 4px 12px -11px rgb(15 23 42 / 0.5) !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease !important;
+}
+
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col > button:hover,
+.products-workspace-polish article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:hover {
+  transform: translateY(-1px);
+  border-color: rgb(249 115 22 / 0.28) !important;
+  background: rgb(249 115 22 / 0.05) !important;
+  box-shadow: 0 7px 16px -12px rgb(15 23 42 / 0.55) !important;
+}
+
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col > button:last-child,
+.products-workspace-polish article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:last-child {
+  border-color: rgb(239 68 68 / 0.2) !important;
+  background: rgb(239 68 68 / 0.07) !important;
+  color: rgb(220 38 38) !important;
+}
+
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col > button:last-child:hover,
+.products-workspace-polish article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:last-child:hover {
+  border-color: rgb(239 68 68 / 0.34) !important;
+  background: rgb(239 68 68 / 0.12) !important;
+  color: rgb(185 28 28) !important;
+}
+
+/* Promotion modal: hide the duplicate Promotions badge in the editor header. */
+.products-workspace-polish [class~="z-[110]"] > div > div:first-child > div > div:last-child {
+  display: none !important;
+}
+
+/*
+ * Promotion discount editor: mirror the visual language already used by the
+ * Promotion period cards. Each control is its own rounded-2xl, bordered,
+ * muted/10 card with p-3 spacing. Discount authority stays untouched.
+ */
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid {
+  align-items: stretch !important;
+  gap: 1rem !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label {
+  display: flex !important;
+  min-width: 0;
+  min-height: 7rem;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.75rem !important;
+  padding: 0.75rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  background: hsl(var(--muted) / 0.1) !important;
+}
+
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > span:first-child {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  margin: 0 !important;
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.25rem;
+  color: hsl(var(--foreground));
+}
+
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > select,
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative,
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative > input {
+  width: 100% !important;
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
+}
+
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > select,
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative > input {
+  border-radius: 0.75rem !important;
+  background: hsl(var(--background)) !important;
+  box-shadow: none !important;
+}
+
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > .relative > input {
+  padding-right: 2.5rem !important;
+  padding-left: 1rem !important;
+}
+
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > .relative > span {
+  right: 0.75rem !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: auto !important;
+  justify-content: center;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: rgb(234 88 12) !important;
+  font-size: 0.875rem;
+  font-weight: 900 !important;
+}
+
+/* The promotion period cards do not carry a one-sided helper below one field.
+ * Keep the discount pair visually identical and leave validation to authority. */
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > span:last-child:not(:first-child) {
+  display: none !important;
+}
+
+/*
+ * Promotion summary cards mirror the compact Product summary-card rhythm.
+ * The existing promotion DOM stays authoritative; CSS only changes presentation:
+ * three cards per desktop row, one deterministic height, title/target/badges in
+ * reserved rows, start/end as the two summary metrics, and actions on the same
+ * bottom baseline. The redundant per-card timezone stays available in the page
+ * header and promotion editor, so it does not consume summary-card height.
+ */
+@media (min-width: 1280px) {
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.875rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article {
+    position: relative;
+    display: flex;
+    height: 18.75rem !important;
+    min-height: 18.75rem !important;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0.875rem 0.875rem 4.125rem;
+    border-radius: 1.5rem !important;
+    background: hsl(var(--card));
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0.875rem;
+    bottom: 3.75rem;
+    height: 1px;
+    background: hsl(var(--border));
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 {
+    min-height: 9rem;
+    padding: 0 !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex {
+    min-height: 6.6rem;
+    align-items: stretch !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .min-w-0.flex-1 {
+    display: grid;
+    min-width: 0;
+    grid-template-rows: 2.25rem 1.75rem 2.6rem;
+    align-content: start;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .min-w-0.flex-1 > h2 {
+    grid-row: 1;
+    align-self: start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.125rem !important;
+    line-height: 1.75rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .min-w-0.flex-1 > p {
+    grid-row: 2;
+    margin-top: 0 !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.5rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .min-w-0.flex-1 > .mb-3 {
+    grid-row: 3;
+    align-self: start;
+    margin: 0 !important;
+    overflow: hidden;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 {
+    position: absolute;
+    z-index: 1;
+    inset-inline: 0.875rem;
+    bottom: 0.875rem;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 2.25rem;
+    align-items: center;
+    gap: 0.5rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button {
+    height: 2.25rem !important;
+    min-height: 2.25rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-inline: 0.875rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:last-child {
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child::after {
+    content: attr(title);
+    margin-inline-start: 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex {
+    display: flex !important;
+    width: fit-content;
+    max-width: 100%;
+    height: 2.25rem;
+    margin-top: 0.2rem !important;
+    gap: 0.4rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-color: rgb(249 115 22 / 0.18) !important;
+    border-radius: 0.75rem !important;
+    background: rgb(249 115 22 / 0.04) !important;
+    color: rgb(194 65 12) !important;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex > svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex > span {
+    font-size: 0.75rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex > strong {
+    font-size: 0.95rem !important;
+    line-height: 1rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .grid.border-t {
+    position: absolute;
+    inset-inline: 0.875rem;
+    bottom: 4.5rem;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.625rem;
+    margin-top: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .grid.border-t > div {
+    min-width: 0;
+    height: 4rem;
+    padding: 0.65rem 0.75rem !important;
+    border: 0 !important;
+    border-radius: 1rem;
+    background: hsl(var(--muted) / 0.1);
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .grid.border-t > div > .mb-2 {
+    margin-bottom: 0.15rem !important;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .grid.border-t > div > [dir="ltr"] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .border-t.px-5.py-3 {
+    display: none !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,32 @@
+export const ADMIN_PAGE_SHELL_TEXT = {
+  ar: {
+    securityMenu: "إجراءات الأمان",
+    closeMenu: "إغلاق القائمة",
+    administration: "أقسام الإدارة",
+    hideSidebar: "إخفاء القائمة الجانبية",
+    showSidebar: "إظهار القائمة الجانبية",
+    controlPanel: "لوحة التحكم",
+    hide: "إخفاء",
+    show: "إظهار",
+  },
+  ku: {
+    securityMenu: "کردارەکانی ئاسایش",
+    closeMenu: "داخستنی لیست",
+    administration: "بەشەکانی بەڕێوەبردن",
+    hideSidebar: "شاردنەوەی لیستی تەنیشت",
+    showSidebar: "پیشاندانی لیستی تەنیشت",
+    controlPanel: "کۆنترۆڵ پانێڵ",
+    hide: "شاردنەوە",
+    show: "پیشاندان",
+  },
+  en: {
+    securityMenu: "Security actions",
+    closeMenu: "Close menu",
+    administration: "Administration",
+    hideSidebar: "Hide sidebar",
+    showSidebar: "Show sidebar",
+    controlPanel: "Control panel",
+    hide: "Hide",
+    show: "Show",
+  },
+} as const;

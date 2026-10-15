@@ -1,0 +1,10 @@
+{
+  "index": 9,
+  "name": "merchant_management_lifecycle_authority",
+  "when": 1786752000000,
+  "preimage_files": [
+    "accounts.ts",
+    "index.ts",
+    "merchant-management.ts"
+  ]
+}

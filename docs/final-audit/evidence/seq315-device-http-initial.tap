@@ -1,0 +1,92 @@
+TAP version 13
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# Subtest: current Authv2 device and permission HTTP boundaries on owned SQL
+    # Subtest: bound cookie rejects missing and wrong device without killing rightful session
+    ok 1 - bound cookie rejects missing and wrong device without killing rightful session
+      ---
+      duration_ms: 58.908435
+      type: 'test'
+      ...
+    # Subtest: cross-account device record cannot be revoked under assistant target
+    ok 2 - cross-account device record cannot be revoked under assistant target
+      ---
+      duration_ms: 51.785424
+      type: 'test'
+      ...
+    # Subtest: incorrect owner password preserves assistant device trust and cookie
+    ok 3 - incorrect owner password preserves assistant device trust and cookie
+      ---
+      duration_ms: 93.009763
+      type: 'test'
+      ...
+    # Subtest: device revocation invalidates only targeted device sessions
+    ok 4 - device revocation invalidates only targeted device sessions
+      ---
+      duration_ms: 54.336904
+      type: 'test'
+      ...
+    # Subtest: assistant cannot change another assistant permissions
+    ok 5 - assistant cannot change another assistant permissions
+      ---
+      duration_ms: 5.168249
+      type: 'test'
+      ...
+    # Subtest: unknown permission is rejected without version or permission mutation
+    ok 6 - unknown permission is rejected without version or permission mutation
+      ---
+      duration_ms: 6.936019
+      type: 'test'
+      ...
+    # Subtest: permission removal revokes live device session and fresh cookie lacks access
+    not ok 7 - permission removal revokes live device session and fresh cookie lacks access
+      ---
+      duration_ms: 67.289199
+      type: 'test'
+      location: '/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq312-device-http-postgres.test.mts:42:2311'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+
+        401 !== 200
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 200
+      actual: 401
+      operator: 'strictEqual'
+      stack: |-
+        <anonymous> (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq312-device-http-postgres.test.mts:132:666)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async TestContext.<anonymous> (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq312-device-http-postgres.test.mts:115:113)
+        async Test.run (node:internal/test_runner/test:1409:7)
+        async run (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq312-device-http-postgres.test.mts:115:71)
+        async TestContext.<anonymous> (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq312-device-http-postgres.test.mts:132:2)
+        async Test.run (node:internal/test_runner/test:1409:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+      ...
+    1..7
+not ok 1 - current Authv2 device and permission HTTP boundaries on owned SQL
+  ---
+  duration_ms: 1488.191992
+  type: 'test'
+  location: '/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq312-device-http-postgres.test.mts:1:1111'
+  failureType: 'testCodeFailure'
+  error: 'Later dependent cases BLOCKED after permission removal revokes live device session and fresh cookie lacks access'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    run (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq312-device-http-postgres.test.mts:115:204)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async TestContext.<anonymous> (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq312-device-http-postgres.test.mts:132:2)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+1..1
+# tests 8
+# suites 0
+# pass 6
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1753.19585

@@ -1,0 +1,19 @@
+{
+  "index": 23,
+  "name": "canonical_tenant_rls_schema_alignment",
+  "when": 1790380800000,
+  "preimage_files": [
+    "merchant-settings.ts",
+    "merchant-locations.ts",
+    "orders.ts",
+    "jobs.ts",
+    "channels.ts",
+    "channel-messaging.ts",
+    "catalog.ts",
+    "commerce-promotions.ts",
+    "subscriptions.ts",
+    "saas-billing.ts",
+    "conversations.ts",
+    "knowledge.ts"
+  ]
+}

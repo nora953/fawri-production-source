@@ -1,0 +1,147 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const root = new URL("../", import.meta.url);
+const appSource = await readFile(new URL("src/App.tsx", root), "utf8");
+const wrapperSource = await readFile(
+  new URL("src/pages/dashboard/TrainingPage.ts", root),
+  "utf8",
+);
+const pageSource = await readFile(
+  new URL("src/pages/dashboard/ServerTrainingPage.tsx", root),
+  "utf8",
+);
+const copySource = await readFile(
+  new URL(
+    "src/lib/translations/features/pages/dashboard/ServerTrainingPage.ts",
+    root,
+  ),
+  "utf8",
+);
+const knowledgeRouteSource = await readFile(
+  new URL("../api-server/src/routes/knowledge-operations.ts", root),
+  "utf8",
+);
+const trainingRouteSource = await readFile(
+  new URL("../api-server/src/routes/training-operations.ts", root),
+  "utf8",
+);
+
+test("dashboard routes training to the active canonical server page", () => {
+  assert.match(appSource, /import\("@\/pages\/dashboard\/TrainingPage\.ts"\)/);
+  assert.match(wrapperSource, /ServerTrainingPage/);
+  assert.doesNotMatch(pageSource, /\/api\/bot-training/);
+  assert.match(pageSource, /\/api\/knowledge\/training-requests/);
+});
+
+test("training authority is session-derived and response records are validated", () => {
+  assert.match(knowledgeRouteSource, /router\.use\(requireMerchantSession\)/);
+  assert.match(knowledgeRouteSource, /router\.use\("\/training-requests", trainingOperationsRouter\)/);
+  assert.match(trainingRouteSource, /router\.use\(requireMerchantSession\)/);
+  assert.match(trainingRouteSource, /getMerchantIdFromSession\(res\)/);
+  assert.doesNotMatch(pageSource, /merchantId/);
+  assert.match(pageSource, /cache: "no-store"/);
+  assert.match(pageSource, /headers: \{ Accept: "application\/json" \}/);
+  assert.match(pageSource, /result\.requests\.every\(isTrainingRequest\)/);
+  assert.match(pageSource, /Training authority returned an invalid response/);
+});
+
+test("training reads are race-safe and never represent authority failure as empty", () => {
+  assert.match(pageSource, /type LoadStatus = "loading" \| "ready" \| "unavailable"/);
+  assert.match(pageSource, /loadRequestIdRef = useRef\(0\)/);
+  assert.match(pageSource, /requestId !== loadRequestIdRef\.current/);
+  assert.match(pageSource, /setLoadStatus\("unavailable"\)/);
+  assert.match(pageSource, /loadStatus === "ready" && filtered\.length === 0/);
+  assert.match(pageSource, /staleData/);
+  assert.doesNotMatch(pageSource, /catch[^]*setRequests\(\[\]\)/);
+});
+
+test("training mutations fail closed and retain optimistic version protection", () => {
+  assert.match(pageSource, /loadStatus === "ready"[^]*savingId === null[^]*!loadingMore[^]*!searchPending/);
+  assert.match(pageSource, /if \(!mutationsAllowed\) return/);
+  assert.match(pageSource, /expectedVersion: request\.version/);
+  assert.match(pageSource, /result\.request[^]*isTrainingRequest/);
+  assert.match(pageSource, /apiError\.code === "VERSION_CONFLICT"/);
+  assert.match(pageSource, /isTrainingRequest\(apiError\.current\)/);
+  assert.match(trainingRouteSource, /readExpectedVersion\(req\)/);
+});
+
+test("training authority failure copy exists in Arabic, Sorani Kurdish, and English", () => {
+  for (const language of ["ar", "ku", "en"]) {
+    assert.match(copySource, new RegExp(`${language}: \\{`));
+  }
+  assert.match(copySource, /unavailableTitle/);
+  assert.match(copySource, /unavailableBody/);
+  assert.match(copySource, /staleBody/);
+  assert.match(copySource, /retry/);
+});
+
+
+test("training management search and pagination are server-authoritative", () => {
+  assert.match(pageSource, /const \[serverQuery, setServerQuery\]/);
+  assert.match(pageSource, /const \[nextCursor, setNextCursor\]/);
+  assert.match(pageSource, /const \[loadingMore, setLoadingMore\]/);
+  assert.match(pageSource, /params\.set\("q", serverQuery\)/);
+  assert.match(pageSource, /params\.set\("status", filter\)/);
+  assert.match(pageSource, /beforeUpdatedAt: nextCursor\.updatedAt/);
+  assert.match(pageSource, /beforeId: nextCursor\.id/);
+  assert.match(pageSource, /copy\.loadMore/);
+  assert.match(pageSource, /copy\.loadingMore/);
+  assert.doesNotMatch(pageSource, /requests\.filter\(/);
+
+  assert.match(trainingRouteSource, /listMerchantTrainingRequestsPage/);
+  assert.match(trainingRouteSource, /INVALID_TRAINING_REQUEST_PAGE/);
+  assert.match(trainingRouteSource, /nextCursor: page\.nextCursor/);
+  assert.match(trainingRouteSource, /req\.query\.q/);
+  assert.match(trainingRouteSource, /req\.query\.status/);
+});
+
+
+test("filtered training mutations reload the authoritative result set", () => {
+  assert.match(pageSource, /if \(serverQuery \|\| filter !== "all"\) \{/);
+  assert.match(pageSource, /const reloaded = await load\(\)/);
+  assert.match(pageSource, /if \(!reloaded\) setNotice\(copy\.loadFailed\)/);
+  assert.match(pageSource, /setNotice\(reloaded \? copy\.conflict : copy\.loadFailed\)/);
+  assert.match(pageSource, /else \{\s*replaceCurrent\(current\);/);
+});
+
+
+test("training search and status controls are locked while a mutation is active", () => {
+  assert.match(pageSource, /disabled={savingId !== null || loadingMore}/);
+  assert.match(pageSource, /value={filter}[^]*disabled={savingId !== null || loadingMore}/);
+});
+
+
+test("unfiltered training mutations keep latest-updated ordering coherent", () => {
+  assert.match(
+    pageSource,
+    /setRequests\(\(items\) => \[\s*current,\s*\.\.\.items\.filter\(\(item\) => item\.id !== current\.id\),\s*\]\)/,
+  );
+});
+
+
+test("training version conflicts preserve the merchant draft while loading current request state", () => {
+  assert.match(pageSource, /options: \{ preserveDraft\?: boolean \} = \{\}/);
+  assert.match(pageSource, /if \(!options\.preserveDraft\) \{/);
+  assert.match(pageSource, /replaceCurrent\(current, \{ preserveDraft: true \}\)/);
+  assert.match(
+    pageSource,
+    /else \{\s*replaceCurrent\(current\);\s*\}/,
+    "successful unfiltered mutations must still adopt the confirmed server reply",
+  );
+  assert.match(copySource, /current state was loaded and your draft was kept/);
+});
+
+
+test("approved training answers can be explicitly revoked with optimistic version protection", () => {
+  assert.match(pageSource, /action: "propose" \| "approve" \| "reject" \| "revoke"/);
+  assert.match(pageSource, /action === "revoke" && !window\.confirm\(copy\.confirmRevoke\)/);
+  assert.match(pageSource, /act\(request, "revoke"\)/);
+  assert.match(pageSource, /copy\.revokeApproval/);
+  assert.match(trainingRouteSource, /router\.post\("\/:id\/revoke"/);
+  assert.match(trainingRouteSource, /revokeMerchantTrainingApproval/);
+  assert.match(trainingRouteSource, /readExpectedVersion\(req\)/);
+  assert.match(copySource, /revokeApproval/);
+  assert.match(copySource, /confirmRevoke/);
+});

@@ -1,0 +1,11 @@
+# SEQ-306–308 current management HTTP preparation
+
+Continue remote00f5ea6a47dfc7f95090926ad11f3746a8b97eab/local equivalent876b468d. Userrequests multiple sequentialstages perbatch; plannedSEQ306–311 continuity/modernfixture/fences/HTTPexecution/triage/ledgercheckpoint. Audit only; application/originaltests/schema unchanged.
+
+SEQ306contracts:originalmanagementjourney stopped atoldphone23514 inSEQ278. Actualaggregateauth-securityrouter required for currentcookies/role/permission/password routes; syntheticE164data inownedcluster only. SEQ307new15named dependentHTTPcases:unauth/assistantpermission/approval/note/channel/suspension+session401/requestduplicate/ownerreview/spoofedowner/password/purge/anonymization and fouractualowner-sessionrevocation role/account/password/cookieboundaries. Originalapplicationroutes/hooks/SQL unchanged. Fullfixturedeletion permitted onlyowned syntheticmerchant/no realmedia/providerobjects.
+
+SEQ308localfourfixedrunnerrefusals4PASS/0FAIL/0SKIP andsyntaxPASS. Fixedone-file allowlist, fresh network-nonePG16/readonlysource/noports, attestation/28committedmigrations andtrap+alwayscleanup retained. Cleanuphookregistered beforeimports/seeding; stopsactualsupportcutover timer, closesownedHTTPconnections/server andpool. Executor destroysownedtemporarydatadir afterfixture exits. No actualpassword/sessiontokenvalues logged. NativeUIpreviouscasesnotrerun.
+
+RuntimeNOT_RUN atpreparation. 15businesssubcases plus1parentTAP mustbe separated toavoid16businesscase claim. Failureblocksdependentlatercases, notfabricatedPASS. HTTPserver127.0.0.1 inownednetworknamespace, no hostedDB/provider credentials; leastprivilegeRLS/provider/browser/fullApp gates remainoutside. WholepercentageNOT_YET_MEASURABLE/releaseBLOCKED.
+
+Initialrun38444329802/job115458651247 source3a9e23b26887276def1fe815c4d2c643f88939c9 verifiedidentity/28migrations but stoppedatowner session issuance AUTH_POSTGRES_OWNER_DEVICE_REQUIRED before15businesssubcases. Fileparent0P/1F isAUDIT_FIXTURE_AUTH_BLOCKED,notproductfailure. Earlyhook/temp/containercleanupSUCCESS. Newauditfixture uses currentregisterAdminDeviceAuthoritative/setAdminDeviceTrustAuthoritative for syntheticownedaccounts, issuesbound sessions andsendsmatchingx-fawri-device-id; no originaltest/guardpatch. ActualdeviceOTP/onboardingnotcertified. Corrected15caseexecutionpending.

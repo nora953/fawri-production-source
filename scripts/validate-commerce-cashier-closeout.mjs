@@ -1,0 +1,94 @@
+import { spawnSync } from 'node:child_process';
+
+const steps = [
+  {
+    label: 'Cashier sales, pricing, receipt printing and manual discount runtime tests',
+    command: 'pnpm',
+    args: [
+      'exec','tsx','--tsconfig','artifacts/fawri/tsconfig.json','--test',
+      'artifacts/fawri/tests/cashier-sales-report-runtime.test.ts',
+      'artifacts/fawri/tests/cashier-sales-report-corruption.test.ts',
+      'artifacts/fawri/tests/cashier-sales-report-manual-discount.test.ts',
+      'artifacts/fawri/tests/cashier-sale-pricing-duplicate-lines.test.ts',
+      'artifacts/fawri/tests/cashier-manual-discount-runtime.test.ts',
+      'artifacts/fawri/tests/cashier-discount-override-operation-binding.test.ts',
+      'artifacts/fawri/tests/cashier-sale-commit-single-flight.test.ts',
+      'artifacts/fawri/tests/cashier-operator-local-database-readiness.test.ts',
+      'artifacts/fawri/tests/cashier-receipt-printing.test.ts',
+      'artifacts/fawri/tests/cashier-history-reprint.test.ts',
+    ],
+  },
+  {
+    label: 'Merchant money and cashier refresh UX tests',
+    command: 'pnpm',
+    args: [
+      'exec','tsx','--tsconfig','artifacts/fawri/tsconfig.json','--test',
+      'artifacts/fawri/tests/merchant-money-ui.test.ts',
+      'artifacts/fawri/tests/cashier-refresh-ux-contract.test.mjs',
+      'artifacts/fawri/tests/catalog-measurement-alignment-contract.test.mjs',
+    ],
+  },
+  {
+    label: 'Cashier reporting cost, discount policy and manager override runtime tests',
+    command: 'pnpm',
+    args: [
+      'exec','tsx','--test',
+      'artifacts/api-server/tests/cashier-central-report-manual-discount.test.ts',
+      'artifacts/api-server/tests/cashier-reporting-cost-runtime.test.ts',
+      'artifacts/api-server/tests/cashier-discount-policy-runtime.test.ts',
+      'artifacts/api-server/tests/cashier-discount-override-runtime.test.ts',
+      'artifacts/api-server/tests/catalog-reporting-cost-postgres-guard.test.ts',
+      'artifacts/api-server/tests/postgres-catalog-reporting-cost-disclosure.test.ts',
+      'artifacts/api-server/tests/catalog-commerce-metadata.test.ts',
+    ],
+  },
+  {
+    label: 'Cashier reporting, sync, manager override and schema readiness contracts',
+    command: 'node',
+    args: [
+      '--test',
+      'artifacts/api-server/tests/cashier-reporting-cost-contract.test.mjs',
+      'artifacts/api-server/tests/cashier-sync-contract.test.mjs',
+      'artifacts/api-server/tests/cashier-compensation-sync-contract.test.mjs',
+      'artifacts/api-server/tests/cashier-order-separation-contract.test.mjs',
+      'artifacts/api-server/tests/cashier-http-route-reachability.test.mjs',
+      'artifacts/api-server/tests/cashier-discount-override-authority.test.mjs',
+      'artifacts/api-server/tests/cashier-discount-override-readiness.test.mjs',
+      'artifacts/api-server/tests/cashier-discount-override-live-readiness.test.mjs',
+      'artifacts/api-server/tests/cashier-discount-authority-activation.test.mjs',
+      'artifacts/api-server/tests/cashier-operator-logout-pin-contract.test.mjs',
+      'artifacts/fawri/tests/cashier-manager-override-checkout.test.mjs',
+      'artifacts/fawri/tests/cashier-manager-override-renewal.test.mjs',
+      'artifacts/fawri/tests/cashier-discount-authority-management-ui.test.mjs',
+      'artifacts/fawri/tests/cashier-fast-checkout-exact-cash.test.mjs',
+      'artifacts/fawri/tests/cashier-fast-checkout-keyboard.test.mjs',
+      'artifacts/fawri/tests/cashier-functional-freeze-contract.test.mjs',
+      'artifacts/fawri/tests/cashier-language-parity-contract.test.mjs',
+      'artifacts/fawri/tests/cashier-language-switcher-contract.test.mjs',
+    ],
+  },
+  {
+    label: 'Store currency validation gate',
+    command: 'node',
+    args: ['scripts/validate-store-currency.mjs'],
+  },
+  {
+    label: 'Catalog editor and production build gate',
+    command: 'node',
+    args: ['scripts/validate-catalog-editor.mjs'],
+  },
+];
+
+for (const step of steps) {
+  process.stdout.write(`\n=== ${step.label} ===\n`);
+  const result = spawnSync(step.command, step.args, {
+    cwd: process.cwd(), env: process.env, stdio: 'inherit', shell: false,
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    process.stderr.write(`\nFAILED: ${step.label}\n`);
+    process.exit(result.status || 1);
+  }
+}
+
+process.stdout.write('\nCOMMERCE_CASHIER_CLOSEOUT_VALIDATION_PASS\n');

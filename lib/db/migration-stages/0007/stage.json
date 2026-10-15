@@ -1,0 +1,9 @@
+{
+  "index": 7,
+  "name": "merchant_customer_payment_confirmation_authority",
+  "when": 1786488600000,
+  "preimage_files": [
+    "orders.ts",
+    "tenant-security.ts"
+  ]
+}

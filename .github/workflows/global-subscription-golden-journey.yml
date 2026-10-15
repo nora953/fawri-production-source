@@ -1,0 +1,82 @@
+name: Global subscription golden journey
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/routes/auth-security.ts"
+      - "artifacts/api-server/src/routes/subscription-entitlement-pg.ts"
+      - "artifacts/api-server/src/middleware/authSession.ts"
+      - "artifacts/api-server/src/services/authPostgresSessionAuthority.ts"
+      - "artifacts/api-server/src/services/postgresAdminAccountAuthority.ts"
+      - "artifacts/api-server/src/services/postgresMerchantAccountAuthority.ts"
+      - "artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts"
+      - "artifacts/api-server/tests/subscription-entitlement-postgres.integration.test.ts"
+      - "artifacts/api-server/tests/subscription-http-postgres-golden-journey.integration.test.ts"
+      - "lib/db/src/**"
+      - "lib/db/drizzle.config.ts"
+      - "lib/db/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/global-subscription-golden-journey.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: global-subscription-golden-journey-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  subscription-journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      # This is a runtime authority proof. Migration-history reproducibility is
+      # validated independently by the PostgreSQL schema foundation work.
+      - name: Initialize disposable PostgreSQL runtime schema
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Run PostgreSQL subscription authority regressions
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/subscription-entitlement-postgres.integration.test.ts
+          ./tests/subscription-http-postgres-golden-journey.integration.test.ts

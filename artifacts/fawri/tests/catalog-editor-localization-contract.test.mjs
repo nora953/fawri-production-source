@@ -1,0 +1,67 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const read = relative => readFileSync(new URL(relative, import.meta.url), 'utf8');
+const central = read('../src/lib/translations/features/catalog/catalogEditorCopy.ts');
+const page = read('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx');
+const details = read('../src/components/catalog/CatalogProductDetailsEditor.tsx');
+const itemType = read('../src/components/catalog/CatalogItemTypeEditor.tsx');
+const shell = read('../src/components/catalog/CatalogEditorShell.tsx');
+const images = read('../src/components/catalog/CatalogImageUploadEditor.tsx');
+
+test('catalog editor copy has one feature authority instead of local dictionaries', () => {
+  for (const source of [page, details, itemType, shell, images]) assert.match(source, /catalogEditorCopy/);
+  assert.doesNotMatch(page, /const COPY: Record<Lang/);
+  assert.doesNotMatch(details, /const copy = \{/);
+  assert.doesNotMatch(itemType, /const COPY: Record<Lang/);
+  assert.doesNotMatch(shell, /const copy = \{/);
+  assert.doesNotMatch(images, /const copy = \{/);
+});
+
+test('approved sale-price editor layout is language-neutral', () => {
+  assert.match(central, /basePrice: 'سعر البيع'/);
+  assert.match(central, /basePrice: 'Sale price'/);
+  assert.match(central, /basePrice: 'نرخی فرۆشتن'/);
+  assert.doesNotMatch(page, /copy\.basePriceHint/);
+  assert.match(page, /md:grid-cols-3/);
+});
+
+test('variant terminology is aligned in Arabic English and Sorani', () => {
+  assert.match(central, /combinations: 'أنواع المنتج'/);
+  assert.match(central, /combination: 'النوع'/);
+  assert.match(central, /actions: 'الإجراء'/);
+  assert.match(central, /combinations: 'Product variants'/);
+  assert.match(central, /combination: 'Variant'/);
+  assert.match(central, /actions: 'Action'/);
+  assert.match(central, /combinations: 'جۆرەکانی بەرهەم'/);
+  assert.match(central, /combination: 'جۆر'/);
+  assert.match(central, /actions: 'کردار'/);
+  assert.doesNotMatch(central, /'Product combinations'|'Generate \/ update combinations'|'Combination image — optional'|'Stock per combination'|'Generate combination SKUs'/);
+  assert.doesNotMatch(central, /تێکەڵ/);
+  assert.match(details, /labels\.combination/);
+  assert.match(details, /labels\.actions/);
+  assert.equal((details.match(/maxImages=\{10\}/g) || []).length, 2);
+  assert.doesNotMatch(details, /maxImages=\{5\}/);
+  assert.doesNotMatch(central, /التركيبة|تێکەڵ/);
+  assert.doesNotMatch(central, /actions: 'Delete'|actions: 'حذف'|actions: 'سڕینەوە'/);
+});
+
+test('all three languages use the same product-editor structure', () => {
+  assert.match(page, /<CatalogItemTypeEditor lang=\{lang\}/);
+  assert.match(page, /<CatalogProductDetailsEditor lang=\{lang\}/);
+  assert.ok((central.match(/\bar:\s*\{/g) || []).length >= 5);
+  assert.ok((central.match(/\bku:\s*\{/g) || []).length >= 5);
+  assert.ok((central.match(/\ben:\s*\{/g) || []).length >= 5);
+});
+
+test('catalog editor visual parity is structurally language-neutral', () => {
+  assert.match(shell, /dir=\{lang === 'en' \? 'ltr' : 'rtl'\}/);
+  assert.match(shell, /catalog-editor-body-grid[^\n]*grid-cols-1/);
+  assert.doesNotMatch(shell, /catalog-editor-body-grid[^\n]*grid-cols-12/);
+  assert.match(details, /w-full min-w-0 space-y-4/);
+  assert.match(itemType, /w-full min-w-0 space-y-3/);
+  assert.match(images, /w-full min-w-0/);
+  assert.doesNotMatch(page, /catalog-editor-fawri-field/);
+  assert.doesNotMatch(page, /lang === 'ar' \? 'مثال:/);
+});

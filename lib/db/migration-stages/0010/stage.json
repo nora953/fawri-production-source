@@ -1,0 +1,9 @@
+{
+  "index": 10,
+  "name": "provider_cost_authority",
+  "when": 1787356800000,
+  "preimage_files": [
+    "index.ts",
+    "provider-costs.ts"
+  ]
+}

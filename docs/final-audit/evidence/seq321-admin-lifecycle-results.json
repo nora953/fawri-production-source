@@ -1,0 +1,232 @@
+{
+  "source": "9824331fdded014a7bf98808a0dde035847dff47",
+  "run": 38486456958,
+  "job": 115601177970,
+  "status": "COMPLETE",
+  "businessCases": {
+    "passed": 14,
+    "failed": 0,
+    "notRun": 0
+  },
+  "rawTap": {
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "parentPassed": 1
+  },
+  "observations": {
+    "cases": 14,
+    "results": [
+      {
+        "name": "assistant cannot list or create administrators",
+        "status": "PASS",
+        "details": {
+          "list": 403,
+          "create": 403,
+          "noNewAccount": true
+        }
+      },
+      {
+        "name": "owner invalid assistant input creates no account",
+        "status": "PASS",
+        "details": {
+          "status": 400,
+          "noNewAccount": true
+        }
+      },
+      {
+        "name": "owner creates assistant with zero grants and mandatory password change",
+        "status": "PASS",
+        "details": {
+          "status": 201,
+          "role": "assistant_admin",
+          "grants": 0,
+          "mustChange": true
+        }
+      },
+      {
+        "name": "duplicate assistant phone is rejected without second account",
+        "status": "PASS",
+        "details": {
+          "status": 409,
+          "accountRows": 1
+        }
+      },
+      {
+        "name": "work monitor is owner-only and excludes foreign sessions and private material",
+        "status": "PASS",
+        "details": {
+          "anonymous": 401,
+          "assistant": 403,
+          "owner": 200,
+          "ownedSessions": 1,
+          "privateFieldsAbsent": true
+        }
+      },
+      {
+        "name": "HTTP trust refuses third device and preserves existing trusted devices",
+        "status": "PASS",
+        "details": {
+          "status": 409,
+          "trusted": 2,
+          "thirdPending": true
+        }
+      },
+      {
+        "name": "logout-all rejects assistant actor and owner target",
+        "status": "PASS",
+        "details": {
+          "assistant": 403,
+          "ownerTarget": 404,
+          "ownerActive": true
+        }
+      },
+      {
+        "name": "owner logout-all revokes both assistant devices and preserves other accounts",
+        "status": "PASS",
+        "details": {
+          "status": 200,
+          "revoked": 2,
+          "targetCookies": 401,
+          "otherAccounts": 200
+        }
+      },
+      {
+        "name": "wrong owner reset password leaves hash versions flag and session unchanged",
+        "status": "PASS",
+        "details": {
+          "status": 401,
+          "stateUnchanged": true,
+          "sessionActive": true
+        }
+      },
+      {
+        "name": "temporary password mismatch leaves account and session unchanged",
+        "status": "PASS",
+        "details": {
+          "status": 400,
+          "stateUnchanged": true
+        }
+      },
+      {
+        "name": "valid owner password reset changes SQL hash flag versions and revokes cookie",
+        "status": "PASS",
+        "details": {
+          "status": 200,
+          "passwordUpdated": true,
+          "mustChange": true,
+          "versionsIncremented": true,
+          "oldHTTP": 401
+        }
+      },
+      {
+        "name": "fresh temporary-password session exposes identity but blocks operational access",
+        "status": "PASS",
+        "details": {
+          "identity": 200,
+          "operations": 403,
+          "reason": "ADMIN_PASSWORD_CHANGE_REQUIRED"
+        }
+      },
+      {
+        "name": "forced change cannot reuse temporary password and preserves live session",
+        "status": "PASS",
+        "details": {
+          "status": 409,
+          "unchanged": true
+        }
+      },
+      {
+        "name": "forced password change clears flag revokes cookie and fresh session regains granted access",
+        "status": "PASS",
+        "details": {
+          "status": 200,
+          "flagCleared": true,
+          "oldHTTP": 401,
+          "freshOperations": 200,
+          "ownerStillAuthorized": true
+        }
+      }
+    ],
+    "noLegacyJSON": true
+  },
+  "proof": [
+    "AUDIT_ISOLATION_PROOF {\"suite\":\"seq318-admin-lifecycle-postgres.test.mts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"a5269fdf606e85a5df19a1431e1d06c8e95c161bd8d9ae17777541682fe41399\",\"networkNamespace\":\"net:[4026532273]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+    "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "DISPOSABLE_MIGRATIONS_PASS count=28",
+    "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "ADMIN_LIFECYCLE_SUITE_RESULT {\"file\":\"seq318-admin-lifecycle-postgres.test.mts\",\"runtime\":\"v24.21.0\",\"exit\":0,\"summaryComplete\":true,\"passed\":15,\"failed\":0,\"skipped\":0,\"cleanup\":true}"
+  ],
+  "ownedCleanup": "SUCCESS",
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+    },
+    {
+      "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+    },
+    {
+      "name": "Run corepack enable",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+    },
+    {
+      "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+    },
+    {
+      "name": "Install frozen dependencies without lifecycle scripts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+    },
+    {
+      "name": "Check audit execution syntax",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+    },
+    {
+      "name": "Execute actual admin-lifecycle creation, logout and password lifecycle assertions",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7
+    },
+    {
+      "name": "Destroy owned containers and anonymous volumes even on failure",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8
+    },
+    {
+      "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 15
+    },
+    {
+      "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 16
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 17
+    }
+  ],
+  "limits": "Real aggregate HTTP and SQL on synthetic accounts/devices; trust and sessions seeded through current services. No interactive login/OTP/provider/browser cookie/production RLS/full App proof; no concurrent creation or injected fault atomicity proof."
+}

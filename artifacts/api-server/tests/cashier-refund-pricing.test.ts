@@ -1,0 +1,62 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  CASHIER_REFUND_PRICING_VERSION,
+  cashierAdjustedLineRevenueById,
+  cashierNetReturnRefundMinor,
+} from "../src/services/cashierRefundPricing.ts";
+
+test("server refund pricing v2 derives exact discounted refunds", () => {
+  assert.equal(CASHIER_REFUND_PRICING_VERSION, 2);
+  const sale = {
+    manual_discount_minor: 3_000,
+    total_minor: 37_000,
+    lines: [
+      { line_id: "a", quantity: 1, line_total_minor: 30_000 },
+      { line_id: "b", quantity: 1, line_total_minor: 10_000 },
+    ],
+  };
+  assert.deepEqual(
+    [...cashierAdjustedLineRevenueById(sale).entries()],
+    [
+      ["a", 27_750],
+      ["b", 9_250],
+    ],
+  );
+  assert.equal(cashierNetReturnRefundMinor(sale, "a", 0, 0, 1), 27_750);
+  assert.equal(cashierNetReturnRefundMinor(sale, "b", 0, 0, 1), 9_250);
+});
+
+test("server refund pricing preserves exact totals across rounding-sensitive partial returns", () => {
+  const sale = {
+    manual_discount_minor: 1,
+    total_minor: 2_999,
+    lines: [{ line_id: "line", quantity: 3, line_total_minor: 3_000 }],
+  };
+  const first = cashierNetReturnRefundMinor(sale, "line", 0, 0, 1);
+  const second = cashierNetReturnRefundMinor(sale, "line", 1, first, 1);
+  const third = cashierNetReturnRefundMinor(
+    sale,
+    "line",
+    2,
+    first + second,
+    1,
+  );
+  const refunds = [first, second, third];
+  assert.deepEqual(refunds, [999, 1_000, 1_000]);
+  assert.equal(refunds.reduce((sum, item) => sum + item, 0), sale.total_minor);
+});
+
+
+test("server v2 pricing caps a new return after legacy refund evidence", () => {
+  const sale = {
+    manual_discount_minor: 3_000,
+    total_minor: 37_000,
+    lines: [{ line_id: "line", quantity: 2, line_total_minor: 40_000 }],
+  };
+  assert.equal(
+    cashierNetReturnRefundMinor(sale, "line", 1, 20_000, 1),
+    17_000,
+  );
+});

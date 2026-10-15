@@ -1,0 +1,217 @@
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > label,
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > div {
+  display: grid;
+  grid-template-rows: 1.25rem 3rem;
+  align-items: start;
+  row-gap: 0.5rem;
+}
+
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > label > :not([hidden]) ~ :not([hidden]),
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > div > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0 !important;
+}
+
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > label > span:first-child,
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > div > p:first-child {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  line-height: 1.25rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > label > input,
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > div > div.grid {
+  align-self: start;
+  min-height: 3rem;
+}
+
+/*
+ * Details dialog: a product without variants has exactly one inventory summary.
+ * Do not render that one record as a half-width/tall tile. The dialog is read-only,
+ * so the canonical presentation is one compact full-width horizontal summary row.
+ * This file is imported last by ProductsWorkspacePage, intentionally making this
+ * the final layout authority for the catalog details geometry.
+ */
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) {
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) > :only-child {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 3.75rem !important;
+  min-height: 3.75rem !important;
+  max-height: 3.75rem !important;
+  aspect-ratio: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  padding: 0.625rem 0.875rem !important;
+  margin: 0 !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) > :only-child > :first-child {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  align-items: center !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) > :only-child > :first-child > :first-child {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) > :only-child > :first-child > :last-child {
+  flex: 0 0 auto !important;
+}
+
+/*
+ * Product option builder.
+ * This section is the only editor card whose first child owns the multi-product
+ * switch. Scope all geometry through that structural marker so the rules cannot
+ * leak into shipping, base data, variant groups, or promotion forms.
+ */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) {
+  padding: 1rem 1.125rem !important;
+}
+
+/* Give the Product options heading a clear visual start and keep the explanatory
+ * copy on its own line instead of competing with the column labels below. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > div:nth-child(2) {
+  width: 100%;
+  padding: 0.125rem 0.25rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > div:nth-child(2) > p:first-child {
+  margin: 0 !important;
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+  font-weight: 800 !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > div:nth-child(2) > p:last-child {
+  max-width: none !important;
+  margin-top: 0.25rem !important;
+  line-height: 1.35rem !important;
+}
+
+/* The builder itself is one contained card. It always consumes the full editor
+ * width; the previous loose children made labels look detached from their inputs. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 {
+  box-sizing: border-box;
+  width: 100% !important;
+  margin-top: 0.875rem !important;
+  padding: 0.875rem !important;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  background: hsl(var(--background));
+}
+
+/* Desktop header and option rows share the exact same three-column template:
+ * option name | values | action. This prevents "اسم الخيارالقيم" from visually
+ * collapsing into one label and keeps the delete control on a stable edge. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > :first-child {
+  box-sizing: border-box;
+  width: 100% !important;
+  grid-template-columns: minmax(11rem, 0.9fr) minmax(0, 2fr) 3rem !important;
+  column-gap: 0.875rem !important;
+  padding: 0 0.75rem 0.35rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > :first-child > span {
+  min-width: 0;
+  line-height: 1.25rem;
+  text-align: start;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+  grid-template-columns: minmax(0, 1fr) 2.75rem !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  gap: 0.625rem 0.75rem !important;
+  padding: 0.75rem !important;
+  border-radius: 0.875rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:first-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  place-self: center;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  min-width: 2.75rem !important;
+  border: 1px solid rgb(239 68 68 / 0.18) !important;
+  background: rgb(239 68 68 / 0.05) !important;
+}
+
+/* Put secondary guidance and the two builder actions on their own footer row. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .flex.flex-col.gap-2 {
+  width: 100%;
+  margin-top: 0.875rem !important;
+  padding-top: 0.875rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .flex.flex-col.gap-2 > div:first-child {
+  min-width: 0;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .flex.flex-col.gap-2 > div:first-child > p {
+  line-height: 1.25rem;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .flex.flex-col.gap-2 > button {
+  min-height: 2.75rem !important;
+  padding-inline: 1rem !important;
+  font-weight: 800 !important;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > :first-child {
+    display: grid !important;
+  }
+
+  .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 {
+    grid-template-columns: minmax(11rem, 0.9fr) minmax(0, 2fr) 3rem !important;
+    grid-template-rows: auto !important;
+    column-gap: 0.875rem !important;
+  }
+
+  .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > button {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}

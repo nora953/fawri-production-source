@@ -1,0 +1,11 @@
+{
+  "index": 14,
+  "name": "cashier_operation_attribution",
+  "when": 1787710800000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "19dc84fec4dc93e6bc6644cdf559732fd1ae7b43f8cbe980f2bfdee384c72a75",
+  "preimage_files": [
+    "cashier-operation-attribution.ts",
+    "index.ts"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "command": "node --test --test-reporter=tap docs/final-audit/evidence/seq283-runner-fences.test.mjs",
+  "runtime": "v24.19.0",
+  "passed": 4,
+  "failed": 0,
+  "skipped": 0,
+  "scope": "unknown file and missing runner/attestation refusal, no SQL business coverage"
+}

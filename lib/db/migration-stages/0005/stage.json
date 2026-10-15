@@ -1,0 +1,10 @@
+{
+  "index": 5,
+  "name": "delivery_fee_per_area",
+  "when": 1786393740000,
+  "preimage_files": [
+    "merchant-settings.ts",
+    "tenant-security.ts",
+    "catalog.ts"
+  ]
+}

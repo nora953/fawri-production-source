@@ -1,0 +1,35 @@
+# SEQ-366–371 — full emergency management roles, recovery and integrity presentation
+
+Audit only. No application/original-test/schema repairs, merge, deployment, hosted DB or provider mutations. Six sequential stages:366 source/applicability;367 full-App fixtures;368 syntax/security/policy prerequisites;369 initial native CI;370 visual/failed-locator triage and six-case diagnostic;371 durable evidence, current CSV, seven ledgers and PR checkpoint.
+
+## Execution and reconciliation
+
+Original Vite main/App/router/providers/global auth transport/revalidator/SupportPreviewLauncher and emergency DOM wrapper retained. Five modes ×AR/EN/KU ×390/1280. Initial source5841f30129f22ec8736fa826e7995d433232f449, merge d0244311d2e7fd57c7f5421ee22227ee8e29ac54, run38500731533/job115646801848: **24 PASS /6 diagnostic FAIL**, Chrome154.0.8037.97. Install/build/upload/cleanup successful; test step failed. The six failed cases reached the owner page but their audit-card locator required combined utility classes absent from the rendered title. This is a harness locator failure, not a product failure or clearance. Original raw results preserved.
+
+| Named cases | Distinct cases | Observation and credit |
+| --- | --- | --- |
+| UIR-012 owner management |6 PASS |New default baseline. Exact localized h1/document lang/direction/global overflow; original wrapper replaces owner form title/submit copy and marks direct-start button; directory assistant visible; empty requests/basic controls. |
+| UIE-012-ASSISTANT |6 PASS |Extra, zero baseline credit. Original assistant form text/buttons, three comboboxes/textarea; owner authorization/directory sections absent. |
+| UIE-012-DENIED |6 PASS |Extra UI branch probe only. Synthetic overview can_request:false plus directory200 hides form/owner sections and displays denial. Actual PostgreSQL directory denies unauthorized caller403, so this paired fixture is not real server-denial acceptance. |
+| UIE-012-LOAD |6 PASS |Extra. Both management GETs initially503; generic error hides private server-error sentinel; actual retry click after fixture recovery makes GETs and restores assistant form. |
+| UID-012-CHAIN |6 initial locator FAIL, then6 diagnostic PASS |Distinct reproduction cases, zero baseline credit. PASS means false-chain/healthy-display mismatch reproduced; product integrity presentation is not accepted. |
+
+Initial234 GETs (210 status200/24 status503), actual device header on all;0 unexpected endpoints/mutations/runtime exceptions in accepted cases. Wrapper MutationObserver can cause repeated overview reads; request count is observed, not a performance/load acceptance. No passed24-case rerun credit. Six remaining diagnostics only executed in independent corrected script: source6d1b6dad246b70d925c8395af3795801f7ea8121, merge ba90bd695cf3d2037a7b7568a145fdb54aaae2f3, run38501087503/job115647945992: **6 diagnostic PASS /0 FAIL**,44GET/device headers/0 unexpected/mutations/runtime exceptions, build/upload/cleanup successful. Exact localized leaf-title locator replaces brittle class-pair matching in audit script only. Automatic additional workflows on cumulative PR changes are not credited or used to conceal initial failure.
+
+## EMERGENCY-AUDIT-STATUS-MISREPORT-001 — MEDIUM / OPEN
+
+**NATIVE_DOM_CONFIRMED + SOURCE_POSTGRES_CONTRACT; mobile screenshots corroborate.** Synthetic owner overview includes audit_chain.valid:false, event_count7. All six current-language/viewport DOM probes still read localized healthy message: Arabic “سلسلة التدقيق سليمة”, English “Audit chain is valid”, Sorani “زنجیرەی تۆمارەکە سالمە”. Actual AdminEmergencyAccessPage.tsx:658–663 unconditionally renders green shield/auditValid text, using only event_count. It never branches on valid. This can falsely reassure the owner about integrity status; no unauthorized access or ability to forge/corrupt records proved.
+
+PostgreSQL source supports this response shape: verifyEmergencyAuditChainPostgres:1266–1300 returns valid:false for sequence/hash/payload mismatch; getEmergencyOverviewPostgres:628–645 returns that boolean in owner overview; auth-emergency-postgres-routes.ts:102–113 serializes ordinary200 response. These are source observations, not an executed SQL-tamper/HTTP proof. Legacy JSON loadEmergencyDb verifies and denies invalid chain503 before its literal valid:true overview; no equivalent legacy bypass claimed. No repairs performed.
+
+Six DOM reproductions and3 mobile390 chain-card screenshots show the mismatch. Desktop1280 scroll-to-card capture does not expose the card clearly; desktop visual reachability is not certified. Source emergency-access-compact.css assistant-only :has(main > div.grid:last-child) also matches owner last grid; possible owner-card clipping remains **TRIAGE**, requiring geometry/scroll tests. This is not silently counted as full responsive/pixel acceptance or a proven new canonical clipping defect.
+
+## Evidence and coverage
+
+48 original PNGs reviewed and persisted: initial36 (30 initial states +6 recovery), subsequent12 (6 initial diagnostic +6 card-scroll captures). Each has dimensions/SHA256/Git blob manifest. Initial artifact11866021315 digestsha256:a621d9d8f187a4eaef4a06655ac2f98682e596c810639f0fe0ecebf02352f8da; corrected artifact11865394743 digestsha256:aef566a77475923cfd8e3bb87c79f1f5c7e03e93e8ae2939355793c92e346a1b. Results/manifests/current baseline/extra-state CSVs preserve both runs. Durable git originals do not depend on30-day artifact retention.
+
+Current222 default full-App baseline: **84 PASS_BOUNDED_FULL_APP /138 NOT_RUN**,37.84% execution of this baseline only. Prior78 accepted cases not rerun for credit. Cumulative extra negative/role/recovery cases36 (18 prior UIN +18 new UIE); diagnostic cases8 (2 prior CSS +6 current integrity), outside222. No duplicate credit.21 repository selectors remain unmapped;11 domains partial; whole-audit percentage NOT_YET_MEASURABLE; release BLOCKED. Existing findings stay open. Current tracked text/policy results in seq371-security-current.json; historical synthetic reachable-history gate remains open.
+
+Scope: fresh storage, synthetic HTTP identities/data only; no real cookie/backend grant/SQL/RLS/integrity-tamper/provider proof. Empty requests and initial high severity only. No activation/approval/reject/end/authorization mutation, populated request routing, critical toggle, expiry/races, long data, keyboard/focus/full accessibility/dark theme/physical device/production font/hosted routing acceptance. Google fonts blocked by same-origin CSP/DNS, fallback fonts used. Process groups, server and profiles cleaned. No final repair plan before comprehensive audit completion.
+
+[Initial CI](https://github.com/nora953/fawri-production-source/actions/runs/38500731533/job/115646801848); [diagnostic CI](https://github.com/nora953/fawri-production-source/actions/runs/38501087503/job/115647945992). **Next SEQ-372**: remaining early-warning/admin/merchant baseline and emergency owner-card visibility/directory403 contract gaps. Resume only unexecuted work or documented technical follow-up.

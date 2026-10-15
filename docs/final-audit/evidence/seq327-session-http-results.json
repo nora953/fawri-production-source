@@ -1,0 +1,235 @@
+{
+  "source": "204b23402a07c4ad209b4be1156344fee64d07f6",
+  "run": 38487200244,
+  "job": 115603591089,
+  "status": "COMPLETE",
+  "businessCases": {
+    "passed": 14,
+    "failed": 0,
+    "notRun": 0
+  },
+  "rawTap": {
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "parentPassed": 1
+  },
+  "observations": {
+    "cases": 14,
+    "results": [
+      {
+        "name": "owner third session on same device is refused without revoking first two",
+        "status": "PASS",
+        "details": {
+          "sameDeviceCap": 2,
+          "thirdRefused": true,
+          "firstTwoHTTP": 200
+        }
+      },
+      {
+        "name": "owner cap is per device and second trusted device may have its own session",
+        "status": "PASS",
+        "details": {
+          "activeAcrossTwoDevices": 3,
+          "secondDeviceHTTP": 200
+        }
+      },
+      {
+        "name": "assistant third session replaces oldest while retaining account cap two",
+        "status": "PASS",
+        "details": {
+          "oldestHTTP": 401,
+          "retainedHTTP": 200,
+          "cap": 2
+        }
+      },
+      {
+        "name": "self session list is account scoped and has no token hash or token",
+        "status": "PASS",
+        "details": {
+          "status": 200,
+          "ownedSessions": 2,
+          "tokenMaterialAbsent": true
+        }
+      },
+      {
+        "name": "self session delete cannot target owner account",
+        "status": "PASS",
+        "details": {
+          "status": 404,
+          "ownerActive": true
+        }
+      },
+      {
+        "name": "self session delete invalidates selected own cookie and keeps current cookie",
+        "status": "PASS",
+        "details": {
+          "delete": 200,
+          "selectedHTTP": 401,
+          "currentHTTP": 200
+        }
+      },
+      {
+        "name": "idle expiration is rejected and SQL expired marker persists",
+        "status": "PASS",
+        "details": {
+          "status": 401,
+          "sql": "expired"
+        }
+      },
+      {
+        "name": "absolute expiration is rejected with valid SQL deadline ordering",
+        "status": "PASS",
+        "details": {
+          "status": 401,
+          "sql": "expired",
+          "idleAlsoExpired": true
+        }
+      },
+      {
+        "name": "successful HTTP touch cannot extend idle deadline past absolute deadline",
+        "status": "PASS",
+        "details": {
+          "status": 200,
+          "idleBoundedToAbsolute": true
+        }
+      },
+      {
+        "name": "due HTTP session rotates to one replacement preserving absolute expiry",
+        "status": "PASS",
+        "details": {
+          "status": 200,
+          "oldHTTP": 401,
+          "newHTTP": 200,
+          "oneLinkedReplacement": true,
+          "absolutePreserved": true,
+          "cookieFlags": true
+        }
+      },
+      {
+        "name": "logout using original rotated cookie follows two replacements and revokes latest",
+        "status": "PASS",
+        "details": {
+          "logout": 200,
+          "lineageDepth": 2,
+          "latestHTTP": 401,
+          "ownerHTTP": 200
+        }
+      },
+      {
+        "name": "two concurrent due HTTP requests produce one rotation winner and one stale denial",
+        "status": "PASS",
+        "details": {
+          "statuses": [
+            200,
+            401
+          ],
+          "oneLinkedWinner": true,
+          "winnerHTTP": 200,
+          "loserEmittedCookieClear": false
+        }
+      },
+      {
+        "name": "self logout-all requires session and revokes own cookies without harming owner",
+        "status": "PASS",
+        "details": {
+          "anonymous": 401,
+          "logout": 200,
+          "ownHTTP": 401,
+          "activeOwn": 0,
+          "ownerHTTP": 200
+        }
+      },
+      {
+        "name": "tampered secret and merchant cookie kind cannot revoke rightful admin session",
+        "status": "PASS",
+        "details": {
+          "tampered": 401,
+          "wrongKind": 401,
+          "rightful": 200,
+          "sessionActive": true
+        }
+      }
+    ],
+    "noLegacyJSON": true
+  },
+  "proof": [
+    "AUDIT_ISOLATION_PROOF {\"suite\":\"seq324-session-http-postgres.test.mts\",\"nodeImage\":\"node:24-bookworm-slim\",\"containerId\":\"4c35f2419fe6a5598a75311363c9ae18290ba31455be66d9b4bf1d3f21f3e292\",\"networkNamespace\":\"net:[4026532272]\",\"networkMode\":\"none\",\"publishedPorts\":false,\"database\":\"fawri_ci\",\"role\":\"fawri_ci\",\"localPort\":5432}",
+    "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "DISPOSABLE_MIGRATIONS_PASS count=28",
+    "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "# DISPOSABLE_PG_IDENTITY_CHECK {\"database\":true,\"role\":true,\"loopback\":true,\"marker\":true}",
+    "SESSION_HTTP_SUITE_RESULT {\"file\":\"seq324-session-http-postgres.test.mts\",\"runtime\":\"v24.21.0\",\"exit\":0,\"summaryComplete\":true,\"passed\":15,\"failed\":0,\"skipped\":0,\"cleanup\":true}"
+  ],
+  "ownedCleanup": "SUCCESS",
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+    },
+    {
+      "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+    },
+    {
+      "name": "Run corepack enable",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+    },
+    {
+      "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+    },
+    {
+      "name": "Install frozen dependencies without lifecycle scripts",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+    },
+    {
+      "name": "Check audit execution syntax",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6
+    },
+    {
+      "name": "Execute actual session-http caps, expiry, rotation and self-session boundaries assertions",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7
+    },
+    {
+      "name": "Destroy owned containers and anonymous volumes even on failure",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8
+    },
+    {
+      "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 15
+    },
+    {
+      "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 16
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 17
+    }
+  ],
+  "limits": "Current session service issuance and real aggregate Authv2 HTTP on synthetic accounts/trusted devices. Expiry and rotation timestamps adjusted in disposable SQL under unchanged constraints. Absolute-expired case also idle-expired. One concurrent rotation trial, not browser response-order proof or general stress test. No interactive login/OTP/provider/production RLS/full App proof."
+}

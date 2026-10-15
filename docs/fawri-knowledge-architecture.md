@@ -1,0 +1,166 @@
+# Fawri knowledge architecture
+
+## Goal
+
+Fawri must be useful from the merchant's first customer conversation. It must not begin as an empty bot that only becomes useful after repeated merchant training.
+
+The knowledge system is layered. A lower layer may add safe general understanding, but it must never override a higher factual authority.
+
+## Authority order
+
+The decision order is:
+
+1. **Live operational authority**
+   - current price and promotion
+   - inventory and location availability
+   - order status and payment state
+   - delivery quote, payment methods, and other structured merchant settings
+
+2. **Merchant-specific policy and approved knowledge**
+   - merchant Saved Answers
+   - approved learned answers
+   - merchant-confirmed corrections
+
+3. **Merchant catalog product facts**
+   - the matched product's server-owned name, category, description, SKU, and variant-option values
+   - never current price, promotion, stock, physical weight/dimensions, order, delivery, payment, return/refund policy, or warranty through this grounding path
+
+4. **Fawri activity encyclopedia**
+   - curated knowledge selected from the merchant's registered activity type
+   - launch packs: fashion, electronics, food, perfumes, and jewelry
+
+5. **Fawri global encyclopedia**
+   - curated general commerce/product terminology useful across activities
+
+6. **Constrained AI composition**
+   - wording/composition only when grounded in trusted records supplied by the server
+
+7. **Clarification or human handoff**
+   - used when a safe answer cannot be established
+
+A lower layer is never allowed to contradict or replace a higher layer.
+
+## Merchant catalog product grounding
+
+Fawri may use a uniquely matched product from the authenticated merchant's server catalog as trusted product-specific grounding. This layer exists so a first-activation answer can combine real product facts with general Fawri knowledge instead of guessing a product specification from the encyclopedia.
+
+The catalog grounding payload is deliberately narrow: product name, category, description, SKU, and bounded variant-option values. It excludes current price, promotion state, stock quantity, structured physical weight/dimensions, order state, delivery, payment, and other operational facts. Warranty and return/refund policy are also excluded from catalog grounding authority; they continue to require their dedicated authority or explicit merchant-approved knowledge where the runtime permits it.
+
+A catalog product is eligible only when it belongs to the authenticated merchant, is not deleted, allows Fawri replies, has an allowed customer-visible status, and has a positive server version. Matching is bounded to the customer's referenced product name or identifiers. Ambiguous catalog matches produce no catalog grounding rather than exposing several products to the model.
+
+When a product match exists, Fawri does not allow a general encyclopedia article to answer directly first. Instead, the product facts and any relevant curated encyclopedia records are passed to constrained AI in separate trusted fields. The generated reply must cite only server-supplied grounding IDs and pass the same factual-token, language, risk, confidence, and auto-reply-policy checks used by the knowledge engine.
+
+## Product and variant conversation memory
+
+Fawri may carry a previously resolved catalog product or variant into the immediately related customer follow-up without asking for the same identity again. The memory source is not the customer's pronoun or an AI guess: it is the server-persisted `matched_record_id` from Fawri's own prior trusted reply.
+
+Stable conversation references use `catalog-product:<productId>` or `catalog-variant:<productId>:<variantId>`. They are loaded only from the authenticated conversation's bounded server history. Browser input cannot set these hints.
+
+The current customer message still wins. If it explicitly identifies another product or variant, that direct match replaces the prior memory. Ambiguous explicit references fail closed to clarification rather than falling back to an older product. Merchant intervention clears automatic catalog memory. A safe Fawri clarification may temporarily preserve the preceding catalog reference so a follow-up such as an area or variant choice can finish the same request.
+
+The same trusted reference is passed to both catalog grounding and structured operational fact resolution. This allows follow-ups such as "والسعر؟", "متوفر؟", or "والأسود منه؟" to stay attached to the correct product/variant while price, stock, measurements, and other operational facts continue to come only from their live authorities.
+
+## Exact variant grounding
+
+Fawri resolves a product variant from the merchant's canonical `product_variants` rows plus `catalog_variant_options`. Variant matching is not limited to the legacy color/size columns: customer-visible option values such as storage capacity, plug type, finish, or another configured option may identify the exact variant.
+
+The same exact variant identity is shared across catalog grounding and live operational fact resolution. When a variant is resolved, price/promotions, variant-level inventory (when enabled), physical measurements, conversation memory, SKU, and selected option values all stay attached to that variant ID.
+
+A partial option that matches more than one variant is ambiguous. Fawri must ask for the missing option instead of choosing one arbitrarily. Explicit current-turn option values outrank a remembered variant from the prior conversation.
+
+Physical measurements use variant facts whenever the selected variant provides them, regardless of whether inventory is tracked per variant. This keeps measurement authority separate from inventory-mode configuration.
+
+Generic product-price behavior remains unchanged for products that do not use variant-level inventory: if the customer does not identify a variant, Fawri may return the product-level price as before. When the customer explicitly identifies a variant, its price override/adjustment and variant-scoped promotions become authoritative for that answer.
+
+For stock, a product configured for variant-level inventory requires an unambiguous variant and routes the exact variant ID through location inventory. Product-level inventory remains product authority, while an explicitly selected variant may still be retained as conversation context.
+
+## Mixed authority composition
+
+A single customer message may combine a live product fact with a product-specific or general knowledge question, for example asking whether a charger supports a feature while also asking its current price and availability. Fawri must not answer only the operational part and silently drop the rest.
+
+For product price, stock, weight, and dimensions, the structured live fact resolver runs first. If the same message also shows a meaningful non-operational product question, the server may compose one reply from separately labeled trusted sources: live operational facts, merchant catalog product facts, and relevant Fawri-curated guidance.
+
+The authority boundaries remain unchanged. Live operational facts are highest authority and their canonical server answer must appear verbatim in the mixed reply. Catalog grounding may add only the explicit product/variant facts supplied by the server. Curated knowledge remains general guidance only.
+
+Automatic mixed composition is accepted only when every grounding ID was supplied by the server, the generated answer cites the live operational fact and at least one non-operational trusted source, factual tokens are supported, the complete live fact wording is preserved verbatim, language/risk/confidence gates pass, and generated auto-reply policy permits it.
+
+If Fawri detects an extra requested product/policy part but cannot safely ground it, it does not fall back to a partial price/stock reply. The conversation is handed to a human with reason code `MIXED_AUTHORITY_COMPOSITION_REQUIRES_HANDOFF`.
+
+A generated candidate containing live facts is never stored as reusable learned knowledge. This prevents current prices, availability, or measurements from becoming stale conversational memory. Successful mixed replies use `CONSTRAINED_AI_GROUNDED_OPERATIONAL_MIXED_REPLY`.
+
+## Fawri encyclopedia trust model
+
+Encyclopedia entries use the fawri_curated provenance. They are not merchant_approved and are not openai_generated.
+
+They are intended for stable, general knowledge such as terminology and product concepts, category-specific buying guidance, care/usage concepts that are not merchant-specific, and explanations such as RAM versus storage, EDT versus EDP, apparel sizing concepts, or jewelry karat terminology.
+
+They must not become an authority for current price or promotion, current stock, order/customer-private state, merchant delivery/payment settings, merchant-specific return/warranty policy, or a product-specific specification that is absent from the catalog.
+
+Operational questions are blocked from encyclopedia resolution before article retrieval.
+
+## Activity selection
+
+The merchant's server-side merchants.activity_type selects the activity pack. The current signup values map to:
+
+- ملابس -> fashion
+- إلكترونيات -> electronics
+- مواد غذائية -> food
+- عطور -> perfumes
+- مجوهرات -> jewelry
+
+Common Arabic, Sorani, and English aliases are also recognized. A custom activity gets the global encyclopedia until a dedicated pack is introduced.
+
+The customer/browser does not choose the activity authority.
+
+## Merchant override
+
+Merchant-specific knowledge always outranks the encyclopedia.
+
+If Fawri answers from the encyclopedia and the merchant later corrects that answer, the existing merchant-correction review flow may ask whether to adopt the correction. If approved, the correction becomes merchant-approved knowledge and therefore wins over the encyclopedia on future matching questions.
+
+This provides specialization without editing the platform encyclopedia itself.
+
+## Language
+
+Each bootstrap article has curated Arabic, Sorani Kurdish, and English wording. Fawri answers directly in the detected customer language for these entries; the article does not depend on live translation to be useful on first activation.
+
+The broader cross-language merchant-knowledge translation rules remain unchanged.
+
+## Style is separate from facts
+
+The system keeps **what Fawri knows** separate from **how Fawri says it**.
+
+A merchant response-style profile is stored in the merchant's server-owned metadata under a dedicated versioned namespace. The profile is managed from the knowledge workspace and currently controls:
+
+- tone: professional, friendly, warm, or direct;
+- reply length: concise, balanced, or detailed;
+- emoji preference: none, minimal, or expressive;
+- bounded free-text style instructions.
+
+The default profile is professional, balanced, and minimal, so a merchant can activate Fawri without configuring style first.
+
+The profile is presentation-only. It is loaded by the server knowledge-policy resolver and passed to constrained AI as trusted merchant presentation data, while a higher-priority system rule states that style can never add, remove, weaken, strengthen, or contradict facts or safety constraints. Sensitive values in free-text style instructions are redacted before provider transport.
+
+Merchant Saved Answers remain exact merchant-approved wording. Curated Fawri encyclopedia answers may now pass through a strictly grounded presentation rewrite when the merchant has chosen a non-default response style. The rewrite can change tone, length, emoji usage, and safe phrasing only; the factual source remains `fawri_curated`. If the provider fails, changes language, reports an unfaithful rewrite, or introduces unsupported factual tokens, Fawri returns the original curated answer instead.
+
+Live operational facts remain in their canonical server wording for now, and merchant Saved Answers remain exact approved wording. This keeps price, stock, orders, delivery, payment, and explicit merchant-approved statements out of an unnecessary presentation rewrite path.
+
+Style may never alter a number, price, date, quantity, SKU, URL, or policy condition; turn general encyclopedia guidance into a merchant promise; override live operational authority; or weaken safety or grounding rules.
+
+This separation allows the merchant to make Fawri sound like their own experienced employee without corrupting the factual knowledge base.
+
+## Bootstrap corpus and expansion
+
+The current version-controlled launch corpus contains **82 curated articles**: global commerce/product terminology plus expanded packs for fashion, electronics, food, perfumes, and jewelry. Coverage now includes identifiers, compatibility, packaging/assembly concepts, sizing and fabrics, display/storage/charging and connectivity concepts, food labels/storage/preparation concepts, fragrance terminology and use, and jewelry materials/sizing/care.
+
+This is a broad first-activation corpus, not a claim that every retail domain is complete. Custom activities receive global knowledge until a dedicated reviewed pack is introduced. The resolver contract is intentionally separate from the decision engine so the corpus can keep expanding or later move to a managed/vector-backed encyclopedia without changing authority order or reply contracts.
+
+Expansion remains incremental and reviewed. Every new article must have a stable ID, a clear global/activity scope, multiple question phrasings, curated Arabic/Sorani/English answers, and content that does not depend on merchant-specific or live operational state.
+
+## Curated grounding for broader questions
+
+A direct encyclopedia answer remains the preferred path when one article clearly matches the customer's question. If no single article is confident enough, the resolver may return a small bounded set of relevant curated articles from the merchant's global/activity corpus for constrained AI composition.
+
+This context is separate from merchant-approved knowledge. The provider receives `approved_knowledge` and `fawri_curated_knowledge` in separate trusted server fields so provenance is never blurred. Curated grounding can support general explanations that combine several stable concepts, but it cannot establish merchant policy, current price or stock, order/customer state, current delivery/payment facts, or product-specific claims absent from the catalog.
+
+Automatic synthesis is allowed only when every cited grounding ID was actually supplied by the server, factual tokens in the generated answer are supported by the cited records, language/risk/confidence checks pass, and the merchant auto-reply policy permits it. Unknown or unsupported grounding fails closed to the existing review/handoff path.

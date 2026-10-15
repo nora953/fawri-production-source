@@ -1,0 +1,25 @@
+{
+  "baseline": "0e0c457638f1016bda1c22b246688bc7898a94fd",
+  "runs": [
+    {
+      "label": "fixture",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "docs/final-audit/evidence/seq241-entrypoint-fences.test.mjs"
+      ],
+      "exit": 0
+    },
+    {
+      "label": "security",
+      "command": [
+        "node",
+        "scripts/security-final-audit.mjs",
+        "repository"
+      ],
+      "exit": 0
+    }
+  ],
+  "scope": "audit fixture literal representation only; no scanner rule or application change;26refusal rerun not added to14newcase totals"
+}

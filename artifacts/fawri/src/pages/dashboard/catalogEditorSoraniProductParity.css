@@ -1,0 +1,18 @@
+/*
+ * Sorani Kurdish product-editor parity.
+ *
+ * Arabic is the locked golden reference. These rules target Sorani only and
+ * must not alter Arabic or English geometry/wording.
+ */
+
+/* The compact single-option table action column contains deletion only.
+ * Match the approved Arabic "حذف" heading with the natural Sorani equivalent.
+ * Grouped/multi-option tables keep their generic action heading. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child::after {
+  content: "سڕینەوە";
+  font-size: 0.75rem;
+}

@@ -1,0 +1,41 @@
+name: Cashier dashboard surface regression
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/fawri/src/App.tsx"
+      - "artifacts/fawri/src/components/layout/Sidebar.tsx"
+      - "artifacts/fawri/src/components/layout/BottomNav.tsx"
+      - "artifacts/fawri/src/cashierMain.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CashierManagementPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CashierCentralReportsPage.tsx"
+      - "artifacts/api-server/src/routes/cashier-sync-operations.ts"
+      - "artifacts/api-server/src/routes/cashier-staff-operations.ts"
+      - "artifacts/api-server/src/routes/cashier-operator-commerce.ts"
+      - "lib/db/src/schema/index.ts"
+      - "lib/db/src/schema/cashier-staff.ts"
+      - "lib/db/src/schema/cashier-operation-attribution.ts"
+      - "artifacts/fawri/tests/cashier-dashboard-surface-regression.test.mjs"
+      - ".github/workflows/cashier-dashboard-surface-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cashier-dashboard-surface-regression-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  invariant:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Assert canonical cashier dashboard surfaces
+        run: node --test artifacts/fawri/tests/cashier-dashboard-surface-regression.test.mjs

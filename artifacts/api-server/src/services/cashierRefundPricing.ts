@@ -1,0 +1,138 @@
+export const CASHIER_REFUND_PRICING_VERSION = 2 as const;
+
+export type CashierRefundPricingSaleLine = {
+  line_id: string;
+  quantity: number;
+  line_total_minor: number;
+};
+
+export type CashierRefundPricingSale = {
+  lines: CashierRefundPricingSaleLine[];
+  manual_discount_minor?: number;
+  total_minor: number;
+};
+
+function safeNonNegativeInteger(value: unknown, field: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new Error(`CASHIER_REFUND_PRICING_INVALID_${field.toUpperCase()}`);
+  }
+  return parsed;
+}
+
+function safePositiveInteger(value: unknown, field: string): number {
+  const parsed = safeNonNegativeInteger(value, field);
+  if (parsed === 0) {
+    throw new Error(`CASHIER_REFUND_PRICING_INVALID_${field.toUpperCase()}`);
+  }
+  return parsed;
+}
+
+function safeAdd(left: number, right: number, field: string): number {
+  const result = left + right;
+  if (!Number.isSafeInteger(result) || result < 0) {
+    throw new Error(`CASHIER_REFUND_PRICING_OVERFLOW_${field.toUpperCase()}`);
+  }
+  return result;
+}
+
+export function cashierAdjustedLineRevenueById(
+  sale: CashierRefundPricingSale,
+): Map<string, number> {
+  let preDiscountTotal = 0;
+  for (const line of sale.lines) {
+    preDiscountTotal = safeAdd(
+      preDiscountTotal,
+      safeNonNegativeInteger(line.line_total_minor, 'line_total'),
+      'pre_discount_total',
+    );
+  }
+  const manualDiscount = safeNonNegativeInteger(
+    sale.manual_discount_minor ?? 0,
+    'manual_discount',
+  );
+  const saleTotal = safeNonNegativeInteger(sale.total_minor, 'sale_total');
+  if (
+    manualDiscount > preDiscountTotal ||
+    preDiscountTotal - manualDiscount !== saleTotal
+  ) {
+    throw new Error('CASHIER_REFUND_PRICING_INVALID_SALE_TOTAL');
+  }
+
+  let remainingBase = BigInt(preDiscountTotal);
+  let remainingDiscount = BigInt(manualDiscount);
+  const adjusted = new Map<string, number>();
+
+  sale.lines.forEach((line, index) => {
+    const lineTotal = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    const lineBase = BigInt(lineTotal);
+    const allocatedDiscount =
+      remainingDiscount > 0n
+        ? index === sale.lines.length - 1
+          ? remainingDiscount
+          : remainingBase > 0n
+            ? (remainingDiscount * lineBase) / remainingBase
+            : 0n
+        : 0n;
+    if (allocatedDiscount < 0n || allocatedDiscount > lineBase) {
+      throw new Error('CASHIER_REFUND_PRICING_INVALID_SALE_TOTAL');
+    }
+    const adjustedRevenue = Number(lineBase - allocatedDiscount);
+    if (!Number.isSafeInteger(adjustedRevenue) || adjustedRevenue < 0) {
+      throw new Error('CASHIER_REFUND_PRICING_OVERFLOW_LINE_REVENUE');
+    }
+    adjusted.set(line.line_id, adjustedRevenue);
+    remainingBase -= lineBase;
+    remainingDiscount -= allocatedDiscount;
+  });
+
+  if (remainingBase !== 0n || remainingDiscount !== 0n) {
+    throw new Error('CASHIER_REFUND_PRICING_INVALID_SALE_TOTAL');
+  }
+  return adjusted;
+}
+
+/**
+ * Divide remaining post-discount line revenue across remaining units. This
+ * keeps repeated partial returns exact and caps v2 refunds after legacy
+ * evidence that may already have refunded more than the new allocation.
+ */
+export function cashierNetReturnRefundMinor(
+  sale: CashierRefundPricingSale,
+  originalLineId: string,
+  alreadyReturned: number,
+  alreadyRefundedMinor: number,
+  quantity: number,
+): number {
+  const line = sale.lines.find(item => item.line_id === originalLineId);
+  if (!line) throw new Error('CASHIER_REFUND_PRICING_LINE_NOT_FOUND');
+  const soldQuantity = safePositiveInteger(line.quantity, 'sold_quantity');
+  const returnedBefore = safeNonNegativeInteger(alreadyReturned, 'returned_before');
+  const refundedBefore = safeNonNegativeInteger(
+    alreadyRefundedMinor,
+    'refunded_before',
+  );
+  const returnQuantity = safePositiveInteger(quantity, 'return_quantity');
+  const returnedAfter = safeAdd(returnedBefore, returnQuantity, 'returned_after');
+  if (returnedBefore > soldQuantity || returnedAfter > soldQuantity) {
+    throw new Error('CASHIER_REFUND_PRICING_RETURN_EXCEEDS_SALE');
+  }
+
+  const adjustedRevenue = cashierAdjustedLineRevenueById(sale).get(originalLineId);
+  if (adjustedRevenue === undefined) {
+    throw new Error('CASHIER_REFUND_PRICING_LINE_NOT_FOUND');
+  }
+  const remainingRevenue = Math.max(0, adjustedRevenue - refundedBefore);
+  const remainingUnits = soldQuantity - returnedBefore;
+  if (returnQuantity > remainingUnits) {
+    throw new Error('CASHIER_REFUND_PRICING_RETURN_EXCEEDS_SALE');
+  }
+  const refund = Number(
+    (BigInt(remainingRevenue) * BigInt(returnQuantity)) /
+      BigInt(remainingUnits),
+  );
+  if (!Number.isSafeInteger(refund) || refund < 0) {
+    throw new Error('CASHIER_REFUND_PRICING_OVERFLOW_REFUND');
+  }
+  return refund;
+}

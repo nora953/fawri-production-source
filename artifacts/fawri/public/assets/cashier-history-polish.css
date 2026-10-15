@@ -1,0 +1,147 @@
+/* Cashier history readability polish.
+   Presentation-only: keep sale/return runtime authority untouched. */
+
+/* Mixed Arabic/Kurdish labels plus ASCII sale references should read as one
+   stable phrase without the operation id jumping around in RTL. */
+html[data-cashier-view='history'] main > div > div.grid > section:first-child button > div:first-child strong,
+html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div:first-child > div:first-child > p {
+  unicode-bidi: plaintext;
+  isolation: isolate;
+}
+
+/* Dates are evidence, not decorative metadata. Keep them compact but readable
+   on the same visual tier across the sale list and selected-sale header. */
+html[data-cashier-view='history'] main > div > div.grid > section:first-child button > div:first-child span.text-slate-500,
+html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div:first-child > div:last-child span.text-slate-500 {
+  color: #64748b !important;
+  font-size: 0.75rem !important;
+  font-weight: 500;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Desktop history uses one bounded scroll surface only: the potentially long
+   sales list. Selected-sale details stay fully expanded with no nested scroll.
+   Scope the page-height rules below the ready operator wrapper so they never
+   stretch the operator gate/loading card before permission validation ends. */
+@media (min-width: 1024px) {
+  html[data-cashier-view='history'] #cashier-root > div.relative > main {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+  }
+
+  html[data-cashier-view='history'] #cashier-root > div.relative > main > div {
+    height: auto !important;
+    min-height: 100vh !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid {
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+    align-items: start;
+  }
+
+  /* Sales card: keep its header fixed and let only the sale rows scroll. */
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child {
+    display: flex !important;
+    min-height: 0 !important;
+    height: clamp(22rem, calc(100dvh - 10rem), 44rem);
+    max-height: 44rem;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2 {
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+  }
+
+  /* Chromium/Opera: use the WebKit scrollbar path exclusively. Do not set the
+     standardized scrollbar-width/color here because modern Chromium can give
+     those properties precedence and resurrect the native Windows stepper
+     arrows. */
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar {
+    width: 7px;
+    background: transparent;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #cbd5e1;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button,
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button:single-button,
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button:vertical:start:decrement,
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button:vertical:end:increment {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: transparent !important;
+  }
+
+  /* Firefox does not implement ::-webkit-scrollbar. Give only that fallback
+     the standardized thin scrollbar so Chromium/Opera stays on the custom
+     arrow-free path above. */
+  @supports not selector(::-webkit-scrollbar) {
+    html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2 {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+  }
+
+  /* Detail card: no internal scrolling. Tighten vertical rhythm slightly so a
+     normal one- or two-line sale fits comfortably without looking oversized. */
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child {
+    min-height: 0 !important;
+    align-self: start;
+    overflow: visible !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div:first-child {
+    padding-block: 0.75rem !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div.grid {
+    gap: 0.5rem !important;
+    padding-block: 0.75rem !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div.p-4 {
+    padding-block: 0.75rem !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div.p-4 > div.mb-3 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div.p-4 .rounded-xl.border.border-slate-200.p-3 {
+    padding-block: 0.625rem !important;
+  }
+}
+
+/* Keep return quantity numerals visually centred between the touch targets. */
+html[data-cashier-view='history'] section div[dir='ltr'] > span.min-w-8 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}

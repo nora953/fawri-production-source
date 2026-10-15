@@ -1,0 +1,818 @@
+{
+  "browser": "Chrome/154.0.8037.97",
+  "source": "ba90bd695cf3d2037a7b7568a145fdb54aaae2f3",
+  "results": [
+    {
+      "name": "UID-012-CHAIN-ar-390",
+      "status": "PASS",
+      "details": {
+        "mode": "invalid-chain",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "الوصول الطارئ للقراءة فقط",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UID-012-CHAIN-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UID-012-CHAIN-ar-390.png",
+        "recovered": null,
+        "diagnostic": {
+          "auditCardText": "سلامة سجل التدقيقسلسلة التدقيق سليمةعدد الأحداث: ٧",
+          "responseValid": false,
+          "displayedHealthy": true,
+          "capture": "UID-012-CHAIN-ar-390-chain.png",
+          "classification": "DEFECT_REPRODUCED; diagnostic PASS is not application acceptance"
+        }
+      },
+      "capture": "UID-012-CHAIN-ar-390.png"
+    },
+    {
+      "name": "UID-012-CHAIN-ar-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "invalid-chain",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "الوصول الطارئ للقراءة فقط",
+        "lang": "ar",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UID-012-CHAIN-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ar-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UID-012-CHAIN-ar-1280.png",
+        "recovered": null,
+        "diagnostic": {
+          "auditCardText": "سلامة سجل التدقيقسلسلة التدقيق سليمةعدد الأحداث: ٧",
+          "responseValid": false,
+          "displayedHealthy": true,
+          "capture": "UID-012-CHAIN-ar-1280-chain.png",
+          "classification": "DEFECT_REPRODUCED; diagnostic PASS is not application acceptance"
+        }
+      },
+      "capture": "UID-012-CHAIN-ar-1280.png"
+    },
+    {
+      "name": "UID-012-CHAIN-en-390",
+      "status": "PASS",
+      "details": {
+        "mode": "invalid-chain",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "Emergency read-only access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UID-012-CHAIN-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UID-012-CHAIN-en-390.png",
+        "recovered": null,
+        "diagnostic": {
+          "auditCardText": "Audit integrityAudit chain is validEvents: 7",
+          "responseValid": false,
+          "displayedHealthy": true,
+          "capture": "UID-012-CHAIN-en-390-chain.png",
+          "classification": "DEFECT_REPRODUCED; diagnostic PASS is not application acceptance"
+        }
+      },
+      "capture": "UID-012-CHAIN-en-390.png"
+    },
+    {
+      "name": "UID-012-CHAIN-en-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "invalid-chain",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "Emergency read-only access",
+        "lang": "en",
+        "dir": "ltr",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UID-012-CHAIN-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-en-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UID-012-CHAIN-en-1280.png",
+        "recovered": null,
+        "diagnostic": {
+          "auditCardText": "Audit integrityAudit chain is validEvents: 7",
+          "responseValid": false,
+          "displayedHealthy": true,
+          "capture": "UID-012-CHAIN-en-1280-chain.png",
+          "classification": "DEFECT_REPRODUCED; diagnostic PASS is not application acceptance"
+        }
+      },
+      "capture": "UID-012-CHAIN-en-1280.png"
+    },
+    {
+      "name": "UID-012-CHAIN-ku-390",
+      "status": "PASS",
+      "details": {
+        "mode": "invalid-chain",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 390,
+        "scroll": 390,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UID-012-CHAIN-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-390",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-390",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-390",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UID-012-CHAIN-ku-390.png",
+        "recovered": null,
+        "diagnostic": {
+          "auditCardText": "سەلامەتی تۆماری وردبینیزنجیرەی تۆمارەکە سالمەژمارەی ڕووداوەکان: ٧",
+          "responseValid": false,
+          "displayedHealthy": true,
+          "capture": "UID-012-CHAIN-ku-390-chain.png",
+          "classification": "DEFECT_REPRODUCED; diagnostic PASS is not application acceptance"
+        }
+      },
+      "capture": "UID-012-CHAIN-ku-390.png"
+    },
+    {
+      "name": "UID-012-CHAIN-ku-1280",
+      "status": "PASS",
+      "details": {
+        "mode": "invalid-chain",
+        "baselineCredit": 0,
+        "path": "/admin/emergency-access",
+        "title": "دەستگەیشتنی فریاکەوتنی تەنها خوێندنەوە",
+        "lang": "ku",
+        "dir": "rtl",
+        "width": 1280,
+        "scroll": 1280,
+        "controls": {
+          "comboboxes": 3,
+          "textareas": 1,
+          "ownerMarker": "true"
+        },
+        "calls": [
+          {
+            "id": "UID-012-CHAIN-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-1280",
+            "path": "/api/auth/admin/me",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-1280",
+            "path": "/api/auth/admin/support/tickets",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          },
+          {
+            "id": "UID-012-CHAIN-ku-1280",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "method": "GET",
+            "status": 200,
+            "deviceHeaderPresent": true
+          }
+        ],
+        "uncaughtExceptions": 0,
+        "capture": "UID-012-CHAIN-ku-1280.png",
+        "recovered": null,
+        "diagnostic": {
+          "auditCardText": "سەلامەتی تۆماری وردبینیزنجیرەی تۆمارەکە سالمەژمارەی ڕووداوەکان: ٧",
+          "responseValid": false,
+          "displayedHealthy": true,
+          "capture": "UID-012-CHAIN-ku-1280-chain.png",
+          "classification": "DEFECT_REPRODUCED; diagnostic PASS is not application acceptance"
+        }
+      },
+      "capture": "UID-012-CHAIN-ku-1280.png"
+    }
+  ],
+  "unexpectedRequests": [],
+  "apiCalls": [
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ar-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-en-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-390",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/me",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/support/tickets",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/directory",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    },
+    {
+      "id": "UID-012-CHAIN-ku-1280",
+      "path": "/api/auth/admin/emergency-read-access/overview",
+      "method": "GET",
+      "status": 200,
+      "deviceHeaderPresent": true
+    }
+  ],
+  "limits": "Actual Vite main/App/router/providers/global auth revalidator/launcher/emergency wrapper and management page; synthetic same-origin HTTP only. Six invalid-chain reproduction diagnostics only; prior 24 accepted cases are not rerun; diagnostic PASS is not product acceptance. No real cookie/backend SQL/grants/chain corruption or server authority certified. No writes/actions beyond GET-only retry; empty requests, high default severity; fallback fonts, no provider or physical-device/accessibility proof."
+}

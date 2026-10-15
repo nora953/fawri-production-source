@@ -1,0 +1,46 @@
+name: Pre-release performance smoke gate
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/**"
+      - "artifacts/api-server/tests/pre-release-http-performance.test.mjs"
+      - ".github/workflows/pre-release-performance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pre-release-performance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline-http-load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NODE_ENV: test
+      LOG_LEVEL: silent
+      DATABASE_URL: postgresql://fawri_test:fawri_test@127.0.0.1:1/fawri_test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Prove bounded baseline HTTP performance
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/pre-release-http-performance.test.mjs

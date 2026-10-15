@@ -1,0 +1,11 @@
+/*
+ * Sorani service-only alignment parity.
+ *
+ * Arabic and English are locked references. The service-location control has
+ * an extra wrapper because it can reveal multiple location choices, so its
+ * select needs the same label-to-control offset as the other three service
+ * fields. Product views are intentionally not targeted.
+ */
+html[lang="ku"] .products-workspace-polish [data-catalog-service-details="true"] > .grid > div:nth-child(4) > select {
+  margin-top: 0.5rem !important;
+}

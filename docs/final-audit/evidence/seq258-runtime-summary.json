@@ -1,0 +1,18 @@
+{
+  "baseline": "b97df88c43e99940a9d50638a9334422da00982d",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "docs/final-audit/evidence/seq259-261-media-races.test.mjs"
+  ],
+  "exit": 1,
+  "counts": {
+    "tests": 5,
+    "pass": 4,
+    "fail": 1,
+    "skipped": 0
+  },
+  "environment": "clean test/noDATABASE_URL; actual ownedFS and unchanged functions; injected SQL/storage",
+  "note": "Final verification replaces preliminary run, not added to counts."
+}

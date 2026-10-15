@@ -1,0 +1,51 @@
+TAP version 13
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# DISPOSABLE_PG_IDENTITY_CHECK {"database":true,"role":true,"loopback":true,"marker":true}
+# CASHIER_HISTORY_OBSERVATION {"scenario":"zero-stock-rebuild","orders":1,"items":1,"mutations":1,"immutableRowsPreserved":true,"locationLevelUnchanged":true}
+# Subtest: zero-stock licensed sale immutable history survives subsequent catalog rename
+ok 1 - zero-stock licensed sale immutable history survives subsequent catalog rename
+  ---
+  duration_ms: 113.944445
+  type: 'test'
+  ...
+# CASHIER_HISTORY_OBSERVATION {"scenario":"zero-stock-archive-guard","denied":true,"graphUnchanged":true,"immutableRowsPreserved":true,"locationLevelUnchanged":true}
+# Subtest: zero-quantity location row blocks archive without changing catalog or sale history
+ok 2 - zero-quantity location row blocks archive without changing catalog or sale history
+  ---
+  duration_ms: 35.548066
+  type: 'test'
+  ...
+# Subtest: zero-quantity location row blocks disabling inventory tracking atomically
+ok 3 - zero-quantity location row blocks disabling inventory tracking atomically
+  ---
+  duration_ms: 25.18478
+  type: 'test'
+  ...
+# Subtest: owned missing-level fault permits archive but retains sale/replay and rejects unsafe return
+not ok 4 - owned missing-level fault permits archive but retains sale/replay and rejects unsafe return
+  ---
+  duration_ms: 11.921673
+  type: 'test'
+  location: '/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq290-cashier-history-postgres.test.mts:42:4907'
+  failureType: 'testCodeFailure'
+  error: 'cashier device did not hold a valid station credential at operation time'
+  code: 'CASHIER_OPERATION_DEVICE_AUTHORITY_REQUIRED'
+  name: 'CashierSyncError'
+  stack: |-
+    <anonymous> (/home/runner/work/fawri-production-source/fawri-production-source/artifacts/api-server/src/services/postgresCashierSyncAuthority.ts:1267:13)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withOperationalTransaction (/home/runner/work/fawri-production-source/fawri-production-source/artifacts/api-server/src/services/operationalPostgresAuthority.ts:75:20)
+    async seed (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq290-cashier-history-postgres.test.mts:284:16)
+    async TestContext.<anonymous> (/home/runner/work/fawri-production-source/fawri-production-source/docs/final-audit/evidence/seq290-cashier-history-postgres.test.mts:413:10)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 3
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 926.27493

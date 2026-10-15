@@ -1,0 +1,21 @@
+{
+  "scope": "current tracked final checkpoint, not reachable history",
+  "repository": {
+    "status": "pass",
+    "scanned_files": 1836,
+    "skipped_files": 5,
+    "findings": []
+  },
+  "policy": {
+    "status": "pass",
+    "scanned_workflows": 78,
+    "violations": []
+  },
+  "history": "existing reachable synthetic fixture gate remains OPEN; not rerun",
+  "localRunnerRefusals": {
+    "runtime": "v24.19.0",
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0
+  }
+}

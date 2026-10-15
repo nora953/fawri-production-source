@@ -1,0 +1,38 @@
+{
+  "baseline": "17e521408b9fdc5621c18839f88d5f22a2c5992b",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "docs/final-audit/evidence/seq241-entrypoint-fences.test.mjs"
+      ],
+      "exit": 0,
+      "counts": {
+        "tests": 26,
+        "pass": 26,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "docs/final-audit/evidence/seq243-245-meta-recovery.test.mjs"
+      ],
+      "exit": 0,
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "environment": "Node24.19.0,NODE_ENVtest,DATABASE_URLabsent except inert hosted-shaped refusal scenario",
+  "limits": "26entrypoint preflight controls are not SQL executions; Meta tests use inert financial/state adapters.",
+  "preparation_note": "Initial fence harness looked only at stderr; Node test reporter forwards pre-import diagnostics to stdout. Corrected to aggregate output; child file failure is not an original test assertion. Initial26 harness failures excluded from final counts."
+}

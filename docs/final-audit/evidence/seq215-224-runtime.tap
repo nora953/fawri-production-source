@@ -1,0 +1,168 @@
+TAP version 13
+# (node:13) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: SEQ218 observed: confirmed missing-order event is acknowledged 200/ignored without a durable write
+ok 1 - SEQ218 observed: confirmed missing-order event is acknowledged 200/ignored without a durable write
+  ---
+  duration_ms: 56.902279
+  type: 'test'
+  ...
+# Subtest: SEQ218 acceptance: confirmed orphan must be retryable or durably recorded
+not ok 2 - SEQ218 acceptance: confirmed orphan must be retryable or durably recorded
+  ---
+  duration_ms: 5.829469
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-audit/docs/final-audit/evidence/seq215-224-runtime.test.mjs:71:1'
+  failureType: 'testCodeFailure'
+  error: 'existing BILLING-WEBHOOK-ORPHAN-015: 200 with no durable write'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-audit/docs/final-audit/evidence/seq215-224-runtime.test.mjs:74:10)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ219 generic SQL exception yields sanitized 503 and no entitlement application
+ok 3 - SEQ219 generic SQL exception yields sanitized 503 and no entitlement application
+  ---
+  duration_ms: 3.31256
+  type: 'test'
+  ...
+# Subtest: SEQ219 missing signature is rejected before service invocation
+ok 4 - SEQ219 missing signature is rejected before service invocation
+  ---
+  duration_ms: 1.380898
+  type: 'test'
+  ...
+# Subtest: SEQ219 invalid signature cannot reach SQL or gateway status query
+ok 5 - SEQ219 invalid signature cannot reach SQL or gateway status query
+  ---
+  duration_ms: 2.760843
+  type: 'test'
+  ...
+# Subtest: SEQ219 provider disabled fails closed before SQL
+ok 6 - SEQ219 provider disabled fails closed before SQL
+  ---
+  duration_ms: 3.361844
+  type: 'test'
+  ...
+# Subtest: SEQ219 ambiguous SaaS order mappings fail closed with 503
+ok 7 - SEQ219 ambiguous SaaS order mappings fail closed with 503
+  ---
+  duration_ms: 2.730268
+  type: 'test'
+  ...
+# Subtest: SEQ220 non-silent monitor failure marks visible error; successful retry clears it
+ok 8 - SEQ220 non-silent monitor failure marks visible error; successful retry clears it
+  ---
+  duration_ms: 3.334262
+  type: 'test'
+  ...
+# Subtest: SEQ220 observed: silent 401 retains monitor data with no error
+ok 9 - SEQ220 observed: silent 401 retains monitor data with no error
+  ---
+  duration_ms: 1.645053
+  type: 'test'
+  ...
+# Subtest: SEQ220 acceptance: silent 401 must invalidate or mark prior monitor data stale
+not ok 10 - SEQ220 acceptance: silent 401 must invalidate or mark prior monitor data stale
+  ---
+  duration_ms: 1.427087
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-audit/docs/final-audit/evidence/seq215-224-runtime.test.mjs:125:3'
+  failureType: 'testCodeFailure'
+  error: 'existing WORK-MONITOR-STALE-001: prior data retained unmarked'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-audit/docs/final-audit/evidence/seq215-224-runtime.test.mjs:127:12)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ220 observed: silent 403 retains monitor data with no error
+ok 11 - SEQ220 observed: silent 403 retains monitor data with no error
+  ---
+  duration_ms: 1.941227
+  type: 'test'
+  ...
+# Subtest: SEQ220 acceptance: silent 403 must invalidate or mark prior monitor data stale
+not ok 12 - SEQ220 acceptance: silent 403 must invalidate or mark prior monitor data stale
+  ---
+  duration_ms: 0.79496
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-audit/docs/final-audit/evidence/seq215-224-runtime.test.mjs:125:3'
+  failureType: 'testCodeFailure'
+  error: 'existing WORK-MONITOR-STALE-001: prior data retained unmarked'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-audit/docs/final-audit/evidence/seq215-224-runtime.test.mjs:127:12)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ220 observed: silent 503 retains monitor data with no error
+ok 13 - SEQ220 observed: silent 503 retains monitor data with no error
+  ---
+  duration_ms: 0.88837
+  type: 'test'
+  ...
+# Subtest: SEQ220 acceptance: silent 503 must invalidate or mark prior monitor data stale
+not ok 14 - SEQ220 acceptance: silent 503 must invalidate or mark prior monitor data stale
+  ---
+  duration_ms: 0.898115
+  type: 'test'
+  location: '/workspace/scratch/b438bad918f4/fawri-audit/docs/final-audit/evidence/seq215-224-runtime.test.mjs:125:3'
+  failureType: 'testCodeFailure'
+  error: 'existing WORK-MONITOR-STALE-001: prior data retained unmarked'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/b438bad918f4/fawri-audit/docs/final-audit/evidence/seq215-224-runtime.test.mjs:127:12)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: SEQ223 shutdown stops scheduling and disposes runtime once across two signals
+ok 15 - SEQ223 shutdown stops scheduling and disposes runtime once across two signals
+  ---
+  duration_ms: 2.774033
+  type: 'test'
+  ...
+# Subtest: SEQ223 HTTP close error produces nonzero shutdown
+ok 16 - SEQ223 HTTP close error produces nonzero shutdown
+  ---
+  duration_ms: 1.915348
+  type: 'test'
+  ...
+# Subtest: SEQ223 forced timeout produces nonzero shutdown
+ok 17 - SEQ223 forced timeout produces nonzero shutdown
+  ---
+  duration_ms: 0.926407
+  type: 'test'
+  ...
+# Subtest: SEQ223 observed: HTTP close callback can exit without a worker completion callback
+ok 18 - SEQ223 observed: HTTP close callback can exit without a worker completion callback
+  ---
+  duration_ms: 0.761831
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 14
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 196.25056

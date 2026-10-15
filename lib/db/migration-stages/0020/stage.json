@@ -1,0 +1,7 @@
+{
+  "index": 20,
+  "name": "cashier_operation_location_backfill",
+  "when": 1790035200000,
+  "mode": "manual_sql",
+  "preimage_files": []
+}

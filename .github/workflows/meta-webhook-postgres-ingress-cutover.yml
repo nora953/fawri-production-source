@@ -1,0 +1,30 @@
+name: Meta webhook PostgreSQL ingress cutover
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/middleware/merchantWebhookAccess.ts"
+      - "artifacts/api-server/src/services/metaPageDirectory.ts"
+      - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
+      - "artifacts/api-server/src/services/postgresMetaChannelAuthority.ts"
+      - "artifacts/api-server/tests/meta-webhook-postgres-ingress-cutover.integration.test.ts"
+      - "lib/db/**"
+      - ".github/workflows/meta-webhook-postgres-ingress-cutover.yml"
+      - "scripts/ci-run-redacted.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: meta-webhook-postgres-ingress-cutover-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-meta-webhook-postgres-ingress-cutover:
+    uses: ./.github/workflows/audit-isolated-postgres.yml
+    with:
+      suite: meta

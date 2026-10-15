@@ -1,0 +1,294 @@
+# Fawri Release Blockers
+
+Status: Post-main-integration release blocker register.
+
+This file separates repository-owned blockers from external launch blockers. A blocker is not closed by intention; it is closed only when the current repository/checkpoint contains evidence.
+
+## Blocker severity model
+
+- `CRITICAL`: prevents a production release.
+- `HIGH`: prevents declaring the affected subsystem production-ready.
+- `MEDIUM`: must be resolved or explicitly accepted before general launch.
+- `EXTERNAL`: depends on provider credentials, permissions, infrastructure, approval, or deployment action outside source control.
+
+## Current repository checkpoint
+
+- Current frozen Fawri Core main SHA: `85cf9dceab0493d8475e1023a3efc42943db453a`
+- Final Core freeze PR: #464
+- Final Core freeze PR head: `e27e62f6d98d08ef25449d778a16fab96628190e`
+- Core freeze audit: `docs/fawri-core-freeze-audit-2026-10-07.md`
+- Core freeze severity: BLOCKER 0 / HIGH 0 / MEDIUM 0
+- Final freeze PR head passed all eight required branch-protection checks before squash merge.
+- Original validated release-candidate tree: `92290d3f97e3ece81525a0b92d668d129e9df5ed`
+- Repository-hardening checkpoint remains preserved at `checkpoint/repository-hardening-complete-2026-09-24`.
+
+## Open repository-owned blockers
+
+None at the frozen Fawri Core checkpoint.
+
+The final Core audit closed the repository-owned architecture, database/RLS, merchant and cashier journey, authentication/security, localization/translation, UX/accessibility, performance, failure/recovery, observability, privacy, production-configuration, external-boundary, clean-deployment, rollback-policy, and final-regression phases.
+
+Full-stack staging browser smoke validation and controlled production smoke validation remain launch/deployment evidence below; they are not unresolved Core defects.
+
+## External production blockers
+
+### Full-stack staging and manual browser validation
+
+Severity: EXTERNAL / MEDIUM
+
+Status: OPEN
+
+The frozen Core has repository-level UX/accessibility and performance regression evidence. Before public launch, the deployed staging stack must still be validated in real browsers against the selected hosting/runtime configuration, including:
+
+- desktop/tablet/mobile responsive behavior,
+- Arabic/Sorani Kurdish/English visual parity and RTL/LTR presentation,
+- forms plus loading/empty/error states,
+- keyboard/focus behavior in the deployed build,
+- production-like network/runtime behavior and final performance review,
+- end-to-end browser smoke flows against the staging API/database.
+
+A staging-only defect discovered here reopens Core only if it proves a genuine source-code regression.
+
+### Production PostgreSQL deployment
+
+Severity: EXTERNAL / CRITICAL
+
+Status: OPEN
+
+Repository migration generation, reproducibility, disposable PostgreSQL application, rollback, and reconciliation gates pass. Production still requires:
+
+- actual production PostgreSQL target,
+- controlled application of the committed migration chain,
+- schema verification after deployment,
+- deployment ownership and rollback procedure.
+
+Do not reinterpret disposable CI migration success as proof that a production database has been migrated.
+
+### AWS KMS production activation
+
+Severity: EXTERNAL / CRITICAL for Meta credential-vault activation
+
+Status: OPEN
+
+AWS KMS is the selected production architecture and repository wiring is complete. Production still requires real external resources:
+
+- production AWS account and region,
+- one symmetric customer-managed KMS key,
+- runtime workload IAM role/identity,
+- KMS key policy permitting the documented decrypt operation,
+- rotation/operator permissions,
+- initial wrapped production DEK manifest,
+- deployment secret-store configuration,
+- rotation and historical-DEK retirement policy.
+
+Production startup is fail-closed unless `FAWRI_META_CREDENTIAL_PROVIDER=aws-kms` and the required KMS configuration is present.
+
+### Meta production OAuth / webhook / live-send activation
+
+Severity: EXTERNAL / CRITICAL for live Meta channel release
+
+Status: OPEN
+
+The repository cutover and operational gates pass, but live production use still requires:
+
+- approved/configured Meta application,
+- real `META_APP_ID`, `META_APP_SECRET`, `META_CONFIG_ID`, and `META_VERIFY_TOKEN`,
+- exact production HTTPS `META_REDIRECT_URI`,
+- production webhook/page subscription configuration,
+- controlled OAuth validation against a test merchant/page,
+- KMS credential-provider readiness,
+- explicit live reply transport activation.
+
+Do not commit credentials or enable uncontrolled live sends from CI.
+
+### Knowledge embedding production activation
+
+Severity: EXTERNAL
+
+Status: OPEN
+
+The OpenAI embedding provider is wired and repository readiness gates pass. Production still requires:
+
+- `FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER=openai`,
+- deployment-secret `OPENAI_API_KEY`,
+- production readiness verification from the deployed workload.
+
+### SaaS subscription billing provider
+
+Severity: EXTERNAL / CRITICAL for automated paid subscription purchase/renewal
+
+Status: OPEN
+
+Current implemented checkout providers do not provide a supported automated production SaaS billing path:
+
+- `superqi_sandbox` is test-only and production-forbidden,
+- `fastpay` remains `merchant_setup_required` until official onboarding, credentials, and supported integration documentation are available.
+
+Do not invent provider endpoints, signatures, callbacks, or settlement behavior.
+
+### Production backup / restore
+
+Severity: EXTERNAL / CRITICAL
+
+Status: OPEN
+
+Disposable backup/restore drills pass in repository CI, but production backup infrastructure is not established by source control.
+
+Before launch, production must prove:
+
+- PostgreSQL backup mechanism,
+- encryption/access control and retention,
+- object/media backup where applicable,
+- isolated restore target,
+- successful integrity-checked restore drill,
+- RPO/RTO ownership and alerting.
+
+### Durable support-image storage
+
+Severity: EXTERNAL / CRITICAL
+
+Status: OPEN
+
+The production release gate reports `SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`.
+
+Current support-image storage is filesystem-backed under the Fawri data directory. Production launch therefore requires one of the following to be proven before traffic:
+
+- the selected hosting runtime provides a durable persistent filesystem/volume with the required backup and restore guarantees, or
+- a separately reviewed durable object-storage/provider integration is implemented and validated.
+
+The proof must also cover:
+
+- survival across application restarts/redeployments,
+- tenant-private access behavior,
+- multi-instance/runtime consistency where more than one application instance can serve requests,
+- retention/deletion behavior,
+- backup/restore coverage for stored support images.
+
+An ephemeral container filesystem is not acceptable production evidence.
+
+### Production secrets and release gate
+
+Severity: EXTERNAL / CRITICAL
+
+Status: OPEN
+
+The production deployment environment still must provide all required secrets and start in explicit production deployment mode only after the relevant provider readiness is proven. Production startup is fail-closed; the legacy release-gate marker may remain for compatibility but is not the safety authority.
+
+Required launch-time evidence includes:
+
+- production values derived from the safe `.env.production.example` contract,
+- strong Auth security secret,
+- strong observability bearer token,
+- required PostgreSQL authority selections,
+- Meta/KMS/OpenAI configuration,
+- job worker policy,
+- `FAWRI_SERVICE_VERSION`,
+- `NODE_ENV=production` and `FAWRI_DEPLOYMENT_MODE=production`,
+- provider-neutral Core authorities and workers configured as required,
+- successful production startup and `/ops/readiness` before routing customer traffic.
+
+## Closed repository-owned blockers
+
+The following previously open HIGH blockers are closed by the integrated release-candidate evidence on PR #256.
+
+### Merchant Dashboard Global Hardening
+
+Severity: HIGH
+
+Status: CLOSED
+
+Closure evidence includes the global merchant journey, merchant journey, settings authority, dashboard/channel coherence, PostgreSQL authority, build/typecheck, and final integration gates.
+
+### Catalog / Variants / Inventory Finalization
+
+Severity: HIGH
+
+Status: CLOSED for repository release-candidate scope
+
+Closure evidence includes Catalog UI cutover, physical-media lifecycle, Catalog validation, location inventory authority, product/variant continuity, and full repository build/typecheck.
+
+### Auth / Admin / Subscription Final Hardening
+
+Severity: HIGH
+
+Status: CLOSED
+
+Closure evidence includes merchant, admin, subscription and global merchant journey gates plus session/authority cutover validation.
+
+### Remaining Operational Authority Hardening
+
+Severity: HIGH
+
+Status: CLOSED
+
+Orders, Settings, Channels, Conversations, Knowledge, Cashier, routing, and related PostgreSQL authority paths are included in the integrated checkpoint and final validation suite.
+
+### Final Database / Security / Operations Validation
+
+Severity: HIGH
+
+Status: CLOSED for repository-owned validation
+
+Closure evidence includes:
+
+- canonical Drizzle generation,
+- committed migration reproducibility,
+- disposable PostgreSQL migration application,
+- rollback/reconciliation,
+- storage audit,
+- repository security,
+- dependency audit/review,
+- lockfile integrity,
+- readiness/observability gates.
+
+Production backup infrastructure and production database deployment remain external blockers above.
+
+### Global Merchant Journey / End-to-End Gate
+
+Severity: HIGH
+
+Status: CLOSED
+
+Final integration validated merchant/global merchant/admin/subscription journeys along with cashier, online-order, routing, settings, and authority cutoffs.
+
+### Multi-location routing and online fulfillment
+
+Severity: HIGH
+
+Status: CLOSED
+
+Validated repository behavior includes service-area resolution, canonical location routing, online-order PostgreSQL authority, atomic commit, cancellation compensation, multi-location bot stock routing, and stale-inventory fail-closed behavior.
+
+### AWS KMS repository activation hardening
+
+Severity: HIGH
+
+Status: CLOSED for code-owned wiring
+
+Validated repository behavior includes explicit production provider selection, KMS ARN/region validation, sanitized AWS/network failures, KMS preflight tests, and readiness/build validation.
+
+Real KMS resources and IAM remain external blockers.
+
+### POS Global Hardening
+
+Severity: HIGH
+
+Status: CLOSED
+
+Historical POS closure remains preserved, including pairing, staff permissions, PIN/session behavior, offline inventory authority, outbox/ACK/reconciliation, sale/return/void lifecycle, report permissions, and connectivity authority.
+
+## Release rule
+
+Fawri may be described as **repository production-release code ready** at the integrated checkpoint.
+
+It must not be described as **production launch ready** until:
+
+1. all EXTERNAL / CRITICAL blockers above are completed,
+2. final manual UI/UX and full-stack staging QA pass,
+3. production PostgreSQL migration/verification completes,
+4. production provider/secrets readiness is proven,
+5. production backup/restore proof exists,
+6. durable support-image storage proof exists,
+7. explicit production mode starts successfully with fail-closed readiness checks,
+8. `/ops/readiness` is ready before traffic,
+9. controlled production smoke tests and queue/DLQ/alert observation pass.

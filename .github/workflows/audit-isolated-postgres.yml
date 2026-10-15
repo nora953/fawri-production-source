@@ -1,0 +1,78 @@
+name: Isolated PostgreSQL engineering audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/*disposable-postgres*'
+      - 'scripts/run-isolated-postgres-audit.sh'
+      - 'scripts/lib/disposable-postgres*.mjs'
+      - 'lib/db/scripts/audit-disposable-migrate.mjs'
+      - 'artifacts/api-server/tests/helpers/**'
+      - 'artifacts/api-server/tests/*postgres*.integration.test.*'
+      - 'artifacts/api-server/tests/saas-billing-*.integration.test.*'
+      - 'artifacts/api-server/tests/cashier-*.integration.test.*'
+      - 'artifacts/api-server/src/services/postgresCashierOperatorReportAuthority.ts'
+      - 'artifacts/api-server/src/services/saasBillingAuthority.ts'
+      - 'artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts'
+      - '.github/workflows/audit-isolated-postgres.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      suite:
+        type: string
+        default: priority
+permissions:
+  contents: read
+concurrency:
+  group: isolated-pg-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.suite || 'priority' }}
+  cancel-in-progress: true
+jobs:
+  disposable-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        id: install
+        run: node scripts/ci-run-redacted.mjs --label audit-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Prove fail-closed guard and teardown with no database
+        run: node --test scripts/disposable-postgres-test-guard.test.mjs
+      - name: Prove PostgreSQL response frame filtering without a database
+        run: node --test scripts/tests/postgres-commit-response-proxy.test.mjs
+      - name: Build API for child-process journeys
+        id: build
+        run: node scripts/ci-run-redacted.mjs --label audit-api-build -- pnpm --filter @workspace/api-server run build
+      - name: Run migrations and selected tests with no external network
+        env:
+          AUDIT_SUITE: ${{ inputs.suite || 'priority' }}
+        run: bash scripts/run-isolated-postgres-audit.sh "$AUDIT_SUITE"
+      - name: Cashier licensing, compensation and historical operator proofs
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
+        run: bash scripts/run-isolated-postgres-audit.sh cashier
+      - name: Billing, refunds and duplicate-event proofs with fake providers
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
+        run: bash scripts/run-isolated-postgres-audit.sh billing
+      - name: Restricted-role tenant, knowledge and retention proofs
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
+        run: bash scripts/run-isolated-postgres-audit.sh tenant
+      - name: Meta bot and AI lifecycle with injected providers only
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
+        run: bash scripts/run-isolated-postgres-audit.sh meta-bot
+      - name: Full committed schema and restricted tenant restore drill
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
+        run: bash scripts/run-isolated-postgres-audit.sh full-restore
+      - name: Prove Node22 staging runtime compatibility on an offline HTTP journey
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
+        run: bash scripts/run-isolated-postgres-audit.sh node22-http
+      - name: Ensure owned containers and anonymous volumes are destroyed
+        if: always()
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi

@@ -1,0 +1,56 @@
+name: Residual original integration isolated audit
+on:
+  pull_request:
+    paths:
+      - 'docs/final-audit/evidence/seq275-*'
+      - '.github/workflows/audit-residual-original-integration.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: residual-original-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  original-residual-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label residual-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build original API for legacy child-process assertions
+        run: node scripts/ci-run-redacted.mjs --label residual-build -- pnpm --filter @workspace/api-server run build
+      - name: Prove guards without database and check audit runner syntax
+        run: |
+          node --test scripts/disposable-postgres-test-guard.test.mjs
+          node --check docs/final-audit/evidence/seq275-execute-original-integration.mjs
+          bash -n docs/final-audit/evidence/seq275-run-owned-original-integration.sh
+      - name: Run each original file on its own committed-schema network-none cluster
+        shell: bash
+        run: |
+          mapfile -t audit_files < <(node --input-type=module -e "import fs from 'node:fs';import path from 'node:path';const m=JSON.parse(fs.readFileSync('docs/final-audit/evidence/seq242-isolated-execution-manifest.json','utf8'));for(const f of m.files)console.log(path.basename(f.file));")
+          test "${#audit_files[@]}" = 13
+          audit_failure=0
+          for audit_file in "${audit_files[@]}"; do
+            echo "RESIDUAL_ORIGINAL_FILE_BEGIN $audit_file"
+            if bash docs/final-audit/evidence/seq275-run-owned-original-integration.sh "$audit_file"; then
+              echo "RESIDUAL_ORIGINAL_FILE_END $audit_file exit=0"
+            else
+              audit_failure=1
+              echo "RESIDUAL_ORIGINAL_FILE_END $audit_file exit=1"
+            fi
+          done
+          exit "$audit_failure"
+      - name: Destroy owned containers and anonymous volumes even on failure
+        if: always()
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi

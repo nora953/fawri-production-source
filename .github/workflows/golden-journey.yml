@@ -1,0 +1,43 @@
+name: Global Merchant PostgreSQL HTTP Journey
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/app.ts"
+      - "artifacts/api-server/src/middleware/authSession.ts"
+      - "artifacts/api-server/src/middleware/authCutoverCompatibility.ts"
+      - "artifacts/api-server/src/middleware/cashierStaffSession.ts"
+      - "artifacts/api-server/src/routes/auth*.ts"
+      - "artifacts/api-server/src/routes/catalog-operations.ts"
+      - "artifacts/api-server/src/routes/cashier-*.ts"
+      - "artifacts/api-server/src/routes/merchant-settings.ts"
+      - "artifacts/api-server/src/routes/order-operations.ts"
+      - "artifacts/api-server/src/services/authPostgresSessionAuthority.ts"
+      - "artifacts/api-server/src/services/cashier*.ts"
+      - "artifacts/api-server/src/services/operationalPostgresAuthority.ts"
+      - "artifacts/api-server/src/services/postgresCatalogAuthority.ts"
+      - "artifacts/api-server/src/services/postgresCashier*.ts"
+      - "artifacts/api-server/src/services/postgresMerchant*.ts"
+      - "artifacts/api-server/src/services/postgresOrder*.ts"
+      - "artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts"
+      - "artifacts/api-server/tests/global-merchant-postgres-http-journey.integration.test.ts"
+      - "lib/db/**"
+      - ".github/workflows/golden-journey.yml"
+      - "scripts/ci-run-redacted.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: global-merchant-postgres-http-journey-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  global-merchant-postgres-http-journey:
+    uses: ./.github/workflows/audit-isolated-postgres.yml
+    with:
+      suite: http
