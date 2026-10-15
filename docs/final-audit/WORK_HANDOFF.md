@@ -1,3 +1,19 @@
+# Latest verified P0 continuation — 2026-10-15
+
+Draft #550 / branch `fix/p0-provider-receipt-order-discovery-20261015` accepted source **`e61dd80af7fbd87273b2e0f6be6baabc7d13ac89`**: **334 PASS / 0 FAIL / 0 SKIP**,55unique files/57invocations including parent/repeated-runtime counts; **25/25 observed workflows SUCCESS**. Isolated [38780417675](https://github.com/nora953/fawri-production-source/actions/runs/38780417675),job116578852357,mergecheckout458778f. RLS28PASS; Meta bounded resolver10PASS includes two new restricted-owner/FORCE-RLS cases. Full restore34migrations/95tables/45policies/9functions; matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Exact report: `P0_REACHABLE_ROLE_AND_META_OWNER_ACCEPTANCE_20261015.md`; machine evidence: `evidence/P0_META_CAPABILITY_OWNER_RESULTS_20261015.json`.
+
+Prior repair source0c7c03abe889d65ba11317f66dbfa6c24ffe81c6 rejected session-user SET-reachable SUPERUSER/BYPASSRLS roles. Unit baseline8PASS/1FAIL → repaired9PASS/0FAIL, real direct/indirect/SET-FALSE control PASS; prior isolated38779466489/job116575601617 was332PASS/0FAIL/0SKIP and25workflowsSUCCESS. Counts overlap; do not add them together. New Meta SQL tests prove bounded owner behavior only, not alternate-owner full HTTP/worker or hosted acceptance.
+
+No main merge/deployment/hosted migrations/grants/secrets or real payments. Hosted owner/EXECUTE/provider/storage/deployment acceptance remains unverified; retention/privileged deletion and arbitrary missing-order ownership policy remain open. Provider mapping mutation after discovery/admission remains NOT RUN as previously documented. Historical P0 **85%/15% is unmeasured**, not updated from test counts; release **NO-GO**.
+
+## Exact resumption
+
+This is a docs-only checkpoint following accepted sourcee61dd80a; no tests currently running. No local changes remain after publishing this checkpoint. Inspect actual remote HEAD/CI before new work. Next independent isolated unit: test restricted function-owner/FORCE-RLS behavior of the confirmed-provider order resolver0033, preserving admitted receipt identity and no grants on denial; do not rerun the blocked provider-mapping race task. Meta owner test pattern is in meta-page-directory-restricted-rls.integration.test.mjs. Hosted acceptance cannot be inferred from either SQL matrix.
+
+Commands: `git fetch origin fix/p0-provider-receipt-order-discovery-20261015`; inspect FETCH_HEAD before checkout. Source test commands: `node --import tsx --test artifacts/api-server/tests/production-postgres-rls-security.test.ts`; `node node_modules/typescript/bin/tsc --project artifacts/api-server/tsconfig.json --noEmit`. Actual SQL must use the existing owned offline CI runner, never hosted merchant data. Before publication validate explicit full base tree, each blob SHA, complete intended tree equality, and expected_sha CAS. Docs-only final checkpoint intentionally skips CI; all25 green claims refer to sourcee61dd80a.
+
+---
+
 # Latest continuation — reachable-role PASS; Meta owner matrix pending (2026-10-15)
 
 Accepted source `0c7c03abe889d65ba11317f66dbfa6c24ffe81c6`: **332 PASS / 0 FAIL / 0 SKIP**,55 unique files/57 invocations,25/25 observed workflows SUCCESS. Isolated run38779466489/job116575601617; Foundation38779466260/job116575597185. Merge checkout prefix5e406a2. RLS28 PASS includes actual direct/indirect SET activation and INHERIT-only denial control. Restore34migrations/95tables/45policies/9functions, matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Evidence: `evidence/P0_REACHABLE_PRIVILEGED_ROLE_RESULTS_20261015.json`.
