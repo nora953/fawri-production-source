@@ -102,7 +102,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     const f=await fixture(kind),originalReceipt=await receipt(f),before=await snapshot(f);
     const result=await runPausedWithRevocation(f,async()=>{
       const changed=await setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:false,actorAccountId:owner.id});
-      assert.equal(changed.status,'untrusted');
+      assert.equal(changed.status,'revoked');
     });
     assert.equal(result.code,0,'original HTTP child must finish normally');
     const response=result.messages.find(m=>m.type==='http-result');
