@@ -8,6 +8,9 @@ async function send(message){if(process.connected)await new Promise(resolve=>pro
 process.on('message',async task=>{
   if(handled)return;handled=true;
   const nativeFetch=globalThis.fetch;let providerCalls=0,dropObserved=false;
+  let resumeProvider;const providerGate=new Promise(resolve=>{resumeProvider=resolve;});
+  const resumeListener=message=>{if(message?.type==='resume-provider')resumeProvider();};
+  process.on('message',resumeListener);
   try{
     assert.match(task.role,/^operator_wire_[a-f0-9]{32}$/);assert.match(task.marker,/^operator-wire-owned-[a-f0-9-]+$/);
     assert.match(task.event,/^superqi-[a-f0-9]{64}$/);assert.ok(['saas','cashier'].includes(task.kind));
@@ -33,7 +36,9 @@ process.on('message',async task=>{
         assert.equal(init.method,'GET');providerCalls++;assert.equal(providerCalls,1);
         // Real auth/session COMMITs and initial audit SELECT have already finished.
         // Only subsequent billing transaction COMMIT responses can be withheld.
-        proxy?.arm();return Response.json(task.payload);
+        proxy?.arm();
+        if(task.pauseProvider){await send({type:'provider-paused'});await providerGate;}
+        return Response.json(task.payload);
       }
       assert.equal(String(url),endpoint,'only owned loopback HTTP or injected provider');return nativeFetch(url,init);
     };
@@ -42,7 +47,7 @@ process.on('message',async task=>{
     await send({type:'http-result',httpStatus:response.status,status:['applied','duplicate'].includes(body.status)?body.status:null,providerCalls,dropObserved,successReported:response.ok});
   }catch(error){await send({type:'failure',code:/^[A-Z0-9_]{1,80}$/.test(error?.code||'')?error.code:'OPERATOR_WIRE_TEST_FAILURE'});process.exitCode=1;}
   finally{
-    globalThis.fetch=nativeFetch;
+    globalThis.fetch=nativeFetch;process.off('message',resumeListener);
     try{if(server)await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));await pool.end();if(proxy)await proxy.close();}
     catch{await send({type:'cleanup-failure'});process.exitCode=1;}
     if(process.connected)process.disconnect();
