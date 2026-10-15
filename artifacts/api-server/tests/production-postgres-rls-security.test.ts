@@ -102,6 +102,13 @@ test("critical tenant domains remain part of the production RLS contract", () =>
     "reply_reservations",
     "saas_billing_orders",
     "knowledge_embeddings",
+    "merchant_cashier_subscriptions",
+    "cashier_station_seat_assignments",
+    "cashier_billing_orders",
+    "cashier_billing_events",
+    "cashier_entitlement_applications",
+    "cashier_entitlement_audit_events",
+    "cashier_device_operation_timeline",
   ]) {
     assert.equal(PRODUCTION_TENANT_RLS_TABLES.includes(name as never), true);
   }

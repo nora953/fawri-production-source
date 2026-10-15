@@ -1,3 +1,17 @@
+## Cashier production RLS readiness acceptance — 2026-10-15
+
+Draft#549 source36f955e32d0f6f7284b5fcfb850ea117e0c00ee0, isolated38681113382/job116245665218:321PASS/0FAIL/0SKIP,54unique/56invocations;14/14workflowsSUCCESS. Runtime gate now includes all7 cashier licensing/billing RLS tables omitted after0027. Local baseline5PASS/1FAIL→repair6/0; actual RLS suite20/0/0 includes14new disabled-RLS/runtime-ownership drift cases and rollback-restored readiness. Fullrestore33migrations/95tables/45policies/8functions and cleanupPASS, identical fingerprint793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498. Exact report: SEQ_377_P0_RLS_RESTORE_ADMIN_SYNC_READINESS_20261014.md; evidence/P0_CASHIER_RLS_READINESS_RESULTS_20261015.json.
+
+Next executable unit is separate dependent Draft#550/fix/p0-provider-receipt-order-discovery-20261015, baseline1f3d743a78d7716b21b6e875e62e4fe477e324a4. It reproduces actual signed-provider callbacks under nonowner/NOBYPASSRLS/no tenant context, preserving durable receipt before desired success assertion. Baseline CI38681215276/job116245975903 still running at checkpoint; NOT RUN/PENDING until logs are inspected. Bounded receipt-backed existing-order resolution repair in progress locally, not accepted. No automatic ownership repair/deletion policy. Hosted owner/grants/provider/storage/deployment gates OPEN; historical85%/15% not newly measured, releaseNO-GO. No main merge/deploy/hosted migration/grants permitted without separate explicit approval.
+
+## Current P0 source and remaining gates — 2026-10-15
+
+Draft#549/test/p0-integrated-billing-meta-20261015 tested8a694b43: combined billing/Meta307/0/0,14workflowsSUCCESS; full restore/cleanupPASS. Main unchanged. Next: remaining acceptance matrix, ownership/discovery/retention policy and reviewed hosted owner/grants/provider/storage/deployment controls. Hosted mutation/merge/deploy requires separate explicit approval. Older next-task headers below are historical. WORK_HANDOFF is current.
+
+## Active combined-source validation — 2026-10-15
+
+Combined Draft branch test/p0-integrated-billing-meta-20261015 imports accepted billing#548 and Meta#547. Standalone proofs retained; integrated acceptance pending. Keep full15billing/7Meta suite selector. Next is actual combined CI, then remaining hosted/retention/ownership gates; no main merge/deploy. See WORK_HANDOFF.
+
 ## Current next unit — 2026-10-15
 
 Standalone billing/race/directory source df31f752 accepted260/0/0 with6workflows; Meta#547 separately accepted287/0/0 with14workflows. Next safe execution: separate combined Draft with both parents, preserve both selectors/evidence, verify integrated CI; no main merge/deploy. Then remaining ownership/retention/hosted capability gates. See WORK_HANDOFF.

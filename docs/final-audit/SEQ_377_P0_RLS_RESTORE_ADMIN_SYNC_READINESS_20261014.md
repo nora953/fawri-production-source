@@ -1,3 +1,11 @@
+## 2026-10-15 — production cashier RLS readiness correction
+
+Draft #549 source `36f955e32d0f6f7284b5fcfb850ea117e0c00ee0`. All14observed workflowsSUCCESS; isolated run38681113382/job116245665218:321PASS/0FAIL/0SKIP across54unique/56invocations. Fullrestore/ownedcleanupPASS, unchanged33migrations/95tables/45policies/8functions fingerprint793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498. Evidence: evidence/P0_CASHIER_RLS_READINESS_RESULTS_20261015.json. Root cause: the production runtime RLS table list predates migration0027 and omitted its seven cashier licensing/billing tables. A restricted role could therefore pass this check while owning one of those tables, or after its RLS was disabled. This finding concerns readiness detection; it does not establish a hosted permission defect.
+
+The fix includes all seven tables in the existing ownership (including inherited/SET ROLE ownership) and missing/disabled-RLS checks. No SQL migration, policy, grant or hosted setting changes. Before repair the extended contract unit suite reproduced5PASS/1FAIL; after repair6PASS/0FAIL. Foundation run `38681113396`, job `116245665263` SUCCESS: real PostgreSQL RLS suite **20PASS/0FAIL/0SKIP**, including14new cases. Each transaction alters one table, observes row_security_active=false under the restricted runtime, verifies the exact failed readiness table/code, rolls back and confirms safe readiness again. The original five ownership-membership scenarios remain intact.
+
+The seven tables are merchant_cashier_subscriptions, cashier_station_seat_assignments, cashier_billing_orders, cashier_billing_events, cashier_entitlement_applications, cashier_entitlement_audit_events and cashier_device_operation_timeline. Disposable runner attestation/teardown remains mandatory; historical source-only findings below are superseded only for the executed guarded paths. Hosted owner/grants and release acceptance remain OPEN. Historical85% is not a new measurement.
+
 # SEQ-377 — P0 RLS, restore, admin, sync and readiness source inspection (2026-10-14)
 
 **Audit only; no tests executed, no DB or deployment touched.** Six source files inspected at branch checkpoint preceding this report.
