@@ -1,3 +1,4 @@
+import {authorizeConfirmedProviderBillingScope,type ConfirmedProviderBillingScope} from './confirmedProviderBillingScope';
 import type {BillingReplayScope} from './billingReplayScope';
 import crypto from "node:crypto";
 import {
@@ -765,6 +766,7 @@ async function recordEvent(
 export async function applyVerifiedSaasBillingProviderEvent(
   input: VerifiedSaasBillingProviderEvent,
   replay?: BillingReplayScope,
+  confirmed?: ConfirmedProviderBillingScope,
 ): Promise<SaasBillingApplicationOutcome> {
   const configuredProvider = getSaasBillingProviderState(input.provider);
   const providerEventAllowed =
@@ -802,19 +804,24 @@ export async function applyVerifiedSaasBillingProviderEvent(
   }
 
   const database = await pool();
-  const owner = replay ? null : await database.query(
+  const owner = replay || confirmed ? null : await database.query(
     `SELECT merchant_id FROM saas_billing_orders WHERE id = $1 LIMIT 2`, [orderId]);
-  if (!replay && owner?.rows.length !== 1) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
-  const merchantId = replay ? requiredText(replay.merchantId,180) : String(owner!.rows[0].merchant_id);
+  if (!replay && !confirmed && owner?.rows.length !== 1) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
+  const merchantId = confirmed ? requiredText(confirmed.merchantId,180) : replay ? requiredText(replay.merchantId,180) : String(owner!.rows[0].merchant_id);
   let sqlFailure: unknown;
   const processEvent = async (client: DatabaseClient, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
-    if(replay) await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchantId]);
+    if(replay || confirmed) await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchantId]);
     // Match checkout and plan-cycle ordering before acquiring billing row locks.
     await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
       `${input.provider}:${eventId}`,
     ]);
     if(replay) await replay.authorize(client);
+    if(confirmed){
+      if(replay || input.provider!=='superqi_sandbox' || new Date(input.occurredAt).getTime()!==new Date(confirmed.firstReceivedAt).getTime() || confirmed.orderId!==orderId || confirmed.authority!=="bot_subscription" || confirmed.eventId!==eventId || confirmed.paymentId!==input.providerPaymentRef || confirmed.eventType!==input.eventType || confirmed.amountIqd!==input.amountIqd || confirmed.payloadHash!==input.payloadHash)
+        throw new Error('confirmed provider event scope conflict');
+      await authorizeConfirmedProviderBillingScope(client,confirmed);
+    }
     const duplicateEvent = await client.query(
       `SELECT order_id, status, payload_hash, event_type, occurred_at FROM saas_billing_events
         WHERE provider = $1 AND provider_event_id = $2 LIMIT 2`,

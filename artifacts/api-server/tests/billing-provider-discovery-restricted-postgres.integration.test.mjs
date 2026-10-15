@@ -19,22 +19,13 @@ Object.assign(process.env,{
 const {pool}=await import('@workspace/db');
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
-const {getSaasPlan}=await import('../src/services/saasPlanCatalog.ts');
-const {handleSuperQiSandboxWebhook:handle}=await import('../src/services/superQiSandboxWebhook.ts');
 const {superQiWebhookSigningPayload}=await import('../src/services/superQiSandboxTransport.ts');
 const signatureOf=payload=>{
   const signer=createSign('RSA-SHA256');signer.update(superQiWebhookSigningPayload(payload),'utf8');signer.end();
   return signer.sign(privateKey).toString('base64');
 };
-function fakeStatus(payload) {
-  return async (url,init)=>{
-    assert.equal(init.method,'GET');
-    assert.equal(url,`https://uat-sandbox-3ds-api.qi.iq/api/v1/payment/${payload.paymentId}/status`);
-    return {ok:true,status:200,json:async()=>payload};
-  };
-}
+const resolverIdentity='public.fawri_resolve_confirmed_payment_order(text,text,text,text,integer,text)';
 const functionIdentity='public.fawri_admit_verified_payment_receipt(text,text,text,text,integer,text,timestamptz)';
-const admitSql='SELECT public.fawri_admit_verified_payment_receipt($1,$2,$3,$4,$5,$6,$7) AS first_received_at';
 
 test('verified provider callbacks discover mapped orders without global tenant access',{timeout:120000},async t=>{
   const children=[],merchantIds=[],paymentRefs=[];const role=`billing_discovery_${randomUUID().replaceAll('-','')}`;
@@ -67,6 +58,45 @@ test('verified provider callbacks discover mapped orders without global tenant a
     const payload={paymentId:`synthetic-discovery-${randomUUID()}`,requestId:randomUUID(),status:'SUCCESS',canceled:false,amount:checkout.order.amount_iqd,confirmedAmount:checkout.order.amount_iqd,currency:'IQD',creationDate:'2026-10-14T10:00:00'};paymentRefs.push(payload.paymentId);
     await pool.query(`UPDATE ${orders} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[checkout.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
     const first=new Date(),before=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0];
+    // Capability is never PUBLIC; lack of the reviewed runtime grant is retryable.
+    await pool.query(`REVOKE ALL ON FUNCTION ${resolverIdentity} FROM ${role}`);
+    assert.equal((await pool.query("SELECT has_function_privilege($1,$2,'EXECUTE') allowed",[role,resolverIdentity])).rows[0].allowed,false);
+    const denied=await run(payload,first),deniedObservation=denied.messages.find(message=>message.type==='observation');
+    assert.equal(denied.code,0);assert.equal(deniedObservation?.errorCode,'SUPERQI_SANDBOX_ORDER_RESOLVER_UNAVAILABLE');
+    assert.deepEqual(deniedObservation.afterContext,{tenant:'',audit:'',admin:''});assert.deepEqual(deniedObservation.afterNaked,{saas:0,cashier:0,receipts:0});
+    const admitted=(await pool.query('SELECT * FROM verified_provider_payment_receipts WHERE payment_ref=$1',[payload.paymentId])).rows;assert.equal(admitted.length,1);
+    await pool.query(`GRANT EXECUTE ON FUNCTION ${resolverIdentity} TO ${role}`);
+    const assertDenied=async expected=>{
+      const orderBefore=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0];
+      const denied=await run(payload,first),observation=denied.messages.find(message=>message.type==='observation');
+      assert.equal(denied.code,0);assert.equal(observation?.errorCode,expected);assert.deepEqual(observation.afterContext,{tenant:'',audit:'',admin:''});assert.deepEqual(observation.afterNaked,{saas:0,cashier:0,receipts:0});
+      assert.deepEqual((await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0],orderBefore);
+      assert.deepEqual((await pool.query('SELECT * FROM verified_provider_payment_receipts WHERE payment_ref=$1',[payload.paymentId])).rows,admitted);
+      assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,0);
+      assert.equal((await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n,0);
+    };
+    await pool.query(`UPDATE ${orders} SET metadata=metadata||$2::jsonb WHERE id=$1`,[checkout.order.id,JSON.stringify({provider_request_id:randomUUID()})]);
+    await assertDenied(kind==='saas'?'SUPERQI_SANDBOX_ORDER_IDENTITY_MISMATCH':'CASHIER_BILLING_ORDER_IDENTITY_MISMATCH');
+    await pool.query(`UPDATE ${orders} SET metadata=$2::jsonb WHERE id=$1`,[checkout.order.id,JSON.stringify(before.metadata)]);
+    await pool.query(`UPDATE ${orders} SET amount_iqd=amount_iqd+1 WHERE id=$1`,[checkout.order.id]);
+    await assertDenied('SUPERQI_SANDBOX_ORDER_AMOUNT_MISMATCH');
+    await pool.query(`UPDATE ${orders} SET amount_iqd=$2 WHERE id=$1`,[checkout.order.id,payload.amount]);
+    const decoyMerchant=`discovery-decoy-${randomUUID()}`;merchantIds.push(decoyMerchant);
+    await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[decoyMerchant,`+1990${String(randomInt(0,100000000)).padStart(8,'0')}`]);
+    await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",[decoyMerchant]);
+    const same=kind==='saas'?await saas.createSaasBillingCheckout({merchantId:decoyMerchant,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'}):await cashier.createCashierBillingCheckout({merchantId:decoyMerchant,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'});
+    await pool.query(`UPDATE ${orders} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[same.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
+    const decoyBefore=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[same.order.id])).rows[0];
+    await assertDenied(kind==='saas'?'SUPERQI_SANDBOX_ORDER_AMBIGUOUS':'CASHIER_BILLING_ORDER_AMBIGUOUS');
+    assert.deepEqual((await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[same.order.id])).rows[0],decoyBefore);
+    assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[same.order.id])).rows[0].n,0);
+    assert.equal((await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[decoyMerchant])).rows[0].n,0);
+    await pool.query(`UPDATE ${orders} SET provider='test_fake' WHERE id=$1`,[same.order.id]);
+    const other=kind==='saas'?await cashier.createCashierBillingCheckout({merchantId,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'}):await saas.createSaasBillingCheckout({merchantId,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'});
+    const otherTable=kind==='saas'?'cashier_billing_orders':'saas_billing_orders';
+    await pool.query(`UPDATE ${otherTable} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[other.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
+    await assertDenied('SUPERQI_SANDBOX_ORDER_AUTHORITY_COLLISION');
+    await pool.query(`UPDATE ${otherTable} SET provider='test_fake' WHERE id=$1`,[other.order.id]);
     const result=await run(payload,first);assert.equal(result.code,0);const observation=result.messages.find(message=>message.type==='observation');assert.ok(observation,'child must complete independent role/context observations');
     const original=(await pool.query('SELECT * FROM verified_provider_payment_receipts WHERE payment_ref=$1',[payload.paymentId])).rows;assert.equal(original.length,1);assert.equal(new Date(original[0].first_received_at).getTime(),first.getTime());
     const applications=(await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,grants=(await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n;

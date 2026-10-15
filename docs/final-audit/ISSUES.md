@@ -1,3 +1,17 @@
+## Restricted signed-provider discovery repair — 2026-10-15 (CI pending)
+
+Active dependent Draft#550/fix/p0-provider-receipt-order-discovery-20261015, base#549. Baseline1f3d743a78d7716b21b6e875e62e4fe477e324a4, isolated38681215276/job116245975903 FAIL:321PASS/3FAIL/0SKIP,55unique/57invocations (failing new suite0PASS/3FAIL includes parent+2cases). Five other workflowsSUCCESS. Both actual signed original callbacks (SaaS/cashier) returnSUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND under nonowner/NOBYPASSRLS with empty tenant/admin context despite mapped orders. Independent SQL proves durable inbox1/originaltime, orders unchanged/apps0/grants0; nakedreads0 and pooledcontextempty. This is availability failure, not demonstrated tenant leakage.
+
+New bounded repair adds non-PUBLIC0033 confirmed-receipt/order resolver, separate private-symbol provider scope, tenant-scoped reference attachment and revalidation inside both original billing transactions; operator replay authorization unchanged. Existing authoritative order only, no inferred ownership repair. Negative cases cover absentEXECUTE/request/amount mismatch/same-authority/cross-authorityambiguity/decoyisolation, followed by success/duplicate/originaltime checks. Restore asserts newcapabilitynonPUBLIC. Localtypecheck/syntax/diff/staticmigrationlineagePASS. Full local canonical generation BLOCKED by symlinkedpnpm module directory restriction atlegacy stage2; actual newSQL/CI NOT RUN until published.
+
+Current resume commands in WORK_HANDOFF.
+
+## Cashier production RLS readiness acceptance — 2026-10-15
+
+Draft#549 source36f955e32d0f6f7284b5fcfb850ea117e0c00ee0, isolated38681113382/job116245665218:321PASS/0FAIL/0SKIP,54unique/56invocations;14/14workflowsSUCCESS. Runtime gate now includes all7 cashier licensing/billing RLS tables omitted after0027. Local baseline5PASS/1FAIL→repair6/0; actual RLS suite20/0/0 includes14new disabled-RLS/runtime-ownership drift cases and rollback-restored readiness. Fullrestore33migrations/95tables/45policies/8functions and cleanupPASS, identical fingerprint793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498. Exact report: SEQ_377_P0_RLS_RESTORE_ADMIN_SYNC_READINESS_20261014.md; evidence/P0_CASHIER_RLS_READINESS_RESULTS_20261015.json.
+
+Next executable unit is separate dependent Draft#550/fix/p0-provider-receipt-order-discovery-20261015, baseline1f3d743a78d7716b21b6e875e62e4fe477e324a4. It reproduces actual signed-provider callbacks under nonowner/NOBYPASSRLS/no tenant context, preserving durable receipt before desired success assertion. Baseline CI38681215276/job116245975903 still running at checkpoint; NOT RUN/PENDING until logs are inspected. Bounded receipt-backed existing-order resolution repair in progress locally, not accepted. No automatic ownership repair/deletion policy. Hosted owner/grants/provider/storage/deployment gates OPEN; historical85%/15% not newly measured, releaseNO-GO. No main merge/deploy/hosted migration/grants permitted without separate explicit approval.
+
 ## Integrated #523/#535 evidence — 2026-10-15
 
 Combined Draft#549/8a694b43 passes307/0/0 and14workflows. This supersedes the need for a combined synthetic regression, not hosted rollout or ownership/retention policy. #523 keeps remaining policy/discovery/hosted acceptance OPEN; #535 keeps reviewed function owner/RLS/EXECUTE and hosted full path OPEN. No new product defect found by three directory boundaries or integration. Current next actions in WORK_HANDOFF.

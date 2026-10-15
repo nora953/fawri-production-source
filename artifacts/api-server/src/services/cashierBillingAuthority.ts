@@ -1,3 +1,4 @@
+import {authorizeConfirmedProviderBillingScope,type ConfirmedProviderBillingScope} from './confirmedProviderBillingScope';
 import type {BillingReplayScope} from './billingReplayScope';
 import crypto from "node:crypto";
 import {
@@ -996,6 +997,7 @@ async function applyPaidOrder(
 export async function applyVerifiedCashierBillingProviderEvent(
   input: VerifiedCashierBillingProviderEvent,
   replay?: BillingReplayScope,
+  confirmed?: ConfirmedProviderBillingScope,
 ): Promise<{
   status:
     | "applied"
@@ -1043,10 +1045,10 @@ export async function applyVerifiedCashierBillingProviderEvent(
     : "";
 
   const pool = await operationalDatabasePool();
-  const discovery = replay ? [] : await operationalQueryRows<{merchant_id:string}>(pool,
+  const discovery = replay || confirmed ? [] : await operationalQueryRows<{merchant_id:string}>(pool,
     `SELECT merchant_id FROM cashier_billing_orders WHERE id = $1 LIMIT 2`,[orderId]);
-  if (!replay && discovery.length !== 1) fail("CASHIER_BILLING_ORDER_NOT_FOUND","cashier billing order not found",404);
-  const merchantId = replay ? requiredText(replay.merchantId,"merchant_id",200) : discovery[0].merchant_id;
+  if (!replay && !confirmed && discovery.length !== 1) fail("CASHIER_BILLING_ORDER_NOT_FOUND","cashier billing order not found",404);
+  const merchantId = confirmed ? requiredText(confirmed.merchantId,"merchant_id",200) : replay ? requiredText(replay.merchantId,"merchant_id",200) : discovery[0].merchant_id;
   let sqlFailure: unknown;
   const processEvent = async (
     client: OperationalQueryTarget,
@@ -1058,6 +1060,11 @@ export async function applyVerifiedCashierBillingProviderEvent(
         `${input.provider}:${eventId}`,
       ]);
       if(replay) await replay.authorize(client);
+    if(confirmed){
+      if(replay || input.provider!=='superqi_sandbox' || new Date(input.occurredAt).getTime()!==new Date(confirmed.firstReceivedAt).getTime() || confirmed.orderId!==orderId || confirmed.authority!=="cashier_subscription" || confirmed.eventId!==eventId || confirmed.paymentId!==input.providerPaymentRef || confirmed.eventType!==input.eventType || confirmed.amountIqd!==input.amountIqd || confirmed.payloadHash!==input.payloadHash)
+        throw new Error('confirmed provider event scope conflict');
+      await authorizeConfirmedProviderBillingScope(client,confirmed);
+    }
       const duplicate = await operationalQueryRows<{
         order_id: string;
         status: string;
