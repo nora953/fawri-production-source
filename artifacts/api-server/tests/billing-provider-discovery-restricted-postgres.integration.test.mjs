@@ -75,6 +75,12 @@ test('verified provider callbacks discover mapped orders without global tenant a
       assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,0);
       assert.equal((await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n,0);
     };
+    // Mutation after durable receipt admission, before application: an altered
+    // provider mapping must fail closed without attaching or granting payment.
+    // This is a sequential boundary proof, NOT an overlapping transaction race.
+    await pool.query(`UPDATE ${orders} SET provider_checkout_ref=$2 WHERE id=$1`,[checkout.order.id,`remapped-${randomUUID()}`]);
+    await assertDenied('SUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND');
+    await pool.query(`UPDATE ${orders} SET provider_checkout_ref=$2 WHERE id=$1`,[checkout.order.id,payload.paymentId]);
     await pool.query(`UPDATE ${orders} SET metadata=metadata||$2::jsonb WHERE id=$1`,[checkout.order.id,JSON.stringify({provider_request_id:randomUUID()})]);
     await assertDenied(kind==='saas'?'SUPERQI_SANDBOX_ORDER_IDENTITY_MISMATCH':'CASHIER_BILLING_ORDER_IDENTITY_MISMATCH');
     await pool.query(`UPDATE ${orders} SET metadata=$2::jsonb WHERE id=$1`,[checkout.order.id,JSON.stringify(before.metadata)]);
