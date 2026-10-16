@@ -1,3 +1,13 @@
+# Neon staging read-only role and schema verification — 2026-10-17
+
+- Verified project Fawri-Staging `round-fire-18493605`, explicit branch `staging-runtime` (`br-falling-dust-b1km4gix`); default branch is a separate `production` branch. The earlier zero-table result was from default branch and is **not** a staging schema finding.
+- Staging has 94 public tables and role `fawri_staging_rls_runtime`. Neon role detail says `authentication_method=no_login`; PostgreSQL catalog read confirms `rolcanlogin=false`, `rolbypassrls=false`.
+- `saas_billing_orders` and `cashier_billing_orders` have rowsecurity enabled and `*_tenant_boundary` policies for ALL; `merchants` rowsecurity disabled (requires grant/access assessment, not automatic vulnerability).
+- No function names matching provider/billing in `pg_proc`; only 3 public routines listed (`fawri_catalog_variant_signature_guard`, `fawri_normalize_catalog_variant_signature`, `fawri_tenant_or_audited_admin`). This staging schema has **not** demonstrated the restricted provider-discovery resolver used by disposable PostgreSQL tests; treat hosted acceptance as BLOCKED pending schema/version reconciliation, not passed.
+- Read-only checks only; no SQL writes, migrations, merges or deploys. Release remains NO-GO.
+
+---
+
 # Accepted post-discovery / pre-attach race — 2026-10-17
 
 - Source `93e2cfa7157cf632575c4112372b5efee88e3ba1` **25/25 GitHub Actions SUCCESS**; isolated PostgreSQL run https://github.com/nora953/fawri-production-source/actions/runs/38982076552 job `117244996814` SUCCESS.
