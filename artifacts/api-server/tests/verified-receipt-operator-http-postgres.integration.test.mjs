@@ -167,6 +167,8 @@ test('real HTTP receipt directory requires trusted admin permission and durable 
       await admin.query('RESET ROLE');
       const ownAudit=(await admin.query('SELECT admin_account_id,reason_code,request_hash FROM database_admin_access_audits WHERE id=$1',[auditId])).rows;
       assert.deepEqual(ownAudit,forced?[]:[{admin_account_id:owner.id,reason_code:'BILLING_VERIFIED_RECEIPTS_READ',request_hash:'a'.repeat(64)}]);
+      assert.deepEqual(await receiptSnapshot(),originalReceipts,'receipt fields cannot change before owner-fixture rollback');
+      assert.equal(await entitlementCount(),originalEntitlements,'read capability cannot grant even before rollback');
     }finally{await admin.query('ROLLBACK');}
     assert.deepEqual((await admin.query('SELECT current_user,session_user')).rows,originalPrincipal);
     assert.deepEqual((await admin.query(catalogSql,[tables])).rows,originalCatalog);
@@ -174,7 +176,7 @@ test('real HTTP receipt directory requires trusted admin permission and durable 
     assert.deepEqual(await audits(),beforeAudits);assert.deepEqual(await receiptSnapshot(),originalReceipts);
     assert.equal(await entitlementCount(),originalEntitlements);
     assert.equal((await admin.query('SELECT count(*)::int n FROM pg_roles WHERE rolname=$1',[capabilityOwner])).rows[0].n,0);
-    console.log('DIRECTORY_OWNER_RLS_PROOF '+JSON.stringify({forced,restrictedOwner:true,expectedSqlstate:forced?'42501':null,auditRequired:true,noReceiptMutation:true,rollbackRestored:true}));
+    console.log('DIRECTORY_OWNER_RLS_PROOF '+JSON.stringify({forced,restrictedOwner:true,expectedSqlstate:forced?'42501':null,auditRequired:true,noReceiptMutation:true,preRollbackDomainUnchanged:true,rollbackRestored:true}));
   });
   await t.test('equal-microsecond keyset pages retain every original receipt during a new head insertion',async()=>{
     const added=[],prefix=`tie-event-${randomUUID()}`;

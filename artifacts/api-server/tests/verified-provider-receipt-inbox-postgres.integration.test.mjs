@@ -225,6 +225,7 @@ test('confirmed provider inbox preserves unmatched payment evidence without gues
         assert.equal(stored[0].amount_iqd,3900);
         assert.equal(new Date(stored[0].first_received_at).getTime(),first.getTime());
       }
+      assert.deepEqual((await client.query('SELECT (SELECT count(*)::int FROM saas_entitlement_applications) saas,(SELECT count(*)::int FROM cashier_entitlement_applications) cashier,(SELECT count(*)::int FROM subscriptions) subscriptions,(SELECT count(*)::int FROM merchant_cashier_subscriptions) cashier_subscriptions')).rows,beforeEntitlements,'admission cannot grant even before fixture rollback');
     } finally {
       await client.query('ROLLBACK');client.release();
     }
@@ -232,6 +233,6 @@ test('confirmed provider inbox preserves unmatched payment evidence without gues
     assert.deepEqual(await entitlementCounts(),beforeEntitlements,'admission never grants an entitlement');
     assert.deepEqual((await pool.query("SELECT c.relowner,c.relrowsecurity,c.relforcerowsecurity,p.proowner,p.prosecdef,p.proconfig FROM pg_class c CROSS JOIN pg_proc p WHERE c.oid='public.verified_provider_payment_receipts'::regclass AND p.oid=$1::regprocedure",[functionIdentity])).rows,original);
     assert.equal((await pool.query('SELECT count(*)::int n FROM pg_roles WHERE rolname=$1',[owner])).rows[0].n,0);
-    console.log('ADMISSION_OWNER_RLS_PROOF '+JSON.stringify({forced,restrictedOwner:true,expectedSqlstate:forced?'42501':null,immutableReplay:!forced,rollbackRestored:true,entitlementsUnchanged:true}));
+    console.log('ADMISSION_OWNER_RLS_PROOF '+JSON.stringify({forced,restrictedOwner:true,expectedSqlstate:forced?'42501':null,immutableReplay:!forced,rollbackRestored:true,entitlementsUnchanged:true,preRollbackEntitlementsUnchanged:true}));
   });
 });

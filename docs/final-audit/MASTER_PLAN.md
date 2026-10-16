@@ -1,3 +1,21 @@
+## P0 gate reconciliation — recovery continuation, 2026-10-16 UTC
+
+Current continuation gates below remain separate from historical issue entries. Green selected SQL suites do not establish complete production readiness or a measured whole-P0 percentage. Do not advance P1/P2 by treating an unresolved policy, blocked test or hosted gate as PASS.
+
+| Gate | Current evidence / status | Exact next action within authorization |
+| --- | --- | --- |
+| Capability owner matrix0029/0030 | PASS on66a1259c/2ddc4cc1;344/346 integrated counts overlap | Reuse committed evidence; no unchanged-source rerun. |
+| Replay capability owner matrix0031/0032 | PASS onf14c3cb3 (362/0/0/0,25green); stronger pre-rollback assertions pending | Initial isolated38969053191 accepted; inspect next source for explicit preRollback proof flags before certifying temporary-state invariants. |
+| Hosted branch/runtime role/function owners/RLS/EXECUTE | BLOCKED/UNVERIFIED: Neon list_projects tool unavailable; old-source readiness200 does not disclose catalog | Restore connector access, then read-only branch/catalog/grant inspection; no hosted mutation. |
+| Deployment controls/storage/hosted sandbox acceptance | OPEN: oldmain/d38d2922 still deployed; checkSuitesfalse; GitHub protection UNKNOWN403; no Railway volumes/buckets, external storage unknown | Prepare reviewed rollout/storage/checks; any configuration, hosted test writes, merge or deployment requires separate authorization. |
+| Financial retention and privileged deletion / missing-order ownership | DECISION REQUIRED, issue523 remainsOPEN; existing admitted receipt immutability and authorized replay already proven | Define product policy and acceptance criteria; no guessed merchant/order binding, arbitrary deletion or invented retention duration. |
+| Provider mapping mutation after discovery/admission | NOT RUN; previous instrumentation blocked, no success claim | Preserve explicit gap and review a permitted, distinct proof before execution; do not retry rejected instrumentation. |
+| Offline licensing CASHIER-OFFLINE-001 | Existing SECURITY_DESIGN_DECISION remainsOPEN; current cache validator is structural; no signed-certificate acceptance | Resolve whether subscription restricts local sale or cloud only, then apply agreed threat model/device/time/7day/browser acceptance. Do not label structural validator proof a complete POS bypass. |
+
+Existing broader register items remain under their original IDs/classifications; this table does not silently close or reclassify them. No production implementation changes or hosted writes were needed for the owner-matrix additions. Current WORK_HANDOFF and per-source machine evidence are the resumption authority.
+
+---
+
 ## Audited directory owner acceptance — 2026-10-16 UTC
 
 Draft #550 source `2ddc4cc11190b7f87f5dfbe83bc4505469e6ad02`: **346 PASS /0 FAIL /0 CANCELLED /0 SKIP**,55unique/57invocations;25/25workflowsSUCCESS. Isolated [38968339665](https://github.com/nora953/fawri-production-source/actions/runs/38968339665),job117200274011. Directory11PASS includes two new0030 bounded SQL owner cases: original actor authorization/redaction/audit succeeds with restricted shared owner; receipt FORCE raises42501 and no audit survives. All principals/catalog owners/RLS/function configuration/receipts/audits/entitlement counts restored after rollback. Original real HTTP/session/device/pagination/audit-fault assertions retained. Fullrestore34migrations/95tables/45policies/9functions and original matching fingerprint. Evidence `evidence/P0_DIRECTORY_OWNER_RESULTS_20261016.json`. Counts overlap344/342. Not hosted or alternate-owner full HTTP acceptance. P0 percentage unmeasured/releaseNO-GO; no production source/migrations/main/hosted changes.

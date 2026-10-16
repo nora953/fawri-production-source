@@ -46,12 +46,15 @@ export async function proveReceiptCapabilityOwners(t,{admin,role,functions,table
       await admin.query('RESET ROLE');
       const written=(await admin.query('SELECT admin_account_id,reason_code,request_hash FROM database_admin_access_audits WHERE id=ANY($1::text[]) ORDER BY reason_code',[[auditId,auditId+'-execute']])).rows;
       assert.deepEqual(written,forced?[]:auditReasons.slice().sort().map(reason_code=>({admin_account_id:actorId,reason_code,request_hash:'a'.repeat(64)})));
+      const during=await snapshot();
+      assert.deepEqual({...during,audits:before.audits},{...before},'capability cannot mutate receipt/order/entitlement state even before fixture rollback');
+      assert.deepEqual(during.audits.filter(row=>row.id!==auditId&&row.id!==auditId+'-execute'),before.audits,'existing audits remain unchanged before rollback');
     }finally{await admin.query('ROLLBACK');}
     assert.deepEqual((await admin.query('SELECT current_user,session_user')).rows,beforePrincipal);
     assert.deepEqual((await admin.query(tableSql,[tables])).rows,beforeTables);
     assert.deepEqual((await admin.query(functionSql,[functions])).rows,beforeFunctions);
     assert.deepEqual(await snapshot(),before,'authorization alone cannot alter receipts, orders, audits or grants');
     assert.equal((await admin.query('SELECT count(*)::int n FROM pg_roles WHERE rolname=$1',[owner])).rows[0].n,0);
-    console.log('REPLAY_CAPABILITY_OWNER_PROOF '+JSON.stringify({kind:fixture.kind,capability:auditReasons.at(-1),forced,restrictedOwner:true,expectedSqlstate:forced?'42501':null,exactReviewedIdentity:!forced,auditRequired:true,noGrant:true,rollbackRestored:true}));
+    console.log('REPLAY_CAPABILITY_OWNER_PROOF '+JSON.stringify({kind:fixture.kind,capability:auditReasons.at(-1),forced,restrictedOwner:true,expectedSqlstate:forced?'42501':null,exactReviewedIdentity:!forced,auditRequired:true,noGrant:true,preRollbackDomainUnchanged:true,rollbackRestored:true}));
   });
 }
