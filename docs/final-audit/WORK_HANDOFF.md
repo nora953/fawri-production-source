@@ -1,3 +1,9 @@
+## P0 resolver rollout prerequisite (2026-10-17)
+
+Migration `lib/db/drizzle/0033_confirmed_provider_order_resolution.sql` revokes function EXECUTE from PUBLIC, but does not grant EXECUTE to a runtime role. The restricted PostgreSQL integration test explicitly grants EXECUTE to its disposable role, verifies failure after REVOKE, and restores GRANT. Hosted staging has no resolver yet. Rollout must separately verify a least-privilege EXECUTE grant to the actual deployed runtime role; do not grant PUBLIC or infer the role from redacted Railway variables. No hosted changes. NO-GO.
+
+---
+
 # Migration 0033 source and hosted staging reconciliation — 2026-10-17
 
 - Identified exact migration in audit branch: `lib/db/drizzle/0033_confirmed_provider_order_resolution.sql` (4073 chars). It creates `public.fawri_resolve_confirmed_payment_order` as `SECURITY DEFINER`, with `search_path=pg_catalog`, `row_security=off`, verified receipt identity checks and bounded SaaS/cashier candidate resolution. Audit branch `lib/db/drizzle/meta/_journal.json` includes `0033_confirmed_provider_order_resolution` (idx 33).
