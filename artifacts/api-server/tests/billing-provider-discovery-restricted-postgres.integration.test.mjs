@@ -87,6 +87,41 @@ test('verified provider callbacks discover mapped orders without global tenant a
     await pool.query(`UPDATE ${orders} SET amount_iqd=amount_iqd+1 WHERE id=$1`,[checkout.order.id]);
     await assertDenied('SUPERQI_SANDBOX_ORDER_AMOUNT_MISMATCH');
     await pool.query(`UPDATE ${orders} SET amount_iqd=$2 WHERE id=$1`,[checkout.order.id,payload.amount]);
+    // Real two-session race: the owner holds an uncommitted mapping update
+    // while the restricted callback tries to discover/apply the same receipt.
+    // Observe a PostgreSQL lock wait rather than relying on a timed sleep.
+    const locker=await pool.connect();
+    let lockOpen=false,overlapping;
+    try {
+      await locker.query('BEGIN');
+      lockOpen=true;
+      await locker.query(`UPDATE ${orders} SET provider_checkout_ref=$2 WHERE id=$1`,[checkout.order.id,`raced-${randomUUID()}`]);
+      overlapping=run(payload,first);
+      const deadline=Date.now()+15000;
+      let blocked=false;
+      while(Date.now()<deadline){
+        const observed=(await pool.query("SELECT cardinality(pg_blocking_pids(pid)) AS blockers FROM pg_stat_activity WHERE usename=$1 AND state='active'",[role])).rows;
+        if(observed.some(row=>Number(row.blockers)>0)){blocked=true;break;}
+        await new Promise(resolve=>setTimeout(resolve,75));
+      }
+      assert.equal(blocked,true,'restricted webhook must overlap the owner mapping transaction and block on its lock');
+      await locker.query('COMMIT');
+      lockOpen=false;
+      const result=await overlapping;
+      const observation=result.messages.find(message=>message.type==='observation');
+      assert.equal(result.code,0);
+      assert.ok(['SUPERQI_SANDBOX_ORDER_IDENTITY_MISMATCH','CASHIER_BILLING_ORDER_IDENTITY_MISMATCH','SUPERQI_SANDBOX_ORDER_REFERENCE_CONFLICT'].includes(observation?.errorCode),`unexpected race rejection: ${observation?.errorCode}`);
+      assert.deepEqual(observation.afterContext,{tenant:'',audit:'',admin:''});
+      assert.deepEqual(observation.afterNaked,{saas:0,cashier:0,receipts:0});
+      assert.deepEqual((await pool.query('SELECT * FROM verified_provider_payment_receipts WHERE payment_ref=$1',[payload.paymentId])).rows,admitted);
+      assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,0);
+      assert.equal((await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n,0);
+    } finally {
+      if(lockOpen)await locker.query('ROLLBACK');
+      locker.release();
+      if(overlapping)await overlapping;
+    }
+    await pool.query(`UPDATE ${orders} SET provider_checkout_ref=$2 WHERE id=$1`,[checkout.order.id,payload.paymentId]);
     const decoyMerchant=`discovery-decoy-${randomUUID()}`;merchantIds.push(decoyMerchant);
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[decoyMerchant,`+1990${String(randomInt(0,100000000)).padStart(8,'0')}`]);
     await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",[decoyMerchant]);
