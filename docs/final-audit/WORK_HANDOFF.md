@@ -1,3 +1,12 @@
+# Accepted overlapping mapping race CI — 2026-10-17
+
+- Source commit `5fe1dc456c2d95fed8a96cfe025f3ea98ffdbc9e`: **25/25 workflows SUCCESS**; isolated PostgreSQL run https://github.com/nora953/fawri-production-source/actions/runs/38981424038, job `117242924849` SUCCESS.
+- Inspected final job log: `AUDIT_SUITE_RESULT {"suite":"billing-provider-discovery-restricted-postgres.integration.test.mjs","auditBatch":"billing","runtime":"v24.22.0","exit":0,"passed":11,"failed":0,"skipped":0,"cancelled":0,"summaryComplete":true}`.
+- Added two-session disposable PostgreSQL test in both SaaS and cashier loops: owner transaction updates provider checkout reference without committing; restricted signed webhook overlaps and must be observed blocked via `pg_blocking_pids` before owner commits; webhook must fail closed; receipt remains immutable, no subscription/application, empty tenant/admin context and zero naked reads. All suite assertions passed.
+- **Coverage boundary:** This proves the specific overlap of mapping mutation and webhook under a row lock. It does not independently prove a forced pause *after successful initial resolver return but before attach/apply*, nor does it replace hosted production-role acceptance. P0 release remains NO-GO pending remaining gates.
+
+---
+
 # Next controlled concurrency experiment — 2026-10-17
 
 **Not yet executed / not an accepted proof.** Proposed disposable-PostgreSQL-only race experiment for both SaaS and cashier:
