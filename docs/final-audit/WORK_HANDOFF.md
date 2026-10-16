@@ -1,3 +1,9 @@
+## P0 isolated Neon branch created — 2026-10-17
+
+Created Neon branch `audit-p0-resolver-isolated-20261017` (`br-snowy-voice-b1bovtwi`) from `staging-runtime` (`br-falling-dust-b1km4gix`), parent LSN `0/36ECAE8`, point-in-time 2026-10-16 23:58:28 UTC. Verified state READY, **no compute endpoint** (`no_compute=true`), no writes. Do not mistake this clone for acceptance: migration 0033, EXECUTE grants and tests have not been run on it. Parent staging and production untouched. Next provision compute only when ready to run controlled isolated acceptance; avoid deploying to live staging. P0 NO-GO.
+
+---
+
 ## P0 resolver rollout prerequisite (2026-10-17)
 
 Migration `lib/db/drizzle/0033_confirmed_provider_order_resolution.sql` revokes function EXECUTE from PUBLIC, but does not grant EXECUTE to a runtime role. The restricted PostgreSQL integration test explicitly grants EXECUTE to its disposable role, verifies failure after REVOKE, and restores GRANT. Hosted staging has no resolver yet. Rollout must separately verify a least-privilege EXECUTE grant to the actual deployed runtime role; do not grant PUBLIC or infer the role from redacted Railway variables. No hosted changes. NO-GO.
