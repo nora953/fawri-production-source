@@ -1,3 +1,13 @@
+# Railway staging runtime role identity — 2026-10-17
+
+- Railway project `fawri-staging`, environment named `production`, service `fawri-web`: latest deployment SUCCESS (2026-10-10), GitHub source `nora953/fawri-production-source` branch `main` (not audit branch).
+- Variables `DATABASE_URL`, `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE`, `FAWRI_OPERATIONAL_POSTGRES_AUTHORITY`, `FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY` exist, but OAuth connector **redacts their values**. Cannot assert deployed DB login role or expected-role value from names alone; do not expose secrets.
+- Read-only Neon staging `pg_stat_activity` snapshot had 0 active sessions for `fawri_staging_runtime`; not proof of never using that role.
+- Catalog: `merchants` owned by `neondb_owner` with RLS disabled and direct `arwd` grants to both `fawri_staging_runtime` (LOGIN=true, BYPASSRLS=true) and `fawri_staging_rls_runtime` (LOGIN=false, BYPASSRLS=false). Hosted runtime role selection **not yet verified**.
+- Next: verify actual database user through deployed `/ops/readiness` without revealing secrets; audit code dependencies and propose safe grant/RLS hardening. No DB writes or Railway deployment. Release NO-GO.
+
+---
+
 # P0 staging merchants broad grant / no RLS — 2026-10-17
 
 - Verified by read-only Neon SQL against project `round-fire-18493605`, branch `staging-runtime` (`br-falling-dust-b1km4gix`): `public.merchants` has `rowsecurity=false`; role `fawri_staging_rls_runtime` has SELECT, INSERT, UPDATE **and DELETE** table privileges. The same role has SELECT/INSERT/UPDATE on SaaS and cashier billing orders, which do have RLS enabled and tenant-boundary policies.
