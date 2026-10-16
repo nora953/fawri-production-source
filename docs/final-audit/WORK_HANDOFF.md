@@ -1,3 +1,12 @@
+# P0 continuation — provider mapping post-admission mutation (2026-10-17)
+
+- Branch: `fix/p0-provider-receipt-order-discovery-20261015`, Draft PR #550. Test source commit `fa8760871a084a737bd478457d9c4c26fe21153e`.
+- Added sequential mutation boundary assertion in `artifacts/api-server/tests/billing-provider-discovery-restricted-postgres.integration.test.mjs`: after verified receipt admission, temporarily change `provider_checkout_ref`, invoke signed restricted callback, require ORDER_NOT_FOUND and unchanged receipt/order/application/subscription; restore mapping before existing acceptance.
+- **NOT RUN** for this new assertion; no new CI result or confirmed outcome. Previous accepted `becd15d9`: 362 PASS, 25/25 workflows SUCCESS, run 38969822940. Do not transfer prior acceptance to new source.
+- This does **not** establish concurrent interleaving of two database transactions, or mutation between admission commit and application under lock. Next: inspect new CI and exact error, correct test/implementation if necessary; then add controlled two-connection synchronization proof. Preserve receipt identity, paid time, merchant isolation and no duplicate grant. No production/hosted/main changes; P0 NO-GO and historical 85% unmeasured.
+
+---
+
 # Recovered Work continuation — latest CI acceptance, 2026-10-17 Baghdad
 
 - Recovery source: Draft [PR #550](https://github.com/nora953/fawri-production-source/pull/550), branch `fix/p0-provider-receipt-order-discovery-20261015`, accepted code/test source `becd15d9d4364b3e654383e893a9e0bec5d6f7ae`. This supersedes earlier PR #548 handoffs; no local-only Work state assumed.
