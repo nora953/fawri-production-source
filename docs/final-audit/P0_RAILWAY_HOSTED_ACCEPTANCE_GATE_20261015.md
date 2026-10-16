@@ -1,3 +1,11 @@
+## Recovery read-only refresh — 2026-10-17 00:12 Baghdad
+
+Railway inventory, service configuration, deployment history and72h health reads confirm unchanged main/d38d2922 deployment11f22954SUCCESS, one online replica/zero crashed, zero recent failures, no staged/pending work. checkSuites=false, no Railway volumes/buckets. Actual GET /ops/readiness at2026-10-16T21:12:07Z returned200/ready with PostgreSQL authority and release configuration up. No role identity/privilege flags are returned. These observations do not accept the newer draft source or establish external storage durability.
+
+The now-exposed Neon list_projects connector was retried during recovery and still returned MCP-32602 Tool list_projects not found. Catalog, runtime grants and hosted function owners remain BLOCKED/UNVERIFIED. Prior GitHub protection403 remains UNKNOWN, not retried. No variable values, credentials, hosted SQL or platform mutations. Exact evidence: `evidence/P0_RAILWAY_READONLY_RECOVERY_20261016.json`. Release NO-GO; hosted writes/deployment still require separate explicit authorization.
+
+---
+
 ## Read-only refresh — 2026-10-15 21:10 Baghdad
 
 Fresh Railway MCP environment/service/deployment/status reads reconfirm source main/d38d29229bed0f9575a98e7026e7819fe363bfd4 and successful deployment11f22954-446b-49ef-adc6-38aca7c08bff (2026-10-10T22:22:49.599Z). One running replica/zero crashed; no recent failures or active warning/critical notifications in the default8h window. No pending/staged work; checkSuites=false, healthcheck /ops/readiness, no mounted volumes or Railway buckets. Absence of these Railway resources is not evidence that external durable storage is absent.

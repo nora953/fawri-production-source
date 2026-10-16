@@ -119,6 +119,63 @@ test('real HTTP receipt directory requires trusted admin permission and durable 
     await assert.rejects(()=>pool.query(readSql,[finance.id,2,null,null,randomUUID(),'a'.repeat(64)]),error=>error.code==='42501');
     assert.equal((await audits()).length,before);
   });
+  for(const forced of [null,'verified_provider_payment_receipts'])await t.test(`audited directory restricted capability owner; FORCE RLS on ${forced||'none'}`,async()=>{
+    const capabilityOwner=`directory_owner_${randomUUID().replaceAll('-','')}`;
+    const tables=['accounts','admin_profiles','admin_permissions','database_admin_access_audits','verified_provider_payment_receipts'];
+    const catalogSql="SELECT c.relname,c.relowner,c.relrowsecurity,c.relforcerowsecurity FROM pg_class c WHERE c.relnamespace='public'::regnamespace AND c.relname=ANY($1::text[]) ORDER BY c.relname";
+    const originalCatalog=(await admin.query(catalogSql,[tables])).rows;
+    const originalFunction=(await admin.query('SELECT proowner,prosecdef,proconfig FROM pg_proc WHERE oid=$1::regprocedure',[capability])).rows;
+    const originalPrincipal=(await admin.query('SELECT current_user,session_user')).rows;
+    const beforeAudits=await audits(),auditId=randomUUID();
+    try{
+      await admin.query('BEGIN');
+      await admin.query(`CREATE ROLE ${capabilityOwner} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+      await admin.query(`GRANT USAGE ON SCHEMA public TO ${capabilityOwner}`);
+      for(const table of tables)await admin.query(`ALTER TABLE public.${table} OWNER TO ${capabilityOwner}`);
+      // Only the receipt dependency's FORCE flag is varied. Actor/audit table
+      // RLS flags stay exactly as committed by the migrations.
+      await admin.query(`ALTER TABLE public.verified_provider_payment_receipts ${forced?'FORCE':'NO FORCE'} ROW LEVEL SECURITY`);
+      await admin.query(`ALTER FUNCTION ${capability} OWNER TO ${capabilityOwner}`);
+      const flags=(await admin.query('SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname=$1',[capabilityOwner])).rows[0];
+      assert.deepEqual(flags,{rolsuper:false,rolbypassrls:false});
+      const protectedCatalog=(await admin.query(catalogSql,[tables])).rows;
+      assert.equal(new Set(protectedCatalog.map(row=>row.relowner)).size,1);
+      for(const row of protectedCatalog){
+        const original=originalCatalog.find(table=>table.relname===row.relname);
+        assert.equal(row.relrowsecurity,original.relrowsecurity);
+        assert.equal(row.relforcerowsecurity,row.relname==='verified_provider_payment_receipts'?Boolean(forced):original.relforcerowsecurity);
+      }
+      assert.equal(protectedCatalog.find(row=>row.relname==='verified_provider_payment_receipts').relrowsecurity,true);
+      const functionOwner=(await admin.query('SELECT proowner,prosecdef,proconfig FROM pg_proc WHERE oid=$1::regprocedure',[capability])).rows[0];
+      assert.deepEqual(functionOwner,{proowner:protectedCatalog[0].relowner,prosecdef:true,proconfig:['search_path=pg_catalog','row_security=off']});
+      await admin.query(`SET LOCAL ROLE ${role}`);
+      assert.equal((await admin.query('SELECT current_user AS role')).rows[0].role,role);
+      assert.equal((await admin.query('SELECT * FROM verified_provider_payment_receipts')).rows.length,0);
+      await admin.query('SAVEPOINT expected_denial');
+      if(forced){
+        await assert.rejects(()=>admin.query(readSql,[owner.id,3,null,null,auditId,'a'.repeat(64)]),error=>error.code==='42501');
+        await admin.query('ROLLBACK TO SAVEPOINT expected_denial');
+      }else{
+        await assert.rejects(()=>admin.query(readSql,[denied.id,3,null,null,randomUUID(),'a'.repeat(64)]),error=>error.code==='42501');
+        await admin.query('ROLLBACK TO SAVEPOINT expected_denial');
+        const result=(await admin.query(readSql,[owner.id,3,null,null,auditId,'a'.repeat(64)])).rows;
+        assert.deepEqual(result.map(row=>row.provider_event_id).sort(),[...events].sort());
+        for(const row of result)assert.deepEqual(Object.keys(row).sort(),['provider','provider_event_id','event_type','amount_iqd','first_received_at','payment_ref_suffix','request_ref_suffix'].sort());
+        for(const value of [...references,'c'.repeat(64)])assert.equal(JSON.stringify(result).includes(value),false);
+        assert.equal((await admin.query('SELECT * FROM verified_provider_payment_receipts')).rows.length,0);
+      }
+      await admin.query('RESET ROLE');
+      const ownAudit=(await admin.query('SELECT admin_account_id,reason_code,request_hash FROM database_admin_access_audits WHERE id=$1',[auditId])).rows;
+      assert.deepEqual(ownAudit,forced?[]:[{admin_account_id:owner.id,reason_code:'BILLING_VERIFIED_RECEIPTS_READ',request_hash:'a'.repeat(64)}]);
+    }finally{await admin.query('ROLLBACK');}
+    assert.deepEqual((await admin.query('SELECT current_user,session_user')).rows,originalPrincipal);
+    assert.deepEqual((await admin.query(catalogSql,[tables])).rows,originalCatalog);
+    assert.deepEqual((await admin.query('SELECT proowner,prosecdef,proconfig FROM pg_proc WHERE oid=$1::regprocedure',[capability])).rows,originalFunction);
+    assert.deepEqual(await audits(),beforeAudits);assert.deepEqual(await receiptSnapshot(),originalReceipts);
+    assert.equal(await entitlementCount(),originalEntitlements);
+    assert.equal((await admin.query('SELECT count(*)::int n FROM pg_roles WHERE rolname=$1',[capabilityOwner])).rows[0].n,0);
+    console.log('DIRECTORY_OWNER_RLS_PROOF '+JSON.stringify({forced,restrictedOwner:true,expectedSqlstate:forced?'42501':null,auditRequired:true,noReceiptMutation:true,rollbackRestored:true}));
+  });
   await t.test('equal-microsecond keyset pages retain every original receipt during a new head insertion',async()=>{
     const added=[],prefix=`tie-event-${randomUUID()}`;
     try{
