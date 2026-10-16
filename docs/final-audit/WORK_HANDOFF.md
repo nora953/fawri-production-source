@@ -1,3 +1,14 @@
+# Recovered Work continuation — latest CI acceptance, 2026-10-17 Baghdad
+
+- Recovery source: Draft [PR #550](https://github.com/nora953/fawri-production-source/pull/550), branch `fix/p0-provider-receipt-order-discovery-20261015`, accepted code/test source `becd15d9d4364b3e654383e893a9e0bec5d6f7ae`. This supersedes earlier PR #548 handoffs; no local-only Work state assumed.
+- **25/25 observed workflows SUCCESS** for this exact SHA. Isolated PostgreSQL [run 38969822940](https://github.com/nora953/fawri-production-source/actions/runs/38969822940), job `117205177353`: parsed **57 AUDIT_SUITE_RESULT records, 362 PASS / 0 FAIL / 0 SKIP / 0 CANCELLED**. Records include repeated restore invocations; not 362 independent scenarios. Operator wire recovery17PASS, replay review20PASS, replay execution20PASS, verified inbox18PASS, receipt process recovery15PASS. Full schema restore and cleanup steps succeeded.
+- Stronger pre-rollback non-mutation checks are **verified on this source**: logs contain `preRollbackDomainUnchanged=true` 18 times and `preRollbackEntitlementsUnchanged=true` twice, no false entries. These are instrumented bounded SQL owner proofs; they do not certify hosted rollout.
+- No new product source or migration change in this recovery checkpoint. Earlier WORK_HANDOFF heading saying stronger SQL NOT RUN is superseded by this verified evidence. Do not repeat the same 25 workflows just for this docs-only update.
+- **Remaining NO-GO:** hosted Neon owner/role/function EXECUTE catalog and approved sandbox rollout, Railway deployment gates/storage, financial retention/deletion and missing-order operator ownership decisions, provider mapping concurrency mutation proof marked NOT RUN, cashier offline policy/threat model. Keep #523/#535 open until their own criteria are satisfied. Do not merge/deploy/change hosted grants or real payments without separate approval.
+- **Next executable unit:** inspect existing provider mapping concurrency test and fixture, add isolated reproducible concurrent mapping mutation/failure proof with fake provider and disposable PostgreSQL; run targeted suite, preserve failures and commit code/tests separately from this documentation checkpoint. If blocked, select next independent restricted-role gate. Confirm latest branch SHA and handoff first.
+
+---
+
 # Continuation — all16 replay owner cases PASS; pre-rollback state assertions pending
 
 2026-10-16 UTC. Same Draft#550/branch. Last accepted source `f14c3cb354cc7723efbb270df2249eee1e276bfe`,362PASS/0FAIL/0CANCELLED/0SKIP and25/25workflowsSUCCESS, isolated38969053191/job117202615539. All16new0031/0032owner cases and original HTTP suites PASS. Native proof count16, review20PASS/execution20PASS, restore/cleanup and original fingerprint PASS. Exact evidence P0_REPLAY_OWNER_RESULTS_20261016.json; initial source retained.
