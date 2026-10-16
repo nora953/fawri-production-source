@@ -1,3 +1,12 @@
+# P0 correction — verified CI failure and exact fail-closed rejection (2026-10-17)
+
+- Source `fa8760871a084a737bd478457d9c4c26fe21153e`: 24/25 workflows SUCCESS, isolated PostgreSQL audit FAILED: https://github.com/nora953/fawri-production-source/actions/runs/38980321462, job 117239397208.
+- Root cause from actual job logs: added post-admission remapping assertion expected `SUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND`, but observed **fail-closed** `SUPERQI_SANDBOX_ORDER_IDENTITY_MISMATCH` (SaaS) and `CASHIER_BILLING_ORDER_IDENTITY_MISMATCH` (cashier). The test expectation was incorrect; do not label as a production defect.
+- Fixed expectation in source commit `85423479d48d97c3de0c4a0ed2415ccabb8bc298`. **New commit CI not yet verified.** Sequential mapping mutation is still distinct from a two-transaction race; keep P0 mapping concurrency NOT RUN.
+- Next: confirm fresh 25-workflow CI for `85423479` and the exact billing suite `billing-provider-discovery-restricted-postgres.integration.test.mjs` has exit=0, then construct overlapping-transaction mapping mutation proof. P0 remains NO-GO.
+
+---
+
 # P0 continuation — provider mapping post-admission mutation (2026-10-17)
 
 - Branch: `fix/p0-provider-receipt-order-discovery-20261015`, Draft PR #550. Test source commit `fa8760871a084a737bd478457d9c4c26fe21153e`.
