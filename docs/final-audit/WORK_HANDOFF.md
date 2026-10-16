@@ -1,3 +1,11 @@
+# Accepted CI checkpoint — 2026-10-17
+
+- Corrected source commit `85423479d48d97c3de0c4a0ed2415ccabb8bc298` has **25/25 GitHub Actions workflows SUCCESS**, 0 failures, https://github.com/nora953/fawri-production-source/actions/runs/38980698605.
+- Isolated PostgreSQL audit job `117240629916` SUCCESS; verified actual log `AUDIT_SUITE_RESULT` for `billing-provider-discovery-restricted-postgres.integration.test.mjs`: **exit=0, passed=11, failed=0, skipped=0, cancelled=0**. Includes SaaS and cashier restricted-role signed callback scenarios and sequential post-admission mapping mutation rejection. Earlier expected-code failure was a test assertion mismatch and is now corrected.
+- **Do not confuse accepted sequential mutation proof with untested two-session overlapping-transaction race.** Next P0 work is deterministic interleaving of mapping mutation at receipt-admission/discovery/application boundaries, with receipt immutability, no premature entitlement, tenant isolation and safe replay assertions. P0 release remains NO-GO; no hosted/main/deploy mutations.
+
+---
+
 # P0 correction — verified CI failure and exact fail-closed rejection (2026-10-17)
 
 - Source `fa8760871a084a737bd478457d9c4c26fe21153e`: 24/25 workflows SUCCESS, isolated PostgreSQL audit FAILED: https://github.com/nora953/fawri-production-source/actions/runs/38980321462, job 117239397208.
