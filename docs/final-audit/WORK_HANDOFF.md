@@ -1,3 +1,11 @@
+# P0 staging merchants broad grant / no RLS — 2026-10-17
+
+- Verified by read-only Neon SQL against project `round-fire-18493605`, branch `staging-runtime` (`br-falling-dust-b1km4gix`): `public.merchants` has `rowsecurity=false`; role `fawri_staging_rls_runtime` has SELECT, INSERT, UPDATE **and DELETE** table privileges. The same role has SELECT/INSERT/UPDATE on SaaS and cashier billing orders, which do have RLS enabled and tenant-boundary policies.
+- **P0 security finding requiring triage:** non-BYPASSRLS role with broad direct grants to a non-RLS merchants table. Any connection actually executing as that role may have unrestricted SQL-level merchant row access. Application-level authorization does not substitute for database isolation; actual exploitability/role use and existing application dependencies must be verified.
+- Do **not** immediately revoke privileges or enable RLS in hosted staging without impact analysis and safe migration/testing. Need audit of role inheritance, `merchants` usage, table ownership, GRANT sources and least-privilege design; create safe disposable-branch proof and migration proposal before changes. Release NO-GO.
+
+---
+
 # Neon staging read-only role and schema verification — 2026-10-17
 
 - Verified project Fawri-Staging `round-fire-18493605`, explicit branch `staging-runtime` (`br-falling-dust-b1km4gix`); default branch is a separate `production` branch. The earlier zero-table result was from default branch and is **not** a staging schema finding.
