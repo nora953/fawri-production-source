@@ -1,3 +1,12 @@
+# Accepted post-discovery / pre-attach race — 2026-10-17
+
+- Source `93e2cfa7157cf632575c4112372b5efee88e3ba1` **25/25 GitHub Actions SUCCESS**; isolated PostgreSQL run https://github.com/nora953/fawri-production-source/actions/runs/38982076552 job `117244996814` SUCCESS.
+- Actual job log: `AUDIT_SUITE_RESULT` for `billing-provider-discovery-restricted-postgres.integration.test.mjs`: `exit=0 passed=11 failed=0 skipped=0 cancelled=0 summaryComplete=true`.
+- SaaS and cashier tests now also lock the merchant row in owner transaction, start a signed restricted-role webhook, observe its blocked `merchants ... FOR UPDATE` via `pg_blocking_pids` (proving initial discovery already returned), mutate checkout reference in the owner transaction, COMMIT and require fail-closed scope reauthorization; receipt immutable, no application/subscription, no tenant/admin context or naked reads.
+- Both tested interleavings (during order discovery, after discovery before attach) are accepted under disposable PostgreSQL. This is **not** evidence for hosted production role/RLS/grants, all possible concurrent histories, or release GO. Continue with targeted hosted-read-only acceptance and remaining P0 gates; no merge/deploy.
+
+---
+
 # Accepted overlapping mapping race CI — 2026-10-17
 
 - Source commit `5fe1dc456c2d95fed8a96cfe025f3ea98ffdbc9e`: **25/25 workflows SUCCESS**; isolated PostgreSQL run https://github.com/nora953/fawri-production-source/actions/runs/38981424038, job `117242924849` SUCCESS.
