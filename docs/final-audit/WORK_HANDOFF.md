@@ -1,3 +1,13 @@
+# Continuation — receipt admission owner matrix pending, 2026-10-16 UTC
+
+Recovered checkpoint `d721571111d616e47a8c6bed7490a3b331628ed8` is published on existing Draft #550. Source `6c34961a` remains independently accepted342PASS/0FAIL/0CANCELLED/0SKIP and25successfulworkflows; recovery did not rerun unchanged code.
+
+New work adds two bounded SQL cases to `artifacts/api-server/tests/verified-provider-receipt-inbox-postgres.integration.test.mjs`: original0029 admission function and inbox owned by a synthetic NOLOGIN/NOSUPERUSER/NOBYPASSRLS role, with FORCE RLS off/on. Non-FORCE case requires exact timestamp-only return, immutable next-day replay/hash collision rejection, no naked read/update/delete access and original identity/time stored. FORCE case must raise42501 and leave no receipt. Both transactions roll back; original catalog owners/RLS/function configuration, absent synthetic owner/receipt and unchanged entitlement counts are checked independently after rollback. Original signed provider/orphan/recovery cases retained. This is bounded SQL owner proof, not direct-LOGIN full handler acceptance or hosted setup certification.
+
+Local node --check and git diff --check PASS. New actual SQL cases NOT RUN at publication; inspect current source isolated CI before claiming success. Docker unavailable locally; use existing owned offline workflow. Exact next action: fetch source workflow jobs/logs, verify both ADMISSION_OWNER_RLS_PROOF records and measured totals, fix demonstrated failure only, then update523/550 and ledgers. No production source/migration/hosted changes. Remaining policy/hosted gates OPEN; provider-mapping race remains NOT RUN, historical85/15 unmeasured/releaseNO-GO.
+
+---
+
 # Emergency recovery checkpoint — 2026-10-16 UTC / 2026-10-17 Baghdad
 
 Recovered the existing worktree and eight staged documentation/evidence files from the interrupted session; no source work was discarded. Remote Draft #550 still points to `6c34961a36ceec848f53060f87990437c9fc13f0` on `fix/p0-provider-receipt-order-discovery-20261015`. PR #548 is superseded by the stacked #549/#550 continuation, not the current work point. Main remains `d38d29229bed0f9575a98e7026e7819fe363bfd4`.

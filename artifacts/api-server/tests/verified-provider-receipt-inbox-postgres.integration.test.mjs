@@ -179,4 +179,59 @@ test('confirmed provider inbox preserves unmatched payment evidence without gues
     await restricted.query('RESET ROLE');restricted.release();restricted=undefined;
     assert.equal((await receipts(p.paymentId)).length,1);
   });
+
+  for (const forced of [false,true]) await t.test(`admission restricted function/table owner with FORCE RLS ${forced}`,async()=>{
+    const client=await pool.connect(),owner=`admission_owner_${randomUUID().replaceAll('-','')}`;
+    const p=payload(),first=new Date(),later=new Date(first.getTime()+86400000);
+    const args=[`synthetic-event-${randomUUID()}`,p.paymentId,p.requestId,'payment_succeeded',3900,'a'.repeat(64),first];
+    const original=(await pool.query("SELECT c.relowner,c.relrowsecurity,c.relforcerowsecurity,p.proowner,p.prosecdef,p.proconfig FROM pg_class c CROSS JOIN pg_proc p WHERE c.oid='public.verified_provider_payment_receipts'::regclass AND p.oid=$1::regprocedure",[functionIdentity])).rows;
+    const entitlementCounts=async()=>(await pool.query('SELECT (SELECT count(*)::int FROM saas_entitlement_applications) saas,(SELECT count(*)::int FROM cashier_entitlement_applications) cashier,(SELECT count(*)::int FROM subscriptions) subscriptions,(SELECT count(*)::int FROM merchant_cashier_subscriptions) cashier_subscriptions')).rows;
+    const beforeEntitlements=await entitlementCounts();
+    try {
+      await client.query('BEGIN');
+      await client.query(`CREATE ROLE ${owner} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+      await client.query(`GRANT USAGE ON SCHEMA public TO ${owner}`);
+      await client.query(`ALTER TABLE public.verified_provider_payment_receipts OWNER TO ${owner}`);
+      await client.query(`ALTER TABLE public.verified_provider_payment_receipts ${forced?'FORCE':'NO FORCE'} ROW LEVEL SECURITY`);
+      await client.query(`ALTER FUNCTION ${functionIdentity} OWNER TO ${owner}`);
+      await client.query(`SET LOCAL ROLE ${role}`);
+      const metadata=(await client.query("SELECT c.relrowsecurity,c.relforcerowsecurity,p.proowner=c.relowner AS matching_owner,p.prosecdef,p.proconfig,r.rolsuper,r.rolbypassrls FROM pg_proc p JOIN pg_roles r ON r.oid=p.proowner CROSS JOIN pg_class c WHERE c.oid='public.verified_provider_payment_receipts'::regclass AND p.oid=$1::regprocedure",[functionIdentity])).rows[0];
+      assert.deepEqual(metadata,{relrowsecurity:true,relforcerowsecurity:forced,matching_owner:true,prosecdef:true,proconfig:['search_path=pg_catalog','row_security=off'],rolsuper:false,rolbypassrls:false});
+      assert.equal((await client.query('SELECT current_user AS role')).rows[0].role,role);
+      assert.equal((await client.query('SELECT * FROM verified_provider_payment_receipts')).rows.length,0);
+      if (forced) {
+        await client.query('SAVEPOINT expected_denial');
+        await assert.rejects(()=>client.query(admitSql,args),error=>error.code==='42501');
+        await client.query('ROLLBACK TO SAVEPOINT expected_denial');
+        await client.query('RESET ROLE');
+        assert.equal((await client.query('SELECT count(*)::int n FROM verified_provider_payment_receipts WHERE payment_ref=$1',[p.paymentId])).rows[0].n,0);
+      } else {
+        const admitted=await client.query(admitSql,args);
+        assert.deepEqual(Object.keys(admitted.rows[0]),['first_received_at']);
+        assert.equal(new Date(admitted.rows[0].first_received_at).getTime(),first.getTime());
+        assert.deepEqual((await client.query(admitSql,[...args.slice(0,6),later])).rows,admitted.rows);
+        await client.query('SAVEPOINT expected_collision');
+        await assert.rejects(()=>client.query(admitSql,[...args.slice(0,5),'b'.repeat(64),later]),error=>error.code==='23505');
+        await client.query('ROLLBACK TO SAVEPOINT expected_collision');
+        assert.equal((await client.query('SELECT * FROM verified_provider_payment_receipts')).rows.length,0);
+        assert.equal((await client.query('UPDATE verified_provider_payment_receipts SET amount_iqd=1')).rowCount,0);
+        assert.equal((await client.query('DELETE FROM verified_provider_payment_receipts')).rowCount,0);
+        await client.query('RESET ROLE');
+        const stored=(await client.query('SELECT * FROM verified_provider_payment_receipts WHERE payment_ref=$1',[p.paymentId])).rows;
+        assert.equal(stored.length,1);
+        assert.equal(stored[0].provider_event_id,args[0]);
+        assert.equal(stored[0].request_ref,p.requestId);
+        assert.equal(stored[0].payload_hash,args[5]);
+        assert.equal(stored[0].amount_iqd,3900);
+        assert.equal(new Date(stored[0].first_received_at).getTime(),first.getTime());
+      }
+    } finally {
+      await client.query('ROLLBACK');client.release();
+    }
+    assert.equal((await receipts(p.paymentId)).length,0,'transactional owner fixture leaves no receipt');
+    assert.deepEqual(await entitlementCounts(),beforeEntitlements,'admission never grants an entitlement');
+    assert.deepEqual((await pool.query("SELECT c.relowner,c.relrowsecurity,c.relforcerowsecurity,p.proowner,p.prosecdef,p.proconfig FROM pg_class c CROSS JOIN pg_proc p WHERE c.oid='public.verified_provider_payment_receipts'::regclass AND p.oid=$1::regprocedure",[functionIdentity])).rows,original);
+    assert.equal((await pool.query('SELECT count(*)::int n FROM pg_roles WHERE rolname=$1',[owner])).rows[0].n,0);
+    console.log('ADMISSION_OWNER_RLS_PROOF '+JSON.stringify({forced,restrictedOwner:true,expectedSqlstate:forced?'42501':null,immutableReplay:!forced,rollbackRestored:true,entitlementsUnchanged:true}));
+  });
 });
