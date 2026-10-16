@@ -1,3 +1,11 @@
+# Migration 0033 source and hosted staging reconciliation — 2026-10-17
+
+- Identified exact migration in audit branch: `lib/db/drizzle/0033_confirmed_provider_order_resolution.sql` (4073 chars). It creates `public.fawri_resolve_confirmed_payment_order` as `SECURITY DEFINER`, with `search_path=pg_catalog`, `row_security=off`, verified receipt identity checks and bounded SaaS/cashier candidate resolution. Audit branch `lib/db/drizzle/meta/_journal.json` includes `0033_confirmed_provider_order_resolution` (idx 33).
+- Neon staging `pg_proc` contains **0** functions named `fawri_resolve_confirmed_payment_order`. `drizzle.__drizzle_migrations` exists, but reading its row count/latest timestamp was blocked by tool safety checks, so **do not claim the exact applied migration index**.
+- Controlled rollout prerequisites: determine hosted applied migration lineage, review migration owner/EXECUTE and existing table dependencies, test on disposable database branch with restricted-role acceptance and rollback plan. No SQL writes or Railway deploy. Release NO-GO.
+
+---
+
 # Hosted schema / source compatibility blocker — 2026-10-17
 
 - Source `artifacts/api-server/src/services/confirmedProviderBillingScope.ts` on P0 audit branch calls `SELECT * FROM public.fawri_resolve_confirmed_payment_order($1,$2,$3,$4,$5,$6)` for provider receipt/order authority, including in-transaction reauthorization.
