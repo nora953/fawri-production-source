@@ -1,3 +1,18 @@
+# Next controlled concurrency experiment — 2026-10-17
+
+**Not yet executed / not an accepted proof.** Proposed disposable-PostgreSQL-only race experiment for both SaaS and cashier:
+
+1. Create a synthetic mapped order, admit its signed verified receipt with the restricted runtime lacking resolver EXECUTE (receipt persisted; zero grants); restore resolver EXECUTE.
+2. Session A (independent owner connection) BEGIN and UPDATE only the target order's `provider_checkout_ref` to a new unique reference, retaining the uncommitted row lock. Do not change receipt or merchant ownership.
+3. Start restricted child callback B with original signed event. Verify B is actually waiting on the target row lock using `pg_stat_activity` / `pg_blocking_pids` and bounded deadline; do not substitute sleep-only ordering. Child's normal webhook first re-admits the same immutable receipt.
+4. COMMIT A while B is blocked; B must finish with a documented identity-mismatch/revalidation rejection, not a grant. Verify unchanged receipt identity and original first-received time, no application/subscription, no unintended merchant/order writes, zero naked tenant reads, reset tenant/admin context. A bounded timeout must always roll back A, terminate child, and clean fixture.
+5. Restore original checkout reference, replay the same event under the restricted role, verify exactly one application and one subscription, then replay duplicate and verify no double grant or receipt time change.
+6. Repeat with an uncommitted metadata `provider_request_id` mutation and, if separately needed, an interleaving **after** resolver returns but **before** application; that latter boundary needs explicit test-only synchronization or an independent SQL-level proof, not an unsupported claim.
+
+The accepted 25/25 CI and 11/11 suite for source `85423479` do **not** cover these overlaps. Keep P0 race gate OPEN until real test logs and observed lock interleaving are captured.
+
+---
+
 # Accepted CI checkpoint — 2026-10-17
 
 - Corrected source commit `85423479d48d97c3de0c4a0ed2415ccabb8bc298` has **25/25 GitHub Actions workflows SUCCESS**, 0 failures, https://github.com/nora953/fawri-production-source/actions/runs/38980698605.
