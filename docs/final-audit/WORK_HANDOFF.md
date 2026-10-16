@@ -1,3 +1,13 @@
+# Hosted schema / source compatibility blocker — 2026-10-17
+
+- Source `artifacts/api-server/src/services/confirmedProviderBillingScope.ts` on P0 audit branch calls `SELECT * FROM public.fawri_resolve_confirmed_payment_order($1,$2,$3,$4,$5,$6)` for provider receipt/order authority, including in-transaction reauthorization.
+- Read-only Neon SQL explicitly against Fawri-Staging `staging-runtime`: `SELECT count(*) FROM pg_proc WHERE proname='fawri_resolve_confirmed_payment_order'` returned **0**. Hosted schema does not currently supply this resolver; do not attempt to deploy this audit-branch callback against it without migration and restricted-role EXECUTE verification.
+- Railway staging service currently deploys `main`, not the P0 audit branch; this finding is a **future deployment compatibility blocker**, not evidence that currently deployed `main` is invoking a missing resolver.
+- Railway service is online 1/1 with no active alerts, but its variable values are redacted and runtime PostgreSQL user remains unverified.
+- Next: locate resolver migration in source, reconcile migration state on a disposable Neon branch, verify RLS/grants and restricted role, then stage controlled rollout only after approval. No hosted writes, merge or deploy. P0 NO-GO.
+
+---
+
 # Railway staging runtime role identity — 2026-10-17
 
 - Railway project `fawri-staging`, environment named `production`, service `fawri-web`: latest deployment SUCCESS (2026-10-10), GitHub source `nora953/fawri-production-source` branch `main` (not audit branch).
