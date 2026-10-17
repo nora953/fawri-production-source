@@ -1,3 +1,9 @@
+## P0 migration 0027 SHA-256 verified — 2026-10-17
+
+PASS: independently computed SHA-256 over exact UTF-8 (ASCII-only) content of `lib/db/drizzle/0027_cashier_subscription_licensing.sql` on audit branch, 18,548 bytes: `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`. Exact match with isolated Neon `drizzle.__drizzle_migrations` id28 hash (`created_at=1791244800000`). Confirms the final applied migration's source integrity, not the full earlier ledger or later migrations. No SQL migration applied; six pending 0028–0033. NO-GO.
+
+---
+
 ## P0 migration 0027 source and 0028–0033 preflight — 2026-10-17
 
 Fetched canonical SQL `lib/db/drizzle/0027_cashier_subscription_licensing.sql` (18548 characters; Git blob SHA `f4fa482d412664091b38fb980f25e399ff6b1847`). It creates cashier subscriptions/orders/events/entitlement tables and RLS policies. Isolated Neon migration ledger final id28 hash `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`, timestamp `1791244800000`. **Do not confuse Git blob SHA with Drizzle SHA-256**: actual SQL text checksum comparison is still outstanding. Existing clone prerequisite tables checked. Avoid applying migrations before hash comparison and privileged role/grant review. No DB writes, NO-GO.
