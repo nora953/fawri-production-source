@@ -10,6 +10,11 @@ const source = fs.readFileSync(
   "utf8",
 );
 
+const validationSource = fs.readFileSync(
+  path.join(here, "../../api-server/src/services/cashierStaffAuthorityValidation.ts"),
+  "utf8",
+);
+
 // Source-contract regression only: disposable PostgreSQL/HTTP behavior must be
 // exercised separately before accepting the P0 runtime remediation.
 test("station disable/revoke invalidates active pairing challenges in the same transaction", () => {
@@ -32,7 +37,7 @@ test("station disable/revoke invalidates active pairing challenges in the same t
 
 test("station create and update require boolean offline inventory authority", () => {
   assert.match(
-    source,
+    validationSource,
     /function offlineAuthorityFlag\(value: unknown\): boolean\s*\{\s*if \(typeof value !== "boolean"\)/,
   );
   assert.match(
