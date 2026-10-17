@@ -127,9 +127,27 @@ test(
       merchantId,
       stationId: stationOne.id,
     });
+    // P0: a pairing code must stay revoked after disabling and re-enabling the station.
+    await cashier.updateCashierStationAuthoritative({
+      merchantId, stationId: stationOne.id, status: "disabled",
+    });
+    await cashier.updateCashierStationAuthoritative({
+      merchantId, stationId: stationOne.id, status: "active",
+    });
+    await assert.rejects(
+      () => cashier.redeemCashierStationPairingAuthoritative({
+        pairingCode: pairingOne.pairing_code,
+        deviceId: "stale-" + crypto.randomUUID(),
+      }),
+      (error: unknown) => Boolean(error && typeof error === "object" &&
+        "code" in error && (error as { code?: unknown }).code === "CASHIER_PAIRING_INVALID"),
+    );
+    const freshPairing = await cashier.beginCashierStationPairingAuthoritative({
+      merchantId, stationId: stationOne.id,
+    });
     const deviceOne = `lifecycle-device-1-${crypto.randomUUID()}`;
     await cashier.redeemCashierStationPairingAuthoritative({
-      pairingCode: pairingOne.pairing_code,
+      pairingCode: freshPairing.pairing_code,
       deviceId: deviceOne,
     });
 
