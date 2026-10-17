@@ -1,3 +1,9 @@
+## P0 missing resolver fail-closed correction — 2026-10-17
+
+Commit `21d4da91fba3d03eb2d4ad837ffb599ba309fb5f` updates `confirmedProviderBillingScope.ts` to map PostgreSQL `42883` (undefined function), alongside `42501` (insufficient privilege), to the existing retryable `SUPERQI_SANDBOX_ORDER_RESOLVER_UNAVAILABLE` / HTTP 503 error. This addresses the hosted staging gap where migration 0033 has not been applied. The source edit is committed; new CI/runtime tests have not been executed or verified yet. Railway still deploys main, not this audit branch. NO-GO.
+
+---
+
 ## P0 migration runner safety review — 2026-10-17
 
 Inspected `lib/db/scripts/smoke-migration.mjs`: its `requireSafeCiDatabase` explicitly requires `FAWRI_ALLOW_MIGRATION_SMOKE=1`, host localhost/127.0.0.1, and database `fawri_ci`; it refuses remote Neon. It uses Drizzle `migrate()` twice over `createStabilizedMigrationFolder` and checks schema/constraints. Do not bypass this localhost safety gate. `lib/db/scripts/commit-migration.mjs` is a separate data migration commit test with `requireSafeDatabase`, not the six-schema-migration runner. `scripts/run-postgresql-migration-plan.mjs` is dry-run only and does not connect to DB. Next: design a dedicated isolated-Neon migration acceptance runner with explicit branch identity, migration journal/hash verification, reviewed SQL owner/grants, fail-closed controls and recovery; no schema migration was applied. NO-GO.
