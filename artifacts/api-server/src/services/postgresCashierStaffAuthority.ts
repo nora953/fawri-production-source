@@ -336,6 +336,18 @@ function staffStatus(value: unknown): "active" | "disabled" | "revoked" {
   return status as "active" | "disabled" | "revoked";
 }
 
+function offlineAuthorityFlag(value: unknown): boolean {
+  if (typeof value !== "boolean") {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_STAFF_INPUT_INVALID",
+      "offline_inventory_authority must be a boolean",
+      400,
+      { field: "offline_inventory_authority" },
+    );
+  }
+  return value;
+}
+
 function stationStatus(value: unknown): "active" | "disabled" | "revoked" {
   const status = String(value ?? "").trim();
   if (!(["active", "disabled", "revoked"] as const).includes(status as never)) {
@@ -923,7 +935,7 @@ export async function createCashierStationAuthoritative(input: {
     locationId !== undefined
       ? null
       : optionalLabel(input.branchLabel, "branch_label", 120);
-  const offlineInventoryAuthority = Boolean(input.offlineInventoryAuthority);
+  const offlineInventoryAuthority = input.offlineInventoryAuthority === undefined ? false : offlineAuthorityFlag(input.offlineInventoryAuthority);
   const stationId = randomId("cashier_station");
 
   return withMerchantOperationalTransaction(merchantId, async (client) => {
@@ -1003,7 +1015,7 @@ export async function updateCashierStationAuthoritative(input: {
   const offlineInventoryAuthority =
     input.offlineInventoryAuthority === undefined
       ? undefined
-      : Boolean(input.offlineInventoryAuthority);
+      : offlineAuthorityFlag(input.offlineInventoryAuthority);
   if (
     name === undefined &&
     branchKey === undefined &&
