@@ -1,3 +1,9 @@
+## P0 isolated migration ledger exact rows — 2026-10-17
+
+Neon SQL access recovered on isolated branch `br-snowy-voice-b1bovtwi` (SELECT 1 succeeded). Ledger `drizzle.__drizzle_migrations` final records: id26 created_at1790553600000 hash `4b1e69a8635f380631efe41d3d42fb5d6a1dd126dacd583243daeb63219e0b17`; id27 created_at1790640000000 hash `e0e515ce07fbdf95efa2e38d173464995355adaf20012bffb892f14ce4d7d011`; id28 created_at1791244800000 hash `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`. Journal maps final id28 timestamp to `0027_cashier_subscription_licensing`; its source SQL file is 18548 characters. Hash-to-source comparison has not been completed; do not claim checksum acceptance. No migrations applied, parent untouched. NO-GO.
+
+---
+
 ## P0 SQL migration inspection follow-up — 2026-10-17
 
 Migration 0028 defines a bounded Meta page resolver and requires a separate runtime EXECUTE deployment grant. Migration 0029 defines `verified_provider_payment_receipts`, enables RLS, revokes PUBLIC table access, and defines an admission SECURITY DEFINER function with separate runtime EXECUTE grant. Journal timestamps show 0027 at 1791244800000 and 0028–0033 at 1791936000000 through 1791936000005. Prior isolated clone read confirmed 28 migration rows through 0027; subsequent Neon read calls were blocked, even `SELECT current_user`, so no SQL application or acceptance. Original staging/production unchanged; release NO-GO.
