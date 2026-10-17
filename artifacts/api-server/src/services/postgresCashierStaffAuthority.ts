@@ -22,6 +22,8 @@ import {
   resolveCashierLocationForBranch,
 } from "./cashierLocationBindingAuthority";
 import {
+  isCashierStaffRole,
+  normalizeCashierStaffPermissions,
   recommendedCashierStaffPermissions,
   type CashierStaffPermission,
   type CashierStaffRole,
