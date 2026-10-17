@@ -1,3 +1,9 @@
+## P0 migration runner safety review — 2026-10-17
+
+Inspected `lib/db/scripts/smoke-migration.mjs`: its `requireSafeCiDatabase` explicitly requires `FAWRI_ALLOW_MIGRATION_SMOKE=1`, host localhost/127.0.0.1, and database `fawri_ci`; it refuses remote Neon. It uses Drizzle `migrate()` twice over `createStabilizedMigrationFolder` and checks schema/constraints. Do not bypass this localhost safety gate. `lib/db/scripts/commit-migration.mjs` is a separate data migration commit test with `requireSafeDatabase`, not the six-schema-migration runner. `scripts/run-postgresql-migration-plan.mjs` is dry-run only and does not connect to DB. Next: design a dedicated isolated-Neon migration acceptance runner with explicit branch identity, migration journal/hash verification, reviewed SQL owner/grants, fail-closed controls and recovery; no schema migration was applied. NO-GO.
+
+---
+
 ## P0 six-capability preflight — 2026-10-17
 
 Read all migration files 0028–0033: six `SECURITY DEFINER` functions with `SET search_path=pg_catalog` and `SET row_security=off`; each revokes PUBLIC EXECUTE. 0029 also creates RLS-enabled verified receipt inbox. 0032 calls 0031's review capability; 0030/0031/0033 depend on 0029's inbox. Isolated Neon read-only pg_proc check found **zero** of six expected capability names installed. Prior step SHA-256 of 0027 source exactly matched isolated ledger id28. Remaining gate: apply six migrations in journal order to isolated branch only, using controlled Drizzle migration runner and reviewed owner/grants, then run restricted-role negative/positive tests. No migration applied in this step; original staging and production unchanged. NO-GO.
