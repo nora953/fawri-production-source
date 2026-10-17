@@ -49,3 +49,21 @@ test("station create and update require boolean offline inventory authority", ()
     "truthy strings such as 'false' must never enable offline authority",
   );
 });
+
+test("pairing redemption locks the station before the challenge and revalidates under lock", () => {
+  const redeem = source.slice(
+    source.indexOf("export async function redeemCashierStationPairingAuthoritative("),
+    source.indexOf("export async function ", source.indexOf("export async function redeemCashierStationPairingAuthoritative(") + 1),
+  );
+  assert.ok(redeem.length > 0, "pairing redemption function must be found");
+  const stationLock = redeem.indexOf("const station = await getStationRow(");
+  const challengeLock = redeem.indexOf("const challenges = await operationalQueryRows<PairingRow>(");
+  assert.ok(stationLock >= 0 && challengeLock > stationLock,
+    "station must be locked before the challenge row");
+  assert.match(redeem.slice(challengeLock), /FOR UPDATE/);
+  assert.match(redeem.slice(challengeLock), /challenge\.status !== "active"/,
+    "challenge must be revalidated after acquiring the challenge lock");
+  assert.match(redeem.slice(0, stationLock), /const discovered = await operationalQueryRows<PairingRow>/);
+  assert.doesNotMatch(redeem.slice(0, stationLock), /FOR UPDATE/,
+    "initial tenant discovery must not lock the challenge");
+});
