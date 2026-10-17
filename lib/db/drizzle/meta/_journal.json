@@ -232,6 +232,13 @@
       "when": 1791936000004,
       "tag": "0032_authorized_receipt_replay_execution",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791936000005,
+      "tag": "0033_confirmed_provider_order_resolution",
+      "breakpoints": true
     }
   ]
 }

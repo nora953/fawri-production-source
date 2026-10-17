@@ -53,10 +53,23 @@ export const PRODUCTION_TENANT_RLS_TABLES = [
   "knowledge_embeddings",
 ] as const;
 
+// The receipt inbox has no tenant column or tenant policy. Its capability-only
+// boundary still requires enabled RLS and a runtime that cannot own the table.
+export const PRODUCTION_PROTECTED_RLS_TABLES = [
+  ...PRODUCTION_TENANT_RLS_TABLES,
+  "verified_provider_payment_receipts",
+] as const;
+
 export type ProductionDatabaseRlsReadiness = {
   roleName: string;
   superuser: boolean;
   bypassRls: boolean;
+  sessionRoleName: string;
+  sessionSuperuser: boolean;
+  sessionBypassRls: boolean;
+  sessionOwnedTables: string[];
+  sessionReachablePrivilegedRoles: string[];
+  // Legacy field names retained for callers; include capability-only tables.
   ownedTenantTables: string[];
   missingOrUnprotectedTenantTables: string[];
 };
@@ -92,6 +105,11 @@ export async function getProductionDatabaseRlsReadiness(
     role_name: string;
     role_superuser: boolean;
     role_bypass_rls: boolean;
+    session_role_name: string;
+    session_role_superuser: boolean;
+    session_role_bypass_rls: boolean;
+    session_owned_tables: string[] | null;
+    session_reachable_privileged_roles: string[] | null;
     owned_tenant_tables: string[] | null;
     missing_or_unprotected_tenant_tables: string[] | null;
   }>(
@@ -104,6 +122,9 @@ export async function getProductionDatabaseRlsReadiness(
          FROM pg_roles
         WHERE rolname = current_user
      ),
+     session_role_state AS (
+       SELECT oid, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = session_user
+     ),
      table_state AS (
        SELECT
          expected.name,
@@ -115,7 +136,12 @@ export async function getProductionDatabaseRlsReadiness(
            pg_has_role((SELECT oid FROM role_state), tenant_table.relowner, 'USAGE')
            OR pg_has_role((SELECT oid FROM role_state), tenant_table.relowner, 'SET'),
            FALSE
-         ) AS owned_by_current_role
+         ) AS owned_by_current_role,
+         COALESCE(
+           pg_has_role((SELECT oid FROM session_role_state), tenant_table.relowner, 'USAGE')
+           OR pg_has_role((SELECT oid FROM session_role_state), tenant_table.relowner, 'SET'),
+           FALSE
+         ) AS owned_by_session_role
        FROM expected
        LEFT JOIN (
          SELECT c.oid, c.relname, c.relrowsecurity, c.relowner
@@ -128,7 +154,17 @@ export async function getProductionDatabaseRlsReadiness(
      )
      SELECT
        public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
+       COALESCE((SELECT array_agg(privileged.rolname::text ORDER BY privileged.rolname)
+         FROM pg_roles privileged
+         WHERE (privileged.rolsuper OR privileged.rolbypassrls)
+           AND pg_has_role((SELECT oid FROM session_role_state), privileged.oid, 'SET')),
+         ARRAY[]::text[]) AS session_reachable_privileged_roles,
        current_user AS role_name,
+       session_user AS session_role_name,
+       COALESCE((SELECT rolsuper FROM session_role_state), TRUE) AS session_role_superuser,
+       COALESCE((SELECT rolbypassrls FROM session_role_state), TRUE) AS session_role_bypass_rls,
+       COALESCE((SELECT array_agg(name ORDER BY name) FROM table_state
+         WHERE owned_by_session_role), ARRAY[]::text[]) AS session_owned_tables,
        COALESCE((SELECT rolsuper FROM role_state), TRUE) AS role_superuser,
        COALESCE((SELECT rolbypassrls FROM role_state), TRUE) AS role_bypass_rls,
        COALESCE(
@@ -143,11 +179,11 @@ export async function getProductionDatabaseRlsReadiness(
            WHERE NOT table_exists OR NOT rls_enabled),
          ARRAY[]::text[]
        ) AS missing_or_unprotected_tenant_tables`,
-    [Array.from(PRODUCTION_TENANT_RLS_TABLES)],
+    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES)],
   );
 
   const row = rows[0];
-  if (!row || !String(row.role_name || "").trim()) {
+  if (!row || !String(row.role_name || "").trim() || !String(row.session_role_name || "").trim()) {
     fail(
       "PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED",
       "production database role readiness could not be determined",
@@ -158,6 +194,11 @@ export async function getProductionDatabaseRlsReadiness(
     roleName: String(row.role_name).trim(),
     superuser: booleanValue(row.role_superuser),
     bypassRls: booleanValue(row.role_bypass_rls),
+    sessionRoleName: String(row.session_role_name).trim(),
+    sessionSuperuser: booleanValue(row.session_role_superuser),
+    sessionBypassRls: booleanValue(row.session_role_bypass_rls),
+    sessionOwnedTables: stringArray(row.session_owned_tables),
+    sessionReachablePrivilegedRoles: stringArray(row.session_reachable_privileged_roles),
     ownedTenantTables: stringArray(row.owned_tenant_tables),
     missingOrUnprotectedTenantTables: stringArray(
       row.missing_or_unprotected_tenant_tables,
@@ -206,13 +247,31 @@ export async function assertProductionDatabaseRlsReady(
   if (readiness.ownedTenantTables.length > 0) {
     fail(
       "PRODUCTION_DATABASE_RUNTIME_TABLE_OWNER_FORBIDDEN",
-      "production runtime database role must not own tenant-protected tables",
+      "production runtime database role must not own RLS-protected tables",
     );
+  }
+  // RESET ROLE can restore the authenticated account's privileges. A restricted
+  // current_user alone cannot certify a privileged connection as safe.
+  if (readiness.sessionSuperuser) {
+    fail("PRODUCTION_DATABASE_SESSION_SUPERUSER_FORBIDDEN",
+      "production authenticated database role must not be a superuser");
+  }
+  if (readiness.sessionBypassRls) {
+    fail("PRODUCTION_DATABASE_SESSION_BYPASSRLS_FORBIDDEN",
+      "production authenticated database role must not bypass row-level security");
+  }
+  if (readiness.sessionOwnedTables.length > 0) {
+    fail("PRODUCTION_DATABASE_SESSION_TABLE_OWNER_FORBIDDEN",
+      "production authenticated database role must not own RLS-protected tables");
+  }
+  if (readiness.sessionReachablePrivilegedRoles.length > 0) {
+    fail("PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE",
+      "production authenticated database role must not activate privileged roles");
   }
   if (readiness.missingOrUnprotectedTenantTables.length > 0) {
     fail(
       "PRODUCTION_DATABASE_TENANT_RLS_REQUIRED",
-      "production tenant tables must exist with row-level security enabled",
+      "production protected tables must exist with row-level security enabled",
     );
   }
 }

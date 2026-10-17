@@ -23,10 +23,11 @@ test("merchant deletion honors RLS for quiescence, purge and physical cleanup", 
   const owner = `deletion-owner-${suffix}`;
   const merchants = [0, 1, 2].map(i => `deletion-${i}-${suffix}`);
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-deletion-rls-"));
+  const runtimePassword = randomUUID().replaceAll("-", "");
   let runtimePool;
   let roleCreated = false;
   try {
-    await admin.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOBYPASSRLS NOINHERIT`);
+    await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOBYPASSRLS NOINHERIT`);
     roleCreated = true;
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await admin.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
@@ -40,14 +41,16 @@ test("merchant deletion honors RLS for quiescence, purge and physical cleanup", 
       await admin.query("INSERT INTO saved_answers(id,merchant_id,category,question_pattern,normalized_question,answer_text,language) VALUES($1,$2,'custom','Synthetic?','synthetic','Private synthetic answer','en')", [`answer-${id}`, id]);
     }
     await admin.query("INSERT INTO background_jobs(id,type,dedupe_key,merchant_id,status) VALUES($1,'audit.test',$1,$2,'queued')", [`job-${suffix}`, merchants[2]]);
-    targetUrl.searchParams.set("options", `-c role=${role}`);
+    targetUrl.username = role;
+    targetUrl.password = runtimePassword;
+    targetUrl.searchParams.delete("options");
     process.env.DATABASE_URL = targetUrl.toString();
     process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = "required";
     process.env.FAWRI_DATA_DIR = dataRoot;
     runtimePool = (await import("@workspace/db")).pool;
     runtimePool.options.max = 1;
     runtimePool.options.connectionTimeoutMillis = 5_000;
-    assert.equal((await runtimePool.query("SELECT current_user AS name")).rows[0].name, role);
+    assert.deepEqual((await runtimePool.query("SELECT current_user AS active, session_user AS login")).rows[0], {active: role, login: role});
     const { assertProductionDatabaseRlsReady } = await import("../src/services/postgresRuntimeRlsSecurity.ts");
     await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required" });
     assert.equal((await runtimePool.query("SELECT count(*)::int AS count FROM products")).rows[0].count, 0);

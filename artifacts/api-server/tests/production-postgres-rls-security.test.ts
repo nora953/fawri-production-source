@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync, readdirSync } from "node:fs";
 import type { OperationalQueryTarget } from "../src/services/operationalPostgresAuthority";
 import {
   assertProductionDatabaseRlsReady,
   PRODUCTION_TENANT_RLS_TABLES,
+  PRODUCTION_PROTECTED_RLS_TABLES,
   ProductionDatabaseRlsSecurityError,
 } from "../src/services/postgresRuntimeRlsSecurity";
 
@@ -26,6 +28,11 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
     role_name: "fawri_runtime",
+    session_role_name: "fawri_runtime",
+    session_role_superuser: false,
+    session_role_bypass_rls: false,
+    session_owned_tables: [],
+    session_reachable_privileged_roles: [],
     role_superuser: false,
     role_bypass_rls: false,
     owned_tenant_tables: [],
@@ -112,4 +119,34 @@ test("critical tenant domains remain part of the production RLS contract", () =>
   ]) {
     assert.equal(PRODUCTION_TENANT_RLS_TABLES.includes(name as never), true);
   }
+});
+
+// Independent migration inventory prevents new protected domains from silently
+// falling outside release readiness, including global capability-only tables.
+test("release readiness covers every committed RLS-enabled table", () => {
+  const directory = new URL("../../../lib/db/drizzle/", import.meta.url);
+  const migrated = new Set<string>();
+  for (const name of readdirSync(directory).filter(name => name.endsWith(".sql"))) {
+    const sql = readFileSync(new URL(name, directory), "utf8");
+    for (const match of sql.matchAll(/ALTER\s+TABLE\s+(?:public\.)?"?([a-z_]+)"?\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY/gi)) {
+      migrated.add(match[1]);
+    }
+  }
+  assert.ok(migrated.size > 40, "must inspect the full migration history");
+  const covered = new Set<string>(PRODUCTION_PROTECTED_RLS_TABLES);
+  assert.deepEqual([...migrated].filter(name => !covered.has(name)).sort(), []);
+});
+
+test("production rejects a privileged authenticated session behind a restricted current role", async () => {
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_SUPERUSER_FORBIDDEN",
+    safeRow({session_role_name: "connection_owner", session_role_superuser: true}));
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_BYPASSRLS_FORBIDDEN",
+    safeRow({session_role_name: "connection_owner", session_role_bypass_rls: true}));
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_TABLE_OWNER_FORBIDDEN",
+    safeRow({session_role_name: "connection_owner", session_owned_tables: ["verified_provider_payment_receipts"]}));
+});
+
+test("production rejects a session able to activate a privileged role", async () => {
+  await rejectsWith("PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE",
+    safeRow({ session_reachable_privileged_roles: ["isolated_bypass_role"] }));
 });

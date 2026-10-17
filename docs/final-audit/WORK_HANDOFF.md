@@ -1,3 +1,400 @@
+
+## P0 confirmed resolver CI acceptance — 2026-10-17
+
+Audit branch commit `9ffdae5bc7a1b15810a5e6c539f05ae2916a441a` completed **25/25 GitHub Actions workflows SUCCESS**, zero failed/cancelled. Isolated PostgreSQL audit run `39002802732`, job `117309086649` completed SUCCESS. Logs explicitly record `ok 1 - confirmed payment resolver fails closed on PostgreSQL 42501` and `ok 2 - confirmed payment resolver fails closed on PostgreSQL 42883`; `billing-provider-discovery-restricted-postgres.integration.test.mjs` reports `passed=13, failed=0, skipped=0, cancelled=0`. PR #550 conversation comment `6229702148` records the same evidence. This closes the disposable CI test proof only, **not hosted staging acceptance**. Pending P0: actual Railway DB runtime identity/least privilege; hosted migrations 0028–0033 and capability EXECUTE grants; RLS verification. No hosted migrations, deploys, or DB writes. **NO-GO**.
+
+## CI follow-up — 2026-10-17
+
+Previous commit `99a9b6a7252fc318d63add189d55e03a79478492` completed 24 successful workflows and one **cancelled** `Isolated PostgreSQL engineering audit` (run 39000165856); do not treat it as 25/25 success. New commit `26caa873ada4b4d2bc37b7a4b937e97f5d882820` had 24/25 workflows successful and one isolated PostgreSQL audit still in progress (run 39000514278). Its migration-and-selected-tests and cashier licensing steps succeeded; billing/refund/duplicate-event proofs were running. No hosted migration/deployment. NO-GO.
+
+---
+
+## CI checkpoint — 2026-10-17
+
+For audit branch commit `99a9b6a7252fc318d63add189d55e03a79478492`, GitHub Actions reported 24/25 workflows successful and 0 failed. The remaining `Isolated PostgreSQL engineering audit` run `39000165856`, job `117301467703`, was still in progress. Its migrations-and-selected-tests, cashier licensing, billing/refunds/duplicate-event, and restricted-role tenant/knowledge/retention steps had completed successfully; Meta bot/AI lifecycle was running, while full schema restore and Node22 HTTP journey were pending. This is an intermediate observation, not full CI acceptance. The missing-resolver `42883` mapping is committed, but a dedicated absent-function test is still not established. No hosted database changes. NO-GO.
+
+---
+
+## P0 missing resolver fail-closed correction — 2026-10-17
+
+Commit `21d4da91fba3d03eb2d4ad837ffb599ba309fb5f` updates `confirmedProviderBillingScope.ts` to map PostgreSQL `42883` (undefined function), alongside `42501` (insufficient privilege), to the existing retryable `SUPERQI_SANDBOX_ORDER_RESOLVER_UNAVAILABLE` / HTTP 503 error. This addresses the hosted staging gap where migration 0033 has not been applied. The source edit is committed; new CI/runtime tests have not been executed or verified yet. Railway still deploys main, not this audit branch. NO-GO.
+
+---
+
+## P0 migration runner safety review — 2026-10-17
+
+Inspected `lib/db/scripts/smoke-migration.mjs`: its `requireSafeCiDatabase` explicitly requires `FAWRI_ALLOW_MIGRATION_SMOKE=1`, host localhost/127.0.0.1, and database `fawri_ci`; it refuses remote Neon. It uses Drizzle `migrate()` twice over `createStabilizedMigrationFolder` and checks schema/constraints. Do not bypass this localhost safety gate. `lib/db/scripts/commit-migration.mjs` is a separate data migration commit test with `requireSafeDatabase`, not the six-schema-migration runner. `scripts/run-postgresql-migration-plan.mjs` is dry-run only and does not connect to DB. Next: design a dedicated isolated-Neon migration acceptance runner with explicit branch identity, migration journal/hash verification, reviewed SQL owner/grants, fail-closed controls and recovery; no schema migration was applied. NO-GO.
+
+---
+
+## P0 six-capability preflight — 2026-10-17
+
+Read all migration files 0028–0033: six `SECURITY DEFINER` functions with `SET search_path=pg_catalog` and `SET row_security=off`; each revokes PUBLIC EXECUTE. 0029 also creates RLS-enabled verified receipt inbox. 0032 calls 0031's review capability; 0030/0031/0033 depend on 0029's inbox. Isolated Neon read-only pg_proc check found **zero** of six expected capability names installed. Prior step SHA-256 of 0027 source exactly matched isolated ledger id28. Remaining gate: apply six migrations in journal order to isolated branch only, using controlled Drizzle migration runner and reviewed owner/grants, then run restricted-role negative/positive tests. No migration applied in this step; original staging and production unchanged. NO-GO.
+
+---
+
+## P0 migration 0027 SHA-256 verified — 2026-10-17
+
+PASS: independently computed SHA-256 over exact UTF-8 (ASCII-only) content of `lib/db/drizzle/0027_cashier_subscription_licensing.sql` on audit branch, 18,548 bytes: `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`. Exact match with isolated Neon `drizzle.__drizzle_migrations` id28 hash (`created_at=1791244800000`). Confirms the final applied migration's source integrity, not the full earlier ledger or later migrations. No SQL migration applied; six pending 0028–0033. NO-GO.
+
+---
+
+## P0 migration 0027 source and 0028–0033 preflight — 2026-10-17
+
+Fetched canonical SQL `lib/db/drizzle/0027_cashier_subscription_licensing.sql` (18548 characters; Git blob SHA `f4fa482d412664091b38fb980f25e399ff6b1847`). It creates cashier subscriptions/orders/events/entitlement tables and RLS policies. Isolated Neon migration ledger final id28 hash `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`, timestamp `1791244800000`. **Do not confuse Git blob SHA with Drizzle SHA-256**: actual SQL text checksum comparison is still outstanding. Existing clone prerequisite tables checked. Avoid applying migrations before hash comparison and privileged role/grant review. No DB writes, NO-GO.
+
+---
+
+## P0 isolated pre-migration dependency and runtime roles — 2026-10-17
+
+Read-only Neon SQL on clone `br-snowy-voice-b1bovtwi` verified prerequisite public tables exist: `account_sessions`, `accounts`, `admin_permissions`, `admin_profiles`, `cashier_billing_orders`, `database_admin_access_audits`, `merchant_channels`, `saas_billing_orders`, `trusted_devices`. Role catalog: `fawri_staging_rls_runtime` LOGIN=false/BYPASSRLS=false; `fawri_staging_runtime` LOGIN=true/BYPASSRLS=true; `neondb_owner` LOGIN=true/BYPASSRLS=true. The first role is not directly login-capable; second can bypass RLS. Actual Railway deployed role remains unverified because connector redacts secret values. Additional pg_class owner/RLS query was blocked. **No migrations executed**. Required: reconcile migration 0027 hash against canonical source; establish actual deployed DB login, ownership, grant strategy; test six migrations only on isolated clone with explicit change authorization and recovery plan. No production or staging modifications. NO-GO.
+
+---
+
+## P0 isolated migration ledger exact rows — 2026-10-17
+
+Neon SQL access recovered on isolated branch `br-snowy-voice-b1bovtwi` (SELECT 1 succeeded). Ledger `drizzle.__drizzle_migrations` final records: id26 created_at1790553600000 hash `4b1e69a8635f380631efe41d3d42fb5d6a1dd126dacd583243daeb63219e0b17`; id27 created_at1790640000000 hash `e0e515ce07fbdf95efa2e38d173464995355adaf20012bffb892f14ce4d7d011`; id28 created_at1791244800000 hash `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`. Journal maps final id28 timestamp to `0027_cashier_subscription_licensing`; its source SQL file is 18548 characters. Hash-to-source comparison has not been completed; do not claim checksum acceptance. No migrations applied, parent untouched. NO-GO.
+
+---
+
+## P0 SQL migration inspection follow-up — 2026-10-17
+
+Migration 0028 defines a bounded Meta page resolver and requires a separate runtime EXECUTE deployment grant. Migration 0029 defines `verified_provider_payment_receipts`, enables RLS, revokes PUBLIC table access, and defines an admission SECURITY DEFINER function with separate runtime EXECUTE grant. Journal timestamps show 0027 at 1791244800000 and 0028–0033 at 1791936000000 through 1791936000005. Prior isolated clone read confirmed 28 migration rows through 0027; subsequent Neon read calls were blocked, even `SELECT current_user`, so no SQL application or acceptance. Original staging/production unchanged; release NO-GO.
+
+---
+
+## P0 migration dependency inspection — 2026-10-17
+
+Inspected actual audit-branch SQL migrations 0028–0033. Each creates one SECURITY DEFINER function; 0029 additionally creates `public.verified_provider_payment_receipts` and its admission function. 0030 reads the receipt table; 0031 reviews it with SaaS/cashier orders; 0032 calls the review function; 0033 reads receipt and SaaS/cashier orders. 0028 is a separate Meta page resolver. Each migration revokes PUBLIC access to its function. Clone `br-snowy-voice-b1bovtwi` read-only pg catalog confirms receipt table absent, admission function absent, Meta resolver absent. Migration ledger shows 28 rows ending at journal timestamp 0027. Ledger individual hashes not yet retrieved (tool blocked query). **Do not apply 0033 alone**; verify 0028–0033 sequence, hashes, owners and least-privilege runtime grants before isolated acceptance. No migration applied. NO-GO.
+
+---
+
+## P0 isolated branch actual migration ledger — 2026-10-17
+
+Neon clone `audit-p0-resolver-isolated-20261017` (`br-snowy-voice-b1bovtwi`) now has a read-write direct compute `ep-curly-sea-b1daovzb`, fixed 0.25 CU, no pooler. Attempt to configure 60-second suspend was rejected by account; compute created with account defaults. Read-only SQL verified `current_database=neondb`, `current_user=neondb_owner`, resolver absent. **drizzle.__drizzle_migrations contains 28 rows; MAX(created_at)=1791244800000**, matching journal entry `0027_cashier_subscription_licensing` timestamp. Audit-branch journal includes 0028–0033; six later migrations need exact hash/lineage reconciliation before any SQL changes. This is the isolated clone, not hosted staging acceptance. No migration applied, no changes to parent staging/production. NO-GO.
+
+---
+
+## P0 isolated Neon branch created — 2026-10-17
+
+Created Neon branch `audit-p0-resolver-isolated-20261017` (`br-snowy-voice-b1bovtwi`) from `staging-runtime` (`br-falling-dust-b1km4gix`), parent LSN `0/36ECAE8`, point-in-time 2026-10-16 23:58:28 UTC. Verified state READY, **no compute endpoint** (`no_compute=true`), no writes. Do not mistake this clone for acceptance: migration 0033, EXECUTE grants and tests have not been run on it. Parent staging and production untouched. Next provision compute only when ready to run controlled isolated acceptance; avoid deploying to live staging. P0 NO-GO.
+
+---
+
+## P0 resolver rollout prerequisite (2026-10-17)
+
+Migration `lib/db/drizzle/0033_confirmed_provider_order_resolution.sql` revokes function EXECUTE from PUBLIC, but does not grant EXECUTE to a runtime role. The restricted PostgreSQL integration test explicitly grants EXECUTE to its disposable role, verifies failure after REVOKE, and restores GRANT. Hosted staging has no resolver yet. Rollout must separately verify a least-privilege EXECUTE grant to the actual deployed runtime role; do not grant PUBLIC or infer the role from redacted Railway variables. No hosted changes. NO-GO.
+
+---
+
+# Migration 0033 source and hosted staging reconciliation — 2026-10-17
+
+- Identified exact migration in audit branch: `lib/db/drizzle/0033_confirmed_provider_order_resolution.sql` (4073 chars). It creates `public.fawri_resolve_confirmed_payment_order` as `SECURITY DEFINER`, with `search_path=pg_catalog`, `row_security=off`, verified receipt identity checks and bounded SaaS/cashier candidate resolution. Audit branch `lib/db/drizzle/meta/_journal.json` includes `0033_confirmed_provider_order_resolution` (idx 33).
+- Neon staging `pg_proc` contains **0** functions named `fawri_resolve_confirmed_payment_order`. `drizzle.__drizzle_migrations` exists, but reading its row count/latest timestamp was blocked by tool safety checks, so **do not claim the exact applied migration index**.
+- Controlled rollout prerequisites: determine hosted applied migration lineage, review migration owner/EXECUTE and existing table dependencies, test on disposable database branch with restricted-role acceptance and rollback plan. No SQL writes or Railway deploy. Release NO-GO.
+
+---
+
+# Hosted schema / source compatibility blocker — 2026-10-17
+
+- Source `artifacts/api-server/src/services/confirmedProviderBillingScope.ts` on P0 audit branch calls `SELECT * FROM public.fawri_resolve_confirmed_payment_order($1,$2,$3,$4,$5,$6)` for provider receipt/order authority, including in-transaction reauthorization.
+- Read-only Neon SQL explicitly against Fawri-Staging `staging-runtime`: `SELECT count(*) FROM pg_proc WHERE proname='fawri_resolve_confirmed_payment_order'` returned **0**. Hosted schema does not currently supply this resolver; do not attempt to deploy this audit-branch callback against it without migration and restricted-role EXECUTE verification.
+- Railway staging service currently deploys `main`, not the P0 audit branch; this finding is a **future deployment compatibility blocker**, not evidence that currently deployed `main` is invoking a missing resolver.
+- Railway service is online 1/1 with no active alerts, but its variable values are redacted and runtime PostgreSQL user remains unverified.
+- Next: locate resolver migration in source, reconcile migration state on a disposable Neon branch, verify RLS/grants and restricted role, then stage controlled rollout only after approval. No hosted writes, merge or deploy. P0 NO-GO.
+
+---
+
+# Railway staging runtime role identity — 2026-10-17
+
+- Railway project `fawri-staging`, environment named `production`, service `fawri-web`: latest deployment SUCCESS (2026-10-10), GitHub source `nora953/fawri-production-source` branch `main` (not audit branch).
+- Variables `DATABASE_URL`, `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE`, `FAWRI_OPERATIONAL_POSTGRES_AUTHORITY`, `FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY` exist, but OAuth connector **redacts their values**. Cannot assert deployed DB login role or expected-role value from names alone; do not expose secrets.
+- Read-only Neon staging `pg_stat_activity` snapshot had 0 active sessions for `fawri_staging_runtime`; not proof of never using that role.
+- Catalog: `merchants` owned by `neondb_owner` with RLS disabled and direct `arwd` grants to both `fawri_staging_runtime` (LOGIN=true, BYPASSRLS=true) and `fawri_staging_rls_runtime` (LOGIN=false, BYPASSRLS=false). Hosted runtime role selection **not yet verified**.
+- Next: verify actual database user through deployed `/ops/readiness` without revealing secrets; audit code dependencies and propose safe grant/RLS hardening. No DB writes or Railway deployment. Release NO-GO.
+
+---
+
+# P0 staging merchants broad grant / no RLS — 2026-10-17
+
+- Verified by read-only Neon SQL against project `round-fire-18493605`, branch `staging-runtime` (`br-falling-dust-b1km4gix`): `public.merchants` has `rowsecurity=false`; role `fawri_staging_rls_runtime` has SELECT, INSERT, UPDATE **and DELETE** table privileges. The same role has SELECT/INSERT/UPDATE on SaaS and cashier billing orders, which do have RLS enabled and tenant-boundary policies.
+- **P0 security finding requiring triage:** non-BYPASSRLS role with broad direct grants to a non-RLS merchants table. Any connection actually executing as that role may have unrestricted SQL-level merchant row access. Application-level authorization does not substitute for database isolation; actual exploitability/role use and existing application dependencies must be verified.
+- Do **not** immediately revoke privileges or enable RLS in hosted staging without impact analysis and safe migration/testing. Need audit of role inheritance, `merchants` usage, table ownership, GRANT sources and least-privilege design; create safe disposable-branch proof and migration proposal before changes. Release NO-GO.
+
+---
+
+# Neon staging read-only role and schema verification — 2026-10-17
+
+- Verified project Fawri-Staging `round-fire-18493605`, explicit branch `staging-runtime` (`br-falling-dust-b1km4gix`); default branch is a separate `production` branch. The earlier zero-table result was from default branch and is **not** a staging schema finding.
+- Staging has 94 public tables and role `fawri_staging_rls_runtime`. Neon role detail says `authentication_method=no_login`; PostgreSQL catalog read confirms `rolcanlogin=false`, `rolbypassrls=false`.
+- `saas_billing_orders` and `cashier_billing_orders` have rowsecurity enabled and `*_tenant_boundary` policies for ALL; `merchants` rowsecurity disabled (requires grant/access assessment, not automatic vulnerability).
+- No function names matching provider/billing in `pg_proc`; only 3 public routines listed (`fawri_catalog_variant_signature_guard`, `fawri_normalize_catalog_variant_signature`, `fawri_tenant_or_audited_admin`). This staging schema has **not** demonstrated the restricted provider-discovery resolver used by disposable PostgreSQL tests; treat hosted acceptance as BLOCKED pending schema/version reconciliation, not passed.
+- Read-only checks only; no SQL writes, migrations, merges or deploys. Release remains NO-GO.
+
+---
+
+# Accepted post-discovery / pre-attach race — 2026-10-17
+
+- Source `93e2cfa7157cf632575c4112372b5efee88e3ba1` **25/25 GitHub Actions SUCCESS**; isolated PostgreSQL run https://github.com/nora953/fawri-production-source/actions/runs/38982076552 job `117244996814` SUCCESS.
+- Actual job log: `AUDIT_SUITE_RESULT` for `billing-provider-discovery-restricted-postgres.integration.test.mjs`: `exit=0 passed=11 failed=0 skipped=0 cancelled=0 summaryComplete=true`.
+- SaaS and cashier tests now also lock the merchant row in owner transaction, start a signed restricted-role webhook, observe its blocked `merchants ... FOR UPDATE` via `pg_blocking_pids` (proving initial discovery already returned), mutate checkout reference in the owner transaction, COMMIT and require fail-closed scope reauthorization; receipt immutable, no application/subscription, no tenant/admin context or naked reads.
+- Both tested interleavings (during order discovery, after discovery before attach) are accepted under disposable PostgreSQL. This is **not** evidence for hosted production role/RLS/grants, all possible concurrent histories, or release GO. Continue with targeted hosted-read-only acceptance and remaining P0 gates; no merge/deploy.
+
+---
+
+# Accepted overlapping mapping race CI — 2026-10-17
+
+- Source commit `5fe1dc456c2d95fed8a96cfe025f3ea98ffdbc9e`: **25/25 workflows SUCCESS**; isolated PostgreSQL run https://github.com/nora953/fawri-production-source/actions/runs/38981424038, job `117242924849` SUCCESS.
+- Inspected final job log: `AUDIT_SUITE_RESULT {"suite":"billing-provider-discovery-restricted-postgres.integration.test.mjs","auditBatch":"billing","runtime":"v24.22.0","exit":0,"passed":11,"failed":0,"skipped":0,"cancelled":0,"summaryComplete":true}`.
+- Added two-session disposable PostgreSQL test in both SaaS and cashier loops: owner transaction updates provider checkout reference without committing; restricted signed webhook overlaps and must be observed blocked via `pg_blocking_pids` before owner commits; webhook must fail closed; receipt remains immutable, no subscription/application, empty tenant/admin context and zero naked reads. All suite assertions passed.
+- **Coverage boundary:** This proves the specific overlap of mapping mutation and webhook under a row lock. It does not independently prove a forced pause *after successful initial resolver return but before attach/apply*, nor does it replace hosted production-role acceptance. P0 release remains NO-GO pending remaining gates.
+
+---
+
+# Next controlled concurrency experiment — 2026-10-17
+
+**Not yet executed / not an accepted proof.** Proposed disposable-PostgreSQL-only race experiment for both SaaS and cashier:
+
+1. Create a synthetic mapped order, admit its signed verified receipt with the restricted runtime lacking resolver EXECUTE (receipt persisted; zero grants); restore resolver EXECUTE.
+2. Session A (independent owner connection) BEGIN and UPDATE only the target order's `provider_checkout_ref` to a new unique reference, retaining the uncommitted row lock. Do not change receipt or merchant ownership.
+3. Start restricted child callback B with original signed event. Verify B is actually waiting on the target row lock using `pg_stat_activity` / `pg_blocking_pids` and bounded deadline; do not substitute sleep-only ordering. Child's normal webhook first re-admits the same immutable receipt.
+4. COMMIT A while B is blocked; B must finish with a documented identity-mismatch/revalidation rejection, not a grant. Verify unchanged receipt identity and original first-received time, no application/subscription, no unintended merchant/order writes, zero naked tenant reads, reset tenant/admin context. A bounded timeout must always roll back A, terminate child, and clean fixture.
+5. Restore original checkout reference, replay the same event under the restricted role, verify exactly one application and one subscription, then replay duplicate and verify no double grant or receipt time change.
+6. Repeat with an uncommitted metadata `provider_request_id` mutation and, if separately needed, an interleaving **after** resolver returns but **before** application; that latter boundary needs explicit test-only synchronization or an independent SQL-level proof, not an unsupported claim.
+
+The accepted 25/25 CI and 11/11 suite for source `85423479` do **not** cover these overlaps. Keep P0 race gate OPEN until real test logs and observed lock interleaving are captured.
+
+---
+
+# Accepted CI checkpoint — 2026-10-17
+
+- Corrected source commit `85423479d48d97c3de0c4a0ed2415ccabb8bc298` has **25/25 GitHub Actions workflows SUCCESS**, 0 failures, https://github.com/nora953/fawri-production-source/actions/runs/38980698605.
+- Isolated PostgreSQL audit job `117240629916` SUCCESS; verified actual log `AUDIT_SUITE_RESULT` for `billing-provider-discovery-restricted-postgres.integration.test.mjs`: **exit=0, passed=11, failed=0, skipped=0, cancelled=0**. Includes SaaS and cashier restricted-role signed callback scenarios and sequential post-admission mapping mutation rejection. Earlier expected-code failure was a test assertion mismatch and is now corrected.
+- **Do not confuse accepted sequential mutation proof with untested two-session overlapping-transaction race.** Next P0 work is deterministic interleaving of mapping mutation at receipt-admission/discovery/application boundaries, with receipt immutability, no premature entitlement, tenant isolation and safe replay assertions. P0 release remains NO-GO; no hosted/main/deploy mutations.
+
+---
+
+# P0 correction — verified CI failure and exact fail-closed rejection (2026-10-17)
+
+- Source `fa8760871a084a737bd478457d9c4c26fe21153e`: 24/25 workflows SUCCESS, isolated PostgreSQL audit FAILED: https://github.com/nora953/fawri-production-source/actions/runs/38980321462, job 117239397208.
+- Root cause from actual job logs: added post-admission remapping assertion expected `SUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND`, but observed **fail-closed** `SUPERQI_SANDBOX_ORDER_IDENTITY_MISMATCH` (SaaS) and `CASHIER_BILLING_ORDER_IDENTITY_MISMATCH` (cashier). The test expectation was incorrect; do not label as a production defect.
+- Fixed expectation in source commit `85423479d48d97c3de0c4a0ed2415ccabb8bc298`. **New commit CI not yet verified.** Sequential mapping mutation is still distinct from a two-transaction race; keep P0 mapping concurrency NOT RUN.
+- Next: confirm fresh 25-workflow CI for `85423479` and the exact billing suite `billing-provider-discovery-restricted-postgres.integration.test.mjs` has exit=0, then construct overlapping-transaction mapping mutation proof. P0 remains NO-GO.
+
+---
+
+# P0 continuation — provider mapping post-admission mutation (2026-10-17)
+
+- Branch: `fix/p0-provider-receipt-order-discovery-20261015`, Draft PR #550. Test source commit `fa8760871a084a737bd478457d9c4c26fe21153e`.
+- Added sequential mutation boundary assertion in `artifacts/api-server/tests/billing-provider-discovery-restricted-postgres.integration.test.mjs`: after verified receipt admission, temporarily change `provider_checkout_ref`, invoke signed restricted callback, require ORDER_NOT_FOUND and unchanged receipt/order/application/subscription; restore mapping before existing acceptance.
+- **NOT RUN** for this new assertion; no new CI result or confirmed outcome. Previous accepted `becd15d9`: 362 PASS, 25/25 workflows SUCCESS, run 38969822940. Do not transfer prior acceptance to new source.
+- This does **not** establish concurrent interleaving of two database transactions, or mutation between admission commit and application under lock. Next: inspect new CI and exact error, correct test/implementation if necessary; then add controlled two-connection synchronization proof. Preserve receipt identity, paid time, merchant isolation and no duplicate grant. No production/hosted/main changes; P0 NO-GO and historical 85% unmeasured.
+
+---
+
+# Recovered Work continuation — latest CI acceptance, 2026-10-17 Baghdad
+
+- Recovery source: Draft [PR #550](https://github.com/nora953/fawri-production-source/pull/550), branch `fix/p0-provider-receipt-order-discovery-20261015`, accepted code/test source `becd15d9d4364b3e654383e893a9e0bec5d6f7ae`. This supersedes earlier PR #548 handoffs; no local-only Work state assumed.
+- **25/25 observed workflows SUCCESS** for this exact SHA. Isolated PostgreSQL [run 38969822940](https://github.com/nora953/fawri-production-source/actions/runs/38969822940), job `117205177353`: parsed **57 AUDIT_SUITE_RESULT records, 362 PASS / 0 FAIL / 0 SKIP / 0 CANCELLED**. Records include repeated restore invocations; not 362 independent scenarios. Operator wire recovery17PASS, replay review20PASS, replay execution20PASS, verified inbox18PASS, receipt process recovery15PASS. Full schema restore and cleanup steps succeeded.
+- Stronger pre-rollback non-mutation checks are **verified on this source**: logs contain `preRollbackDomainUnchanged=true` 18 times and `preRollbackEntitlementsUnchanged=true` twice, no false entries. These are instrumented bounded SQL owner proofs; they do not certify hosted rollout.
+- No new product source or migration change in this recovery checkpoint. Earlier WORK_HANDOFF heading saying stronger SQL NOT RUN is superseded by this verified evidence. Do not repeat the same 25 workflows just for this docs-only update.
+- **Remaining NO-GO:** hosted Neon owner/role/function EXECUTE catalog and approved sandbox rollout, Railway deployment gates/storage, financial retention/deletion and missing-order operator ownership decisions, provider mapping concurrency mutation proof marked NOT RUN, cashier offline policy/threat model. Keep #523/#535 open until their own criteria are satisfied. Do not merge/deploy/change hosted grants or real payments without separate approval.
+- **Next executable unit:** inspect existing provider mapping concurrency test and fixture, add isolated reproducible concurrent mapping mutation/failure proof with fake provider and disposable PostgreSQL; run targeted suite, preserve failures and commit code/tests separately from this documentation checkpoint. If blocked, select next independent restricted-role gate. Confirm latest branch SHA and handoff first.
+
+---
+
+# Continuation — all16 replay owner cases PASS; pre-rollback state assertions pending
+
+2026-10-16 UTC. Same Draft#550/branch. Last accepted source `f14c3cb354cc7723efbb270df2249eee1e276bfe`,362PASS/0FAIL/0CANCELLED/0SKIP and25/25workflowsSUCCESS, isolated38969053191/job117202615539. All16new0031/0032owner cases and original HTTP suites PASS. Native proof count16, review20PASS/execution20PASS, restore/cleanup and original fingerprint PASS. Exact evidence P0_REPLAY_OWNER_RESULTS_20261016.json; initial source retained.
+
+Current assertion-only change strengthens three test/helper files: admission verifies entitlement counts before rollback; directory verifies receipt fields/entitlements before rollback; replay helper compares domain snapshots and existing audit rows before rollback as well as after. Existing expected return identities/audits/FORCE denials and all original cases remain. Logs add preRollbackDomainUnchanged/preRollbackEntitlementsUnchanged flags. This separates temporary domain non-mutation from fixture cleanup; the prior passing rollback assertion alone did not prove both. Local syntax/diffPASS; stronger SQL NOT RUN at publication /CI pending. No production source, migration, grant or hosted change.
+
+Next exact action: inspect this source isolated CI, require20owner proof records with explicit preRollback flags (2admission+2directory+16replay), measured aggregate, original real HTTP/provider/wire recovery assertions, fullrestore/cleanup and all observed workflows. Counts may remain362 because assertions, not test titles, were added. Do not assign the previous362 acceptance to this source until actual logs verify it. Retain any genuine failure and repair without weakening assertions.
+
+Remaining gates are now explicitly indexed at the top of MASTER_PLAN.md: hosted catalog/grants/target branch (Neon tool unavailable), deployment controls/storage/approved sandbox rollout, financial retention/privileged deletion/missing-order ownership decisions, prior blocked provider-mapping mutation proof, and CASHIER-OFFLINE-001 policy/threat model. Reconcile canonical P0 before P1/P2; no percentage increase or release clearance. No main merge/deploy/hosted writes/secrets/real providers/payments authorized. Complete per-blob/full-tree equality and expected_sha CAS remain mandatory for publication. Source and evidence are on existing branch; older local changes preserved.
+
+## Replay capability owner matrix — initial acceptance, 2026-10-16 UTC
+
+Source `f14c3cb354cc7723efbb270df2249eee1e276bfe`,Draft#550: **362PASS/0FAIL/0CANCELLED/0SKIP**,55unique/57invocations;25/25workflowsSUCCESS. Isolated [38969053191](https://github.com/nora953/fawri-production-source/actions/runs/38969053191),job117202615539. Both replay review/execution suites20PASS each, including8newcases each. All16native owner proofs cover0031/0032 x SaaS/cashier x no FORCE/receipt/SaaS-order/cashier-order FORCE; exact identity/current denied operator/audit/42501/rollback checks pass, original real HTTP assertions retained. Fullrestore/cleanupPASS,34migrations/95tables/45policies/9functions and unchanged matching fingerprint. Evidence `evidence/P0_REPLAY_OWNER_RESULTS_20261016.json` retains this initial source. Counts overlap346/344/342; no wholeP0 percentage inferred.
+
+A subsequent assertion-only source additionally measures receipt/order/entitlement state inside the transaction BEFORE fixture rollback for0029/0030/0031/0032. This is necessary to certify absence of temporary grants/writes, independently of post-rollback equality. Local syntax/diffPASS; actual stronger SQL/CI PENDING at publication. No product defect was established or production implementation changed. Hosted/policy/offline/mapping gates remainOPEN; releaseNO-GO.
+
+---
+
+# Continuation — 0030 accepted; 0031/0032 owner matrix pending
+
+2026-10-16 UTC /2026-10-17 Baghdad. Same existing Draft #550/branch fix/p0-provider-receipt-order-discovery-20261015. Latest accepted source `2ddc4cc11190b7f87f5dfbe83bc4505469e6ad02`,346PASS/0FAIL/0CANCELLED/0SKIP,25/25workflowsSUCCESS. Exact source/run/job/results below and machine evidence P0_DIRECTORY_OWNER_RESULTS_20261016.json. Recovery of the original eight unpublished files and prior0029 acceptance remain saved. All296repository branch heads were enumerated during recovery;22P0 branches matched the known stack, and active runs belonged to this continuation, not a stranded prior job. Older local modifications are preserved as described below.
+
+New source adds a shared test helper receipt-capability-owner-matrix.mjs and invokes it in existing replay review/execution HTTP suites BEFORE original real HTTP assertions. Sixteen new bounded SQL cases:0031/0032 x SaaS/cashier x no FORCE/receipt FORCE/SaaS-order FORCE/cashier-order FORCE. Synthetic restricted owner holds the exact function dependency graph; execution includes nested review function/session/device tables. Actual native functions must return exact original reviewed identity/time (and execution merchant), preserve current denied-operator checks, emit only required scoped audits, keep naked receipt/order reads0, and raise42501 without residual audits when a protected dependency is forced. Transaction rollback must restore original principals/catalog/rows/audits/entitlement counts and remove synthetic owner. Authorization capability alone never applies payment. Original HTTP/provider/session/device/permission/concurrency/SQL-fault assertions retained. Local three-file node --check and git diff --check PASS; actual16SQL cases NOT RUN at publication /CI pending. No production implementation/SQL migrations/hosted changes.
+
+Next exact action: inspect this source isolated workflow and both affected suites; require16 REPLAY_CAPABILITY_OWNER_PROOF records, measured totals, original real HTTP proofs, fullrestore/cleanup and all observed workflows. If failure, retain baseline evidence and fix demonstrated fixture/product cause without weakening assertions. Do not claim346 acceptance for this new source.
+
+After this bounded matrix, reconcile remaining canonical P0 gates before P1: hosted function owners/grants/actual database branch and sandbox journeys (Neon tool unavailable), Railway deployment gating/storage/approved rollout, financial retention/privileged deletion/arbitrary missing-order ownership policy, and still-open CASHIER-OFFLINE-001 licensing design decision. Prior provider-mapping race remains NOT RUN/blocked instrumentation; do not retry it. Do not infer these are closed from green SQL suites. No main merge, deployment, hosted SQL/migrations/grants/secrets or real providers/payments authorized. Historical85/15 unmeasured, releaseNO-GO. Publish complete intended tree with per-blob equality and expected_sha CAS; final documentation checkpoint can skipCI without claiming docs SHA was tested.
+
+## Audited directory owner acceptance — 2026-10-16 UTC
+
+Draft #550 source `2ddc4cc11190b7f87f5dfbe83bc4505469e6ad02`: **346 PASS /0 FAIL /0 CANCELLED /0 SKIP**,55unique/57invocations;25/25workflowsSUCCESS. Isolated [38968339665](https://github.com/nora953/fawri-production-source/actions/runs/38968339665),job117200274011. Directory11PASS includes two new0030 bounded SQL owner cases: original actor authorization/redaction/audit succeeds with restricted shared owner; receipt FORCE raises42501 and no audit survives. All principals/catalog owners/RLS/function configuration/receipts/audits/entitlement counts restored after rollback. Original real HTTP/session/device/pagination/audit-fault assertions retained. Fullrestore34migrations/95tables/45policies/9functions and original matching fingerprint. Evidence `evidence/P0_DIRECTORY_OWNER_RESULTS_20261016.json`. Counts overlap344/342. Not hosted or alternate-owner full HTTP acceptance. P0 percentage unmeasured/releaseNO-GO; no production source/migrations/main/hosted changes.
+
+---
+
+# Continuation — 0029 accepted; 0030 directory owner matrix pending
+
+2026-10-16 UTC / 2026-10-17 Baghdad. Existing branch fix/p0-provider-receipt-order-discovery-20261015, Draft #550. Latest accepted test source `66a1259c64f9f2c61f935b2d710e42da9ff4d241`,344PASS/0FAIL/0CANCELLED/0SKIP and25/25workflowsSUCCESS, isolated38967543213/job117197651440. New0029owner cases both PASS; exact evidence/report below. Recovery checkpointd7215711 preserves the prior eight unpublished staged files; main unchanged. Local older worktree8048c5a3f368/fawri still has unrelated emergency snapshot harness/SEQ140-142 evidence changes, and0313605f88b5/fawri has two modified historical PNGs; preserved without applying to this branch. No evidence of an active previous test process.
+
+Current continuation adds two bounded original0030 audited directory SQL tests in verified-receipt-operator-http-postgres.integration.test.mjs. Function and five actor/audit/receipt dependency tables share a synthetic restricted owner in a transaction. Actor/audit RLS flags remain as committed; only receipt FORCE flag varies. Positive case retains current authorization denial, redacted-only rows, exact actor-scoped audit, naked read denial; receipt FORCE case requires42501/no audit survives. Both rollback, original principal/catalog/receipts/audits/entitlement counts restored and synthetic owner absent. Original real HTTP/session/device/redaction/pagination/audit-fault assertions retained. This is bounded SQL owner proof, not full HTTP under alternate owner. Local syntax/whitespace PASS; new0030 SQL tests NOT RUN at publication; CI pending for this source. Do not apply344 acceptance to new source until actual logs verify it.
+
+Next exact action: inspect source isolated workflow, require two DIRECTORY_OWNER_RLS_PROOF records, measured total and complete restore/cleanup; retain/fix any real failure before marking accepted. Then assess remaining0031/0032 capability-owner gates or actual available read-only hosted evidence. Do not repeat accepted full suites without distinct assertions or affected source. Prior provider mapping race remains NOT RUN; do not retry blocked instrumentation. Financial retention/privileged-deletion/arbitrary missing-order ownership policies cannot be invented. Hosted mutation/merge/deploy requires separate explicit approval; none performed. Neon tool still unavailable, Railway oldmain endpoint ready does not certify draft code. P0 unmeasured/releaseNO-GO.
+
+## Receipt admission owner acceptance — 2026-10-16 UTC
+
+Draft #550 source `66a1259c64f9f2c61f935b2d710e42da9ff4d241`: **344 PASS / 0 FAIL / 0 CANCELLED / 0 SKIP**,55unique files/57invocations; **25/25 observed workflows SUCCESS**. Isolated [38967543213](https://github.com/nora953/fawri-production-source/actions/runs/38967543213),job117197651440,mergefaa06f7. Inbox18PASS includes two new0029 restricted shared function/table owner cases: no-FORCE exact timestamp-only admission/immutable next-day replay/hash collision denial/naked DML denial; FORCE42501 with no receipt. Both rollback to original catalog owners/RLS/function configuration, no synthetic role/receipt remains, entitlement counts unchanged. Fullrestore34migrations/95tables/45policies/9functions; original matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Evidence `evidence/P0_ADMISSION_OWNER_RESULTS_20261016.json`. Counts overlap342, not additive. Bounded SQL proof, not hosted or alternate-owner full handler acceptance.
+
+Recovered eight staged acceptance files are published at `d721571111d616e47a8c6bed7490a3b331628ed8`. Fresh read-only Railway still oldmain/d38d2922,200ready,checkSuitesfalse/noRailwayvolumes/buckets/pendingwork; Neon connector still Tool list_projects not found. Evidence `evidence/P0_RAILWAY_READONLY_RECOVERY_20261016.json`; hosted/policy gates OPEN, P0 percentage unmeasured/releaseNO-GO. No production source/migrations/hosted writes/main merge/deploy.
+
+---
+
+# Continuation — receipt admission owner matrix pending, 2026-10-16 UTC
+
+Recovered checkpoint `d721571111d616e47a8c6bed7490a3b331628ed8` is published on existing Draft #550. Source `6c34961a` remains independently accepted342PASS/0FAIL/0CANCELLED/0SKIP and25successfulworkflows; recovery did not rerun unchanged code.
+
+New work adds two bounded SQL cases to `artifacts/api-server/tests/verified-provider-receipt-inbox-postgres.integration.test.mjs`: original0029 admission function and inbox owned by a synthetic NOLOGIN/NOSUPERUSER/NOBYPASSRLS role, with FORCE RLS off/on. Non-FORCE case requires exact timestamp-only return, immutable next-day replay/hash collision rejection, no naked read/update/delete access and original identity/time stored. FORCE case must raise42501 and leave no receipt. Both transactions roll back; original catalog owners/RLS/function configuration, absent synthetic owner/receipt and unchanged entitlement counts are checked independently after rollback. Original signed provider/orphan/recovery cases retained. This is bounded SQL owner proof, not direct-LOGIN full handler acceptance or hosted setup certification.
+
+Local node --check and git diff --check PASS. New actual SQL cases NOT RUN at publication; inspect current source isolated CI before claiming success. Docker unavailable locally; use existing owned offline workflow. Exact next action: fetch source workflow jobs/logs, verify both ADMISSION_OWNER_RLS_PROOF records and measured totals, fix demonstrated failure only, then update523/550 and ledgers. No production source/migration/hosted changes. Remaining policy/hosted gates OPEN; provider-mapping race remains NOT RUN, historical85/15 unmeasured/releaseNO-GO.
+
+---
+
+# Emergency recovery checkpoint — 2026-10-16 UTC / 2026-10-17 Baghdad
+
+Recovered the existing worktree and eight staged documentation/evidence files from the interrupted session; no source work was discarded. Remote Draft #550 still points to `6c34961a36ceec848f53060f87990437c9fc13f0` on `fix/p0-provider-receipt-order-discovery-20261015`. PR #548 is superseded by the stacked #549/#550 continuation, not the current work point. Main remains `d38d29229bed0f9575a98e7026e7819fe363bfd4`.
+
+Independently fetched current run/job logs and parsed all 57 AUDIT_SUITE_RESULT records: 342 PASS / 0 FAIL / 0 CANCELLED / 0 SKIP, 55 unique files. All 25 observed source workflows completed SUCCESS. Isolated run 38785273961/job116595545067, merge checkout `98016d8d27ed18cf21b5090e0c775f1e38e8668e`. Both full restore fingerprints and migration/table/policy/function counts match the recovered machine evidence. The previous session stopped after staging its successful direct-LOGIN acceptance checkpoint, before publishing those eight files. The apparent pending CI in remote handoff is resolved; no rerun needed.
+
+Last production implementation change: `0c7c03abe889d65ba11317f66dbfa6c24ffe81c6` (SET-reachable privileged-role readiness). Latest test/helper source: `6c34961a`. Last remote documentation-only checkpoint: `43f48f0e725095f35676d6b81e8b1e07de66ca84`; intervening test commits also contain handoff updates. Local modifications are documentation/evidence only and are preserved in this checkpoint. Other older worktrees and incomplete provider-discovery patch are retained, not applied.
+
+Next bounded task: add missing 0029 receipt-admission capability restricted-owner/FORCE-RLS acceptance to the existing guarded inbox integration suite. Preserve immutable identity/time, native access denial, transaction rollback and original recovery assertions. Existing SQL owner tests cover 0028/0033, not this admission function. Actual SQL uses the existing isolated offline GitHub runner; Docker is unavailable locally. No hosted writes, main merge, deploy, real providers or payments. Financial ownership/retention decisions and hosted acceptance remain OPEN; P0 percentage unmeasured and release NO-GO.
+
+---
+
+# Latest verified P0 continuation — 2026-10-15
+
+Draft#550 / `fix/p0-provider-receipt-order-discovery-20261015`, tested source **`6c34961a36ceec848f53060f87990437c9fc13f0`**: **342 PASS /0 FAIL /0 CANCELLED /0 SKIP**,55unique files/57invocations including parent/repeated-runtime counts; **25/25 observed workflows SUCCESS**. Isolated [38785273961](https://github.com/nora953/fawri-production-source/actions/runs/38785273961),job116595545067,merge98016d8. Signed billing11PASS and original complete Meta app→queue→subscription→worker13PASS now use actual restricted LOGIN connections: current_user=session_user after RESET ROLE, original production RLS readiness accepted. Synthetic fixture credentials only. Both billing authorities apply once/preserve immutable receipt/original time; original duplicate/denial/isolation assertions retained. RLS28PASS; Meta bounded resolver10PASS; full restore34migrations/95tables/45policies/9functions and matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035.
+
+Prior e91e6d96 also342PASS/25green includes8new original confirmed-provider SQL owner/FORCE-RLS cases, with restricted owner success and expected42501 per protected dependency, unchanged receipts/orders and0premature grants after rollback. Sourcef4a40de1 is retained as failed workflow:331PASS/0failed assertions/3CANCELLED/0SKIP from incorrect nested test context, not8SQLfailures. Context repaired without raising original timeouts; runner now emits explicit cancellations in all57summaries. Counts overlap and are not additive. Report `P0_REACHABLE_ROLE_AND_META_OWNER_ACCEPTANCE_20261015.md`; exact evidence `evidence/P0_DIRECT_LOGIN_FULL_PATH_RESULTS_20261015.json`, `P0_BILLING_OWNER_MATRIX_RESULTS_20261015.json`, and baseline JSON.
+
+Fresh read-only Railway snapshot18:10Z still old main/d38d2922/deployment11f22954SUCCESS, one online replica, readiness200/ready without runtime role flags; checkSuitesfalse/no Railway volume or bucket/pending work. This does not prove absence of external storage or GitHub branch protection; previous Neon tool BLOCKED and protection403 UNKNOWN remain unverified, not retried. No hosted changes, main merge/deploy, real payments or credential changes. Hosted owner/EXECUTE/provider/storage/deployment acceptance and retention/privileged deletion/manual missing-order ownership policy remain open. Provider mapping race remains NOT RUN. Historical P0 **85% complete/15% remaining is unmeasured**; no new percentage inferred from test counts. Release **NO-GO**.
+
+## Exact resumption
+
+This docs-only checkpoint follows accepted source6c34961a; no tests currently running. Source branch/PR unchanged; final docs commit identifies itself in Git history/PR comment (do not claim docs SHA ran CI). Previous failed source and repair evidence retained; current worktree should be clean after remote checkout.
+
+Next independent safe unit: assess missing restricted function-owner/FORCE-RLS cases for durable receipt admission capability0029, using original admitted identity/time and no grants, only if existing tests do not cover them. Do not rebuild accepted admission/recovery or repeat full paths without source changes. Do not retry the interrupted provider-mapping race task. Hosted acceptance remains blocked on actual catalog/grant/storage/provider verification and explicit approval for hosted writes/deployment; no assumption that ready200 or CI closes it. Retention/ownership policy is not to be invented.
+
+Resume commands: `git fetch origin fix/p0-provider-receipt-order-discovery-20261015`; inspect remote HEAD/CI and preserve local work before `git switch --detach FETCH_HEAD`. Syntax: `node --check artifacts/api-server/tests/billing-provider-discovery-restricted-postgres.integration.test.mjs` and corresponding Meta/helper files. Actual SQL: existing owned offline audit workflow. Source6c34961a verified run38785273961/job116595545067; Foundation38785273773 SUCCESS. Before publication use explicit complete base tree, per-blob SHA/full intended tree equality and expected_sha CAS. Docs-only checkpoint intentionally [skip ci]. Do not repeat green342 suite absent relevant change/distinct uncovered fault.
+
+---
+
+# Latest continuation — reachable-role PASS; Meta owner matrix pending (2026-10-15)
+
+Accepted source `0c7c03abe889d65ba11317f66dbfa6c24ffe81c6`: **332 PASS / 0 FAIL / 0 SKIP**,55 unique files/57 invocations,25/25 observed workflows SUCCESS. Isolated run38779466489/job116575601617; Foundation38779466260/job116575597185. Merge checkout prefix5e406a2. RLS28 PASS includes actual direct/indirect SET activation and INHERIT-only denial control. Restore34migrations/95tables/45policies/9functions, matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Evidence: `evidence/P0_REACHABLE_PRIVILEGED_ROLE_RESULTS_20261015.json`.
+
+Next source in this commit adds only two Meta bounded resolver integration subtests: a restricted non-BYPASSRLS function/table owner works without FORCE RLS and raises42501 with FORCE RLS. Catalog identity/flags checked, original ownership/RLS restored with transaction rollback, then original resolver accepted again. Local node --check and git diff --check PASS. Actual PostgreSQL cases **NOT RUN / CI pending at publication**. This is bounded SQL capability coverage, not a new full app/worker or hosted acceptance claim; existing full-app proof retained.
+
+Next exact action: inspect CI for this commit and `meta-page-directory-restricted-rls.integration.test.mjs` in isolated run; obtain source SHA/run/job and exact count. Fix any real failure without changing RLS/owner protections, then update #535/#550 and this handoff. Previous 332 totals certify source0c7c03 only. No tests running locally. Provider mapping race remains NOT RUN; hosted gates remain unverified. Historical85/15 unmeasured, release NO-GO. Same branch and Draft#550, no main merge/deploy/hosted mutation.
+
+---
+
+# Continuation — SET-reachable privileged-role readiness (2026-10-15)
+
+Branch/PR remain `fix/p0-provider-receipt-order-discovery-20261015` / #550.
+Parent documentation HEAD: `7c3591b2a29ddba3af2ee1d6cc245249da2da963`.
+Previous accepted code: `92ad7bbef94bda674194205220975d0220190856`; 329 PASS / 0 FAIL / 0 SKIP and 25 observed workflows SUCCESS, reverified on GitHub before this batch.
+
+New bounded change: readiness inspects session-user SET-reachable SUPERUSER/BYPASSRLS roles, including roles owning none of the protected tables. Direct current/session flags and ownership checks remain intact. No SQL migration, hosted grant, deployment, or secret changes.
+
+Evidence: added unit regression initially **8 PASS / 1 FAIL** (missing expected rejection), then **9 PASS / 0 FAIL** after repair; API TypeScript no-emit PASS; diff whitespace check PASS. Added three isolated PostgreSQL membership cases (direct SET, indirect SET, INHERIT TRUE/SET FALSE). They assert actual inbox `row_security_active` before/after allowed activation, with transactional fixture cleanup. **PostgreSQL tests NOT RUN locally; CI pending at publication.** No claim that these three cases pass until actual job logs verify them.
+
+Next: inspect CI on the commit containing this header, especially the isolated PostgreSQL audit and foundation jobs. Record exact source SHA/run/job IDs, real PASS/FAIL totals and any failures here and in #550/#523. Do not reuse the old 329 count as evidence for new code. If CI succeeds, assess capability function ownership readiness separately; provider mapping race remains NOT RUN as previously documented. Hosted acceptance remains unverified; P0 historical 85/15 remains unmeasured; release NO-GO.
+
+Resume: `git fetch origin fix/p0-provider-receipt-order-discovery-20261015`; inspect remote HEAD and workflow runs, then `git switch --detach FETCH_HEAD` only after preserving local work. Unit command: `node --import tsx --test artifacts/api-server/tests/production-postgres-rls-security.test.ts`. Typecheck: `node node_modules/typescript/bin/tsc --project artifacts/api-server/tsconfig.json --noEmit`.
+
+---
+
+## Session and receipt RLS readiness accepted — 2026-10-15
+
+Draft#550 / fix/p0-provider-receipt-order-discovery-20261015, tested source `92ad7bbef94bda674194205220975d0220190856`: **25/25 workflows SUCCESS**. Isolated `38723072880` / job `116382166372`, checkout `8b9eaca442f46c605aabb85fee59d25a32707f18`: **329 PASS / 0 FAIL / 0 SKIP**,55unique/57invocations including parents/repeated runtimes. RLS25PASS; knowledge and deletion each1PASS using direct restricted LOGIN connections with current_user=session_user. Production gate checks current and session role superuser/BYPASSRLS/protected-table ownership; the protected inventory includes the global receipt inbox and an independent migration inventory test. Local unit8/0. Fullrestore/cleanupPASS, unchanged34migrations/95tables/45policies/9functions/fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Exact evidence: evidence/P0_SESSION_RLS_READINESS_RESULTS_20261015.json; report SEQ_377_P0_RLS_RESTORE_ADMIN_SYNC_READINESS_20261014.md. Current commands and remaining gates in WORK_HANDOFF. Historical85%/15% unmeasured; releaseNO-GO. Earlier pending headings below are superseded only by this accepted source.
+
+Source9f544274 remains a recorded failed integration: isolated38685444022/job116259113377327PASS/2FAIL/0SKIP, RLS25PASS. Knowledge and deletion fixtures authenticated as administrator and then SET ROLE; new session guard correctly rejected both. Foundation38685443941/job116259113025 also failed knowledge after RLS25PASS. Corrected fixtures authenticate as per-run synthetic restricted LOGIN roles; separate administrator pool handles fixture setup/cleanup. No weakening of the production guard or tenant assertions.
+
+Publishing incident: intermediatefeeb37f2 accidentally created a3-file tree because the base-tree reference was absent after ephemeral orchestration state was lost. It had no workflow files, so no CI run was observed. Restored92ad7bbe contains all2213source files and exactly matches intended local tree9d92e19f03892e865dcc75fab0060604059ed6c8; relative to9f only the2fixturefiles and handoff differ. No main or hosted change occurred. History is retained. Publication requirement for resumption: never accept an undefined/empty base_tree_sha for edits to this repository; obtain explicit live base SHA, validate every40-hex SHA and compare created tree with complete local intended tree BEFORE ref update.
+
+No tests are running at this checkpoint. The final documentation checkpoint uses [skip ci], with tested code fixed at92ad7bbe above. Resume from remote, since local synthetic commit IDs can differ:
+
+```sh
+git fetch origin fix/p0-provider-receipt-order-discovery-20261015
+git switch --detach FETCH_HEAD
+# Only the owned, attested disposable Docker runner; never hosted:
+bash scripts/run-isolated-postgres-audit.sh tenant
+```
+
+Next exact safe unit: assess and test SET-reachable privileged-role/capability-owner readiness configurations not certified by the current direct session-attribute checks. Use isolated fixture roles and preserve all current negative/positive assertions; do not change hosted grants. Additional provider mapping-change concurrency after discovery/admission remainsNOTRUN after prior delegated content flag. Do not claim those races or every role-reachability configuration passed. Hosted owner/RLS/EXECUTE/provider acceptance, deployment gating/storage and ownership/retention-duration/privileged-deletion policy remainOPEN. Railway/Neon/main were not mutated. No main merge, deployment, hosted migration/grant/secret change or real payment is authorized. Do not repeat accepted329 tests without affected source or a new distinct case.
+
+## Session fixture correction — 2026-10-15 (CI pending)
+
+Source9f5442740b5bf373e368311556ccfe3f04de3509 failed isolated38685444022/job116259113377:327PASS/2FAIL/0SKIP. RLS suite25PASS; failing knowledge and merchant-deletion fixtures used administrative login with startup SET ROLE, correctly rejected by SESSION_SUPERUSER_FORBIDDEN. Foundation38685443941/job116259113025 also failed knowledge after RLS25PASS. These failures are retained; source9f is not fully accepted.
+
+Correction changes only those two owned disposable fixtures to LOGIN roles with per-run synthetic passwords and direct connections, asserting current_user=session_user=restricted role. Administrative connection remains separate for setup/cleanup. Production guard unchanged. Syntax/diffPASS; corrected SQL/CI pending. Next inspect new CI and record exact source/run/job, preserve negative session cases and all original tenant/deletion assertions. No hosted credentials, roles, grants or settings changed. Prior inbox gate e1b31378 accepted326/0/0,25CI. Historical85% unmeasured; releaseNO-GO. Other remaining gates below stay OPEN.
+
+## Active session identity readiness hardening — CI pending, 2026-10-15
+
+Active Draft#550 / fix/p0-provider-receipt-order-discovery-20261015. Separate root cause: readiness checked current_user only; a privileged session_user can remain behind SET ROLE. New local unit reproduced7PASS/1FAIL (missing rejection), repaired8/0; TypeScript/diffPASS. New code separately checks session role superuser/BYPASSRLS/protected-table ownership. New disposable cases reject bootstrap-superuser session behind restricted current role, and independently test non-superuser session roles with BYPASSRLS or receipt-table ownership; RESET ROLE is observed to restore unsafe RLS state, all fixture DDL rolls back. Existing normal acceptance fixtures now set both current/session identities to the restricted role with SET SESSION AUTHORIZATION, preserving original ownership membership cases. Actual new SQL/CI NOT RUN until publication; do not count previous326PASS as this source's acceptance.
+
+Next: inspect new CI/source, exact session-role SQL outcomes, fullrestore/cleanup and all workflows; record results. Resume git fetch origin fix/p0-provider-receipt-order-discovery-20261015; git switch --detach FETCH_HEAD. Owned runner only: bash scripts/run-isolated-postgres-audit.sh tenant. Prior provider mapping-change concurrency remainsNOTRUN after delegated content flag; no bypass of that block is attempted here. Hosted owner/grants/provider/storage/deployment and ownership/retention policy remainOPEN; historical85%/15% unmeasured, releaseNO-GO. No main merge/deploy/hosted writes. PostgreSQL rationale: https://www.postgresql.org/docs/17/sql-set-role.html and https://www.postgresql.org/docs/17/role-attributes.html . This is bounded startup/session-readiness hardening, not certification of actual hosted credentials or every reachable privileged-role configuration.
+
+## Receipt inbox RLS readiness accepted — 2026-10-15
+
+Draft#550 source `e1b31378ff7acc3ead9850db2eb418dee90b31c7`: **25/25 workflows SUCCESS**. Isolated run `38684893840`, job `116257386044`, checkout `2f4abef901f29cb9295800f80ae0e5b25472abfa`: **326 PASS / 0 FAIL / 0 SKIP**,55unique/57invocations (parents/repeated runtimes included). RLS suite22/0/0 includes two new global inbox drift cases. Independent migration-inventory unit baseline6/1 identified only verified_provider_payment_receipts missing; repaired7/0. Runtime protected-table inventory now covers the capability-only inbox alongside tenant tables, while keeping legacy field/error IDs compatible. No policy/migration/grant changes. Fullrestore/ownedcleanupPASS:34migrations/95tables/45policies/9functions, unchanged fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Evidence: evidence/P0_RECEIPT_INBOX_RLS_READINESS_RESULTS_20261015.json.
+
+## Receipt inbox readiness coverage — 2026-10-15 (CI pending)
+
+Active Draft#550 / fix/p0-provider-receipt-order-discovery-20261015. New bounded repair: global capability-only verified_provider_payment_receipts was absent from runtime readiness's tenant-table inventory. Runtime ownership or disabled RLS on this table could therefore escape that readiness check. This is a code-level detection gap, not evidence of unsafe hosted grants.
+
+Added PRODUCTION_PROTECTED_RLS_TABLES combining tenant tables and the receipt inbox; legacy readiness field/error identifiers remain compatible. Added independent migration-inventory unit test covering every committed ENABLE ROW LEVEL SECURITY table, and two transactional PostgreSQL drift cases for inbox ownership/disabledRLS with rollback-restored readiness. Unit baseline6PASS/1FAIL identified only the inbox; repair7PASS/0FAIL locally. Diff checkPASS. Actual new PostgreSQL cases/CI NOT RUN until publication. No policy, migration or runtime grant changed.
+
+Next: inspect new source CI (especially tenant/RLS suite), save exact source/run/job and counters without assuming prior324PASS applies. Then continue receipt/function-owner readiness assessment. Earlier delegated provider mapping-race work remains NOT RUN; do not claim it completed. Hosted/retention/release gates remain OPEN, historical85%/15% not freshly measured. No main merge/deploy/hosted writes. Previous accepted sourcecd7408ee and its324/0/0 are preserved below.
+
+## Current acceptance and handoff — 2026-10-15
+
+Active Draft #550, branch `fix/p0-provider-receipt-order-discovery-20261015`, base Draft #549. Tested code commit: `cd7408ee178393a5a63a02e6bbdc9a163cd54c00`. All **25/25 observed workflows SUCCESS**. Isolated run `38681867802`, job `116247985222`, merge checkout `181b04e212b5c98e8848652e56d4f517b19464e5`: **324 PASS / 0 FAIL / 0 SKIP**, 55 unique files / 57 invocations. Counts include parent tests and repeated runtimes; never add overlapping workflow totals.
+
+The original signed SaaS/cashier callback now finds an existing mapped order under a nonowner, non-superuser, NOBYPASSRLS runtime with empty tenant/admin context. Independent SQL proves one immutable receipt, one application and one subscription for each authority; fresh duplicate replay retains original receipt/paid time. Naked global reads remain zero and pooled context resets. Permission denial, request/amount mismatch, same-authority and cross-authority ambiguity fail closed without grants. The capability only resolves existing authoritative orders; arbitrary ownership repair is not implemented. Operator authorization remains separate.
+
+Baseline failure is preserved: source `1f3d743a78d7716b21b6e875e62e4fe477e324a4`, run `38681215276` / job `116245975903`, 321 PASS / 3 FAIL / 0 SKIP (parent plus two new cases). Both returned ORDER_NOT_FOUND despite mapped orders, with receipt1/apps0/grants0. Exact report: `P0_RESTRICTED_PROVIDER_ORDER_DISCOVERY_20261015.md`; baseline and repair JSON evidence under `evidence/P0_RESTRICTED_PROVIDER_DISCOVERY_*_20261015.json`.
+
+Canonical regeneration/reproducibility and actual SQL PASS in schema run `38681868158`, job `116247986045`; this provides CI evidence despite the local symlinked-pnpm generator block. Full restore PASS: 34 migrations / 95 tables / 45 policies / 9 functions, matching seed/verify fingerprint `388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035`. New resolver remains non-PUBLIC after restore. Owned container/volume cleanup PASS. Parent #549 cashier RLS readiness repair `36f955e` remains accepted (321/0/0, 14 workflows), now included in this source.
+
+Remaining: provider-specific mapping changes after initial discovery and between receipt-admission commit/application are **NOT RUN**. Additional delegated instrumentation was interrupted by an automated content flag; incomplete unpublished changes were removed, so they are not part of this accepted source. Next exact unit is a controlled fixture concurrency proof at those actual database boundaries, with immutable receipt/no premature grant/context-reset assertions. Merchant mutation after admission is constrained by existing composite FKs; do not weaken them. Also independently review receipt/function-owner readiness coverage. Hosted owner/RLS/EXECUTE/provider acceptance, deployment gating/storage, arbitrary ownership repair and retention-duration/privileged-deletion policy remain OPEN. No new percentage is measured: historical85% complete/15% remaining only; release **NO-GO**.
+
+No main merge, Railway deployment, hosted migration/grant/secret changes or real payment was performed or authorized. Documentation-only final checkpoint uses [skip ci]; tested code is the SHA above. No tests are running at this checkpoint.
+
+Resume from GitHub (the local worktree may have a different synthetic commit until fetched):
+
+```sh
+git fetch origin fix/p0-provider-receipt-order-discovery-20261015
+git switch --detach FETCH_HEAD
+# Only an owned, attested disposable Docker database; never hosted:
+bash scripts/run-isolated-postgres-audit.sh billing
+```
+
+Do not rerun accepted324 tests unless affected source changes or a distinct fault is added. Start with the specific concurrency unit above, then inspect its actual CI. Earlier pending/next-task headers below are historical where superseded by this checkpoint.
+
+## Restricted signed-provider discovery repair — 2026-10-15 (CI pending)
+
+Active dependent Draft#550/fix/p0-provider-receipt-order-discovery-20261015, base#549. Baseline1f3d743a78d7716b21b6e875e62e4fe477e324a4, isolated38681215276/job116245975903 FAIL:321PASS/3FAIL/0SKIP,55unique/57invocations (failing new suite0PASS/3FAIL includes parent+2cases). Five other workflowsSUCCESS. Both actual signed original callbacks (SaaS/cashier) returnSUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND under nonowner/NOBYPASSRLS with empty tenant/admin context despite mapped orders. Independent SQL proves durable inbox1/originaltime, orders unchanged/apps0/grants0; nakedreads0 and pooledcontextempty. This is availability failure, not demonstrated tenant leakage.
+
+New bounded repair adds non-PUBLIC0033 confirmed-receipt/order resolver, separate private-symbol provider scope, tenant-scoped reference attachment and revalidation inside both original billing transactions; operator replay authorization unchanged. Existing authoritative order only, no inferred ownership repair. Negative cases cover absentEXECUTE/request/amount mismatch/same-authority/cross-authorityambiguity/decoyisolation, followed by success/duplicate/originaltime checks. Restore asserts newcapabilitynonPUBLIC. Localtypecheck/syntax/diff/staticmigrationlineagePASS. Full local canonical generation BLOCKED by symlinkedpnpm module directory restriction atlegacy stage2; actual newSQL/CI NOT RUN until published.
+
+Next exact action: inspect repair CI and logs, fix proven failures, record source/run/job and independently verified grants/receipt/pooledcontext. Resume with git fetch origin fix/p0-provider-receipt-order-discovery-20261015; git switch --detach FETCH_HEAD. Run owned runner only: bash scripts/run-isolated-postgres-audit.sh billing (requires installed dependencies/Docker/disposableattestation). Never execute on hosted DB. ReportP0_RESTRICTED_PROVIDER_ORDER_DISCOVERY_20261015.md; baselineevidence/P0_RESTRICTED_PROVIDER_DISCOVERY_BASELINE_20261015.json. Parent549/source36f955e has321/0/0 and14CI SUCCESS; do not claim that as acceptance of new0033. Hostedowner/grants/provider/storage/deployment and retentionpolicy remainOPEN, historical85%/15%unmeasured, releaseNO-GO. No main merge/deploy/hostedmigration/grants.
+
 ## Cashier production RLS readiness acceptance — 2026-10-15
 
 Draft#549 source36f955e32d0f6f7284b5fcfb850ea117e0c00ee0, isolated38681113382/job116245665218:321PASS/0FAIL/0SKIP,54unique/56invocations;14/14workflowsSUCCESS. Runtime gate now includes all7 cashier licensing/billing RLS tables omitted after0027. Local baseline5PASS/1FAIL→repair6/0; actual RLS suite20/0/0 includes14new disabled-RLS/runtime-ownership drift cases and rollback-restored readiness. Fullrestore33migrations/95tables/45policies/8functions and cleanupPASS, identical fingerprint793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498. Exact report: SEQ_377_P0_RLS_RESTORE_ADMIN_SYNC_READINESS_20261014.md; evidence/P0_CASHIER_RLS_READINESS_RESULTS_20261015.json.

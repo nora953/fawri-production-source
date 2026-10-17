@@ -3,6 +3,7 @@ import {randomUUID,randomInt,generateKeyPairSync} from 'node:crypto';
 import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import {cleanupResources} from './helpers/cleanup-resources.mjs';
+import {proveReceiptCapabilityOwners} from './helpers/receipt-capability-owner-matrix.mjs';
 await assertDisposablePostgres();
 Object.assign(process.env,{
   FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',
@@ -100,6 +101,15 @@ test('real HTTP replay review requires fresh provider confirmation and durable c
     return {response,body:await response.json()};
   }
   const audits=async()=>(await admin.query("SELECT id,admin_account_id,reason_code,request_hash FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[]) AND reason_code='BILLING_RECEIPT_REPLAY_REVIEW' ORDER BY started_at,id",[ids])).rows;
+  await proveReceiptCapabilityOwners(t,{
+    admin,role,functions:[capability],
+    tables:['accounts','admin_profiles','admin_permissions','database_admin_access_audits','verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders'],
+    fixtures,actorId:owner.id,deniedActorId:denied.id,
+    invoke:(f,actorId,auditId)=>admin.query(readSql,[actorId,f.event,f.body.authority,f.order.id,auditId,'a'.repeat(64)]),
+    expected:f=>({provider:'superqi_sandbox',provider_event_id:f.event,payment_ref:f.payload.paymentId,request_ref:f.payload.requestId,event_type:'payment_succeeded',amount_iqd:f.payload.amount,payload_hash:superQiWebhookPayloadHash(f.payload),first_received_at:'2026-10-14T12:00:00.123456Z',order_id:f.order.id,authority:f.body.authority}),
+    snapshot:async()=>({receipts:await receiptSnapshot(),orders:await orderSnapshot(),audits:await audits(),entitlements:await entitlementCount()}),
+    auditReasons:['BILLING_RECEIPT_REPLAY_REVIEW'],
+  });
   await t.test('session/device/permission/origin denials stop before raw lookup and provider access',async()=>{
     assert.equal((await request()).response.status,401);
     assert.equal((await request(owner,fixtures[0],fixtures[0].body,{'X-Fawri-Device-Id':'wrong'})).response.status,401);

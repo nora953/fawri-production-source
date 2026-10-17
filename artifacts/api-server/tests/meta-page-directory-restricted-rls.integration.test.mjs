@@ -78,6 +78,36 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
     await assert.rejects(() => runtimePool.query("SELECT * FROM public.fawri_resolve_meta_page_merchants($1::text[])", [Array.from({length:101},(_,i)=>'page-'+i)]), error => error.code === '22023');
     assert.equal((await runtimePool.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count, 0);
   });
+  for (const forced of [false, true]) {
+    await t.test(`restricted capability owner with forced RLS=${forced} fails closed when required`, async () => {
+      const client = await admin.connect();
+      const owner = `meta_owner_${suffix}`;
+      try {
+        await client.query('BEGIN');
+        await client.query(`CREATE ROLE ${owner} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+        await client.query(`GRANT USAGE ON SCHEMA public TO ${owner}`);
+        await client.query(`ALTER TABLE public.merchant_channels OWNER TO ${owner}`);
+        await client.query(`ALTER FUNCTION public.fawri_resolve_meta_page_merchants(text[]) OWNER TO ${owner}`);
+        await client.query(`ALTER TABLE public.merchant_channels ${forced ? 'FORCE' : 'NO FORCE'} ROW LEVEL SECURITY`);
+        await client.query(`SET LOCAL ROLE ${role}`);
+        const metadata = (await client.query("SELECT r.rolsuper,r.rolbypassrls,c.relforcerowsecurity,p.proowner=c.relowner AS matching_owner FROM pg_proc p JOIN pg_class c ON c.oid='public.merchant_channels'::regclass JOIN pg_roles r ON r.oid=p.proowner WHERE p.oid='public.fawri_resolve_meta_page_merchants(text[])'::regprocedure")).rows[0];
+        assert.deepEqual(metadata, {rolsuper:false,rolbypassrls:false,relforcerowsecurity:forced,matching_owner:true});
+        const resolve = () => client.query('SELECT * FROM public.fawri_resolve_meta_page_merchants($1::text[]) ORDER BY page_id', [pages]);
+        if (forced) {
+          await assert.rejects(resolve, error => error.code === '42501');
+        } else {
+          assert.deepEqual((await resolve()).rows, pages.map((page_id,index)=>({page_id,merchant_id:merchants[index]})));
+          assert.equal((await client.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count, 0);
+        }
+      } finally {
+        // ROLLBACK also restores function/table ownership and FORCE RLS after
+        // PostgreSQL aborts the transaction on the expected privilege error.
+        await client.query('ROLLBACK');
+        client.release();
+      }
+      assert.deepEqual(await channels.listActiveMetaPageMappingsAuthoritative(pages), pages.map((pageId,index)=>({pageId,merchantId:merchants[index]})));
+    });
+  }
   async function ingress(pageId) {
     const req = { method: 'POST', path: '/api/meta/webhook', body: { object: 'page', entry: [{ id: pageId, messaging: [] }] } };
     let status = null, body = null, next = false;

@@ -3,6 +3,7 @@ import {randomUUID,randomInt,generateKeyPairSync} from 'node:crypto';
 import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import {cleanupResources} from './helpers/cleanup-resources.mjs';
+import {proveReceiptCapabilityOwners} from './helpers/receipt-capability-owner-matrix.mjs';
 await assertDisposablePostgres();
 Object.assign(process.env,{
   FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',
@@ -106,6 +107,17 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
   const applications=async f=>(await admin.query(`SELECT * FROM ${f.kind==='saas'?'saas_entitlement_applications':'cashier_entitlement_applications'} WHERE order_id=$1`,[f.order.id])).rows;
   const eventState=async f=>(await admin.query(`SELECT status FROM ${f.kind==='saas'?'saas_billing_events':'cashier_billing_events'} WHERE provider_event_id=$1`,[f.event])).rows;
   const exactTime=async f=>(await admin.query(`SELECT to_char(paid_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS time FROM ${f.table} WHERE id=$1`,[f.order.id])).rows[0].time;
+  const ownerSession=(await admin.query("SELECT id,device_fingerprint_hash FROM account_sessions WHERE account_id=$1 AND kind='admin' AND status='active'",[owner.id])).rows;
+  assert.equal(ownerSession.length,1);
+  await proveReceiptCapabilityOwners(t,{
+    admin,role,functions:[capability,'public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)'],
+    tables:['accounts','admin_profiles','admin_permissions','database_admin_access_audits','verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders','account_sessions','trusted_devices'],
+    fixtures:fixtures.filter(f=>f.scenario==='normal'),actorId:owner.id,deniedActorId:denied.id,
+    invoke:(f,actorId,auditId)=>admin.query(readSql,[actorId,ownerSession[0].id,ownerSession[0].device_fingerprint_hash,f.event,f.body.authority,f.order.id,auditId,'a'.repeat(64)]),
+    expected:f=>({provider:'superqi_sandbox',provider_event_id:f.event,payment_ref:f.payload.paymentId,request_ref:f.payload.requestId,event_type:'payment_succeeded',amount_iqd:f.payload.amount,payload_hash:superQiWebhookPayloadHash(f.payload),first_received_at:f.firstReceivedAt,order_id:f.order.id,authority:f.body.authority,merchant_id:originalOrders.find(order=>order.id===f.order.id).merchant_id}),
+    snapshot:async()=>({receipts:await receiptSnapshot(),orders:await orderSnapshot(),audits:(await admin.query('SELECT id,admin_account_id,reason_code,request_hash FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[]) ORDER BY started_at,id',[ids])).rows,entitlements:await entitlementCount()}),
+    auditReasons:['BILLING_RECEIPT_REPLAY_REVIEW','BILLING_RECEIPT_REPLAY_EXECUTE'],
+  });
   await t.test('permission/device/origin denial and body overrides cannot execute or call provider',async()=>{
     for(const actor of [undefined,merchant,denied])assert.ok([401,403].includes((await request(actor)).response.status));
     assert.equal((await request(owner,fixtures[0],fixtures[0].body,{'X-Fawri-Device-Id':'wrong'})).response.status,401);
