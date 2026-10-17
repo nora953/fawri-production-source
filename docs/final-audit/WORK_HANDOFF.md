@@ -1,3 +1,8 @@
+
+## P0 confirmed resolver CI acceptance — 2026-10-17
+
+Audit branch commit `9ffdae5bc7a1b15810a5e6c539f05ae2916a441a` completed **25/25 GitHub Actions workflows SUCCESS**, zero failed/cancelled. Isolated PostgreSQL audit run `39002802732`, job `117309086649` completed SUCCESS. Logs explicitly record `ok 1 - confirmed payment resolver fails closed on PostgreSQL 42501` and `ok 2 - confirmed payment resolver fails closed on PostgreSQL 42883`; `billing-provider-discovery-restricted-postgres.integration.test.mjs` reports `passed=13, failed=0, skipped=0, cancelled=0`. PR #550 conversation comment `6229702148` records the same evidence. This closes the disposable CI test proof only, **not hosted staging acceptance**. Pending P0: actual Railway DB runtime identity/least privilege; hosted migrations 0028–0033 and capability EXECUTE grants; RLS verification. No hosted migrations, deploys, or DB writes. **NO-GO**.
+
 ## CI follow-up — 2026-10-17
 
 Previous commit `99a9b6a7252fc318d63add189d55e03a79478492` completed 24 successful workflows and one **cancelled** `Isolated PostgreSQL engineering audit` (run 39000165856); do not treat it as 25/25 success. New commit `26caa873ada4b4d2bc37b7a4b937e97f5d882820` had 24/25 workflows successful and one isolated PostgreSQL audit still in progress (run 39000514278). Its migration-and-selected-tests and cashier licensing steps succeeded; billing/refund/duplicate-event proofs were running. No hosted migration/deployment. NO-GO.
