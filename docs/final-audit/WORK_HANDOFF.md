@@ -1,3 +1,9 @@
+## CI checkpoint — 2026-10-17
+
+For audit branch commit `99a9b6a7252fc318d63add189d55e03a79478492`, GitHub Actions reported 24/25 workflows successful and 0 failed. The remaining `Isolated PostgreSQL engineering audit` run `39000165856`, job `117301467703`, was still in progress. Its migrations-and-selected-tests, cashier licensing, billing/refunds/duplicate-event, and restricted-role tenant/knowledge/retention steps had completed successfully; Meta bot/AI lifecycle was running, while full schema restore and Node22 HTTP journey were pending. This is an intermediate observation, not full CI acceptance. The missing-resolver `42883` mapping is committed, but a dedicated absent-function test is still not established. No hosted database changes. NO-GO.
+
+---
+
 ## P0 missing resolver fail-closed correction — 2026-10-17
 
 Commit `21d4da91fba3d03eb2d4ad837ffb599ba309fb5f` updates `confirmedProviderBillingScope.ts` to map PostgreSQL `42883` (undefined function), alongside `42501` (insufficient privilege), to the existing retryable `SUPERQI_SANDBOX_ORDER_RESOLVER_UNAVAILABLE` / HTTP 503 error. This addresses the hosted staging gap where migration 0033 has not been applied. The source edit is committed; new CI/runtime tests have not been executed or verified yet. Railway still deploys main, not this audit branch. NO-GO.
