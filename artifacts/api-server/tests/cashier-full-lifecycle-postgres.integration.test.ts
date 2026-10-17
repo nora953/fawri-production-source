@@ -148,6 +148,57 @@ test(
       (error: unknown) => Boolean(error && typeof error === "object" &&
         "code" in error && (error as { code?: unknown }).code === "CASHIER_PAIRING_INVALID"),
     );
+    // Two-session regression: station disable holds the station row lock while
+    // redemption waits. Revocation must commit before redemption can accept code.
+    const concurrentPairing = await cashier.beginCashierStationPairingAuthoritative({
+      merchantId, stationId: stationOne.id,
+    });
+    const disablingClient = await pool.connect();
+    let disablingTransactionOpen = false;
+    try {
+      await disablingClient.query("BEGIN");
+      disablingTransactionOpen = true;
+      await disablingClient.query("SET LOCAL statement_timeout = '10000ms'");
+      await disablingClient.query(
+        "SELECT id FROM merchant_cashier_stations WHERE merchant_id = $1 AND id = $2 FOR UPDATE",
+        [merchantId, stationOne.id],
+      );
+      const redeemAttempt = cashier.redeemCashierStationPairingAuthoritative({
+        pairingCode: concurrentPairing.pairing_code,
+        deviceId: "concurrent-" + crypto.randomUUID(),
+      });
+      // Attach the rejection handler immediately so a database failure cannot
+      // become an unhandled rejection while the disabling transaction commits.
+      const redemptionResult = redeemAttempt.then(
+        () => ({ accepted: true as const }),
+        (error: unknown) => ({ accepted: false as const, error }),
+      );
+      await disablingClient.query(
+        `UPDATE merchant_cashier_stations
+            SET status = 'disabled', updated_at = now()
+          WHERE merchant_id = $1 AND id = $2`,
+        [merchantId, stationOne.id],
+      );
+      await disablingClient.query(
+        `UPDATE cashier_station_pairing_challenges
+            SET status = 'revoked', revoked_at = now()
+          WHERE merchant_id = $1 AND station_id = $2 AND status = 'active'`,
+        [merchantId, stationOne.id],
+      );
+      await disablingClient.query("COMMIT");
+      disablingTransactionOpen = false;
+      const outcome = await redemptionResult;
+      assert.equal(outcome.accepted, false, "revoked concurrent pairing must not be redeemed");
+      if (!outcome.accepted) {
+        assert.equal((outcome.error as { code?: string }).code, "CASHIER_PAIRING_INVALID");
+      }
+    } finally {
+      if (disablingTransactionOpen) await disablingClient.query("ROLLBACK");
+      disablingClient.release();
+    }
+    await cashier.updateCashierStationAuthoritative({
+      merchantId, stationId: stationOne.id, status: "active",
+    });
     const freshPairing = await cashier.beginCashierStationPairingAuthoritative({
       merchantId, stationId: stationOne.id,
     });
