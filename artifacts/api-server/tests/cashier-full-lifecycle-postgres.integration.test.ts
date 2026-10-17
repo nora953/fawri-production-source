@@ -134,6 +134,12 @@ test(
     await cashier.updateCashierStationAuthoritative({
       merchantId, stationId: stationOne.id, status: "active",
     });
+    const staleChallenge = await pool.query(
+      "SELECT status FROM cashier_station_pairing_challenges WHERE merchant_id = $1 AND station_id = $2",
+      [merchantId, stationOne.id],
+    );
+    assert.deepEqual(staleChallenge.rows.map((row: { status: string }) => row.status), ["revoked"]);
+
     await assert.rejects(
       () => cashier.redeemCashierStationPairingAuthoritative({
         pairingCode: pairingOne.pairing_code,
