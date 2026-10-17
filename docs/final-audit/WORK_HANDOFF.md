@@ -1,3 +1,9 @@
+## P0 migration dependency inspection — 2026-10-17
+
+Inspected actual audit-branch SQL migrations 0028–0033. Each creates one SECURITY DEFINER function; 0029 additionally creates `public.verified_provider_payment_receipts` and its admission function. 0030 reads the receipt table; 0031 reviews it with SaaS/cashier orders; 0032 calls the review function; 0033 reads receipt and SaaS/cashier orders. 0028 is a separate Meta page resolver. Each migration revokes PUBLIC access to its function. Clone `br-snowy-voice-b1bovtwi` read-only pg catalog confirms receipt table absent, admission function absent, Meta resolver absent. Migration ledger shows 28 rows ending at journal timestamp 0027. Ledger individual hashes not yet retrieved (tool blocked query). **Do not apply 0033 alone**; verify 0028–0033 sequence, hashes, owners and least-privilege runtime grants before isolated acceptance. No migration applied. NO-GO.
+
+---
+
 ## P0 isolated branch actual migration ledger — 2026-10-17
 
 Neon clone `audit-p0-resolver-isolated-20261017` (`br-snowy-voice-b1bovtwi`) now has a read-write direct compute `ep-curly-sea-b1daovzb`, fixed 0.25 CU, no pooler. Attempt to configure 60-second suspend was rejected by account; compute created with account defaults. Read-only SQL verified `current_database=neondb`, `current_user=neondb_owner`, resolver absent. **drizzle.__drizzle_migrations contains 28 rows; MAX(created_at)=1791244800000**, matching journal entry `0027_cashier_subscription_licensing` timestamp. Audit-branch journal includes 0028–0033; six later migrations need exact hash/lineage reconciliation before any SQL changes. This is the isolated clone, not hosted staging acceptance. No migration applied, no changes to parent staging/production. NO-GO.
