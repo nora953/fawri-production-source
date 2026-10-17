@@ -1,3 +1,9 @@
+## P0 SQL migration inspection follow-up — 2026-10-17
+
+Migration 0028 defines a bounded Meta page resolver and requires a separate runtime EXECUTE deployment grant. Migration 0029 defines `verified_provider_payment_receipts`, enables RLS, revokes PUBLIC table access, and defines an admission SECURITY DEFINER function with separate runtime EXECUTE grant. Journal timestamps show 0027 at 1791244800000 and 0028–0033 at 1791936000000 through 1791936000005. Prior isolated clone read confirmed 28 migration rows through 0027; subsequent Neon read calls were blocked, even `SELECT current_user`, so no SQL application or acceptance. Original staging/production unchanged; release NO-GO.
+
+---
+
 ## P0 migration dependency inspection — 2026-10-17
 
 Inspected actual audit-branch SQL migrations 0028–0033. Each creates one SECURITY DEFINER function; 0029 additionally creates `public.verified_provider_payment_receipts` and its admission function. 0030 reads the receipt table; 0031 reviews it with SaaS/cashier orders; 0032 calls the review function; 0033 reads receipt and SaaS/cashier orders. 0028 is a separate Meta page resolver. Each migration revokes PUBLIC access to its function. Clone `br-snowy-voice-b1bovtwi` read-only pg catalog confirms receipt table absent, admission function absent, Meta resolver absent. Migration ledger shows 28 rows ending at journal timestamp 0027. Ledger individual hashes not yet retrieved (tool blocked query). **Do not apply 0033 alone**; verify 0028–0033 sequence, hashes, owners and least-privilege runtime grants before isolated acceptance. No migration applied. NO-GO.
