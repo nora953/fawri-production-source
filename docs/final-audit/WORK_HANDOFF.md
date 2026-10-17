@@ -1,3 +1,9 @@
+## CI follow-up — 2026-10-17
+
+Previous commit `99a9b6a7252fc318d63add189d55e03a79478492` completed 24 successful workflows and one **cancelled** `Isolated PostgreSQL engineering audit` (run 39000165856); do not treat it as 25/25 success. New commit `26caa873ada4b4d2bc37b7a4b937e97f5d882820` had 24/25 workflows successful and one isolated PostgreSQL audit still in progress (run 39000514278). Its migration-and-selected-tests and cashier licensing steps succeeded; billing/refund/duplicate-event proofs were running. No hosted migration/deployment. NO-GO.
+
+---
+
 ## CI checkpoint — 2026-10-17
 
 For audit branch commit `99a9b6a7252fc318d63add189d55e03a79478492`, GitHub Actions reported 24/25 workflows successful and 0 failed. The remaining `Isolated PostgreSQL engineering audit` run `39000165856`, job `117301467703`, was still in progress. Its migrations-and-selected-tests, cashier licensing, billing/refunds/duplicate-event, and restricted-role tenant/knowledge/retention steps had completed successfully; Meta bot/AI lifecycle was running, while full schema restore and Node22 HTTP journey were pending. This is an intermediate observation, not full CI acceptance. The missing-resolver `42883` mapping is committed, but a dedicated absent-function test is still not established. No hosted database changes. NO-GO.
