@@ -1067,14 +1067,15 @@ export async function updateCashierStationAuthoritative(input: {
       add("location_id", targetLocation.id);
     }
     if (branchLabel !== undefined) add("branch_label", branchLabel);
-    if (offlineInventoryAuthority !== undefined) {
+    if (status !== undefined && status !== "active") {
+      sets.push("offline_inventory_authority = FALSE");
+    } else if (offlineInventoryAuthority !== undefined) {
       add("offline_inventory_authority", offlineInventoryAuthority);
     }
     if (status !== undefined) {
       add("status", status);
       sets.push(status === "revoked" ? "revoked_at = now()" : "revoked_at = NULL");
       if (status !== "active") {
-        sets.push("offline_inventory_authority = FALSE");
         if (!locationChanged) {
           sets.push(
             "paired_device_id = NULL",
