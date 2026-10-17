@@ -1,3 +1,9 @@
+## P0 migration 0027 source and 0028–0033 preflight — 2026-10-17
+
+Fetched canonical SQL `lib/db/drizzle/0027_cashier_subscription_licensing.sql` (18548 characters; Git blob SHA `f4fa482d412664091b38fb980f25e399ff6b1847`). It creates cashier subscriptions/orders/events/entitlement tables and RLS policies. Isolated Neon migration ledger final id28 hash `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`, timestamp `1791244800000`. **Do not confuse Git blob SHA with Drizzle SHA-256**: actual SQL text checksum comparison is still outstanding. Existing clone prerequisite tables checked. Avoid applying migrations before hash comparison and privileged role/grant review. No DB writes, NO-GO.
+
+---
+
 ## P0 isolated pre-migration dependency and runtime roles — 2026-10-17
 
 Read-only Neon SQL on clone `br-snowy-voice-b1bovtwi` verified prerequisite public tables exist: `account_sessions`, `accounts`, `admin_permissions`, `admin_profiles`, `cashier_billing_orders`, `database_admin_access_audits`, `merchant_channels`, `saas_billing_orders`, `trusted_devices`. Role catalog: `fawri_staging_rls_runtime` LOGIN=false/BYPASSRLS=false; `fawri_staging_runtime` LOGIN=true/BYPASSRLS=true; `neondb_owner` LOGIN=true/BYPASSRLS=true. The first role is not directly login-capable; second can bypass RLS. Actual Railway deployed role remains unverified because connector redacts secret values. Additional pg_class owner/RLS query was blocked. **No migrations executed**. Required: reconcile migration 0027 hash against canonical source; establish actual deployed DB login, ownership, grant strategy; test six migrations only on isolated clone with explicit change authorization and recovery plan. No production or staging modifications. NO-GO.
