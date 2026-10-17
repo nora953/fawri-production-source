@@ -1,3 +1,9 @@
+## P0 isolated pre-migration dependency and runtime roles — 2026-10-17
+
+Read-only Neon SQL on clone `br-snowy-voice-b1bovtwi` verified prerequisite public tables exist: `account_sessions`, `accounts`, `admin_permissions`, `admin_profiles`, `cashier_billing_orders`, `database_admin_access_audits`, `merchant_channels`, `saas_billing_orders`, `trusted_devices`. Role catalog: `fawri_staging_rls_runtime` LOGIN=false/BYPASSRLS=false; `fawri_staging_runtime` LOGIN=true/BYPASSRLS=true; `neondb_owner` LOGIN=true/BYPASSRLS=true. The first role is not directly login-capable; second can bypass RLS. Actual Railway deployed role remains unverified because connector redacts secret values. Additional pg_class owner/RLS query was blocked. **No migrations executed**. Required: reconcile migration 0027 hash against canonical source; establish actual deployed DB login, ownership, grant strategy; test six migrations only on isolated clone with explicit change authorization and recovery plan. No production or staging modifications. NO-GO.
+
+---
+
 ## P0 isolated migration ledger exact rows — 2026-10-17
 
 Neon SQL access recovered on isolated branch `br-snowy-voice-b1bovtwi` (SELECT 1 succeeded). Ledger `drizzle.__drizzle_migrations` final records: id26 created_at1790553600000 hash `4b1e69a8635f380631efe41d3d42fb5d6a1dd126dacd583243daeb63219e0b17`; id27 created_at1790640000000 hash `e0e515ce07fbdf95efa2e38d173464995355adaf20012bffb892f14ce4d7d011`; id28 created_at1791244800000 hash `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`. Journal maps final id28 timestamp to `0027_cashier_subscription_licensing`; its source SQL file is 18548 characters. Hash-to-source comparison has not been completed; do not claim checksum acceptance. No migrations applied, parent untouched. NO-GO.
