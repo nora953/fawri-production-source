@@ -1225,14 +1225,43 @@ export async function redeemCashierStationPairingAuthoritative(input: {
   const expiresAt = new Date(Date.now() + STATION_CREDENTIAL_TTL_MS);
 
   return withOperationalTransaction(async (client) => {
-    const challenges = await operationalQueryRows<PairingRow>(
+    // Discover the tenant without taking a challenge row lock. All pairing paths
+    // acquire the station lock before the challenge lock to avoid a lock cycle
+    // with station disable/revoke, which updates challenges after the station.
+    const discovered = await operationalQueryRows<PairingRow>(
       client,
       `SELECT id, merchant_id, station_id, status, expires_at
          FROM cashier_station_pairing_challenges
         WHERE code_hash = $1
-        LIMIT 1
-        FOR UPDATE`,
+        LIMIT 1`,
       [codeHash],
+    );
+    const candidate = discovered[0];
+    if (!candidate) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_PAIRING_INVALID",
+        "cashier pairing code is invalid or already used",
+        401,
+      );
+    }
+    const merchantId = identifier(candidate.merchant_id, "merchant_id");
+    await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
+    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
+    const station = await getStationRow(
+      client,
+      merchantId,
+      candidate.station_id,
+      true,
+    );
+    // Re-read under lock: a concurrent disable or pairing redemption may have
+    // invalidated the code after the unlocked tenant discovery.
+    const challenges = await operationalQueryRows<PairingRow>(
+      client,
+      `SELECT id, merchant_id, station_id, status, expires_at
+         FROM cashier_station_pairing_challenges
+        WHERE id = $1 AND code_hash = $2 AND merchant_id = $3 AND station_id = $4
+        FOR UPDATE`,
+      [candidate.id, codeHash, merchantId, candidate.station_id],
     );
     const challenge = challenges[0];
     if (!challenge || challenge.status !== "active") {
@@ -1249,15 +1278,6 @@ export async function redeemCashierStationPairingAuthoritative(input: {
         410,
       );
     }
-    const merchantId = identifier(challenge.merchant_id, "merchant_id");
-    await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
-    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
-    const station = await getStationRow(
-      client,
-      merchantId,
-      challenge.station_id,
-      true,
-    );
     if (!station || station.status !== "active") {
       throw new CashierStaffAuthorityError(
         "CASHIER_STATION_INACTIVE",
