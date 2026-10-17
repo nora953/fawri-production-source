@@ -9,7 +9,7 @@ async function resolve(client:SubscriptionPlanCycleTransaction,identity:Identity
  try{return await client.query(sql,args(identity));}catch(error){
   const message=error instanceof Error?error.message:'';
   if(/^(SUPERQI_SANDBOX|CASHIER_BILLING)_[A-Z_]+$/.test(message))throw new SuperQiSandboxProviderError(message,'confirmed payment conflicts with durable order identity',/AMBIGUOUS|AUTHORITY_COLLISION/.test(message)?503:409);
-  if(error&&typeof error==='object'&&'code' in error&&error.code==='42501')throw new SuperQiSandboxProviderError('SUPERQI_SANDBOX_ORDER_RESOLVER_UNAVAILABLE','confirmed payment order capability unavailable',503);
+  if(error&&typeof error==='object'&&'code' in error&&['42501','42883'].includes(String(error.code)))throw new SuperQiSandboxProviderError('SUPERQI_SANDBOX_ORDER_RESOLVER_UNAVAILABLE','confirmed payment order capability unavailable',503);
   throw error;
  }
 }
