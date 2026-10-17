@@ -1,3 +1,9 @@
+## P0 isolated branch actual migration ledger — 2026-10-17
+
+Neon clone `audit-p0-resolver-isolated-20261017` (`br-snowy-voice-b1bovtwi`) now has a read-write direct compute `ep-curly-sea-b1daovzb`, fixed 0.25 CU, no pooler. Attempt to configure 60-second suspend was rejected by account; compute created with account defaults. Read-only SQL verified `current_database=neondb`, `current_user=neondb_owner`, resolver absent. **drizzle.__drizzle_migrations contains 28 rows; MAX(created_at)=1791244800000**, matching journal entry `0027_cashier_subscription_licensing` timestamp. Audit-branch journal includes 0028–0033; six later migrations need exact hash/lineage reconciliation before any SQL changes. This is the isolated clone, not hosted staging acceptance. No migration applied, no changes to parent staging/production. NO-GO.
+
+---
+
 ## P0 isolated Neon branch created — 2026-10-17
 
 Created Neon branch `audit-p0-resolver-isolated-20261017` (`br-snowy-voice-b1bovtwi`) from `staging-runtime` (`br-falling-dust-b1km4gix`), parent LSN `0/36ECAE8`, point-in-time 2026-10-16 23:58:28 UTC. Verified state READY, **no compute endpoint** (`no_compute=true`), no writes. Do not mistake this clone for acceptance: migration 0033, EXECUTE grants and tests have not been run on it. Parent staging and production untouched. Next provision compute only when ready to run controlled isolated acceptance; avoid deploying to live staging. P0 NO-GO.
