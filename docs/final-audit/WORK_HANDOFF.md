@@ -1,3 +1,9 @@
+## P0 six-capability preflight — 2026-10-17
+
+Read all migration files 0028–0033: six `SECURITY DEFINER` functions with `SET search_path=pg_catalog` and `SET row_security=off`; each revokes PUBLIC EXECUTE. 0029 also creates RLS-enabled verified receipt inbox. 0032 calls 0031's review capability; 0030/0031/0033 depend on 0029's inbox. Isolated Neon read-only pg_proc check found **zero** of six expected capability names installed. Prior step SHA-256 of 0027 source exactly matched isolated ledger id28. Remaining gate: apply six migrations in journal order to isolated branch only, using controlled Drizzle migration runner and reviewed owner/grants, then run restricted-role negative/positive tests. No migration applied in this step; original staging and production unchanged. NO-GO.
+
+---
+
 ## P0 migration 0027 SHA-256 verified — 2026-10-17
 
 PASS: independently computed SHA-256 over exact UTF-8 (ASCII-only) content of `lib/db/drizzle/0027_cashier_subscription_licensing.sql` on audit branch, 18,548 bytes: `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`. Exact match with isolated Neon `drizzle.__drizzle_migrations` id28 hash (`created_at=1791244800000`). Confirms the final applied migration's source integrity, not the full earlier ledger or later migrations. No SQL migration applied; six pending 0028–0033. NO-GO.
