@@ -1103,7 +1103,7 @@ export async function updateCashierStationAuthoritative(input: {
         404,
       );
     }
-    if (locationChanged) {
+    if (locationChanged || status === "disabled" || status === "revoked") {
       await client.query(
         `UPDATE cashier_station_pairing_challenges
             SET status = 'revoked', revoked_at = now()
