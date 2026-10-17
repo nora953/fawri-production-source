@@ -173,6 +173,29 @@ test(
         () => ({ accepted: true as const }),
         (error: unknown) => ({ accepted: false as const, error }),
       );
+      // Wait until PostgreSQL itself reports the redemption backend blocked by
+      // our station-row transaction. This proves the lock interleaving rather
+      // than merely relying on scheduling the two JavaScript promises.
+      let observedStationLockWait = false;
+      const waitDeadline = Date.now() + 8000;
+      while (Date.now() < waitDeadline) {
+        const waiters = await disablingClient.query<{ waiting: boolean }>(
+          `SELECT EXISTS (
+             SELECT 1 FROM pg_stat_activity a
+              WHERE a.pid <> pg_backend_pid()
+                AND a.datname = current_database()
+                AND a.wait_event_type = 'Lock'
+                AND pg_blocking_pids(a.pid) @> ARRAY[pg_backend_pid()]
+           ) AS waiting`,
+        );
+        if (waiters.rows[0]?.waiting) {
+          observedStationLockWait = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      assert.equal(observedStationLockWait, true,
+        "redemption must demonstrably wait on the station lock before revocation");
       await disablingClient.query(
         `UPDATE merchant_cashier_stations
             SET status = 'disabled', updated_at = now()
