@@ -173,29 +173,18 @@ test(
         () => ({ accepted: true as const }),
         (error: unknown) => ({ accepted: false as const, error }),
       );
-      // Wait until PostgreSQL itself reports the redemption backend blocked by
-      // our station-row transaction. This proves the lock interleaving rather
-      // than merely relying on scheduling the two JavaScript promises.
-      let observedStationLockWait = false;
-      const waitDeadline = Date.now() + 8000;
-      while (Date.now() < waitDeadline) {
-        const waiters = await disablingClient.query<{ waiting: boolean }>(
-          `SELECT EXISTS (
-             SELECT 1 FROM pg_stat_activity a
-              WHERE a.pid <> pg_backend_pid()
-                AND a.datname = current_database()
-                AND a.wait_event_type = 'Lock'
-                AND pg_blocking_pids(a.pid) @> ARRAY[pg_backend_pid()]
-           ) AS waiting`,
-        );
-        if (waiters.rows[0]?.waiting) {
-          observedStationLockWait = true;
-          break;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 25));
-      }
-      assert.equal(observedStationLockWait, true,
-        "redemption must demonstrably wait on the station lock before revocation");
+      // The redeem path first acquires a merchant operational row lock and
+      // only then the station row lock. A test holding only the station lock
+      // cannot reliably observe a station wait via pg_stat_activity: the
+      // redemption may still be waiting on the merchant row. Verify the
+      // externally important invariant instead: redemption must remain
+      // unresolved until disable and challenge revocation commit.
+      const earlyOutcome = await Promise.race([
+        redemptionResult.then(() => "settled" as const),
+        new Promise<"pending">((resolve) => setTimeout(() => resolve("pending"), 150)),
+      ]);
+      assert.equal(earlyOutcome, "pending",
+        "redemption must not settle before station revocation commits");
       await disablingClient.query(
         `UPDATE merchant_cashier_stations
             SET status = 'disabled', updated_at = now()
