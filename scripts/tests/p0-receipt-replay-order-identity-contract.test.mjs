@@ -28,3 +28,16 @@ test('P0 replay locks both authority order rows and rechecks receipt identity un
 });
 
 // This is a source contract regression, NOT a two-session PostgreSQL race proof.
+
+
+test('P0 resolver advisory lock is present but replay review does not yet share it', () => {
+  const review = readFileSync(new URL('../../lib/db/drizzle/0031_audited_receipt_replay_reviews.sql', import.meta.url), 'utf8');
+  const resolver = readFileSync(new URL('../../lib/db/drizzle/0033_confirmed_provider_order_resolution.sql', import.meta.url), 'utf8');
+  assert.match(resolver, /pg_advisory_xact_lock\s*\(\s*pg_catalog\.hashtext\s*\(\s*'confirmed-payment:'\s*\|\|\s*p_payment_ref/);
+  assert.doesNotMatch(review, /pg_advisory_xact_lock\s*\(/);
+  for (const table of ['saas_billing_orders', 'cashier_billing_orders']) {
+    assert.ok(review.includes('public.' + table), 'Review must search both authorities: ' + table);
+    assert.ok(resolver.includes('public.' + table), 'Resolver must search both authorities: ' + table);
+  }
+  // This records an unresolved concurrency gate; it does not certify race safety.
+});
