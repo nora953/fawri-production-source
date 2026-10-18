@@ -7,6 +7,28 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import pg from "pg";
+
+async function restrictedTestDatabaseUrl(databaseUrl) {
+  const admin = new pg.Client({ connectionString: databaseUrl });
+  await admin.connect();
+  const role = "fawri_observability_ci_runtime";
+  try {
+    await admin.query(`DO $ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${role}') THEN
+        CREATE ROLE ${role} LOGIN PASSWORD 'disposable-observability-only';
+      END IF;
+    END $`);
+    await admin.query(`GRANT CONNECT ON DATABASE ${JSON.stringify(new URL(databaseUrl).pathname.slice(1))} TO ${role}`);
+  } finally {
+    await admin.end();
+  }
+  const url = new URL(databaseUrl);
+  url.username = role;
+  url.password = "disposable-observability-only";
+  return url.toString();
+}
+
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(testDir, "..");
@@ -105,7 +127,7 @@ const expectedReadyChecks = [
 test("real app mounts bounded observability routes and protects metrics", async () => {
   const databaseUrl = String(process.env.DATABASE_URL || "").trim();
   assert.match(databaseUrl, /^postgres(?:ql)?:\/\//i, "disposable PostgreSQL DATABASE_URL is required");
-  const server = await startApi(databaseUrl);
+  const server = await startApi(await restrictedTestDatabaseUrl(databaseUrl));
   const base = `http://127.0.0.1:${server.port}`;
 
   try {
