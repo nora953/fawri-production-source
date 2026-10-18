@@ -27,9 +27,9 @@ BEGIN
     AND d.device_fingerprint_hash=p_device_hash AND d.status='trusted' FOR SHARE;
   IF NOT FOUND THEN RAISE EXCEPTION 'verified receipt operator not authorized' USING ERRCODE='42501'; END IF;
   IF p_authority='bot_subscription' THEN
-    SELECT o.merchant_id,o.provider_checkout_ref INTO tenant,assigned_payment FROM public.saas_billing_orders o WHERE o.id=p_order_id;
+    SELECT o.merchant_id,o.provider_checkout_ref INTO tenant,assigned_payment FROM public.saas_billing_orders o WHERE o.id=p_order_id FOR SHARE;
   ELSE
-    SELECT o.merchant_id,o.provider_checkout_ref INTO tenant,assigned_payment FROM public.cashier_billing_orders o WHERE o.id=p_order_id;
+    SELECT o.merchant_id,o.provider_checkout_ref INTO tenant,assigned_payment FROM public.cashier_billing_orders o WHERE o.id=p_order_id FOR SHARE;
   END IF;
   -- Execution accepts reviewed existing assignment; no null-reference repair.
   IF tenant IS NULL OR assigned_payment IS DISTINCT FROM reviewed.payment_ref OR reviewed.event_type<>'payment_succeeded' THEN
