@@ -22,6 +22,8 @@ const cashier=await import('../src/services/cashierBillingAuthority.ts');
 const {superQiWebhookSigningPayload}=await import('../src/services/superQiSandboxTransport.ts');
 // Register isolated SQLSTATE 42501/42883 fail-closed proofs in the existing CI billing audit.
 await import('./confirmed-provider-resolver-unavailable.test.ts');
+// Exercise runtime-role fail-closed readiness assertions in the existing PostgreSQL CI audit.
+await import('./postgres-runtime-role-readiness.test.ts');
 const signatureOf=payload=>{
   const signer=createSign('RSA-SHA256');signer.update(superQiWebhookSigningPayload(payload),'utf8');signer.end();
   return signer.sign(privateKey).toString('base64');
