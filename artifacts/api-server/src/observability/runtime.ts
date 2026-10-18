@@ -54,13 +54,7 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
         role_name?: unknown; is_superuser?: unknown;
         bypass_rls?: unknown; owns_merchants?: unknown;
       } | undefined;
-      // Local disposable PostgreSQL fixtures run under their bootstrap owner.
-      // Production and hosted staging must always enforce the restricted role.
-      if (process.env.NODE_ENV !== "test") {
-        assertSafePostgresRuntimeRole(row);
-      } else {
-        assertExpectedPostgresRuntimeRole(String(row?.role_name || ""));
-      }
+      assertSafePostgresRuntimeRole(row);
     },
   };
 }
