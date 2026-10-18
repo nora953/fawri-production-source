@@ -25,6 +25,16 @@ export function assertExpectedPostgresRuntimeRole(
   }
 }
 
+export function assertSafePostgresRuntimeRole(row: {
+  role_name?: unknown; is_superuser?: unknown;
+  bypass_rls?: unknown; owns_merchants?: unknown;
+} | undefined): void {
+  if (!row || row.is_superuser !== false || row.bypass_rls !== false || row.owns_merchants !== false) {
+    throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
+  }
+  assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
+}
+
 export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
   return {
     name: "postgresql_authority",
@@ -44,10 +54,7 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
         role_name?: unknown; is_superuser?: unknown;
         bypass_rls?: unknown; owns_merchants?: unknown;
       } | undefined;
-      if (!row || row.is_superuser !== false || row.bypass_rls !== false || row.owns_merchants !== false) {
-        throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
-      }
-      assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
+      assertSafePostgresRuntimeRole(row);
     },
   };
 }
