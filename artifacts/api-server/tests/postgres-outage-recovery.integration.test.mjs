@@ -44,6 +44,26 @@ test("API readiness and PostgreSQL pool recover after a database outage without 
     FAWRI_META_CREDENTIAL_PROVIDER: "disabled",
   });
 
+  // The disposable container bootstrap account owns the database; readiness
+  // must instead exercise a non-owner, non-BYPASSRLS login.
+  const { default: pg } = await import("pg");
+  const bootstrap = new pg.Client({ connectionString: databaseUrl });
+  await bootstrap.connect();
+  try {
+    await bootstrap.query(`DO $ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fawri_recovery_ci_runtime') THEN
+        CREATE ROLE fawri_recovery_ci_runtime LOGIN PASSWORD 'disposable-recovery-only';
+      END IF;
+    END $`);
+    await bootstrap.query(`GRANT CONNECT ON DATABASE "${parsed.pathname.slice(1)}" TO fawri_recovery_ci_runtime`);
+  } finally {
+    await bootstrap.end();
+  }
+  const runtimeUrl = new URL(databaseUrl);
+  runtimeUrl.username = "fawri_recovery_ci_runtime";
+  runtimeUrl.password = "disposable-recovery-only";
+  process.env.DATABASE_URL = runtimeUrl.toString();
+
   const [{ default: app }, { pool }] = await Promise.all([
     import("../src/app.ts"),
     import("@workspace/db"),
