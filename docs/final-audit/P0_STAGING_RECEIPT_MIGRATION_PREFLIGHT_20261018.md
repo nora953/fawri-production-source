@@ -65,3 +65,12 @@ Stop on journal mismatch, missing/incorrect owner, BYPASSRLS runtime, broad EXEC
 - Commit `cc6920d30165182d2bd8202fa2a9d17b7dc020f0` completed **40/40 GitHub Actions workflow runs successfully**, including the isolated PostgreSQL engineering audit. This is the fourth consecutive fully green cycle on the PR branch.
 - Fresh read-only query against explicit Neon `staging-runtime` branch returned **28** migration ledger rows, latest timestamp `1791244800000`, and `to_regclass('public.verified_provider_payment_receipts') IS NOT NULL = false`. Hosted schema remains behind committed `0028`–`0033`.
 - No staging migration, grant, Railway deployment, or merge was executed. CI success alone does not lift the **P0 NO-GO** gate; the approved isolated migration rehearsal, hash reconciliation, role/grant proof and hosted acceptance remain outstanding.
+
+
+## P0 current checkpoint — 2026-10-18 (read-only, no rollout)
+
+- PR #550 commit `925e888bea0aae526eb1fa523e7e1c3113483274` passed **40/40** commit-associated GitHub Actions workflows, with no failed or pending workflows at verification.
+- `0032_authorized_receipt_replay_execution.sql` now holds SHARE locks on both account/session and the selected SaaS or cashier billing order during replay authorization. The authoritative `migration-stages/0032/manual.sql` was synchronized; migration candidate CI passed.
+- Isolated Neon audit branch `br-snowy-voice-b1bovtwi` still reports **28** Drizzle migration ledger entries and no `public.verified_provider_payment_receipts` table. Six migrations (`0028`–`0033`) remain unapplied there.
+- Read-only Neon connection used `neondb_owner` (BYPASSRLS); `fawri_staging_runtime` is LOGIN/BYPASSRLS and `fawri_staging_rls_runtime` is NOLOGIN/NOBYPASSRLS. This is **not** evidence of safe deployed application login/session identity. Verify both `current_user` and `session_user` using the hosted app readiness path after an approved rollout.
+- P0 progress is **approximately 87% (historical engineering estimate, not a computed or release-accepted score)**. P0 remains **NO-GO** until authorized isolated migration rehearsal, exact role/function ACL verification, restricted-runtime tenant isolation and hosted provider receipt/replay acceptance. No Neon writes, Railway changes, deploy or merge authorized or performed.
