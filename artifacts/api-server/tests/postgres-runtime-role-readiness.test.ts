@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { assertSafePostgresRuntimeRole } from "../src/observability/runtime";
 
-const safe = { role_name: "fawri_runtime", is_superuser: false, bypass_rls: false, owns_merchants: false };
+const safe = { role_name: "fawri_runtime", is_superuser: false, bypass_rls: false, owns_unforced_rls_table: false };
 
 test("readiness accepts a non-owner non-bypass runtime role", () => {
   assert.doesNotThrow(() => assertSafePostgresRuntimeRole(safe));
@@ -13,7 +13,8 @@ test("readiness rejects unsafe PostgreSQL runtime identities", () => {
     undefined,
     { ...safe, is_superuser: true },
     { ...safe, bypass_rls: true },
-    { ...safe, owns_merchants: true },
+    { ...safe, owns_unforced_rls_table: true },
+    { ...safe, owns_unforced_rls_table: undefined },
     { ...safe, bypass_rls: undefined },
   ]) {
     assert.throws(() => assertSafePostgresRuntimeRole(role), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
