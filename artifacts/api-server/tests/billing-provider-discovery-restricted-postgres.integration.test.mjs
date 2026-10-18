@@ -42,6 +42,9 @@ test('verified provider callbacks discover mapped orders without global tenant a
   await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
   await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
   await pool.query(`GRANT EXECUTE ON FUNCTION ${functionIdentity} TO ${role}`);
+  // The unmatched-receipt case must exercise the resolver's zero-row result,
+  // not the missing-EXECUTE fail-closed path tested separately below.
+  await pool.query(`GRANT EXECUTE ON FUNCTION ${resolverIdentity} TO ${role}`);
   const providerEnv=Object.fromEntries(Object.entries(process.env).filter(([key])=>key.startsWith('FAWRI_SUPERQI_')||['FAWRI_OPERATIONAL_POSTGRES_AUTHORITY','FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY','FAWRI_SAAS_BILLING_PROVIDER','FAWRI_SAAS_BILLING_PROVIDERS'].includes(key)));
   async function run(payload,receivedAt){
     const child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/billing-provider-discovery-child.mjs',import.meta.url))],{env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
