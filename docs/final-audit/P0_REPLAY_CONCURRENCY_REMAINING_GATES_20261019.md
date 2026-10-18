@@ -19,3 +19,7 @@
 - Explicitly approved migration application 0028–0033 to isolated Neon clone, followed by verification of function definitions, EXECUTE grants, RLS and least-privilege runtime role.
 - Verify actual Railway `current_user`, `session_user`, runtime role attributes, and protected-route acceptance; staging/production remain unchanged.
 - No merge, Railway deployment or hosted Neon mutations without separate approval. P0 remains **NO-GO**.
+
+## 2026-10-19 advisory-lock source regression
+
+Commit `15460b98f17047d5d780af5efa4fb4c4ce5bda8c` adds a source regression that explicitly records the difference between the confirmed-payment resolver advisory lock and the replay review's lack of the same lock. This is an open concurrency gate, not proof of safety or an exploit. At the latest CI observation 22/41 workflows succeeded, 18 running, 1 queued, 0 failed; final acceptance remains pending. Do not mark P0 GO from this result.
