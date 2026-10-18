@@ -27,9 +27,9 @@ export function assertExpectedPostgresRuntimeRole(
 
 export function assertSafePostgresRuntimeRole(row: {
   role_name?: unknown; is_superuser?: unknown;
-  bypass_rls?: unknown; owns_merchants?: unknown;
+  bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
 } | undefined): void {
-  if (!row || row.is_superuser !== false || row.bypass_rls !== false || row.owns_merchants !== false) {
+  if (!row || row.is_superuser !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false) {
     throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
   }
   assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
@@ -46,13 +46,14 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
         EXISTS (
           SELECT 1 FROM pg_class c
           JOIN pg_namespace n ON n.oid = c.relnamespace
-          WHERE n.nspname = 'public' AND c.relname = 'merchants'
-            AND c.relkind IN ('r', 'p') AND c.relowner = r.oid
-        ) AS owns_merchants
+          WHERE n.nspname = 'public'
+            AND c.relkind IN ('r', 'p') AND c.relrowsecurity
+            AND NOT c.relforcerowsecurity AND c.relowner = r.oid
+        ) AS owns_unforced_rls_table
         FROM pg_roles r WHERE r.rolname = current_user`);
       const row = result.rows[0] as {
         role_name?: unknown; is_superuser?: unknown;
-        bypass_rls?: unknown; owns_merchants?: unknown;
+        bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
       } | undefined;
       assertSafePostgresRuntimeRole(row);
     },
