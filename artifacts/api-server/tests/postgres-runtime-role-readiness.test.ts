@@ -11,6 +11,9 @@ test("readiness accepts a non-owner non-bypass runtime role", () => {
 test("readiness rejects unsafe PostgreSQL runtime identities", () => {
   for (const role of [
     undefined,
+    { ...safe, role_name: undefined },
+    { ...safe, role_name: "" },
+    { ...safe, role_name: "   " },
     { ...safe, is_superuser: true },
     { ...safe, bypass_rls: true },
     { ...safe, owns_unforced_rls_table: true },
