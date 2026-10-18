@@ -14,7 +14,8 @@
     "migration:rollback-test": "node ./scripts/rollback-migration.mjs",
     "migration:commit-test": "node ./scripts/commit-migration.mjs",
     "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
+    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "migration:preflight:static-test": "node --test ./scripts/tests/isolated-neon-migration-static.test.mjs"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
