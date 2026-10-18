@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { assertSafePostgresRuntimeRole } from "../src/observability/runtime";
 
-const safe = { role_name: "fawri_runtime", is_superuser: false, bypass_rls: false, owns_unforced_rls_table: false };
+const safe = { role_name: "fawri_runtime", is_superuser: false, bypass_rls: false, owns_unforced_rls_table: false, session_role_name: "fawri_login", session_is_superuser: false, session_bypass_rls: false };
 
 test("readiness accepts a non-owner non-bypass runtime role", () => {
   assert.doesNotThrow(() => assertSafePostgresRuntimeRole(safe));
@@ -19,6 +19,11 @@ test("readiness rejects unsafe PostgreSQL runtime identities", () => {
     { ...safe, owns_unforced_rls_table: true },
     { ...safe, owns_unforced_rls_table: undefined },
     { ...safe, bypass_rls: undefined },
+    { ...safe, session_role_name: undefined },
+    { ...safe, session_role_name: "" },
+    { ...safe, session_is_superuser: true },
+    { ...safe, session_bypass_rls: true },
+    { ...safe, session_bypass_rls: undefined },
   ]) {
     assert.throws(() => assertSafePostgresRuntimeRole(role), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
   }
@@ -34,4 +39,8 @@ test("readiness still enforces configured runtime role identity", () => {
     if (old === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
     else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = old;
   }
+});
+
+test("readiness rejects privileged login even when SET ROLE selects a safe effective role", () => {
+  assert.throws(() => assertSafePostgresRuntimeRole({ ...safe, role_name: "fawri_staging_rls_runtime", session_role_name: "fawri_staging_runtime", session_bypass_rls: true }), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
 });
