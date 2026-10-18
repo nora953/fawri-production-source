@@ -29,7 +29,7 @@ export function assertSafePostgresRuntimeRole(row: {
   role_name?: unknown; is_superuser?: unknown;
   bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
 } | undefined): void {
-  if (!row || row.is_superuser !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false) {
+  if (!row || typeof row.role_name !== "string" || !row.role_name.trim() || row.is_superuser !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false) {
     throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
   }
   assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
