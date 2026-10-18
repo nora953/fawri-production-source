@@ -14,11 +14,9 @@ async function restrictedTestDatabaseUrl(databaseUrl) {
   await admin.connect();
   const role = "fawri_observability_ci_runtime";
   try {
-    await admin.query(`DO $ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${role}') THEN
-        CREATE ROLE ${role} LOGIN PASSWORD 'disposable-observability-only';
-      END IF;
-    END $`);
+    await admin.query("CREATE ROLE fawri_observability_ci_runtime LOGIN PASSWORD 'disposable-observability-only'").catch((error) => {
+      if (error?.code !== "42710") throw error;
+    });
     await admin.query(`GRANT CONNECT ON DATABASE ${JSON.stringify(new URL(databaseUrl).pathname.slice(1))} TO ${role}`);
   } finally {
     await admin.end();
