@@ -29,3 +29,9 @@
 ## Stop conditions
 
 Stop on journal mismatch, missing/incorrect owner, BYPASSRLS runtime, broad EXECUTE grant, missing restricted-role proof, non-idempotent migration, wrong branch, or unclear backup/rollback. No hosted writes, DDL, grant, deploy or merge were performed in this review. **P0 NO-GO**.
+
+## Journal reconciliation update — read-only
+
+- Live `staging-runtime` migration journal last row: `id=28`, `created_at=1791244800000`.
+- Committed `lib/db/drizzle/meta/_journal.json` entry `idx=27`, tag `0027_cashier_subscription_licensing`, has `when=1791244800000`; entries `idx=28..33` are `0028_meta_ingress_bounded_page_resolver` through `0033_confirmed_provider_order_resolution` with `when=1791936000000..1791936000005`.
+- This timestamp alignment and absence of newer objects support that six committed migrations remain unapplied on staging. **Still reconcile migration hashes and complete history before writing**; journal row ID is not the file index, and matching timestamp alone does not authenticate SQL contents.
