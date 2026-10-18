@@ -21,7 +21,7 @@ BEGIN
   PERFORM 1 FROM public.account_sessions s JOIN public.accounts a ON a.id=s.account_id
     WHERE s.id=p_session_id AND s.account_id=p_actor_id AND s.kind='admin' AND s.status='active'
       AND s.device_fingerprint_hash=p_device_hash AND s.session_version=a.session_version AND s.security_version=a.security_version
-      AND s.idle_expires_at>clock_timestamp() AND s.absolute_expires_at>clock_timestamp() FOR SHARE OF s;
+      AND s.idle_expires_at>clock_timestamp() AND s.absolute_expires_at>clock_timestamp() FOR SHARE OF s, a;
   IF NOT FOUND THEN RAISE EXCEPTION 'verified receipt operator not authorized' USING ERRCODE='42501'; END IF;
   PERFORM 1 FROM public.trusted_devices d WHERE d.account_id=p_actor_id AND d.kind='admin'
     AND d.device_fingerprint_hash=p_device_hash AND d.status='trusted' FOR SHARE;
