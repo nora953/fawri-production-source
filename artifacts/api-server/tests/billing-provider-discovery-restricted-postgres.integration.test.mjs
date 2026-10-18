@@ -64,7 +64,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
     const orphanRun=await run(payload,orphanReceivedAt);
     const orphanObservation=orphanRun.messages.find(message=>message.type==='observation');
     assert.equal(orphanRun.code,0);
-    assert.ok(orphanObservation?.errorCode,'unmatched verified receipt must fail closed');
+    assert.equal(orphanObservation?.errorCode,'SUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND','unmatched verified receipt must return the precise retryable error');
     assert.equal(orphanObservation.gatewayCalls,1);
     assert.deepEqual(orphanObservation.afterContext,{tenant:'',audit:'',admin:''});
     assert.deepEqual(orphanObservation.afterNaked,{saas:0,cashier:0,receipts:0});
