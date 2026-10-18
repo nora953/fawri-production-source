@@ -58,6 +58,21 @@ test('verified provider callbacks discover mapped orders without global tenant a
     const checkout=kind==='saas'?await saas.createSaasBillingCheckout({merchantId,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'}):await cashier.createCashierBillingCheckout({merchantId,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'});
     const orders=kind==='saas'?'saas_billing_orders':'cashier_billing_orders',apps=kind==='saas'?'saas_entitlement_applications':'cashier_entitlement_applications',subscriptions=kind==='saas'?'subscriptions':'merchant_cashier_subscriptions';
     const payload={paymentId:`synthetic-discovery-${randomUUID()}`,requestId:randomUUID(),status:'SUCCESS',canceled:false,amount:checkout.order.amount_iqd,confirmedAmount:checkout.order.amount_iqd,currency:'IQD',creationDate:'2026-10-14T10:00:00'};paymentRefs.push(payload.paymentId);
+    // An authenticated provider payment with no matching provider order must be
+    // retained for recovery, never assigned to the unrelated test_fake order.
+    const orphanReceivedAt=new Date();
+    const orphanRun=await run(payload,orphanReceivedAt);
+    const orphanObservation=orphanRun.messages.find(message=>message.type==='observation');
+    assert.equal(orphanRun.code,0);
+    assert.ok(orphanObservation?.errorCode,'unmatched verified receipt must fail closed');
+    assert.equal(orphanObservation.gatewayCalls,1);
+    assert.deepEqual(orphanObservation.afterContext,{tenant:'',audit:'',admin:''});
+    assert.deepEqual(orphanObservation.afterNaked,{saas:0,cashier:0,receipts:0});
+    const orphanReceipt=(await pool.query('SELECT * FROM verified_provider_payment_receipts WHERE payment_ref=$1',[payload.paymentId])).rows;
+    assert.equal(orphanReceipt.length,1,'unmatched verified payment must survive callback failure');
+    assert.equal(new Date(orphanReceipt[0].first_received_at).getTime(),orphanReceivedAt.getTime());
+    assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,0);
+    assert.equal((await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n,0);
     await pool.query(`UPDATE ${orders} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[checkout.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
     const first=new Date(),before=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0];
     // Capability is never PUBLIC; lack of the reviewed runtime grant is retryable.
