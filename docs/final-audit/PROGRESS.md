@@ -1407,3 +1407,17 @@ Sourcea696046b, PR537 (stack534/536): isolated38520772813/job115709702562 **174P
 ### P0 migration ledger reconciliation — 2026-10-18
 
 Read-only verification: `lib/db/drizzle/meta/_journal.json` in PR #550 enumerates entries idx 0..33, with `0027_cashier_subscription_licensing` timestamp 1791244800000 and subsequent `0028` through `0033` timestamps 1791936000000..0005. Neon staging `drizzle.__drizzle_migrations` returns 28 applied records and `max(created_at)=1791244800000`. Therefore staging ledger is at **0027**, with six committed journal entries **0028–0033 not yet evidenced as applied**. Independent read-only `information_schema.tables` inspection found no public table with `receipt` in its name; do not infer exact migration DDL from table-name matching alone. This is a **hosted migration parity blocker**, not a request to run migrations. Do not migrate/deploy without explicit user approval and a rollback/backup plan. Latest docs commit is not covered by prior code commit's 40/40 CI result; distinguish these runs.
+
+
+### P0 staging migration SQL dependency and privilege review — 2026-10-18
+
+Read-only source inspection of six committed SQL files `lib/db/drizzle/0028_*.sql` through `0033_*.sql`:
+
+1. `0028_meta_ingress_bounded_page_resolver` creates `SECURITY DEFINER` page resolver reading `merchant_channels`; revokes PUBLIC EXECUTE.
+2. `0029_verified_provider_payment_receipts` creates `public.verified_provider_payment_receipts` with RLS enabled, revokes PUBLIC table privileges, creates `fawri_admit_verified_payment_receipt` and revokes PUBLIC EXECUTE.
+3. `0030_audited_verified_receipt_reads` creates audited receipt-read capability referencing accounts/admin permissions/audits and receipt inbox; revokes PUBLIC EXECUTE.
+4. `0031_audited_receipt_replay_reviews` creates review capability depending on receipt inbox, admin permissions and SaaS/cashier billing orders; revokes PUBLIC EXECUTE.
+5. `0032_authorized_receipt_replay_execution` creates authorized replay capability depending on 0031 review, account sessions, trusted devices, billing orders and audit records; revokes PUBLIC EXECUTE.
+6. `0033_confirmed_provider_order_resolution` creates confirmed-payment order resolver depending on receipt inbox and both billing-order tables; revokes PUBLIC EXECUTE.
+
+**Preflight gate (not yet executed):** approved backup/rollback and migration window; verify 0027 schema baseline; apply 0028–0033 strictly in journal order on authorized staging only; inspect function owners, SECURITY DEFINER/search_path/row_security configuration and exact EXECUTE grants to intended backend roles (never PUBLIC or merchant); verify RLS/tenant isolation, signed-provider receipt admission, ambiguity handling and replay idempotence using hosted application runtime. Do not confuse SQL owner session with app role. No staging writes or deployment authorized/performed. P0 NO-GO.
