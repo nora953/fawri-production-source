@@ -31,9 +31,23 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
     timeoutMs: 2_000,
     async check() {
       const { pool } = await import("@workspace/db");
-      const result = await pool.query("select current_user as role_name");
-      const row = result.rows[0] as { role_name?: unknown } | undefined;
-      assertExpectedPostgresRuntimeRole(String(row?.role_name || ""));
+      const result = await pool.query(`SELECT current_user AS role_name,
+        r.rolsuper AS is_superuser, r.rolbypassrls AS bypass_rls,
+        EXISTS (
+          SELECT 1 FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'public' AND c.relname = 'merchants'
+            AND c.relkind IN ('r', 'p') AND c.relowner = r.oid
+        ) AS owns_merchants
+        FROM pg_roles r WHERE r.rolname = current_user`);
+      const row = result.rows[0] as {
+        role_name?: unknown; is_superuser?: unknown;
+        bypass_rls?: unknown; owns_merchants?: unknown;
+      } | undefined;
+      if (!row || row.is_superuser !== false || row.bypass_rls !== false || row.owns_merchants !== false) {
+        throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
+      }
+      assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
     },
   };
 }
