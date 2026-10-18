@@ -74,7 +74,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
     assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,0);
     assert.equal((await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n,0);
     await pool.query(`UPDATE ${orders} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[checkout.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
-    const first=new Date(),before=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0];
+    const first=orphanReceivedAt,before=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0];
     // Capability is never PUBLIC; lack of the reviewed runtime grant is retryable.
     await pool.query(`REVOKE ALL ON FUNCTION ${resolverIdentity} FROM ${role}`);
     assert.equal((await pool.query("SELECT has_function_privilege($1,$2,'EXECUTE') allowed",[role,resolverIdentity])).rows[0].allowed,false);
