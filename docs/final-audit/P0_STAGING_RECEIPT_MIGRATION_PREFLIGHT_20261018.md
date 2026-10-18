@@ -42,3 +42,12 @@ Stop on journal mismatch, missing/incorrect owner, BYPASSRLS runtime, broad EXEC
 - Commit `cf369918ec102e0f86b683ddb163ed817d11323e` (runtime readiness rejects missing/blank PostgreSQL role identity, with regression cases) completed **40/40 GitHub Actions workflow runs successfully**. Verified via commit-associated workflow runs; no failures, cancellations, or outstanding runs at the check.
 - Isolated PostgreSQL engineering audit and PostgreSQL schema validation both finished successfully in that set. This is CI evidence from disposable infrastructure, **not** proof of hosted staging migrations, runtime role/EXECUTE grants, or signed-provider acceptance.
 - Release gate remains **P0 NO-GO** pending the controlled, explicitly approved staging acceptance sequence above. No hosted database writes, deployment, or merge occurred during this verification.
+
+
+## CI completion and final read-only gate — 2026-10-18
+
+- Commit `1923c83a08f642868f91dbda4ff0c64feb042885` completed **40/40 GitHub Actions workflows successfully**, including isolated PostgreSQL audit and schema validation. This verifies the PR branch on disposable CI infrastructure, not the hosted staging release.
+- Read-only Neon staging query reconfirmed `drizzle.__drizzle_migrations` has 28 records with latest `created_at=1791244800000` (journal tag `0027_cashier_subscription_licensing`). `to_regclass('public.verified_provider_payment_receipts')` is NULL and the confirmed-payment order resolver was absent. Journal entries `0028` through `0033` remain ahead of hosted staging.
+- Read-only ACL query found existing public `fawri_tenant_or_audited_admin` is SECURITY DEFINER and publicly executable; committed migration `0024_tenant_rls_security_definer_predicate.sql` explicitly grants that predicate to PUBLIC. Do not misclassify this preexisting intended RLS helper as an accidental new receipt capability grant.
+- The new `0028` Meta resolver and `0029`–`0033` receipt functions revoke PUBLIC EXECUTE. Their intended trusted runtime EXECUTE grants and owner remain deployment approval gates; never automatically grant PUBLIC or deploy with an owner/BYPASSRLS application role.
+- **P0 NO-GO** remains in effect. No staging DDL/DML, runtime grants, deployment or PR merge was executed in this read-only check.
