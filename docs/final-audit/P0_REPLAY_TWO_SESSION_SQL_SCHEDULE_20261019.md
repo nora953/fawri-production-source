@@ -35,3 +35,9 @@ Store test source, CI run URL, SQLSTATEs, backend PIDs, commit/rollback and row-
 - Meaning: a matching cashier order committed by session B becomes visible to session A on its next statement, even though session A had observed exactly one SaaS order earlier in the same READ COMMITTED transaction.
 - Limitation: the baseline deliberately invokes **neither** `fawri_review_verified_payment_receipt` nor `fawri_resolve_confirmed_payment_order`. It does not prove an exploitable function-level race or incorrect entitlement. Do not mark schedules A/B complete.
 - Next: controlled, non-sleep barriers inside the disposable test-only function copies or instrumentation; verify fail-closed behavior and zero entitlement applications, then retain the run's SQLSTATEs and PID evidence.
+
+## Verified resolver collision rejection (2026-10-19)
+- Source commit: `753bb5f920cdb855f78662b1f3d76cd4b05bc316` adds an invocation of the actual `fawri_resolve_confirmed_payment_order` after session B has committed a conflicting cashier order.
+- Isolated run: https://github.com/nora953/fawri-production-source/actions/runs/39188374899 ; job `117855741802` SUCCESS; all 41 workflows on that commit SUCCESS.
+- Job log: `DISPOSABLE_MIGRATIONS_PASS count=34` and `P0_RESOLVER_COMMITTED_COLLISION_REJECTED {"sqlstate":"23514","entitlementGrants":0,"scope":"post-commit; not an in-function interleaving"}`.
+- This closes the **pre-existing committed cross-authority collision** subcase only. It does **not** close schedule B (phantom committed while the resolver is already running) or schedule A (two scans inside review). Continue P0 NO-GO.
