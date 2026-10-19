@@ -66,3 +66,8 @@ All synthetic writes and policy experiments were performed on the disposable Neo
 ## Final CI completion for cleanup commit — 2026-10-19
 - Commit 3d91b943ede629bf54c81dd403f772015e8b676d: 41/41 GitHub Actions workflow runs completed with success; zero failures, including PostgreSQL schema validation and isolated PostgreSQL engineering audit.
 - This closes the CI cycle for that commit, **not** the P0 release gate. Safe directly authenticated LOGIN provisioning and least-privilege tenant-isolation acceptance proofs remain outstanding. P0 NO-GO; no production or staging role changes authorized.
+
+## PostgreSQL 16 restore drill recovery — 2026-10-19
+- Commit `d7503515c4f8cc3d76c2f48a9e89d5effb858771`: **41/41 GitHub Actions workflows successful**, zero failures, including both jobs in Backup and restore drill and the isolated PostgreSQL engineering audit.
+- Root cause of earlier restore-drill failure: runner PostgreSQL 18 `pg_dump` emitted `SET transaction_timeout = 0`, unsupported by disposable PostgreSQL 16 server. Runner lacked PostgreSQL 16 client binaries and its default apt sources lacked `postgresql-client-16`; workflow now configures the PostgreSQL apt repository and installs the matching client.
+- CI proof is complete for the cited commit; **P0 remains NO-GO** pending a genuinely directly authenticated nonprivileged LOGIN role (no BYPASSRLS, no CREATEROLE, no reachable privileged SET ROLE), audited tenant isolation and required access grants. No production/staging DB changes performed.
