@@ -83,3 +83,9 @@ All synthetic writes and policy experiments were performed on the disposable Neo
 - The restricted `fawri_staging_rls_runtime` remains NOLOGIN. An additional read-only privileged-membership query was blocked by tool safety checks, so no new membership result is asserted.
 - Operator acceptance requires a separate directly authenticated LOGIN with NOBYPASSRLS, NOCREATEROLE, no privileged SET/USAGE memberships or protected-table ownership; then rerun the runtime readiness gates, two-tenant isolation checks, and pooled-session context-reset tests on a disposable branch before any reviewed staging rollout.
 - P0 remains NO-GO. No database changes were made in this verification.
+
+## Observability runtime privilege parity and CI — 2026-10-19
+- Commit `5fdbac3e30c99fccf431a743370b87ebc390c389` extended `artifacts/api-server/src/observability/runtime.ts` readiness to fail closed when the directly authenticated PostgreSQL session has `CREATEROLE` or inherits a SUPERUSER/BYPASSRLS role through `USAGE`, aligning these checks with the stronger production RLS gate.
+- Initial CI exposed two existing test fixtures that omitted the new mandatory fields. Commit `3f2f8c9456f2415811d79aa9662066b5a92d8146` updated `artifacts/api-server/tests/postgres-runtime-role-readiness.test.ts` and added rejection cases for privileged or missing values.
+- GitHub Actions for commit `3f2f8c9456f2415811d79aa9662066b5a92d8146`: **41/41 completed successfully**, zero failures, including Final quality gates, Final security and supply chain, PostgreSQL schema validation, and Isolated PostgreSQL engineering audit.
+- **CI PASS does not clear P0**: direct-authenticated least-privilege LOGIN, audited grants, cross-tenant deny tests and pooled connection tenant-context reset remain unproven on the disposable Neon audit branch. No staging/production database or credentials were changed. Release remains **NO-GO**.
