@@ -22,7 +22,7 @@ export type OperationalQueryTarget = {
 export type OperationalSqlClient = OperationalQueryTarget;
 
 export type OperationalTransactionClient = OperationalQueryTarget & {
-  release(): void;
+  release(error?: Error | boolean): void;
 };
 
 export type OperationalDatabasePool = OperationalQueryTarget & {
@@ -70,16 +70,28 @@ export async function withOperationalTransaction<T>(
 ): Promise<T> {
   const pool = await operationalDatabasePool();
   const client = await pool.connect();
+  let discardClient = false;
+  let transactionStarted = false;
+  let commitAttempted = false;
   try {
     await client.query("BEGIN");
+    transactionStarted = true;
     const result = await work(client);
+    commitAttempted = true;
     await client.query("COMMIT");
     return result;
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
+    // An unsuccessful BEGIN, COMMIT, or ROLLBACK leaves connection state
+    // uncertain. Never return such a connection to the shared pool.
+    if (!transactionStarted || commitAttempted) discardClient = true;
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      discardClient = true;
+    }
     throw error;
   } finally {
-    client.release();
+    client.release(discardClient);
   }
 }
 
