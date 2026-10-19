@@ -57,3 +57,9 @@ A second exact-SHA GitHub Actions read confirmed **41 completed / 41 success / 0
 - This environment is named `production` inside the Railway project `fawri-staging`; do not assume it represents the actual customer-facing production environment without owner confirmation.
 
 **Disposition:** runtime health snapshot is clean, but database identity remains NOT VERIFIED. This does not close the hosted runtime privilege gate. No deployment or hosted database change was made.
+
+## Hosted runtime role check prepared — 2026-10-19
+
+Added `docs/final-audit/sql/p0_hosted_runtime_role_readonly_check.sql`, a read-only SELECT intended to run through the application's actual `DATABASE_URL` in a controlled operator session. It reports the connected role's superuser, CREATEDB, CREATEROLE, BYPASSRLS and INHERIT attributes plus direct role memberships, without displaying credentials. This query has **not** been executed against Railway because the connected Railway integration redacts variable values; the actual runtime role remains **NOT VERIFIED**.
+
+The documentation-only commit `3f094baaacd9ee8ce07a6f559c55d61aab0be920` has no workflow runs returned for its exact SHA. Do not claim CI passed for this docs-only commit. The previously tested code revision `d11387d1cd608f8fe412a132f3117286ecb7e0f8` had 41/41 successful workflows.
