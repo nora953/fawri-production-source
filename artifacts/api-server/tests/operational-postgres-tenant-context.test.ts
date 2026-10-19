@@ -22,7 +22,7 @@ test("operational transaction has explicit commit, rollback and client release",
   assert.match(source, /await client\.query\("BEGIN"\)/);
   assert.match(source, /await client\.query\("COMMIT"\)/);
   assert.match(source, /await client\.query\("ROLLBACK"\)/);
-  assert.match(source, /client\.release\(\)/);
+  assert.match(source, /client\.release\(discardClient\)/);
 });
 
 test("transaction-local context is not promoted to session-level context", () => {
