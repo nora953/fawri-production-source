@@ -831,6 +831,12 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.equal(ownerCashierList.status, 200);
   const ownerCashierListBody = await json(ownerCashierList);
   assert.equal(ownerCashierListBody.orders.some((order: any) => order.id === saleId), false);
+  const ownerExplicitCashierList = await fetch(`${baseUrl}/api/orders/${merchantAId}`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ownerExplicitCashierList.status, 200);
+  const ownerExplicitCashierListBody = await json(ownerExplicitCashierList);
+  assert.equal(ownerExplicitCashierListBody.orders.some((order: any) => order.id === saleId), false);
 
   const merchantReport = await fetch(`${baseUrl}/api/cashier/management/report`, {
     headers: { Cookie: merchantACookie },
