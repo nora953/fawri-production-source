@@ -44,3 +44,11 @@ The absolute loader is environment-specific retained tsx 4.22.0; a normal instal
 ## Next exact action
 
 Verify this code commit on GitHub and its CI, then add a synthetic guarded PostgreSQL test demonstrating audit issuance/reuse boundaries and authorized directory preservation. Record preconditions, SQLSTATE/rows and cleanup. Review the minimum safe grant/capability design before modifying issuance or runtime credentials. Retain NO-GO for infrastructure, audit boundary and hosted acceptance blockers.
+
+## Follow-up batch: guarded SQL characterization fixture
+
+Added admin-audit-boundary-postgres.integration.test.mjs to the first position in the isolated priority suite and named audit-boundary suite. Uses separate bootstrap setup/cleanup and two freshly created LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOINHERIT accounts, verifying current_user=session_user, no memberships and no relation ownership. Grants are explicit to merchant_settings plus optional audit-table CRUD, never ALL TABLES. The fixture runs only after repository network-none disposable attestation. It expects unsafe-grant behavior as characterization, not as a desired production property; existing legitimate merchant-directory tests remain unchanged.
+
+Local validation: node --check for fixture/runner, git diff --check PASS; runner summary + disposable guard tests 19 PASS / 0 FAIL / 0 SKIP; intentionally unattested fixture invocation rejected before DB driver import. SQL execution NOT RUN locally; no Docker. After commit, inspect guarded CI for actual evidence and cleanup before asserting the SQL behavior is reproduced.
+
+Readiness fix e5300d80 Foundation run 39340236256 job 118359679712 has successfully completed frozen install, typecheck, build, readiness units, PostgreSQL RLS and merchant-management integration steps. Full workflow/41-run cycle still pending at 2026-10-19T23:15:29Z.

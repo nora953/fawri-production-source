@@ -15,3 +15,9 @@ Neon permitted target only: round-fire-18493605 / br-billowing-leaf-b14yamgu / n
 Recovery remote commit verified: 6394d2d0d0e94bceb164ba17890d4e99483c7daa. The containing code batch fixes implicit safe defaults for missing/malformed PostgreSQL role evidence. Added regressions reproduced 10 PASS / 2 FAIL before the fix; readiness + SuperQi transport/source-contract suite passed 18/18 afterward, zero skips. See P0-PAYMENT-ADMISSION-AND-AUDIT-BOUNDARY-20261019.md. Check CI for the containing commit before claiming fresh CI success.
 
 Next exact task: synthetic isolated audit-record forgery/reuse proof and preserve legitimate directory/receipt-reader workflows; no hosted writes. Dependency install offline was blocked by missing mirror metadata; local unit tests use the retained tsx 4.22.0 loader. Docker unavailable locally; use the repository's guarded isolated CI for DB integration, never bypass its attestation.
+
+## Audit boundary fixture pending guarded CI
+
+Readiness code SHA e5300d80da1ea27bd4e7d100edef1fa503f6fc01 was verified on GitHub. Foundation job 118359679712 passed DB/API typecheck, build, readiness unit and PostgreSQL RLS integration plus merchant-management integration; full workflow still running at observation. New admin-audit-boundary-postgres.integration.test.mjs is first in isolated priority suite. Local syntax/checks and runner+guard tests: 19/19 PASS. Unattested fixture rejects before DB import; SQL test cases NOT RUN locally.
+
+Next: inspect the containing commit's isolated PostgreSQL workflow job logs for P0_AUDIT_FORGERY_PROOF / P0_AUDIT_BEARER_REUSE_PROOF and AUDIT_SUITE_RESULT terminal counts. If failing, repair synthetic fixture/cleanup based on actual SQLSTATE. Characterization of unsafe grants is evidence, never a release acceptance gate. No hosted mutations.

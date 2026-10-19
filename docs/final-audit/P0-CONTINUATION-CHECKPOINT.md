@@ -1,10 +1,10 @@
 # P0 continuation checkpoint
 
-- Last verified UTC: 2026-10-19T23:12:33Z (recovery cycle; use Git commit time for publication).
+- Last verified UTC: 2026-10-19T23:15:29Z (recovery cycle; use Git commit time for publication).
 - Repository: nora953/fawri-production-source.
 - Active branch: fix/p0-provider-receipt-order-discovery-20261015.
 - PR: #550 OPEN/DRAFT; base test/p0-integrated-billing-meta-20261015 (not main).
-- Latest verified remote commit before this batch: 6394d2d0d0e94bceb164ba17890d4e99483c7daa (recovery checkpoint). Prior CI-tested source: 693b2be0e30dbb815afda89ccb0f591cb97e98f1. This file's containing commit carries the readiness-evidence fix; resolve its SHA from Git rather than a self-referential hash.
+- Latest verified remote code commit before this batch: e5300d80da1ea27bd4e7d100edef1fa503f6fc01 (readiness-evidence fix). Recovery: 6394d2d0d0e94bceb164ba17890d4e99483c7daa. Previous fully CI-tested source: 693b2be0e30dbb815afda89ccb0f591cb97e98f1. The containing commit adds audit-boundary tests; resolve its SHA from Git.
 - Main verified at d38d29229bed0f9575a98e7026e7819fe363bfd4; no merge or deployment.
 
 ## Completed recovery and evidence
@@ -19,7 +19,7 @@
 
 - Baseline new regression cases on unchanged readiness source: 10 PASS / 2 FAIL / 0 SKIP (12 tests). Missing safety booleans and privilege arrays were silently accepted.
 - Fixed readiness parser rejects absent/malformed native booleans and text-array inventories. Targeted readiness + SuperQi transport + provider source-contract tests: 18 PASS / 0 FAIL / 0 SKIP, process exit 0. The two regression groups exercise 85 malformed field/value combinations.
-- Local frozen offline dependency install was blocked by missing pnpm mirror metadata; targeted tests used the retained tsx 4.22.0 loader, executed against current source. No safety check bypassed. Full typecheck/build and fresh database integration NOT RUN locally; Docker/PostgreSQL binaries unavailable. Await current-source GitHub CI.
+- Local frozen offline dependency install was blocked by missing pnpm mirror metadata; targeted tests used the retained tsx 4.22.0 loader, executed against current source. No safety check bypassed. Full typecheck/build and fresh database integration NOT RUN locally; Docker/PostgreSQL binaries unavailable. For e5300d80, Foundation run 39340236256 job 118359679712: frozen install, database/API typecheck, API build, production readiness unit contract, production PostgreSQL RLS integration, restricted knowledge and merchant-management integration steps all SUCCESS. The workflow as a whole was still running; not full CI acceptance.
 - Detailed source-path and boundary evidence: P0-PAYMENT-ADMISSION-AND-AUDIT-BOUNDARY-20261019.md.
 - Catalog inspections are SELECT only on the authorized disposable branch/database neondb.
 - No whole-suite rerun for this documentation-only checkpoint.
@@ -30,7 +30,7 @@
 
 ## Current work / next exact action
 
-Verify this batch's remote SHA and targeted GitHub CI (Foundation integration final gate includes readiness unit and PostgreSQL integration). Next Priority B: build a synthetic isolated regression proof of audit-row creation/reuse -> audited-admin predicate behavior; distinguish SQL-role compromise from an HTTP exploit. Review least-privilege rollout design before changes to audit issuance. No Neon grants or runtime credential changes.
+New admin-audit-boundary-postgres.integration.test.mjs is registered first in isolated priority suite and also selectable as audit-boundary. It uses two fresh restricted directly authenticated LOGIN fixtures, targeted grants, synthetic accounts only, and cleanup. It characterizes baseline tenant CRUD, audit forgery/cross-tenant mutation under audit CRUD grants, denial without those grants, and known-token reuse after actor suspension versus expired-token denial. Syntax/diff checks PASS, runner/attestation unit tests 19/19 PASS; unattested invocation rejected before DB import as expected. SQL cases NOT RUN locally. Next exact action: verify containing GitHub commit and isolated CI logs; record actual P0_AUDIT_FORGERY_PROOF and P0_AUDIT_BEARER_REUSE_PROOF outputs and terminal TAP counters. Do not call characterization success a security fix. No Neon grants or credentials changed.
 
 ## Restrictions
 

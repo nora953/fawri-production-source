@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.mjs';
 const suites = {
+  'audit-boundary': ['admin-audit-boundary-postgres.integration.test.mjs'],
   'full-restore': ['full-schema-restore-postgres.integration.test.mjs'],
   cashier: ['cashier-operator-profit-http-postgres.integration.test.mjs', 'cashier-historical-compensation-http-postgres.integration.test.mjs', 'cashier-closed-shift-recovery-http-postgres.integration.test.mjs', 'cashier-sync-multidevice-postgres.integration.test.mjs', 'cashier-billing-negative-failure-cases.integration.test.mjs', 'cashier-full-lifecycle-postgres.integration.test.ts', 'cashier-subscription-postgres.integration.test.ts', 'cashier-billing-postgres.integration.test.ts', 'cashier-downgrade-grace-postgres.integration.test.ts', 'cashier-historical-operation-postgres.integration.test.ts', 'cashier-operator-logout-pin-postgres.integration.test.ts', 'cashier-operator-own-history-scope-postgres.integration.test.ts', 'catalog-cashier-compensation-history-postgres.integration.test.ts'],
   billing: ['receipt-resolver-inflight-phantom-postgres.integration.test.mjs', 'receipt-cross-authority-phantom-postgres.integration.test.mjs', 'billing-provider-discovery-restricted-postgres.integration.test.mjs', 'postgres-autocommit-response-proxy.unit.test.mjs', 'verified-inbox-wire-recovery-postgres.integration.test.mjs', 'operator-replay-wire-recovery-postgres.integration.test.mjs', 'verified-receipt-replay-execution-http-postgres.integration.test.mjs', 'verified-receipt-replay-review-http-postgres.integration.test.mjs', 'verified-receipt-operator-http-postgres.integration.test.mjs', 'verified-provider-receipt-inbox-postgres.integration.test.mjs', 'billing-receipt-process-recovery-postgres.integration.test.mjs', 'billing-external-checkout-rollback-postgres.integration.test.mjs', 'saas-billing-sql-failure-recovery.integration.test.mjs', 'saas-billing-negative-failure-cases.integration.test.mjs', 'saas-billing-authority.integration.test.ts', 'superqi-sandbox-billing.integration.test.ts', 'subscription-entitlement-postgres.integration.test.ts', 'merchant-customer-payment-authority-postgres.integration.test.ts'],
@@ -17,7 +18,7 @@ const suites = {
   'meta-rls': ['meta-page-directory-restricted-rls.integration.test.mjs'],
 };
 suites['node22-http'] = suites.http;
-suites.priority = ['failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
+suites.priority = [...suites['audit-boundary'], 'failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
 const selected = suites[process.argv[2]];
 assert.ok(selected, 'unknown audit suite');
 await assertDisposablePostgres();
