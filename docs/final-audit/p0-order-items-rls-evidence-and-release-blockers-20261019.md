@@ -36,3 +36,8 @@ All synthetic writes and policy experiments were performed on the disposable Neo
 - Commit 7a9aefa2b8e53468dd7d2af31ddcb550d7fb5afb adds negative tests for missing/true session_can_set_privileged_role.
 - Direct disposable-Neon SQL probe with authenticated fawri_staging_runtime returned session_can_set_privileged_role=true. This is expected to be rejected by the new readiness gate.
 - CI for commit 7a9aefa2b8e53468dd7d2af31ddcb550d7fb5afb was in progress at observation; do not claim this new patch has passed until final checks complete.
+
+## CI checkpoint for latest security patch
+- Commit deb6e3b65b7d1b45a59f217c6ad833c3cc9fa199: 40/41 GitHub workflows completed successfully; isolated PostgreSQL engineering audit (run 39220252703, disposable-audit job 117954169840) still in progress at checkpoint. No failed workflows observed. Do not interpret running as passed.
+- Runtime security fix is committed in fef7ecfdd3b1cbed251709eaca32a8ae16b63ba2 and covered by tests in 7a9aefa2b8e53468dd7d2af31ddcb550d7fb5afb.
+- The next release decision must separately check the latest commit's CI status and a directly authenticated least-privilege LOGIN role. Passing CI alone is not P0 GO.
