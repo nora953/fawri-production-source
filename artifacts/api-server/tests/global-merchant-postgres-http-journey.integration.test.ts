@@ -319,6 +319,20 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   });
   assert.equal(ordinaryOrderForeignPayment.status, 404);
   assert.equal((await json(ordinaryOrderForeignPayment)).code, "ORDER_NOT_FOUND");
+  const ordinaryOrderForeignConfirm = await fetch(`${baseUrl}/api/orders/${ordinaryOrderId}/payment/confirm`, {
+    method: "POST",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1 }),
+  });
+  assert.equal(ordinaryOrderForeignConfirm.status, 404);
+  assert.equal((await json(ordinaryOrderForeignConfirm)).code, "ORDER_NOT_FOUND");
+  const ordinaryOrderForeignReject = await fetch(`${baseUrl}/api/orders/${ordinaryOrderId}/payment/reject`, {
+    method: "POST",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, reason: "foreign merchant" }),
+  });
+  assert.equal(ordinaryOrderForeignReject.status, 404);
+  assert.equal((await json(ordinaryOrderForeignReject)).code, "ORDER_NOT_FOUND");
   const ordinaryOrderAfterDenials = await pool.query(
     "SELECT status::text AS status, payment_status::text AS payment_status, version FROM orders WHERE merchant_id = $1 AND id = $2",
     [merchantAId, ordinaryOrderId],
