@@ -21,11 +21,18 @@ The job reported success for:
 
 The repository security workflow also completed successfully. These are **CI step results**, not proof that hosted runtime identity or live tenant boundaries are safe.
 
+### Specific two-session race evidence
+
+- Source: `artifacts/api-server/tests/receipt-cross-authority-phantom-postgres.integration.test.mjs`.
+- Runner inclusion: `scripts/execute-disposable-postgres-audit.mjs`, `billing` suite.
+- The test opens `owner` and `contender` connections and transactions, confirms blocking via `pg_blocking_pids`, commits the owner, and expects the contender to fail with SQLSTATE `23514`; it asserts only one order owns the identity afterward.
+- The isolated PostgreSQL audit job's billing step completed successfully. This is real disposable PostgreSQL concurrency evidence for the tested **UPDATE** scenario; do not mislabel it as source-only. It does not prove every INSERT, key-combination, deadlock or hosted rollout scenario.
+
 ## Release blockers requiring separate evidence
 
 1. **Hosted runtime identity:** Railway's application `DATABASE_URL` role is not verified. On the isolated Neon audit branch, `fawri_staging_runtime` was observed with `BYPASSRLS`, `CREATEDB` and `CREATEROLE`; do not infer that Railway uses this role. Verify only the role name and effective privileges, without exposing credentials.
 2. **Hosted schema alignment:** The isolated Neon branch previously had 28 migration ledger rows while the checked-in journal contains 35 entries (0000–0034). Reconcile identifiers and hashes and rehearse the unapplied candidates in a disposable environment before any hosted migration.
-3. **Migration 0034 race acceptance:** The source-contract test and green CI do not, by themselves, establish that *two concurrent database sessions* cannot create a cross-authority provider identity collision. Require actual two-session INSERT/UPDATE collision tests, deadlock checks, and pre-activation duplicate detection.
+3. **Migration 0034 race acceptance — partially evidenced:** The billing suite in `scripts/execute-disposable-postgres-audit.mjs` includes `receipt-cross-authority-phantom-postgres.integration.test.mjs`. Its source explicitly opens two PostgreSQL sessions, checks `pg_blocking_pids`, commits the first transaction, and asserts SQLSTATE `23514` for the losing UPDATE. The isolated audit billing step succeeded on this commit. **Therefore a two-session cross-authority UPDATE race has been tested in disposable CI**, not merely specified. Remaining: independent INSERT race cases, payment-only versus request-only collisions, opposite-order updates/deadlock coverage, and pre-activation duplicate detection. These additional cases are not established by the inspected test.
 4. **Non-RLS sensitive tables:** `account_sessions`, `cashier_operator_sessions`, `order_items` and `support_messages` need real API-level cross-merchant negative tests, regardless of the restricted-role CI pass.
 5. **Release revision and deployment:** The audited branch has not been approved for merge or deployment; verify the intended commit and Railway runtime health at release time.
 
