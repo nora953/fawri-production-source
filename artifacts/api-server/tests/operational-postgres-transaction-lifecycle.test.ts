@@ -78,3 +78,38 @@ test("rollback failure does not mask the original error object", async () => {
   );
   assert.deepEqual(m.releases, [true]);
 });
+
+test("callback can use its transaction client and return a structured result", async () => {
+  const m = mockPool();
+  const value = await withOperationalTransaction(async (client) => {
+    const result = await client.query("SELECT 1");
+    return { count: result.rows.length, accepted: true };
+  }, m.pool);
+  assert.deepEqual(value, { count: 0, accepted: true });
+  assert.deepEqual(m.queries, ["BEGIN", "SELECT 1", "COMMIT"]);
+  assert.deepEqual(m.releases, [false]);
+});
+
+test("failed BEGIN never invokes work and discards the connection", async () => {
+  const m = mockPool("BEGIN");
+  let invoked = false;
+  await assert.rejects(
+    () => withOperationalTransaction(async () => { invoked = true; }, m.pool),
+    /simulated BEGIN failure/,
+  );
+  assert.equal(invoked, false);
+  assert.deepEqual(m.queries, ["BEGIN", "ROLLBACK"]);
+  assert.deepEqual(m.releases, [true]);
+});
+
+test("failed COMMIT cannot be reported as success and discards the connection", async () => {
+  const m = mockPool("COMMIT");
+  let invoked = 0;
+  await assert.rejects(
+    () => withOperationalTransaction(async () => { invoked += 1; return "success"; }, m.pool),
+    /simulated COMMIT failure/,
+  );
+  assert.equal(invoked, 1);
+  assert.deepEqual(m.queries, ["BEGIN", "COMMIT", "ROLLBACK"]);
+  assert.deepEqual(m.releases, [true]);
+});
