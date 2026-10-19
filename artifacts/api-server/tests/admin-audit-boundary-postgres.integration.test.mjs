@@ -21,6 +21,8 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
   t.after(() => cleanupResources([
     ['runtime sessions', async () => { for (const client of clients) await client.end(); }],
     ['owned audit records', () => admin.query('DELETE FROM database_admin_access_audits WHERE id=$1', [auditId])],
+    ['owned merchant settings', () => admin.query('DELETE FROM merchant_settings WHERE merchant_id=ANY($1::text[])', [tenants])],
+    ['owned merchants', () => admin.query('DELETE FROM merchants WHERE id=ANY($1::text[])', [tenants])],
     ['owned accounts', () => admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [[actor, ...tenants]])],
     ['owned roles', async () => {
       for (const role of roles) {
