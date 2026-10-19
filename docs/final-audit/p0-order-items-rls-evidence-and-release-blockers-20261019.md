@@ -41,3 +41,10 @@ All synthetic writes and policy experiments were performed on the disposable Neo
 - Commit deb6e3b65b7d1b45a59f217c6ad833c3cc9fa199: 40/41 GitHub workflows completed successfully; isolated PostgreSQL engineering audit (run 39220252703, disposable-audit job 117954169840) still in progress at checkpoint. No failed workflows observed. Do not interpret running as passed.
 - Runtime security fix is committed in fef7ecfdd3b1cbed251709eaca32a8ae16b63ba2 and covered by tests in 7a9aefa2b8e53468dd7d2af31ddcb550d7fb5afb.
 - The next release decision must separately check the latest commit's CI status and a directly authenticated least-privilege LOGIN role. Passing CI alone is not P0 GO.
+
+## Direct LOGIN provisioning acceptance criteria (read-only verification)
+- The restricted policy-test role fawri_staging_rls_runtime has NOLOGIN, NOSUPERUSER, NOBYPASSRLS and cannot SET or inherit any of the five privileged roles inspected (cloud_admin, fawri_staging_runtime, neon_service, neon_superuser, neondb_owner). This is necessary but insufficient: it is not a direct LOGIN.
+- Provision a new direct LOGIN with NOSUPERUSER NOBYPASSRLS; no ownership of protected tables, no privileged SET ROLE reachability, no privileged session_user, and only audited schema/table/sequence/function privileges. Prefer an independent account rather than granting LOGIN to an inherited staging audit role without reviewing all grants.
+- Confirm both current_user and session_user of the application's **actual authenticated connection**, not an impersonated transaction, and execute both production RLS readiness and observability PostgreSQL authority checks.
+- Verify default deny without tenant context, own-tenant SELECT/INSERT/UPDATE/DELETE where required, and cross-tenant denial using two synthetic merchants in an isolated environment. Record SQLSTATE and effective rows. Ensure the app's background workers and cashier/AI inventory paths remain separately scoped.
+- Rollout needs an explicit reversible migration plan and credential rotation; do not make privilege changes in production or staging during this audit.
