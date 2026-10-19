@@ -33,5 +33,7 @@ SELECT pg_catalog.jsonb_build_object(
   'guard_settings',(SELECT proconfig FROM guard),
   'guard_has_safe_search_path',COALESCE((SELECT 'search_path=pg_catalog'=ANY(proconfig) FROM guard),false),
   'guard_disables_row_security',COALESCE((SELECT 'row_security=off'=ANY(proconfig) FROM guard),false),
+  'guard_owner',(SELECT owner.rolname FROM guard g JOIN pg_catalog.pg_proc p ON p.oid=g.oid JOIN pg_catalog.pg_roles owner ON owner.oid=p.proowner),
+  'guard_owner_bypasses_rls',(SELECT owner.rolbypassrls OR owner.rolsuper FROM guard g JOIN pg_catalog.pg_proc p ON p.oid=g.oid JOIN pg_catalog.pg_roles owner ON owner.oid=p.proowner),
   'guard_public_execute',(SELECT public_can_execute FROM guard)
 ) AS p0_schema_evidence;
