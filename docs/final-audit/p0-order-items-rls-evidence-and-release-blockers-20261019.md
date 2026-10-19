@@ -30,3 +30,9 @@ All synthetic writes and policy experiments were performed on the disposable Neo
 - Login-enabled roles inspected: cloud_admin (SUPERUSER/BYPASSRLS), neon_service (BYPASSRLS), neondb_owner (BYPASSRLS), and fawri_staging_runtime (BYPASSRLS). None of these qualifies as an unprivileged runtime login.
 - fawri_staging_rls_runtime is NOSUPERUSER NOBYPASSRLS but NOLOGIN. It cannot establish a direct application session. Its SET ROLE test is useful for checking policies, **not** sufficient for runtime-login attestation.
 - Required next step: provision a separate LOGIN NOSUPERUSER NOBYPASSRLS role with no protected-table ownership and no SET privilege to any privileged role; grant only the audited operational privileges and confirm the deployment authenticates as that role. This must be planned and reviewed before any role changes on staging or production.
+
+## Additional P0 runtime readiness defense (2026-10-19)
+- Commit fef7ecfdd3b1cbed251709eaca32a8ae16b63ba2 hardens artifacts/api-server/src/observability/runtime.ts: PostgreSQL authority readiness now checks whether session_user can SET ROLE to any SUPERUSER/BYPASSRLS role and fails closed.
+- Commit 7a9aefa2b8e53468dd7d2af31ddcb550d7fb5afb adds negative tests for missing/true session_can_set_privileged_role.
+- Direct disposable-Neon SQL probe with authenticated fawri_staging_runtime returned session_can_set_privileged_role=true. This is expected to be rejected by the new readiness gate.
+- CI for commit 7a9aefa2b8e53468dd7d2af31ddcb550d7fb5afb was in progress at observation; do not claim this new patch has passed until final checks complete.
