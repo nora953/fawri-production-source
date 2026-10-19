@@ -804,6 +804,13 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   });
   assert.equal(ownerCashierConflictResolution.status, 404);
   assert.equal((await json(ownerCashierConflictResolution)).code, "ORDER_NOT_FOUND");
+  const cashierBoundarySnapshot = await pool.query(
+    "SELECT status::text AS status, payment_status::text AS payment_status FROM orders WHERE merchant_id = $1 AND id = $2",
+    [merchantAId, saleId],
+  );
+  assert.equal(cashierBoundarySnapshot.rows.length, 1);
+  assert.equal(cashierBoundarySnapshot.rows[0].status, "delivered");
+  assert.equal(cashierBoundarySnapshot.rows[0].payment_status, "paid");
 
   const merchantReport = await fetch(`${baseUrl}/api/cashier/management/report`, {
     headers: { Cookie: merchantACookie },
