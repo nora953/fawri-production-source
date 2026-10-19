@@ -383,6 +383,7 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.equal(ownOrdersB.status, 200);
   const ownOrdersBBody = await json(ownOrdersB);
   assert.equal(ownOrdersBBody.merchant_id, merchantBId);
+  assert.equal(ownOrdersBBody.orders.some((order: any) => order.id === ordinaryOrderId), false);
 
   const unscopedOrdersA = await fetch(`${baseUrl}/api/orders`, {
     headers: { Cookie: merchantACookie },
