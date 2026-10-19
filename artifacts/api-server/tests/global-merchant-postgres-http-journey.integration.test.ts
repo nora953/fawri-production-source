@@ -776,6 +776,20 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   });
   assert.equal(ownerCashierOrderDetail.status, 404);
   assert.equal((await json(ownerCashierOrderDetail)).code, "ORDER_NOT_FOUND");
+  const ownerCashierPaymentMutation = await fetch(`${baseUrl}/api/orders/${saleId}/payment-status`, {
+    method: "PATCH",
+    headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, payment_status: "failed" }),
+  });
+  assert.equal(ownerCashierPaymentMutation.status, 404);
+  assert.equal((await json(ownerCashierPaymentMutation)).code, "ORDER_NOT_FOUND");
+  const ownerCashierPaymentConfirm = await fetch(`${baseUrl}/api/orders/${saleId}/payment/confirm`, {
+    method: "POST",
+    headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1 }),
+  });
+  assert.equal(ownerCashierPaymentConfirm.status, 404);
+  assert.equal((await json(ownerCashierPaymentConfirm)).code, "ORDER_NOT_FOUND");
 
   const merchantReport = await fetch(`${baseUrl}/api/cashier/management/report`, {
     headers: { Cookie: merchantACookie },
