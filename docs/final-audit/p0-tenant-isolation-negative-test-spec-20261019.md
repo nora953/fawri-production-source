@@ -41,3 +41,14 @@ For API cases, discover actual handlers/routes and their expected denial semanti
 4. Prepare least-privilege grants and migration reconciliation; request explicit approval before hosted role changes or deployment.
 
 **No hosted changes authorized. P0 remains NO-GO.**
+
+## Verified existing executable coverage inventory — 2026-10-19
+
+A source inspection of the audited branch identified **existing** disposable PostgreSQL integration tests; therefore the opening `SPEC ONLY` label describes the *full matrix*, not the absence of all security tests.
+
+- `artifacts/api-server/tests/merchant-session-restricted-http-postgres.integration.test.mjs` is already in the `tenant` audit suite. It creates two synthetic merchants and a PostgreSQL role with `NOBYPASSRLS`, verifies role identity and broad table grants, checks cookie/device rejection, ensures session listings are merchant-scoped, and checks that merchant A receives HTTP 404 when attempting to revoke merchant B's session while B's session remains usable. It also verifies logout-all leaves B's session active and queries account-session database state. **API-04 has existing CI coverage for these routes**, not a blanket proof for every auth endpoint.
+- `artifacts/api-server/tests/support-postgres-cutover.integration.test.ts` is already in the `tenant` suite and exercises support PostgreSQL HTTP cutover. Its precise cross-merchant message-ID negative assertions still need case-by-case inspection; do not mark API-05/API-06 complete solely because the suite is green.
+- `artifacts/api-server/tests/cashier-operator-own-history-scope-postgres.integration.test.ts` is in the `cashier` suite and covers own-history staff scoping. It does not by itself establish cross-merchant `cashier_operator_sessions` or `order_items` HTTP authorization.
+- `scripts/execute-disposable-postgres-audit.mjs` explicitly includes these test files in the corresponding suites. Code revision `0efbfee20ba997940c4334be6604e40c4faf6d86` passed 41/41 workflows including the isolated PostgreSQL audit [39198982292](https://github.com/nora953/fawri-production-source/actions/runs/39198982292).
+
+**Coverage disposition:** API-04 merchant-session list/revoke/logout-all paths: **EXISTING TEST COVERAGE / CI GREEN**. API-01/02/03/05/06 and remaining RLS matrix: **NOT YET PROVEN BY THIS INVENTORY**. Hosted runtime role H-01 and hosted acceptance H-02–H-06 remain OPEN. Never equate broad-grant synthetic-role test success with proof of the actual Railway runtime identity.
