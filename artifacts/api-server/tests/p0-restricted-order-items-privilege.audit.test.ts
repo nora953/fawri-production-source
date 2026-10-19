@@ -34,6 +34,13 @@ test("P0 restricted role must not read unscoped order items", async () => {
     );
     assert.equal(role.rows[0].role, "fawri_staging_rls_runtime");
     assert.equal(role.rows[0].bypass, false);
+    const session = await client.query("SELECT session_user AS login_role");
+    assert.equal(session.rows[0].login_role, "fawri_ci");
+    // This SET ROLE probe is NOT runtime-login attestation: session_user stays fawri_ci.
+    const table = await client.query(
+      "SELECT relrowsecurity AS rls_enabled FROM pg_class WHERE oid = 'public.order_items'::regclass",
+    );
+    assert.equal(table.rowCount, 1, "SETUP BLOCKED: order_items table missing");
     // A restricted tenant role should not have unscoped table-wide SELECT.
     // An authorization failure is the expected secure result.
     let denied = false;
