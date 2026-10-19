@@ -309,7 +309,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     );
     assert.equal(afterCommit.rows[0]?.context || "", "", "merchant A context must not survive commit");
     const unscopedA = await client.query<{ a: boolean; b: boolean }>(
-      "SELECT public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe') AS a, public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe') AS b",
+      "SELECT COALESCE(public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe'), false) AS a, COALESCE(public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe'), false) AS b",
     );
     assert.equal(unscopedA.rows[0]?.a, false, "merchant A must not remain authorized after commit");
     assert.equal(unscopedA.rows[0]?.b, false, "merchant B must not be authorized without context");
@@ -333,7 +333,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     );
     assert.equal(afterRollback.rows[0]?.context || "", "", "merchant B context must not survive rollback");
     const unscopedB = await client.query<{ a: boolean; b: boolean }>(
-      "SELECT public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe') AS a, public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe') AS b",
+      "SELECT COALESCE(public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe'), false) AS a, COALESCE(public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe'), false) AS b",
     );
     assert.equal(unscopedB.rows[0]?.a, false, "merchant A must not be authorized after rollback");
     assert.equal(unscopedB.rows[0]?.b, false, "merchant B must not remain authorized after rollback");
