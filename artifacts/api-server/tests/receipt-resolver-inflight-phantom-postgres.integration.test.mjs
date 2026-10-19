@@ -47,15 +47,17 @@ test('P0 resolver must reject a competing authority committed while its selected
   const resolving=resolver.query('SELECT * FROM public.fawri_resolve_confirmed_payment_order($1,$2,$3,$4,$5,$6)',[event,payment,request,'payment_succeeded',bot.order.amount_iqd,hash]).then(rows=>({rows}),error=>({error}));
   let waiting=false;
   for(let attempt=0;attempt<1500;attempt++){
-    const state=(await pool.query("SELECT wait_event_type,wait_event FROM pg_stat_activity WHERE pid=$1",[pid])).rows[0];
+    const state=(await blocker.query("SELECT wait_event_type,wait_event FROM pg_stat_activity WHERE pid=$1",[pid])).rows[0];
     if(state?.wait_event_type==='Lock'){waiting=true;break;}
     await nextTurn();
   }
   assert.ok(waiting,'resolver must reach the selected-row lock barrier; do not infer race from timing');
   // A separate writer does not participate in the resolver's advisory-lock convention.
-  const collision=await pool.query("UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",[cash.order.id,payment,JSON.stringify({provider_request_id:request})]).then(()=>null,error=>error);
+  // The trigger must reject the writer; do not block the test on a third pool connection.
+  const collision=await blocker.query("UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",[cash.order.id,payment,JSON.stringify({provider_request_id:request})]).then(()=>null,error=>error);
   assert.equal(collision?.code,'23514','database guard must reject an in-flight competing authority writer');
-  await blocker.query('COMMIT');
+  // A failed statement aborts this transaction; release its selected-row lock.
+  await blocker.query('ROLLBACK');
   const result=await resolving;
   const visible=(await pool.query(`SELECT
     (SELECT count(*)::int FROM saas_billing_orders WHERE provider='superqi_sandbox' AND provider_checkout_ref=$1)
