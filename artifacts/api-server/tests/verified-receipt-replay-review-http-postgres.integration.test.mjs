@@ -146,9 +146,13 @@ test('real HTTP replay review requires fresh provider confirmation and durable c
   });
   await t.test('cross-authority ambiguity and exact identity mismatch stop before provider access',async()=>{
     const a=fixtures[0],b=fixtures[1],calls=providerCalls;
-    await admin.query(`UPDATE ${b.table} SET provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[b.order.id,a.payload.paymentId,JSON.stringify({provider_request_id:a.payload.requestId})]);
-    assert.equal((await request(owner,a)).response.status,409);assert.equal(providerCalls,calls);
-    await admin.query(`UPDATE ${b.table} SET provider_checkout_ref=$2,metadata=$3::jsonb WHERE id=$1`,[b.order.id,b.payload.paymentId,JSON.stringify(originalOrders[1].metadata)]);
+    // Cross-authority duplicates are rejected at the database write boundary.
+    await assert.rejects(
+      ()=>admin.query(`UPDATE ${b.table} SET provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[b.order.id,a.payload.paymentId,JSON.stringify({provider_request_id:a.payload.requestId})]),
+      error=>error.code==='23514',
+    );
+    assert.deepEqual((await admin.query(`SELECT * FROM ${b.table} WHERE id=$1`,[b.order.id])).rows[0],originalOrders[1]);
+    assert.equal(providerCalls,calls);
     await admin.query(`UPDATE ${a.table} SET metadata=metadata||$2::jsonb WHERE id=$1`,[a.order.id,JSON.stringify({provider_request_id:randomUUID()})]);
     assert.equal((await request(owner,a)).response.status,409);assert.equal(providerCalls,calls);
     await admin.query(`UPDATE ${a.table} SET metadata=$2::jsonb WHERE id=$1`,[a.order.id,JSON.stringify(originalOrders[0].metadata)]);
