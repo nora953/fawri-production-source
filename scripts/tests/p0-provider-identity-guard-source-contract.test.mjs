@@ -28,9 +28,9 @@ test('P0 provider identity guard serializes payment and request references and r
     assert.ok(migration.includes(key));
   }
   assert.match(migration, /ORDER BY key LOOP/);
-  assert.match(migration, /pg_catalog\\.pg_advisory_xact_lock/);
+  assert.match(migration, /pg_catalog\.pg_advisory_xact_lock/);
   assert.match(migration, /SECURITY DEFINER SET search_path=pg_catalog SET row_security=off/);
-  assert.match(migration, /REVOKE ALL ON FUNCTION public\\.fawri_guard_provider_order_identity\\(\\) FROM PUBLIC;/);
+  assert.match(migration, /REVOKE ALL ON FUNCTION public\.fawri_guard_provider_order_identity\(\) FROM PUBLIC;/);
 });
 
 // Static contract only. PostgreSQL two-session race tests and migration execution remain required.
