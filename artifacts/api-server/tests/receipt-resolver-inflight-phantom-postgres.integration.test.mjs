@@ -53,16 +53,17 @@ test('P0 resolver must reject a competing authority committed while its selected
   }
   assert.ok(waiting,'resolver must reach the selected-row lock barrier; do not infer race from timing');
   // A separate writer does not participate in the resolver's advisory-lock convention.
-  await pool.query("UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",[cash.order.id,payment,JSON.stringify({provider_request_id:request})]);
+  const collision=await pool.query("UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",[cash.order.id,payment,JSON.stringify({provider_request_id:request})]).then(()=>null,error=>error);
+  assert.equal(collision?.code,'23514','database guard must reject an in-flight competing authority writer');
   await blocker.query('COMMIT');
   const result=await resolving;
   const visible=(await pool.query(`SELECT
     (SELECT count(*)::int FROM saas_billing_orders WHERE provider='superqi_sandbox' AND provider_checkout_ref=$1)
     +(SELECT count(*)::int FROM cashier_billing_orders WHERE provider='superqi_sandbox' AND provider_checkout_ref=$1) AS matches`,[payment])).rows[0].matches;
-  assert.equal(visible,2,'both authorities must be committed before judging resolver outcome');
-  console.log('P0_RESOLVER_INFLIGHT_RACE '+JSON.stringify({resolverPid:pid,waitObserved:waiting,committedMatches:visible,returnedRows:result.rows?.rows?.length??null,sqlstate:result.error?.code??null}));
-  // Fail CI if a stale unique mapping escapes after the competing order committed.
-  assert.ok(result.error || result.rows.rows.length===0,'P0: resolver returned a stale unique mapping after an in-flight cross-authority phantom');
+  assert.equal(visible,1,'database guard must preserve global uniqueness across authorities');
+  assert.equal(result.error,undefined,'resolver may safely return the sole committed order');
+  assert.equal(result.rows.rows.length,1);
+  console.log('P0_RESOLVER_INFLIGHT_RACE_GUARDED '+JSON.stringify({resolverPid:pid,waitObserved:waiting,committedMatches:visible,returnedRows:result.rows.rows.length,writerSqlstate:collision.code}));
   const grants=(await pool.query('SELECT (SELECT count(*)::int FROM saas_entitlement_applications WHERE order_id=$1) AS bot,(SELECT count(*)::int FROM cashier_entitlement_applications WHERE order_id=$2) AS cashier',[bot.order.id,cash.order.id])).rows[0];
   assert.deepEqual(grants,{bot:0,cashier:0});
 });
