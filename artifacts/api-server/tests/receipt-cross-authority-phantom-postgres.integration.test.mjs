@@ -106,7 +106,7 @@ test('cross-authority identity guard rejects second writer in READ COMMITTED',as
       provider,status,idempotency_key,provider_checkout_ref,request_expires_at,metadata,created_at,updated_at
     ) SELECT $2,merchant_id,operation,requested_plan,amount_iqd,currency,catalog_version,
       'superqi_sandbox','pending',$3,$4,request_expires_at,
-      metadata || jsonb_build_object('provider_request_id',$5),now(),now()
+      metadata || jsonb_build_object('provider_request_id',$5::text),now(),now()
       FROM saas_billing_orders WHERE id=$1`,
       [bot.order.id,randomUUID(),`p0-insert-owner-${randomUUID()}`,insertPayment,insertRequest]);
     await insertContender.query('BEGIN');
@@ -119,7 +119,7 @@ test('cross-authority identity guard rejects second writer in READ COMMITTED',as
     ) SELECT $2,merchant_id,subscription_id,operation,current_seats,requested_seats,resulting_seats,
       unit_price_iqd,amount_iqd,currency,billing_period_start,billing_period_end,
       grace_duration_seconds,'pending',$3,'superqi_sandbox',$4,request_expires_at,
-      metadata || jsonb_build_object('provider_request_id',$5),now(),now()
+      metadata || jsonb_build_object('provider_request_id',$5::text),now(),now()
       FROM cashier_billing_orders WHERE id=$1`,
       [cash.order.id,randomUUID(),`p0-insert-contender-${randomUUID()}`,insertPayment,insertRequest])
       .then(()=>null,error=>error);
