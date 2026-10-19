@@ -1,6 +1,6 @@
 # P0 replay cross-authority concurrency: deterministic execution schedule
 
-Status: **UNEXECUTED / NO-GO**. This document is a test specification, not evidence of a successful two-session run.
+Status: **PARTIALLY EXECUTED / NO-GO**. The baseline two-session READ COMMITTED phantom is verified in disposable PostgreSQL; the function-internal schedules A and B below remain unexecuted.
 
 ## Boundary
 Use an owned disposable PostgreSQL instance with all migrations through 0033 applied, valid signed receipt and operator fixtures. Do not run against hosted Neon or Railway. Record migration hashes, server version, connection backend PIDs, SQLSTATEs and transaction outcomes. Fail closed on a missing fixture or unexpected lock timeout.
@@ -27,3 +27,11 @@ Use an owned disposable PostgreSQL instance with all migrations through 0033 app
 
 ## Evidence and release rule
 Store test source, CI run URL, SQLSTATEs, backend PIDs, commit/rollback and row-count evidence under docs/final-audit/. Source-only checks, mock tests and existing green CI do not close this gate. Hosted migrations and Railway least-privilege runtime verification remain separate approvals. **P0 NO-GO until all gates pass.**
+
+## Verified baseline evidence (2026-10-19)
+- Source: `artifacts/api-server/tests/receipt-cross-authority-phantom-postgres.integration.test.mjs`, wired into the isolated `billing` suite by commit `94ce8695e4ec79e9c481a4c8c16b7a7f988a0c5e`.
+- GitHub Actions: https://github.com/nora953/fawri-production-source/actions/runs/39185730169 ; disposable job `117847657002` succeeded, and all 41 workflow runs for that commit succeeded.
+- Disposable log: `DISPOSABLE_MIGRATIONS_PASS count=34`; `P0_CROSS_AUTHORITY_PHANTOM_OBSERVED {"first":1,"second":2,"readerIsolation":"read committed","writerCommitted":true,"kind":"database schedule only; no replay function was invoked"}`.
+- Meaning: a matching cashier order committed by session B becomes visible to session A on its next statement, even though session A had observed exactly one SaaS order earlier in the same READ COMMITTED transaction.
+- Limitation: the baseline deliberately invokes **neither** `fawri_review_verified_payment_receipt` nor `fawri_resolve_confirmed_payment_order`. It does not prove an exploitable function-level race or incorrect entitlement. Do not mark schedules A/B complete.
+- Next: controlled, non-sleep barriers inside the disposable test-only function copies or instrumentation; verify fail-closed behavior and zero entitlement applications, then retain the run's SQLSTATEs and PID evidence.
