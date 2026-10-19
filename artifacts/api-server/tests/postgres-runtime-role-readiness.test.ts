@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { assertSafePostgresRuntimeRole } from "../src/observability/runtime";
 
-const safe = { role_name: "fawri_runtime", is_superuser: false, bypass_rls: false, owns_unforced_rls_table: false, session_role_name: "fawri_login", session_is_superuser: false, session_bypass_rls: false, session_can_set_privileged_role: false };
+const safe = { role_name: "fawri_runtime", is_superuser: false, bypass_rls: false, owns_unforced_rls_table: false, session_role_name: "fawri_login", session_is_superuser: false, session_bypass_rls: false, session_can_create_role: false, session_inherits_privileged_role: false, session_can_set_privileged_role: false };
 
 test("readiness accepts a non-owner non-bypass runtime role", () => {
   assert.doesNotThrow(() => assertSafePostgresRuntimeRole(safe));
@@ -24,6 +24,10 @@ test("readiness rejects unsafe PostgreSQL runtime identities", () => {
     { ...safe, session_is_superuser: true },
     { ...safe, session_bypass_rls: true },
     { ...safe, session_bypass_rls: undefined },
+    { ...safe, session_can_create_role: true },
+    { ...safe, session_can_create_role: undefined },
+    { ...safe, session_inherits_privileged_role: true },
+    { ...safe, session_inherits_privileged_role: undefined },
     { ...safe, session_can_set_privileged_role: true },
     { ...safe, session_can_set_privileged_role: undefined },
   ]) {
@@ -50,4 +54,10 @@ test("readiness rejects privileged login even when SET ROLE selects a safe effec
 
 test("readiness rejects a non-bypass login that can SET ROLE into BYPASSRLS or SUPERUSER", () => {
   assert.throws(() => assertSafePostgresRuntimeRole({ ...safe, session_can_set_privileged_role: true }), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
+});
+
+
+test("readiness rejects CREATEROLE and inherited privileged membership even without SET ROLE", () => {
+  assert.throws(() => assertSafePostgresRuntimeRole({ ...safe, session_can_create_role: true }), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
+  assert.throws(() => assertSafePostgresRuntimeRole({ ...safe, session_inherits_privileged_role: true }), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
 });
