@@ -29,3 +29,16 @@ test("transaction-local context is not promoted to session-level context", () =>
   assert.doesNotMatch(source, /set_config\('fawri\.tenant_id',\s*\$1,\s*false\)/);
   assert.doesNotMatch(source, /SET\s+SESSION\s+fawri\.tenant_id/i);
 });
+
+test("tenant setting is established before the merchant callback is invoked", () => {
+  const tenantFunction = source.slice(source.indexOf("export async function withMerchantOperationalTransaction"));
+  const setContext = tenantFunction.indexOf("await client.query(");
+  const invokeWork = tenantFunction.indexOf("return work(client)");
+  assert.ok(setContext >= 0 && invokeWork > setContext, "tenant context must precede merchant work");
+});
+
+test("tenant context is configured inside the transaction wrapper", () => {
+  const tenantFunction = source.slice(source.indexOf("export async function withMerchantOperationalTransaction"));
+  assert.match(tenantFunction, /return withOperationalTransaction\(async \(client\) => \{/);
+  assert.doesNotMatch(tenantFunction, /operationalDatabasePool\(\)/);
+});
