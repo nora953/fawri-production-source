@@ -75,3 +75,11 @@ The test does not yet prove reverse-order multi-key lock behavior under a contro
 The disposable PostgreSQL billing step failed in the newly added concurrent cross-authority INSERT scenario with PostgreSQL error `could not determine data type of parameter $5`. The failing expression used the untyped parameter as a variadic `jsonb_build_object` value in both authority INSERT statements. Commit `46124a3646365982a226bb55ba825ce7b2bd32e2` adds an explicit `$5::text` cast in both statements. This is a targeted test SQL fix; it is **not yet considered verified** until the new commit's billing workflow reruns successfully.
 
 Prior in the same billing job, existing resolver in-flight and concurrent first-writer proofs logged successful outcomes (`P0_RESOLVER_INFLIGHT_RACE_GUARDED`, `P0_CONCURRENT_FIRST_WRITERS_GUARDED`); the later added INSERT test was the failure. Recheck all 41 workflows and inspect the isolated audit billing step after commit `46124a3` before closing this blocker.
+
+## Verified regression closure — 2026-10-19
+
+- Code commit: `c2d13827184d2917a767b1584c44ef47e38f0eb8`.
+- GitHub Actions: **41/41 workflows completed successfully**, including isolated PostgreSQL engineering audit run [39197137370](https://github.com/nora953/fawri-production-source/actions/runs/39197137370).
+- Isolated audit job `disposable-audit`: **success**. Its billing/refunds/duplicate-event step, migration/selected tests, restricted-role tenant proofs, Meta/AI lifecycle, full schema restore drill, and Node22 staging compatibility all concluded **success**.
+- The concurrent cross-authority INSERT regression was corrected by explicitly typing the request-id parameter and avoiding a separate merchant-pending uniqueness conflict in synthetic fixture rows. This confirms the CI suite is green; it does **not** verify hosted deployment schema, actual Railway runtime DB role, or production tenant isolation.
+- **P0 release decision remains NO-GO** pending hosted read-only role/schema verification, authorization-negative acceptance evidence, and deployment readiness. No hosted migrations, privilege changes, merge, or deployment were performed.
