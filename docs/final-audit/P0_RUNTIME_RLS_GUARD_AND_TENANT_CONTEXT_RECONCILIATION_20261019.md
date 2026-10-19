@@ -23,3 +23,7 @@ Connected as `fawri_staging_runtime`, transaction-local `SET ROLE fawri_staging_
 5. Hosted migration, privilege, deployment, merge and launch gates remain pending explicit review and approval.
 
 **Do not infer GO from passing source checks or synthetic role-switching.**
+
+## CI evidence for this documentation commit
+
+Exact commit `05ab105331d8d233d3b7d4d1b53c9f34d0f4d511` was queried after the report was created. GitHub returned 41 workflow runs: **6 success, 17 in progress, 18 queued** at observation time. This is **not** 41/41 green and is not a release acceptance. Historical code commit `c2d13827184d2917a767b1584c44ef47e38f0eb8` independently returned 41/41 success. The current documentation update triggers a new SHA and requires its own final CI check.
