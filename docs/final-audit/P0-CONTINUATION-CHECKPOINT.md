@@ -49,3 +49,8 @@ Only Git audit branch and reviewable tests/code/docs authorized. Neon project ro
 - Read `scripts/execute-disposable-postgres-audit.mjs` on the audit branch: named `audit-boundary` suite maps to `admin-audit-boundary-postgres.integration.test.mjs`; `priority` includes it first. The runner emits `AUDIT_SUITE_RESULT` with pass/fail/skipped/cancelled and `summaryComplete` fields, and guards against an entirely skipped PostgreSQL proof.
 - Source wiring VERIFIED; successful SQL execution remains NOT VERIFIED. The latest two documentation commits intentionally use `[skip ci]`, so their lack of PR-triggered runs cannot be counted as a test failure or acceptance. Do not claim the fixture's proof markers executed without a completed run log.
 - Next action: identify the source commit that first added the fixture, obtain its guarded isolated workflow logs, or schedule a targeted authorized isolated test on an attested disposable CI database. Keep P0 NO-GO.
+
+## Synthetic fixture cleanup hardening — 2026-10-20
+
+- Code commit `a5635e2a9423efff08d204a72c3a7074494e722d` adds explicit cleanup of synthetic `merchant_settings` and `merchants` before `accounts` in `admin-audit-boundary-postgres.integration.test.mjs`. Previously fixture teardown deleted audit records and accounts but did not explicitly delete merchants/settings it created. This addresses a concrete teardown coverage gap; it does not alter production SQL or grant policy.
+- Guarded PostgreSQL execution and SQL cleanup success remain NOT VERIFIED after this change; do not claim the fixture passed. Next: run authorized isolated CI for this source commit and inspect `P0_AUDIT_FORGERY_PROOF`, `P0_AUDIT_BEARER_REUSE_PROOF`, `AUDIT_SUITE_RESULT` and teardown status. P0 remains NO-GO.
