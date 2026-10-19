@@ -91,5 +91,18 @@ test('cross-authority identity guard rejects second writer in READ COMMITTED',as
     if(contenderOpen)await contender.query('ROLLBACK');
     owner.release();contender.release();
   }
+  // Verify independent identity keys: either key alone must reject a collision.
+  for (const scenario of [
+    { label: 'request-only', payment: `request-only-${randomUUID()}`, request: freshRequest },
+    { label: 'payment-only', payment: freshPayment, request: `payment-only-${randomUUID()}` },
+  ]) {
+    const error = await pool.query(
+      "UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",
+      [cash.order.id,scenario.payment,JSON.stringify({provider_request_id:scenario.request})],
+    ).then(()=>null,e=>e);
+    assert.equal(error?.code,'23514',`${scenario.label} identity collision must fail closed`);
+    const count=(await pool.query(sql,[scenario.payment,scenario.request])).rows[0].n;
+    assert.equal(count,1,`${scenario.label} collision must not create a second owner`);
+  }
   console.log('P0_CROSS_AUTHORITY_IDENTITY_GUARDED '+JSON.stringify({first,second,writerSqlstate:collision.code,readerIsolation:'read committed',scope:'database write-path protection'}));
 });
