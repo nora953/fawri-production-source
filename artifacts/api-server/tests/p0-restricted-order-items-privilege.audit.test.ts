@@ -5,7 +5,9 @@ import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgr
 // Opt-in P0 security gate. Run only against the attested network-none fawri_ci database.
 // It intentionally fails if the candidate restricted role can read unprotected order items.
 // Do not enable as a required CI gate until the intended least-privilege grants are reconciled.
-test("P0 restricted role must not read unscoped order items", async () => {
+const enabled = process.env.FAWRI_P0_RESTRICTED_ORDER_ITEMS_AUDIT === "1";
+
+test("P0 restricted role must not read unscoped order items", { skip: !enabled && "requires explicit isolated PostgreSQL audit opt-in" }, async () => {
   await assertDisposablePostgres();
   const { Client } = await import("pg");
   const client = new Client({ connectionString: process.env.DATABASE_URL });
