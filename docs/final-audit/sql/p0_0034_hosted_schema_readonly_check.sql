@@ -11,6 +11,8 @@ WITH expected(table_name, trigger_name) AS (
          c.oid IS NOT NULL AS table_exists,
          t.oid IS NOT NULL AS trigger_exists,
          t.tgenabled AS trigger_enabled,
+         (t.tgenabled IN ('O','A')) AS enabled_in_origin_session,
+         (t.tgfoid=pg_catalog.to_regprocedure('public.fawri_guard_provider_order_identity()')) AS calls_expected_guard,
          pg_catalog.pg_get_triggerdef(t.oid) AS trigger_definition
   FROM expected e
   LEFT JOIN pg_catalog.pg_class c ON c.oid=pg_catalog.to_regclass('public.'||e.table_name)
@@ -29,5 +31,7 @@ SELECT pg_catalog.jsonb_build_object(
   'guard_exists',EXISTS(SELECT 1 FROM guard),
   'guard_security_definer',(SELECT prosecdef FROM guard),
   'guard_settings',(SELECT proconfig FROM guard),
+  'guard_has_safe_search_path',COALESCE((SELECT 'search_path=pg_catalog'=ANY(proconfig) FROM guard),false),
+  'guard_disables_row_security',COALESCE((SELECT 'row_security=off'=ANY(proconfig) FROM guard),false),
   'guard_public_execute',(SELECT public_can_execute FROM guard)
 ) AS p0_schema_evidence;
