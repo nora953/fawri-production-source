@@ -327,6 +327,11 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.deepEqual(unscopedOrdersABody.orders, ownOrdersABody.orders);
   assert.deepEqual(unscopedOrdersBBody.orders, ownOrdersBBody.orders);
 
+  const anonymousOrders = await fetch(`${baseUrl}/api/orders`);
+  assert.equal(anonymousOrders.status, 401);
+  const anonymousMerchantOrders = await fetch(`${baseUrl}/api/orders/${merchantAId}`);
+  assert.equal(anonymousMerchantOrders.status, 401);
+
   const subscription = await fetch(`${baseUrl}/api/auth/subscription/current`, {
     headers: { Cookie: merchantACookie },
   });
