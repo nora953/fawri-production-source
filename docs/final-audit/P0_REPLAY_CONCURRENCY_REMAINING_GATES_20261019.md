@@ -37,3 +37,7 @@ Commit `8bdb0921382de10c5a80a869c4a30cf04ef5b1c2` adds source assertions for rec
 Branch HEAD `7f6dfb35e1dc5df53d1f0ae0d6d4678576adcac3` completed **41/41 GitHub Actions SUCCESS** (zero failed, cancelled or pending). This is CI acceptance only, not hosted replay race proof.
 
 Read-only query against isolated Neon branch `br-snowy-voice-b1bovtwi` returned `current_user=neondb_owner`, `drizzle.__drizzle_migrations` row count `28`, and `pg_indexes` matches for `provider_checkout_ref` and `provider_request_id` on `public.saas_billing_orders` / `public.cashier_billing_orders` each `0`. This is an index-definition search, not an exhaustive constraint or transaction-safety proof. Repo journal records 34 migrations through 0033; hosted clone is behind. The connected role is owner and cannot establish least-privilege runtime acceptance. No SQL writes or deployments performed. Remaining: disposable migration application with explicit authorization, deterministic two-session concurrency tests and runtime-role verification. **P0 NO-GO.**
+
+## 2026-10-19 second CI acceptance
+
+Commit `8d80ab65507196160b78014af893ce5dd4a4cdd2`: **41/41 GitHub Actions SUCCESS**, zero failed/cancelled/pending. Included isolated PostgreSQL engineering audit, schema validation, final security and supply chain. This is source/CI acceptance, **not** proof of hosted 0028–0033 migrations, least-privilege runtime, or deterministic two-session payment-reference race safety. No hosted SQL writes, role alterations or deployments performed. **P0 NO-GO**.
