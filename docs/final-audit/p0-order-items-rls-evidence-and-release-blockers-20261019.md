@@ -25,3 +25,8 @@
 
 ## Safety
 All synthetic writes and policy experiments were performed on the disposable Neon branch. This note does not authorize a production migration or privilege changes.
+
+## Additional role inventory (disposable Neon, 2026-10-19)
+- Login-enabled roles inspected: cloud_admin (SUPERUSER/BYPASSRLS), neon_service (BYPASSRLS), neondb_owner (BYPASSRLS), and fawri_staging_runtime (BYPASSRLS). None of these qualifies as an unprivileged runtime login.
+- fawri_staging_rls_runtime is NOSUPERUSER NOBYPASSRLS but NOLOGIN. It cannot establish a direct application session. Its SET ROLE test is useful for checking policies, **not** sufficient for runtime-login attestation.
+- Required next step: provision a separate LOGIN NOSUPERUSER NOBYPASSRLS role with no protected-table ownership and no SET privilege to any privileged role; grant only the audited operational privileges and confirm the deployment authenticates as that role. This must be planned and reviewed before any role changes on staging or production.
