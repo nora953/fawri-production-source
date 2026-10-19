@@ -25,7 +25,7 @@ test("P0 restricted role must not read unscoped order items", { skip: !enabled &
     assert.equal(candidate.rowCount, 1, "SETUP BLOCKED: candidate restricted role is missing");
     assert.equal(candidate.rows[0].rolbypassrls, false, "SETUP BLOCKED: candidate role bypasses RLS");
     const membership = await client.query(
-      "SELECT pg_has_role(current_user, $1, 'MEMBER') AS can_assume",
+      "SELECT pg_has_role(current_user, $1, 'SET') AS can_assume",
       ["fawri_staging_rls_runtime"],
     );
     assert.equal(membership.rows[0].can_assume, true, "SETUP BLOCKED: local runner cannot assume candidate role");
@@ -43,16 +43,18 @@ test("P0 restricted role must not read unscoped order items", { skip: !enabled &
       "SELECT relrowsecurity AS rls_enabled FROM pg_class WHERE oid = 'public.order_items'::regclass",
     );
     assert.equal(table.rowCount, 1, "SETUP BLOCKED: order_items table missing");
-    // A restricted tenant role should not have unscoped table-wide SELECT.
-    // An authorization failure is the expected secure result.
+    assert.equal(table.rows[0].rls_enabled, true, "P0: order_items RLS must be enabled");
+    // With no tenant context, a policy-protected table must return no rows.
+    // A permission-denied result is also safe if SELECT is intentionally revoked.
     let denied = false;
     try {
-      await client.query("SELECT id FROM public.order_items LIMIT 1");
+      const rows = await client.query("SELECT id FROM public.order_items LIMIT 1");
+      denied = rows.rowCount === 0;
     } catch (error) {
       denied = error?.code === "42501";
       if (!denied) throw error;
     }
-    assert.equal(denied, true, "P0: restricted role has unrestricted SELECT on order_items");
+    assert.equal(denied, true, "P0: restricted role can read unscoped order items");
   } finally {
     await client.query("ROLLBACK").catch(() => {});
     await client.end();
