@@ -18,7 +18,7 @@ WITH expected(table_name, trigger_name) AS (
     AND t.tgname=e.trigger_name AND NOT t.tgisinternal
 ), guard AS (
   SELECT p.oid, p.prosecdef, p.proconfig,
-         pg_catalog.has_function_privilege('public',p.oid,'EXECUTE') AS public_can_execute
+         EXISTS (SELECT 1 FROM pg_catalog.aclexplode(COALESCE(p.proacl,pg_catalog.acldefault('f',p.proowner))) acl WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE') AS public_can_execute
   FROM pg_catalog.pg_proc p
   WHERE p.oid=pg_catalog.to_regprocedure('public.fawri_guard_provider_order_identity()')
 )
