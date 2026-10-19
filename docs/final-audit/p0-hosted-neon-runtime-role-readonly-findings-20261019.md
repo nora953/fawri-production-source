@@ -29,3 +29,18 @@ Neon branch queried: `br-snowy-voice-b1bovtwi`, database `neondb`. Queries ran a
 6. Recheck deployment readiness and CI against the exact commit proposed for release.
 
 **No hosted changes performed. No merge or deployment authorized.**
+
+## Follow-up: tenant-boundary schema and policy verification
+
+- All 45 `public` RLS policies use `fawri_tenant_or_audited_admin(...)` in both `USING` and `WITH CHECK`; all are `FOR ALL`, apply to `PUBLIC`, and none lacks either clause.
+- Function body compares the merchant identifier to `current_setting('fawri.tenant_id', true)` or checks a non-expired `database_admin_access_audits` row matched by `fawri.admin_audit_id` and `fawri.admin_account_id`. Function is `SECURITY DEFINER`, owner `neondb_owner`, with `search_path=pg_catalog`.
+- Four sensitive tables `account_sessions` (`tenant_id`), `cashier_operator_sessions` (`merchant_id`), `order_items` (`merchant_id`), `support_messages` (`merchant_id`) have RLS **disabled** while `fawri_staging_runtime` has SELECT privileges on each. Their application-layer authorization must be reviewed before deciding whether/how to add RLS.
+- Foreign keys establish some data integrity links but are **not** authorization boundaries. No cross-tenant runtime exploit test was executed and no vulnerability through the application's API has been demonstrated.
+
+### Negative tests to add in isolated CI
+
+1. Use separate merchants A and B and a dedicated runtime login with `NOBYPASSRLS NOCREATEDB NOCREATEROLE`; verify A cannot SELECT/UPDATE/DELETE B's tenant-protected rows.
+2. With no tenant context, verify protected reads are empty and writes fail; confirm only audited, unexpired admin context enables its explicitly scoped access.
+3. For non-RLS tables (`account_sessions`, `cashier_operator_sessions`, `order_items`, `support_messages`), exercise real API handlers using merchant A credentials against merchant B record IDs and verify denial without exposing B's data.
+4. Repeat ordinary checkout, support, auth and background-worker flows to detect compatibility regressions before proposing any privilege or RLS changes.
+
