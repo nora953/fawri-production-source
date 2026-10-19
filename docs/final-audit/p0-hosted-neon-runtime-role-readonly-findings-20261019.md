@@ -44,3 +44,11 @@ Neon branch queried: `br-snowy-voice-b1bovtwi`, database `neondb`. Queries ran a
 3. For non-RLS tables (`account_sessions`, `cashier_operator_sessions`, `order_items`, `support_messages`), exercise real API handlers using merchant A credentials against merchant B record IDs and verify denial without exposing B's data.
 4. Repeat ordinary checkout, support, auth and background-worker flows to detect compatibility regressions before proposing any privilege or RLS changes.
 
+
+## 2026-10-19 continuation — access limitations and evidence boundary
+
+- Reconfirmed via Railway's read-only service variable listing that both `DATABASE_URL` and `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE` are configured by name, but their values are withheld (`valuesRedacted=true`). **Presence of an expected-role variable is not evidence that the current database session has that role.** Do not expose credentials to resolve this.
+- Attempted a read-only Neon query against the previously audited isolated branch to inspect `current_user` and the migration ledger. The query was **blocked before execution by tool safety checks**; no new hosted database facts were established and no database state changed.
+- Existing read-only SQL probe: `docs/final-audit/sql/p0_hosted_runtime_role_readonly_check.sql`. It must be executed using the *actual application connection* in an approved controlled operator session; its output (role names and privilege booleans only) should be preserved as evidence.
+- The 41/41 green CI result for code commit `c2d13827184d2917a767b1584c44ef47e38f0eb8` is a **disposable test environment result**. It does not close hosted runtime role, hosted migration ledger, or cross-merchant API acceptance gates.
+- **NO-GO** remains in effect. No hosted SQL mutations, deployment, or merge authorized.
