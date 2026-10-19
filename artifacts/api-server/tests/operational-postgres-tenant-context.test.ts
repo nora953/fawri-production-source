@@ -66,3 +66,9 @@ test("tenant validation normalizes surrounding whitespace before applying contex
   assert.match(merchantFunction, /String\(merchantIdValue \|\| ""\)\.trim\(\)/);
   assert.match(merchantFunction, /\[merchantId\]/);
 });
+
+test("tenant IDs at the 200-character boundary are not rejected by length guard", () => {
+  const merchantFunction = source.slice(source.indexOf("export async function withMerchantOperationalTransaction"));
+  assert.match(merchantFunction, /merchantId\.length > 200/);
+  assert.doesNotMatch(merchantFunction, /merchantId\.length >= 200/);
+});
