@@ -91,6 +91,60 @@ test('cross-authority identity guard rejects second writer in READ COMMITTED',as
     if(contenderOpen)await contender.query('ROLLBACK');
     owner.release();contender.release();
   }
+  // Exercise the actual BEFORE INSERT trigger with two simultaneous first writers
+  // in separate authorities. The source rows are synthetic orders created above;
+  // only IDs, idempotency keys, provider references and request IDs are replaced.
+  const insertPayment=`concurrent-insert-payment-${randomUUID()}`;
+  const insertRequest=`concurrent-insert-request-${randomUUID()}`;
+  const insertOwner=await pool.connect(),insertContender=await pool.connect();
+  let insertOwnerOpen=false,insertContenderOpen=false;
+  try {
+    await insertOwner.query('BEGIN');
+    insertOwnerOpen=true;
+    await insertOwner.query(`INSERT INTO saas_billing_orders (
+      id,merchant_id,operation,requested_plan,amount_iqd,currency,catalog_version,
+      provider,status,idempotency_key,provider_checkout_ref,request_expires_at,metadata,created_at,updated_at
+    ) SELECT $2,merchant_id,operation,requested_plan,amount_iqd,currency,catalog_version,
+      'superqi_sandbox','pending',$3,$4,request_expires_at,
+      metadata || jsonb_build_object('provider_request_id',$5),now(),now()
+      FROM saas_billing_orders WHERE id=$1`,
+      [bot.order.id,randomUUID(),`p0-insert-owner-${randomUUID()}`,insertPayment,insertRequest]);
+    await insertContender.query('BEGIN');
+    insertContenderOpen=true;
+    const pendingInsert=insertContender.query(`INSERT INTO cashier_billing_orders (
+      id,merchant_id,subscription_id,operation,current_seats,requested_seats,resulting_seats,
+      unit_price_iqd,amount_iqd,currency,billing_period_start,billing_period_end,
+      grace_duration_seconds,status,idempotency_key,provider,provider_checkout_ref,
+      request_expires_at,metadata,created_at,updated_at
+    ) SELECT $2,merchant_id,subscription_id,operation,current_seats,requested_seats,resulting_seats,
+      unit_price_iqd,amount_iqd,currency,billing_period_start,billing_period_end,
+      grace_duration_seconds,'pending',$3,'superqi_sandbox',$4,request_expires_at,
+      metadata || jsonb_build_object('provider_request_id',$5),now(),now()
+      FROM cashier_billing_orders WHERE id=$1`,
+      [cash.order.id,randomUUID(),`p0-insert-contender-${randomUUID()}`,insertPayment,insertRequest])
+      .then(()=>null,error=>error);
+    const insertDeadline=Date.now()+10000;
+    let insertBlocked=false;
+    while(Date.now()<insertDeadline){
+      const result=await pool.query('SELECT cardinality(pg_blocking_pids(pid)) AS blockers FROM pg_stat_activity WHERE pid=$1',[insertContender.processID]);
+      if(Number(result.rows[0]?.blockers)>0){insertBlocked=true;break;}
+      await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    assert.equal(insertBlocked,true,'competing first-time INSERT must wait on identity advisory lock');
+    await insertOwner.query('COMMIT');
+    insertOwnerOpen=false;
+    const insertRejected=await pendingInsert;
+    assert.equal(insertRejected?.code,'23514','cross-authority duplicate INSERT must be rejected');
+    await insertContender.query('ROLLBACK');
+    insertContenderOpen=false;
+    const insertOwned=(await pool.query(sql,[insertPayment,insertRequest])).rows[0].n;
+    assert.equal(insertOwned,1,'concurrent INSERTs must leave exactly one authority owner');
+    console.log('P0_CONCURRENT_INSERTS_GUARDED '+JSON.stringify({blocked:insertBlocked,loserSqlstate:insertRejected.code,committedMatches:insertOwned}));
+  } finally {
+    if(insertOwnerOpen)await insertOwner.query('ROLLBACK');
+    if(insertContenderOpen)await insertContender.query('ROLLBACK');
+    insertOwner.release();insertContender.release();
+  }
   // Verify independent identity keys: either key alone must reject a collision.
   for (const scenario of [
     { label: 'request-only', payment: `request-only-${randomUUID()}`, request: freshRequest },
