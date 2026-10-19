@@ -35,3 +35,11 @@ New admin-audit-boundary-postgres.integration.test.mjs is registered first in is
 ## Restrictions
 
 Only Git audit branch and reviewable tests/code/docs authorized. Neon project round-fire-18493605, branch br-billowing-leaf-b14yamgu, database neondb only; read-only first. No production/default/staging modifications, destructive SQL, unsafe role creation, broad GRANT/REVOKE, merge or deployment. Keep offline cashier and intelligent replies distinct. Save each meaningful batch and update this file and P0-NEXT-SESSION-HANDOFF.md before starting expensive work.
+
+## CI cancellation evidence follow-up — 2026-10-20
+
+- Verified GitHub Actions runs for source commit `e5300d80da1ea27bd4e7d100edef1fa503f6fc01`: 41 runs; 37 completed success, 4 completed cancelled, zero completed failure. Cancelled workflows: Final security and supply chain (`39340236235`), Foundation integration final gate (`39340236256`), Isolated PostgreSQL engineering audit (`39340236463`), PostgreSQL schema validation (`39340236400`). This commit does **not** have a full 41/41 green acceptance.
+- Isolated audit job `118359679872` logs show cashier batch completed with zero test failures and billing batch started; GitHub then logged `The operation was canceled` at 2026-10-19T23:17:14Z. Container cleanup succeeded. This is cancellation, not demonstrated SQL failure or completed billing acceptance.
+- Foundation job `118359679712` was cancelled during `Run commerce and Cashier closeout validation`; previous successful steps do not imply a successful final gate.
+- The guarded `admin-audit-boundary-postgres.integration.test.mjs` exists on the audit branch and characterizes audit-record forgery and bearer reuse, but **no completed CI proof for its containing commit was verified in this follow-up**. Do not assert `P0_AUDIT_FORGERY_PROOF` or `P0_AUDIT_BEARER_REUSE_PROOF` succeeded.
+- Next exact action: resolve containing commit SHA of guarded fixture; inspect that commit's Isolated PostgreSQL workflow logs for both proof markers, terminal TAP counts and cleanup. If absent or cancelled, run a new authorized isolated CI validation without weakening disposable attestation; fix any real fixture failure. P0 remains **NO-GO**. No database changes in this batch.
