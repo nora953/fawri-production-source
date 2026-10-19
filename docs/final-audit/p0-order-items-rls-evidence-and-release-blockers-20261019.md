@@ -56,3 +56,9 @@ All synthetic writes and policy experiments were performed on the disposable Neo
 - Attempts to ALTER ROLE ... NOBYPASSRLS and REVOKE neon_superuser from this test login using fawri_staging_runtime failed with permission denied. No privilege reduction was applied.
 - Existing fawri_staging_rls_runtime remains NOLOGIN, NOBYPASSRLS, NOCREATEROLE. SET ROLE from a privileged session does not establish a safe direct login.
 - **Remaining P0 blocker:** provision a direct LOGIN without privileged memberships and verify effective privileges using its own authenticated session. Escalate to a supported Neon administrative provisioning path rather than weaken the runtime safety gate. Test-only account should be retired in a reviewed cleanup.
+
+## CI closure and disposable role cleanup — 2026-10-19
+- Commit b0681e247b6fe12fd88e44d15622e8a6cdbc6f43: all 41/41 GitHub Actions workflow runs completed successfully, no failures.
+- Deleted unsafe experimental LOGIN fawri_p0_direct_login_audit_20261019 from disposable Neon branch br-billowing-leaf-b14yamgu via Neon role deletion. A subsequent role listing confirmed it is absent. Prior check showed zero owned pg_class objects.
+- No changes to production or staging credentials/roles; existing restricted NOLOGIN role retained.
+- Release blocker remains: establish and prove a direct-authenticated least-privilege LOGIN with NOBYPASSRLS, NOCREATEROLE, no privileged role membership, and cross-tenant deny proofs. CI success alone is not production approval.
