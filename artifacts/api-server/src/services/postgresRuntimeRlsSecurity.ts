@@ -12,6 +12,7 @@ export const PRODUCTION_TENANT_RLS_TABLES = [
   "merchant_locations",
   "location_inventory_levels",
   "orders",
+  "order_items",
   "order_payment_decisions",
   "order_payment_provider_events",
   "order_terminal_decision_links",
