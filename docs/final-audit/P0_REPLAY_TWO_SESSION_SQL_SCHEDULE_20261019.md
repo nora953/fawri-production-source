@@ -41,3 +41,12 @@ Store test source, CI run URL, SQLSTATEs, backend PIDs, commit/rollback and row-
 - Isolated run: https://github.com/nora953/fawri-production-source/actions/runs/39188374899 ; job `117855741802` SUCCESS; all 41 workflows on that commit SUCCESS.
 - Job log: `DISPOSABLE_MIGRATIONS_PASS count=34` and `P0_RESOLVER_COMMITTED_COLLISION_REJECTED {"sqlstate":"23514","entitlementGrants":0,"scope":"post-commit; not an in-function interleaving"}`.
 - This closes the **pre-existing committed cross-authority collision** subcase only. It does **not** close schedule B (phantom committed while the resolver is already running) or schedule A (two scans inside review). Continue P0 NO-GO.
+
+## Confirmed P0 function-level resolver race — FAILED (2026-10-19)
+- CI run: https://github.com/nora953/fawri-production-source/actions/runs/39189468667 ; isolated job `117858872352` completed FAILURE in the billing suite. All other 40 workflows for commit `8a38ec7c952e819b13a3869b97d58d19e62af949` passed before isolated failure.
+- Test: `artifacts/api-server/tests/receipt-resolver-inflight-phantom-postgres.integration.test.mjs`, with a real two-session selected-row lock barrier and a separate writer that commits a competing cross-authority identity.
+- Log: `P0_RESOLVER_INFLIGHT_RACE {"resolverPid":106,"waitObserved":true,"committedMatches":2,"returnedRows":1,"sqlstate":null}`.
+- TAP failure: `P0: resolver returned a stale unique mapping after an in-flight cross-authority phantom`; assertion at test line 65; duration 173ms, **not a timeout**.
+- Confirmed issue: migration `0033_confirmed_provider_order_resolution.sql` scans candidate authority rows before acquiring the selected order's `FOR UPDATE` lock; a writer not sharing the advisory lock can commit a competing order while the resolver waits, and the resolver returns the earlier single candidate without rescanning.
+- Scope: **ambiguous mapping returned** is demonstrated. This test did not prove an entitlement was applied, because it fails at the stale-mapping assertion before the later zero-grant assertion. Do not claim actual payment misapplication.
+- Required remediation: durable cross-authority payment identity ownership/serialization shared by every order identity writer and the resolver, not just a post-lock rescan (which still leaves a race after the rescan); migration + tests must cover both order authorities and all write paths, including updates, under disposable CI before any hosted migration approval. **P0 NO-GO.**
