@@ -27,3 +27,7 @@ Commit `15460b98f17047d5d780af5efa4fb4c4ce5bda8c` adds a source regression that 
 ## 2026-10-19 completed CI for advisory-lock source regression
 
 Commit `15460b98f17047d5d780af5efa4fb4c4ce5bda8c`: **41/41 GitHub Actions workflow runs completed SUCCESS**, no failed, cancelled, queued or in-progress runs in final commit-wide check. Thirteen cancelled workflows were rerun and subsequently passed. This closes only the source-regression CI gate; the deterministic two-session PostgreSQL concurrency and hosted runtime/migration gates remain open. **P0 NO-GO.**
+
+## 2026-10-19 receipt inbox and cross-authority source contracts
+
+Commit `8bdb0921382de10c5a80a869c4a30cf04ef5b1c2` adds source assertions for receipt inbox event-key collision handling (migration 0029) and cross-authority lookup inputs (migration 0031). First observed commit CI snapshot: 5/41 succeeded, 16 running, 20 pending/queued, no failures. These checks do **not** prove uniqueness of checkout/request references or a two-session race-safe outcome. P0 NO-GO.
