@@ -339,6 +339,18 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     body: JSON.stringify({ expected_version: 1, status: "confirmed" }),
   });
   assert.equal(anonymousOrderMutation.status, 401);
+  const anonymousPaymentMutation = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/payment-status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, payment_status: "paid" }),
+  });
+  assert.equal(anonymousPaymentMutation.status, 401);
+  const anonymousPaymentConfirm = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/payment/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1 }),
+  });
+  assert.equal(anonymousPaymentConfirm.status, 401);
 
   const subscription = await fetch(`${baseUrl}/api/auth/subscription/current`, {
     headers: { Cookie: merchantACookie },
