@@ -60,3 +60,9 @@ test("runtime rejects invalid merchant IDs before acquiring a database connectio
     assert.equal(callbackCalled, false, "invalid merchant ID must not execute tenant work");
   }
 });
+
+test("tenant validation normalizes surrounding whitespace before applying context", () => {
+  const merchantFunction = source.slice(source.indexOf("export async function withMerchantOperationalTransaction"));
+  assert.match(merchantFunction, /String\(merchantIdValue \|\| ""\)\.trim\(\)/);
+  assert.match(merchantFunction, /\[merchantId\]/);
+});
