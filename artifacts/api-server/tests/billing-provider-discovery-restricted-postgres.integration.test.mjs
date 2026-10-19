@@ -183,18 +183,25 @@ test('verified provider callbacks discover mapped orders without global tenant a
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[decoyMerchant,`+1990${String(randomInt(0,100000000)).padStart(8,'0')}`]);
     await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved','channel_connected')",[decoyMerchant]);
     const same=kind==='saas'?await saas.createSaasBillingCheckout({merchantId:decoyMerchant,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'}):await cashier.createCashierBillingCheckout({merchantId:decoyMerchant,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'});
-    await pool.query(`UPDATE ${orders} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[same.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
     const decoyBefore=(await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[same.order.id])).rows[0];
-    await assertDenied(kind==='saas'?'SUPERQI_SANDBOX_ORDER_AMBIGUOUS':'CASHIER_BILLING_ORDER_AMBIGUOUS');
+    // Migration 0034 rejects same-authority duplicate payment identities.
+    await assert.rejects(
+      ()=>pool.query(`UPDATE ${orders} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[same.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]),
+      error=>error.code==='23514',
+    );
     assert.deepEqual((await pool.query(`SELECT * FROM ${orders} WHERE id=$1`,[same.order.id])).rows[0],decoyBefore);
     assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[same.order.id])).rows[0].n,0);
     assert.equal((await pool.query(`SELECT count(*)::int n FROM ${subscriptions} WHERE merchant_id=$1`,[decoyMerchant])).rows[0].n,0);
-    await pool.query(`UPDATE ${orders} SET provider='test_fake' WHERE id=$1`,[same.order.id]);
     const other=kind==='saas'?await cashier.createCashierBillingCheckout({merchantId,operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'}):await saas.createSaasBillingCheckout({merchantId,operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'});
     const otherTable=kind==='saas'?'cashier_billing_orders':'saas_billing_orders';
-    await pool.query(`UPDATE ${otherTable} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[other.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]);
-    await assertDenied('SUPERQI_SANDBOX_ORDER_AUTHORITY_COLLISION');
-    await pool.query(`UPDATE ${otherTable} SET provider='test_fake' WHERE id=$1`,[other.order.id]);
+    const otherBefore=(await pool.query(`SELECT * FROM ${otherTable} WHERE id=$1`,[other.order.id])).rows[0];
+    // Cross-authority collisions are also rejected before any callback can attach.
+    await assert.rejects(
+      ()=>pool.query(`UPDATE ${otherTable} SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[other.order.id,payload.paymentId,JSON.stringify({provider_request_id:payload.requestId})]),
+      error=>error.code==='23514',
+    );
+    assert.deepEqual((await pool.query(`SELECT * FROM ${otherTable} WHERE id=$1`,[other.order.id])).rows[0],otherBefore);
+    assert.equal((await pool.query(`SELECT count(*)::int n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,0);
     // This matrix tests the original SQL capability with alternate fixture
     // ownership, before application. No callback timing or mapping mutation.
     for (const forced of [null,'verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders']) {
