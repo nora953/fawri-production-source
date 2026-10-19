@@ -296,6 +296,17 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.equal(foreignOrdersB.status, 403);
   assert.equal((await json(foreignOrdersB)).code, "MERCHANT_ACCESS_FORBIDDEN");
 
+  const ownOrdersA = await fetch(`${baseUrl}/api/orders/${merchantAId}`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ownOrdersA.status, 200);
+  assert.equal((await json(ownOrdersA)).merchant_id, merchantAId);
+  const ownOrdersB = await fetch(`${baseUrl}/api/orders/${merchantBId}`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(ownOrdersB.status, 200);
+  assert.equal((await json(ownOrdersB)).merchant_id, merchantBId);
+
   const subscription = await fetch(`${baseUrl}/api/auth/subscription/current`, {
     headers: { Cookie: merchantACookie },
   });
