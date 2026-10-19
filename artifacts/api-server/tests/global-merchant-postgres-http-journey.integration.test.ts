@@ -300,12 +300,14 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     headers: { Cookie: merchantACookie },
   });
   assert.equal(ownOrdersA.status, 200);
-  assert.equal((await json(ownOrdersA)).merchant_id, merchantAId);
+  const ownOrdersABody = await json(ownOrdersA);
+  assert.equal(ownOrdersABody.merchant_id, merchantAId);
   const ownOrdersB = await fetch(`${baseUrl}/api/orders/${merchantBId}`, {
     headers: { Cookie: merchantBCookie },
   });
   assert.equal(ownOrdersB.status, 200);
-  assert.equal((await json(ownOrdersB)).merchant_id, merchantBId);
+  const ownOrdersBBody = await json(ownOrdersB);
+  assert.equal(ownOrdersBBody.merchant_id, merchantBId);
 
   const unscopedOrdersA = await fetch(`${baseUrl}/api/orders`, {
     headers: { Cookie: merchantACookie },
@@ -322,6 +324,8 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   const unscopedOrdersBBody = await json(unscopedOrdersB);
   assert.equal(unscopedOrdersBBody.merchant_id, merchantBId);
   assert.equal(unscopedOrdersBBody.orders.every((order: any) => order.merchant_id === merchantBId), true);
+  assert.deepEqual(unscopedOrdersABody.orders, ownOrdersABody.orders);
+  assert.deepEqual(unscopedOrdersBBody.orders, ownOrdersBBody.orders);
 
   const subscription = await fetch(`${baseUrl}/api/auth/subscription/current`, {
     headers: { Cookie: merchantACookie },
