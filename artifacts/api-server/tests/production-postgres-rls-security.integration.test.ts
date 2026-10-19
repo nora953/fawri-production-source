@@ -92,6 +92,8 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   assert.equal(readiness.sessionRoleName, probeRole);
   assert.equal(readiness.sessionSuperuser, false);
   assert.equal(readiness.sessionBypassRls, false);
+  assert.equal(readiness.sessionCreateRole, false);
+  assert.deepEqual(readiness.sessionInheritedPrivilegedRoles, []);
   assert.deepEqual(readiness.sessionOwnedTables, []);
   assert.deepEqual(readiness.ownedTenantTables, []);
   assert.deepEqual(
@@ -269,11 +271,10 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
         assert.deepEqual(state.ownedTenantTables, []);
         assert.equal((await client.query("SELECT row_security_active('public.verified_provider_payment_receipts') AS active")).rows[0].active, true);
         assert.deepEqual(state.sessionReachablePrivilegedRoles, mode === "inherit-only" ? [] : [privileged]);
-        if (mode === "inherit-only") {
-          await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
-        } else {
-          await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
-            {code: "PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE"});
+        assert.deepEqual(state.sessionInheritedPrivilegedRoles, mode === "indirect" ? [] : [privileged]);
+        await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
+          {code: mode === "inherit-only" ? "PRODUCTION_DATABASE_INHERITED_PRIVILEGED_ROLE_FORBIDDEN" : "PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE"});
+        if (mode !== "inherit-only") {
           await client.query(`SET ROLE ${privileged}`);
           assert.equal((await client.query("SELECT row_security_active('public.verified_provider_payment_receipts') AS active")).rows[0].active, false);
         }
@@ -286,6 +287,25 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     });
   }
 
+
+  await t.test("authenticated role with CREATEROLE is rejected", async () => {
+    const elevated = "fawri_createrole_probe";
+    await client.query("RESET SESSION AUTHORIZATION");
+    await client.query("BEGIN");
+    try {
+      await client.query(`CREATE ROLE ${elevated} NOLOGIN NOSUPERUSER NOBYPASSRLS CREATEROLE`);
+      await client.query(`SET SESSION AUTHORIZATION ${elevated}`);
+      const state = await getProductionDatabaseRlsReadiness(client);
+      assert.equal(state.sessionCreateRole, true);
+      await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
+        {code: "PRODUCTION_DATABASE_SESSION_CREATEROLE_FORBIDDEN"});
+    } finally {
+      await client.query("RESET SESSION AUTHORIZATION");
+      await client.query("ROLLBACK");
+    }
+    await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+    await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
+  });
 
   await t.test("tenant context cannot leak between sequential transactions on the same pooled connection", async () => {
     // The same physical client is reused for both merchants. This is stronger
