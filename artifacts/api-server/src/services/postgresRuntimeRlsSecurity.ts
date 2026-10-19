@@ -277,6 +277,10 @@ export async function assertProductionDatabaseRlsReady(
     fail("PRODUCTION_DATABASE_SESSION_CREATEROLE_FORBIDDEN",
       "production authenticated database role must not create or alter roles");
   }
+  if (readiness.sessionReachablePrivilegedRoles.length > 0) {
+    fail("PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE",
+      "production authenticated database role must not activate privileged roles");
+  }
   if (readiness.sessionInheritedPrivilegedRoles.length > 0) {
     fail("PRODUCTION_DATABASE_INHERITED_PRIVILEGED_ROLE_FORBIDDEN",
       "production authenticated database role must not inherit privileged roles");
@@ -284,10 +288,6 @@ export async function assertProductionDatabaseRlsReady(
   if (readiness.sessionOwnedTables.length > 0) {
     fail("PRODUCTION_DATABASE_SESSION_TABLE_OWNER_FORBIDDEN",
       "production authenticated database role must not own RLS-protected tables");
-  }
-  if (readiness.sessionReachablePrivilegedRoles.length > 0) {
-    fail("PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE",
-      "production authenticated database role must not activate privileged roles");
   }
   if (readiness.missingOrUnprotectedTenantTables.length > 0) {
     fail(
