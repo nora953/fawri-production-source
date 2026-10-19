@@ -15,7 +15,7 @@ const {pool}=await import('@workspace/db');
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 
-test('two independent READ COMMITTED sessions expose a cross-authority order phantom',async t=>{
+test('cross-authority identity guard rejects second writer in READ COMMITTED',async t=>{
   const merchants=[];
   let reader,writer;
   t.after(async()=>cleanupResources([
@@ -49,28 +49,11 @@ test('two independent READ COMMITTED sessions expose a cross-authority order pha
   const first=(await reader.query(sql,[payment,request])).rows[0].n;
   assert.equal(first,1,'first scan must have exactly one candidate');
   await writer.query('BEGIN');
-  await writer.query("UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",[cash.order.id,payment,JSON.stringify({provider_request_id:request})]);
-  await writer.query('COMMIT');
+  const collision=await writer.query("UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",[cash.order.id,payment,JSON.stringify({provider_request_id:request})]).then(()=>null,error=>error);
+  assert.equal(collision?.code,'23514','second writer must be rejected by the database guard');
+  await writer.query('ROLLBACK');
   const second=(await reader.query(sql,[payment,request])).rows[0].n;
-  assert.equal(second,2,'second statement in same READ COMMITTED transaction must see committed phantom');
+  assert.equal(second,1,'no competing order may commit under the database guard');
   await reader.query('ROLLBACK');
-  // Real resolver must fail closed when both authority candidates are committed.
-  const receiptEvent=`phantom-event-${randomUUID()}`;
-  const receiptHash='a'.repeat(64);
-  await pool.query(
-    "INSERT INTO verified_provider_payment_receipts(provider,provider_event_id,payment_ref,request_ref,event_type,amount_iqd,payload_hash,first_received_at) VALUES('superqi_sandbox',$1,$2,$3,'payment_succeeded',$4,$5,now())",
-    [receiptEvent,payment,request,bot.order.amount_iqd,receiptHash]
-  );
-  await assert.rejects(
-    ()=>pool.query('SELECT * FROM public.fawri_resolve_confirmed_payment_order($1,$2,$3,$4,$5,$6)',[receiptEvent,payment,request,'payment_succeeded',bot.order.amount_iqd,receiptHash]),
-    error=>error.code==='23514' && /ORDER_AUTHORITY_COLLISION/.test(error.message)
-  );
-  const grants=await pool.query(
-    'SELECT (SELECT count(*)::int FROM saas_entitlement_applications WHERE order_id=$1) AS bot, (SELECT count(*)::int FROM cashier_entitlement_applications WHERE order_id=$2) AS cashier',
-    [bot.order.id,cash.order.id]
-  );
-  assert.deepEqual(grants.rows[0],{bot:0,cashier:0});
-  await pool.query('DELETE FROM verified_provider_payment_receipts WHERE provider_event_id=$1',[receiptEvent]);
-  console.log('P0_RESOLVER_COMMITTED_COLLISION_REJECTED '+JSON.stringify({sqlstate:'23514',entitlementGrants:0,scope:'post-commit; not an in-function interleaving'}));
-  console.log('P0_CROSS_AUTHORITY_PHANTOM_OBSERVED '+JSON.stringify({first,second,readerIsolation:'read committed',writerCommitted:true,kind:'database schedule only; no replay function was invoked'}));
+  console.log('P0_CROSS_AUTHORITY_IDENTITY_GUARDED '+JSON.stringify({first,second,writerSqlstate:collision.code,readerIsolation:'read committed',scope:'database write-path protection'}));
 });
