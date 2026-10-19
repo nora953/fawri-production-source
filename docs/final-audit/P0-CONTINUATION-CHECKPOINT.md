@@ -43,3 +43,9 @@ Only Git audit branch and reviewable tests/code/docs authorized. Neon project ro
 - Foundation job `118359679712` was cancelled during `Run commerce and Cashier closeout validation`; previous successful steps do not imply a successful final gate.
 - The guarded `admin-audit-boundary-postgres.integration.test.mjs` exists on the audit branch and characterizes audit-record forgery and bearer reuse, but **no completed CI proof for its containing commit was verified in this follow-up**. Do not assert `P0_AUDIT_FORGERY_PROOF` or `P0_AUDIT_BEARER_REUSE_PROOF` succeeded.
 - Next exact action: resolve containing commit SHA of guarded fixture; inspect that commit's Isolated PostgreSQL workflow logs for both proof markers, terminal TAP counts and cleanup. If absent or cancelled, run a new authorized isolated CI validation without weakening disposable attestation; fix any real fixture failure. P0 remains **NO-GO**. No database changes in this batch.
+
+## Guarded fixture wiring verification — 2026-10-20
+
+- Read `scripts/execute-disposable-postgres-audit.mjs` on the audit branch: named `audit-boundary` suite maps to `admin-audit-boundary-postgres.integration.test.mjs`; `priority` includes it first. The runner emits `AUDIT_SUITE_RESULT` with pass/fail/skipped/cancelled and `summaryComplete` fields, and guards against an entirely skipped PostgreSQL proof.
+- Source wiring VERIFIED; successful SQL execution remains NOT VERIFIED. The latest two documentation commits intentionally use `[skip ci]`, so their lack of PR-triggered runs cannot be counted as a test failure or acceptance. Do not claim the fixture's proof markers executed without a completed run log.
+- Next action: identify the source commit that first added the fixture, obtain its guarded isolated workflow logs, or schedule a targeted authorized isolated test on an attested disposable CI database. Keep P0 NO-GO.
