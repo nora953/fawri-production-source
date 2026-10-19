@@ -83,3 +83,12 @@ Prior in the same billing job, existing resolver in-flight and concurrent first-
 - Isolated audit job `disposable-audit`: **success**. Its billing/refunds/duplicate-event step, migration/selected tests, restricted-role tenant proofs, Meta/AI lifecycle, full schema restore drill, and Node22 staging compatibility all concluded **success**.
 - The concurrent cross-authority INSERT regression was corrected by explicitly typing the request-id parameter and avoiding a separate merchant-pending uniqueness conflict in synthetic fixture rows. This confirms the CI suite is green; it does **not** verify hosted deployment schema, actual Railway runtime DB role, or production tenant isolation.
 - **P0 release decision remains NO-GO** pending hosted read-only role/schema verification, authorization-negative acceptance evidence, and deployment readiness. No hosted migrations, privilege changes, merge, or deployment were performed.
+
+## Latest exact-commit CI verification — 2026-10-19
+
+- Code commit: `0efbfee20ba997940c4334be6604e40c4faf6d86`.
+- GitHub Actions exact-commit query: **41 completed / 41 successful / 0 failed / 0 pending**.
+- Isolated PostgreSQL engineering audit: [run 39198982292](https://github.com/nora953/fawri-production-source/actions/runs/39198982292), **completed / success**.
+- This revision adds a transactional provider-identity transfer and rollback regression to `artifacts/api-server/tests/receipt-cross-authority-phantom-postgres.integration.test.mjs`. The audit job completed its migrations, cashier licensing, billing/refunds/duplicate-event, Meta/AI, restricted schema restore, and Node.js 22 compatibility stages successfully. The green billing stage is CI-level evidence for the newly included regression, not evidence of a hosted rollout.
+- **P0 remains NO-GO:** hosted Railway runtime role is unverified; hosted migration ledger and 0034 trigger state are unverified; actual API-level cross-tenant negative acceptance for sensitive non-RLS tables is open; release deployment and owner approval are pending.
+- No hosted migrations, role changes, merge, or deployment were performed as part of this verification.
