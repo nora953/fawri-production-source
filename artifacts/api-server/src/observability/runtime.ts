@@ -29,9 +29,10 @@ export function assertSafePostgresRuntimeRole(row: {
   role_name?: unknown; is_superuser?: unknown;
   bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
   session_role_name?: unknown; session_is_superuser?: unknown; session_bypass_rls?: unknown;
+  session_can_create_role?: unknown; session_inherits_privileged_role?: unknown;
   session_can_set_privileged_role?: unknown;
 } | undefined): void {
-  if (!row || typeof row.role_name !== "string" || !row.role_name.trim() || row.is_superuser !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false || typeof row.session_role_name !== "string" || !row.session_role_name.trim() || row.session_is_superuser !== false || row.session_bypass_rls !== false || row.session_can_set_privileged_role !== false) {
+  if (!row || typeof row.role_name !== "string" || !row.role_name.trim() || row.is_superuser !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false || typeof row.session_role_name !== "string" || !row.session_role_name.trim() || row.session_is_superuser !== false || row.session_bypass_rls !== false || row.session_can_create_role !== false || row.session_inherits_privileged_role !== false || row.session_can_set_privileged_role !== false) {
     throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
   }
   assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
@@ -48,6 +49,12 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
         session_role.rolname AS session_role_name,
         session_role.rolsuper AS session_is_superuser,
         session_role.rolbypassrls AS session_bypass_rls,
+        session_role.rolcreaterole AS session_can_create_role,
+        EXISTS (
+          SELECT 1 FROM pg_roles privileged
+          WHERE (privileged.rolsuper OR privileged.rolbypassrls)
+            AND pg_has_role(session_role.oid, privileged.oid, 'USAGE')
+        ) AS session_inherits_privileged_role,
         EXISTS (
           SELECT 1 FROM pg_roles privileged
           WHERE (privileged.rolsuper OR privileged.rolbypassrls)
