@@ -31,3 +31,9 @@ Commit `15460b98f17047d5d780af5efa4fb4c4ce5bda8c`: **41/41 GitHub Actions workfl
 ## 2026-10-19 receipt inbox and cross-authority source contracts
 
 Commit `8bdb0921382de10c5a80a869c4a30cf04ef5b1c2` adds source assertions for receipt inbox event-key collision handling (migration 0029) and cross-authority lookup inputs (migration 0031). First observed commit CI snapshot: 5/41 succeeded, 16 running, 20 pending/queued, no failures. These checks do **not** prove uniqueness of checkout/request references or a two-session race-safe outcome. P0 NO-GO.
+
+## 2026-10-19 latest HEAD CI and isolated Neon read-only evidence
+
+Branch HEAD `7f6dfb35e1dc5df53d1f0ae0d6d4678576adcac3` completed **41/41 GitHub Actions SUCCESS** (zero failed, cancelled or pending). This is CI acceptance only, not hosted replay race proof.
+
+Read-only query against isolated Neon branch `br-snowy-voice-b1bovtwi` returned `current_user=neondb_owner`, `drizzle.__drizzle_migrations` row count `28`, and `pg_indexes` matches for `provider_checkout_ref` and `provider_request_id` on `public.saas_billing_orders` / `public.cashier_billing_orders` each `0`. This is an index-definition search, not an exhaustive constraint or transaction-safety proof. Repo journal records 34 migrations through 0033; hosted clone is behind. The connected role is owner and cannot establish least-privilege runtime acceptance. No SQL writes or deployments performed. Remaining: disposable migration application with explicit authorization, deterministic two-session concurrency tests and runtime-role verification. **P0 NO-GO.**
