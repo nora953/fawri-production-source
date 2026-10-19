@@ -27,3 +27,13 @@ Connected as `fawri_staging_runtime`, transaction-local `SET ROLE fawri_staging_
 ## CI evidence for this documentation commit
 
 Exact commit `05ab105331d8d233d3b7d4d1b53c9f34d0f4d511` was queried after the report was created. GitHub returned 41 workflow runs: **6 success, 17 in progress, 18 queued** at observation time. This is **not** 41/41 green and is not a release acceptance. Historical code commit `c2d13827184d2917a767b1584c44ef47e38f0eb8` independently returned 41/41 success. The current documentation update triggers a new SHA and requires its own final CI check.
+
+## Follow-up exact-SHA CI and API evidence reconciliation
+
+- Commit `05ab105331d8d233d3b7d4d1b53c9f34d0f4d511`: 41 runs observed, **12 success, 3 in progress, 26 cancelled** at follow-up. It is not green; many runs were superseded by a newer commit.
+- Commit `f9514ad15e3104e6c18afc8b8c7962e259690c9e`: 41 runs observed, **6 success, 15 in progress, 15 queued, 5 pending** at follow-up. Final status still unknown.
+- `global-merchant-postgres-http-journey.integration.test.ts` has cross-merchant 404 assertions for ordinary order detail, status, payment status, confirm, reject and conflict resolution (source lines 303–342); foreign order list exclusion (357–361). These cover selected API paths, **not direct `order_items` table RLS**.
+- `merchant-session-restricted-http-postgres.integration.test.mjs` contains a cross-merchant revoke denial case (source line 87), complementing the existing tenant test inventory.
+- `cashier-operator-own-history-scope-postgres.integration.test.ts` exercises operator history scoping but must not be mistaken for cross-merchant operator-session acceptance.
+
+Next engineering work: identify exact production/staging gate activation, trace all callers of `withMerchantOperationalTransaction` to verified session authority, and add disposable negative tests for direct `order_items` and cross-merchant cashier sessions. No hosted role/migration/deploy changes.
