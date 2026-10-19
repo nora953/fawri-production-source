@@ -71,6 +71,12 @@ jobs:
           artifacts/api-server/tests/production-release-readiness.test.ts
           artifacts/api-server/tests/production-postgres-rls-security.test.ts
 
+      - name: Prove operational PostgreSQL transaction lifecycle failure handling
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/operational-postgres-tenant-context.test.ts
+          artifacts/api-server/tests/operational-postgres-transaction-lifecycle.test.ts
+
       - name: Validate online report query budget contract
         run: node --test artifacts/api-server/tests/online-report-query-budget.test.mjs
 
