@@ -48,3 +48,11 @@ All synthetic writes and policy experiments were performed on the disposable Neo
 - Confirm both current_user and session_user of the application's **actual authenticated connection**, not an impersonated transaction, and execute both production RLS readiness and observability PostgreSQL authority checks.
 - Verify default deny without tenant context, own-tenant SELECT/INSERT/UPDATE/DELETE where required, and cross-tenant denial using two synthetic merchants in an isolated environment. Record SQLSTATE and effective rows. Ensure the app's background workers and cashier/AI inventory paths remain separately scoped.
 - Rollout needs an explicit reversible migration plan and credential rotation; do not make privilege changes in production or staging during this audit.
+
+## Direct-login Neon provisioning experiment — 2026-10-19
+- CI for e50f38be96a497cbb120942bada6ae92ee0b3f19: 41/41 completed successfully.
+- On disposable Neon branch br-billowing-leaf-b14yamgu only, created LOGIN fawri_p0_direct_login_audit_20261019 using Neon role creation. Direct current_user and session_user both matched the new login.
+- **FAIL:** New login has BYPASSRLS=true and CREATEROLE=true, and inherited SET-enabled membership in neon_superuser. It is unsafe for application traffic; do not use its credentials in staging/production.
+- Attempts to ALTER ROLE ... NOBYPASSRLS and REVOKE neon_superuser from this test login using fawri_staging_runtime failed with permission denied. No privilege reduction was applied.
+- Existing fawri_staging_rls_runtime remains NOLOGIN, NOBYPASSRLS, NOCREATEROLE. SET ROLE from a privileged session does not establish a safe direct login.
+- **Remaining P0 blocker:** provision a direct LOGIN without privileged memberships and verify effective privileges using its own authenticated session. Escalate to a supported Neon administrative provisioning path rather than weaken the runtime safety gate. Test-only account should be retired in a reviewed cleanup.
