@@ -47,3 +47,13 @@ No hosted migration, privilege change, deployment or merge is authorized by this
 A second exact-SHA GitHub Actions read confirmed **41 completed / 41 success / 0 failed** for commit `425f639254df6757dcdce6e65846f8657831823e`. The isolated PostgreSQL audit workflow run `39194796136` completed successfully, including the billing, restricted-role, Meta/AI, schema restore and Node.js 22 steps. This revision adds independent request-only and payment-only collision assertions to the disposable PostgreSQL billing test, each expecting SQLSTATE `23514` and a single surviving owner. These are **UPDATE-based collision tests**, not INSERT-race proofs.
 
 **Remaining migration 0034 gaps:** simultaneous cross-authority INSERT collisions, reverse-order two-key advisory-lock deadlock resistance, and pre-activation duplicate detection. These are not cleared by the green CI. Hosted identity, schema alignment, non-RLS API isolation and deployment approval blockers above remain open. No production rollout is authorized.
+
+## Read-only Railway staging check — 2026-10-19
+
+- Railway project `fawri-staging`, environment `production`, service `fawri-web` was inventoried read-only.
+- Live source is repository `nora953/fawri-production-source`, branch `main`; latest deployment `11f22954-446b-49ef-adc6-38aca7c08bff` reported `SUCCESS`, created `2026-10-10T22:22:49.599Z`.
+- Railway environment status returned one service, zero issues and zero failures; no pending staged work was reported.
+- The connected Railway integration returned environment-variable names only (`valuesRedacted=true`). It exposed the name `DATABASE_URL` but not its value, so the effective database role and privileges **could not be verified**. No credentials were read back or exposed, and no variables/configuration were changed.
+- This environment is named `production` inside the Railway project `fawri-staging`; do not assume it represents the actual customer-facing production environment without owner confirmation.
+
+**Disposition:** runtime health snapshot is clean, but database identity remains NOT VERIFIED. This does not close the hosted runtime privilege gate. No deployment or hosted database change was made.
