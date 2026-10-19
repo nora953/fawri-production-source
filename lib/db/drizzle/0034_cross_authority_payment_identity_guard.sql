@@ -1,5 +1,7 @@
 -- P0: a provider identity may resolve to at most one billing authority.
 -- Database-enforced identity ownership covers direct SQL writers as well as API writers.
+-- Acquire a shared identity namespace lock for each provider reference. Order updates
+-- that share a reference serialize even when they target different tables.
 -- A transaction-scoped advisory lock serializes all changes sharing either identity.
 -- Both references are guarded separately because the resolver matches with OR.
 CREATE FUNCTION public.fawri_guard_provider_order_identity()
@@ -14,7 +16,7 @@ DECLARE
   lock_key text;
   matches integer;
 BEGIN
-  IF TG_OP = 'UPDATE' THEN
+  IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
     old_payment := CASE WHEN OLD.provider='superqi_sandbox' THEN OLD.provider_checkout_ref ELSE NULL END;
     old_request := CASE WHEN OLD.provider='superqi_sandbox' THEN OLD.metadata->>'provider_request_id' ELSE NULL END;
   END IF;
