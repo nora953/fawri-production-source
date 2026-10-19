@@ -41,3 +41,21 @@ test('P0 resolver advisory lock is present but replay review does not yet share 
   }
   // This records an unresolved concurrency gate; it does not certify race safety.
 });
+
+
+test('P0 receipt inbox identity is unique per provider event and refuses collisions', () => {
+  const inbox = readFileSync(new URL('../../lib/db/drizzle/0029_verified_provider_payment_receipts.sql', import.meta.url), 'utf8');
+  assert.match(inbox, /PRIMARY KEY\s*\(\s*provider\s*,\s*provider_event_id\s*\)/);
+  assert.match(inbox, /ON CONFLICT\s*\(\s*provider\s*,\s*provider_event_id\s*\)\s*DO NOTHING/);
+  assert.match(inbox, /FOR UPDATE/);
+  assert.match(inbox, /verified payment receipt identity collision/);
+});
+
+test('P0 replay order lookup references lack a demonstrated cross-authority uniqueness guarantee', () => {
+  const review = readFileSync(new URL('../../lib/db/drizzle/0031_audited_receipt_replay_reviews.sql', import.meta.url), 'utf8');
+  for (const field of ['provider_checkout_ref', "metadata->>'provider_request_id'"]) {
+    assert.ok(review.includes(field), 'Missing reviewed matching field: ' + field);
+  }
+  assert.match(review, /UNION ALL/);
+  // These are source observations only; no assertion that concurrency is safe.
+});
