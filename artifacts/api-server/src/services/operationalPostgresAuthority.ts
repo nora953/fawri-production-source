@@ -67,8 +67,9 @@ export async function operationalQueryRows<T extends Record<string, unknown>>(
 
 export async function withOperationalTransaction<T>(
   work: (client: OperationalTransactionClient) => Promise<T>,
+  poolOverride?: OperationalDatabasePool,
 ): Promise<T> {
-  const pool = await operationalDatabasePool();
+  const pool = poolOverride ?? await operationalDatabasePool();
   const client = await pool.connect();
   let discardClient = false;
   let transactionStarted = false;
