@@ -351,6 +351,18 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     body: JSON.stringify({ expected_version: 1 }),
   });
   assert.equal(anonymousPaymentConfirm.status, 401);
+  const anonymousPaymentReject = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/payment/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, reason: "unauthorized" }),
+  });
+  assert.equal(anonymousPaymentReject.status, 401);
+  const anonymousConflictResolution = await fetch(`${baseUrl}/api/orders/${crypto.randomUUID()}/payment/conflict/resolve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, resolution_note: "unauthorized" }),
+  });
+  assert.equal(anonymousConflictResolution.status, 401);
 
   const subscription = await fetch(`${baseUrl}/api/auth/subscription/current`, {
     headers: { Cookie: merchantACookie },
