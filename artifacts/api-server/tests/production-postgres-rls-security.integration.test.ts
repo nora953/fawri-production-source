@@ -286,4 +286,47 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     });
   }
 
+
+  await t.test("tenant context cannot leak between sequential transactions on the same pooled connection", async () => {
+    // The same physical client is reused for both merchants. This is stronger
+    // than a source-only assertion about set_config(..., true).
+    await client.query("BEGIN");
+    try {
+      await client.query("SELECT set_config('fawri.tenant_id', $1, true)", ["merchant-a-isolation-probe"]);
+      const tenantA = await client.query<{ own: boolean; foreign: boolean }>(
+        "SELECT public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe') AS own, public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe') AS foreign",
+      );
+      assert.equal(tenantA.rows[0]?.own, true);
+      assert.equal(tenantA.rows[0]?.foreign, false);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    }
+
+    const afterCommit = await client.query<{ context: string }>(
+      "SELECT current_setting('fawri.tenant_id', true) AS context",
+    );
+    assert.equal(afterCommit.rows[0]?.context || "", "", "merchant A context must not survive commit");
+
+    await client.query("BEGIN");
+    try {
+      await client.query("SELECT set_config('fawri.tenant_id', $1, true)", ["merchant-b-isolation-probe"]);
+      const tenantB = await client.query<{ own: boolean; foreign: boolean }>(
+        "SELECT public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe') AS own, public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe') AS foreign",
+      );
+      assert.equal(tenantB.rows[0]?.own, true);
+      assert.equal(tenantB.rows[0]?.foreign, false);
+      await client.query("ROLLBACK");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    }
+
+    const afterRollback = await client.query<{ context: string }>(
+      "SELECT current_setting('fawri.tenant_id', true) AS context",
+    );
+    assert.equal(afterRollback.rows[0]?.context || "", "", "merchant B context must not survive rollback");
+  });
+
 });
