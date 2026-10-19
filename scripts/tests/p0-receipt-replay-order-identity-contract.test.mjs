@@ -59,3 +59,13 @@ test('P0 replay order lookup references lack a demonstrated cross-authority uniq
   assert.match(review, /UNION ALL/);
   // These are source observations only; no assertion that concurrency is safe.
 });
+
+test('P0 replay review has two separate cross-authority candidate scans', () => {
+  const review = readFileSync(new URL('../../lib/db/drizzle/0031_audited_receipt_replay_reviews.sql', import.meta.url), 'utf8');
+  const countScan = review.indexOf('SELECT count(*) INTO matches');
+  const detailScan = review.indexOf('SELECT candidates.*,count(*) OVER ()');
+  assert.ok(countScan >= 0 && detailScan > countScan);
+  assert.equal((review.match(/UNION ALL/g) || []).length, 2);
+  assert.doesNotMatch(review, /pg_advisory_xact_lock/);
+  // Structural regression only: does not certify absence of a concurrent phantom.
+});
