@@ -57,3 +57,24 @@ for (const phase of ["BEGIN", "COMMIT"] as const) {
     assert.ok(m.queries.includes("ROLLBACK"));
   });
 }
+
+test("successful rollback never disguises the original work failure", async () => {
+  const m = mockPool();
+  const original = new Error("merchant work rejected");
+  await assert.rejects(
+    () => withOperationalTransaction(async () => { throw original; }, m.pool),
+    (error: unknown) => error === original,
+  );
+  assert.deepEqual(m.queries, ["BEGIN", "ROLLBACK"]);
+  assert.deepEqual(m.releases, [false]);
+});
+
+test("rollback failure does not mask the original error object", async () => {
+  const m = mockPool("ROLLBACK");
+  const original = new Error("merchant work rejected");
+  await assert.rejects(
+    () => withOperationalTransaction(async () => { throw original; }, m.pool),
+    (error: unknown) => error === original,
+  );
+  assert.deepEqual(m.releases, [true]);
+});
