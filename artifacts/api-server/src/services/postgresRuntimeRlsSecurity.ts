@@ -68,6 +68,8 @@ export type ProductionDatabaseRlsReadiness = {
   sessionRoleName: string;
   sessionSuperuser: boolean;
   sessionBypassRls: boolean;
+  sessionCreateRole: boolean;
+  sessionInheritedPrivilegedRoles: string[];
   sessionOwnedTables: string[];
   sessionReachablePrivilegedRoles: string[];
   // Legacy field names retained for callers; include capability-only tables.
@@ -109,6 +111,8 @@ export async function getProductionDatabaseRlsReadiness(
     session_role_name: string;
     session_role_superuser: boolean;
     session_role_bypass_rls: boolean;
+    session_role_create_role: boolean;
+    session_inherited_privileged_roles: string[] | null;
     session_owned_tables: string[] | null;
     session_reachable_privileged_roles: string[] | null;
     owned_tenant_tables: string[] | null;
@@ -124,7 +128,7 @@ export async function getProductionDatabaseRlsReadiness(
         WHERE rolname = current_user
      ),
      session_role_state AS (
-       SELECT oid, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = session_user
+       SELECT oid, rolsuper, rolbypassrls, rolcreaterole FROM pg_roles WHERE rolname = session_user
      ),
      table_state AS (
        SELECT
@@ -160,8 +164,14 @@ export async function getProductionDatabaseRlsReadiness(
          WHERE (privileged.rolsuper OR privileged.rolbypassrls)
            AND pg_has_role((SELECT oid FROM session_role_state), privileged.oid, 'SET')),
          ARRAY[]::text[]) AS session_reachable_privileged_roles,
+       COALESCE((SELECT array_agg(privileged.rolname::text ORDER BY privileged.rolname)
+         FROM pg_roles privileged
+         WHERE (privileged.rolsuper OR privileged.rolbypassrls)
+           AND pg_has_role((SELECT oid FROM session_role_state), privileged.oid, 'USAGE')),
+         ARRAY[]::text[]) AS session_inherited_privileged_roles,
        current_user AS role_name,
        session_user AS session_role_name,
+       COALESCE((SELECT rolcreaterole FROM session_role_state), TRUE) AS session_role_create_role,
        COALESCE((SELECT rolsuper FROM session_role_state), TRUE) AS session_role_superuser,
        COALESCE((SELECT rolbypassrls FROM session_role_state), TRUE) AS session_role_bypass_rls,
        COALESCE((SELECT array_agg(name ORDER BY name) FROM table_state
@@ -198,6 +208,8 @@ export async function getProductionDatabaseRlsReadiness(
     sessionRoleName: String(row.session_role_name).trim(),
     sessionSuperuser: booleanValue(row.session_role_superuser),
     sessionBypassRls: booleanValue(row.session_role_bypass_rls),
+    sessionCreateRole: booleanValue(row.session_role_create_role),
+    sessionInheritedPrivilegedRoles: stringArray(row.session_inherited_privileged_roles),
     sessionOwnedTables: stringArray(row.session_owned_tables),
     sessionReachablePrivilegedRoles: stringArray(row.session_reachable_privileged_roles),
     ownedTenantTables: stringArray(row.owned_tenant_tables),
@@ -260,6 +272,14 @@ export async function assertProductionDatabaseRlsReady(
   if (readiness.sessionBypassRls) {
     fail("PRODUCTION_DATABASE_SESSION_BYPASSRLS_FORBIDDEN",
       "production authenticated database role must not bypass row-level security");
+  }
+  if (readiness.sessionCreateRole) {
+    fail("PRODUCTION_DATABASE_SESSION_CREATEROLE_FORBIDDEN",
+      "production authenticated database role must not create or alter roles");
+  }
+  if (readiness.sessionInheritedPrivilegedRoles.length > 0) {
+    fail("PRODUCTION_DATABASE_INHERITED_PRIVILEGED_ROLE_FORBIDDEN",
+      "production authenticated database role must not inherit privileged roles");
   }
   if (readiness.sessionOwnedTables.length > 0) {
     fail("PRODUCTION_DATABASE_SESSION_TABLE_OWNER_FORBIDDEN",
