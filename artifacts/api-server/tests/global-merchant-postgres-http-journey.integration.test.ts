@@ -349,6 +349,16 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.equal(ordinaryOrderAfterDenials.rows[0].payment_status, "cash_on_delivery");
   assert.equal(Number(ordinaryOrderAfterDenials.rows[0].version), 1);
 
+  const ordinaryOwnerList = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(ordinaryOwnerList.status, 200);
+  assert.equal((await json(ordinaryOwnerList)).orders.some((order: any) => order.id === ordinaryOrderId), true);
+  const ordinaryForeignList = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(ordinaryForeignList.status, 200);
+  assert.equal((await json(ordinaryForeignList)).orders.some((order: any) => order.id === ordinaryOrderId), false);
   const foreignOrdersA = await fetch(`${baseUrl}/api/orders/${merchantBId}`, {
     headers: { Cookie: merchantACookie },
   });
