@@ -337,6 +337,20 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     );
     assert.equal(unscopedB.rows[0]?.a, false, "merchant A must not be authorized after rollback");
     assert.equal(unscopedB.rows[0]?.b, false, "merchant B must not remain authorized after rollback");
+
+    // A fresh transaction on the reused connection starts without either
+    // tenant's authority, even before a new tenant context is installed.
+    await client.query("BEGIN");
+    try {
+      const fresh = await client.query<{ a: boolean; b: boolean }>(
+        "SELECT COALESCE(public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe'), false) AS a, COALESCE(public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe'), false) AS b",
+      );
+      assert.equal(fresh.rows[0]?.a, false);
+      assert.equal(fresh.rows[0]?.b, false);
+    } finally {
+      await client.query("ROLLBACK");
+    }
+
   });
 
 });
