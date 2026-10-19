@@ -307,6 +307,22 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.equal(ownOrdersB.status, 200);
   assert.equal((await json(ownOrdersB)).merchant_id, merchantBId);
 
+  const unscopedOrdersA = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(unscopedOrdersA.status, 200);
+  const unscopedOrdersABody = await json(unscopedOrdersA);
+  assert.equal(unscopedOrdersABody.merchant_id, merchantAId);
+  assert.equal(unscopedOrdersABody.orders.every((order: any) => order.merchant_id === merchantAId), true);
+
+  const unscopedOrdersB = await fetch(`${baseUrl}/api/orders`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(unscopedOrdersB.status, 200);
+  const unscopedOrdersBBody = await json(unscopedOrdersB);
+  assert.equal(unscopedOrdersBBody.merchant_id, merchantBId);
+  assert.equal(unscopedOrdersBBody.orders.every((order: any) => order.merchant_id === merchantBId), true);
+
   const subscription = await fetch(`${baseUrl}/api/auth/subscription/current`, {
     headers: { Cookie: merchantACookie },
   });
