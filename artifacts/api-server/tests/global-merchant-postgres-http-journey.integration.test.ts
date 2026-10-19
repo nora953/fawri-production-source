@@ -720,6 +720,25 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.equal(canonicalOrder.rows[0].payment_status, "paid");
   assert.equal(Number(canonicalOrder.rows[0].total_iqd), productPrice);
 
+  const foreignCashierOrderDetail = await fetch(`${baseUrl}/api/order/${saleId}`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(foreignCashierOrderDetail.status, 404);
+  assert.equal((await json(foreignCashierOrderDetail)).code, "ORDER_NOT_FOUND");
+  const foreignCashierOrderMutation = await fetch(`${baseUrl}/api/orders/${saleId}/status`, {
+    method: "PATCH",
+    headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
+    body: JSON.stringify({ expected_version: 1, status: "cancelled" }),
+  });
+  assert.equal(foreignCashierOrderMutation.status, 404);
+  assert.equal((await json(foreignCashierOrderMutation)).code, "ORDER_NOT_FOUND");
+  const unchangedCashierOrder = await pool.query(
+    "SELECT status::text AS status, payment_status::text AS payment_status FROM orders WHERE merchant_id = $1 AND id = $2",
+    [merchantAId, saleId],
+  );
+  assert.equal(unchangedCashierOrder.rows[0].status, "delivered");
+  assert.equal(unchangedCashierOrder.rows[0].payment_status, "paid");
+
   const merchantReport = await fetch(`${baseUrl}/api/cashier/management/report`, {
     headers: { Cookie: merchantACookie },
   });
