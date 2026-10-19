@@ -9,3 +9,9 @@ Priority B: sole production TypeScript direct database_admin_access_audits INSER
 Priority C remains infrastructure-blocked: restricted role NOLOGIN; staging LOGIN has BYPASSRLS+CREATEROLE. Earlier Neon-created unsafe login experiment was already cleaned up. Do not repeat role creation. Any SET ROLE proof is not direct-login certification.
 
 Neon permitted target only: round-fire-18493605 / br-billowing-leaf-b14yamgu / neondb. Do not touch parent/default/staging/production. No merge/deploy. NO-GO until security gates and hosted acceptance are proven. Keep cashier and AI replies separate. Every batch: hypothesis -> evidence -> small tests -> GitHub commit -> checkpoint/handoff -> verify SHA. Do not rely on conversation history or lost scratch state.
+
+## Readiness evidence parsing milestone
+
+Recovery remote commit verified: 6394d2d0d0e94bceb164ba17890d4e99483c7daa. The containing code batch fixes implicit safe defaults for missing/malformed PostgreSQL role evidence. Added regressions reproduced 10 PASS / 2 FAIL before the fix; readiness + SuperQi transport/source-contract suite passed 18/18 afterward, zero skips. See P0-PAYMENT-ADMISSION-AND-AUDIT-BOUNDARY-20261019.md. Check CI for the containing commit before claiming fresh CI success.
+
+Next exact task: synthetic isolated audit-record forgery/reuse proof and preserve legitimate directory/receipt-reader workflows; no hosted writes. Dependency install offline was blocked by missing mirror metadata; local unit tests use the retained tsx 4.22.0 loader. Docker unavailable locally; use the repository's guarded isolated CI for DB integration, never bypass its attestation.

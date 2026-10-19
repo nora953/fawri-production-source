@@ -31,6 +31,8 @@ function safeRow(overrides: Record<string, unknown> = {}) {
     session_role_name: "fawri_runtime",
     session_role_superuser: false,
     session_role_bypass_rls: false,
+    session_role_create_role: false,
+    session_inherited_privileged_roles: [],
     session_owned_tables: [],
     session_reachable_privileged_roles: [],
     role_superuser: false,
@@ -149,4 +151,34 @@ test("production rejects a privileged authenticated session behind a restricted 
 test("production rejects a session able to activate a privileged role", async () => {
   await rejectsWith("PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE",
     safeRow({ session_reachable_privileged_roles: ["isolated_bypass_role"] }));
+});
+
+test("production fails closed on absent or malformed role safety booleans", async () => {
+  for (const field of [
+    "role_superuser", "role_bypass_rls", "session_role_superuser",
+    "session_role_bypass_rls", "session_role_create_role",
+  ]) {
+    for (const value of [undefined, null, "false", "true", 0, 1, {}, []]) {
+      await rejectsWith("PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED", safeRow({ [field]: value }));
+    }
+  }
+});
+
+test("production fails closed on absent or malformed privilege inventories", async () => {
+  for (const field of [
+    "session_inherited_privileged_roles", "session_owned_tables",
+    "session_reachable_privileged_roles", "owned_tenant_tables",
+    "missing_or_unprotected_tenant_tables",
+  ]) {
+    for (const value of [undefined, null, "{}", {}, [null], [""], ["   "], [false], [0]]) {
+      await rejectsWith("PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED", safeRow({ [field]: value }));
+    }
+  }
+});
+
+test("production rejects CREATEROLE and inherited privileged membership with complete evidence", async () => {
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_CREATEROLE_FORBIDDEN",
+    safeRow({ session_role_create_role: true }));
+  await rejectsWith("PRODUCTION_DATABASE_INHERITED_PRIVILEGED_ROLE_FORBIDDEN",
+    safeRow({ session_inherited_privileged_roles: ["isolated_bypass_role"] }));
 });

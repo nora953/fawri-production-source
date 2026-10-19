@@ -92,12 +92,24 @@ function fail(code: string, message: string): never {
 }
 
 function booleanValue(value: unknown): boolean {
-  return value === true || value === 1 || value === "1" || value === "t" || value === "true";
+  // node-postgres returns native booleans for these catalog expressions.
+  // Missing or unparsed evidence must never become an implicit safe false.
+  if (typeof value !== "boolean") {
+    fail("PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED",
+      "production database role safety evidence is incomplete or invalid");
+  }
+  return value;
 }
 
 function stringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((item) => String(item || "").trim()).filter(Boolean);
+  // The SQL explicitly COALESCEs inventories to text[]. An unknown inventory
+  // is not proof that the session has no privileged roles or table ownership.
+  if (!Array.isArray(value) || value.some((item) =>
+    typeof item !== "string" || !item.trim())) {
+    fail("PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED",
+      "production database privilege inventory is incomplete or invalid");
+  }
+  return value.map((item) => item.trim());
 }
 
 export async function getProductionDatabaseRlsReadiness(
