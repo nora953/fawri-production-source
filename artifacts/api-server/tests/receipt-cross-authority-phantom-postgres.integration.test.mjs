@@ -158,5 +158,32 @@ test('cross-authority identity guard rejects second writer in READ COMMITTED',as
     const count=(await pool.query(sql,[scenario.payment,scenario.request])).rows[0].n;
     assert.equal(count,1,`${scenario.label} collision must not create a second owner`);
   }
+  // A committed owner must retain its identity when a competing transaction
+  // attempts to delete/reassign ownership and then rolls back. This verifies
+  // that DELETE participates in the same transactional identity lock protocol.
+  const transfer=await pool.connect();
+  try {
+    await transfer.query('BEGIN');
+    await transfer.query('DELETE FROM saas_billing_orders WHERE id=$1',[bot.order.id]);
+    await transfer.query(
+      "UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",
+      [cash.order.id,freshPayment,JSON.stringify({provider_request_id:freshRequest})],
+    );
+    const inTransfer=(await transfer.query(sql,[freshPayment,freshRequest])).rows[0].n;
+    assert.equal(inTransfer,1,'transfer transaction must have exactly one visible identity owner');
+    await transfer.query('ROLLBACK');
+    const afterRollback=(await pool.query(sql,[freshPayment,freshRequest])).rows[0].n;
+    assert.equal(afterRollback,1,'rollback must restore original provider identity ownership');
+    const originalOwner=(await pool.query(
+      "SELECT id FROM saas_billing_orders WHERE id=$1 AND provider_checkout_ref=$2",
+      [bot.order.id,freshPayment],
+    )).rowCount;
+    assert.equal(originalOwner,1,'rolled-back transfer must preserve original SaaS order');
+    console.log('P0_PROVIDER_IDENTITY_TRANSFER_ROLLBACK '+JSON.stringify({inTransfer,afterRollback,originalOwner}));
+  } finally {
+    // ROLLBACK is safe even if the transaction already ended; never leak a client.
+    await transfer.query('ROLLBACK');
+    transfer.release();
+  }
   console.log('P0_CROSS_AUTHORITY_IDENTITY_GUARDED '+JSON.stringify({first,second,writerSqlstate:collision.code,readerIsolation:'read committed',scope:'database write-path protection'}));
 });
