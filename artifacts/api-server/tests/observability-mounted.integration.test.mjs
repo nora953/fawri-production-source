@@ -83,14 +83,24 @@ async function startApi(databaseUrl) {
       FAWRI_OBSERVABILITY_BEARER_TOKEN: metricsToken,
     },
     stdio: ["ignore", "pipe", "pipe"],
+    detached: process.platform !== "win32",
   });
   child.stdout.on("data", (chunk) => output.push(String(chunk)));
   child.stderr.on("data", (chunk) => output.push(String(chunk)));
 
+  const stopProcess = (signal) => {
+    if (process.platform !== "win32" && child.pid) {
+      try { process.kill(-child.pid, signal); return; } catch (error) {
+        if (error?.code !== "ESRCH") throw error;
+      }
+    }
+    if (child.exitCode === null) child.kill(signal);
+  };
+
   try {
     await waitForServer(port, child, output);
   } catch (error) {
-    child.kill("SIGKILL");
+    stopProcess("SIGKILL");
     await rm(dataDir, { recursive: true, force: true });
     throw error;
   }
@@ -100,12 +110,12 @@ async function startApi(databaseUrl) {
     metricsToken,
     async stop() {
       if (child.exitCode === null) {
-        child.kill("SIGTERM");
+        stopProcess("SIGTERM");
         await Promise.race([
           new Promise((resolve) => child.once("exit", resolve)),
           new Promise((resolve) => setTimeout(resolve, 3000)),
         ]);
-        if (child.exitCode === null) child.kill("SIGKILL");
+        if (child.exitCode === null) stopProcess("SIGKILL");
       }
       await rm(dataDir, { recursive: true, force: true });
     },
@@ -122,7 +132,7 @@ const expectedReadyChecks = [
   { name: "production_release_configuration", status: "up" },
 ];
 
-test("real app mounts bounded observability routes and protects metrics", async () => {
+test("real app mounts bounded observability routes and protects metrics", { timeout: 30_000 }, async () => {
   const databaseUrl = String(process.env.DATABASE_URL || "").trim();
   assert.match(databaseUrl, /^postgres(?:ql)?:\/\//i, "disposable PostgreSQL DATABASE_URL is required");
   const server = await startApi(await restrictedTestDatabaseUrl(databaseUrl));
@@ -168,7 +178,7 @@ test("real app mounts bounded observability routes and protects metrics", async 
   }
 });
 
-test("real app readiness fails closed when PostgreSQL authority is unavailable", async () => {
+test("real app readiness fails closed when PostgreSQL authority is unavailable", { timeout: 30_000 }, async () => {
   const databaseUrl = String(process.env.DATABASE_URL || "").trim();
   assert.match(databaseUrl, /^postgres(?:ql)?:\/\//i, "disposable PostgreSQL DATABASE_URL is required");
   const unavailablePort = await freePort();
