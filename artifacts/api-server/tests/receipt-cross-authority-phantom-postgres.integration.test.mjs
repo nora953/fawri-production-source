@@ -55,5 +55,41 @@ test('cross-authority identity guard rejects second writer in READ COMMITTED',as
   const second=(await reader.query(sql,[payment,request])).rows[0].n;
   assert.equal(second,1,'no competing order may commit under the database guard');
   await reader.query('ROLLBACK');
+  // Two distinct pre-existing orders race to claim an initially unowned
+  // provider identity. The second writer must wait for the first commit and
+  // then fail closed; neither table can commit a duplicate.
+  const freshPayment=`concurrent-payment-${randomUUID()}`;
+  const freshRequest=`concurrent-request-${randomUUID()}`;
+  const owner=await pool.connect(),contender=await pool.connect();
+  let ownerOpen=false,contenderOpen=false;
+  try {
+    await owner.query('BEGIN');
+    ownerOpen=true;
+    await owner.query("UPDATE saas_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",[bot.order.id,freshPayment,JSON.stringify({provider_request_id:freshRequest})]);
+    await contender.query('BEGIN');
+    contenderOpen=true;
+    const pending=contender.query("UPDATE cashier_billing_orders SET provider='superqi_sandbox',provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1",[cash.order.id,freshPayment,JSON.stringify({provider_request_id:freshRequest})]).then(()=>null,error=>error);
+    const deadline=Date.now()+10000;
+    let blocked=false;
+    while(Date.now()<deadline){
+      const result=await pool.query("SELECT cardinality(pg_blocking_pids(pid)) AS blockers FROM pg_stat_activity WHERE pid=$1",[contender.processID]);
+      if(Number(result.rows[0]?.blockers)>0){blocked=true;break;}
+      await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    assert.equal(blocked,true,'competing first-time identity writer must wait for owner transaction');
+    await owner.query('COMMIT');
+    ownerOpen=false;
+    const rejected=await pending;
+    assert.equal(rejected?.code,'23514','second first-time writer must reject the committed owner');
+    await contender.query('ROLLBACK');
+    contenderOpen=false;
+    const owned=(await pool.query(sql,[freshPayment,freshRequest])).rows[0].n;
+    assert.equal(owned,1,'only one authority may commit the fresh provider identity');
+    console.log('P0_CONCURRENT_FIRST_WRITERS_GUARDED '+JSON.stringify({blocked,writerSqlstate:rejected.code,committedMatches:owned}));
+  } finally {
+    if(ownerOpen)await owner.query('ROLLBACK');
+    if(contenderOpen)await contender.query('ROLLBACK');
+    owner.release();contender.release();
+  }
   console.log('P0_CROSS_AUTHORITY_IDENTITY_GUARDED '+JSON.stringify({first,second,writerSqlstate:collision.code,readerIsolation:'read committed',scope:'database write-path protection'}));
 });
