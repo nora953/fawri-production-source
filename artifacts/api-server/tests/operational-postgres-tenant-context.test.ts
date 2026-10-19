@@ -42,3 +42,21 @@ test("tenant context is configured inside the transaction wrapper", () => {
   assert.match(tenantFunction, /return withOperationalTransaction\(async \(client\) => \{/);
   assert.doesNotMatch(tenantFunction, /operationalDatabasePool\(\)/);
 });
+
+test("runtime rejects invalid merchant IDs before acquiring a database connection", async () => {
+  const { withMerchantOperationalTransaction } = await import("../src/services/operationalPostgresAuthority");
+  for (const merchantId of ["", "   ", "x".repeat(201)]) {
+    let callbackCalled = false;
+    await assert.rejects(
+      () => withMerchantOperationalTransaction(merchantId, async () => {
+        callbackCalled = true;
+      }),
+      (error: unknown) => {
+        assert.equal((error as { code?: string }).code, "OPERATIONAL_TENANT_INVALID");
+        assert.equal((error as { status?: number }).status, 400);
+        return true;
+      },
+    );
+    assert.equal(callbackCalled, false, "invalid merchant ID must not execute tenant work");
+  }
+});
