@@ -1,0 +1,64 @@
+name: P0 markdown-it lockfile candidate
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/p0-markdown-it-lockfile-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p0-markdown-it-lockfile-candidate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout candidate source without persisted credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Prepare exact same-series security patch
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const path='pnpm-workspace.yaml',source=fs.readFileSync(path,'utf8');
+          const before="  'markdown-it@14.1.1': 14.3.1",after="  'markdown-it@14.1.1': 14.3.2";
+          assert.equal(source.split(before).length,2,'expected one existing pinned override');
+          assert.match(source,/^minimumReleaseAge: 1440$/m);
+          fs.writeFileSync(path,source.replace(before,after));
+          NODE
+      - name: Generate real pnpm lockfile without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label markdown-it-lockfile-regeneration -- pnpm install --lockfile-only --ignore-scripts
+      - name: Validate frozen install and package integrity without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label markdown-it-candidate-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Enforce unchanged security policy
+        run: node scripts/security-final-audit.mjs policy
+      - name: Require no High or Critical dependencies in generated candidate
+        run: node scripts/security-final-audit.mjs dependency
+      - name: Emit reviewable public lockfile candidate without repository write authority
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          const files=['pnpm-workspace.yaml','pnpm-lock.yaml'].map(path=>({path,content:fs.readFileSync(path,'utf8')}));
+          assert.ok(files[1].content.includes('markdown-it@14.3.2:'));
+          assert.ok(!files[1].content.includes('markdown-it@14.3.1:'));
+          const payload=JSON.stringify(files);
+          const sha256=crypto.createHash('sha256').update(payload).digest('hex');
+          const size=12000,total=Math.ceil(payload.length/size);
+          console.log('P0_LOCKFILE_CANDIDATE_META '+JSON.stringify({sha256,total,length:payload.length}));
+          for(let index=0;index<total;index++) console.log('P0_LOCKFILE_CANDIDATE '+JSON.stringify({index,chunk:payload.slice(index*size,(index+1)*size)}));
+          NODE
