@@ -3,7 +3,7 @@ set -euo pipefail
 # Only fresh Docker-owned PostgreSQL; no host DB URL or hosted credentials inherited.
 audit_suite="${1:-priority}"
 case "$audit_suite" in
-  priority|http|node22-http|knowledge-rls|meta|meta-rls|bootstrap|deletion|cashier|billing|tenant|meta-bot|full-restore) ;;
+  priority|http|node22-http|knowledge-rls|management|meta|meta-rls|bootstrap|deletion|cashier|billing|tenant|meta-bot|full-restore) ;;
   *) echo 'Unsupported audit suite' >&2; exit 2 ;;
 esac
 audit_node_image="node:24-bookworm-slim"

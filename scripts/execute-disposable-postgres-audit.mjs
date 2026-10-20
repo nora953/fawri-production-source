@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.mjs';
 const suites = {
   'knowledge-rls': ['knowledge-tenant-rls.integration.test.mjs'],
+  management: ['merchant-management-tenant-rls.integration.test.mjs'],
   'audit-boundary': ['tenant-transaction-scope-postgres.integration.test.mjs', 'authentication-operator-pool-postgres.integration.test.mjs', 'admin-audit-boundary-postgres.integration.test.mjs'],
   'full-restore': ['full-schema-restore-postgres.integration.test.mjs'],
   cashier: ['cashier-operator-profit-http-postgres.integration.test.mjs', 'cashier-historical-compensation-http-postgres.integration.test.mjs', 'cashier-closed-shift-recovery-http-postgres.integration.test.mjs', 'cashier-sync-multidevice-postgres.integration.test.mjs', 'cashier-billing-negative-failure-cases.integration.test.mjs', 'cashier-full-lifecycle-postgres.integration.test.ts', 'cashier-subscription-postgres.integration.test.ts', 'cashier-billing-postgres.integration.test.ts', 'cashier-downgrade-grace-postgres.integration.test.ts', 'cashier-historical-operation-postgres.integration.test.ts', 'cashier-operator-logout-pin-postgres.integration.test.ts', 'cashier-operator-own-history-scope-postgres.integration.test.ts', 'catalog-cashier-compensation-history-postgres.integration.test.ts'],

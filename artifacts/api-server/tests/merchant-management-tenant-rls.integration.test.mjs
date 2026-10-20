@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import {assertDisposablePostgres} from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+await assertDisposablePostgres();
 
 test("merchant management and retention use authoritative subscriptions under restricted RLS", { timeout: 60_000 }, async (t) => {
   const originalUrl = process.env.DATABASE_URL;

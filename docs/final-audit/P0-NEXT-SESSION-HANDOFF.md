@@ -1,5 +1,14 @@
 # FAWRI P0 next-session handoff
 
+## Strict fixture isolation correction — 2026-10-20T22:30:18.925760+00:00
+
+956c87aeb5eef6545b02a02a51d02bb2aea91f9a: isolated39507817926/job118921068956 SUCCESS with66 complete exit0/fail0/skip0/cancel0 invocations. Actual auth10/canonical restricted owner16/merchant management6 and all Meta restart/job suites PASS. Security39507817843 all4 jobs SUCCESS; dependency job118921069280 confirmsHigh0/Critical0/Moderate2.43/44 workflows SUCCESS; only Foundation39507817717 failed.
+
+Foundation's remaining failure is a strict attestation rejection: it still launched the management fixture directly in its legacy PostgreSQL service. The fixture now uses the guarded auth role helper, so it must run in the existing owned offline harness. This increment adds a single-test management suite, routes Foundation through that existing runner, and puts an explicit pre-import guard on the management entrypoint. Remote-target rejection includes this entrypoint. No guard/role assertion is weakened and no test is skipped.
+
+Local guard15/15 PASS, security-tooling19/19 PASS, shell/Node syntax and policy PASS with1440-minute release age unchanged. Corrected Foundation/full exact-source CI PENDING. Product source and generated dependency lock remain956c87ae's already-tested versions. Release NO-GO; original production GUC exploit remains open and six tenant writers still require integration/cutover.
+
+
 ## Follow-up corrections — 2026-10-20T22:23:29.030246+00:00
 
 6031de063bc216d90fc6ea84a1da098e9b79d735 completed39/44 SUCCESS,5 FAILURE. Canonical restricted-owner protocol16 PASS and actual auth-pool10 PASS, but merchant-management and three Meta restart/job fixtures still relied on shared tenant fallback for authentication. Preserve failures in evidence/P0-TRUSTED-AUTH-CALLER-ATTEMPT-20261021.json; no full acceptance of6031de06.

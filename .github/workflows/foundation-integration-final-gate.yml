@@ -166,9 +166,7 @@ jobs:
         run: bash scripts/run-isolated-postgres-audit.sh deletion
 
       - name: Prove merchant management and retention under restricted tenant RLS
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/merchant-management-tenant-rls.integration.test.mjs
+        run: bash scripts/run-isolated-postgres-audit.sh management
 
       - name: Prove Meta knowledge-gap notification under pool contention in an owned offline cluster
         # Full parent lifecycle includes the assertion that holds all but one
