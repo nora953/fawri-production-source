@@ -130,6 +130,7 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
       await setAudit(tenantOnly);
       assert.deepEqual(await visible(tenantOnly), tenants.slice(0, 2));
     });
+    assert.deepEqual(await visible(tenantOnly), [], 'admin settings must reset after initial bearer-use transaction');
     // Revoking table access alone does not bind existing authority to a session.
     await admin.query("UPDATE accounts SET state='suspended' WHERE id=$1", [actor]);
     assert.equal((await admin.query('SELECT state FROM accounts WHERE id=$1', [actor])).rows[0]?.state, 'suspended');
