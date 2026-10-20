@@ -289,14 +289,15 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   }
 
 
+  for (const capability of ["public.fawri_issue_admin_directory_audit(text,text,text)", "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)"])
   for (const mode of ["direct", "set-reachable", "unreachable"]) {
-    await t.test(`operator issuer ACL ${mode} cannot leak into tenant readiness`, async () => {
+    await t.test(`operator capability ${capability} ACL ${mode} cannot leak into tenant readiness`, async () => {
       const operatorRole = "fawri_directory_operator_probe";
       await client.query("RESET SESSION AUTHORIZATION");
       await client.query("BEGIN");
       try {
         await client.query(`CREATE ROLE ${operatorRole} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE`);
-        await client.query(`GRANT EXECUTE ON FUNCTION public.fawri_issue_admin_directory_audit(text,text,text) TO ${mode === "direct" ? probeRole : operatorRole}`);
+        await client.query(`GRANT EXECUTE ON FUNCTION ${capability} TO ${mode === "direct" ? probeRole : operatorRole}`);
         if (mode !== "direct") {
           await client.query(`GRANT ${operatorRole} TO ${probeRole} WITH INHERIT FALSE, SET ${mode === "set-reachable" ? "TRUE" : "FALSE"}`);
         }

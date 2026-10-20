@@ -1,3 +1,4 @@
+import { OPERATOR_DATABASE_CAPABILITIES } from "./operatorDirectoryPostgresAuthority";
 import {
   operationalDatabasePool,
   operationalQueryRows,
@@ -182,8 +183,9 @@ export async function getProductionDatabaseRlsReadiness(
              OR candidate_operator.oid = (SELECT oid FROM session_role_state)
              OR pg_has_role((SELECT oid FROM session_role_state), candidate_operator.oid, 'USAGE')
              OR pg_has_role((SELECT oid FROM session_role_state), candidate_operator.oid, 'SET'))
-           AND has_function_privilege(candidate_operator.oid,
-             to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)')::oid, 'EXECUTE')),
+           AND EXISTS (SELECT 1 FROM unnest($2::text[]) AS capability(signature)
+             WHERE has_function_privilege(candidate_operator.oid,
+               to_regprocedure(capability.signature)::oid, 'EXECUTE'))),
          ARRAY[]::text[]) AS operator_authority_roles,
        COALESCE((SELECT array_agg(privileged.rolname::text ORDER BY privileged.rolname)
          FROM pg_roles privileged
@@ -216,7 +218,7 @@ export async function getProductionDatabaseRlsReadiness(
            WHERE NOT table_exists OR NOT rls_enabled),
          ARRAY[]::text[]
        ) AS missing_or_unprotected_tenant_tables`,
-    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES)],
+    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES), Object.values(OPERATOR_DATABASE_CAPABILITIES)],
   );
 
   const row = rows[0];
@@ -329,7 +331,7 @@ export async function assertProductionDatabaseRlsReady(
   }
   if (readiness.operatorAuthorityRoles.length > 0) {
     fail("PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE",
-      "tenant runtime must not issue administrative directory authority");
+      "tenant runtime must not reach privileged operator database capabilities");
   }
   try {
     const url = new URL(String(env.FAWRI_OPERATOR_DATABASE_URL || "").trim());

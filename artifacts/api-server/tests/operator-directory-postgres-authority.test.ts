@@ -8,12 +8,14 @@ const configured = {
 };
 function pool(identity: unknown) {
   const events: string[] = [];
+  const parameters: unknown[] = [];
   return {
-    events,
+    events, parameters,
     async query() { throw new Error("must use a leased transaction client"); },
     async connect() {
       return {
-        async query(sql: string) {
+        async query(sql: string, values?: unknown[]) {
+          if (sql.startsWith("SELECT")) parameters.push(values);
           events.push(sql.startsWith("SELECT") ? "IDENTITY" : sql);
           return { rows: sql.startsWith("SELECT") ? (identity ? [identity] : []) : [] };
         },
@@ -80,4 +82,20 @@ test("operator work failures roll back and pool configuration cannot silently ch
   env.FAWRI_OPERATOR_DATABASE_URL = "postgresql://another@127.0.0.1/other";
   await assert.rejects(() => authority.databasePool(), { code: "OPERATOR_DATABASE_CONFIG_CHANGED" });
   await authority.close();
+});
+
+
+test("receipt pool validates its own bounded capability without requiring directory issuance", async () => {
+  const fake = pool(identity);
+  const authority = createOperatorDirectoryAuthority({
+    capability: "receiptRead", env: { ...configured }, makePool: async () => fake as never,
+  });
+  assert.equal(await authority.transaction(async () => "read"), "read");
+  assert.deepEqual(fake.parameters, [["public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)"]]);
+  await authority.close();
+});
+
+test("unrecognized runtime capabilities fail before opening connections", () => {
+  assert.throws(() => createOperatorDirectoryAuthority({ capability: "untrusted" as never }),
+    { code: "OPERATOR_DATABASE_CAPABILITY_INVALID" });
 });

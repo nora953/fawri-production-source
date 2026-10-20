@@ -8,6 +8,10 @@ import {
 import { productionReleaseGateRequired } from "./productionReleaseReadiness";
 
 export const OPERATOR_DIRECTORY_DATABASE_ENV = "FAWRI_OPERATOR_DATABASE_URL";
+export const OPERATOR_DATABASE_CAPABILITIES = {
+  directory: "public.fawri_issue_admin_directory_audit(text,text,text)",
+  receiptRead: "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)",
+} as const;
 type OwnedPool = OperationalDatabasePool & { end(): Promise<void> };
 
 function unavailable(code: string): never {
@@ -17,11 +21,16 @@ function unavailable(code: string): never {
 // Only server configuration selects this pool. It never accepts request actors,
 // tenant IDs or credentials. Production cannot fall back to the tenant pool.
 export function createOperatorDirectoryAuthority(options: {
+  capability?: keyof typeof OPERATOR_DATABASE_CAPABILITIES;
   env?: NodeJS.ProcessEnv;
   makePool?: (url: string) => Promise<OwnedPool>;
   sharedPool?: () => Promise<OperationalDatabasePool>;
 } = {}) {
   const env = options.env ?? process.env;
+  const selected = options.capability ?? "directory";
+  if (!Object.hasOwn(OPERATOR_DATABASE_CAPABILITIES, selected)) unavailable("OPERATOR_DATABASE_CAPABILITY_INVALID");
+  const capability = OPERATOR_DATABASE_CAPABILITIES[selected];
+  if (!capability) unavailable("OPERATOR_DATABASE_CAPABILITY_INVALID");
   let owned: Promise<OwnedPool> | undefined;
   let configuredUrl: string | undefined;
   async function databasePool(): Promise<OperationalDatabasePool> {
@@ -62,12 +71,12 @@ export function createOperatorDirectoryAuthority(options: {
               WHERE n.nspname='public' AND c.relkind IN ('r','p')
                 AND (pg_has_role(r.oid, c.relowner, 'USAGE') OR pg_has_role(r.oid, c.relowner, 'SET')))
             AND NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-              WHERE n.nspname='public' AND p.proname='fawri_issue_admin_directory_audit'
+              WHERE n.nspname='public' AND p.oid=to_regprocedure($1::text)
                 AND (pg_has_role(r.oid, p.proowner, 'USAGE') OR pg_has_role(r.oid, p.proowner, 'SET')))
           ) AS safe,
           has_function_privilege(session_user,
-            'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') AS can_issue
-          FROM pg_roles r WHERE r.rolname=session_user`);
+            $1::text, 'EXECUTE') AS can_issue
+          FROM pg_roles r WHERE r.rolname=session_user`, [capability]);
         const row = result.rows[0];
         if (!row || !row.login || row.login !== row.active || row.safe !== true || row.can_issue !== true) {
           unavailable("OPERATOR_DATABASE_IDENTITY_INVALID");
