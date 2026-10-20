@@ -1044,8 +1044,7 @@ export async function applyVerifiedCashierBillingProviderEvent(
     ? requiredText(input.providerPaymentRef, "provider_payment_ref", 300)
     : "";
 
-  const pool = await operationalDatabasePool();
-  const discovery = replay || confirmed ? [] : await operationalQueryRows<{merchant_id:string}>(pool,
+  const discovery = replay || confirmed ? [] : await operationalQueryRows<{merchant_id:string}>(await operationalDatabasePool(),
     `SELECT merchant_id FROM cashier_billing_orders WHERE id = $1 LIMIT 2`,[orderId]);
   if (!replay && !confirmed && discovery.length !== 1) fail("CASHIER_BILLING_ORDER_NOT_FOUND","cashier billing order not found",404);
   const merchantId = confirmed ? requiredText(confirmed.merchantId,"merchant_id",200) : replay ? requiredText(replay.merchantId,"merchant_id",200) : discovery[0].merchant_id;
@@ -1440,10 +1439,11 @@ export async function applyVerifiedCashierBillingProviderEvent(
       }
   };
   // Admission and application retain the same merchant-scoped transaction API.
-  const admitted = await withMerchantOperationalTransaction(merchantId, (client) => processEvent(client, true));
+  const runTransaction = replay ? replay.transaction : <T>(work:(client:OperationalQueryTarget)=>Promise<T>) => withMerchantOperationalTransaction(merchantId, work);
+  const admitted = await runTransaction((client) => processEvent(client, true));
   if (admitted.status !== "reconciliation_required" ||
       admitted.reasonCode !== "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;
-  const outcome = await withMerchantOperationalTransaction(merchantId, (client) => processEvent(client, false));
+  const outcome = await runTransaction((client) => processEvent(client, false));
   // Throw only after COMMIT: the provider retries while durable receipt survives.
   if (sqlFailure) throw sqlFailure;
   return outcome;

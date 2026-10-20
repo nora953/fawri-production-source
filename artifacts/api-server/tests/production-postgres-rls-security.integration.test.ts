@@ -289,7 +289,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   }
 
 
-  for (const capability of ["public.fawri_issue_admin_directory_audit(text,text,text)", "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)", "public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)"])
+  for (const capability of ["public.fawri_issue_admin_directory_audit(text,text,text)", "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)", "public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)", "public.fawri_authorize_verified_receipt_replay(text,text,text,text,text,text,text,text)"])
   for (const mode of ["direct", "set-reachable", "inherit-only", "unreachable"]) {
     await t.test(`operator capability ${capability} ACL ${mode} cannot leak into tenant readiness`, async () => {
       const operatorRole = "fawri_directory_operator_probe";

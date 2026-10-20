@@ -803,13 +803,12 @@ export async function applyVerifiedSaasBillingProviderEvent(
     fail("SAAS_BILLING_CURRENCY_MISMATCH", "billing currency mismatch", 409);
   }
 
-  const database = await pool();
-  const owner = replay || confirmed ? null : await database.query(
+  const owner = replay || confirmed ? null : await (await pool()).query(
     `SELECT merchant_id FROM saas_billing_orders WHERE id = $1 LIMIT 2`, [orderId]);
   if (!replay && !confirmed && owner?.rows.length !== 1) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
   const merchantId = confirmed ? requiredText(confirmed.merchantId,180) : replay ? requiredText(replay.merchantId,180) : String(owner!.rows[0].merchant_id);
   let sqlFailure: unknown;
-  const processEvent = async (client: DatabaseClient, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
+  const processEvent = async (client: SubscriptionPlanCycleTransaction, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
     if(replay || confirmed) await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchantId]);
     // Match checkout and plan-cycle ordering before acquiring billing row locks.
     await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
@@ -1231,10 +1230,11 @@ export async function applyVerifiedSaasBillingProviderEvent(
     }
   };
   // Commit verified receipt admission before any entitlement transaction begins.
-  const admitted = await transaction((client) => processEvent(client, true));
+  const runTransaction = replay ? replay.transaction : transaction;
+  const admitted = await runTransaction((client) => processEvent(client, true));
   if (admitted.status !== "reconciliation_required" ||
       admitted.reasonCode !== "SAAS_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;
-  const outcome = await transaction((client) => processEvent(client, false));
+  const outcome = await runTransaction((client) => processEvent(client, false));
   // Throw only after COMMIT: the provider retries while durable receipt survives.
   if (sqlFailure) throw sqlFailure;
   return outcome;
