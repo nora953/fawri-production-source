@@ -67,6 +67,7 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
   }
   const writable = await runtime('writable', true);
   const tenantOnly = await runtime('tenant', false);
+  const otherSession = await runtime('other', false);
 
   async function transaction(client, work) {
     await client.query('BEGIN');
@@ -100,6 +101,18 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
     }
   });
 
+  await t.test('shared SQL login can forge a tenant GUC without any admin audit privilege', async () => {
+    // A shared runtime login is trusted to choose the tenant. Audit transaction
+    // binding does not turn that user-controlled GUC into an authenticated ID.
+    await transaction(tenantOnly, async () => {
+      await tenantOnly.query("SELECT set_config('fawri.tenant_id',$1,true)", [tenants[1]]);
+      assert.deepEqual(await visible(tenantOnly), [tenants[1]]);
+      assert.equal((await tenantOnly.query('UPDATE merchant_settings SET version=version+1 WHERE merchant_id=$1', [tenants[1]])).rowCount, 1);
+    });
+    assert.deepEqual(await visible(tenantOnly), []);
+    console.log('P0_TENANT_GUC_TRUST_PROOF ' + JSON.stringify({ auditTableAccess: false, arbitrarySqlRequired: true, foreignTenantIdentifierRequired: true, tenantGucForgery: true, httpExploitTested: false, releaseAccepted: false }));
+  });
+
   await t.test('audit CRUD grants allow synthetic record forgery and cross-tenant reads/writes', async () => {
     await transaction(writable, async () => {
       await insertAudit(writable);
@@ -124,29 +137,52 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
     assert.deepEqual(await visible(tenantOnly), []);
   });
 
-  await t.test('known valid audit identifiers are reusable even without direct audit privileges', async () => {
-    await insertAudit(admin);
-    await transaction(tenantOnly, async () => {
-      await setAudit(tenantOnly);
-      assert.deepEqual(await visible(tenantOnly), tenants.slice(0, 2));
+  await t.test('issuing-transaction authority checks live actor and profile state', async () => {
+    await transaction(writable, async () => {
+      await insertAudit(writable);
+      await setAudit(writable);
+      assert.deepEqual(await visible(writable), tenants.slice(0, 2), 'active issuer keeps legitimate authority');
+      for (const [disable, enable, label] of [
+        ["UPDATE accounts SET state='suspended' WHERE id=$1", "UPDATE accounts SET state='active' WHERE id=$1", 'suspended account'],
+        ['UPDATE admin_profiles SET enabled=false WHERE id=$1', 'UPDATE admin_profiles SET enabled=true WHERE id=$1', 'disabled profile'],
+        ['UPDATE admin_profiles SET must_change_password=true WHERE id=$1', 'UPDATE admin_profiles SET must_change_password=false WHERE id=$1', 'password change required'],
+      ]) {
+        await admin.query(disable, [actor]);
+        try { assert.deepEqual(await visible(writable), [], label + ' loses authority in the live transaction'); }
+        finally { await admin.query(enable, [actor]); }
+        assert.deepEqual(await visible(writable), tenants.slice(0, 2), 'restored active administrator works');
+      }
+      await writable.query("UPDATE database_admin_access_audits SET started_at=now()-interval '2 minutes',expires_at=now()-interval '1 minute' WHERE id=$1", [auditId]);
+      assert.deepEqual(await visible(writable), [], 'expired authority denied even in issuing transaction');
     });
-    assert.deepEqual(await visible(tenantOnly), [], 'admin settings must reset after initial bearer-use transaction');
-    // Revoking table access alone does not bind existing authority to a session.
-    await admin.query("UPDATE accounts SET state='suspended' WHERE id=$1", [actor]);
-    assert.equal((await admin.query('SELECT state FROM accounts WHERE id=$1', [actor])).rows[0]?.state, 'suspended');
-    await transaction(tenantOnly, async () => {
-      await setAudit(tenantOnly);
-      assert.deepEqual(await visible(tenantOnly), [], 'suspended administrator must lose audited cross-tenant authority immediately');
-    });
-    assert.deepEqual(await visible(tenantOnly), [], 'admin settings must reset after suspended-actor replay transaction');
-    // Confirm the audit is still live when a suspended actor's identifiers are replayed.
+    assert.deepEqual(await visible(writable), [], 'rollback removes all local authority settings');
+    assert.equal((await admin.query('SELECT count(*)::int AS count FROM database_admin_access_audits WHERE id=$1', [auditId])).rows[0].count, 0, 'rollback removes the authority record');
+  });
+
+  await t.test('committed audit identifiers cannot authorize another transaction or concurrent session', async () => {
+    // A real restricted issuer succeeds before COMMIT. Its retained record must
+    // never authorize even that same connection in a subsequent transaction.
+    await writable.query('BEGIN');
+    try {
+      await insertAudit(writable);
+      await setAudit(writable);
+      assert.deepEqual(await visible(writable), tenants.slice(0, 2));
+      await writable.query('COMMIT');
+    } catch (error) { await writable.query('ROLLBACK'); throw error; }
     assert.equal((await admin.query('SELECT expires_at > now() AS live FROM database_admin_access_audits WHERE id=$1', [auditId])).rows[0]?.live, true);
-    await admin.query("UPDATE database_admin_access_audits SET started_at=now()-interval '2 minutes',expires_at=now()-interval '1 minute' WHERE id=$1", [auditId]);
-    await transaction(tenantOnly, async () => {
-      await setAudit(tenantOnly);
-      assert.deepEqual(await visible(tenantOnly), [], 'expired authority must fail closed');
-    });
-    assert.deepEqual(await visible(tenantOnly), []);
-    console.log('P0_AUDIT_BEARER_REUSE_PROOF ' + JSON.stringify({ auditTableAccess: false, knownIdentifiersRequired: true, activeWindowReuse: true, suspendedActorReuse: false, expiredDenied: true, httpExploitTested: false, releaseAccepted: false }));
+    // All replay attempts know the valid IDs and can set arbitrary GUCs.
+    await Promise.all([writable, tenantOnly, otherSession].map(client => transaction(client, async () => {
+      await setAudit(client);
+      assert.deepEqual(await visible(client), [], 'live committed IDs must not authorize a fresh transaction');
+      assert.equal((await client.query('UPDATE merchant_settings SET version=version+1 WHERE merchant_id=$1', [tenants[1]])).rowCount, 0);
+      await client.query("SELECT set_config('fawri.tenant_id',$1,true)", [tenants[0]]);
+      assert.deepEqual(await visible(client), [tenants[0]], 'own tenant remains usable during rejected admin replay');
+    })));
+    for (const client of [writable, tenantOnly, otherSession]) assert.deepEqual(await visible(client), []);
+    await admin.query("UPDATE accounts SET state='suspended' WHERE id=$1", [actor]);
+    try {
+      await transaction(tenantOnly, async () => { await setAudit(tenantOnly); assert.deepEqual(await visible(tenantOnly), []); });
+    } finally { await admin.query("UPDATE accounts SET state='active' WHERE id=$1", [actor]); }
+    console.log('P0_AUDIT_TRANSACTION_BINDING_PROOF ' + JSON.stringify({ directRestrictedLogin: true, knownIdentifiersRequired: true, activeWindowReuse: false, sameConnectionLaterTransactionReuse: false, concurrentSessions: 3, suspendedActorReuse: false, auditForgeryStillUnresolved: true, httpExploitTested: false, releaseAccepted: false }));
   });
 });

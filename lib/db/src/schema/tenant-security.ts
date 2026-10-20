@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, pgPolicy, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, check, index, pgPolicy, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { adminProfiles } from "./merchants";
 import {
   merchantLocationDeliveryAreas,
@@ -34,6 +34,9 @@ export const databaseAdminAccessAudits = pgTable(
     merchantId: text("merchant_id"),
     reasonCode: text("reason_code").notNull(),
     requestHash: text("request_hash").notNull(),
+    // PostgreSQL assigns the full epoch-aware transaction ID; retained audit
+    // identifiers cannot authorize a later transaction or another connection.
+    authorityTransactionId: bigint("authority_transaction_id", { mode: "bigint" }).notNull().default(sql`txid_current()`),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },

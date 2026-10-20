@@ -260,6 +260,13 @@
       "when": 1791936000008,
       "tag": "0036_audited_admin_active_state_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791936000009,
+      "tag": "0037_audited_admin_transaction_binding",
+      "breakpoints": true
     }
   ]
 }
