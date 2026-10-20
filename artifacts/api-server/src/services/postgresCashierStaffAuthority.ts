@@ -1,3 +1,4 @@
+import { authenticationDatabasePool, withAuthenticationTransaction, withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   CashierStaffAuthorityError,
@@ -29,11 +30,8 @@ import {
   type CashierStaffRole,
 } from "./cashierStaffPolicy";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withMerchantOperationalTransaction,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -549,7 +547,7 @@ export async function listCashierStaffAuthoritative(
 ): Promise<CashierStaffView[]> {
   assertPostgresAuthority();
   const merchantId = identifier(merchantIdValue, "merchant_id");
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const rows = await operationalQueryRows<StaffRow>(
       client,
       `SELECT id, merchant_id, display_name, role, status, pin_hash, pin_version,
@@ -584,7 +582,7 @@ export async function createCashierStaffAuthoritative(input: {
   const staffId = randomId("cashier_staff");
   const pinHash = hashPassword(pin);
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     await client.query(
       `INSERT INTO merchant_cashier_staff (
@@ -651,7 +649,7 @@ export async function updateCashierStaffAuthoritative(input: {
     );
   }
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const current = await getStaffRow(client, merchantId, staffId, true);
     if (!current) {
@@ -753,7 +751,7 @@ export async function listCashierLocationsAuthoritative(
 ): Promise<CashierLocationView[]> {
   assertPostgresAuthority();
   const merchantId = identifier(merchantIdValue, "merchant_id");
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const rows = await operationalQueryRows<CashierLocationRow>(
       client,
       `SELECT id, name, legacy_branch_key, is_default, operational_status
@@ -787,7 +785,7 @@ export async function listCashierStationsAuthoritative(
 ): Promise<CashierStationView[]> {
   assertPostgresAuthority();
   const merchantId = identifier(merchantIdValue, "merchant_id");
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const rows = await operationalQueryRows<StationRow>(
       client,
       `SELECT id, merchant_id, name, location_id, branch_key, branch_label, status,
@@ -830,7 +828,7 @@ export async function createCashierStationAuthoritative(input: {
   const offlineInventoryAuthority = input.offlineInventoryAuthority === undefined ? false : offlineAuthorityFlag(input.offlineInventoryAuthority);
   const stationId = randomId("cashier_station");
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const location = locationId
       ? await resolveCashierLocationById(client, { merchantId, locationId })
@@ -922,7 +920,7 @@ export async function updateCashierStationAuthoritative(input: {
     );
   }
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const current = await getStationRow(client, merchantId, stationId, true);
     if (!current) {
@@ -1050,7 +1048,7 @@ export async function beginCashierStationPairingAuthoritative(input: {
   const challengeId = randomId("cashier_pairing");
   const expiresAt = new Date(Date.now() + PAIRING_TTL_MS);
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const station = await getStationRow(client, merchantId, stationId, true);
     if (!station) {
@@ -1116,7 +1114,7 @@ export async function redeemCashierStationPairingAuthoritative(input: {
   const credentialId = randomId("cashier_credential");
   const expiresAt = new Date(Date.now() + STATION_CREDENTIAL_TTL_MS);
 
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     // Discover the tenant without taking a challenge row lock. All pairing paths
     // acquire the station lock before the challenge lock to avoid a lock cycle
     // with station disable/revoke, which updates challenges after the station.
@@ -1245,7 +1243,7 @@ export async function authenticateCashierStationAuthoritative(input: {
   const stationToken = identifier(input.stationToken, "station_token", 200);
   const deviceId = identifier(input.deviceId, "device_id", 200);
   const tokenHash = hashSecret(stationToken);
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<StationCredentialRow>(
     pool,
     `SELECT c.id AS credential_id, c.merchant_id, c.station_id,
@@ -1430,7 +1428,7 @@ export async function loginCashierOperatorAuthoritative(input: {
   const sessionId = randomId("cashier_operator_session");
   const station = input.station;
 
-  const decision = await withMerchantOperationalTransaction(
+  const decision = await withMerchantAuthenticationTransaction(
     station.merchant_id,
     async (client) => {
       const pinDecision = await verifyOperatorPinInTransaction(
@@ -1585,7 +1583,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
   const deviceId = identifier(input.deviceId, "device_id", 200);
   const stationHash = hashSecret(stationToken);
   const operatorHash = hashSecret(operatorToken);
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<OperatorAuthRow & StationCredentialRow>(
     pool,
     `SELECT os.id AS session_id, os.merchant_id, os.station_id, os.staff_id,
@@ -1682,7 +1680,7 @@ export async function logoutCashierOperatorAuthoritative(
   context: CashierOperatorContext,
 ): Promise<void> {
   assertPostgresAuthority();
-  await withMerchantOperationalTransaction(context.merchant_id, async (client) => {
+  await withMerchantAuthenticationTransaction(context.merchant_id, async (client) => {
     await client.query(
       `UPDATE cashier_operator_sessions
           SET status = 'revoked', revoked_at = now()

@@ -274,6 +274,13 @@
       "when": 1791936000010,
       "tag": "0038_role_bound_admin_directory_issuer",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791936000011,
+      "tag": "0039_role_bound_authentication_runtime",
+      "breakpoints": true
     }
   ]
 }

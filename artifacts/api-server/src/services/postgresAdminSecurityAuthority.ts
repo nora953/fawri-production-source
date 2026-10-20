@@ -1,3 +1,4 @@
+import { authenticationDatabasePool, withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import { authSecurityStore } from "./authSecurityStore";
 import {
@@ -7,10 +8,8 @@ import {
   type TrustedDeviceRecord,
 } from "./authSecurityTypes";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -88,7 +87,7 @@ export async function registerAdminDeviceAuthoritative(input: {
     return authSecurityStore.registerDevice(input);
   }
   const deviceHash = fingerprint("device", input.deviceId);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const account = await operationalQueryRows<{ id: string }>(
       client,
       "SELECT id FROM accounts WHERE id = $1 AND kind = 'admin' AND state = 'active' FOR UPDATE",
@@ -145,7 +144,7 @@ export async function isAdminDeviceTrustedAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.isDeviceTrusted(accountId, "admin", deviceId);
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const row = await selectDevice(
     pool,
     "account_id = $1 AND kind = 'admin' AND device_fingerprint_hash = $2 AND status = 'trusted'",
@@ -162,7 +161,7 @@ export async function findAdminDeviceForVerificationPostgres(input: {
   if (!operationalPostgresAuthorityRequired()) {
     throw new Error("AUTH_POSTGRES_ADMIN_DEVICE_LOOKUP_REQUIRES_POSTGRES");
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const row = await selectDevice(
     pool,
     "id = $1 AND account_id = $2 AND kind = 'admin' AND device_fingerprint_hash = $3",
@@ -181,7 +180,7 @@ export async function listAdminDevicesAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.listDevices(accountId);
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const values: unknown[] = [];
   let accountClause = "";
   if (accountId) {
@@ -209,7 +208,7 @@ export async function setAdminDeviceTrustAuthoritative(input: {
   if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.setDeviceTrust(input);
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const device = await selectDevice(
       client,
       "id = $1 AND kind = 'admin'",
@@ -278,7 +277,7 @@ export async function auditAdminSecurityEventAuthoritative(input: {
     authSecurityStore.audit(input);
     return;
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   await pool.query(
     `INSERT INTO auth_audit_events
       (id, event_type, actor_account_id, actor_kind, subject_hash,
@@ -310,7 +309,7 @@ export async function listAdminAuditEventsAuthoritative(
       .slice(-limit)
       .reverse();
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<{
     id: string;
     event_type: string;

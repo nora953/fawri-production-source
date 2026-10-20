@@ -16,7 +16,7 @@ await pool.query('RESET ROLE');
 const flags=(await pool.query("SELECT current_user AS role,session_user AS login,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
 assert.deepEqual(flags,{role:process.env.FAWRI_TEST_META_ROLE,login:process.env.FAWRI_TEST_META_ROLE,rolsuper:false,rolbypassrls:false,owns_table:false});
 const {assertProductionDatabaseRlsReady}=await import('../../src/services/postgresRuntimeRlsSecurity.ts');
-await assertProductionDatabaseRlsReady({NODE_ENV:'production',FAWRI_DEPLOYMENT_MODE:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'},pool);
+await assertProductionDatabaseRlsReady({NODE_ENV:'production',FAWRI_DEPLOYMENT_MODE:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_DATABASE_URL:"postgresql://auth@127.0.0.1/fawri_ci", FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'},pool);
 const knowledge=await import('../../src/services/ai/knowledgeDecisionEngine.ts');
 knowledge.configureKnowledgeEmbeddingProvider({providerId:'synthetic-meta-app',model:'synthetic-meta-app-v1',dimensions:2,async embed(){return [1,0];}});
 const {default:app}=await import('../../src/app.ts');
@@ -70,6 +70,7 @@ process.on('message',async task=>{
     }else if(task.command==='stop'&&!stopping){
       stopping=true;worker.stop();server.closeAllConnections();
       await new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve()));
+      await (await import("../../src/services/authenticationPostgresAuthority.ts")).closeAuthenticationPool();
       await pool.end();await send({id:task.id,stopped:true});process.disconnect();
     }else throw Error('invalid owned command');
   }catch(error){await send({id:task.id,failure:true,code:/^[A-Z0-9_]{1,80}$/.test(error?.code||'')?error.code:'META_APP_TEST_FAILURE'});process.exitCode=1;}

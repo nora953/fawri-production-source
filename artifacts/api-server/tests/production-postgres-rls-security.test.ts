@@ -14,7 +14,7 @@ function productionEnv(): NodeJS.ProcessEnv {
     NODE_ENV: "production",
     FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
-    FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci",
+    FAWRI_AUTH_DATABASE_URL:"postgresql://auth@127.0.0.1/fawri_ci", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci",
   };
 }
 
@@ -28,6 +28,7 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
+    authentication_authority_present:true, authentication_mutation_roles:[], audit_access_roles:[],
     directory_issuer_present: true,
     operator_authority_roles: [],
     role_name: "fawri_runtime",
@@ -169,7 +170,7 @@ test("production fails closed on absent or malformed role safety booleans", asyn
 
 test("production fails closed on absent or malformed privilege inventories", async () => {
   for (const field of [
-    "operator_authority_roles", "session_inherited_privileged_roles", "session_owned_tables",
+    "authentication_mutation_roles", "audit_access_roles", "operator_authority_roles", "session_inherited_privileged_roles", "session_owned_tables",
     "session_reachable_privileged_roles", "owned_tenant_tables",
     "missing_or_unprotected_tenant_tables",
   ]) {
@@ -197,7 +198,15 @@ test("tenant readiness rejects directory issuer ACLs reachable by current/sessio
 test("production directory cannot silently use the tenant database when operator configuration is absent", async () => {
   for (const value of [undefined, "", "https://example.invalid", "not a url"]) {
     await assert.rejects(() => assertProductionDatabaseRlsReady(
-      { ...productionEnv(), FAWRI_OPERATOR_DATABASE_URL: value }, target(safeRow())),
+      { ...productionEnv(), FAWRI_AUTH_DATABASE_URL:"postgresql://auth@127.0.0.1/fawri_ci", FAWRI_OPERATOR_DATABASE_URL: value }, target(safeRow())),
       { code: "PRODUCTION_OPERATOR_DATABASE_REQUIRED" });
   }
+});
+
+
+test("production rejects auth mutation and audit access inventories",async()=>{
+  await rejectsWith("PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE",safeRow({authentication_mutation_roles:["auth_writer"]}));
+  await rejectsWith("PRODUCTION_ADMIN_AUDIT_ACCESS_REACHABLE",safeRow({audit_access_roles:["audit_reader"]}));
+  await rejectsWith("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED",safeRow({authentication_authority_present:false}));
+  await assert.rejects(()=>assertProductionDatabaseRlsReady({...productionEnv(),FAWRI_AUTH_DATABASE_URL:undefined},target(safeRow())),{code:"PRODUCTION_AUTH_DATABASE_REQUIRED"});
 });

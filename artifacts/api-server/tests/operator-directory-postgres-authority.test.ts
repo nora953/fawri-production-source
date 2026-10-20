@@ -103,3 +103,19 @@ test("unrecognized runtime capabilities fail before opening connections", () => 
   assert.throws(() => createOperatorDirectoryAuthority({ capability: "untrusted" as never }),
     { code: "OPERATOR_DATABASE_CAPABILITY_INVALID" });
 });
+
+
+test("authentication cannot select operator or tenant credentials in production", async () => {
+  let opened=false;
+  const authority=createOperatorDirectoryAuthority({capability:"authentication",env:{...configured},
+    makePool:async()=>{opened=true;throw Error();},sharedPool:async()=>{opened=true;throw Error();}});
+  await assert.rejects(()=>authority.databasePool(),{code:"AUTH_DATABASE_REQUIRED",message:"authentication database authority is unavailable"});
+  assert.equal(opened,false);
+});
+test("authentication validates its own LOGIN capability and dedicated URL",async()=>{
+  const fake=pool(identity),url="postgresql://synthetic_auth@127.0.0.1/auth_test";
+  const authority=createOperatorDirectoryAuthority({capability:"authentication",env:{...configured,FAWRI_AUTH_DATABASE_URL:url},
+    makePool:async selected=>{assert.equal(selected,url);return fake as never;}});
+  assert.equal(await authority.transaction(async()=>"auth"),"auth");
+  assert.deepEqual(fake.parameters,[["public.fawri_authentication_runtime()"]]);await authority.close();
+});

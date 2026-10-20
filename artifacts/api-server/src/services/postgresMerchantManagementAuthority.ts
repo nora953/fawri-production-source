@@ -1,3 +1,4 @@
+import { authenticationDatabasePool, withAuthenticationTransaction, withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import { withOperatorDirectoryTransaction } from "./operatorDirectoryPostgresAuthority";
 import crypto from "node:crypto";
 import {
@@ -6,11 +7,8 @@ import {
   MerchantRetentionStatus,
 } from "./merchantLifecycle";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withMerchantOperationalTransaction,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { refreshMerchantRetentionPostgres } from "./postgresMerchantRetentionAuthority";
@@ -353,7 +351,7 @@ export async function getManagedMerchantPostgres(
   merchantId: string,
 ): Promise<ManagedMerchant | null> {
   requirePostgres();
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const row = await selectMerchant(client, merchantId);
     return row && row.account_state !== "closed" ? managedMerchant(row) : null;
   });
@@ -361,7 +359,7 @@ export async function getManagedMerchantPostgres(
 
 export async function getMerchantAdminNotePostgres(merchantId: string): Promise<string> {
   requirePostgres();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const merchant = await selectMerchant(pool, merchantId);
   if (!merchant || merchant.account_state === "closed") {
     throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
@@ -384,7 +382,7 @@ export async function setMerchantAdminNotePostgres(input: {
   if (note.length > 5000) {
     throw new MerchantManagementError(400, "MERCHANT_NOTE_TOO_LONG", "note is too long");
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const merchant = await selectMerchant(client, input.merchantId, true);
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
@@ -421,7 +419,7 @@ export async function listMerchantChannelOverridesPostgres(): Promise<
   Record<string, Record<string, string>>
 > {
   requirePostgres();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<{
     merchant_id: string;
     platform: string;
@@ -467,7 +465,7 @@ export async function setMerchantChannelOverridePostgres(input: {
   if (!allowedPlatforms.has(input.platform) || !allowedStatuses.has(input.status)) {
     throw new MerchantManagementError(400, "CHANNEL_OVERRIDE_INVALID", "invalid channel override");
   }
-  await withOperationalTransaction(async (client) => {
+  await withAuthenticationTransaction(async (client) => {
     const merchant = await selectMerchant(client, input.merchantId, true);
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
@@ -506,7 +504,7 @@ export async function updateMerchantStatusPostgres(input: {
     throw new MerchantManagementError(400, "STATUS_REASON_REQUIRED", "reason is required for this status");
   }
 
-  const result = await withMerchantOperationalTransaction(input.merchantId, async (client) => {
+  const result = await withMerchantAuthenticationTransaction(input.merchantId, async (client) => {
     const merchant = await selectMerchant(client, input.merchantId, true);
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
@@ -691,7 +689,7 @@ export async function updateMerchantStatusPostgres(input: {
 
 export async function listDeletionRequestsPostgres(): Promise<ManagedDeletionRequest[]> {
   requirePostgres();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<DeletionRequestRow>(
     pool,
     `SELECT id, merchant_id, merchant_id_snapshot, merchant_name_snapshot,
@@ -723,7 +721,7 @@ export async function createDeletionRequestPostgres(input: {
   if (input.reason !== "policy_violation" && input.reason !== "retention_expired") {
     throw new MerchantManagementError(400, "DELETION_REASON_INVALID", "invalid deletion reason");
   }
-  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(input.merchantId, async (client) => {
     const merchant = await selectMerchant(client, input.merchantId, true);
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
@@ -812,7 +810,7 @@ export async function rejectDeletionRequestPostgres(input: {
   actorAdminId: string;
 }): Promise<ManagedDeletionRequest> {
   requirePostgres();
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const rows = await operationalQueryRows<DeletionRequestRow>(
       client,
       `SELECT id, merchant_id, merchant_id_snapshot, merchant_name_snapshot,
@@ -1185,7 +1183,7 @@ export async function completeMerchantDeletionPostgres(input: {
   actorAdminId: string;
 }): Promise<{ ok: true; deletedMerchantId: string; deletionRequest: ManagedDeletionRequest }> {
   requirePostgres();
-  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(input.merchantId, async (client) => {
     const merchant = await selectMerchant(client, input.merchantId, true);
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
@@ -1341,7 +1339,7 @@ export async function importLegacyAdminDataPostgres(input: {
   channelOverrides: Record<string, unknown>;
 }): Promise<{ logs: number; notes: number; channels: number }> {
   requirePostgres();
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const actor = await adminSnapshot(client, input.actorAdminId);
     if (!actor || actor.role !== "owner_admin") {
       throw new MerchantManagementError(403, "OWNER_ADMIN_REQUIRED", "owner administrator is required");
@@ -1446,7 +1444,7 @@ export async function importLegacyAdminDataPostgres(input: {
 
 export async function listAdminLogsPostgres(limit = 1000): Promise<unknown[]> {
   requirePostgres();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<{
     id: string;
     actor_account_id: string | null;

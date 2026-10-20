@@ -1,3 +1,4 @@
+import {restrictTenantAuthenticationPrivileges,createDisposableAuthenticationRole} from "./helpers/disposable-authentication-role.mjs";
 import { assertDisposablePostgres } from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -24,6 +25,8 @@ test("merchant deletion honors RLS for quiescence, purge and physical cleanup", 
   const merchants = [0, 1, 2].map(i => `deletion-${i}-${suffix}`);
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-deletion-rls-"));
   const runtimePassword = randomUUID().replaceAll("-", "");
+  const originalAuthUrl=process.env.FAWRI_AUTH_DATABASE_URL;
+  let authRole;
   let runtimePool;
   let roleCreated = false;
   try {
@@ -31,6 +34,9 @@ test("merchant deletion honors RLS for quiescence, purge and physical cleanup", 
     roleCreated = true;
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await admin.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
+    await restrictTenantAuthenticationPrivileges(admin,role);
+    authRole=await createDisposableAuthenticationRole(admin,originalUrl);
+    process.env.FAWRI_AUTH_DATABASE_URL=authRole.url;
     await admin.query(`GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
     await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state) VALUES($1,'admin',$2,'synthetic','active')", [owner, `+1888${Date.now().toString().slice(-8)}9`]);
     await admin.query("INSERT INTO admin_profiles(id,account_id,profile_kind,display_name,role,enabled,must_change_password) VALUES($1,$1,'admin','Synthetic owner','owner_admin',true,false)", [owner]);
@@ -52,7 +58,7 @@ test("merchant deletion honors RLS for quiescence, purge and physical cleanup", 
     runtimePool.options.connectionTimeoutMillis = 5_000;
     assert.deepEqual((await runtimePool.query("SELECT current_user AS active, session_user AS login")).rows[0], {active: role, login: role});
     const { assertProductionDatabaseRlsReady } = await import("../src/services/postgresRuntimeRlsSecurity.ts");
-    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci" });
+    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required", FAWRI_AUTH_DATABASE_URL:"postgresql://auth@127.0.0.1/fawri_ci", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci" });
     assert.equal((await runtimePool.query("SELECT count(*)::int AS count FROM products")).rows[0].count, 0);
     const management = await import("../src/services/postgresMerchantManagementAuthority.ts");
     const media = await import("../src/services/catalogMediaStorage.ts");
@@ -84,7 +90,10 @@ test("merchant deletion honors RLS for quiescence, purge and physical cleanup", 
     assert.equal((await admin.query("SELECT state FROM accounts WHERE id=$1", [merchants[0]])).rows[0].state, "closed");
     assert.equal((await runtimePool.query("SELECT count(*)::int AS count FROM products")).rows[0].count, 0, "pooled connection must not retain tenant context");
   } finally {
+    await (await import("../src/services/authenticationPostgresAuthority.ts")).closeAuthenticationPool();
     await runtimePool?.end();
+    await authRole?.dispose();
+    if(originalAuthUrl===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=originalAuthUrl;
     process.env.DATABASE_URL = originalUrl;
     if (originalAuthority === undefined) delete process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY;
     else process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = originalAuthority;

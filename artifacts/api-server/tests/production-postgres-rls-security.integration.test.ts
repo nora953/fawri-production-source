@@ -4,6 +4,7 @@ import { pool } from "@workspace/db";
 import {
   assertProductionDatabaseRlsReady,
   getProductionDatabaseRlsReadiness,
+  AUTHENTICATION_INTEGRITY_TABLES,
 } from "../src/services/postgresRuntimeRlsSecurity";
 
 function productionEnv(): NodeJS.ProcessEnv {
@@ -11,7 +12,7 @@ function productionEnv(): NodeJS.ProcessEnv {
     NODE_ENV: "production",
     FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
-    FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci",
+    FAWRI_AUTH_DATABASE_URL:"postgresql://auth@127.0.0.1/fawri_ci", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci",
   };
 }
 
@@ -289,7 +290,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   }
 
 
-  for (const capability of ["public.fawri_issue_admin_directory_audit(text,text,text)", "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)", "public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)", "public.fawri_authorize_verified_receipt_replay(text,text,text,text,text,text,text,text)"])
+  for (const capability of ["public.fawri_authentication_runtime()", "public.fawri_issue_admin_directory_audit(text,text,text)", "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)", "public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)", "public.fawri_authorize_verified_receipt_replay(text,text,text,text,text,text,text,text)"])
   for (const mode of ["direct", "set-reachable", "inherit-only", "unreachable"]) {
     await t.test(`operator capability ${capability} ACL ${mode} cannot leak into tenant readiness`, async () => {
       const operatorRole = "fawri_directory_operator_probe";
@@ -315,6 +316,37 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
       await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
     });
   }
+
+  const integrityCases = [
+    ...AUTHENTICATION_INTEGRITY_TABLES.map(table=>({table,privilege:"UPDATE",audit:false})),
+    ...["INSERT","DELETE","TRUNCATE","TRIGGER","REFERENCES","UPDATE(password_hash)","INSERT(phone)","REFERENCES(id)"].map(privilege=>({table:"accounts",privilege,audit:false})),
+    ...["SELECT","INSERT","UPDATE","DELETE","TRUNCATE","TRIGGER","REFERENCES","SELECT(id)","UPDATE(reason_code)"].map(privilege=>({table:"database_admin_access_audits",privilege,audit:true})),
+  ];
+  for(const {table,privilege,audit} of integrityCases) await t.test(`tenant cannot hold ${table} ${privilege}`,async()=>{
+    await client.query("RESET SESSION AUTHORIZATION");await client.query("BEGIN");
+    try{
+      await client.query(`GRANT ${privilege} ON public.${table} TO ${probeRole}`);
+      await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+      const state=await getProductionDatabaseRlsReadiness(client);
+      assert.deepEqual(audit?state.auditAccessRoles:state.authenticationMutationRoles,[probeRole]);
+      await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv(),client),{code:audit?"PRODUCTION_ADMIN_AUDIT_ACCESS_REACHABLE":"PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE"});
+    }finally{await client.query("RESET SESSION AUTHORIZATION");await client.query("ROLLBACK");}
+  });
+  for(const audit of [false,true]) for(const mode of ["set-reachable","inherit-only","unreachable"]) await t.test(`sensitive ${audit?"audit":"auth"} column grant ${mode}`,async()=>{
+    const authority="fawri_auth_mutation_probe";
+    await client.query("RESET SESSION AUTHORIZATION");await client.query("BEGIN");
+    try{
+      await client.query(`CREATE ROLE ${authority} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE`);
+      await client.query(`GRANT ${audit?"SELECT(id) ON public.database_admin_access_audits":"UPDATE(password_hash) ON public.accounts"} TO ${authority}`);
+      await client.query(`GRANT ${authority} TO ${probeRole} WITH INHERIT ${mode==="inherit-only"?"TRUE":"FALSE"}, SET ${mode==="set-reachable"?"TRUE":"FALSE"}`);
+      await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+      const state=await getProductionDatabaseRlsReadiness(client),roles=audit?state.auditAccessRoles:state.authenticationMutationRoles;
+      assert.deepEqual(roles,mode==="unreachable"?[]:mode==="inherit-only"?[authority,probeRole].sort():[authority]);
+      if(mode==="unreachable")await assert.doesNotReject(()=>assertProductionDatabaseRlsReady(productionEnv(),client));
+      else await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv(),client),{code:audit?"PRODUCTION_ADMIN_AUDIT_ACCESS_REACHABLE":"PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE"});
+    }finally{await client.query("RESET SESSION AUTHORIZATION");await client.query("ROLLBACK");}
+  });
+  await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
 
   await t.test("authenticated role with CREATEROLE is rejected", async () => {
     const elevated = "fawri_createrole_probe";

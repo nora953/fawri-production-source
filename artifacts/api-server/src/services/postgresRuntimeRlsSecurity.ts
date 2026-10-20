@@ -62,7 +62,16 @@ export const PRODUCTION_PROTECTED_RLS_TABLES = [
   "verified_provider_payment_receipts",
 ] as const;
 
+export const AUTHENTICATION_INTEGRITY_TABLES = [
+  "accounts", "admin_profiles", "admin_permissions", "account_sessions", "trusted_devices",
+  "auth_otp_challenges", "login_attempts", "auth_audit_events",
+] as const;
+export const ADMIN_AUTHORITY_AUDIT_TABLES = ["database_admin_access_audits"] as const;
+
 export type ProductionDatabaseRlsReadiness = {
+  authenticationAuthorityPresent: boolean;
+  authenticationMutationRoles: string[];
+  auditAccessRoles: string[];
   directoryIssuerPresent: boolean;
   operatorAuthorityRoles: string[];
   roleName: string;
@@ -120,6 +129,9 @@ export async function getProductionDatabaseRlsReadiness(
 ): Promise<ProductionDatabaseRlsReadiness> {
   const queryTarget = target || (await operationalDatabasePool());
   const rows = await operationalQueryRows<{
+    authentication_authority_present: boolean;
+    authentication_mutation_roles: string[];
+    audit_access_roles: string[];
     directory_issuer_present: boolean;
     operator_authority_roles: string[];
     role_name: string;
@@ -146,6 +158,13 @@ export async function getProductionDatabaseRlsReadiness(
      ),
      session_role_state AS (
        SELECT oid, rolsuper, rolbypassrls, rolcreaterole FROM pg_roles WHERE rolname = session_user
+     ),
+     reachable_roles AS (
+       SELECT candidate.oid,candidate.rolname FROM pg_roles candidate
+       WHERE candidate.oid=(SELECT oid FROM role_state)
+          OR candidate.oid=(SELECT oid FROM session_role_state)
+          OR pg_has_role((SELECT oid FROM session_role_state),candidate.oid,'USAGE')
+          OR pg_has_role((SELECT oid FROM session_role_state),candidate.oid,'SET')
      ),
      table_state AS (
        SELECT
@@ -176,6 +195,19 @@ export async function getProductionDatabaseRlsReadiness(
      )
      SELECT
        public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
+       to_regprocedure('public.fawri_authentication_runtime()') IS NOT NULL AS authentication_authority_present,
+       COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
+         WHERE EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+           WHERE n.nspname='public' AND c.relname=ANY($3::text[]) AND c.relkind IN ('r','p')
+             AND (has_table_privilege(r.oid,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
+               OR has_any_column_privilege(r.oid,c.oid,'INSERT,UPDATE,REFERENCES')))),
+         ARRAY[]::text[]) AS authentication_mutation_roles,
+       COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
+         WHERE EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+           WHERE n.nspname='public' AND c.relname=ANY($4::text[]) AND c.relkind IN ('r','p')
+             AND (has_table_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
+               OR has_any_column_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,REFERENCES')))),
+         ARRAY[]::text[]) AS audit_access_roles,
        to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)') IS NOT NULL AS directory_issuer_present,
        COALESCE((SELECT array_agg(candidate_operator.rolname::text ORDER BY candidate_operator.rolname)
          FROM pg_roles candidate_operator
@@ -218,7 +250,7 @@ export async function getProductionDatabaseRlsReadiness(
            WHERE NOT table_exists OR NOT rls_enabled),
          ARRAY[]::text[]
        ) AS missing_or_unprotected_tenant_tables`,
-    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES), Object.values(OPERATOR_DATABASE_CAPABILITIES)],
+    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES), Object.values(OPERATOR_DATABASE_CAPABILITIES), Array.from(AUTHENTICATION_INTEGRITY_TABLES), Array.from(ADMIN_AUTHORITY_AUDIT_TABLES)],
   );
 
   const row = rows[0];
@@ -230,6 +262,9 @@ export async function getProductionDatabaseRlsReadiness(
   }
 
   return {
+    authenticationAuthorityPresent: booleanValue(row.authentication_authority_present),
+    authenticationMutationRoles: stringArray(row.authentication_mutation_roles),
+    auditAccessRoles: stringArray(row.audit_access_roles),
     directoryIssuerPresent: booleanValue(row.directory_issuer_present),
     operatorAuthorityRoles: stringArray(row.operator_authority_roles),
     roleName: String(row.role_name).trim(),
@@ -333,6 +368,13 @@ export async function assertProductionDatabaseRlsReady(
     fail("PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE",
       "tenant runtime must not reach privileged operator database capabilities");
   }
+  if (!readiness.authenticationAuthorityPresent) fail("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED", "production requires role-bound authentication migration");
+  if (readiness.authenticationMutationRoles.length) fail("PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE", "tenant runtime must not reach authentication mutation privileges");
+  if (readiness.auditAccessRoles.length) fail("PRODUCTION_ADMIN_AUDIT_ACCESS_REACHABLE", "tenant runtime must not directly access authority audit records");
+  try {
+    const url = new URL(String(env.FAWRI_AUTH_DATABASE_URL || "").trim());
+    if (!["postgres:", "postgresql:"].includes(url.protocol)) throw new Error();
+  } catch { fail("PRODUCTION_AUTH_DATABASE_REQUIRED", "production authentication requires a separately authenticated database pool"); }
   try {
     const url = new URL(String(env.FAWRI_OPERATOR_DATABASE_URL || "").trim());
     if (!["postgres:", "postgresql:"].includes(url.protocol)) throw new Error();

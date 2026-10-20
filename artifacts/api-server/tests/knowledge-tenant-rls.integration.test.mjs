@@ -1,3 +1,4 @@
+import {restrictTenantAuthenticationPrivileges} from "./helpers/disposable-authentication-role.mjs";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { randomUUID } from "node:crypto";
@@ -23,6 +24,7 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
     roleCreated = true;
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await admin.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
+    await restrictTenantAuthenticationPrivileges(admin,role);
     for (const [index, id] of tenants.entries()) {
       await admin.query("INSERT INTO accounts(id,kind,phone,password_hash) VALUES($1,'merchant',$2,'synthetic-test-hash')",
         [id, `+1999${Date.now().toString().slice(-8)}${index}`]);
@@ -46,7 +48,7 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
     runtimePool.options.connectionTimeoutMillis = 5_000;
     assert.deepEqual((await runtimePool.query("SELECT current_user AS active, session_user AS login")).rows[0], {active: role, login: role});
     const { assertProductionDatabaseRlsReady } = await import("../src/services/postgresRuntimeRlsSecurity.ts");
-    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci" });
+    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required", FAWRI_AUTH_DATABASE_URL:"postgresql://auth@127.0.0.1/fawri_ci", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci" });
     const knowledge = await import("../src/services/knowledge/postgresKnowledgeRuntime.ts");
     const { PostgresKnowledgeManagementRuntime } = await import("../src/services/knowledge/postgresKnowledgeManagementRuntime.ts");
     const { deleteMerchantKnowledgePostgresData } = await import("../src/services/knowledge/postgresKnowledgeLifecycle.ts");

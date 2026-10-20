@@ -9,6 +9,7 @@ import { productionReleaseGateRequired } from "./productionReleaseReadiness";
 
 export const OPERATOR_DIRECTORY_DATABASE_ENV = "FAWRI_OPERATOR_DATABASE_URL";
 export const OPERATOR_DATABASE_CAPABILITIES = {
+  authentication: "public.fawri_authentication_runtime()",
   directory: "public.fawri_issue_admin_directory_audit(text,text,text)",
   receiptRead: "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)",
   receiptReview: "public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)",
@@ -16,9 +17,6 @@ export const OPERATOR_DATABASE_CAPABILITIES = {
 } as const;
 type OwnedPool = OperationalDatabasePool & { end(): Promise<void> };
 
-function unavailable(code: string): never {
-  throw new OperationalPostgresAuthorityError(code, "operator database authority is unavailable");
-}
 
 // Only server configuration selects this pool. It never accepts request actors,
 // tenant IDs or credentials. Production cannot fall back to the tenant pool.
@@ -28,6 +26,11 @@ export function createOperatorDirectoryAuthority(options: {
   makePool?: (url: string) => Promise<OwnedPool>;
   sharedPool?: () => Promise<OperationalDatabasePool>;
 } = {}) {
+  const auth = options.capability === "authentication";
+  const unavailable = (code:string):never => {
+    throw new OperationalPostgresAuthorityError(auth ? code.replace("OPERATOR_", "AUTH_") : code,
+      auth ? "authentication database authority is unavailable" : "operator database authority is unavailable");
+  };
   const env = options.env ?? process.env;
   const selected = options.capability ?? "directory";
   if (!Object.hasOwn(OPERATOR_DATABASE_CAPABILITIES, selected)) unavailable("OPERATOR_DATABASE_CAPABILITY_INVALID");
@@ -36,7 +39,7 @@ export function createOperatorDirectoryAuthority(options: {
   let owned: Promise<OwnedPool> | undefined;
   let configuredUrl: string | undefined;
   async function databasePool(): Promise<OperationalDatabasePool> {
-    const url = String(env[OPERATOR_DIRECTORY_DATABASE_ENV] || "").trim();
+    const url = String(env[auth ? "FAWRI_AUTH_DATABASE_URL" : OPERATOR_DIRECTORY_DATABASE_ENV] || "").trim();
     if (!url) {
       if (productionReleaseGateRequired(env)) unavailable("OPERATOR_DATABASE_REQUIRED");
       return (options.sharedPool ?? operationalDatabasePool)();
