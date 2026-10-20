@@ -78,7 +78,32 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
   assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)','EXECUTE') AS allowed",[role])).rows[0].allowed,false,'restored raw review capability must remain non-PUBLIC');
   assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_authorize_verified_receipt_replay(text,text,text,text,text,text,text,text)','EXECUTE') AS allowed",[role])).rows[0].allowed,false,'restored replay execution capability must remain non-PUBLIC');
   assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_resolve_confirmed_payment_order(text,text,text,text,integer,text)','EXECUTE') AS allowed",[role])).rows[0].allowed,false,'restored confirmed order capability must remain non-PUBLIC');
-  const components = { tables, policies, functions, constraints, indexes, migrations, channels };
+  // Fingerprint private authority objects as well as public business tables.
+  const privateSchemas=(await pool.query("SELECT nspname,pg_get_userbyid(nspowner) AS owner,ARRAY(SELECT entry::text FROM unnest(coalesce(nspacl,acldefault('n',nspowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_namespace WHERE nspname='fawri_security' ORDER BY nspname")).rows;
+  const privateTables=(await pool.query("SELECT relname,pg_get_userbyid(relowner) AS owner,relrowsecurity,relforcerowsecurity,ARRAY(SELECT entry::text FROM unnest(coalesce(relacl,acldefault('r',relowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_class JOIN pg_namespace n ON n.oid=relnamespace WHERE n.nspname='fawri_security' AND relkind IN ('r','p') ORDER BY relname")).rows;
+  const privateFunctions=(await pool.query("SELECT proname,pg_get_userbyid(proowner) AS owner,pg_get_function_identity_arguments(p.oid) AS args,pg_get_functiondef(p.oid) AS definition,ARRAY(SELECT entry::text FROM unnest(coalesce(proacl,acldefault('f',proowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_proc p JOIN pg_namespace n ON n.oid=pronamespace WHERE n.nspname='fawri_security' AND prokind='f' ORDER BY proname,args")).rows;
+  const privateConstraints=(await pool.query("SELECT c.relname,conname,contype,convalidated,condeferrable,condeferred,pg_get_constraintdef(k.oid) AS definition FROM pg_constraint k JOIN pg_class c ON c.oid=conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='fawri_security' ORDER BY c.relname,conname")).rows;
+  const privateIndexes=(await pool.query("SELECT tablename,indexname,indexdef FROM pg_indexes WHERE schemaname='fawri_security' ORDER BY tablename,indexname")).rows;
+  assert.equal(privateSchemas.length,1,'private security schema must survive backup/restore');
+  assert.deepEqual(privateTables.map(x=>x.relname),['transaction_scopes']);
+  assert.deepEqual(privateFunctions.map(x=>x.proname),['allows_merchant','issue_scope']);
+  assert.ok(privateConstraints.some(x=>x.contype==='f'),'merchant FK is retained');
+  assert.ok(privateIndexes.some(x=>x.indexname==='transaction_scopes_expiry_idx'));
+  const privateAcl=(await pool.query("SELECT has_schema_privilege($1,'fawri_security','USAGE') AS schema_usage,has_schema_privilege($1,'fawri_security','CREATE') AS schema_create,has_table_privilege($1,'fawri_security.transaction_scopes','SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES') AS scope_access,has_function_privilege($1,'fawri_security.issue_scope(name,integer,bigint,text)','EXECUTE') AS issuer,has_function_privilege($1,'fawri_security.allows_merchant(text)','EXECUTE') AS predicate",[role])).rows[0];
+  assert.deepEqual(privateAcl,{schema_usage:false,schema_create:false,scope_access:false,issuer:false,predicate:false},'private ACLs must survive restore without PUBLIC access');
+  // Normalize private CHECK constraints through the same native parser too.
+  const privateNormalizer=await pool.connect();
+  try {
+    for(const [i,row] of privateConstraints.entries())if(row.contype==='c'){
+      const table='private_restore_check_'+i;
+      await privateNormalizer.query('CREATE TEMP TABLE '+table+' (LIKE fawri_security.transaction_scopes)');
+      try{
+        await privateNormalizer.query('ALTER TABLE '+table+' ADD CONSTRAINT private_check '+row.definition);
+        row.definition=(await privateNormalizer.query("SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid=$1::regclass AND conname='private_check'",['pg_temp.'+table])).rows[0].definition;
+      }finally{await privateNormalizer.query('DROP TABLE '+table);}
+    }
+  }finally{privateNormalizer.release();}
+  const components = { tables, policies, functions, constraints, indexes, migrations, channels, privateSchemas, privateTables, privateFunctions, privateConstraints, privateIndexes };
   const fingerprint = createHash('sha256').update(JSON.stringify(components)).digest('hex');
   let before;
   if (phase === 'seed') fs.writeFileSync('/restore-proof/before.json', JSON.stringify({ fingerprint, components }), { mode: 0o600 });
@@ -110,7 +135,7 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
     await client.query('ROLLBACK');
     client.release();
   }
-  console.log('AUDIT_FULL_SCHEMA_RESTORE_RESULT ' + JSON.stringify({ phase, migrationCount: migrations.length, tableCount: tables.length, policyCount: policies.length, functionCount: functions.length, fixtureChannels: channels.length, restrictedTenantReads: true, fingerprint }));
+  console.log('AUDIT_FULL_SCHEMA_RESTORE_RESULT ' + JSON.stringify({ phase, migrationCount: migrations.length, tableCount: tables.length, policyCount: policies.length, functionCount: functions.length, fixtureChannels: channels.length, restrictedTenantReads: true, privateScopeAuthorityAclPreserved:true, privateSchemaCount:privateSchemas.length, privateTableCount:privateTables.length, privateFunctionCount:privateFunctions.length, fingerprint }));
   if (phase === 'verify') assert.equal(fingerprint, before.fingerprint, 'restored schema/data/policy/ACL fingerprint must match');
   // Fixture rows intentionally persist between seed and restore verification.
   // The launcher destroys the entire owned cluster and anonymous volume.

@@ -1,6 +1,7 @@
 import type { OperationalQueryTarget } from "./operationalPostgresAuthority";
 import { OperationalPostgresAuthorityError } from "./operationalPostgresAuthority";
 import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
+import { assertTenantScopeSession } from "./tenantScopePostgresBoundary";
 
 type ScopeTarget = {
   login: string;
@@ -26,6 +27,7 @@ export async function issueMerchantTransactionScope(
       "OPERATIONAL_TENANT_INVALID", "merchant tenant is invalid", 400,
     );
   }
+  await assertTenantScopeSession(client, false);
   const result = await client.query<ScopeTarget>(`SELECT
     session_user::text AS login, current_user::text AS active,
     pg_backend_pid() AS pid, txid_current()::text AS xid,
@@ -46,6 +48,7 @@ export async function issueMerchantTransactionScope(
     );
   }
   await withAuthenticationTransaction(async issuer => {
+    await assertTenantScopeSession(issuer, true);
     await issuer.query(
       "SELECT fawri_security.issue_scope($1::name,$2::integer,$3::bigint,$4::text)",
       [target.login, target.pid, target.xid, merchantId],
