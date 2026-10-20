@@ -318,7 +318,8 @@ export async function listManagedMerchantsPostgres(actorAdminId: string): Promis
       throw new MerchantManagementError(403, "ADMIN_ACCOUNT_INVALID", "administrator account is unavailable");
     }
     // SECURITY TODO (P0): direct audit writers can still mint authority.
-    // Migration 0037 binds consumption to the issuing transaction, but An application-side adminSnapshot check alone is
+    // Migration 0037 binds consumption to the issuing transaction.
+    // An application-side adminSnapshot check alone is
     // not a database authorization boundary. Move issuance behind a narrowly
     // granted, role-bound database authority before revoking direct audit DML.
     // Directory reads span tenants. Use the existing audited-admin RLS predicate
