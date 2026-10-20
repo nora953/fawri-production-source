@@ -34,7 +34,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
 
   await client.query(`DROP ROLE IF EXISTS ${probeRole}`);
   await client.query(
-    `CREATE ROLE ${probeRole} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`,
+    `CREATE ROLE ${probeRole} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`,
   );
 
   await client.query(`GRANT USAGE ON SCHEMA public TO ${probeRole}`);

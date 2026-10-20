@@ -1,3 +1,4 @@
+import { assertTenantScopeSession } from "./tenantScopePostgresBoundary";
 import { OPERATOR_DATABASE_CAPABILITIES } from "./operatorDirectoryPostgresAuthority";
 import {
   operationalDatabasePool,
@@ -381,6 +382,12 @@ export async function assertProductionDatabaseRlsReady(
   } catch {
     fail("PRODUCTION_OPERATOR_DATABASE_REQUIRED",
       "production directory requires a separately authenticated operator database pool");
+  }
+  try {
+    await assertTenantScopeSession(target || await operationalDatabasePool(), false);
+  } catch {
+    fail("PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE",
+      "tenant runtime must have complete private scope objects without private authority privileges");
   }
 
 }

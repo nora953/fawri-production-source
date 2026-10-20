@@ -20,8 +20,8 @@ function productionEnv(): NodeJS.ProcessEnv {
 
 function target(row: Record<string, unknown>): OperationalQueryTarget {
   return {
-    async query<T extends Record<string, unknown>>() {
-      return { rows: [row] as unknown as T[] };
+    async query<T extends Record<string, unknown>>(sql: string) {
+      return { rows: [sql.includes("WITH principal") ? {present:true,safe:true} : row] as unknown as T[] };
     },
   };
 }
@@ -209,4 +209,17 @@ test("production rejects auth mutation and audit access inventories",async()=>{
   await rejectsWith("PRODUCTION_ADMIN_AUDIT_ACCESS_REACHABLE",safeRow({audit_access_roles:["audit_reader"]}));
   await rejectsWith("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED",safeRow({authentication_authority_present:false}));
   await assert.rejects(()=>assertProductionDatabaseRlsReady({...productionEnv(),FAWRI_AUTH_DATABASE_URL:undefined},target(safeRow())),{code:"PRODUCTION_AUTH_DATABASE_REQUIRED"});
+});
+
+
+test("production rejects missing or unsafe private scope admission evidence", async () => {
+  for (const state of [undefined, {}, {present:false,safe:true}, {present:true,safe:false}, {present:"true",safe:true}, {present:true,safe:"true"}]) {
+    const client: OperationalQueryTarget = {
+      async query<T extends Record<string, unknown>>(sql: string) {
+        return { rows: (sql.includes("WITH principal") ? (state === undefined ? [] : [state]) : [safeRow()]) as unknown as T[] };
+      },
+    };
+    await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
+      {code:"PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE"});
+  }
 });

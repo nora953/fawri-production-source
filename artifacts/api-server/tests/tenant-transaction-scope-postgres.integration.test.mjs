@@ -8,6 +8,7 @@ await assertDisposablePostgres();
 const {Client}=await import('pg');
 const {issueMerchantTransactionScope}=await import('../src/services/tenantTransactionScope.ts');
 const {assertTenantScopeSession}=await import('../src/services/tenantScopePostgresBoundary.ts');
+const {assertProductionDatabaseRlsReady}=await import('../src/services/postgresRuntimeRlsSecurity.ts');
 const {closeAuthenticationPool}=await import('../src/services/authenticationPostgresAuthority.ts');
 
 // Canonical migration protocol and server issuance proof; production RLS cutover is separate.
@@ -270,21 +271,32 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
         assert.deepEqual(await visible(primary),[merchants[0]],'failed issuer transaction was rolled back before pool reuse');
       });
 
+      const productionEnv={NODE_ENV:'production',FAWRI_DEPLOYMENT_MODE:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_DATABASE_URL:authUrl,FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'};
+      await assertProductionDatabaseRlsReady(productionEnv,primary);
       const unsafe={code:'OPERATIONAL_TENANT_SCOPE_ROLE_UNSAFE'};
       for(const [c,r,isIssuer] of [[primary,tenant,false],[authClient,auth,true]]){
         await assertTenantScopeSession(c,isIssuer);
         for(const privilege of ['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']){
           await admin.query('GRANT '+privilege+' ON fawri_security.transaction_scopes TO '+r);
-          try{await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);}
+          try{
+            await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);
+            if(!isIssuer)await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv,c),{code:'PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE'});
+          }
           finally{await admin.query('REVOKE '+privilege+' ON fawri_security.transaction_scopes FROM '+r);}
         }
         for(const privilege of ['SELECT','INSERT','UPDATE','REFERENCES']){
           await admin.query('GRANT '+privilege+'(merchant_id) ON fawri_security.transaction_scopes TO '+r);
-          try{await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);}
+          try{
+            await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);
+            if(!isIssuer)await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv,c),{code:'PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE'});
+          }
           finally{await admin.query('REVOKE '+privilege+'(merchant_id) ON fawri_security.transaction_scopes FROM '+r);}
         }
         await admin.query('GRANT CREATE ON SCHEMA fawri_security TO '+r);
-        try{await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);}
+        try{
+            await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);
+            if(!isIssuer)await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv,c),{code:'PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE'});
+          }
         finally{await admin.query('REVOKE CREATE ON SCHEMA fawri_security FROM '+r);}
         await assertTenantScopeSession(c,isIssuer);
       }
@@ -298,7 +310,10 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
       for(const [c,r,isIssuer] of [[primary,tenant,false],[authClient,auth,true]]){
         for(const membership of ['INHERIT TRUE, SET FALSE','INHERIT FALSE, SET TRUE']){
           await admin.query('GRANT '+grantRole+' TO '+r+' WITH '+membership);
-          try{await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);}
+          try{
+            await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);
+            if(!isIssuer)await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv,c),{code:'PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE'});
+          }
           finally{await admin.query('REVOKE '+grantRole+' FROM '+r);}
         }
         await admin.query('GRANT '+grantRole+' TO '+r+' WITH INHERIT FALSE, SET FALSE');
@@ -315,7 +330,10 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
       try{
         for(const [c,r,isIssuer] of [[primary,tenant,false],[authClient,auth,true]]){
           await admin.query('GRANT '+grantRole+' TO '+r+' WITH INHERIT FALSE, SET TRUE');
-          try{await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);}
+          try{
+            await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);
+            if(!isIssuer)await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv,c),{code:'PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE'});
+          }
           finally{await admin.query('REVOKE '+grantRole+' FROM '+r);}
         }
       }finally{await admin.query('ALTER FUNCTION fawri_security.allows_merchant(text) OWNER TO '+bootstrap);}
@@ -327,5 +345,5 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
       await admin.query('CREATE POLICY owned_scope ON '+schema+'.probe_rows USING('+schema+'.allows_merchant(merchant_id)) WITH CHECK('+schema+'.allows_merchant(merchant_id))');
     }
   });
-  if(protocolPassed)console.log('P0_TENANT_SCOPE_PROTOCOL_PROOF '+JSON.stringify({privateScopePrivilegeAdmissionVerified:true,canonicalMigrationExercised:true,serverAuthenticatedPoolIssuance:true,serverIsolationRejection:true,serverAutocommitRejection:true,issuerFailurePoolRecovery:true,restrictedRuntimeLogin:true,sameLoginCrossBackendReplayDenied:true,sameBackendLaterTransactionReplayDenied:true,gucSpoofDenied:true,foreignReadAndUpdateDenied:true,privateAuthorityCrudDenied:true,forgedIssuerCallDenied:true,immutableScope:true,expiredScopeRenewalDenied:true,completedOnlyBoundedCleanup:true,restrictedNonLoginFunctionOwner:true,readCommittedSupported:true,repeatableReadAndSerializableFailClosed:true,concurrentConnections:4,reuseRounds:2,productionPredicateChanged:false,hostedCertified:false,releaseAccepted:false}));
+  if(protocolPassed)console.log('P0_TENANT_SCOPE_PROTOCOL_PROOF '+JSON.stringify({productionStartupPrivateScopeAdmissionVerified:true,privateScopePrivilegeAdmissionVerified:true,canonicalMigrationExercised:true,serverAuthenticatedPoolIssuance:true,serverIsolationRejection:true,serverAutocommitRejection:true,issuerFailurePoolRecovery:true,restrictedRuntimeLogin:true,sameLoginCrossBackendReplayDenied:true,sameBackendLaterTransactionReplayDenied:true,gucSpoofDenied:true,foreignReadAndUpdateDenied:true,privateAuthorityCrudDenied:true,forgedIssuerCallDenied:true,immutableScope:true,expiredScopeRenewalDenied:true,completedOnlyBoundedCleanup:true,restrictedNonLoginFunctionOwner:true,readCommittedSupported:true,repeatableReadAndSerializableFailClosed:true,concurrentConnections:4,reuseRounds:2,productionPredicateChanged:false,hostedCertified:false,releaseAccepted:false}));
 });
