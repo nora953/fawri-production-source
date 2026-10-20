@@ -1,9 +1,11 @@
--- Isolated protocol candidate only: not a migration and not wired into production RLS.
--- The guarded test replaces this schema placeholder with its owned nonce namespace.
-CREATE SCHEMA __SCOPE_SCHEMA__;
-REVOKE ALL ON SCHEMA __SCOPE_SCHEMA__ FROM PUBLIC;
+-- Transaction-scoped tenant authority foundation. RLS cutover is a separate change.
+-- No application LOGIN receives grants here. Provision an unreachable trusted
+-- function owner with merchant SELECT and pg_read_all_stats before granting
+-- issuer EXECUTE to the authentication LOGIN; never grant scope-table CRUD.
+CREATE SCHEMA fawri_security;
+REVOKE ALL ON SCHEMA fawri_security FROM PUBLIC;
 
-CREATE TABLE __SCOPE_SCHEMA__.transaction_scopes (
+CREATE TABLE fawri_security.transaction_scopes (
   runtime_login name NOT NULL,
   backend_pid integer NOT NULL CHECK (backend_pid > 0),
   transaction_id bigint NOT NULL CHECK (transaction_id > 0),
@@ -13,10 +15,10 @@ CREATE TABLE __SCOPE_SCHEMA__.transaction_scopes (
   PRIMARY KEY(runtime_login,backend_pid,transaction_id),
   CHECK (expires_at > issued_at AND expires_at <= issued_at + interval '3 minutes')
 );
-CREATE INDEX transaction_scopes_expiry_idx ON __SCOPE_SCHEMA__.transaction_scopes(expires_at);
-REVOKE ALL ON __SCOPE_SCHEMA__.transaction_scopes FROM PUBLIC;
+CREATE INDEX transaction_scopes_expiry_idx ON fawri_security.transaction_scopes(expires_at);
+REVOKE ALL ON fawri_security.transaction_scopes FROM PUBLIC;
 
-CREATE FUNCTION __SCOPE_SCHEMA__.issue_scope(
+CREATE FUNCTION fawri_security.issue_scope(
   p_runtime_login name,p_backend_pid integer,p_transaction_id bigint,p_merchant_id text
 ) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog
@@ -61,20 +63,20 @@ BEGIN
   END IF;
   -- Clean only expired, completed transactions. Never erase an in-progress
   -- tombstone: that would permit renewal/rebinding inside the same transaction.
-  DELETE FROM __SCOPE_SCHEMA__.transaction_scopes s
+  DELETE FROM fawri_security.transaction_scopes s
     WHERE (s.runtime_login,s.backend_pid,s.transaction_id) IN (
       SELECT old.runtime_login,old.backend_pid,old.transaction_id
-        FROM __SCOPE_SCHEMA__.transaction_scopes old
+        FROM fawri_security.transaction_scopes old
        WHERE old.expires_at < clock_timestamp()
          AND pg_xact_status(old.transaction_id::text::xid8) IS DISTINCT FROM 'in progress'
        ORDER BY old.expires_at LIMIT 64
     );
   v_now := clock_timestamp();
-  INSERT INTO __SCOPE_SCHEMA__.transaction_scopes
+  INSERT INTO fawri_security.transaction_scopes
     (runtime_login,backend_pid,transaction_id,merchant_id,issued_at,expires_at)
     VALUES(p_runtime_login,p_backend_pid,p_transaction_id,p_merchant_id,v_now,v_now+interval '3 minutes')
     ON CONFLICT(runtime_login,backend_pid,transaction_id) DO NOTHING;
-  IF NOT EXISTS (SELECT 1 FROM __SCOPE_SCHEMA__.transaction_scopes s
+  IF NOT EXISTS (SELECT 1 FROM fawri_security.transaction_scopes s
       WHERE s.runtime_login=p_runtime_login AND s.backend_pid=p_backend_pid
         AND s.transaction_id=p_transaction_id AND s.merchant_id=p_merchant_id
         AND s.issued_at<=clock_timestamp() AND s.expires_at>clock_timestamp()) THEN
@@ -82,15 +84,15 @@ BEGIN
   END IF;
 END
 $body$;
-REVOKE ALL ON FUNCTION __SCOPE_SCHEMA__.issue_scope(name,integer,bigint,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) FROM PUBLIC;
 
-CREATE FUNCTION __SCOPE_SCHEMA__.allows_merchant(p_merchant_id text)
+CREATE FUNCTION fawri_security.allows_merchant(p_merchant_id text)
 RETURNS boolean LANGUAGE sql STABLE STRICT SECURITY DEFINER SET search_path=pg_catalog
 AS $body$
   SELECT current_setting('transaction_isolation')='read committed'
-    AND EXISTS (SELECT 1 FROM __SCOPE_SCHEMA__.transaction_scopes s
+    AND EXISTS (SELECT 1 FROM fawri_security.transaction_scopes s
       WHERE s.runtime_login=session_user AND s.backend_pid=pg_backend_pid()
         AND s.transaction_id=txid_current() AND s.merchant_id=p_merchant_id
         AND s.issued_at<=clock_timestamp() AND s.expires_at>clock_timestamp())
 $body$;
-REVOKE ALL ON FUNCTION __SCOPE_SCHEMA__.allows_merchant(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION fawri_security.allows_merchant(text) FROM PUBLIC;

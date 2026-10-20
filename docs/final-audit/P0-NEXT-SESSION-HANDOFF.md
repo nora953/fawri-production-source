@@ -1,5 +1,20 @@
 # FAWRI P0 next-session handoff
 
+## Continuation 2026-10-20T18:15:20.272Z — canonical tenant-scope foundation, validation pending
+
+Recovered exact source/docs HEAD `72a15c68e524523939e0863d13315ebbc4520733`; all44 workflows completed SUCCESS, including migration39469980947, schema39469981839 and isolated39469981220. Draft PR#550 remains open against `test/p0-integrated-billing-meta-20261015`. No newer concurrent commit observed.
+
+This increment adds canonical manual migration0040 (private fawri_security scope table/issuer/predicate), journal and reproducible snapshot, and server-only issueMerchantTransactionScope using the existing identity-checked authentication pool. Actual primary LOGIN/PID/full-XID are read from the same leased client; autocommit targets expire before issuance, unsupported isolation is explicitly rejected, and issuer commit precedes return. Call immediately after BEGIN before merchant/FK locks. No application caller or public RLS predicate is cut over yet.
+
+The original isolated protocol now reads the canonical SQL rather than an independently drifting template. Its existing restricted NOLOGIN-owner tests remain; an added real LOGIN test exercises the server helper against the canonical migrated namespace using an actual separate auth pool, including GUC redirect denial, same-LOGIN other-backend denial, immutability, autocommit rejection, higher-isolation rejection, issuer revocation/failure rollback and pool recovery. All nested tests now feed the proof-emission guard.
+
+**New execution results: pending CI, not yet accepted.** Local execution was attempted again and remains unavailable. Snapshot ID computed using the generator's deterministic SHA256 algorithm, checked against empty/abc standard vectors; canonical regeneration must verify it in CI. No new tests claimed passed.
+
+Migration grants nothing to application LOGINs and does not provision roles. Canonical objects initially belong to the migration executor, matching current migration ownership behavior. Restricted function-owner/statistics provisioning and readiness rejection of direct/inherited/SET private-object access remain REQUIRED before production use. Prototype restricted-owner success is not certification of hosted canonical ownership.
+
+Release **NO-GO**. Raw tenant GUC exploit in production predicate remains open. Next: inspect exact new-commit CI, fix any migration/service test failures, then add private-object readiness guards and trusted issuer grants in owned fixtures, migrate all8 scope writers with safe lock order, and only then replace public tenant GUC trust. Do not repeat protocol design or dependency work. No hosted data/grants/deployment, main push or merge.
+
+
 Verified 2026-10-20T17:53:19.427Z. **NO-GO**.
 
 Exact accepted executable `8ae2cf717e04455e8f26a5bf80d28539b9ada62b`: **44/44 completed workflows SUCCESS**, isolated39468476801/job118785998742 with65 complete exit0/fail0/skip0/cancel0 invocation summaries. New transaction-scope protocol15 TAP tests PASS (14 nested+parent). Containing docs-only commit has separate CI; check live HEAD before writing.
