@@ -1,0 +1,230 @@
+import assert from 'node:assert/strict';
+import {randomUUID,randomInt} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import test from 'node:test';
+import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
+import {cleanupResources} from './helpers/cleanup-resources.mjs';
+await assertDisposablePostgres();
+const {Client}=await import('pg');
+
+// A protocol proof, not a production migration or a change to existing RLS.
+// The bootstrap installs owned objects; every authorization call uses a real
+// restricted LOGIN and a non-LOGIN, non-superuser function owner.
+test('tenant scope binds actual LOGIN backend and transaction without trusting GUCs',{timeout:90000},async t=>{
+  const admin=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:5000});
+  await admin.connect();
+  const nonce=randomUUID().replaceAll('-',''),schema='scope_probe_'+nonce;
+  const owner='scope_owner_'+nonce,tenant='scope_tenant_'+nonce,auth='scope_auth_'+nonce;
+  const merchants=['scope-a-'+nonce,'scope-b-'+nonce],roles=[],clients=[];
+  let schemaCreated=false,tenantUrl,authClient,primary,other,expiredTarget;
+  t.after(()=>cleanupResources([
+    ['owned sessions',async()=>{for(const c of clients)await c.end();}],
+    ['owned scope namespace',()=>schemaCreated?admin.query('DROP SCHEMA IF EXISTS '+schema+' CASCADE'):undefined],
+    ['owned merchants',()=>admin.query('DELETE FROM merchants WHERE id=ANY($1::text[])',[merchants])],
+    ['owned accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchants])],
+    ['owned roles',async()=>{for(const r of roles){await admin.query('DROP OWNED BY '+r);await admin.query('DROP ROLE '+r);}}],
+    ['bootstrap',()=>admin.end()],
+  ]));
+  for(const r of [owner,tenant,auth]){
+    assert.match(r,/^[a-z][a-z0-9_]{1,62}$/);
+    const password=randomUUID().replaceAll('-','');
+    await admin.query('CREATE ROLE '+r+(r===owner?' NOLOGIN':" LOGIN PASSWORD '"+password+"'")+' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE'+(r===owner?' INHERIT':' NOINHERIT')+' NOREPLICATION');roles.push(r);
+    if(r!==owner){
+      const url=new URL(process.env.DATABASE_URL);url.username=r;url.password=password;url.search='';
+      if(r===tenant)tenantUrl=url.toString();
+      const c=new Client({connectionString:url.toString(),connectionTimeoutMillis:5000});clients.push(c);await c.connect();
+      if(r===auth)authClient=c;else primary=c;
+    }
+  }
+  async function fresh(){const c=new Client({connectionString:tenantUrl,connectionTimeoutMillis:5000});clients.push(c);await c.connect();return c;}
+  other=await fresh();
+  for(const id of merchants){
+    await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[id,'+198'+randomInt(100000000,999999999)]);
+    await admin.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status) VALUES($1,$1,'Synthetic','Synthetic','retail','approved','approved')",[id]);
+  }
+  let sql=readFileSync(new URL('./fixtures/tenant-transaction-scope-candidate.sql',import.meta.url),'utf8');
+  assert.ok(sql.includes('__SCOPE_SCHEMA__'));sql=sql.replaceAll('__SCOPE_SCHEMA__',schema);
+  // Register cleanup before SQL setup can partially succeed.
+  schemaCreated=true;await admin.query(sql);
+  await admin.query('ALTER SCHEMA '+schema+' OWNER TO '+owner);
+  await admin.query('ALTER TABLE '+schema+'.transaction_scopes OWNER TO '+owner);
+  await admin.query('ALTER FUNCTION '+schema+'.issue_scope(name,integer,bigint,text) OWNER TO '+owner);
+  await admin.query('ALTER FUNCTION '+schema+'.allows_merchant(text) OWNER TO '+owner);
+  await admin.query('GRANT pg_read_all_stats TO '+owner);
+  await admin.query('GRANT USAGE ON SCHEMA public TO '+owner+','+tenant+','+auth);
+  await admin.query('GRANT SELECT ON public.merchants TO '+owner);
+  await admin.query('GRANT USAGE ON SCHEMA '+schema+' TO '+tenant+','+auth);
+  await admin.query('GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO '+auth);
+  await admin.query('GRANT EXECUTE ON FUNCTION '+schema+'.issue_scope(name,integer,bigint,text) TO '+auth);
+  await admin.query('GRANT EXECUTE ON FUNCTION '+schema+'.allows_merchant(text) TO '+tenant);
+  await admin.query('CREATE TABLE '+schema+'.probe_rows(merchant_id text PRIMARY KEY,version integer NOT NULL)');
+  for(const id of merchants)await admin.query('INSERT INTO '+schema+'.probe_rows VALUES($1,1)',[id]);
+  await admin.query('ALTER TABLE '+schema+'.probe_rows ENABLE ROW LEVEL SECURITY');
+  await admin.query('ALTER TABLE '+schema+'.probe_rows FORCE ROW LEVEL SECURITY');
+  await admin.query('CREATE POLICY owned_scope ON '+schema+'.probe_rows USING('+schema+'.allows_merchant(merchant_id)) WITH CHECK('+schema+'.allows_merchant(merchant_id))');
+  await admin.query('GRANT SELECT,INSERT,UPDATE,DELETE ON '+schema+'.probe_rows TO '+tenant);
+  for(const [c,r]of [[primary,tenant],[other,tenant],[authClient,auth]]){
+    const actual=(await c.query("SELECT current_user AS active,session_user AS login,rolsuper,rolbypassrls,rolcreaterole,EXISTS(SELECT 1 FROM pg_auth_members WHERE member=r.oid) AS member,EXISTS(SELECT 1 FROM pg_class WHERE relowner=r.oid) AS owns_relations FROM pg_roles r WHERE rolname=session_user")).rows[0];
+    assert.deepEqual(actual,{active:r,login:r,rolsuper:false,rolbypassrls:false,rolcreaterole:false,member:false,owns_relations:false});
+    await assert.rejects(()=>c.query('SET ROLE '+owner),{code:'42501'});
+  }
+  const ownerFlags=(await admin.query('SELECT rolcanlogin,rolsuper,rolbypassrls,rolcreaterole FROM pg_roles WHERE rolname=$1',[owner])).rows[0];
+  assert.deepEqual(ownerFlags,{rolcanlogin:false,rolsuper:false,rolbypassrls:false,rolcreaterole:false});
+  const visible=async c=>(await c.query('SELECT merchant_id FROM '+schema+'.probe_rows ORDER BY merchant_id')).rows.map(r=>r.merchant_id);
+  const identity=async c=>(await c.query('SELECT session_user::text AS login,pg_backend_pid() AS pid,txid_current()::text AS xid')).rows[0];
+  const issue=(target,merchant)=>authClient.query('SELECT '+schema+'.issue_scope($1::name,$2::integer,$3::bigint,$4::text)',[target.login,target.pid,target.xid,merchant]);
+  const binding=async target=>(await admin.query('SELECT merchant_id,issued_at,expires_at FROM '+schema+'.transaction_scopes WHERE runtime_login=$1 AND backend_pid=$2 AND transaction_id=$3',[target.login,target.pid,target.xid])).rows[0];
+  async function transaction(c,work,isolation='READ COMMITTED'){
+    assert.ok(['READ COMMITTED','REPEATABLE READ','SERIALIZABLE'].includes(isolation));
+    await c.query('BEGIN ISOLATION LEVEL '+isolation);
+    try{return await work(await identity(c));}finally{await c.query('ROLLBACK');}
+  }
+  async function scoped(c,merchant,work,isolation='READ COMMITTED'){
+    return transaction(c,async target=>{await issue(target,merchant);return work(target);},isolation);
+  }
+
+  let protocolPassed=true;
+  async function check(name,work){await t.test(name,async()=>{try{await work();}catch(error){protocolPassed=false;throw error;}});}
+
+  await check('tenant GUCs and forged administrative actors grant nothing without issued scope',async()=>{
+    await transaction(primary,async()=>{
+      await primary.query("SELECT set_config('fawri.tenant_id',$1,true),set_config('fawri.admin_account_id','forged',true),set_config('fawri.admin_audit_id','forged',true)",[merchants[1]]);
+      assert.deepEqual(await visible(primary),[]);
+      assert.equal((await primary.query('UPDATE '+schema+'.probe_rows SET version=99 WHERE merchant_id=$1',[merchants[1]])).rowCount,0);
+    });
+  });
+  await t.test('authorized own CRUD works; foreign GUC changes cannot redirect reads or writes',async()=>{
+    await scoped(primary,merchants[0],async()=>{
+      assert.deepEqual(await visible(primary),[merchants[0]]);
+      assert.equal((await primary.query('UPDATE '+schema+'.probe_rows SET version=version+1 WHERE merchant_id=$1',[merchants[0]])).rowCount,1);
+      await primary.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchants[1]]);
+      assert.deepEqual(await visible(primary),[merchants[0]]);
+      assert.equal((await primary.query('UPDATE '+schema+'.probe_rows SET version=99 WHERE merchant_id=$1',[merchants[1]])).rowCount,0);
+      assert.equal((await primary.query('DELETE FROM '+schema+'.probe_rows WHERE merchant_id=$1',[merchants[1]])).rowCount,0);
+      await primary.query('SAVEPOINT foreign_insert');
+      await assert.rejects(()=>primary.query('INSERT INTO '+schema+'.probe_rows VALUES($1,9)',[merchants[1]]),{code:'42501'});
+      await primary.query('ROLLBACK TO SAVEPOINT foreign_insert');
+      assert.equal((await primary.query('DELETE FROM '+schema+'.probe_rows WHERE merchant_id=$1',[merchants[0]])).rowCount,1);
+      assert.equal((await primary.query('INSERT INTO '+schema+'.probe_rows VALUES($1,1)',[merchants[0]])).rowCount,1);
+    });
+  });
+  await t.test('tenant cannot mint even with forged actor GUC and accidental issuer EXECUTE grant',async()=>{
+    await transaction(primary,async target=>{
+      const query=()=>other.query('SELECT '+schema+'.issue_scope($1,$2,$3,$4)',[target.login,target.pid,target.xid,merchants[1]]);
+      await assert.rejects(query,{code:'42501'});
+      await admin.query('GRANT EXECUTE ON FUNCTION '+schema+'.issue_scope(name,integer,bigint,text) TO '+tenant);
+      try{
+        await other.query("SELECT set_config('fawri.admin_account_id',$1,false),set_config('fawri.tenant_id',$2,false)",[auth,merchants[1]]);
+        await assert.rejects(query,{code:'42501'});
+      }finally{await admin.query('REVOKE EXECUTE ON FUNCTION '+schema+'.issue_scope(name,integer,bigint,text) FROM '+tenant);await other.query('RESET ALL');}
+      assert.deepEqual(await visible(primary),[]);
+    });
+  });
+  await t.test('runtime and trusted issuer cannot directly SELECT INSERT UPDATE DELETE scope records',async()=>{
+    for(const c of [primary,authClient])for(const query of [
+      'SELECT * FROM '+schema+'.transaction_scopes',
+      "INSERT INTO "+schema+".transaction_scopes VALUES(current_user,pg_backend_pid(),txid_current(),'forged',now(),now()+interval '1 minute')",
+      'UPDATE '+schema+".transaction_scopes SET merchant_id='forged'",
+      'DELETE FROM '+schema+'.transaction_scopes',
+    ])await assert.rejects(()=>c.query(query),{code:'42501'});
+  });
+  await t.test('same LOGIN on another backend cannot replay known full binding identifiers',async()=>{
+    await scoped(primary,merchants[0],async target=>{
+      await transaction(other,async otherTarget=>{
+        assert.equal(otherTarget.login,target.login);assert.notEqual(otherTarget.pid,target.pid);
+        await other.query("SELECT set_config('fawri.tenant_id',$1,true),set_config('fawri.tenant_scope_pid',$2,true),set_config('fawri.tenant_scope_xid',$3,true)",[merchants[0],String(target.pid),target.xid]);
+        assert.deepEqual(await visible(other),[]);
+        assert.equal((await other.query('UPDATE '+schema+'.probe_rows SET version=99 WHERE merchant_id=$1',[merchants[0]])).rowCount,0);
+      });
+    });
+  });
+  await t.test('same backend later transaction cannot reuse authority after COMMIT',async()=>{
+    await primary.query('BEGIN');let previous;
+    try{previous=await identity(primary);await issue(previous,merchants[0]);assert.deepEqual(await visible(primary),[merchants[0]]);await primary.query('COMMIT');}
+    catch(error){await primary.query('ROLLBACK');throw error;}
+    await transaction(primary,async current=>{
+      assert.equal(current.pid,previous.pid);assert.notEqual(current.xid,previous.xid);
+      await primary.query("SELECT set_config('fawri.tenant_id',$1,true),set_config('fawri.tenant_scope_xid',$2,true)",[merchants[0],previous.xid]);
+      assert.deepEqual(await visible(primary),[]);
+    });
+  });
+  await t.test('scope is immutable and idempotent issuance cannot extend its validity',async()=>{
+    await scoped(primary,merchants[0],async target=>{
+      const before=await binding(target);await issue(target,merchants[0]);assert.deepEqual(await binding(target),before);
+      await assert.rejects(()=>issue(target,merchants[1]),{code:'42501'});
+      assert.deepEqual(await binding(target),before);assert.deepEqual(await visible(primary),[merchants[0]]);
+    });
+  });
+  await t.test('expired in-progress authority is denied and cannot be deleted then renewed',async()=>{
+    await scoped(primary,merchants[0],async target=>{
+      expiredTarget=target;
+      await admin.query('UPDATE '+schema+".transaction_scopes SET issued_at=statement_timestamp()-interval '4 minutes',expires_at=statement_timestamp()-interval '1 minute' WHERE runtime_login=$1 AND backend_pid=$2 AND transaction_id=$3",[target.login,target.pid,target.xid]);
+      assert.deepEqual(await visible(primary),[]);
+      await scoped(other,merchants[1],async()=>{assert.deepEqual(await visible(other),[merchants[1]]);});
+      assert.ok(await binding(target),'cleanup must preserve expired in-progress tombstone');
+      await assert.rejects(()=>issue(target,merchants[0]),{code:'42501'});
+      await assert.rejects(()=>issue(target,merchants[1]),{code:'42501'});
+    });
+  });
+  await t.test('bounded cleanup removes expired completed transactions only',async()=>{
+    assert.ok(await binding(expiredTarget));
+    await scoped(primary,merchants[0],async target=>{
+      assert.equal(await binding(expiredTarget),undefined);
+      assert.ok(await binding(target));assert.deepEqual(await visible(primary),[merchants[0]]);
+    });
+  });
+  await t.test('revoked actual authentication marker prevents issuance despite identifiers and EXECUTE',async()=>{
+    await transaction(primary,async target=>{
+      await admin.query('REVOKE EXECUTE ON FUNCTION public.fawri_authentication_runtime() FROM '+auth);
+      try{await assert.rejects(()=>issue(target,merchants[0]),{code:'42501'});assert.deepEqual(await visible(primary),[]);}
+      finally{await admin.query('GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO '+auth);}
+      await issue(target,merchants[0]);assert.deepEqual(await visible(primary),[merchants[0]]);
+    });
+  });
+  await t.test('issuer validates live backend login and full transaction epoch before inserting',async()=>{
+    await transaction(primary,async target=>{
+      const otherPid=(await other.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+      for(const [login,pid,xid,merchant]of [
+        [owner,target.pid,target.xid,merchants[0]],
+        [target.login,otherPid,target.xid,merchants[0]],
+        [target.login,target.pid,String(BigInt(target.xid)+1n),merchants[0]],
+        [target.login,target.pid,String(BigInt(target.xid)+4294967296n),merchants[0]],
+        [target.login,target.pid,target.xid,'missing-'+nonce],
+      ])await assert.rejects(()=>issue({login,pid,xid},merchant),{code:'42501'});
+      assert.equal(await binding(target),undefined);assert.deepEqual(await visible(primary),[]);
+    });
+  });
+  await t.test('unsupported Repeatable Read and Serializable snapshots fail closed explicitly',async()=>{
+    for(const level of ['REPEATABLE READ','SERIALIZABLE'])await scoped(primary,merchants[0],async()=>{
+      assert.deepEqual(await visible(primary),[]);
+      assert.equal((await primary.query('SELECT '+schema+'.allows_merchant($1) AS allowed',[merchants[0]])).rows[0].allowed,false);
+    },level);
+  });
+  await t.test('rollback preserves data and clears GUC while stale binding cannot cross pool reuse',async()=>{
+    const before=(await admin.query('SELECT * FROM '+schema+'.probe_rows ORDER BY merchant_id')).rows;
+    await assert.rejects(()=>scoped(primary,merchants[0],async()=>{
+      await primary.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchants[1]]);
+      await primary.query('UPDATE '+schema+'.probe_rows SET version=version+10 WHERE merchant_id=$1',[merchants[0]]);
+      throw Error('synthetic rollback');
+    }),{message:'synthetic rollback'});
+    assert.deepEqual((await admin.query('SELECT * FROM '+schema+'.probe_rows ORDER BY merchant_id')).rows,before);
+    assert.equal((await primary.query("SELECT nullif(current_setting('fawri.tenant_id',true),'') AS tenant")).rows[0].tenant,null);
+    assert.deepEqual(await visible(primary),[]);
+  });
+  await t.test('four concurrent connections sharing one LOGIN retain isolated scope across reuse',async()=>{
+    const parallel=await Promise.all(Array.from({length:4},()=>fresh()));
+    const settled=await Promise.allSettled(parallel.map(async(c,index)=>{
+      for(let round=0;round<2;round++){
+        const own=merchants[(index+round)%2],foreign=merchants[(index+round+1)%2];
+        await scoped(c,own,async()=>{
+          await c.query("SELECT set_config('fawri.tenant_id',$1,true)",[foreign]);
+          assert.deepEqual(await visible(c),[own]);
+          assert.equal((await c.query('UPDATE '+schema+'.probe_rows SET version=99 WHERE merchant_id=$1',[foreign])).rowCount,0);
+        });
+        assert.deepEqual(await visible(c),[]);
+      }
+    }));
+    for(const result of settled)assert.equal(result.status,'fulfilled',result.status==='rejected'?String(result.reason):undefined);
+  });
+  if(protocolPassed)console.log('P0_TENANT_SCOPE_PROTOCOL_PROOF '+JSON.stringify({restrictedRuntimeLogin:true,sameLoginCrossBackendReplayDenied:true,sameBackendLaterTransactionReplayDenied:true,gucSpoofDenied:true,foreignReadAndUpdateDenied:true,privateAuthorityCrudDenied:true,forgedIssuerCallDenied:true,immutableScope:true,expiredScopeRenewalDenied:true,completedOnlyBoundedCleanup:true,restrictedNonLoginFunctionOwner:true,readCommittedSupported:true,repeatableReadAndSerializableFailClosed:true,concurrentConnections:4,reuseRounds:2,productionPredicateChanged:false,hostedCertified:false,releaseAccepted:false}));
+});
