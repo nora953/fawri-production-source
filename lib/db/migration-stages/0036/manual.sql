@@ -29,5 +29,7 @@ AS $$
          AND (admin_audit.merchant_id IS NULL OR admin_audit.merchant_id = p_merchant_id)
     )
 $$;
+--> statement-breakpoint
 REVOKE ALL ON FUNCTION public.fawri_tenant_or_audited_admin(text) FROM PUBLIC;
+--> statement-breakpoint
 GRANT EXECUTE ON FUNCTION public.fawri_tenant_or_audited_admin(text) TO PUBLIC;
