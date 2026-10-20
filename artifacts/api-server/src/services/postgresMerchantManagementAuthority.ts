@@ -317,6 +317,10 @@ export async function listManagedMerchantsPostgres(actorAdminId: string): Promis
     if (!actor) {
       throw new MerchantManagementError(403, "ADMIN_ACCOUNT_INVALID", "administrator account is unavailable");
     }
+    // SECURITY TODO (P0): the runtime role can currently mint and replay these
+    // database audit records. An application-side adminSnapshot check alone is
+    // not a database authorization boundary. Move issuance behind a narrowly
+    // granted, role-bound database authority before revoking direct audit DML.
     // Directory reads span tenants. Use the existing audited-admin RLS predicate
     // for this transaction rather than bypassing RLS or querying once per tenant.
     const auditId = `database-admin-${crypto.randomUUID()}`;
