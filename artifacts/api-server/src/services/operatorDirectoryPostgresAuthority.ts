@@ -38,13 +38,11 @@ export function createOperatorDirectoryAuthority(options: {
     configuredUrl = url;
     if (!owned) {
       owned = (options.makePool ?? (async (connectionString: string) => {
-        const { default: pg } = await import("pg");
-        const pool = new pg.Pool({ connectionString, max: 3, connectionTimeoutMillis: 5000 });
-        // Drain transport errors without logging credentials, SQL or driver text.
-        const report = () => console.error("OPERATOR_POSTGRES_CONNECTION_FAILURE");
-        pool.on("error", report);
-        pool.on("connect", client => client.on("error", report));
-        return pool as unknown as OwnedPool;
+        // Keep driver types and sanitized transport handling in @workspace/db.
+        const { createPostgresPool } = await import("@workspace/db");
+        return createPostgresPool(connectionString, {
+          max: 3, connectionTimeoutMillis: 5000,
+        }) as unknown as OwnedPool;
       }))(url);
     }
     return owned;

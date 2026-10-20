@@ -1,3 +1,8 @@
+## Typecheck repair in flight — 2026-10-20 UTC
+
+- Source d58141284bc35ff9fc8e3f36930a53636a22ea9f failed API typecheck in CI: operator module directly imported pg but API package does not own pg declaration types (TS7016; resulting callback TS7006). Foundation39378259170/job118481186225 and billing readiness39378259171/job118481186159 logs verify this. This source is NOT accepted; do not count its failed/cancelled runs as successful SQL evidence.
+- Repair centralizes typed additional pool construction in @workspace/db:createPostgresPool, reusing the existing sanitized transport handlers for primary and operator pools. No @ts-ignore, declaration suppression, dependency or lockfile change. Re-run source CI after this containing repair; local focused suites remain required.
+
 ## In-flight role-bound directory issuer increment — 2026-10-20 UTC
 
 - Last verified remote HEAD before this batch: 92f197d2d4bb29559331abf26d38e6f6e6c53b52. Last fully CI-accepted executable source 4fe28acd0d83d17fc2f133bc6096e0d620e3d3f0 (43/43 SUCCESS). Branch/PR/base unchanged.
