@@ -1,3 +1,5 @@
+import {createDisposableAuthenticationRole} from "./helpers/disposable-authentication-role.mjs";
+import {grantReceiptExecutionFixture} from "./helpers/receipt-execution-role.mjs";
 import assert from 'node:assert/strict';
 import {randomUUID,randomInt,generateKeyPairSync} from 'node:crypto';
 import test from 'node:test';
@@ -25,10 +27,14 @@ const capability='public.fawri_authorize_verified_receipt_replay(text,text,text,
 const kinds={saas:{orders:'saas_billing_orders',events:'saas_billing_events',applications:'saas_entitlement_applications',subscriptions:'subscriptions'},cashier:{orders:'cashier_billing_orders',events:'cashier_billing_events',applications:'cashier_entitlement_applications',subscriptions:'merchant_cashier_subscriptions'}};
 
 test('real operator HTTP replay recovers committed receipt/grant after PostgreSQL wire acknowledgment loss with fresh sessions', {timeout:180000},async t=>{
-  const ids=[],events=[],children=[],markers=[],sessionIds=[];const role=`operator_wire_${randomUUID().replaceAll('-','')}`;let roleCreated=false;
+  const ids=[],events=[],children=[],markers=[],sessionIds=[];const role=`operator_wire_${randomUUID().replaceAll('-','')}`,password=randomUUID().replaceAll('-','');let roleCreated=false,authFixture;
+  const previousAuthUrl=process.env.FAWRI_AUTH_DATABASE_URL;
   t.after(async()=>cleanupResources([
     ['owned backends',async()=>{for(const marker of markers)await pool.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE application_name=$1 AND datname=current_database() AND pid<>pg_backend_pid()',[marker]);}],
     ['owned child processes',async()=>{for(const child of children)await stopTestChild(child);}],
+    ['authentication pool',async()=>{const {closeAuthenticationPool}=await import('../src/services/authenticationPostgresAuthority.ts');await closeAuthenticationPool();}],
+    ['authentication fixture',()=>authFixture?.dispose()],
+    ['environment',()=>{if(previousAuthUrl===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=previousAuthUrl;}],
     ['owned receipts',()=>pool.query('DELETE FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[])',[events])],
     ['owned execution audits',()=>pool.query('DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])',[ids])],
     ['owned trusted devices',()=>pool.query('DELETE FROM trusted_devices WHERE account_id=ANY($1::text[])',[ids])],
@@ -37,10 +43,11 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     ['owned role',()=>roleCreated?pool.query(`DROP ROLE ${role}`):undefined],
     ['pool',()=>pool.end()],
   ]));
-  await pool.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
-  await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
+  await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   assert.equal((await pool.query("SELECT has_function_privilege($1,$2,'EXECUTE') AS allowed",[role,capability])).rows[0].allowed,false);
-  await pool.query(`GRANT EXECUTE ON FUNCTION ${capability} TO ${role}`);
+  await grantReceiptExecutionFixture(pool,role);
+  authFixture=await createDisposableAuthenticationRole(pool,process.env.DATABASE_URL);
+  process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
   async function admin(roleName,permissions=[]){
     const id=`wire-admin-${randomUUID()}`;ids.push(id);
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'admin',$2,'synthetic','active',true)",[id,`+1997${String(randomInt(0,100000000)).padStart(8,'0')}`]);
@@ -78,7 +85,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     child.on('message',message=>{messages.push(message);if(message.type==='ready')readyResolve();});child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
     const done=new Promise(resolve=>{child.once('exit',(code,signal)=>resolve({code,signal,messages}));child.once('error',()=>resolve({code:'SPAWN_FAILURE',messages}));});
     let timer;try{await Promise.race([ready,done.then(()=>{throw new Error('owned operator exited before ready');}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('owned operator ready timeout')),15000);})]);}finally{clearTimeout(timer);}
-    child.send({...f,role,marker,token,device:finance.device,boundary});
+    child.send({...f,role,password,marker,token,device:finance.device,boundary});
     try{return await Promise.race([done,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('owned operator HTTP timeout')),30000);})]);}finally{clearTimeout(timer);}
   }
   async function runPausedWithRevocation(f,revoke){
@@ -92,7 +99,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     const done=new Promise(resolve=>{child.once('exit',(code,signal)=>resolve({code,signal,messages}));child.once('error',()=>resolve({code:'SPAWN_FAILURE',messages}));});
     const deadline=async(p,label)=>{let timer;try{return await Promise.race([p,done.then(()=>{throw Error('operator child exited before '+label);}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('operator '+label+' timeout')),15000);})]);}finally{clearTimeout(timer);}};
     await deadline(ready,'ready');
-    child.send({...f,role,marker,token,device:finance.device,pauseProvider:true});
+    child.send({...f,role,password,marker,token,device:finance.device,pauseProvider:true});
     await deadline(paused,'provider pause');
     try{await revoke(token);}finally{child.send({type:'resume-provider'});}
     let finishTimer;try{return await Promise.race([done,new Promise((_,reject)=>{finishTimer=setTimeout(()=>reject(Error('operator HTTP completion timeout')),30000);})]);}finally{clearTimeout(finishTimer);}

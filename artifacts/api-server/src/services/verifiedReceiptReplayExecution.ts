@@ -1,3 +1,4 @@
+import {issueMerchantTransactionScope} from "./tenantTransactionScope";
 import crypto from 'node:crypto';
 import {withReceiptOperatorExecutionTransaction} from './operatorReceiptExecutionPostgresAuthority';
 import type {BillingReplayScope} from './billingReplayScope';
@@ -41,6 +42,7 @@ export async function executeVerifiedReceiptReplay(actor:{id:string;sessionId:st
   const receipt=await transaction(client=>authorize(client,"provider-admission"));
   await confirmReceiptReplay(receipt,fetchImpl);
   const scope:BillingReplayScope={transaction:work=>transaction(async client=>{
+    await issueMerchantTransactionScope(client,receipt.merchant_id);
     await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[receipt.merchant_id]);
     return work(client);
   }),merchantId:receipt.merchant_id,requestId:receipt.request_ref,firstReceivedAt:receipt.first_received_at,authorize:async(client:SubscriptionPlanCycleTransaction)=>{

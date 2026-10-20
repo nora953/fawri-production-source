@@ -1,3 +1,5 @@
+import {createDisposableAuthenticationRole} from "./helpers/disposable-authentication-role.mjs";
+import {grantReceiptExecutionFixture} from "./helpers/receipt-execution-role.mjs";
 import assert from 'node:assert/strict';
 import { randomUUID, randomInt, generateKeyPairSync } from 'node:crypto';
 import test from 'node:test';
@@ -11,11 +13,13 @@ const sql='SELECT * FROM public.fawri_authorize_verified_receipt_replay($1,$2,$3
 test('direct execution LOGIN owns all replay phases without borrowing tenant or bootstrap credentials', {timeout:120000}, async t=>{
   const nonce=randomUUID().replaceAll('-',''),ids=[],fixtures=[],roles=[],clients=[],urls=[],faults=[];
   const admin=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:5000});await admin.connect();
-  const saved={};let mainPool,originalQuery,originalConnect,closePool=async()=>{},bootstrapCalls=0;
+  const saved={};let authFixture;let mainPool,originalQuery,originalConnect,closePool=async()=>{},bootstrapCalls=0;
   t.after(()=>cleanupResources([
     ['main pool methods',async()=>{if(mainPool){mainPool.query=originalQuery;mainPool.connect=originalConnect;}}],
     ['owned triggers',async()=>{for(const f of faults){await admin.query(`DROP TRIGGER IF EXISTS ${f.name} ON ${f.table}`);await admin.query(`DROP FUNCTION IF EXISTS ${f.name}()`);}}],
     ['operator pool',()=>closePool()],
+    ['authentication pool',async()=>{const {closeAuthenticationPool}=await import('../src/services/authenticationPostgresAuthority.ts');await closeAuthenticationPool();}],
+    ['authentication fixture',()=>authFixture?.dispose()],
     ['runtime connections',async()=>{for(const c of clients)await c.end();}],
     ['owned receipts',()=>admin.query('DELETE FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[])',[fixtures.map(f=>f.event)])],
     ['owned operator audits',()=>admin.query('DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])',[ids])],
@@ -28,12 +32,14 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
   ]));
   const {publicKey}=generateKeyPairSync('rsa',{modulusLength:2048});
   const env={NODE_ENV:'test',FAWRI_DEPLOYMENT_MODE:'development',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',
-    FAWRI_AUTH_SECURITY_SECRET:'synthetic-execution-pool-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-execution-pool-password-salt',FAWRI_OPERATOR_DATABASE_URL:undefined,
+    FAWRI_AUTH_SECURITY_SECRET:'synthetic-execution-pool-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-execution-pool-password-salt',FAWRI_OPERATOR_DATABASE_URL:undefined,FAWRI_AUTH_DATABASE_URL:undefined,
     FAWRI_SAAS_BILLING_PROVIDER:'superqi_sandbox',FAWRI_SAAS_BILLING_PROVIDERS:'superqi_sandbox,test_fake',FAWRI_SUPERQI_SANDBOX_ENABLED:'1',
     FAWRI_SUPERQI_SANDBOX_USERNAME:'synthetic-user',FAWRI_SUPERQI_SANDBOX_PASSWORD:'synthetic-password',FAWRI_SUPERQI_SANDBOX_TERMINAL_ID:'synthetic-terminal',
     FAWRI_SUPERQI_SANDBOX_NOTIFICATION_URL:'https://execute.example.invalid/webhook',FAWRI_SUPERQI_SANDBOX_FINISH_URL:'https://execute.example.invalid/finish',
     FAWRI_SUPERQI_SANDBOX_WEBHOOK_PUBLIC_KEY_B64:Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64')};
   for(const[k,v]of Object.entries(env)){saved[k]=process.env[k];if(v===undefined)delete process.env[k];else process.env[k]=v;}
+  authFixture=await createDisposableAuthenticationRole(admin,process.env.DATABASE_URL);
+  process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
   ({pool:mainPool}=await import('@workspace/db'));originalQuery=mainPool.query;originalConnect=mainPool.connect;
   ({closeReceiptOperatorExecutionPool:closePool}=await import('../src/services/operatorReceiptExecutionPostgresAuthority.ts'));
   const {executeVerifiedReceiptReplay:execute}=await import('../src/services/verifiedReceiptReplayExecution.ts');
@@ -72,14 +78,7 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
     await admin.query(`CREATE ROLE ${r} LOGIN PASSWORD '${password}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);roles.push(r);
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${r}`);
     if(kind==='executor'){
-      await admin.query(`GRANT EXECUTE ON FUNCTION ${capability} TO ${r}`);
-      // Reviewed billing DML only; no authentication/audit/inbox table access.
-      await admin.query(`GRANT SELECT,UPDATE ON merchants,saas_billing_orders,cashier_billing_orders TO ${r}`);
-      await admin.query(`GRANT SELECT,INSERT,UPDATE ON saas_billing_events,cashier_billing_events,subscriptions,merchant_cashier_subscriptions TO ${r}`);
-      await admin.query(`GRANT SELECT,INSERT ON saas_entitlement_applications,cashier_entitlement_applications TO ${r}`);
-      await admin.query(`GRANT SELECT ON subscription_reply_batches TO ${r}`);
-      await admin.query(`GRANT SELECT,UPDATE ON cashier_station_seat_assignments TO ${r}`);
-      await admin.query(`GRANT INSERT ON audit_events,cashier_entitlement_audit_events TO ${r}`);
+      await grantReceiptExecutionFixture(admin,r);
     }
     const url=new URL(process.env.DATABASE_URL);url.username=r;url.password=password;url.search='';urls.push(url.toString());
     const c=new Client({connectionString:url.toString(),connectionTimeoutMillis:5000});clients.push(c);await c.connect();
@@ -177,10 +176,22 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
     }finally{await closePool();process.env.FAWRI_OPERATOR_DATABASE_URL=urls[1];}
     assert.equal(providerCalls,calls);assert.equal((await audits()).length,before);assert.equal(bootstrapCalls,0);
   });
+  await t.test('private scope is issued for actual executor transactions; revocation fails closed and recovers',async()=>{
+    for(const f of fixtures.filter(f=>f.scenario==='normal')){
+      const scopes=await admin.query(`SELECT s.merchant_id FROM fawri_security.transaction_scopes s JOIN database_admin_access_audits a ON a.authority_transaction_id=s.transaction_id WHERE s.runtime_login=$1 AND s.merchant_id=$2 AND a.admin_account_id=$3 AND a.reason_code='BILLING_RECEIPT_REPLAY_EXECUTE'`,[roles[1],f.merchant,actor]);
+      assert.ok(scopes.rows.length>=2,'receipt admission and entitlement transactions require distinct bindings');
+    }
+    await assert.rejects(()=>clients[1].query('SELECT * FROM fawri_security.transaction_scopes'),{code:'42501'});
+    await admin.query(`REVOKE EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) FROM ${authFixture.role}`);
+    const f=fixtures[0],before=await applications(f);
+    try {await assert.rejects(()=>invoke(f),{code:'RECEIPT_REPLAY_EXECUTION_UNAVAILABLE',status:503});assert.deepEqual(await applications(f),before);}
+    finally {await admin.query(`GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO ${authFixture.role}`);}
+    assert.equal((await invoke(f)).status,'duplicate');assert.equal(bootstrapCalls,0);
+  });
   await t.test('concurrent duplicate executions preserve tenant scope, receipt bytes and single grants',async()=>{
     const normal=fixtures.filter(f=>f.scenario==='normal');const outcomes=await Promise.allSettled(normal.flatMap(f=>[invoke(f),invoke(f)]));assert.ok(outcomes.every(o=>o.status==='fulfilled'&&o.value.status==='duplicate'));
     for(const f of normal)assert.equal((await applications(f)).length,1);
     assert.deepEqual(await receiptSnapshot(),originalReceipts);assert.equal(bootstrapCalls,0);
-    console.log('P0_RECEIPT_EXECUTION_OPERATOR_POOL_PROOF '+JSON.stringify({directRestrictedLogins:2,executionOnlyPrivilegedCapability:true,authAuditInboxCrud:false,tenantKnownActorSessionDenied:true,bootstrapPoolCalls:bootstrapCalls,providerOutsideTransaction:true,checksPerFreshExecution:4,durableTransactionsPerFreshExecution:3,permissionSessionCapabilityRevocationRechecked:true,mappingChangeRejected:true,grantAdmissionCommitFailureRecovery:true,concurrentAuthorities:2,receiptFieldsUnchanged:true,exactlyOneGrantPerOrder:true,productionPaymentProviderCertified:false,releaseAccepted:false}));
+    console.log('P0_RECEIPT_EXECUTION_OPERATOR_POOL_PROOF '+JSON.stringify({directRestrictedLogins:3,separateScopeIssuer:true,executionOnlyPrivilegedCapability:true,authAuditInboxCrud:false,tenantKnownActorSessionDenied:true,bootstrapPoolCalls:bootstrapCalls,providerOutsideTransaction:true,checksPerFreshExecution:4,durableTransactionsPerFreshExecution:3,permissionSessionCapabilityRevocationRechecked:true,mappingChangeRejected:true,grantAdmissionCommitFailureRecovery:true,concurrentAuthorities:2,receiptFieldsUnchanged:true,exactlyOneGrantPerOrder:true,productionPaymentProviderCertified:false,releaseAccepted:false}));
   });
 });
