@@ -1,3 +1,4 @@
+import { withOperatorDirectoryTransaction } from "./operatorDirectoryPostgresAuthority";
 import crypto from "node:crypto";
 import {
   calculateRetentionStatus,
@@ -312,28 +313,17 @@ async function writeAudit(
 
 export async function listManagedMerchantsPostgres(actorAdminId: string): Promise<ManagedMerchant[]> {
   requirePostgres();
-  return withOperationalTransaction(async (client) => {
+  return withOperatorDirectoryTransaction(async (client) => {
     const actor = await adminSnapshot(client, String(actorAdminId || "").trim());
     if (!actor) {
       throw new MerchantManagementError(403, "ADMIN_ACCOUNT_INVALID", "administrator account is unavailable");
     }
-    // SECURITY TODO (P0): direct audit writers can still mint authority.
-    // Migration 0037 binds consumption to the issuing transaction.
-    // An application-side adminSnapshot check alone is
-    // not a database authorization boundary. Move issuance behind a narrowly
-    // granted, role-bound database authority before revoking direct audit DML.
-    // Directory reads span tenants. Use the existing audited-admin RLS predicate
-    // for this transaction rather than bypassing RLS or querying once per tenant.
+    // The SQL issuer is non-PUBLIC and independently checks actor permissions.
+    // Its EXECUTE ACL on session_user gates audited cross-tenant consumption.
     const auditId = `database-admin-${crypto.randomUUID()}`;
     await client.query(
-      `INSERT INTO database_admin_access_audits
-         (id, admin_account_id, reason_code, request_hash, expires_at)
-       VALUES ($1, $2, 'MERCHANT_DIRECTORY_READ', $3, now() + interval '1 minute')`,
-      [auditId, actor.id, crypto.createHash("sha256").update(auditId).digest("hex")],
-    );
-    await client.query(
-      "SELECT set_config('fawri.admin_account_id', $1, true), set_config('fawri.admin_audit_id', $2, true)",
-      [actor.id, auditId],
+      "SELECT public.fawri_issue_admin_directory_audit($1,$2,$3)",
+      [actor.id, auditId, crypto.createHash("sha256").update(auditId).digest("hex")],
     );
     const rows = await operationalQueryRows<ManagedMerchantRow>(
       client,

@@ -62,6 +62,8 @@ export const PRODUCTION_PROTECTED_RLS_TABLES = [
 ] as const;
 
 export type ProductionDatabaseRlsReadiness = {
+  directoryIssuerPresent: boolean;
+  operatorAuthorityRoles: string[];
   roleName: string;
   superuser: boolean;
   bypassRls: boolean;
@@ -117,6 +119,8 @@ export async function getProductionDatabaseRlsReadiness(
 ): Promise<ProductionDatabaseRlsReadiness> {
   const queryTarget = target || (await operationalDatabasePool());
   const rows = await operationalQueryRows<{
+    directory_issuer_present: boolean;
+    operator_authority_roles: string[];
     role_name: string;
     role_superuser: boolean;
     role_bypass_rls: boolean;
@@ -171,6 +175,16 @@ export async function getProductionDatabaseRlsReadiness(
      )
      SELECT
        public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
+       to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)') IS NOT NULL AS directory_issuer_present,
+       COALESCE((SELECT array_agg(candidate_operator.rolname::text ORDER BY candidate_operator.rolname)
+         FROM pg_roles candidate_operator
+         WHERE (candidate_operator.oid = (SELECT oid FROM role_state)
+             OR candidate_operator.oid = (SELECT oid FROM session_role_state)
+             OR pg_has_role((SELECT oid FROM session_role_state), candidate_operator.oid, 'USAGE')
+             OR pg_has_role((SELECT oid FROM session_role_state), candidate_operator.oid, 'SET'))
+           AND has_function_privilege(candidate_operator.oid,
+             to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)')::oid, 'EXECUTE')),
+         ARRAY[]::text[]) AS operator_authority_roles,
        COALESCE((SELECT array_agg(privileged.rolname::text ORDER BY privileged.rolname)
          FROM pg_roles privileged
          WHERE (privileged.rolsuper OR privileged.rolbypassrls)
@@ -214,6 +228,8 @@ export async function getProductionDatabaseRlsReadiness(
   }
 
   return {
+    directoryIssuerPresent: booleanValue(row.directory_issuer_present),
+    operatorAuthorityRoles: stringArray(row.operator_authority_roles),
     roleName: String(row.role_name).trim(),
     superuser: booleanValue(row.role_superuser),
     bypassRls: booleanValue(row.role_bypass_rls),
@@ -307,4 +323,20 @@ export async function assertProductionDatabaseRlsReady(
       "production protected tables must exist with row-level security enabled",
     );
   }
+  if (!readiness.directoryIssuerPresent) {
+    fail("PRODUCTION_DATABASE_OPERATOR_ISSUER_REQUIRED",
+      "production database requires the role-bound directory issuer migration");
+  }
+  if (readiness.operatorAuthorityRoles.length > 0) {
+    fail("PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE",
+      "tenant runtime must not issue administrative directory authority");
+  }
+  try {
+    const url = new URL(String(env.FAWRI_OPERATOR_DATABASE_URL || "").trim());
+    if (!["postgres:", "postgresql:"].includes(url.protocol)) throw new Error();
+  } catch {
+    fail("PRODUCTION_OPERATOR_DATABASE_REQUIRED",
+      "production directory requires a separately authenticated operator database pool");
+  }
+
 }

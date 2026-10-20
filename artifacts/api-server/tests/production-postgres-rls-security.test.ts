@@ -14,6 +14,7 @@ function productionEnv(): NodeJS.ProcessEnv {
     NODE_ENV: "production",
     FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
+    FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci",
   };
 }
 
@@ -27,6 +28,8 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
+    directory_issuer_present: true,
+    operator_authority_roles: [],
     role_name: "fawri_runtime",
     session_role_name: "fawri_runtime",
     session_role_superuser: false,
@@ -155,7 +158,7 @@ test("production rejects a session able to activate a privileged role", async ()
 
 test("production fails closed on absent or malformed role safety booleans", async () => {
   for (const field of [
-    "role_superuser", "role_bypass_rls", "session_role_superuser",
+    "directory_issuer_present", "role_superuser", "role_bypass_rls", "session_role_superuser",
     "session_role_bypass_rls", "session_role_create_role",
   ]) {
     for (const value of [undefined, null, "false", "true", 0, 1, {}, []]) {
@@ -166,7 +169,7 @@ test("production fails closed on absent or malformed role safety booleans", asyn
 
 test("production fails closed on absent or malformed privilege inventories", async () => {
   for (const field of [
-    "session_inherited_privileged_roles", "session_owned_tables",
+    "operator_authority_roles", "session_inherited_privileged_roles", "session_owned_tables",
     "session_reachable_privileged_roles", "owned_tenant_tables",
     "missing_or_unprotected_tenant_tables",
   ]) {
@@ -181,4 +184,20 @@ test("production rejects CREATEROLE and inherited privileged membership with com
     safeRow({ session_role_create_role: true }));
   await rejectsWith("PRODUCTION_DATABASE_INHERITED_PRIVILEGED_ROLE_FORBIDDEN",
     safeRow({ session_inherited_privileged_roles: ["isolated_bypass_role"] }));
+});
+
+
+test("tenant readiness rejects directory issuer ACLs reachable by current/session/SET roles", async () => {
+  await rejectsWith("PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE",
+    safeRow({ operator_authority_roles: ["trusted_directory_operator"] }));
+  await rejectsWith("PRODUCTION_DATABASE_OPERATOR_ISSUER_REQUIRED",
+    safeRow({ directory_issuer_present: false }));
+});
+
+test("production directory cannot silently use the tenant database when operator configuration is absent", async () => {
+  for (const value of [undefined, "", "https://example.invalid", "not a url"]) {
+    await assert.rejects(() => assertProductionDatabaseRlsReady(
+      { ...productionEnv(), FAWRI_OPERATOR_DATABASE_URL: value }, target(safeRow())),
+      { code: "PRODUCTION_OPERATOR_DATABASE_REQUIRED" });
+  }
 });

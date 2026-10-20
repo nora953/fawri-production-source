@@ -11,6 +11,7 @@ function productionEnv(): NodeJS.ProcessEnv {
     NODE_ENV: "production",
     FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
+    FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci",
   };
 }
 
@@ -287,6 +288,32 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     });
   }
 
+
+  for (const mode of ["direct", "set-reachable", "unreachable"]) {
+    await t.test(`operator issuer ACL ${mode} cannot leak into tenant readiness`, async () => {
+      const operatorRole = "fawri_directory_operator_probe";
+      await client.query("RESET SESSION AUTHORIZATION");
+      await client.query("BEGIN");
+      try {
+        await client.query(`CREATE ROLE ${operatorRole} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE`);
+        await client.query(`GRANT EXECUTE ON FUNCTION public.fawri_issue_admin_directory_audit(text,text,text) TO ${mode === "direct" ? probeRole : operatorRole}`);
+        if (mode !== "direct") {
+          await client.query(`GRANT ${operatorRole} TO ${probeRole} WITH INHERIT FALSE, SET ${mode === "set-reachable" ? "TRUE" : "FALSE"}`);
+        }
+        await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+        const state = await getProductionDatabaseRlsReadiness(client);
+        assert.equal(state.directoryIssuerPresent, true);
+        assert.deepEqual(state.operatorAuthorityRoles, mode === "direct" ? [probeRole] : mode === "set-reachable" ? [operatorRole] : []);
+        if (mode === "unreachable") await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
+        else await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
+          { code: "PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE" });
+      } finally {
+        await client.query("RESET SESSION AUTHORIZATION");
+        await client.query("ROLLBACK");
+      }
+      await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+    });
+  }
 
   await t.test("authenticated role with CREATEROLE is rejected", async () => {
     const elevated = "fawri_createrole_probe";

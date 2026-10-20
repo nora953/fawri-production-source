@@ -267,6 +267,13 @@
       "when": 1791936000009,
       "tag": "0037_audited_admin_transaction_binding",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791936000010,
+      "tag": "0038_role_bound_admin_directory_issuer",
+      "breakpoints": true
     }
   ]
 }

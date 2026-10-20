@@ -70,6 +70,7 @@ jobs:
           pnpm exec tsx --test
           artifacts/api-server/tests/production-release-readiness.test.ts
           artifacts/api-server/tests/production-postgres-rls-security.test.ts
+          artifacts/api-server/tests/operator-directory-postgres-authority.test.ts
 
       - name: Prove operational PostgreSQL transaction lifecycle failure handling
         run: >-
