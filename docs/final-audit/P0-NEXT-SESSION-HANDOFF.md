@@ -1,5 +1,18 @@
 # FAWRI P0 next-session handoff
 
+## Follow-up corrections — 2026-10-20T22:23:29.030246+00:00
+
+6031de063bc216d90fc6ea84a1da098e9b79d735 completed39/44 SUCCESS,5 FAILURE. Canonical restricted-owner protocol16 PASS and actual auth-pool10 PASS, but merchant-management and three Meta restart/job fixtures still relied on shared tenant fallback for authentication. Preserve failures in evidence/P0-TRUSTED-AUTH-CALLER-ATTEMPT-20261021.json; no full acceptance of6031de06.
+
+Correction uses separate actual restricted primary/auth/operator LOGINs in management; primary loses auth mutation/audit access, operator gets SELECT plus bounded issuer without audit-table access. Three Meta child fixtures now authenticate primary directly (no privileged-login SET ROLE simulation), use a separate restricted auth LOGIN, verify both identities and production primary readiness, and close auth pool on graceful exit. Existing SIGKILL/commit-gap/retry/debit/refund/identity assertions remain unchanged.
+
+Local cashier concurrency source contract exposed a stale withMerchantOperationalTransaction requirement despite the earlier auth-pool migration. It now requires exactly one credential-capable authentication transaction, bounded within the login function; all unique-index/409/order assertions retained. Its2 tests PASS and it is added to the existing isolated priority suite, making66 planned invocations. This is source-contract coverage, not a new standalone database race proof.
+
+Newly published High advisories require Vite7.3.6->7.3.7 (GHSA-587h-7wmj-h5pm) and markdown-it14.3.2->14.3.3 (GHSA-gfr2-rv44-r23c). Lockfile actually generated using pinned pnpm10.26.1; only18 replaced lock lines and2 workspace lines (both dependency targets/peer references/integrities), no unrelated dependency updates. Local policy PASS, minimumReleaseAge1440 unchanged/no added exclusions. Frozen lockfile-only validation PASS (not a full local install); actual pnpm audit:High0/Critical0/Moderate2/Low0. Raw audit exits1 for the Moderate advisories, not because the High gate failed. Full frozen install/build/security verification still requires new CI.
+
+New corrected PostgreSQL/CI results PENDING. Release NO-GO: six tenant GUC writers/public predicate cutover still outstanding; hosted ownership/config/privacy/cashier integrity gates remain. No hosted, production, staging, Railway, main or merge changes.
+
+
 ## Trusted-auth caller and canonical-owner continuation — 2026-10-20T22:11:27.589935+00:00
 
 Recovered live HEAD442bb751652f36012e7895933d73e548cac7405a,44/44 completed workflows SUCCESS; Draft PR550/base unchanged. Existing accepted executable1fc4a0f remains the prior accepted source. No concurrent newer work observed.

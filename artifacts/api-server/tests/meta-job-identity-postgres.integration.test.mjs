@@ -1,3 +1,4 @@
+import {createDisposableAuthenticationRole,restrictTenantAuthenticationPrivileges} from './helpers/disposable-authentication-role.mjs';
 import assert from 'node:assert/strict';
 import {createHmac,createHash,randomUUID,randomInt} from 'node:crypto';
 import {spawn} from 'node:child_process';
@@ -16,7 +17,7 @@ const {default:express}=await import('express');
 const childPath=fileURLToPath(new URL('./helpers/meta-worker-restart-child.mjs',import.meta.url));
 
 test('original encrypted Meta jobs reject tenant and event identity conflicts before domain writes',{timeout:120000},async t=>{
-  const suffix=randomUUID().replaceAll('-',''),role=`meta_app_${suffix}`,merchants=[],children=[],markers=[];let graph,roleCreated=false,providerCalls=0;
+  const suffix=randomUUID().replaceAll('-',''),role=`meta_app_${suffix}`,runtimePassword=randomUUID().replaceAll('-',''),merchants=[],children=[],markers=[];let graph,roleCreated=false,providerCalls=0,authFixture;
   const page=`meta-restart-page-${suffix}`,mid=`meta-restart-mid-${suffix}`,event=`meta:${page}:${mid}`,token=`synthetic-restart-token-${suffix}`,secret=`synthetic-restart-secret-${suffix}`;
   t.after(async()=>cleanupResources([
     ['owned children',async()=>{for(const handle of children){if(handle.child.exitCode===null&&handle.child.signalCode===null){try{await handle.command('stop');}finally{await stopTestChild(handle.child);}}}}],
@@ -24,10 +25,13 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     ['owned graph',async()=>{if(graph){graph.closeAllConnections();await new Promise((r,j)=>graph.close(e=>e?j(e):r()));}}],
     ['owned ledger',()=>pool.query('DELETE FROM reply_ledger WHERE merchant_id=ANY($1::text[])',[merchants])],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchants])],
+    ['owned authentication role',()=>authFixture?.dispose()],
     ['owned grants',()=>roleCreated?pool.query(`DROP OWNED BY ${role}`):undefined],['owned role',()=>roleCreated?pool.query(`DROP ROLE ${role}`):undefined],['pool',()=>pool.end()],
   ]));
-  await pool.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
+  await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);await pool.query(`GRANT EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) TO ${role}`);
+  await restrictTenantAuthenticationPrivileges(pool,role);
+  authFixture=await createDisposableAuthenticationRole(pool,process.env.DATABASE_URL);
   for(let i=0;i<2;i++){
     const created=await accounts.upsertPendingMerchantAuthoritative({phone:`+1994${String(randomInt(0,100000000)).padStart(8,'0')}`,passwordHash:'synthetic',ownerName:'Synthetic',storeName:'Synthetic',activityType:'retail',language:'ar',requestedPlan:'silver'});const id=created.account.id;merchants.push(id);
     await accounts.markMerchantOtpVerifiedAuthoritative(id);await pool.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[id]);
@@ -41,14 +45,14 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
   });graph=await new Promise((r,j)=>{const s=fake.listen(0,'127.0.0.1',()=>r(s));s.once('error',j);});
   async function start(crash=false){
     const marker=`meta-restart-owned-${randomUUID()}`;markers.push(marker);
-    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env,META_APP_SECRET:secret,META_VERIFY_TOKEN:'synthetic-verify',META_GRAPH_BASE_URL:`http://127.0.0.1:${graph.address().port}`,FAWRI_META_REPLY_TRANSPORT:'live',FAWRI_TEST_META_ROLE:role,FAWRI_TEST_META_MARKER:marker,FAWRI_TEST_META_DEADLETTER_CRASH:crash?'1':'0',FAWRI_TEST_META_RESTART_EVENT:event,LOG_LEVEL:'silent'},stdio:['ignore','pipe','pipe','ipc']});
+    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env,FAWRI_AUTH_DATABASE_URL:authFixture.url,META_APP_SECRET:secret,META_VERIFY_TOKEN:'synthetic-verify',META_GRAPH_BASE_URL:`http://127.0.0.1:${graph.address().port}`,FAWRI_META_REPLY_TRANSPORT:'live',FAWRI_TEST_META_ROLE:role,FAWRI_TEST_META_PASSWORD:runtimePassword,FAWRI_TEST_META_MARKER:marker,FAWRI_TEST_META_DEADLETTER_CRASH:crash?'1':'0',FAWRI_TEST_META_RESTART_EVENT:event,LOG_LEVEL:'silent'},stdio:['ignore','pipe','pipe','ipc']});
     const messages=[],pending=new Map();let readyResolve;const ready=new Promise(r=>{readyResolve=r;});
     child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});child.on('message',m=>{messages.push(m);if(m.type==='ready')readyResolve(m);else if(pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.failure?p.reject(Error(m.code)):p.resolve(m);}});
     const done=new Promise(r=>child.once('exit',(code,signal)=>{for(const p of pending.values())p.reject(Error('owned worker exited'));pending.clear();r({code,signal});}));
     function command(command){const id=randomUUID();let timer;return new Promise((resolve,reject)=>{pending.set(id,{resolve,reject});timer=setTimeout(()=>{pending.delete(id);reject(Error('owned worker command timeout'));},20000);child.send({id,command});}).finally(()=>clearTimeout(timer));}
     const handle={child,command,messages,done};children.push(handle);let timer;
     try{handle.info=await Promise.race([ready,done.then(()=>{throw Error('owned worker startup failed');}),new Promise((_,j)=>{timer=setTimeout(()=>j(Error('owned worker startup timeout')),20000);})]);}finally{clearTimeout(timer);}
-    assert.equal(handle.info.restricted,true);return handle;
+    assert.equal(handle.info.restricted,true);assert.equal(handle.info.authenticatedAuthority,true);return handle;
   }
   const jobs=async()=>(await pool.query('SELECT type,dedupe_key,status,last_error_code,attempts,result FROM background_jobs WHERE merchant_id=$1 ORDER BY type',[merchants[0]])).rows;
   const ledger=async()=>(await pool.query(`SELECT id,direction,reason_code,metadata,to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS time FROM reply_ledger WHERE merchant_id=$1 AND external_event_id=$2 ORDER BY direction,id`,[merchants[0],event])).rows;

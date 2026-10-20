@@ -19,7 +19,7 @@ const suites = {
   'meta-rls': ['meta-page-directory-restricted-rls.integration.test.mjs'],
 };
 suites['node22-http'] = suites.http;
-suites.priority = [...suites['audit-boundary'], 'failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
+suites.priority = [...suites['audit-boundary'], 'cashier-operator-login-concurrency-hardening.test.mjs', 'failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
 const selected = suites[process.argv[2]];
 assert.ok(selected, 'unknown audit suite');
 await assertDisposablePostgres();

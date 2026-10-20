@@ -1,3 +1,4 @@
+import {createDisposableAuthenticationRole,restrictTenantAuthenticationPrivileges} from './helpers/disposable-authentication-role.mjs';
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { randomUUID } from "node:crypto";
@@ -6,24 +7,35 @@ import test from "node:test";
 test("merchant management and retention use authoritative subscriptions under restricted RLS", { timeout: 60_000 }, async (t) => {
   const originalUrl = process.env.DATABASE_URL;
   const originalAuthority = process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY;
+  const originalAuthUrl=process.env.FAWRI_AUTH_DATABASE_URL,originalOperatorUrl=process.env.FAWRI_OPERATOR_DATABASE_URL;
+  let authFixture,operatorCreated=false,closeAuth=async()=>{},closeOperator=async()=>{};
   const url = new URL(originalUrl);
   assert.ok(["127.0.0.1", "localhost"].includes(url.hostname));
   assert.ok(["/fawri_ci", "/fawri_final_audit"].includes(url.pathname));
   const { Pool } = createRequire(import.meta.resolve("@workspace/db"))("pg");
   const admin = new Pool({ connectionString: originalUrl, connectionTimeoutMillis: 5_000 });
   const suffix = randomUUID().replaceAll("-", "").slice(0, 12);
-  const role = `management_rls_${suffix}`;
+  const role = `management_rls_${suffix}`,operator=`management_op_${suffix}`;
+  const runtimePassword=randomUUID().replaceAll('-',''),operatorPassword=randomUUID().replaceAll('-','');
   const owner = `management-owner-${suffix}`;
   const merchants = [0, 1, 2].map(i => `management-${i}-${suffix}`);
   let runtimePool;
   let roleCreated = false;
   try {
-    await admin.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOBYPASSRLS NOINHERIT`);
+    await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB NOINHERIT`);
     roleCreated = true;
-    await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_issue_admin_directory_audit(text,text,text) TO ${role}`);
+    authFixture=await createDisposableAuthenticationRole(admin,originalUrl);
+    await admin.query(`CREATE ROLE ${operator} LOGIN PASSWORD '${operatorPassword}' NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB NOINHERIT`);operatorCreated=true;
+    await admin.query(`GRANT USAGE ON SCHEMA public TO ${operator}`);
+    await admin.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${operator}`);
+    await admin.query(`REVOKE ALL ON database_admin_access_audits FROM ${operator}`);
+    await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_issue_admin_directory_audit(text,text,text) TO ${operator}`);
+    const operatorUrl=new URL(originalUrl);operatorUrl.username=operator;operatorUrl.password=operatorPassword;operatorUrl.search='';
+    process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;process.env.FAWRI_OPERATOR_DATABASE_URL=operatorUrl.toString();
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await admin.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
     await admin.query(`GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
+    await restrictTenantAuthenticationPrivileges(admin,role);
     await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state) VALUES($1,'admin',$2,'synthetic','active')", [owner, `+1887${Date.now().toString().slice(-8)}9`]);
     await admin.query("INSERT INTO admin_profiles(id,account_id,profile_kind,display_name,role,enabled,must_change_password) VALUES($1,$1,'admin','Synthetic owner','owner_admin',true,false)", [owner]);
     for (const [i, id] of merchants.entries()) {
@@ -32,13 +44,16 @@ test("merchant management and retention use authoritative subscriptions under re
       await admin.query("INSERT INTO subscriptions(id,merchant_id,plan_name,status,billing_anchor_day,starts_at,expires_at,base_reply_limit,base_replies_remaining,suspended_at) VALUES($1,$2,'trial','suspended',1,now()-interval '1 day',now()+interval '7 days',100,100,now())", [`sub-${id}`, id]);
     }
     await admin.query("UPDATE merchants SET retention_suspended_at=now()-interval '1 day' WHERE id=$1", [merchants[1]]);
-    url.searchParams.set("options", `-c role=${role}`);
+    url.username=role;url.password=runtimePassword;url.search='';
     process.env.DATABASE_URL = url.toString();
     process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = "required";
     runtimePool = (await import("@workspace/db")).pool;
     runtimePool.options.max = 1;
     runtimePool.options.connectionTimeoutMillis = 5_000;
-    assert.equal((await runtimePool.query("SELECT current_user AS name")).rows[0].name, role);
+    assert.deepEqual((await runtimePool.query("SELECT current_user AS active,session_user AS login")).rows[0],{active:role,login:role});
+    closeAuth=(await import('../src/services/authenticationPostgresAuthority.ts')).closeAuthenticationPool;
+    closeOperator=(await import('../src/services/operatorDirectoryPostgresAuthority.ts')).closeOperatorDirectoryPool;
+    await (await import('../src/services/postgresRuntimeRlsSecurity.ts')).assertProductionDatabaseRlsReady({...process.env,NODE_ENV:'production',FAWRI_DEPLOYMENT_MODE:'production'},runtimePool);
     const management = await import("../src/services/postgresMerchantManagementAuthority.ts");
     const retention = await import("../src/services/postgresMerchantRetentionAuthority.ts");
     await t.test("details and authorized directory include subscription dates", async () => {
@@ -71,11 +86,15 @@ test("merchant management and retention use authoritative subscriptions under re
       assert.equal((await admin.query("SELECT status FROM subscriptions WHERE merchant_id=$1", [merchants[2]])).rows[0].status, "suspended");
     });
   } finally {
-    await runtimePool?.end();
+    await closeAuth();await closeOperator();await runtimePool?.end();
+    if(originalAuthUrl===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=originalAuthUrl;
+    if(originalOperatorUrl===undefined)delete process.env.FAWRI_OPERATOR_DATABASE_URL;else process.env.FAWRI_OPERATOR_DATABASE_URL=originalOperatorUrl;
     process.env.DATABASE_URL = originalUrl;
     if (originalAuthority === undefined) delete process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY;
     else process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = originalAuthority;
     try {
+      await authFixture?.dispose();
+      if(operatorCreated){await admin.query(`DROP OWNED BY ${operator}`);await admin.query(`DROP ROLE ${operator}`);}
       if (roleCreated) { await admin.query(`DROP OWNED BY ${role}`); await admin.query(`DROP ROLE ${role}`); }
     } finally { await admin.end(); }
   }
