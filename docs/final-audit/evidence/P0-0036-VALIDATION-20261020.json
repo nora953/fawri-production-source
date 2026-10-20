@@ -1,0 +1,327 @@
+{
+  "verified_at": "2026-10-20T01:34:12.484Z",
+  "source_sha": "c5225acbeec5cfc2e0411c11cd17737ab1ae6dad",
+  "release": "NO-GO",
+  "runs": [
+    {
+      "id": 39353024883,
+      "name": "Meta webhook PostgreSQL ingress cutover",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024883"
+    },
+    {
+      "id": 39353024632,
+      "name": "Complete schema candidate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024632"
+    },
+    {
+      "id": 39353024467,
+      "name": "Meta OAuth operational cutoff",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024467"
+    },
+    {
+      "id": 39353024698,
+      "name": "Auth OTP contract continuity",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024698"
+    },
+    {
+      "id": 39353024743,
+      "name": "Merchant regional PostgreSQL authority",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024743"
+    },
+    {
+      "id": 39353024702,
+      "name": "Merchant deletion provider identifiers",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024702"
+    },
+    {
+      "id": 39353024848,
+      "name": "Merchant deletion promotions lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024848"
+    },
+    {
+      "id": 39353024363,
+      "name": "Order operations",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024363"
+    },
+    {
+      "id": 39353024822,
+      "name": "Merchant access security",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024822"
+    },
+    {
+      "id": 39353024487,
+      "name": "PostgreSQL outage recovery proof",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024487"
+    },
+    {
+      "id": 39353024338,
+      "name": "Merchant deletion physical media lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024338"
+    },
+    {
+      "id": 39353024529,
+      "name": "Global subscription golden journey",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024529"
+    },
+    {
+      "id": 39353024670,
+      "name": "Product catalog UI cutover",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024670"
+    },
+    {
+      "id": 39353024740,
+      "name": "PostgreSQL migration candidate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024740"
+    },
+    {
+      "id": 39353024483,
+      "name": "Pre-release performance smoke gate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024483"
+    },
+    {
+      "id": 39353024666,
+      "name": "Isolated Neon preflight static safety",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024666"
+    },
+    {
+      "id": 39353024681,
+      "name": "Knowledge embedding readiness",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024681"
+    },
+    {
+      "id": 39353024334,
+      "name": "Billing provider readiness",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024334"
+    },
+    {
+      "id": 39353024713,
+      "name": "Global Merchant PostgreSQL HTTP Journey",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024713"
+    },
+    {
+      "id": 39353024715,
+      "name": "Bot logic adversarial matrix",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024715"
+    },
+    {
+      "id": 39353024464,
+      "name": "Merchant deletion cashier lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024464"
+    },
+    {
+      "id": 39353024449,
+      "name": "Merchant deletion audit PII",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024449"
+    },
+    {
+      "id": 39353024373,
+      "name": "Catalog variant signature schema contract",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024373"
+    },
+    {
+      "id": 39353024521,
+      "name": "Observability mounted routes",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024521"
+    },
+    {
+      "id": 39353024752,
+      "name": "AWS KMS production adapter readiness",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024752"
+    },
+    {
+      "id": 39353024707,
+      "name": "Complete migration safety",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024707"
+    },
+    {
+      "id": 39353024739,
+      "name": "Backup and restore drill",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024739"
+    },
+    {
+      "id": 39353024751,
+      "name": "Dashboard channel coherence",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024751"
+    },
+    {
+      "id": 39353024865,
+      "name": "Global merchant golden journey",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024865"
+    },
+    {
+      "id": 39353024691,
+      "name": "Cashier subscription lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024691"
+    },
+    {
+      "id": 39353024789,
+      "name": "Clean deployment golden gate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024789"
+    },
+    {
+      "id": 39353024584,
+      "name": "Location inventory authority",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024584"
+    },
+    {
+      "id": 39353024742,
+      "name": "Final quality gates",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024742"
+    },
+    {
+      "id": 39353024799,
+      "name": "Merchant settings",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024799"
+    },
+    {
+      "id": 39353024776,
+      "name": "Merchant account security UI",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024776"
+    },
+    {
+      "id": 39353024843,
+      "name": "Global admin golden journey",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024843"
+    },
+    {
+      "id": 39353024492,
+      "name": "Staging container contract",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024492"
+    },
+    {
+      "id": 39353024846,
+      "name": "Cashier operational cutoff",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024846"
+    },
+    {
+      "id": 39353024539,
+      "name": "Meta webhook pipeline",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024539"
+    },
+    {
+      "id": 39353024612,
+      "name": "Foundation integration final gate",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024612"
+    },
+    {
+      "id": 39353024729,
+      "name": "Final security and supply chain",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024729"
+    },
+    {
+      "id": 39353024854,
+      "name": "PostgreSQL schema validation",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024854"
+    },
+    {
+      "id": 39353024803,
+      "name": "Isolated PostgreSQL engineering audit",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39353024803"
+    }
+  ],
+  "isolated": {
+    "run": 39353024803,
+    "job": 118401631953,
+    "audit_tests": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "forgery": true,
+    "active_window_replay": true,
+    "suspended_actor_replay": false
+  },
+  "schema": {
+    "run": 39353024854,
+    "job": 118401795326,
+    "committed_reproducible": true,
+    "sql_sha256": "711d1d7129e106a8b6855b439e80d33dddf1c1239ca5d8d64a44feb608735a55",
+    "snapshot_sha256": "77b2fc02d2e7b4c19b903cb9a7d2340c834abeafaff59adeaba426ba3c8afd1a"
+  }
+}

@@ -1,3 +1,12 @@
+## Verified recovery and migration 0036 acceptance — 2026-10-20 UTC
+
+- Verified source HEAD: `c5225acbeec5cfc2e0411c11cd17737ab1ae6dad`; PR #550 OPEN/DRAFT, base `test/p0-integrated-billing-meta-20261015`. No newer source observed; no inline reviews/reviews.
+- All **43/43** source workflows completed SUCCESS. Machine-readable run IDs/links: `evidence/P0-0036-VALIDATION-20261020.json`.
+- Schema run 39353024854/job 118401795326: canonical generation, byte reproducibility, journal/snapshot validation and disposable migration application SUCCESS. Stage 0036 SQL SHA256 `711d1d7129e106a8b6855b439e80d33dddf1c1239ca5d8d64a44feb608735a55`; snapshot SHA256 `77b2fc02d2e7b4c19b903cb9a7d2340c834abeafaff59adeaba426ba3c8afd1a`. Migration candidate run 39353024740 SUCCESS.
+- Isolated run 39353024803/job 118401631953: actual admin-boundary suite 5 PASS / 0 FAIL / 0 SKIP; forgery=true, activeWindowReuse=true, suspendedActorReuse=false, expiredDenied=true. Merchant-management tenant RLS 6 PASS, production RLS 30 PASS; privileged receipt/billing suites also completed. These are synthetic CI proofs, not hosted certification.
+- Phase A complete for source above. **NO-GO**: audit forgery and active-window cross-session replay remain; admin identity/permission writes and privileged receipt EXECUTE remain shared-role risks; hosted restricted-login acceptance unresolved. No hosted mutation, merge or deployment.
+- Next bounded fix: bind audit authority to its issuing PostgreSQL transaction, retaining audit records as history. Directory issuance and consumption are already in one transaction. Deny committed-token replay in fresh sessions/transactions, preserve active issuing-transaction access, test disabled/password-change actors and concurrency. This is a partial replay remediation; direct audit/identity writers can still manufacture authority. Next architectural milestone remains separate trusted operator issuance/pool and tenant grants without audit/admin identity DML or operator EXECUTE.
+
 # FAWRI P0 next-session handoff
 
 Read P0-CONTINUATION-CHECKPOINT.md first. Verify GitHub head of fix/p0-provider-receipt-order-discovery-20261015 and Draft PR #550 before editing. This file's containing commit is the recovery milestone after verified source 693b2be0e30dbb815afda89ccb0f591cb97e98f1 (41/41 observed workflows SUCCESS).
