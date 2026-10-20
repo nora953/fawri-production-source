@@ -1,3 +1,4 @@
+import { withOperationalTransaction } from "./operationalPostgresAuthority";
 import {resolveConfirmedProviderBillingScope,authorizeConfirmedProviderBillingScope,type ConfirmedProviderBillingScope} from './confirmedProviderBillingScope';
 import crypto from "node:crypto";
 import { pool } from "@workspace/db";
@@ -72,9 +73,7 @@ async function attachProviderPaymentReference(
       ? "cashier_billing_orders"
       : "saas_billing_orders";
 
-  const client=await pool.connect();
-  try {
-    await client.query('BEGIN');
+  await withOperationalTransaction(async client => {
     await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[scope.merchantId]);
     await client.query('SELECT id FROM merchants WHERE id=$1 FOR UPDATE',[scope.merchantId]);
     await authorizeConfirmedProviderBillingScope(client,scope);
@@ -114,9 +113,7 @@ async function attachProviderPaymentReference(
       409,
     );
   }
-    await client.query('COMMIT');
-  } catch(error) { await client.query('ROLLBACK').catch(()=>{});throw error; }
-  finally {client.release();}
+  });
 }
 
 export function superQiConfirmedProviderEventId(input: {

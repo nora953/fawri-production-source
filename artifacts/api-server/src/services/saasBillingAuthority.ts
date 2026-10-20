@@ -1,3 +1,4 @@
+import { withOperationalTransaction, type OperationalTransactionClient, type OperationalDatabasePool } from "./operationalPostgresAuthority";
 import {authorizeConfirmedProviderBillingScope,type ConfirmedProviderBillingScope} from './confirmedProviderBillingScope';
 import type {BillingReplayScope} from './billingReplayScope';
 import crypto from "node:crypto";
@@ -124,10 +125,8 @@ export class SaasBillingAuthorityError extends Error {
   }
 }
 
-type DatabaseClient = SubscriptionPlanCycleTransaction & { release(): void };
-type DatabasePool = SubscriptionPlanCycleTransaction & {
-  connect(): Promise<DatabaseClient>;
-};
+type DatabaseClient = OperationalTransactionClient;
+type DatabasePool = OperationalDatabasePool;
 
 function fail(
   code: string,
@@ -171,19 +170,7 @@ async function pool(): Promise<DatabasePool> {
 }
 
 async function transaction<T>(work: (client: DatabaseClient) => Promise<T>): Promise<T> {
-  const database = await pool();
-  const client = await database.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await work(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+  return withOperationalTransaction(work, await pool());
 }
 
 function configuredProviderNames(): string[] {

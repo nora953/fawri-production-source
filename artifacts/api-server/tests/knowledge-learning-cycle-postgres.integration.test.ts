@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
 import { createDisposableKnowledgeRuntime } from "./helpers/disposable-knowledge-runtime.mjs";
 const runtimeFixture = await createDisposableKnowledgeRuntime();
 const pool = runtimeFixture.admin;
@@ -44,13 +45,11 @@ test(
     const merchantB = `knowledge-cycle-b-${suffix}`;
     const merchants = [merchantA, merchantB];
 
-    t.after(async () => {
-      await pool.query(
-        `DELETE FROM accounts WHERE id = ANY($1::text[])`,
-        [merchants],
-      );
-      await runtimeFixture.dispose();
-    });
+    t.after(() => cleanupResources([
+      ["owned accounts", () => pool.query("DELETE FROM accounts WHERE id=ANY($1::text[])", [merchants])],
+      ["runtime fixture", () => runtimeFixture.dispose()],
+    ]));
+
 
     for (const [index, merchantId] of merchants.entries()) {
       await pool.query(

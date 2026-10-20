@@ -1,5 +1,15 @@
 # FAWRI P0 continuation checkpoint
 
+## Verified knowledge caller / pending transaction-lifecycle continuation — 2026-10-20T23:10:13.934398+00:00
+
+Exact verified source `251b83298c6c0f067bf9cb06801aecc2795ebe94`: **45/45 workflows completed SUCCESS**,66 isolated invocation summaries each exit0/fail0/skip0/cancel0. Dashboard's owned knowledge batch independently passed1+8+1 TAP tests. Evidence: `evidence/P0-KNOWLEDGE-SCOPE-CALLER-20261020.json`. Isolated run39512352032/job118936208778; Dashboard39512352072/job118936209122. Actual auth10/scope16/admin9/privilege81, receipt/operator/provider/cashier/Meta54 and recovery/restore/Node22 proofs PASS. The original public GUC exploit remains successful; NO-GO.
+
+Next containing commit additionally routes subscription, SaaS billing and SuperQi attachment transactions through the existing withOperationalTransaction helper, discarding clients after failed BEGIN/COMMIT/ROLLBACK while preserving original errors. This does not mint scopes in these three paths yet. Updated actual-function subscription VM control-flow tests7 PASS and shared lifecycle tests10 PASS locally; these are control-flow tests, not database proofs. Both are now in the priority isolated suite. Knowledge management/lifecycle are also registered in the main tenant batch (expected70 invocations total; verify actual logs). Owned fixture cleanup registers before seeding and runs all cleanup after failures; shared actual knowledge primary passes production admission. CI for these additional changes is PENDING until checked. Local guard/security tooling34 PASS, syntax/policy/whitespace PASS. No local PostgreSQL run.
+
+Branch `fix/p0-provider-receipt-order-discovery-20261015`, Draft PR550 base `test/p0-integrated-billing-meta-20261015`. Exact containing SHA is in GitHub history. NEXT: fetch HEAD and CI, fix genuine failures, record exact-source evidence; then wire the remaining five runtime paths through private scope issuance before protected locks and finally remove raw GUC trust. Knowledge is wired but retains transitional GUC for unchanged production policy. Six old GUC locations still exist. No production/staging/Neon writes/deploy/merge. **Release decision NO-GO.**
+
+---
+
 ## In-flight knowledge caller increment — 2026-10-20T23:02:09.952635+00:00
 
 Live recovery HEAD `57da9fc9a9dc0bff3b04427c7700ef6083219e39` independently verified: all44 workflows completed SUCCESS. PR550 remains open Draft with base `test/p0-integrated-billing-meta-20261015`. The containing engineering commit's exact SHA is in GitHub history; its CI is PENDING until execution is checked.

@@ -34,6 +34,8 @@ export async function createDisposableKnowledgeRuntime() {
     process.env.DATABASE_URL=url.toString();process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
     runtimePool=(await import('@workspace/db')).pool;
     assert.deepEqual((await runtimePool.query('SELECT session_user::text AS login,current_user::text AS active')).rows[0],{login:role,active:role});
+    const {assertProductionDatabaseRlsReady}=await import('../../src/services/postgresRuntimeRlsSecurity.ts');
+    await assertProductionDatabaseRlsReady({NODE_ENV:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_DATABASE_URL:authFixture.url,FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'});
     return {admin,runtimePool,role,authRole:authFixture.role,dispose};
   } catch(error) {await dispose();throw error;}
 }

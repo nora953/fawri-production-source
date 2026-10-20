@@ -1,3 +1,4 @@
+import { withOperationalTransaction, type OperationalQueryTarget, type OperationalTransactionClient, type OperationalDatabasePool } from "./operationalPostgresAuthority";
 import crypto from "node:crypto";
 import {
   applySubscriptionPlanCyclePostgres,
@@ -116,17 +117,9 @@ export class SubscriptionEntitlementAuthorityError extends Error {
   }
 }
 
-type QueryResult = {
-  rows: Record<string, unknown>[];
-  rowCount?: number | null;
-};
-
-type QueryTarget = {
-  query(sql: string, values?: unknown[]): Promise<QueryResult>;
-};
-
-type TransactionClient = QueryTarget & { release(): void };
-type DatabasePool = QueryTarget & { connect(): Promise<TransactionClient> };
+type QueryTarget = OperationalQueryTarget;
+type TransactionClient = OperationalTransactionClient;
+type DatabasePool = OperationalDatabasePool;
 
 type SubscriptionRow = {
   id: string;
@@ -409,19 +402,7 @@ async function queryRows<T extends Record<string, unknown>>(
 async function withTransaction<T>(
   work: (client: TransactionClient) => Promise<T>,
 ): Promise<T> {
-  const pool = await databasePool();
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await work(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+  return withOperationalTransaction(work, await databasePool());
 }
 
 // Tenant context belongs to this transaction only; pooled connections must not

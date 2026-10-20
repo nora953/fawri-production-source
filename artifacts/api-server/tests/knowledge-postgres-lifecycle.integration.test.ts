@@ -1,6 +1,7 @@
 // @ts-nocheck
 import assert from "node:assert/strict";
 import test from "node:test";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
 import { createDisposableKnowledgeRuntime } from "./helpers/disposable-knowledge-runtime.mjs";
 const runtimeFixture = await createDisposableKnowledgeRuntime();
 const pool = runtimeFixture.admin;
@@ -86,15 +87,16 @@ async function tenantCount(table: string, merchantId: string): Promise<number> {
 test("merchant Knowledge lifecycle deletion is PostgreSQL-authoritative and tenant-scoped", async (t) => {
   assert.ok(process.env.DATABASE_URL, "DATABASE_URL is required");
 
+  t.after(() => cleanupResources([
+    ["owned accounts", () => pool.query("DELETE FROM accounts WHERE id=ANY($1::text[])", [merchantIds])],
+    ["runtime fixture", () => runtimeFixture.dispose()],
+  ]));
+
   await seedMerchant(merchantIds[0], "+9647990000011");
   await seedMerchant(merchantIds[1], "+9647990000012");
   await seedKnowledge(merchantIds[0]);
   await seedKnowledge(merchantIds[1]);
 
-  t.after(async () => {
-    await pool.query(`DELETE FROM accounts WHERE id = ANY($1::text[])`, [merchantIds]);
-    await runtimeFixture.dispose();
-  });
 
   const beforeB = {
     saved: await tenantCount("saved_answers", merchantIds[1]),
