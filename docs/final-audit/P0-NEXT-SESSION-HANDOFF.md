@@ -1,5 +1,14 @@
 # FAWRI P0 next-session handoff
 
+## Schema reset correction — 2026-10-20T20:24:38.949777+00:00
+
+Exact source `06a6be5887c3626624df06eb5d813ba6ca07eb2b`: 43/44 workflows SUCCESS, one schema-validation FAILURE. Isolated run39473205064/job118802337916 SUCCESS:65 complete invocations, all exit0/fail0/skip0/cancel0; canonical scope/server issuer16 TAP tests PASS. Candidate39473204638 SUCCESS. Canonical generation and byte reproducibility passed inside schema39473205447; its later smoke step failed42P06 because the acceptance fixture reset only public/drizzle and retained fawri_security between runs.
+
+Corrected only the existing guarded disposable reset to include fawri_security before public/drizzle; added an internal local fawri_ci assertion before any schema reset. No migration idempotency shortcut, weakened assertion, hosted change or CI exception. Local syntax check PASS; corrected PostgreSQL execution pending CI. Evidence: evidence/P0-CANONICAL-TENANT-SCOPE-20261020.json.
+
+Branch fix/p0-provider-receipt-order-discovery-20261015; Draft PR#550 remains based on test/p0-integrated-billing-meta-20261015. Release NO-GO. Canonical0040/helper exists and isolated protocol/server proof passed, but production RLS still trusts tenant GUC; no application writer cutover. Next: verify corrected schema CI, then private-object role admission, private-schema backup/restore coverage, trusted ownership/grants, all8 writers and production predicate cutover. Sensitive auth/cashier integrity and hosted gates remain open. Prior uncommitted local worktrees were left untouched; a clean detached worktree was created from exact live HEAD. Local shell is available again; no local PostgreSQL/Docker available.
+
+
 ## Continuation 2026-10-20T18:15:20.272Z — canonical tenant-scope foundation, validation pending
 
 Recovered exact source/docs HEAD `72a15c68e524523939e0863d13315ebbc4520733`; all44 workflows completed SUCCESS, including migration39469980947, schema39469981839 and isolated39469981220. Draft PR#550 remains open against `test/p0-integrated-billing-meta-20261015`. No newer concurrent commit observed.
