@@ -46,7 +46,7 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
     runtimePool.options.connectionTimeoutMillis = 5_000;
     assert.deepEqual((await runtimePool.query("SELECT current_user AS active, session_user AS login")).rows[0], {active: role, login: role});
     const { assertProductionDatabaseRlsReady } = await import("../src/services/postgresRuntimeRlsSecurity.ts");
-    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required" });
+    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci" });
     const knowledge = await import("../src/services/knowledge/postgresKnowledgeRuntime.ts");
     const { PostgresKnowledgeManagementRuntime } = await import("../src/services/knowledge/postgresKnowledgeManagementRuntime.ts");
     const { deleteMerchantKnowledgePostgresData } = await import("../src/services/knowledge/postgresKnowledgeLifecycle.ts");

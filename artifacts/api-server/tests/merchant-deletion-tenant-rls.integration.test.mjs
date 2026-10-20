@@ -52,7 +52,7 @@ test("merchant deletion honors RLS for quiescence, purge and physical cleanup", 
     runtimePool.options.connectionTimeoutMillis = 5_000;
     assert.deepEqual((await runtimePool.query("SELECT current_user AS active, session_user AS login")).rows[0], {active: role, login: role});
     const { assertProductionDatabaseRlsReady } = await import("../src/services/postgresRuntimeRlsSecurity.ts");
-    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required" });
+    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci" });
     assert.equal((await runtimePool.query("SELECT count(*)::int AS count FROM products")).rows[0].count, 0);
     const management = await import("../src/services/postgresMerchantManagementAuthority.ts");
     const media = await import("../src/services/catalogMediaStorage.ts");

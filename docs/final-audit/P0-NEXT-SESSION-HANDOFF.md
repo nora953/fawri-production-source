@@ -1,3 +1,9 @@
+## Runtime contract and positive-fixture repair — 2026-10-20 UTC
+
+- Source43710541da76814e172d889d0bf48911a4a696c6 still failed API typecheck because API's existing ambient @workspace/db contract omitted the new factory export (TS2339). Updated that narrow runtime contract with the actual typed factory, with no suppression/any/dependency change. Focused strict TypeScript check of operator pool and readiness + their service dependencies now exits0 locally.
+- Actual source d581 isolated log run39378259268/job118481186655 proves admin-boundary9 PASS/0FAIL/0SKIP, including P0_AUDIT_FORGERY_DENIED (audit CRUD+forged transaction denied) and dedicated direct-login app directory. Run later cancelled; it is not complete acceptance. A different priority fixture failed because its production-ready env omitted newly required operator URL. Updated knowledge/deletion positive readiness fixture configuration; the production gate remains strict and new missing-config negative tests retained.
+- Next: verify this containing repair CI, then record exact source SHA/all workflow and SQL results. NO-GO; hosted role/grant, receipt operator split and arbitrary tenant GUC/identity DML blockers remain.
+
 ## Typecheck repair in flight — 2026-10-20 UTC
 
 - Source d58141284bc35ff9fc8e3f36930a53636a22ea9f failed API typecheck in CI: operator module directly imported pg but API package does not own pg declaration types (TS7016; resulting callback TS7006). Foundation39378259170/job118481186225 and billing readiness39378259171/job118481186159 logs verify this. This source is NOT accepted; do not count its failed/cancelled runs as successful SQL evidence.
