@@ -100,7 +100,17 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
   const fetchImpl=async(url,init)=>{
     providerCalls++;assert.equal(init.method,'GET');
     const f=fixtures.find(f=>String(url)===`https://uat-sandbox-3ds-api.qi.iq/api/v1/payment/${encodeURIComponent(f.payload.paymentId)}/status`);assert.ok(f,'only injected owned provider traffic');
-    assert.equal((await admin.query("SELECT count(*)::int AS n FROM pg_stat_activity WHERE usename=$1 AND state='idle in transaction'",[roles[1]])).rows[0].n,0,'no actor/session/device locks span provider I/O');
+    // Other concurrent requests may legitimately hold their own SQL transaction.
+    // A separate connection must be able to update this actor while this request
+    // awaits the provider. Holding our own FOR SHARE lock would deadlock until
+    // lock_timeout; transient locks from other requests can finish normally.
+    const probe=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:5000});
+    await probe.connect();
+    try {
+      await probe.query('BEGIN');await probe.query("SET LOCAL lock_timeout='5s'");
+      assert.equal((await probe.query('UPDATE accounts SET state=state WHERE id=$1',[actor])).rowCount,1);
+      await probe.query('ROLLBACK');
+    } finally {await probe.query('ROLLBACK').catch(()=>{});await probe.end();}
     if(providerHook)await providerHook(f);return Response.json(f.payload);
   };
   const invoke=(f)=>execute(context,f.event,f.body,fetchImpl);
@@ -168,7 +178,7 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
     assert.equal(providerCalls,calls);assert.equal((await audits()).length,before);assert.equal(bootstrapCalls,0);
   });
   await t.test('concurrent duplicate executions preserve tenant scope, receipt bytes and single grants',async()=>{
-    const normal=fixtures.filter(f=>f.scenario==='normal');const outcomes=await Promise.all(normal.flatMap(f=>[invoke(f),invoke(f)]));assert.ok(outcomes.every(o=>o.status==='duplicate'));
+    const normal=fixtures.filter(f=>f.scenario==='normal');const outcomes=await Promise.allSettled(normal.flatMap(f=>[invoke(f),invoke(f)]));assert.ok(outcomes.every(o=>o.status==='fulfilled'&&o.value.status==='duplicate'));
     for(const f of normal)assert.equal((await applications(f)).length,1);
     assert.deepEqual(await receiptSnapshot(),originalReceipts);assert.equal(bootstrapCalls,0);
     console.log('P0_RECEIPT_EXECUTION_OPERATOR_POOL_PROOF '+JSON.stringify({directRestrictedLogins:2,executionOnlyPrivilegedCapability:true,authAuditInboxCrud:false,tenantKnownActorSessionDenied:true,bootstrapPoolCalls:bootstrapCalls,providerOutsideTransaction:true,checksPerFreshExecution:4,durableTransactionsPerFreshExecution:3,permissionSessionCapabilityRevocationRechecked:true,mappingChangeRejected:true,grantAdmissionCommitFailureRecovery:true,concurrentAuthorities:2,receiptFieldsUnchanged:true,exactlyOneGrantPerOrder:true,productionPaymentProviderCertified:false,releaseAccepted:false}));
