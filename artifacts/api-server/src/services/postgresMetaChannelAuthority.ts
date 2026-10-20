@@ -1,4 +1,4 @@
-import { withAuthenticationTransaction, withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
+import { withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   createEnvironmentMetaCredentialKeyProvider,
@@ -10,6 +10,7 @@ import {
 import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
 import {
   operationalPostgresAuthorityRequired,
+  withOperationalTransaction,
   type OperationalSqlClient,
 } from "./operationalPostgresAuthority";
 import {
@@ -220,7 +221,7 @@ export async function listActiveMetaPageMappingsAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return listActiveMetaPageMappings().filter((mapping) => requested.includes(mapping.pageId));
   }
-  return withAuthenticationTransaction(async (client) => {
+  return withOperationalTransaction(async (client) => {
     const result = await client.query<{ page_id: string; merchant_id: string }>(
       `SELECT page_id, merchant_id FROM public.fawri_resolve_meta_page_merchants($1::text[])`,
       [requested],
