@@ -18,8 +18,7 @@ export async function authenticationDatabasePool(): Promise<OperationalDatabaseP
 export async function withMerchantAuthenticationTransaction<T>(merchantId:string,work:(client:OperationalQueryTarget)=>Promise<T>):Promise<T> {
   const tenant=String(merchantId || "").trim();
   if(!tenant || tenant.length>200) throw new Error("AUTHENTICATION_TENANT_INVALID");
-  return authority.transaction(async client=>{
-    await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[tenant]);
-    return work(client);
-  });
+  // This trusted authentication LOGIN is authorized by its non-PUBLIC marker,
+  // not a tenant GUC. Callers still bind merchant IDs in their SQL predicates.
+  return authority.transaction(work);
 }

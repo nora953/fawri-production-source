@@ -1135,7 +1135,8 @@ export async function redeemCashierStationPairingAuthoritative(input: {
       );
     }
     const merchantId = identifier(candidate.merchant_id, "merchant_id");
-    await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
+    // Pairing runs on the identity-checked authentication LOGIN. Its database
+    // authority comes from the marker ACL; merchantId remains explicit below.
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const station = await getStationRow(
       client,

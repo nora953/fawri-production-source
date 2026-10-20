@@ -21,13 +21,21 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
   const owner='scope_owner_'+nonce,tenant='scope_tenant_'+nonce,auth='scope_auth_'+nonce;
   const merchants=['scope-a-'+nonce,'scope-b-'+nonce],roles=[],clients=[];
   let schemaCreated=false,tenantUrl,authUrl,authClient,primary,other,expiredTarget;
+  let canonicalOwners=[],canonicalOwnerChanged=false;
+  const quoteRole=value=>'"'+String(value).replaceAll('"','""')+'"';
+  async function restoreCanonicalOwners(){
+    if(!canonicalOwnerChanged)return;
+    for(const entry of [...canonicalOwners].reverse())await admin.query('ALTER '+entry.object+' OWNER TO '+quoteRole(entry.owner));
+    canonicalOwnerChanged=false;
+  }
   t.after(()=>cleanupResources([
     ['authentication pool',()=>closeAuthenticationPool()],
     ['owned sessions',async()=>{for(const c of clients)await c.end();}],
     ['owned scope namespace',()=>schemaCreated?admin.query('DROP SCHEMA IF EXISTS '+schema+' CASCADE'):undefined],
     ['owned merchants',()=>admin.query('DELETE FROM merchants WHERE id=ANY($1::text[])',[merchants])],
     ['owned accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchants])],
-    ['owned roles',async()=>{for(const r of roles){await admin.query('DROP OWNED BY '+r);await admin.query('DROP ROLE '+r);}}],
+    ['canonical authority owners',restoreCanonicalOwners],
+    ['owned roles',async()=>{assert.equal(canonicalOwnerChanged,false,'canonical ownership restoration must precede role teardown');for(const r of roles){await admin.query('DROP OWNED BY '+r);await admin.query('DROP ROLE '+r);}}],
     ['bootstrap',()=>admin.end()],
   ]));
   for(const r of [owner,tenant,auth]){
@@ -237,6 +245,20 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
   await check('server issuer uses actual authenticated pool and canonical migration with transaction affinity',async()=>{
     const previousAuthUrl=process.env.FAWRI_AUTH_DATABASE_URL;
     process.env.FAWRI_AUTH_DATABASE_URL=authUrl;
+    canonicalOwners=(await admin.query(`
+      SELECT 'SCHEMA fawri_security' AS object,pg_get_userbyid(nspowner) AS owner FROM pg_namespace WHERE nspname='fawri_security'
+      UNION ALL SELECT 'TABLE fawri_security.transaction_scopes',pg_get_userbyid(relowner) FROM pg_class WHERE oid='fawri_security.transaction_scopes'::regclass
+      UNION ALL SELECT 'FUNCTION fawri_security.issue_scope(name,integer,bigint,text)',pg_get_userbyid(proowner) FROM pg_proc WHERE oid='fawri_security.issue_scope(name,integer,bigint,text)'::regprocedure
+      UNION ALL SELECT 'FUNCTION fawri_security.allows_merchant(text)',pg_get_userbyid(proowner) FROM pg_proc WHERE oid='fawri_security.allows_merchant(text)'::regprocedure
+    `)).rows;
+    assert.equal(canonicalOwners.length,4);
+    // Preserve the captured schema/table/function owner order explicitly.
+    canonicalOwners.sort((a,b)=>['SCHEMA','TABLE','FUNCTION'].indexOf(a.object.split(' ')[0])-['SCHEMA','TABLE','FUNCTION'].indexOf(b.object.split(' ')[0]));
+    canonicalOwnerChanged=true;
+    for(const entry of canonicalOwners)await admin.query('ALTER '+entry.object+' OWNER TO '+quoteRole(owner));
+    const canonicalOwnerNames=(await admin.query("SELECT pg_get_userbyid(proowner) AS owner FROM pg_proc WHERE oid IN ('fawri_security.issue_scope(name,integer,bigint,text)'::regprocedure,'fawri_security.allows_merchant(text)'::regprocedure) ORDER BY proname")).rows;
+    assert.deepEqual(canonicalOwnerNames,[{owner},{owner}]);
+    for(const c of [primary,authClient])await assert.rejects(()=>c.query('SET ROLE '+owner),{code:'42501'});
     await admin.query('GRANT USAGE ON SCHEMA fawri_security TO '+tenant+','+auth);
     await admin.query('GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO '+auth);
     await admin.query('GRANT EXECUTE ON FUNCTION fawri_security.allows_merchant(text) TO '+tenant);
@@ -271,6 +293,19 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
         assert.deepEqual(await visible(primary),[merchants[0]],'failed issuer transaction was rolled back before pool reuse');
       });
 
+      // The canonical issuer really executes with the restricted owner. Missing
+      // visibility or merchant SELECT must deny issuance, then recover cleanly.
+      for(const capability of ['statistics','merchant select']){
+        await admin.query(capability==='statistics'?'REVOKE pg_read_all_stats FROM '+owner:'REVOKE SELECT ON public.merchants FROM '+owner);
+        try{await transaction(primary,async()=>{
+          await assert.rejects(()=>issueMerchantTransactionScope(primary,merchants[0]),{code:'42501'});
+          assert.equal((await primary.query('SELECT fawri_security.allows_merchant($1) AS allowed',[merchants[0]])).rows[0].allowed,false);
+        });}finally{await admin.query(capability==='statistics'?'GRANT pg_read_all_stats TO '+owner:'GRANT SELECT ON public.merchants TO '+owner);}
+      }
+      await transaction(primary,async()=>{
+        await issueMerchantTransactionScope(primary,merchants[0]);
+        assert.deepEqual(await visible(primary),[merchants[0]]);
+      });
       const productionEnv={NODE_ENV:'production',FAWRI_DEPLOYMENT_MODE:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_DATABASE_URL:authUrl,FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'};
       await assertProductionDatabaseRlsReady(productionEnv,primary);
       const unsafe={code:'OPERATIONAL_TENANT_SCOPE_ROLE_UNSAFE'};
@@ -322,8 +357,8 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
       }
       await admin.query('REVOKE SELECT ON fawri_security.transaction_scopes FROM '+grantRole);
       // Detect function ownership even when scope-table privileges are absent.
-      const bootstrap=(await admin.query('SELECT session_user AS name')).rows[0].name;
-      assert.match(bootstrap,/^[a-z][a-z0-9_]{1,62}$/);
+      const previousFunctionOwner=(await admin.query("SELECT pg_get_userbyid(proowner) AS name FROM pg_proc WHERE oid='fawri_security.allows_merchant(text)'::regprocedure")).rows[0].name;
+      assert.equal(previousFunctionOwner,owner);
       await admin.query('GRANT CREATE ON SCHEMA fawri_security TO '+grantRole);
       await admin.query('ALTER FUNCTION fawri_security.allows_merchant(text) OWNER TO '+grantRole);
       await admin.query('REVOKE CREATE ON SCHEMA fawri_security FROM '+grantRole);
@@ -336,7 +371,7 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
           }
           finally{await admin.query('REVOKE '+grantRole+' FROM '+r);}
         }
-      }finally{await admin.query('ALTER FUNCTION fawri_security.allows_merchant(text) OWNER TO '+bootstrap);}
+      }finally{await admin.query('ALTER FUNCTION fawri_security.allows_merchant(text) OWNER TO '+quoteRole(previousFunctionOwner));}
       for(const value of ['', 'x'.repeat(201)])await assert.rejects(()=>issueMerchantTransactionScope(primary,value),{code:'OPERATIONAL_TENANT_INVALID'});
     }finally{
       await closeAuthenticationPool();
@@ -345,5 +380,5 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
       await admin.query('CREATE POLICY owned_scope ON '+schema+'.probe_rows USING('+schema+'.allows_merchant(merchant_id)) WITH CHECK('+schema+'.allows_merchant(merchant_id))');
     }
   });
-  if(protocolPassed)console.log('P0_TENANT_SCOPE_PROTOCOL_PROOF '+JSON.stringify({productionStartupPrivateScopeAdmissionVerified:true,privateScopePrivilegeAdmissionVerified:true,canonicalMigrationExercised:true,serverAuthenticatedPoolIssuance:true,serverIsolationRejection:true,serverAutocommitRejection:true,issuerFailurePoolRecovery:true,restrictedRuntimeLogin:true,sameLoginCrossBackendReplayDenied:true,sameBackendLaterTransactionReplayDenied:true,gucSpoofDenied:true,foreignReadAndUpdateDenied:true,privateAuthorityCrudDenied:true,forgedIssuerCallDenied:true,immutableScope:true,expiredScopeRenewalDenied:true,completedOnlyBoundedCleanup:true,restrictedNonLoginFunctionOwner:true,readCommittedSupported:true,repeatableReadAndSerializableFailClosed:true,concurrentConnections:4,reuseRounds:2,productionPredicateChanged:false,hostedCertified:false,releaseAccepted:false}));
+  if(protocolPassed)console.log('P0_TENANT_SCOPE_PROTOCOL_PROOF '+JSON.stringify({canonicalRestrictedOwnerVerified:true,canonicalOwnerCapabilityRevocationDenied:true,productionStartupPrivateScopeAdmissionVerified:true,privateScopePrivilegeAdmissionVerified:true,canonicalMigrationExercised:true,serverAuthenticatedPoolIssuance:true,serverIsolationRejection:true,serverAutocommitRejection:true,issuerFailurePoolRecovery:true,restrictedRuntimeLogin:true,sameLoginCrossBackendReplayDenied:true,sameBackendLaterTransactionReplayDenied:true,gucSpoofDenied:true,foreignReadAndUpdateDenied:true,privateAuthorityCrudDenied:true,forgedIssuerCallDenied:true,immutableScope:true,expiredScopeRenewalDenied:true,completedOnlyBoundedCleanup:true,restrictedNonLoginFunctionOwner:true,readCommittedSupported:true,repeatableReadAndSerializableFailClosed:true,concurrentConnections:4,reuseRounds:2,productionPredicateChanged:false,hostedCertified:false,releaseAccepted:false}));
 });

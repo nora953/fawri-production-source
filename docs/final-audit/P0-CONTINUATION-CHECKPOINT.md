@@ -1,5 +1,18 @@
 # FAWRI P0 continuation checkpoint
 
+## Trusted-auth caller and canonical-owner continuation — 2026-10-20T22:11:27.589935+00:00
+
+Recovered live HEAD442bb751652f36012e7895933d73e548cac7405a,44/44 completed workflows SUCCESS; Draft PR550/base unchanged. Existing accepted executable1fc4a0f remains the prior accepted source. No concurrent newer work observed.
+
+New code removes tenant GUC writes from withMerchantAuthenticationTransaction and cashier device pairing. Both already run through the separate identity-checked authentication LOGIN; existing non-PUBLIC marker remains their database authority, and SQL merchant predicates remain explicit. This is an intentional trusted-auth path, not tenant scope issuance on the auth LOGIN (which the issuer rejects). Actual auth fixture adds protected merchant_settings read with null tenant GUC and invalid-ID callback rejection; mixed rollback checks null GUC too.
+
+Canonical fawri_security schema/table/functions are temporarily transferred inside the guarded owned PostgreSQL fixture to the existing restricted NOLOGIN/non-superuser/non-bypass/non-createrole owner with pg_read_all_stats and merchant SELECT. Actual server issuance, role admission and pool recovery therefore execute under the canonical restricted owner, not just the nonce-schema replica. Capability revocation must deny issuance, then restored privileges recover. Original owners are captured/restored before role teardown; production migrations/grants are unchanged. No hosted ownership certification is claimed.
+
+Local operator/auth pool plus readiness26/26 PASS, zero failure/skip. Changed MJS syntax and whitespace checks PASS. New PostgreSQL proofs and full CI PENDING. No new security acceptance before execution. Production tenant GUC exploit remains OPEN and release NO-GO. Six tenant-runtime GUC writers still require scope integration: operationalPostgresAuthority, knowledge/postgresKnowledgeRuntime, postgresSubscriptionEntitlement, superQiSandboxWebhook, verifiedReceiptReplayExecution, saasBillingAuthority. Next: inspect exact-source CI/fix failures, then wire these callers before protected merchant locks, update actual LOGIN fixtures/auth issuer grants, and only then replace public RLS GUC trust. Authentication/cashier trusted paths no longer need their GUC writer migration, but require regression preservation.
+
+No production/staging/Neon data/role changes, Railway deployment, main push or merge. All owner/grant mutations in this increment belong only to the existing disposable fixture; no default Neon branch was used. The clean fawri-scope-live checkout starts at442bb751; older dirty worktrees remain untouched.
+
+
 Verified 2026-10-20T20:38:53.994827+00:00. **Release decision: NO-GO.**
 
 Repository nora953/fawri-production-source. Branch `fix/p0-provider-receipt-order-discovery-20261015`. Open Draft [PR550](https://github.com/nora953/fawri-production-source/pull/550); actual base `test/p0-integrated-billing-meta-20261015`, not main.

@@ -32,6 +32,7 @@ test('separate authentication LOGIN protects authority data and preserves signup
       await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO ${r}`);
       await admin.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ${AUTHENTICATION_INTEGRITY_TABLES.join(',')} TO ${r}`);
       await admin.query(`GRANT SELECT,INSERT,UPDATE ON merchants TO ${r}`);
+      await admin.query(`GRANT SELECT,INSERT,UPDATE ON merchant_settings TO ${r}`);
     }
     const url=new URL(process.env.DATABASE_URL);url.username=r;url.password=password;url.search='';urls.push(url.toString());
     const c=new Client({connectionString:url.toString(),connectionTimeoutMillis:5000});clients.push(c);await c.connect();
@@ -61,6 +62,17 @@ test('separate authentication LOGIN protects authority data and preserves signup
     const p=phone();merchant=await merchants.upsertPendingMerchantAuthoritative({phone:p,passwordHash:'synthetic',ownerName:'Synthetic',storeName:'Synthetic',activityType:'retail',language:'ar'});ids.push(merchant.account.id);
     await merchants.markMerchantOtpVerifiedAuthoritative(merchant.account.id);
     const found=await merchants.findMerchantByPhoneAuthoritative(p);assert.equal(found.account.id,merchant.account.id);assert.equal(mainCalls,0);
+  });
+  await t.test('merchant authentication reads protected rows without tenant GUC authority',async()=>{
+    await admin.query('INSERT INTO merchant_settings(merchant_id) VALUES($1)',[merchant.account.id]);
+    const actual=await authority.withMerchantAuthenticationTransaction(merchant.account.id,async client=>{
+      const identity=(await client.query("SELECT session_user AS login,current_user AS active,nullif(current_setting('fawri.tenant_id',true),'') AS tenant")).rows[0];
+      assert.deepEqual(identity,{login:roles[1],active:roles[1],tenant:null});
+      return (await client.query('SELECT merchant_id FROM merchant_settings WHERE merchant_id=$1',[merchant.account.id])).rows;
+    });
+    assert.deepEqual(actual,[{merchant_id:merchant.account.id}]);
+    for(const value of ['', 'x'.repeat(201)])await assert.rejects(()=>authority.withMerchantAuthenticationTransaction(value,async()=>assert.fail('invalid merchant callback executed')),/AUTHENTICATION_TENANT_INVALID/);
+    assert.equal(mainCalls,0);
   });
   await t.test('OTP issue and verify preserve one-time authority through private auth role',async()=>{
     const input={target:merchant.account.phone,purpose:'signup',ip:'127.0.0.21'};
@@ -102,6 +114,7 @@ test('separate authentication LOGIN protects authority data and preserves signup
   await t.test('mixed account and merchant updates roll back together on failure',async()=>{
     const before=(await admin.query('SELECT a.state,m.store_name FROM accounts a JOIN merchants m ON m.account_id=a.id WHERE a.id=$1',[merchant.account.id])).rows[0];
     await assert.rejects(()=>authority.withMerchantAuthenticationTransaction(merchant.account.id,async client=>{
+      assert.equal((await client.query("SELECT nullif(current_setting('fawri.tenant_id',true),'') AS tenant")).rows[0].tenant,null);
       await client.query("UPDATE accounts SET state='suspended' WHERE id=$1",[merchant.account.id]);
       await client.query("UPDATE merchants SET store_name='rolled-back' WHERE id=$1",[merchant.account.id]);throw Error('synthetic rollback');
     }),{message:'synthetic rollback'});
@@ -115,5 +128,5 @@ test('separate authentication LOGIN protects authority data and preserves signup
     process.env.FAWRI_AUTH_DATABASE_URL=urls[0];await assert.rejects(()=>admins.findAdminByIdAuthoritative(assistant.account.id),{code:'AUTH_DATABASE_IDENTITY_INVALID'});
     assert.equal(mainCalls,0);await closeAuth();process.env.FAWRI_AUTH_DATABASE_URL=urls[1];
   });
-  console.log('P0_AUTHENTICATION_POOL_PROOF '+JSON.stringify({directRestrictedLogins:2,tenantAuthMutationsDenied:true,tenantAuditCrudDenied:true,signupAndLookup:true,otpSingleUse:true,sessionIssueValidateRotateRevoke:true,adminPermissionPasswordStateChanges:true,mixedTransactionRollback:true,primaryPoolCalls:mainCalls,productionFallbackDenied:true,hostedCertified:false,releaseAccepted:false}));
+  console.log('P0_AUTHENTICATION_POOL_PROOF '+JSON.stringify({directRestrictedLogins:2,tenantAuthMutationsDenied:true,tenantAuditCrudDenied:true,trustedAuthWithoutTenantGuc:true,signupAndLookup:true,otpSingleUse:true,sessionIssueValidateRotateRevoke:true,adminPermissionPasswordStateChanges:true,mixedTransactionRollback:true,primaryPoolCalls:mainCalls,productionFallbackDenied:true,hostedCertified:false,releaseAccepted:false}));
 });
