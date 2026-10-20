@@ -1,3 +1,16 @@
+
+# Latest continuation — 2026-10-20T17:12:06.536Z
+
+**NO-GO**. Before publication HEAD `9793ec75b55d41e47c576b889526e02f9892dc84`; branch `fix/p0-provider-receipt-order-discovery-20261015`, Draft PR#550/base `test/p0-integrated-billing-meta-20261015`. Containing security-patch commit records exact new source SHA. Previous accepted b04b9c1's44/44 is historical; checkpoint0ec71ee subsequently had43/44 because dependency advisories changed.
+
+New blocker identified and candidate remediation verified: markdown-it14.3.1 via typedoc0.28.19, High GHSA-r7fv-28h4-cvq7/CVE-2026-111759. Published upstream same-series patch14.3.2; diagnostic source4d6f835 reports only bounded public identifiers, keeping High/Critical fail-closed. Actual diagnostics regression23 PASS/0fail/0skip in job118765205054 before superseding cancellation during history scan.
+
+[Candidate39462976434](https://github.com/nora953/fawri-production-source/actions/runs/39462976434), job118766909841 on9793ec75: **SUCCESS**. Real pnpm10.26.1 generated workspace/lockfile, frozen integrity-checked install with lifecycle scripts disabled passed, unchanged policy/release-age1440 passed, audit high0/critical0/moderate2. Reconstructed all19 emitted chunks and verified exact content differences: markdown-it override/node/edge/integrity14.3.1->14.3.2; pnpm additionally records SHA512 for unchanged SheetJS0.20.3 tarball. No other graph/content/version changes. Published actual pnpm output without inventing integrity. Removed the temporary read-only generator workflow after collecting its evidence; retained run/history. No release-age/severity exceptions.
+
+Evidence: [P0-MARKDOWN-IT-SECURITY-PATCH-20261020.json](evidence/P0-MARKDOWN-IT-SECURITY-PATCH-20261020.json). **Whole-source CI pending after this patch; do not claim44/44 yet.** NEXT FIRST: inspect new exact HEAD full CI and dependency audit; resolve real failures before accepting source. Then return to DB-authenticated tenant-scope remediation. Tenant-GUC impersonation, sensitive auth SELECT/privacy, cashier credential/session scope and hosted rollout blockers remain. Local execution unavailable, so all package generation/install/tests above used actual CI. No production/staging/Neon/Railway changes, merge or main push.
+
+---
+
 # FAWRI P0 next-session handoff
 
 Verified 2026-10-20T16:18:29.745Z. **NO-GO**.
@@ -24,9 +37,3 @@ No production/staging/Neon changes, Railway deploy, merge or main push. Reverify
 Live HEAD before this diagnostic increment: `0ec71eecf4d92120edc6ad437ab1dc318a67ed6e`; same branch/Draft PR#550/base. Current HEAD CI is **43 success/1 failure out of44**, unlike historical accepted b04b9c1 results. [Final security39456550351](https://github.com/nora953/fawri-production-source/actions/runs/39456550351) dependency-review job118744823610 and dependency-audit job118744824321 report high1/moderate2/critical0. Frozen install, lockfile policy and repository/history scans pass. Existing count-only report conceals affected package/advisory identity; root cause NOT YET IDENTIFIED.
 
 This increment adds strictly bounded, allowlisted public package/GHSA identifiers to blocking audit diagnostics and regression tests rejecting raw text/URLs/findings and malformed/oversized details. It leaves High/Critical failure policy and all existing checks intact. No dependency version change or vulnerability remediation claimed. Local execution environment is unavailable; source prepared via connector and tests must execute in CI. NEXT FIRST: inspect diagnostic CI tests and blocking package identifiers; determine safe upstream remediation and regenerate/verify the lockfile using a real package-manager environment. Do not fabricate lockfile integrity or suppress an advisory. Tenant-GUC, sensitive read/cashier scope and hosted gates remain open. **NO-GO**. No production/staging/Neon/Railway mutations, merge or main push.
-
-
-### Blocking dependency identified — 2026-10-20T17:03:37.660Z
-Diagnostic source `4d6f835b96817c4b5b33e50bf709c8beada6cb1e`; dependency-review run39462472287/job118765204709 confirms markdown-it High advisory GHSA-r7fv-28h4-cvq7 (CVE-2026-111759). Current resolved version14.3.1. Upstream [advisory](https://github.com/advisories/GHSA-r7fv-28h4-cvq7) and [release14.3.2](https://github.com/markdown-it/markdown-it/releases/tag/14.3.2) identify same-series14.3.2 fix. Official advisory database updated Oct20; historical green audit is time-scoped, not current certification.
-
-Added a read-only, credential-free candidate workflow because local execution is unavailable. It changes only a temporary workspace override in its checkout, runs real pnpm lockfile generation, frozen integrity-checked install, policy and unchanged High/Critical audit, then emits public candidate files for review. No GitHub write permission, no commit/push/deploy, no hosted database credentials, no release-age or severity exception. NEXT: require candidate success, inspect generated graph changes, publish only reviewed workspace/lockfile and regression evidence, then recheck CI. No dependency remediation yet claimed. **NO-GO**.

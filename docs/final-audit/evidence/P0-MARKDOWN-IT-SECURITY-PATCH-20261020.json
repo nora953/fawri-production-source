@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-10-20T17:12:06.536Z",
+  "repository": "nora953/fawri-production-source",
+  "branch": "fix/p0-provider-receipt-order-discovery-20261015",
+  "pr": 550,
+  "base": "test/p0-integrated-billing-meta-20261015",
+  "release_decision": "NO-GO",
+  "advisory": {
+    "package": "markdown-it",
+    "before": "14.3.1",
+    "after": "14.3.2",
+    "ghsa": "GHSA-r7fv-28h4-cvq7",
+    "cve": "CVE-2026-111759",
+    "upstream_advisory": "https://github.com/advisories/GHSA-r7fv-28h4-cvq7",
+    "upstream_release": "https://github.com/markdown-it/markdown-it/releases/tag/14.3.2",
+    "dependency_path": "typedoc@0.28.19 -> markdown-it",
+    "reported_high_before": 1,
+    "reported_critical_before": 0,
+    "reported_moderate_before": 2,
+    "high_after_candidate": 0,
+    "critical_after_candidate": 0,
+    "moderate_after_candidate": 2
+  },
+  "baseline": {
+    "sha": "0ec71eecf4d92120edc6ad437ab1dc318a67ed6e",
+    "workflows": 44,
+    "success": 43,
+    "failure": 1,
+    "failed_run": 39456550351,
+    "failed_jobs": [
+      118744823610,
+      118744824321
+    ],
+    "historical_green_executable": "b04b9c1c152751a7abe51a4dc55b226e860db10d",
+    "note": "Historical44/44 predates current advisory result; not current certification"
+  },
+  "diagnostics": {
+    "sha": "4d6f835b96817c4b5b33e50bf709c8beada6cb1e",
+    "run_id": 39462472287,
+    "dependency_review_job": 118765204709,
+    "regression_job": 118765205054,
+    "tests_passed": 23,
+    "tests_failed": 0,
+    "tests_skipped": 0,
+    "note": "test step completed; repository job later cancelled by newer source during history scan",
+    "audit_threshold_unchanged": true,
+    "raw_registry_text_urls_findings_not_logged": true
+  },
+  "candidate": {
+    "sha": "9793ec75b55d41e47c576b889526e02f9892dc84",
+    "run_id": 39462976434,
+    "job_id": 118766909841,
+    "status": "completed",
+    "conclusion": "success",
+    "pnpm": "10.26.1",
+    "node": 24,
+    "commands": [
+      "pnpm install --lockfile-only --ignore-scripts",
+      "pnpm install --frozen-lockfile --ignore-scripts",
+      "node scripts/security-final-audit.mjs policy",
+      "node scripts/security-final-audit.mjs dependency"
+    ],
+    "minimum_release_age_minutes": 1440,
+    "no_new_exclusions": true,
+    "runner_payload": {
+      "sha256": "2bae2d73173382a55910f18e503a324d8c6e6d21743a76f6f9d2658c12455ced",
+      "total": 19,
+      "length": 223636
+    },
+    "exact_reviewed_graph_comparison": true,
+    "graph_changes": [
+      "markdown-it14.3.1 ->14.3.2 only version change",
+      "pnpm adds sha512 integrity to unchanged SheetJS0.20.3 tarball; no URL or version change"
+    ],
+    "workflow_write_permission": false,
+    "workflow_deleted_after_candidate": true
+  },
+  "final_source_ci": "PENDING after publication; candidate results are not whole-source CI certification",
+  "remaining_blockers": [
+    "raw tenant-GUC impersonation",
+    "sensitive authentication SELECT/privacy",
+    "cashier-specific credential/session scope",
+    "hosted grants/configuration and prior rollout gates"
+  ],
+  "environment": {
+    "local_execution": "unavailable",
+    "tests": "GitHub Actions actual execution; V8 pure helper check supplementary",
+    "production_or_staging_mutated": false,
+    "neon_mutated": false,
+    "railway_deployed": false,
+    "pr_merged": false,
+    "main_pushed": false
+  }
+}
