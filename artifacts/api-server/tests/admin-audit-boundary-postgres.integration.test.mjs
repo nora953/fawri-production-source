@@ -136,7 +136,7 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
     assert.equal((await admin.query('SELECT state FROM accounts WHERE id=$1', [actor])).rows[0]?.state, 'suspended');
     await transaction(tenantOnly, async () => {
       await setAudit(tenantOnly);
-      assert.deepEqual(await visible(tenantOnly), tenants.slice(0, 2));
+      assert.deepEqual(await visible(tenantOnly), [], 'suspended administrator must lose audited cross-tenant authority immediately');
     });
     assert.deepEqual(await visible(tenantOnly), [], 'admin settings must reset after suspended-actor replay transaction');
     // Confirm the audit is still live when a suspended actor's identifiers are replayed.
@@ -147,6 +147,6 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
       assert.deepEqual(await visible(tenantOnly), [], 'expired authority must fail closed');
     });
     assert.deepEqual(await visible(tenantOnly), []);
-    console.log('P0_AUDIT_BEARER_REUSE_PROOF ' + JSON.stringify({ auditTableAccess: false, knownIdentifiersRequired: true, activeWindowReuse: true, suspendedActorReuse: true, expiredDenied: true, httpExploitTested: false, releaseAccepted: false }));
+    console.log('P0_AUDIT_BEARER_REUSE_PROOF ' + JSON.stringify({ auditTableAccess: false, knownIdentifiersRequired: true, activeWindowReuse: true, suspendedActorReuse: false, expiredDenied: true, httpExploitTested: false, releaseAccepted: false }));
   });
 });
