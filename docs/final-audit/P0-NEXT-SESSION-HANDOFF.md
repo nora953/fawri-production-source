@@ -1,3 +1,8 @@
+## Owned child-process readiness configuration — 2026-10-20 UTC
+
+- Source8d700180b683dd0b95f34183350bfa2ba4b9f617 reached38 successful workflows but Meta pipeline39378687588/job118482527162 failed at owned Meta app startup. Child helper invokes production RLS readiness with explicit fixture env and omitted the new operator URL. Repository-wide search also found the same omission in billing-provider-discovery-child.mjs. Both helpers now declare synthetic operator configuration for the tenant-RLS startup probe, matching other positive fixtures. This does NOT certify operator connectivity; the separate direct-login application directory test supplies actual restricted operator credentials and exercises issuance.
+- No production gate, SQL assertion, role privilege or negative missing-configuration test relaxed. Keep source8d700180 non-accepted until the corrected source completes all required workflows and isolated SQL suites. NO-GO unchanged.
+
 ## Runtime contract and positive-fixture repair — 2026-10-20 UTC
 
 - Source43710541da76814e172d889d0bf48911a4a696c6 still failed API typecheck because API's existing ambient @workspace/db contract omitted the new factory export (TS2339). Updated that narrow runtime contract with the actual typed factory, with no suppression/any/dependency change. Focused strict TypeScript check of operator pool and readiness + their service dependencies now exits0 locally.

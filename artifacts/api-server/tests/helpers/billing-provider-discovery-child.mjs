@@ -19,7 +19,7 @@ process.on('message',async task=>{
     const flags=(await pool.query("SELECT current_user AS role,session_user AS login,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
     assert.deepEqual(flags,{role:task.role,login:task.role,rolsuper:false,rolbypassrls:false,owns_table:false});
     const {assertProductionDatabaseRlsReady}=await import('../../src/services/postgresRuntimeRlsSecurity.ts');
-    await assertProductionDatabaseRlsReady({NODE_ENV:'production',FAWRI_DEPLOYMENT_MODE:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required'},pool);
+    await assertProductionDatabaseRlsReady({NODE_ENV:'production',FAWRI_DEPLOYMENT_MODE:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_OPERATOR_DATABASE_URL:'postgresql://operator@127.0.0.1/fawri_ci'},pool);
     const context=async()=>(await pool.query("SELECT coalesce(current_setting('fawri.tenant_id',true),'') AS tenant,coalesce(current_setting('fawri.admin_audit_id',true),'') AS audit,coalesce(current_setting('fawri.admin_account_id',true),'') AS admin")).rows[0];
     const naked=async()=>(await pool.query('SELECT (SELECT count(*)::int FROM saas_billing_orders) saas,(SELECT count(*)::int FROM cashier_billing_orders) cashier,(SELECT count(*)::int FROM verified_provider_payment_receipts) receipts')).rows[0];
     assert.deepEqual(await context(),{tenant:'',audit:'',admin:''});assert.deepEqual(await naked(),{saas:0,cashier:0,receipts:0});
