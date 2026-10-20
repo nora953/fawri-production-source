@@ -85,13 +85,16 @@ test("operator work failures roll back and pool configuration cannot silently ch
 });
 
 
-test("receipt pool validates its own bounded capability without requiring directory issuance", async () => {
+for (const [capability, signature] of [
+  ["receiptRead", "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)"],
+  ["receiptReview", "public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)"],
+] as const) test(`${capability} pool validates its own bounded capability without requiring directory issuance`, async () => {
   const fake = pool(identity);
   const authority = createOperatorDirectoryAuthority({
-    capability: "receiptRead", env: { ...configured }, makePool: async () => fake as never,
+    capability, env: { ...configured }, makePool: async () => fake as never,
   });
   assert.equal(await authority.transaction(async () => "read"), "read");
-  assert.deepEqual(fake.parameters, [["public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)"]]);
+  assert.deepEqual(fake.parameters, [[signature]]);
   await authority.close();
 });
 

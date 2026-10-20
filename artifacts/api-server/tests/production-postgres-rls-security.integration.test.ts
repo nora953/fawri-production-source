@@ -289,8 +289,8 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   }
 
 
-  for (const capability of ["public.fawri_issue_admin_directory_audit(text,text,text)", "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)"])
-  for (const mode of ["direct", "set-reachable", "unreachable"]) {
+  for (const capability of ["public.fawri_issue_admin_directory_audit(text,text,text)", "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)", "public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)"])
+  for (const mode of ["direct", "set-reachable", "inherit-only", "unreachable"]) {
     await t.test(`operator capability ${capability} ACL ${mode} cannot leak into tenant readiness`, async () => {
       const operatorRole = "fawri_directory_operator_probe";
       await client.query("RESET SESSION AUTHORIZATION");
@@ -299,12 +299,12 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
         await client.query(`CREATE ROLE ${operatorRole} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE`);
         await client.query(`GRANT EXECUTE ON FUNCTION ${capability} TO ${mode === "direct" ? probeRole : operatorRole}`);
         if (mode !== "direct") {
-          await client.query(`GRANT ${operatorRole} TO ${probeRole} WITH INHERIT FALSE, SET ${mode === "set-reachable" ? "TRUE" : "FALSE"}`);
+          await client.query(`GRANT ${operatorRole} TO ${probeRole} WITH INHERIT ${mode === "inherit-only" ? "TRUE" : "FALSE"}, SET ${mode === "set-reachable" ? "TRUE" : "FALSE"}`);
         }
         await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
         const state = await getProductionDatabaseRlsReadiness(client);
         assert.equal(state.directoryIssuerPresent, true);
-        assert.deepEqual(state.operatorAuthorityRoles, mode === "direct" ? [probeRole] : mode === "set-reachable" ? [operatorRole] : []);
+        assert.deepEqual(state.operatorAuthorityRoles, mode === "direct" ? [probeRole] : mode === "set-reachable" ? [operatorRole] : mode === "inherit-only" ? [operatorRole, probeRole].sort() : []);
         if (mode === "unreachable") await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
         else await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
           { code: "PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE" });

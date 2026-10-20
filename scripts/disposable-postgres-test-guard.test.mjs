@@ -82,7 +82,7 @@ test('cleanup failures cannot give a green result or prevent later cleanup; reda
 
 test('real MJS entrypoints reject remote target without loading application DB', async () => {
   const { spawnSync } = await import('node:child_process');
-  for (const file of ['global-merchant-auth-bootstrap-postgres.integration.test.mjs', 'global-merchant-golden-journey.integration.test.mjs', 'merchant-deletion-tenant-rls.integration.test.mjs']) {
+  for (const file of ['receipt-operator-pool-postgres.integration.test.mjs', 'receipt-review-operator-pool-postgres.integration.test.mjs', 'global-merchant-auth-bootstrap-postgres.integration.test.mjs', 'global-merchant-golden-journey.integration.test.mjs', 'merchant-deletion-tenant-rls.integration.test.mjs']) {
     const result = spawnSync(process.execPath, ['--test', `artifacts/api-server/tests/${file}`], {
       env: { NODE_ENV: 'test', DATABASE_URL: 'postgresql://synthetic:placeholder@staging.invalid/neondb' }, encoding: 'utf8', timeout: 10000,
     });

@@ -11,6 +11,7 @@ export const OPERATOR_DIRECTORY_DATABASE_ENV = "FAWRI_OPERATOR_DATABASE_URL";
 export const OPERATOR_DATABASE_CAPABILITIES = {
   directory: "public.fawri_issue_admin_directory_audit(text,text,text)",
   receiptRead: "public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)",
+  receiptReview: "public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)",
 } as const;
 type OwnedPool = OperationalDatabasePool & { end(): Promise<void> };
 
