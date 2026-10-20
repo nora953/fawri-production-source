@@ -1,5 +1,19 @@
 # FAWRI P0 next-session handoff
 
+## In-flight knowledge caller increment — 2026-10-20T23:02:09.952635+00:00
+
+Live recovery HEAD `57da9fc9a9dc0bff3b04427c7700ef6083219e39` independently verified: all44 workflows completed SUCCESS. PR550 remains open Draft with base `test/p0-integrated-billing-meta-20261015`. The containing engineering commit's exact SHA is in GitHub history; its CI is PENDING until execution is checked.
+
+Knowledge's actual PostgreSQL client now calls issueMerchantTransactionScope immediately after BEGIN through withOperationalTransaction, before protected SQL/merchant FK locks. It retains the leased primary connection and inherits discard on uncertain BEGIN/COMMIT/ROLLBACK. The old transaction-local GUC is temporarily retained solely for compatibility with the unchanged public predicate. There is no bootstrap/runtime bypass. This is caller wiring, not production RLS remediation.
+
+Disposable knowledge/learning/lifecycle/Meta fixtures now separate actual primary/auth LOGINs from bootstrap setup/inspection. Auth fixture receives private-schema USAGE and issuer EXECUTE, never private-table CRUD. Knowledge RLS fixture temporarily uses canonical private policies on its five public knowledge tables and restores original policies in cleanup; checks real scope tuple, foreign-GUC/update denial, issuer revocation blocking callback, rollback and pool reuse. These assertions are newly added, not yet database-verified in this commit. Dashboard knowledge CI now uses the strict owned isolated runner. Knowledge batch adds management/lifecycle coverage.
+
+Actually executed locally:33 focused knowledge runtime/transaction lifecycle tests PASS,15 disposable guard tests PASS; syntax, whitespace and security policy PASS. No local PostgreSQL run. No production/staging/Neon writes, deployment, main push or merge.
+
+NEXT: inspect this exact commit's CI; resolve genuine failures without bypassing identity/attestation, retain evidence, then continue remaining caller migration and public RLS cutover. Six legacy GUC writer locations remain, with knowledge now additionally requiring a private scope. The original public-predicate GUC exploit remains open. Hosted ownership/grants/pooler and remaining prior P0 gates remain uncertified. **Release NO-GO.**
+
+---
+
 Verified 2026-10-20T22:38:10.137Z. **Release decision: NO-GO.**
 
 Repository nora953/fawri-production-source. Branch `fix/p0-provider-receipt-order-discovery-20261015`. Open Draft [PR550](https://github.com/nora953/fawri-production-source/pull/550); actual base `test/p0-integrated-billing-meta-20261015`, not main.

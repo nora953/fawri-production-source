@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.mjs';
 const suites = {
-  'knowledge-rls': ['knowledge-tenant-rls.integration.test.mjs'],
+  'knowledge-rls': ['knowledge-tenant-rls.integration.test.mjs', 'knowledge-management-postgres-cutover.integration.test.ts', 'knowledge-postgres-lifecycle.integration.test.ts'],
   management: ['merchant-management-tenant-rls.integration.test.mjs'],
   'audit-boundary': ['tenant-transaction-scope-postgres.integration.test.mjs', 'authentication-operator-pool-postgres.integration.test.mjs', 'admin-audit-boundary-postgres.integration.test.mjs'],
   'full-restore': ['full-schema-restore-postgres.integration.test.mjs'],

@@ -19,6 +19,8 @@ export async function createDisposableAuthenticationRole(admin,connectionString)
     await admin.query(`REVOKE ALL ON public.database_admin_access_audits FROM ${role}`);
     await admin.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
     await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO ${role}`);
+    await admin.query(`GRANT USAGE ON SCHEMA fawri_security TO ${role}`);
+    await admin.query(`GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO ${role}`);
   } catch(error) {await admin.query(`DROP OWNED BY ${role}`);await admin.query(`DROP ROLE ${role}`);throw error;}
   const url=new URL(connectionString);url.username=role;url.password=password;url.search='';
   return {role,url:url.toString(),async dispose(){await admin.query(`DROP OWNED BY ${role}`);await admin.query(`DROP ROLE ${role}`);}};

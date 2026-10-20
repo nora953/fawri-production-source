@@ -2,7 +2,9 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { pool } from "@workspace/db";
+import { createDisposableKnowledgeRuntime } from "./helpers/disposable-knowledge-runtime.mjs";
+const runtimeFixture = await createDisposableKnowledgeRuntime();
+const pool = runtimeFixture.admin;
 import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
 import { learnFromMerchantManualReply } from "../src/services/merchantManualKnowledgeLearning.js";
 import { PostgresKnowledgeManagementRuntime } from "../src/services/knowledge/postgresKnowledgeManagementRuntime.js";
@@ -47,7 +49,7 @@ test(
         `DELETE FROM accounts WHERE id = ANY($1::text[])`,
         [merchants],
       );
-      await pool.end();
+      await runtimeFixture.dispose();
     });
 
     for (const [index, merchantId] of merchants.entries()) {

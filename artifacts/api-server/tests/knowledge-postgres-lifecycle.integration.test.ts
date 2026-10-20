@@ -1,7 +1,9 @@
 // @ts-nocheck
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pool } from "@workspace/db";
+import { createDisposableKnowledgeRuntime } from "./helpers/disposable-knowledge-runtime.mjs";
+const runtimeFixture = await createDisposableKnowledgeRuntime();
+const pool = runtimeFixture.admin;
 import { PostgresKnowledgeManagementRuntime } from "../src/services/knowledge/postgresKnowledgeManagementRuntime.js";
 import { deleteMerchantKnowledgePostgresData } from "../src/services/knowledge/postgresKnowledgeLifecycle.js";
 
@@ -91,7 +93,7 @@ test("merchant Knowledge lifecycle deletion is PostgreSQL-authoritative and tena
 
   t.after(async () => {
     await pool.query(`DELETE FROM accounts WHERE id = ANY($1::text[])`, [merchantIds]);
-    await pool.end();
+    await runtimeFixture.dispose();
   });
 
   const beforeB = {

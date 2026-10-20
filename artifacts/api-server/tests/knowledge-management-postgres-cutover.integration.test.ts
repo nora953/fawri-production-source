@@ -1,7 +1,9 @@
 // @ts-nocheck
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pool } from "@workspace/db";
+import { createDisposableKnowledgeRuntime } from "./helpers/disposable-knowledge-runtime.mjs";
+const runtimeFixture = await createDisposableKnowledgeRuntime();
+const pool = runtimeFixture.admin;
 import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
 import {
   PostgresKnowledgeManagementRuntime,
@@ -64,7 +66,7 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
 
   t.after(async () => {
     await pool.query(`DELETE FROM accounts WHERE id = ANY($1::text[])`, [merchantIds]);
-    await pool.end();
+    await runtimeFixture.dispose();
   });
 
   const managementA = new PostgresKnowledgeManagementRuntime({

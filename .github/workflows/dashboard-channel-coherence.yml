@@ -187,4 +187,4 @@ jobs:
         run: pnpm --filter @workspace/api-server exec tsx --test ./tests/merchant-channels-postgres-http.integration.test.ts
 
       - name: Run saved answers PostgreSQL management proof
-        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/knowledge-management-postgres-cutover.integration.test.ts
+        run: bash scripts/run-isolated-postgres-audit.sh knowledge-rls
