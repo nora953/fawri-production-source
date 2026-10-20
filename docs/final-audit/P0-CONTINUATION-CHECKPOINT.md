@@ -1,5 +1,9 @@
 # FAWRI P0 continuation — 2026-10-20T23:18:48.456538+00:00
 
+## Latest receipt test correction — 2026-10-20T23:27:43.477876+00:00
+
+Source896c1cd360632819977bed36356ee196befb950d completed44/45 SUCCESS and1 failure.70 isolated invocations:69 clean; execution actual-LOGIN/scope15 PASS and wire17 PASS. HTTP replay had17 PASS/3 FAIL (2 owner subtests plus parent) because the shared owner proof assumed inbox SELECT, now intentionally absent on the least-privilege executor. Evidence: `evidence/P0-RECEIPT-SCOPE-CALLER-ATTEMPT-20261020.json`. The helper now asserts direct ACL42501 when SELECT is absent, or zero RLS-visible rows when present, while preserving exact positive definer result/audit, all owner/FORCE cases and before/after rollback/domain snapshots. No new grants, skipped cases or changed SQL authorization. This correction is pending its own CI. Last fully accepted executable remains384c9667534cc54262305d528d5034e4250ff303 (45/45;70 clean). **NO-GO.**
+
 **Release decision NO-GO.** Repository nora953/fawri-production-source; audit branch `fix/p0-provider-receipt-order-discovery-20261015`. PR550 remains open Draft, actual base `test/p0-integrated-billing-meta-20261015`.
 
 ## Verified executable source

@@ -41,7 +41,20 @@ export async function proveReceiptCapabilityOwners(t,{admin,role,functions,table
         await assert.rejects(()=>invoke(fixture,deniedActorId,randomUUID()),error=>error.code==='42501');
         await admin.query('ROLLBACK TO SAVEPOINT expected_denial');
         assert.deepEqual((await invoke(fixture,actorId,auditId)).rows,[expected(fixture)]);
-        assert.deepEqual((await admin.query('SELECT (SELECT count(*)::int FROM verified_provider_payment_receipts) receipts,(SELECT count(*)::int FROM saas_billing_orders) saas,(SELECT count(*)::int FROM cashier_billing_orders) cashier')).rows,[{receipts:0,saas:0,cashier:0}]);
+        for(const table of ['verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders']){
+          const allowed=(await admin.query("SELECT has_table_privilege(current_user,$1,'SELECT') AS allowed",['public.'+table])).rows[0].allowed;
+          assert.ok(allowed===true||allowed===false);
+          if(allowed){
+            assert.deepEqual((await admin.query(`SELECT count(*)::int AS n FROM public.${table}`)).rows,[{n:0}]);
+          }else{
+            // A least-privilege executor lacks inbox SELECT entirely. Keep the
+            // positive definer result/audit above and prove direct ACL denial
+            // without aborting the surrounding ownership/immutability checks.
+            await admin.query('SAVEPOINT direct_read_denial');
+            await assert.rejects(()=>admin.query(`SELECT count(*) FROM public.${table}`),{code:'42501'});
+            await admin.query('ROLLBACK TO SAVEPOINT direct_read_denial');
+          }
+        }
       }
       await admin.query('RESET ROLE');
       const written=(await admin.query('SELECT admin_account_id,reason_code,request_hash FROM database_admin_access_audits WHERE id=ANY($1::text[]) ORDER BY reason_code',[[auditId,auditId+'-execute']])).rows;
