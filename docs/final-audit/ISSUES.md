@@ -1,3 +1,9 @@
+## Explicit owned-bootstrap fixture attestation — 2026-10-21
+
+Published consumer correction `cb5eaa4eb4d92811d480eac7200062ed9a7407fc` is pending CI. Source review found that role-grant helpers re-attested process DATABASE_URL after it had correctly changed to tenant LOGIN. Containing helper correction verifies the EXPLICIT original bootstrap URL against the SAME network-none/namespace/database/user/marker guard; no flag or role bypass. Authentication creation already receives that URL; tenant-revocation/executor grant helpers now accept it explicitly, with old default unchanged. Original role-grant SQL and production source unchanged. Native lock observer in receipt executor uses explicit bootstrap connection, while replay remains forbidden from borrowing the primary pool. Local guard/security34 and syntax/whitespace PASS. Native new results PENDING; public GUC exploit and other P0 gates OPEN, NO-GO. Inspect latest exact-source CI before further changes; do not call cb5 or containing source accepted without counters.
+
+---
+
 ## Central private scope proof / legacy consumer correction — 2026-10-21
 
 Exact executable `2fe24ef4cdae762d657e8551505ace9f7642e238`: **35/46 workflows SUCCESS,11 FAILURE**. Isolated39645535304/job119379983364:73 invocations,61 clean/12 not clean. **New central actual-LOGIN scope proof6 PASS** (includes parent), including committed issuer before locks, generic no-mint, forged setting cannot rebind private scope, rollback/reuse, issuer revoke/recovery and subscription caller. Existing core private16/auth10/admin9/runtime81 and cashier proofs retain their exact-source counters. Full migration41/schema/restore unchanged. This is NOT full-source acceptance. Evidence: [P0-CENTRAL-SCOPE-CONSUMERS-ATTEMPT-20261021.json](evidence/P0-CENTRAL-SCOPE-CONSUMERS-ATTEMPT-20261021.json).

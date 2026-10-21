@@ -2,8 +2,8 @@ import {assertDisposablePostgres} from '../../../../scripts/lib/disposable-postg
 
 // Disposable execution fixture only; mirror the reviewed billing DML exercised
 // by the actual operator-pool test, without auth/audit/inbox CRUD privileges.
-export async function grantReceiptExecutionFixture(admin,role) {
-  await assertDisposablePostgres();
+export async function grantReceiptExecutionFixture(admin,role,bootstrapUrl=process.env.DATABASE_URL) {
+  await assertDisposablePostgres({...process.env,DATABASE_URL:bootstrapUrl});
   if(!/^[a-z][a-z0-9_]{1,62}$/.test(role))throw Error('invalid disposable execution role');
   await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
   await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_authorize_verified_receipt_replay(text,text,text,text,text,text,text,text) TO ${role}`);

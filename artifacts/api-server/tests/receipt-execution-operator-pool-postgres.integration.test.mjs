@@ -81,7 +81,7 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
     await admin.query(`CREATE ROLE ${r} LOGIN PASSWORD '${password}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);roles.push(r);
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${r}`);
     if(kind==='executor'){
-      await grantReceiptExecutionFixture(admin,r);
+      await grantReceiptExecutionFixture(admin,r,bootstrapUrl);
     }
     const url=new URL(process.env.DATABASE_URL);url.username=r;url.password=password;url.search='';urls.push(url.toString());
     const c=new Client({connectionString:url.toString(),connectionTimeoutMillis:5000});clients.push(c);await c.connect();
@@ -106,7 +106,7 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
     // A separate connection must be able to update this actor while this request
     // awaits the provider. Holding our own FOR SHARE lock would deadlock until
     // lock_timeout; transient locks from other requests can finish normally.
-    const probe=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:5000});
+    const probe=new Client({connectionString:bootstrapUrl,connectionTimeoutMillis:5000});
     await probe.connect();
     try {
       await probe.query('BEGIN');await probe.query("SET LOCAL lock_timeout='5s'");

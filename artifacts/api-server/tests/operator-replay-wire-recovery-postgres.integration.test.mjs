@@ -48,7 +48,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
   ]));
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   assert.equal((await pool.query("SELECT has_function_privilege($1,$2,'EXECUTE') AS allowed",[role,capability])).rows[0].allowed,false);
-  await grantReceiptExecutionFixture(pool,role);
+  await grantReceiptExecutionFixture(pool,role,bootstrapUrl);
   authFixture=await createDisposableAuthenticationRole(pool,bootstrapUrl);
   process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
   async function admin(roleName,permissions=[]){

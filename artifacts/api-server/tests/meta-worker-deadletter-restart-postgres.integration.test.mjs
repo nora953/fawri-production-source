@@ -32,7 +32,7 @@ test('actual signed Meta worker restart discovers refund after committed DLQ gap
   ]));
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);await pool.query(`GRANT EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) TO ${role}`);
-  await restrictTenantAuthenticationPrivileges(pool,role);
+  await restrictTenantAuthenticationPrivileges(pool,role,bootstrapUrl);
   authFixture=await createDisposableAuthenticationRole(pool,bootstrapUrl);
   for(let i=0;i<2;i++){
     const created=await accounts.upsertPendingMerchantAuthoritative({phone:`+1994${String(randomInt(0,100000000)).padStart(8,'0')}`,passwordHash:'synthetic',ownerName:'Synthetic',storeName:'Synthetic',activityType:'retail',language:'ar',requestedPlan:'silver'});const id=created.account.id;merchants.push(id);

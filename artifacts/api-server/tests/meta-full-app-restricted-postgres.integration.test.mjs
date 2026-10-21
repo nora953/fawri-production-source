@@ -37,7 +37,7 @@ test('signed actual Meta app reaches original manual filter, tenant queue and li
   ]));
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
-  await restrictTenantAuthenticationPrivileges(pool,role);
+  await restrictTenantAuthenticationPrivileges(pool,role,bootstrapUrl);
   authRole=await createDisposableAuthenticationRole(pool,bootstrapUrl);
   assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_resolve_meta_page_merchants(text[])','EXECUTE') AS allowed",[role])).rows[0].allowed,false);
   await pool.query(`GRANT EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) TO ${role}`);

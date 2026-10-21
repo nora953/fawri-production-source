@@ -57,7 +57,7 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
   ]));
   admin=await parentRuntime.admin.connect();
   await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
-  await grantReceiptExecutionFixture(admin,role);
+  await grantReceiptExecutionFixture(admin,role,bootstrapUrl);
   await admin.query(`REVOKE EXECUTE ON FUNCTION ${capability} FROM ${role}`);
   authFixture=await createDisposableAuthenticationRole(admin,bootstrapUrl);
   process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;

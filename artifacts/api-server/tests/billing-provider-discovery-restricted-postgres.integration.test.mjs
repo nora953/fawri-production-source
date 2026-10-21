@@ -47,7 +47,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
   await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
-  await restrictTenantAuthenticationPrivileges(pool,role);
+  await restrictTenantAuthenticationPrivileges(pool,role,bootstrapUrl);
   authFixture=await createDisposableAuthenticationRole(pool,bootstrapUrl);
   await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
   await pool.query(`GRANT EXECUTE ON FUNCTION ${functionIdentity} TO ${role}`);
