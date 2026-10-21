@@ -1,3 +1,15 @@
+## VERIFIED recovery / central merchant scope acceptance — 2026-10-21
+
+**Accepted executable: `c60914b8d954cb1d82e9a3706adfd0b669d9144d`. ALL46/46 workflows completed SUCCESS.** Isolated [39649327517](https://github.com/nora953/fawri-production-source/actions/runs/39649327517),job119393191547: **75/75 invocations exit0/fail0/skip0/cancel0/complete**. Actual checkout6f6ab7f3cbcdd017bb72151d0c1335b84ec7282c and source have identical tree8d33b3364a5f47461a2df7940fcf892121d8bc92. Full dump/restore and41 migrations PASS. Exact workflow links, all75 counters, proof flags and limits: [P0-CENTRAL-SCOPE-FINAL-ACCEPTANCE-20261021.json](evidence/P0-CENTRAL-SCOPE-FINAL-ACCEPTANCE-20261021.json). Containing checkpoint is documentation/evidence ONLY [skip ci]; do not claim a new executable run for its SHA.
+
+Recovery independently confirmed previous74fc702f:46 green/72 clean and12 saved commits after251b8329. Only TWO production source files changed during this recovery: central merchant operational/subscription wrappers now commit private issuance after BEGIN/before locks; generic/auth wrappers do not mint. Actual LOGIN fixtures retain original billing/receipt races, HTTP, refund, wire-loss, Meta and clock/lease assertions. Central scope6, scope protocol16/auth10/admin9/runtime81, discovery19/inbox18, executor15/HTTP20/wire17, Meta full-app13/restore6, clock1/lease6 and every other invocation PASS. Counts include parents/repeated runtimes, not unique P0 coverage. Earlier failures/cancellations remain preserved in attempt JSONs.
+
+**PUBLIC RAW TENANT GUC TRUST REMAINS OPEN.** The actual successful P0_TENANT_GUC_TRUST_PROOF remains in this accepted log. Private caller acceptance is preparatory, not global RLS closure. Fresh read-only hosted evidence shows staging28 vs source41 migrations, no private scope schema/resolver, unsafe candidate runtime role attributes/non-RLS grants, old main deployment, deployed DB login unverified. [Hosted evidence](evidence/P0-HOSTED-READONLY-RECOVERY-20261021.json). [Complete status/measurement/effort](P0-RECOVERY-RELEASE-STATUS-20261021.md). Full-P0 percent NOT MEASURABLE; historical85% unverified. Provisional20–40 focused engineering hours excludes waiting/new defects. **RELEASE NO-GO.** No hosted write/migration/grant/deploy/main push/merge.
+
+**Next exact action:** fetch live branch HEAD/use a fresh clean checkout; preserve dirty old worktrees. Implement canonical0041 public predicate cutover to private allows_merchant, with stage/journal/deterministic snapshot reproduction and removal of six transitional source tenant GUC writes. Update only affected old SQL fixtures to actual trusted issuance, retain GUC-forgery denial and all positive business/rollback/session/expiry/race proofs. No issuer grants to primary, no bootstrap/role bypass, no hosted rollout. Then reconcile remaining hosted/privacy/cashier/offline/retention/provider/storage/full-inventory gates. P1/P2 remain out of scope.
+
+---
+
 
 ## P0 confirmed resolver CI acceptance — 2026-10-17
 

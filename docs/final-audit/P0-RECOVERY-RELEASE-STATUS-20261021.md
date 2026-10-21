@@ -1,3 +1,7 @@
+## Final accepted executable
+
+`c60914b8d954cb1d82e9a3706adfd0b669d9144d`:46/46 workflows SUCCESS;75/75 isolated invocations clean. Isolated run39649327517/job119393191547; exact source/checkout tree match. See evidence/P0-CENTRAL-SCOPE-FINAL-ACCEPTANCE-20261021.json. This containing commit changes docs/evidence only; no new runtime acceptance is inferred. Release remains **NO-GO**.
+
 # P0 recovery and release status — 2026-10-21
 
 ## What recovery established
