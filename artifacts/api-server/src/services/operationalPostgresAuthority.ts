@@ -109,6 +109,11 @@ export async function withMerchantOperationalTransaction<T>(
     );
   }
   return withOperationalTransaction(async (client) => {
+    // Load after BEGIN to avoid the issuer/authentication module cycle. Only
+    // merchant transactions mint; generic and authentication leases never do.
+    // The separate issuer must commit before merchant or foreign-key locks.
+    const { issueMerchantTransactionScope } = await import("./tenantTransactionScope");
+    await issueMerchantTransactionScope(client, merchantId);
     await client.query(
       "SELECT set_config('fawri.tenant_id', $1, true)",
       [merchantId],

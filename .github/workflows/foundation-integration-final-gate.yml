@@ -152,10 +152,8 @@ jobs:
       - name: Prove default knowledge services under restricted tenant RLS in an owned offline cluster
         run: bash scripts/run-isolated-postgres-audit.sh knowledge-rls
 
-      - name: Prove background subscription reminders under restricted tenant RLS
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/subscription-reminder-rls.integration.test.mjs
+      - name: Prove background subscription reminders in an owned offline cluster
+        run: bash scripts/run-isolated-postgres-audit.sh subscription-reminder
 
       - name: Prove Support image authorization before filesystem persistence
         run: >-

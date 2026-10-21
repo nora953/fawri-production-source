@@ -1,3 +1,11 @@
+## Central merchant scope increment — 2026-10-21
+
+Recovered fixture source `5b7f7cb9065d2686ccd3ffdc209c4e27addfb3ad`: isolated39644611813/job119376758882 **72/72 clean invocations**, support5/reminder1/reviewHTTP20/MetaRestore6 PASS using actual LOGINs. Overall45/46 workflows SUCCESS; Foundation host-service attestation failure retained. Evidence: [P0-RECOVERY-FIXTURE-ACCEPTANCE-20261021.json](evidence/P0-RECOVERY-FIXTURE-ACCEPTANCE-20261021.json).
+
+Containing source now awaits canonical private issuance in central operational/subscription merchant transactions AFTER BEGIN/BEFORE locks. Generic/auth transactions do not mint. Adds actual-LOGIN central scope/rollback/revocation/subscription regression; Foundation reminder uses an owned network-none suite. Local actual-function/control29 and guard/security34 PASS; native SQL/new full CI PENDING. Transitional tenant setting/public predicate are UNCHANGED; raw GUC exploit remains OPEN. No hosted writes/deploy/main/merge. Full P0 denominator remains unreconciled (UI manifest is P1 only), so85% and a replacement whole-P0 percentage are not defensible. **NO-GO**. Next inspect containing exact-source CI, repair failures, then public predicate canonical migration and remaining consumers/hosted/privacy gates.
+
+---
+
 ## Crash recovery verified — 2026-10-21
 
 GitHub branch HEAD recovered at `74fc702f8d7759abd4f34ac4d367e8e126439c21`, exactly the user-observed checkpoint. PR #550 remains open Draft, actual base `test/p0-integrated-billing-meta-20261015`; no merge. Fresh independent API inspection: **46/46 exact-HEAD workflows SUCCESS**, isolated run39541854104/job119031160756, **72/72 invocation summaries exit0/fail0/skip0/cancel0/complete**. Evidence: [P0-CRASH-RECOVERY-20261021.json](evidence/P0-CRASH-RECOVERY-20261021.json). Source and saved handoff confirm 12 subsequent commits after251b8329, covering transaction discard, receipt/provider scope issuance, explicit direct billing context, actual tenant/auth fixtures and subscription directory operator. Prior session uncommitted files are inaccessible; no claim that unsaved work was recovered. Current recovery checkout was clean at74fc702f.

@@ -23,7 +23,8 @@ const suites = {
   'meta-rls': ['meta-page-directory-restricted-rls.integration.test.mjs'],
 };
 suites['node22-http'] = suites.http;
-suites.priority = [...suites['audit-boundary'], 'cashier-operator-login-concurrency-hardening.test.mjs', 'subscription-tenant-transaction-unit.test.mjs', 'billing-merchant-context-unit.test.mjs', 'operational-postgres-transaction-lifecycle.test.ts', 'failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
+suites['subscription-reminder'] = ['subscription-reminder-rls.integration.test.mjs'];
+suites.priority = [...suites['audit-boundary'], 'merchant-central-scope-postgres.integration.test.mjs', 'cashier-operator-login-concurrency-hardening.test.mjs', 'subscription-tenant-transaction-unit.test.mjs', 'billing-merchant-context-unit.test.mjs', 'operational-postgres-transaction-lifecycle.test.ts', 'failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
 const selected = suites[process.argv[2]];
 assert.ok(selected, 'unknown audit suite');
 await assertDisposablePostgres();
