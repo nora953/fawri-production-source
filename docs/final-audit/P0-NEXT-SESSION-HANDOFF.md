@@ -1,3 +1,13 @@
+## Crash recovery verified — 2026-10-21
+
+GitHub branch HEAD recovered at `74fc702f8d7759abd4f34ac4d367e8e126439c21`, exactly the user-observed checkpoint. PR #550 remains open Draft, actual base `test/p0-integrated-billing-meta-20261015`; no merge. Fresh independent API inspection: **46/46 exact-HEAD workflows SUCCESS**, isolated run39541854104/job119031160756, **72/72 invocation summaries exit0/fail0/skip0/cancel0/complete**. Evidence: [P0-CRASH-RECOVERY-20261021.json](evidence/P0-CRASH-RECOVERY-20261021.json). Source and saved handoff confirm 12 subsequent commits after251b8329, covering transaction discard, receipt/provider scope issuance, explicit direct billing context, actual tenant/auth fixtures and subscription directory operator. Prior session uncommitted files are inaccessible; no claim that unsaved work was recovered. Current recovery checkout was clean at74fc702f.
+
+**OPEN P0:** actual log still records successful `P0_TENANT_GUC_TRUST_PROOF` (raw tenant setting trusted; arbitrary SQL and foreign tenant identifier required; HTTP exploit not tested). Green CI must not be interpreted as exploit remediation. Remaining canonical central issuance/public predicate cutover, hosted identities/owners/ACL/pooler, auth/privacy/cashier integrity and provider/storage/retention gates remain uncertified. Historical85% is not a measured completion rate.
+
+Containing fixture increment separates actual tenant/auth LOGINs for support and subscription reminders, Meta restore parent/child, and actual review-only LOGIN from primary checkout/auth in receipt review HTTP. Native bootstrap stays setup/inspection/cleanup only. Retains original fault/chronology/exactly-once/owner assertions. **New increment is PENDING CI**; four JS syntax checks and whitespace PASS. No local PostgreSQL/Docker. Local frozen pnpm11 install rejected xlsx@0.20.3 missing tarball integrity; no lockfile or policy relaxation. Source remains unchanged in this increment. Inspect new exact-source CI before central merchant issuance; fix actual failures without bypass/grants/skips. No hosted DB writes/deployment/main push/merge. **NO-GO**.
+
+---
+
 # FAWRI P0 continuation checkpoint
 
 ## Accepted runtime and subscription operator increment — 2026-10-21T04:02:27.987Z
