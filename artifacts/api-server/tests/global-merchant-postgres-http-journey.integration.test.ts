@@ -100,13 +100,15 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     FAWRI_DISABLE_JOB_WORKERS: "1",
   });
 
+  const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+  const runtimeFixture=await createDisposableKnowledgeRuntime();
   const [
     { pool },
     { hashPassword },
     merchantAccounts,
     { MERCHANT_SESSION_COOKIE },
   ] = await Promise.all([
-    import("@workspace/db"),
+    Promise.resolve({pool:runtimeFixture.admin}),
     import("../src/services/authPasswordService.js"),
     import("../src/services/postgresMerchantAccountAuthority.js"),
     import("../src/middleware/authSession.js"),
@@ -127,7 +129,7 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
       if (server) await new Promise<void>((resolve, reject) => server?.close((error) => error ? reject(error) : resolve()));
     }],
     ["fixture accounts", cleanup],
-    ["pool", () => pool.end()],
+    ["actual runtime fixture", () => runtimeFixture.dispose()],
     ["temporary directory", () => rm(runtimeDirectory, { recursive: true, force: true })],
   ]));
 

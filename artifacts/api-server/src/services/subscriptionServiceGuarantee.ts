@@ -1,3 +1,4 @@
+import { withMerchantOperationalTransaction } from "./operationalPostgresAuthority";
 import crypto from "node:crypto";
 
 const HOUR_SECONDS = 60 * 60;
@@ -333,15 +334,15 @@ export class PostgresSubscriptionGuaranteeSubscriptionAuthority
 {
   constructor(private readonly sql?: SubscriptionGuaranteeSqlExecutor) {}
 
-  private async executor(): Promise<SubscriptionGuaranteeSqlExecutor> {
+  private async executor(merchantId: string): Promise<SubscriptionGuaranteeSqlExecutor> {
     if (this.sql) return this.sql;
-    const { pool } = await import("@workspace/db");
     return {
       async query<Row extends Record<string, unknown>>(
         statement: string,
         values: readonly unknown[] = [],
       ): Promise<SqlResult<Row>> {
-        const result = await pool.query(statement, Array.from(values));
+        const result = await withMerchantOperationalTransaction(merchantId, client =>
+          client.query(statement, Array.from(values)));
         return { rows: result.rows as Row[] };
       },
     };
@@ -353,7 +354,7 @@ export class PostgresSubscriptionGuaranteeSubscriptionAuthority
   ): Promise<SubscriptionGuaranteeSubscriptionSnapshot | null> {
     const requestedMerchantId = nonEmpty(merchantId, 160);
     const requestedSubscriptionId = nonEmpty(subscriptionId, 160);
-    const sql = await this.executor();
+    const sql = await this.executor(requestedMerchantId);
     const result = await sql.query(
       `SELECT subscription.id, subscription.merchant_id, subscription.plan_name,
               subscription.status, subscription.price_iqd, subscription.starts_at,
@@ -895,15 +896,14 @@ class DefaultSubscriptionGuaranteeSqlClient
     statement: string,
     values: readonly unknown[] = [],
   ): Promise<SqlResult<Row>> {
-    const { pool } = await import("@workspace/db");
-    const result = await pool.query(statement, Array.from(values));
+    const result = await withMerchantOperationalTransaction(merchantId, client =>
+          client.query(statement, Array.from(values)));
     return { rows: result.rows as Row[] };
   }
 
   async transaction<T>(
     operation: (executor: SubscriptionGuaranteeSqlExecutor) => Promise<T>,
   ): Promise<T> {
-    const { pool } = await import("@workspace/db");
     const connection = await pool.connect();
     const executor: SubscriptionGuaranteeSqlExecutor = {
       async query<Row extends Record<string, unknown>>(

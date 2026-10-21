@@ -61,6 +61,8 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
     FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
   });
 
+  const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+  const runtimeFixture=await createDisposableKnowledgeRuntime();
   const [
     { pool },
     { default: express },
@@ -68,7 +70,7 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
     { default: authSecurityRouter },
     { authPostgresSessionAuthority },
   ] = await Promise.all([
-    import("@workspace/db"),
+    Promise.resolve({pool:runtimeFixture.admin}),
     import("express"),
     import("cookie-parser"),
     import("../src/routes/auth-security.js"),
@@ -186,7 +188,7 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
   t.after(async () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await cleanup();
-    await pool.end();
+    await runtimeFixture.dispose();
     await rm(runtimeDirectory, { recursive: true, force: true });
   });
 

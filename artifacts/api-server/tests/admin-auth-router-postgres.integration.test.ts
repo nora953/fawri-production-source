@@ -33,7 +33,9 @@ const assistantNextPassword = "AssistantNext9!";
 const assistantDeviceId = "assistant-device-postgres-proof";
 
 process.env.FAWRI_PASSWORD_SALT = PASSWORD_SALT;
-const { pool } = await import("@workspace/db");
+const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    const pool=runtimeFixture.admin;
 const { hashPassword } = await import("../src/services/authPasswordService.js");
 
 async function json(response: Response) {
@@ -154,7 +156,7 @@ test("admin auth router is end-to-end PostgreSQL authoritative", async (t) => {
       "DELETE FROM accounts WHERE id = $1 OR id = $2 OR phone = ANY($3::text[])",
       [ownerId, assistantId || "missing-assistant", [ownerPhone, assistantPhone]],
     );
-    await pool.end();
+    await runtimeFixture.dispose();
     await rm(runtimeDirectory, { recursive: true, force: true });
   });
 
