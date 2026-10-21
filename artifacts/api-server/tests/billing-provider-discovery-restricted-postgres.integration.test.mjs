@@ -156,16 +156,24 @@ test('verified provider callbacks discover mapped orders without global tenant a
     try {
       await attachLocker.query('BEGIN');
       attachLockOpen=true;
-      await attachLocker.query('SELECT id FROM merchants WHERE id=$1 FOR UPDATE',[merchantId]);
+      // Block the application's FOR UPDATE without blocking the issuer's FK
+      // KEY SHARE. Scope issuance must commit before the application lock wait.
+      await attachLocker.query('SELECT id FROM merchants WHERE id=$1 FOR NO KEY UPDATE',[merchantId]);
       attachOverlap=run(payload,first);
       const deadline=Date.now()+15000;
-      let blocked=false;
+      let blocked=false,scopeCommitted=false;
       while(Date.now()<deadline){
-        const observed=(await pool.query("SELECT cardinality(pg_blocking_pids(pid)) AS blockers,query FROM pg_stat_activity WHERE usename=$1 AND state='active'",[role])).rows;
-        if(observed.some(row=>Number(row.blockers)>0 && /merchants/i.test(row.query))){blocked=true;break;}
+        const observed=(await pool.query("SELECT pid,cardinality(pg_blocking_pids(pid)) AS blockers,query FROM pg_stat_activity WHERE usename=$1 AND state='active'",[role])).rows;
+        const waiting=observed.find(row=>Number(row.blockers)>0 && /merchants/i.test(row.query));
+        if(waiting){
+          blocked=true;
+          scopeCommitted=(await pool.query("SELECT EXISTS(SELECT 1 FROM fawri_security.transaction_scopes WHERE runtime_login=$1 AND backend_pid=$2 AND merchant_id=$3 AND pg_xact_status(transaction_id::text::xid8)='in progress') AS yes",[role,waiting.pid,merchantId])).rows[0].yes;
+          break;
+        }
         await new Promise(resolve=>setTimeout(resolve,75));
       }
       assert.equal(blocked,true,'webhook must complete initial discovery and block on merchant lock before attach');
+      assert.equal(scopeCommitted,true,'scope issuer must commit a live actual-runtime binding before protected merchant lock acquisition');
       await attachLocker.query(`UPDATE ${orders} SET provider_checkout_ref=$2 WHERE id=$1`,[checkout.order.id,`post-discovery-${randomUUID()}`]);
       await attachLocker.query('COMMIT');
       attachLockOpen=false;

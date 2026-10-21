@@ -1,5 +1,11 @@
 # FAWRI P0 continuation checkpoint
 
+## Provider overlap barrier correction — 2026-10-21T06:02:09.059431+03:00
+
+8bc89fdb6d1f3669a400f06a6901b89f34299894:44/45 workflows SUCCESS;70 invocations,69 clean. Provider inbox scope/issuer revocation/recovery assertions PASS, receipt execution15/HTTP20/wire17 remain PASS. Only discovery fixture failed:8 PASS/3 FAIL (2 post-discovery barriers plus parent). Its FOR UPDATE merchant barrier blocked the scope issuer's FK KEY SHARE before the primary could reach the intended row lock. Full evidence: `evidence/P0-PROVIDER-SCOPE-CALLER-ATTEMPT-20261021.json`.
+
+Correction changes the owned barrier to FOR NO KEY UPDATE, allowing issuer KEY SHARE while still blocking the real application's FOR UPDATE. It adds committed private-binding observation for the actual waiting runtime backend/in-progress full XID, then retains overlapping mapping mutation and all rejection/receipt/no-grant/session assertions. No source authorization/grants/CI thresholds changed. This correction is pending CI. Last fully accepted executable remains e63e5b8dc5e4bfe86f1ef4d8d97e3fde8c0db0fd (45/45;70 clean). **NO-GO.**
+
 Verified 2026-10-21T05:50:58.183248+03:00 (Asia/Baghdad). **Release decision: NO-GO.**
 
 Repository nora953/fawri-production-source; branch `fix/p0-provider-receipt-order-discovery-20261015`; open Draft [PR550](https://github.com/nora953/fawri-production-source/pull/550), actual base `test/p0-integrated-billing-meta-20261015`. No main push or merge.
