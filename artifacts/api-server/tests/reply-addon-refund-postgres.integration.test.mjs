@@ -40,7 +40,7 @@ test('addon reply refunds retain batch identity, exclude expired credit and seri
   await t.test('committed FK refuses loss of a referenced batch, concurrent refunds credit exactly once', async () => {
     const f = await fixture();
     await assert.rejects(() => pool.query('DELETE FROM subscription_reply_batches WHERE id=$1', [f.batchId]), error => error.code === '23503');
-    const results = await Promise.all([refundMerchantAutoReplyAuthoritative(f.eventId, 'META_REPLY_FAILED', new Date('2026-08-11T00:02:00Z')), refundMerchantAutoReplyAuthoritative(f.eventId, 'META_REPLY_FAILED', new Date('2026-08-11T00:02:00Z'))]);
+    const results = await Promise.all([refundMerchantAutoReplyAuthoritative(f.eventId, 'META_REPLY_FAILED', new Date('2026-08-11T00:02:00Z'), f.merchantId), refundMerchantAutoReplyAuthoritative(f.eventId, 'META_REPLY_FAILED', new Date('2026-08-11T00:02:00Z'), f.merchantId)]);
     assert.equal(results.filter(r => r.refunded).length, 1);
     assert.equal(results.filter(r => !r.refunded && r.reason === 'already_refunded').length, 1);
     assert.equal((await pool.query('SELECT remaining FROM subscription_reply_batches WHERE id=$1', [f.batchId])).rows[0].remaining, 5);
@@ -53,7 +53,7 @@ test('addon reply refunds retain batch identity, exclude expired credit and seri
     await authority.applySubscriptionPlanOperationPostgres({ merchantId: f.merchantId, actorAccountId: f.actorId, operation: 'renew', plan: 'silver', now });
     assert.equal((await reserveMerchantAutoReplyAuthoritative(f.merchantId, `new-addon-cycle-${randomUUID()}`, new Date('2026-11-12T00:01:00Z'))).allowed, true);
     const before = await authority.getCurrentSubscriptionPostgres(f.merchantId, new Date('2026-11-12T00:02:00Z'));
-    const refund = await refundMerchantAutoReplyAuthoritative(f.eventId, 'META_REPLY_FAILED', new Date('2026-11-12T00:03:00Z'));
+    const refund = await refundMerchantAutoReplyAuthoritative(f.eventId, 'META_REPLY_FAILED', new Date('2026-11-12T00:03:00Z'), f.merchantId);
     const after = await authority.getCurrentSubscriptionPostgres(f.merchantId, new Date('2026-11-12T00:04:00Z'));
     assert.equal(before.base_replies_used, 1);
     assert.equal(after.base_replies_used, 1);

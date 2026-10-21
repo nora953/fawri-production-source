@@ -1,3 +1,4 @@
+import { withOperatorDirectoryTransaction } from "./operatorDirectoryPostgresAuthority";
 import { withOperationalTransaction, type OperationalQueryTarget, type OperationalTransactionClient, type OperationalDatabasePool } from "./operationalPostgresAuthority";
 import crypto from "node:crypto";
 import {
@@ -691,13 +692,25 @@ export async function getCurrentSubscriptionPostgres(
 }
 
 export async function listSubscriptionsPostgres(
+  actorAdminId: string,
   now: Date = new Date(),
 ): Promise<SubscriptionApiRecord[]> {
-  const pool = await databasePool();
-  const result = await queryRows<Record<string, unknown>>(
-    pool,
-    `SELECT merchant_id FROM subscriptions ORDER BY starts_at DESC, merchant_id ASC`,
-  );
+  const actor = requiredText(actorAdminId, 180);
+  // Only the separately configured directory LOGIN may issue this audit. The
+  // SQL issuer rechecks current actor state and permissions on every snapshot.
+  const result = await withOperatorDirectoryTransaction(async client => {
+    const auditId = `database-admin-${crypto.randomUUID()}`;
+    await client.query("SELECT public.fawri_issue_admin_directory_audit($1,$2,$3)",
+      [actor, auditId, crypto.createHash("sha256").update(auditId).digest("hex")]);
+    const permission = await client.query<{allowed:boolean}>(`SELECT
+      EXISTS(SELECT 1 FROM public.admin_profiles WHERE account_id=$1 AND role='owner_admin')
+      OR EXISTS(SELECT 1 FROM public.admin_permissions WHERE admin_id=$1 AND permission='manage_subscriptions') AS allowed`,[actor]);
+    if (permission.rows[0]?.allowed !== true) {
+      fail("SUBSCRIPTION_ADMIN_PERMISSION_REQUIRED", "subscription administrator permission is required", 403);
+    }
+    return (await client.query<{merchant_id:string}>(`SELECT merchant_id FROM subscriptions
+      ORDER BY starts_at DESC, merchant_id ASC`)).rows;
+  });
   const output: SubscriptionApiRecord[] = [];
   for (const item of result) {
     const current = await getCurrentSubscriptionPostgres(

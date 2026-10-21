@@ -32,7 +32,7 @@ test('late old-cycle refund cannot erase a new-cycle reply debit', async t => {
   const before = await authority.getCurrentSubscriptionPostgres(merchantId, new Date('2026-09-12T00:02:00Z'));
   assert.equal(before.base_replies_used, 1);
   assert.equal(before.base_replies_remaining, 3999);
-  const refund = await refundMerchantAutoReplyAuthoritative(oldEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:03:00Z'));
+  const refund = await refundMerchantAutoReplyAuthoritative(oldEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:03:00Z'), merchantId);
   assert.equal(refund.refunded, false, 'old-cycle base debit must not refund into renewed cycle');
   assert.equal(refund.reason, 'refund_cycle_mismatch');
   const after = await authority.getCurrentSubscriptionPostgres(merchantId, new Date('2026-09-12T00:04:00Z'));
@@ -43,12 +43,12 @@ test('late old-cycle refund cannot erase a new-cycle reply debit', async t => {
   assert.equal(after.base_replies_remaining, before.base_replies_remaining);
   // A valid refund within the active cycle must still restore exactly one
   // debit. This guards against an over-broad fail-closed cycle check.
-  const currentRefund = await refundMerchantAutoReplyAuthoritative(newEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:05:00Z'));
+  const currentRefund = await refundMerchantAutoReplyAuthoritative(newEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:05:00Z'), merchantId);
   assert.equal(currentRefund.refunded, true);
   const restored = await authority.getCurrentSubscriptionPostgres(merchantId, new Date('2026-09-12T00:06:00Z'));
   assert.equal(restored.base_replies_used, 0);
   assert.equal(restored.base_replies_remaining, 4000);
-  const replay = await refundMerchantAutoReplyAuthoritative(newEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:07:00Z'));
+  const replay = await refundMerchantAutoReplyAuthoritative(newEvent, 'META_REPLY_FAILED', new Date('2026-09-12T00:07:00Z'), merchantId);
   assert.equal(replay.refunded, false);
   assert.equal(replay.reason, 'already_refunded');
   console.log('REPLY_SAME_CYCLE_REFUND_RESULT ' + JSON.stringify({ currentRefund, used: restored.base_replies_used, remaining: restored.base_replies_remaining, replay }));

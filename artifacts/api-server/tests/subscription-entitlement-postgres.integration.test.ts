@@ -114,14 +114,14 @@ test("required mode keeps reply entitlement entirely in PostgreSQL", async () =>
     const released = await releaseMerchantAutoReplyReservationAuthoritative(
       "meta:pg-cutover:event-1",
       "MERCHANT_SETTINGS_VERSION_CHANGED",
-      new Date("2026-08-11T00:03:00.000Z"),
+      new Date("2026-08-11T00:03:00.000Z"), merchantId
     );
     assert.equal(released.released, true);
     assert.deepEqual(
       await releaseMerchantAutoReplyReservationAuthoritative(
         "meta:pg-cutover:event-1",
         "MERCHANT_SETTINGS_VERSION_CHANGED",
-        new Date("2026-08-11T00:04:00.000Z"),
+        new Date("2026-08-11T00:04:00.000Z"), merchantId
       ),
       { released: false, reason: "already_released" },
     );
@@ -141,14 +141,14 @@ test("required mode keeps reply entitlement entirely in PostgreSQL", async () =>
     const refunded = await refundMerchantAutoReplyAuthoritative(
       "meta:pg-cutover:event-2",
       "META_REPLY_FAILED",
-      new Date("2026-08-11T00:07:00.000Z"),
+      new Date("2026-08-11T00:07:00.000Z"), merchantId
     );
     assert.equal(refunded.refunded, true);
     assert.deepEqual(
       await refundMerchantAutoReplyAuthoritative(
         "meta:pg-cutover:event-2",
         "META_REPLY_FAILED",
-        new Date("2026-08-11T00:08:00.000Z"),
+        new Date("2026-08-11T00:08:00.000Z"), merchantId
       ),
       { refunded: false, reason: "already_refunded" },
     );

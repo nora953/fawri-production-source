@@ -114,7 +114,7 @@ router.get(
   requireSecureAdminPermission("manage_subscriptions"),
   async (_req, res) => {
     try {
-      const subscriptions = await listSubscriptionsPostgres();
+      const subscriptions = await listSubscriptionsPostgres(actorId(res));
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, subscriptions });
     } catch (error) {
@@ -129,7 +129,7 @@ router.get(
   async (req, res) => {
     let subscriptions;
     try {
-      subscriptions = await listSubscriptionsPostgres();
+      subscriptions = await listSubscriptionsPostgres(actorId(res));
     } catch (error) {
       authorityError(res, error);
       return;
@@ -165,7 +165,7 @@ router.get(
     snapshotInterval = setInterval(() => {
       if (closed || res.writableEnded || refreshInFlight) return;
       refreshInFlight = true;
-      void listSubscriptionsPostgres()
+      void listSubscriptionsPostgres(actorId(res))
         .then((nextSubscriptions) => {
           if (!closed && !res.writableEnded) {
             writeSseEvent(res, "snapshot", { subscriptions: nextSubscriptions });
