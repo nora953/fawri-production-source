@@ -1441,7 +1441,22 @@ export async function applyVerifiedCashierBillingProviderEvent(
       }
   };
   // Admission and application retain the same merchant-scoped transaction API.
-  const runTransaction = replay ? replay.transaction : <T>(work:(client:OperationalQueryTarget)=>Promise<T>) => withMerchantOperationalTransaction(merchantId, work);
+  const executeTransaction = replay ? replay.transaction : <T>(work:(client:OperationalQueryTarget)=>Promise<T>) => withMerchantOperationalTransaction(merchantId, work);
+  const runTransaction = async <T>(work: (client: OperationalQueryTarget) => Promise<T>): Promise<T> => {
+    try {
+      return await executeTransaction(work);
+    } catch (error) {
+      // RLS intentionally hides another merchant's order. The global unique
+      // constraint still rejects reuse; translate only its exact native error
+      // after the transaction wrapper has rolled back, without reading that row.
+      const violation = error as { code?: string; constraint?: string } | null;
+      if (violation?.code === "23505" &&
+          violation.constraint === "cashier_billing_orders_provider_payment_unique") {
+        fail("CASHIER_BILLING_PAYMENT_REPLAY", "cashier payment reference was already used by another billing order", 409);
+      }
+      throw error;
+    }
+  };
   const admitted = await runTransaction((client) => processEvent(client, true));
   if (admitted.status !== "reconciliation_required" ||
       admitted.reasonCode !== "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;

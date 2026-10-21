@@ -1224,9 +1224,24 @@ export async function applyVerifiedSaasBillingProviderEvent(
     }
   };
   // Commit verified receipt admission before any entitlement transaction begins.
-  const runTransaction = replay ? replay.transaction : confirmed ? transaction
+  const executeTransaction = replay ? replay.transaction : confirmed ? transaction
     : <T>(work: (client: SubscriptionPlanCycleTransaction) => Promise<T>) =>
         withMerchantOperationalTransaction(merchantId, work);
+  const runTransaction = async <T>(work: (client: SubscriptionPlanCycleTransaction) => Promise<T>): Promise<T> => {
+    try {
+      return await executeTransaction(work);
+    } catch (error) {
+      // RLS intentionally hides another merchant's order. The global unique
+      // constraint still rejects reuse; translate only its exact native error
+      // after the transaction wrapper has rolled back, without reading that row.
+      const violation = error as { code?: string; constraint?: string } | null;
+      if (violation?.code === "23505" &&
+          violation.constraint === "saas_billing_orders_provider_payment_unique") {
+        fail("SAAS_BILLING_PROVIDER_PAYMENT_COLLISION", "provider payment identity was already linked to another billing order", 409);
+      }
+      throw error;
+    }
+  };
   const admitted = await runTransaction((client) => processEvent(client, true));
   if (admitted.status !== "reconciliation_required" ||
       admitted.reasonCode !== "SAAS_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;

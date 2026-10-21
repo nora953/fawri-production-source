@@ -5,7 +5,9 @@ import { assertDisposablePostgres } from '../../../scripts/lib/disposable-postgr
 import { cleanupResources } from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY = 'required';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
 const authority = await import('../src/services/postgresSubscriptionEntitlement.ts');
 const { reserveMerchantAutoReplyAuthoritative } = await import('../src/services/merchantReplyEntitlementAuthority.ts');
 const { refundMerchantAutoReplyAuthoritative } = await import('../src/services/merchantReplyRefundAuthority.ts');
@@ -15,7 +17,7 @@ test('addon reply refunds retain batch identity, exclude expired credit and seri
   t.after(async () => cleanupResources([
     ['fixture reply ledger', () => pool.query('DELETE FROM reply_ledger WHERE merchant_id=ANY($1::text[])', [merchants])],
     ['fixture identities', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [ids])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
   async function fixture() {
     const merchantId = `addon-merchant-${randomUUID()}`, actorId = `addon-admin-${randomUUID()}`;

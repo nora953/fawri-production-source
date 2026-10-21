@@ -3,17 +3,19 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { pool } from "@workspace/db";
-import { reserveMerchantAutoReplyAuthoritative } from "../src/services/merchantReplyEntitlementAuthority";
-import { refundMerchantAutoReplyAuthoritative } from "../src/services/merchantReplyRefundAuthority";
-import { releaseMerchantAutoReplyReservationAuthoritative } from "../src/services/merchantReplyReservationReleaseAuthority";
-import {
+const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
+const { reserveMerchantAutoReplyAuthoritative }=await import("../src/services/merchantReplyEntitlementAuthority");
+const { refundMerchantAutoReplyAuthoritative }=await import("../src/services/merchantReplyRefundAuthority");
+const { releaseMerchantAutoReplyReservationAuthoritative }=await import("../src/services/merchantReplyReservationReleaseAuthority");
+const {
   activateEmergencyCreditPostgres,
   applySubscriptionActionPostgres,
   applySubscriptionPlanOperationPostgres,
   getCurrentSubscriptionPostgres,
   SubscriptionEntitlementAuthorityError,
-} from "../src/services/postgresSubscriptionEntitlement";
+}=await import("../src/services/postgresSubscriptionEntitlement");
 
 const merchantId = "merchant-subscription-pg-test";
 const actorId = "admin-subscription-pg-test";
@@ -244,3 +246,6 @@ test("admin mutations fail closed when merchant is not approved", async () => {
     }
   }
 });
+
+// Dispose only after all original cases and their fixture cleanup finish.
+test.after(()=>runtimeFixture.dispose());

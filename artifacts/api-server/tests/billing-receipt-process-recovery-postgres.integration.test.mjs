@@ -10,7 +10,9 @@ await assertDisposablePostgres();
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
-const { pool } = await import('@workspace/db');
+const {createDisposableProviderRuntime}=await import('./helpers/disposable-provider-runtime.mjs');
+const runtimeFixture=await createDisposableProviderRuntime();
+const pool=runtimeFixture.admin;
 const saas = await import('../src/services/saasBillingAuthority.ts');
 const cashier = await import('../src/services/cashierBillingAuthority.ts');
 const childPath = fileURLToPath(new URL('./helpers/billing-receipt-crash-child.mjs', import.meta.url));
@@ -33,7 +35,7 @@ test('committed verified receipts survive owned application/backend interruption
     ['owned child processes', async () => { for (const child of children) await stopTestChild(child); }],
     ['fault objects', async () => { for (const [name, table] of faults) await dropFault(name, table); }],
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [fixtures])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
   async function fixture(kind) {
     const merchantId = `receipt-${randomUUID()}`;
@@ -58,7 +60,7 @@ test('committed verified receipts survive owned application/backend interruption
   async function start(kind, event, commitAcknowledgmentLoss, wireCommitAcknowledgmentLoss) {
     const marker = `receipt-owned-${randomUUID()}`;
     markers.push(marker);
-    const child = spawn(process.execPath, ['--import','tsx',childPath], {env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});
+    const child = spawn(process.execPath, ['--import','tsx',childPath], {env:{...process.env,DATABASE_URL:runtimeFixture.bootstrapUrl,FAWRI_TEST_BILLING_DATABASE_URL:runtimeFixture.runtimeUrl},stdio:['ignore','pipe','pipe','ipc']});
     children.push(child);
     const messages = [];
     let resolveReady;

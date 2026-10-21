@@ -5,7 +5,9 @@ import { assertDisposablePostgres } from '../../../scripts/lib/disposable-postgr
 import { cleanupResources } from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY = 'required';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
 const authority = await import('../src/services/postgresSubscriptionEntitlement.ts');
 const { reserveMerchantAutoReplyAuthoritative } = await import('../src/services/merchantReplyEntitlementAuthority.ts');
 const { refundMerchantAutoReplyAuthoritative } = await import('../src/services/merchantReplyRefundAuthority.ts');
@@ -15,7 +17,7 @@ test('late old-cycle refund cannot erase a new-cycle reply debit', async t => {
   const actorId = `cycle-admin-${randomUUID()}`;
   t.after(async () => cleanupResources([
     ['fixture identities', () => pool.query('DELETE FROM accounts WHERE id = ANY($1::text[])', [[merchantId, actorId]])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
   for (const [id, kind] of [[merchantId, 'merchant'], [actorId, 'admin']]) {
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,$2,$3,'synthetic','active',true)", [id, kind, `+1999${String(randomInt(0, 100000000)).padStart(8, '0')}`]);

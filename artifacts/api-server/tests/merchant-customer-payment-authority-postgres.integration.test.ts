@@ -15,8 +15,9 @@ process.env.FAWRI_META_TOKEN_KEY_BASE64 = Buffer.alloc(32, 31).toString("base64"
 process.env.FAWRI_AUTH_SECURITY_SECRET =
   "merchant-payment-proof-auth-secret-32-bytes-minimum";
 
-const dbModule = await import("@workspace/db");
-const pool = dbModule.pool;
+const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
 const accounts = await import(
   "../src/services/postgresMerchantAccountAuthority.js"
 );
@@ -944,6 +945,6 @@ test("concurrent reuse of a provider event for different orders returns a domain
 });
 
 test.after(async () => {
-  await pool.end();
+  await runtimeFixture.dispose();
   fs.rmSync(dataDir, { recursive: true, force: true });
 });

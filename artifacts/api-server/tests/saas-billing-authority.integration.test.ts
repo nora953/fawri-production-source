@@ -1,17 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pool } from "@workspace/db";
-import {
+const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
+const {
   applyVerifiedSaasBillingProviderEvent,
   createSaasBillingCheckout,
   getSaasBillingCatalog,
   listMerchantSaasBillingOrders,
-} from "../src/services/saasBillingAuthority";
-import {
+}=await import("../src/services/saasBillingAuthority");
+const {
   applySubscriptionPlanOperationPostgres,
   getCurrentSubscriptionPostgres,
-} from "../src/services/postgresSubscriptionEntitlement";
-import { PostgresSubscriptionGuaranteeSubscriptionAuthority } from "../src/services/subscriptionServiceGuarantee";
+}=await import("../src/services/postgresSubscriptionEntitlement");
+const { PostgresSubscriptionGuaranteeSubscriptionAuthority }=await import("../src/services/subscriptionServiceGuarantee");
 
 const merchantId = "merchant-saas-billing-test";
 const manualMerchantId = "merchant-saas-manual-test";
@@ -299,3 +301,6 @@ test("browser amount cannot override server plan pricing", async () => {
     else process.env.NODE_ENV = oldNodeEnv;
   }
 });
+
+// Dispose only after all original cases and their fixture cleanup finish.
+test.after(()=>runtimeFixture.dispose());

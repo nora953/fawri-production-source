@@ -32,6 +32,12 @@ test('direct merchant billing preserves own authority without a global order-own
     const results=await Promise.all([apply(event),apply(event)]);assert.deepEqual(results.map(r=>r.status).sort(),['applied','duplicate']);
     assert.equal((await fixture.admin.query(`SELECT count(*)::int AS n FROM ${apps} WHERE order_id=$1`,[event.orderId])).rows[0].n,1);
     await assert.rejects(()=>apply({...event,merchantId:merchants[1]}),error=>error.code===`${kind.toUpperCase()}_BILLING_ORDER_NOT_FOUND`);
+    // A hidden foreign order must still reserve the global provider identity.
+    const other=kind==='saas'?await saas.createSaasBillingCheckout({merchantId:merchants[1],operation:'activate',plan:'silver',idempotencyKey:randomUUID(),provider:'test_fake'}):await cashier.createCashierBillingCheckout({merchantId:merchants[1],operation:'activate',requestedSeats:1,idempotencyKey:randomUUID(),provider:'test_fake'});
+    const foreignPayment={...event,merchantId:merchants[1],orderId:other.order.id,providerEventId:randomUUID(),amountIqd:other.order.amount_iqd};
+    await assert.rejects(()=>apply(foreignPayment),error=>error.status===409 && error.code===(kind==='saas'?'SAAS_BILLING_PROVIDER_PAYMENT_COLLISION':'CASHIER_BILLING_PAYMENT_REPLAY'));
+    assert.equal((await fixture.admin.query(`SELECT count(*)::int AS n FROM ${apps} WHERE order_id=$1`,[other.order.id])).rows[0].n,0);
+    assert.equal((await fixture.admin.query(`SELECT count(*)::int AS n FROM ${events} WHERE provider_event_id=$1`,[foreignPayment.providerEventId])).rows[0].n,0);
     assert.equal((await fixture.runtimePool.query("SELECT nullif(current_setting('fawri.tenant_id',true),'') AS tenant")).rows[0].tenant,null);
   });
   console.log('P0_DIRECT_MERCHANT_BILLING_CONTEXT_PROOF '+JSON.stringify({actualRuntimeLogin:true,explicitContextBeforeDatabase:true,globalOwnerLookupRemoved:true,foreignOrderReadAndMutationDenied:true,concurrentOwnApplyOnce:true,sessionReset:true,productionPredicateChanged:false,releaseAccepted:false}));

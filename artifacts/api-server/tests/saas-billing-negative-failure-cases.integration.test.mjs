@@ -6,14 +6,16 @@ import { cleanupResources } from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
 const billing = await import('../src/services/saasBillingAuthority.ts');
 
 test('verified SaaS payments preserve terminal state and recover after proactive expiry', { timeout: 60000 }, async t => {
   const merchantIds = [];
   t.after(async () => cleanupResources([
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id = ANY($1::text[])', [merchantIds])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
   async function checkout(now = new Date()) {
     const id = `negative-bill-${randomUUID()}`;
