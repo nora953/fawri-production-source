@@ -896,14 +896,15 @@ class DefaultSubscriptionGuaranteeSqlClient
     statement: string,
     values: readonly unknown[] = [],
   ): Promise<SqlResult<Row>> {
-    const result = await withMerchantOperationalTransaction(merchantId, client =>
-          client.query(statement, Array.from(values)));
+    const { pool } = await import("@workspace/db");
+    const result = await pool.query(statement, Array.from(values));
     return { rows: result.rows as Row[] };
   }
 
   async transaction<T>(
     operation: (executor: SubscriptionGuaranteeSqlExecutor) => Promise<T>,
   ): Promise<T> {
+    const { pool } = await import("@workspace/db");
     const connection = await pool.connect();
     const executor: SubscriptionGuaranteeSqlExecutor = {
       async query<Row extends Record<string, unknown>>(

@@ -1,5 +1,11 @@
 # FAWRI P0 continuation checkpoint
 
+## Guarantee executor type-check correction — 2026-10-21T03:38:13.637665+00:00
+
+Latest inspected source bf3c2bf03dd3afcbd3bc5d58ce193e8c9c14bd56 is blocked by actual API type-check errors TS2304 at subscriptionServiceGuarantee.ts899/907 (undefined merchantId/pool). Representative run39539488626/job119023707087, evidence/P0-GUARANTEE-EXECUTOR-TYPECHECK-ATTEMPT-20261021.json. Do NOT call its46 workflows green or its PostgreSQL changes accepted. An overbroad edit also changed the general DefaultSubscriptionGuaranteeSqlClient; containing correction restores that ENTIRE general client to the prior implementation and limits the new merchant transaction to the subscription snapshot read class. Original general query/audit/transaction behavior retained.
+
+Actually executed after correction: guarantee/knowledge24 PASS; source syntax and reviewed diff PASS. Full API type-check and72 isolated invocations require NEW exact-source CI. Last full acceptance remains129effec4cb9bcdc21435304842567ad32f929e8 (45/45;72 clean). Branch fix/p0-provider-receipt-order-discovery-20261015; Draft PR550 actual base test/p0-integrated-billing-meta-20261015. Next precise action: inspect containing HEAD/PR/CI, resolve actual failures and save counters/links, then resume remaining central private issuance/public predicate work listed below. No source authorization bypass or relaxed tests. Raw tenant GUC and hosted/privacy gates remain open. No production/staging/Neon write, deployment, main push or merge. **NO-GO.**
+
 ## Manual plan and guarantee scope correction — 2026-10-21T03:35:48.178298+00:00
 
 Branch fix/p0-provider-receipt-order-discovery-20261015; Draft PR550 base test/p0-integrated-billing-meta-20261015. Inspected live HEAD60bc422cfe450b08a8288a5f4d5d80de24b3f5e6:42/46 workflows SUCCESS,4 FAILURE. Isolated72 invocations67 clean; exact run/job/counters in evidence/P0-BILLING-RUNTIME-SCOPE-ATTEMPT-20261021.json. All13 actual cashier fixtures PASS, concurrent payment replay6 PASS (original409/no-double-grant assertions), receipt process/crash recovery15 PASS, customer payment11 PASS, scope16/admin9/receipt executor15/HTTP20/wire17 and migration/schema PASS. Last fully accepted executable remains129effec4cb9bcdc21435304842567ad32f929e8:45/45 and72 clean. Never transfer that acceptance to newer source.
