@@ -1,13 +1,18 @@
-import type { OperationalQueryTarget } from "./operationalPostgresAuthority";
 import { OperationalPostgresAuthorityError } from "./operationalPostgresAuthority";
+
+// Query-only boundary accepts existing transaction adapters as well as pg leases.
+// Authorization still inspects the actual session; no pool or role override.
+export type TenantScopeQueryTarget = {
+  query(sql: string, values?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
+};
 
 // Catalog OIDs allow tenant admission without private-schema USAGE. Inspect
 // both inherited and SET-reachable roles; NOINHERIT alone is not a boundary.
 export async function assertTenantScopeSession(
-  client: OperationalQueryTarget,
+  client: TenantScopeQueryTarget,
   issuer: boolean,
 ): Promise<void> {
-  const result = await client.query<{ present: boolean; safe: boolean }>(`
+  const result = await client.query(`
     WITH principal AS (
       SELECT oid,rolcanlogin,rolsuper,rolbypassrls,rolcreaterole
       FROM pg_roles WHERE rolname=session_user

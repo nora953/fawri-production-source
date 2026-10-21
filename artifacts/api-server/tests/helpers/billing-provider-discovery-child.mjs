@@ -31,6 +31,6 @@ process.on('message',async task=>{
     const afterContext=await context(),afterNaked=await naked();
     await send({type:'observation',flags,status:outcome?.outcome?.status,errorCode,gatewayCalls,afterContext,afterNaked});
   }catch(error){await send({type:'failure',code:/^[A-Z0-9_]{1,80}$/.test(error?.code||'')?error.code:'TEST_ASSERTION_FAILURE'});process.exitCode=1;}
-  finally{if(pool)await pool.end().catch(()=>{});if(process.connected)process.disconnect();}
+  finally{await (await import('../../src/services/authenticationPostgresAuthority.ts')).closeAuthenticationPool();if(pool)await pool.end().catch(()=>{});if(process.connected)process.disconnect();}
 });
 await send({type:'ready'});

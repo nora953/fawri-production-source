@@ -1,7 +1,6 @@
-import type { OperationalQueryTarget } from "./operationalPostgresAuthority";
 import { OperationalPostgresAuthorityError } from "./operationalPostgresAuthority";
 import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
-import { assertTenantScopeSession } from "./tenantScopePostgresBoundary";
+import { assertTenantScopeSession, type TenantScopeQueryTarget } from "./tenantScopePostgresBoundary";
 
 type ScopeTarget = {
   login: string;
@@ -18,7 +17,7 @@ type ScopeTarget = {
  * This function neither starts a transaction nor changes the caller's isolation.
  */
 export async function issueMerchantTransactionScope(
-  client: OperationalQueryTarget,
+  client: TenantScopeQueryTarget,
   merchantIdValue: string,
 ): Promise<void> {
   const merchantId = String(merchantIdValue || "").trim();
@@ -28,11 +27,11 @@ export async function issueMerchantTransactionScope(
     );
   }
   await assertTenantScopeSession(client, false);
-  const result = await client.query<ScopeTarget>(`SELECT
+  const result = await client.query(`SELECT
     session_user::text AS login, current_user::text AS active,
     pg_backend_pid() AS pid, txid_current()::text AS xid,
     current_setting('transaction_isolation') AS isolation`);
-  const target = result.rows[0];
+  const target = result.rows[0] as ScopeTarget | undefined;
   if (!target || !target.login || target.login !== target.active
       || !Number.isSafeInteger(target.pid) || target.pid <= 0
       || !/^[1-9][0-9]*$/.test(target.xid)) {

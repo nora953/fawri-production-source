@@ -1,4 +1,5 @@
-import { withOperationalTransaction, type OperationalTransactionClient, type OperationalDatabasePool } from "./operationalPostgresAuthority";
+import {issueMerchantTransactionScope} from "./tenantTransactionScope";
+import { withOperationalTransaction, withMerchantOperationalTransaction, type OperationalTransactionClient, type OperationalDatabasePool } from "./operationalPostgresAuthority";
 import {authorizeConfirmedProviderBillingScope,type ConfirmedProviderBillingScope} from './confirmedProviderBillingScope';
 import type {BillingReplayScope} from './billingReplayScope';
 import crypto from "node:crypto";
@@ -495,7 +496,7 @@ export async function createSaasBillingCheckout(input: {
   const now = input.now || new Date();
   const plan = getSaasPlan(input.plan);
 
-  const reserved = await transaction(async (client) => {
+  const reserved = await withMerchantOperationalTransaction(merchantId, async (client) => {
     // Match receipt application lock order before touching checkout orders.
     await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
     // Serialize same-merchant checkout creation before reading the idempotency
@@ -661,13 +662,13 @@ export async function createSaasBillingCheckout(input: {
       },
       input.providerFetch,
     );
-    return transaction(async (client) => {
+    return withMerchantOperationalTransaction(merchantId, async (client) => {
       const attached = await client.query(
         `UPDATE saas_billing_orders
             SET provider_checkout_ref = $2,
                 metadata = metadata || $3::jsonb,
                 updated_at = $4
-          WHERE id = $1 AND provider = 'superqi_sandbox'
+          WHERE id = $1 AND merchant_id = $5 AND provider = 'superqi_sandbox'
             AND status = 'pending' AND provider_checkout_ref IS NULL
           RETURNING id`,
         [
@@ -675,6 +676,7 @@ export async function createSaasBillingCheckout(input: {
           payment.paymentId,
           JSON.stringify({ provider_form_url: payment.formUrl }),
           now,
+          merchantId,
         ],
       );
       if (attached.rows.length !== 1) {
@@ -701,24 +703,25 @@ export async function listMerchantSaasBillingOrders(
   merchantId: string,
 ): Promise<SaasBillingOrderRecord[]> {
   const normalizedMerchantId = requiredText(merchantId, 180);
-  const database = await pool();
-  await database.query(
-    `UPDATE saas_billing_orders
-        SET status = 'expired', updated_at = NOW()
-      WHERE merchant_id = $1
-        AND status = 'pending'
-        AND request_expires_at <= NOW()
-          AND NOT (provider = 'superqi_sandbox' AND provider_checkout_ref IS NULL)`,
-    [normalizedMerchantId],
-  );
-  const result = await database.query(
-    `${ORDER_SELECT}
-      WHERE merchant_id = $1
-      ORDER BY created_at DESC, id DESC
-      LIMIT 100`,
-    [normalizedMerchantId],
-  );
-  return result.rows.map(orderFromRow);
+  return withMerchantOperationalTransaction(normalizedMerchantId, async database => {
+    await database.query(
+      `UPDATE saas_billing_orders
+          SET status = 'expired', updated_at = NOW()
+        WHERE merchant_id = $1
+          AND status = 'pending'
+          AND request_expires_at <= NOW()
+            AND NOT (provider = 'superqi_sandbox' AND provider_checkout_ref IS NULL)`,
+      [normalizedMerchantId],
+    );
+    const result = await database.query(
+      `${ORDER_SELECT}
+        WHERE merchant_id = $1
+        ORDER BY created_at DESC, id DESC
+        LIMIT 100`,
+      [normalizedMerchantId],
+    );
+    return result.rows.map(orderFromRow);
+  });
 }
 
 async function recordEvent(
@@ -796,6 +799,8 @@ export async function applyVerifiedSaasBillingProviderEvent(
   const merchantId = confirmed ? requiredText(confirmed.merchantId,180) : replay ? requiredText(replay.merchantId,180) : String(owner!.rows[0].merchant_id);
   let sqlFailure: unknown;
   const processEvent = async (client: SubscriptionPlanCycleTransaction, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
+    // Replay already issues on its operator lease; confirmed callbacks own a fresh primary transaction.
+    if(confirmed) await issueMerchantTransactionScope(client,merchantId);
     if(replay || confirmed) await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchantId]);
     // Match checkout and plan-cycle ordering before acquiring billing row locks.
     await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
@@ -1230,28 +1235,31 @@ export async function getPaidBillingReferenceForSubscription(input: {
   merchantId: string;
   subscriptionId: string;
 }): Promise<{ billingState: "paid" | "unknown"; billingReference: string | null }> {
-  const database = await pool();
-  const result = await database.query(
-    `SELECT application.order_id, application.provider_payment_ref
-       FROM saas_entitlement_applications AS application
-       INNER JOIN saas_billing_orders AS billing_order
-         ON billing_order.id = application.order_id
-        AND billing_order.merchant_id = application.merchant_id
-      WHERE application.merchant_id = $1
-        AND application.subscription_id = $2
-        AND billing_order.status IN ('paid', 'refunded')
-      ORDER BY application.applied_at DESC
-      LIMIT 2`,
-    [requiredText(input.merchantId, 180), requiredText(input.subscriptionId, 180)],
-  );
-  if (result.rows.length === 0) {
-    return { billingState: "unknown", billingReference: null };
-  }
-  if (result.rows.length > 1) {
-    fail("SAAS_BILLING_REFERENCE_AMBIGUOUS", "billing reference is ambiguous", 503);
-  }
-  return {
-    billingState: "paid",
-    billingReference: `saas-billing-order:${requiredText(result.rows[0].order_id, 180)}`,
-  };
+  const merchantId = requiredText(input.merchantId, 180);
+  const subscriptionId = requiredText(input.subscriptionId, 180);
+  return withMerchantOperationalTransaction(merchantId, async database => {
+    const result = await database.query(
+      `SELECT application.order_id, application.provider_payment_ref
+         FROM saas_entitlement_applications AS application
+         INNER JOIN saas_billing_orders AS billing_order
+           ON billing_order.id = application.order_id
+          AND billing_order.merchant_id = application.merchant_id
+        WHERE application.merchant_id = $1
+          AND application.subscription_id = $2
+          AND billing_order.status IN ('paid', 'refunded')
+        ORDER BY application.applied_at DESC
+        LIMIT 2`,
+      [merchantId, subscriptionId],
+    );
+    if (result.rows.length === 0) {
+      return { billingState: "unknown" as const, billingReference: null };
+    }
+    if (result.rows.length > 1) {
+      fail("SAAS_BILLING_REFERENCE_AMBIGUOUS", "billing reference is ambiguous", 503);
+    }
+    return {
+      billingState: "paid" as const,
+      billingReference: `saas-billing-order:${requiredText(result.rows[0].order_id, 180)}`,
+    };
+  });
 }

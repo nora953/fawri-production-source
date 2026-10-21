@@ -1,4 +1,4 @@
-import {restrictTenantAuthenticationPrivileges} from "./helpers/disposable-authentication-role.mjs";
+import {createDisposableAuthenticationRole,restrictTenantAuthenticationPrivileges} from "./helpers/disposable-authentication-role.mjs";
 import assert from 'node:assert/strict';
 import {randomUUID,randomInt,generateKeyPairSync,createSign} from 'node:crypto';
 import test from 'node:test';
@@ -33,9 +33,10 @@ const resolverIdentity='public.fawri_resolve_confirmed_payment_order(text,text,t
 const functionIdentity='public.fawri_admit_verified_payment_receipt(text,text,text,text,integer,text,timestamptz)';
 
 test('verified provider callbacks discover mapped orders without global tenant access',{timeout:120000},async t=>{
-  const children=[],merchantIds=[],paymentRefs=[];const role=`billing_discovery_${randomUUID().replaceAll('-','')}`,runtimePassword=randomUUID().replaceAll('-','');
+  const children=[],merchantIds=[],paymentRefs=[];const role=`billing_discovery_${randomUUID().replaceAll('-','')}`,runtimePassword=randomUUID().replaceAll('-','');let authFixture;
   t.after(async()=>cleanupResources([
     ['owned children',async()=>{for(const child of children)await stopTestChild(child);}],
+    ['authentication fixture',()=>authFixture?.dispose()],
     ['owned inbox',()=>pool.query('DELETE FROM verified_provider_payment_receipts WHERE payment_ref=ANY($1::text[])',[paymentRefs])],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchantIds])],
     ['owned grants',()=>pool.query(`DROP OWNED BY ${role}`)],['owned role',()=>pool.query(`DROP ROLE ${role}`)],['pool',()=>pool.end()],
@@ -44,6 +45,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
   await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
   await restrictTenantAuthenticationPrivileges(pool,role);
+  authFixture=await createDisposableAuthenticationRole(pool,process.env.DATABASE_URL);
   await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
   await pool.query(`GRANT EXECUTE ON FUNCTION ${functionIdentity} TO ${role}`);
   // The unmatched-receipt case must exercise the resolver's zero-row result,
@@ -51,7 +53,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
   await pool.query(`GRANT EXECUTE ON FUNCTION ${resolverIdentity} TO ${role}`);
   const providerEnv=Object.fromEntries(Object.entries(process.env).filter(([key])=>key.startsWith('FAWRI_SUPERQI_')||['FAWRI_OPERATIONAL_POSTGRES_AUTHORITY','FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY','FAWRI_SAAS_BILLING_PROVIDER','FAWRI_SAAS_BILLING_PROVIDERS'].includes(key)));
   async function run(payload,receivedAt){
-    const child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/billing-provider-discovery-child.mjs',import.meta.url))],{env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
+    const child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/billing-provider-discovery-child.mjs',import.meta.url))],{env:{...process.env,FAWRI_AUTH_DATABASE_URL:authFixture.url},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
     const messages=[];let readyResolve;const ready=new Promise(resolve=>{readyResolve=resolve;});
     child.on('message',message=>{messages.push(message);if(message.type==='ready')readyResolve();});child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
     const done=new Promise(resolve=>{child.once('exit',(code,signal)=>resolve({code,signal,messages}));child.once('error',()=>resolve({code:'SPAWN_FAILURE',messages}));});let timer;

@@ -14,7 +14,9 @@ Object.assign(process.env,{
   FAWRI_SUPERQI_SANDBOX_FINISH_URL:'https://merchant.example.invalid/dashboard/subscription',
   FAWRI_SUPERQI_SANDBOX_WEBHOOK_PUBLIC_KEY_B64:Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64'),
 });
-const {pool}=await import('@workspace/db');
+const {createDisposableProviderRuntime}=await import('./helpers/disposable-provider-runtime.mjs');
+const runtimeFixture=await createDisposableProviderRuntime();
+const pool=runtimeFixture.admin;
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 const {getSaasPlan}=await import('../src/services/saasPlanCatalog.ts');
@@ -44,7 +46,7 @@ test('confirmed provider inbox preserves unmatched payment evidence without gues
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchantIds])],
     ['role grants',async()=>{if(role)await pool.query(`DROP OWNED BY ${role}`);}],
     ['role',async()=>{if(role)await pool.query(`DROP ROLE ${role}`);}],
-    ['pool',()=>pool.end()],
+    ['runtime fixture',()=>runtimeFixture.dispose()],
   ]));
   function payload(amount=3900) {
     const paymentId=`synthetic-inbox-${randomUUID()}`;paymentRefs.push(paymentId);
@@ -153,6 +155,18 @@ test('confirmed provider inbox preserves unmatched payment evidence without gues
     assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,1);
     assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${subscriptions} WHERE merchant_id=$1`,[merchantId])).rows[0].n,1);
     assert.equal(new Date((await pool.query(`SELECT paid_at FROM ${orders} WHERE id=$1`,[checkout.order.id])).rows[0].paid_at).getTime(),first.getTime());
+    const bindings=(await pool.query('SELECT transaction_id::text AS xid FROM fawri_security.transaction_scopes WHERE runtime_login=$1 AND merchant_id=$2',[runtimeFixture.role,merchantId])).rows;
+    assert.ok(bindings.length>=(kind==='saas'?3:1),'actual callback attachment and SaaS phases require private transaction bindings');
+    const originalReceipt=await receipts(p.paymentId);
+    await pool.query(`REVOKE EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) FROM ${runtimeFixture.authRole}`);
+    try {
+      await assert.rejects(()=>handle({...input,receivedAt:later}),{code:'OPERATIONAL_TENANT_SCOPE_ROLE_UNSAFE'});
+      assert.equal((await pool.query(`SELECT count(*)::int AS n FROM ${apps} WHERE order_id=$1`,[checkout.order.id])).rows[0].n,1);
+      assert.deepEqual(await receipts(p.paymentId),originalReceipt);
+    } finally {await pool.query(`GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO ${runtimeFixture.authRole}`);}
+    assert.equal((await handle({...input,receivedAt:later})).outcome.status,'duplicate');
+    assert.equal((await runtimeFixture.runtimePool.query("SELECT nullif(current_setting('fawri.tenant_id',true),'') AS tenant")).rows[0].tenant,null);
+    console.log('P0_PROVIDER_TRANSACTION_SCOPE_CALLER_PROOF '+JSON.stringify({kind,actualRuntimeLogin:true,separateAuthIssuer:true,privateBindings:true,issuerRevocationDenied:true,revocationRetainsReceiptAndGrant:true,retryDuplicate:true,sessionReset:true,cashierBillingScopePending:kind==='cashier',productionPredicateChanged:false,releaseAccepted:false}));
     console.log('VERIFIED_ORPHAN_INBOX_PROOF '+JSON.stringify({kind,receiptBeforeOrderMapping:1,preMappingEntitlement:0,replayAppliedOnce:true,originalReceiptTime:true}));
   });
 
