@@ -1,3 +1,11 @@
+## All73 isolated invocations accepted; Foundation clock/lease caller correction — 2026-10-21
+
+Exact executable `6706aafbf18c14ded0aab864ac83018667024e5e`: **45/46 workflows SUCCESS**; only Foundation clock test FAILURE. Isolated39648267076/job119389499701 SUCCESS: **73/73 invocations exit0/fail0/skip0/cancel0/complete**. Meta full-app13 PASS (all original refunds/release/once-only assertions); scope6, provider19/inbox18, receipt executor15/HTTP20/wire17, all other counters and schema/restore41 PASS. Evidence: [P0-CENTRAL-SCOPE-73-ACCEPTANCE-20261021.json](evidence/P0-CENTRAL-SCOPE-73-ACCEPTANCE-20261021.json). Not full46-workflow acceptance.
+
+Foundation then exposed old clock fixture's root application identity (OPERATIONAL_TENANT_SCOPE_ROLE_UNSAFE), with queue lease fixture queued behind it. Containing correction moves BOTH unchanged clock-skew and five lease-race scenario assertions to actual tenant/auth LOGINs and owned network-none runner. Both also join priority audit (expected75 invocations, actual count pending). No product source/migration/grant/admission change. Local syntax/whitespace/YAML PASS. New exact-source acceptance PENDING. Next verify containing source and all75 counters, save final evidence; public predicate cutover/hosted/privacy/full-P0 inventory still open. **NO-GO**. No hosted write/deploy/main/merge.
+
+---
+
 ## Central scope 72/73 clean; final Meta privacy expectation correction — 2026-10-21
 
 Source `34fdfcc4c90121fb2ba44471b1dc23d066db5a1e`:43/46 workflows SUCCESS,3 FAILURE. Isolated39647042910/job119385472074:73 invocations,72 clean and only Meta full-app not clean (9PASS/4FAIL, parent/cascade included). New scope6, provider discovery19/inbox18/receipt executor15/HTTP20/wire17, auth compatibility11, private16/auth10/admin9/runtime81, cashier and restore/migration41 accepted at this exact scope. Detailed counters: [P0-CENTRAL-SCOPE-META-ATTEMPT-20261021.json](evidence/P0-CENTRAL-SCOPE-META-ATTEMPT-20261021.json). Earlier cb5 attempt40SUCCESS/2FAIL/4CANCELLED, isolated cancelled; not accepted.

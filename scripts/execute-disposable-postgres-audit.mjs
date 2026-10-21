@@ -24,6 +24,7 @@ const suites = {
 };
 suites['node22-http'] = suites.http;
 suites['auth-contract'] = ['auth-account-repository.test.ts','auth-password-service.test.ts','auth-otp-delivery.test.ts','auth-policy.test.ts','auth-security-store.test.ts','auth-cutover-contract.test.mjs','auth-cutover-path-case.test.ts'];
+suites['foundation-runtime'] = ['merchant-settings-clock.integration.test.mjs','queue-expired-lease-race.integration.test.mjs'];
 suites['subscription-reminder'] = ['subscription-reminder-rls.integration.test.mjs'];
 suites['settings-runtime'] = ['merchant-settings-postgres-http.integration.test.ts'];
 suites['regional-runtime'] = ['merchant-regional-postgres-http.integration.test.ts'];
@@ -31,7 +32,7 @@ suites['channels-runtime'] = ['merchant-channels-postgres-http.integration.test.
 suites['variant-runtime'] = ['catalog-variant-signature-postgres.integration.test.ts'];
 suites['inventory-runtime'] = ['location-inventory-authority-postgres.integration.test.ts'];
 suites['media-runtime'] = ['merchant-deletion-physical-media-postgres.integration.test.ts'];
-suites.priority = [...suites['audit-boundary'], 'merchant-central-scope-postgres.integration.test.mjs', 'cashier-operator-login-concurrency-hardening.test.mjs', 'subscription-tenant-transaction-unit.test.mjs', 'billing-merchant-context-unit.test.mjs', 'operational-postgres-transaction-lifecycle.test.ts', 'failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
+suites.priority = [...suites['audit-boundary'], 'merchant-central-scope-postgres.integration.test.mjs', ...suites['foundation-runtime'], 'cashier-operator-login-concurrency-hardening.test.mjs', 'subscription-tenant-transaction-unit.test.mjs', 'billing-merchant-context-unit.test.mjs', 'operational-postgres-transaction-lifecycle.test.ts', 'failed-setup-cleanup-postgres.integration.test.mjs', ...suites.bootstrap, ...suites.http, ...suites.deletion, ...suites.meta, ...suites['meta-rls']];
 const selected = suites[process.argv[2]];
 assert.ok(selected, 'unknown audit suite');
 await assertDisposablePostgres();
