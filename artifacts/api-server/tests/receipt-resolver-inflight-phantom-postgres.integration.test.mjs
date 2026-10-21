@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import assert from 'node:assert/strict';
 import {randomUUID,randomInt} from 'node:crypto';
 import test from 'node:test';
@@ -11,7 +12,9 @@ Object.assign(process.env,{
   FAWRI_SAAS_BILLING_PROVIDER:'test_fake',
   FAWRI_SAAS_BILLING_PROVIDERS:'test_fake',
 });
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const parentRuntime=await createDisposableKnowledgeRuntime();
+const pool=parentRuntime.admin;
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 
@@ -23,7 +26,7 @@ test('P0 resolver must reject a competing authority committed while its selected
     ['release resolver',async()=>{if(resolver){await resolver.query('ROLLBACK');resolver.release();}}],
     ['owned receipts',()=>pool.query('DELETE FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[])',[events])],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
-    ['pool',()=>pool.end()],
+    ['parent runtime',()=>parentRuntime.dispose()],
   ]));
   async function merchant(){
     const id=`resolver-race-${randomUUID()}`;ids.push(id);

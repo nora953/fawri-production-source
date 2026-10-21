@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {createDisposableAuthenticationRole} from "./helpers/disposable-authentication-role.mjs";
 import {grantReceiptExecutionFixture} from "./helpers/receipt-execution-role.mjs";
 import assert from 'node:assert/strict';
@@ -14,7 +15,9 @@ Object.assign(process.env,{
 });
 const {publicKey}=generateKeyPairSync('rsa',{modulusLength:2048});
 Object.assign(process.env,{FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_SAAS_BILLING_PROVIDER:'superqi_sandbox',FAWRI_SAAS_BILLING_PROVIDERS:'superqi_sandbox,test_fake',FAWRI_SUPERQI_SANDBOX_ENABLED:'1',FAWRI_SUPERQI_SANDBOX_USERNAME:'synthetic-user',FAWRI_SUPERQI_SANDBOX_PASSWORD:'synthetic-password',FAWRI_SUPERQI_SANDBOX_TERMINAL_ID:'synthetic-terminal',FAWRI_SUPERQI_SANDBOX_NOTIFICATION_URL:'https://operator.example.invalid/webhook',FAWRI_SUPERQI_SANDBOX_FINISH_URL:'https://operator.example.invalid/finish',FAWRI_SUPERQI_SANDBOX_WEBHOOK_PUBLIC_KEY_B64:Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64')});
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const parentRuntime=await createDisposableKnowledgeRuntime();
+const pool=parentRuntime.runtimePool;
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 const {superQiConfirmedProviderEventId}=await import('../src/services/superQiSandboxWebhook.ts');
@@ -50,13 +53,13 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
     ['role grants',()=>roleCreated?admin.query(`DROP OWNED BY ${role}`):undefined],
     ['role',()=>roleCreated?admin.query(`DROP ROLE ${role}`):undefined],
     ['owner connection',()=>{pool.options.options=originalOptions;pool.options.connectionString=originalConnectionString;for(const client of setupClients)client.release();admin?.release();}],
-    ['pool',()=>pool.end()],
+    ['parent runtime',()=>parentRuntime.dispose()],
   ]));
-  admin=await pool.connect();
+  admin=await parentRuntime.admin.connect();
   await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   await grantReceiptExecutionFixture(admin,role);
   await admin.query(`REVOKE EXECUTE ON FUNCTION ${capability} FROM ${role}`);
-  authFixture=await createDisposableAuthenticationRole(admin,process.env.DATABASE_URL);
+  authFixture=await createDisposableAuthenticationRole(admin,bootstrapUrl);
   process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
   const operatorUrl=new URL(process.env.DATABASE_URL);operatorUrl.username=role;operatorUrl.password=password;operatorUrl.search='';
   process.env.FAWRI_OPERATOR_DATABASE_URL=operatorUrl.toString();

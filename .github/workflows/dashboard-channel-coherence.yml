@@ -180,11 +180,8 @@ jobs:
       - name: Install frozen dependencies without lifecycle scripts
         run: node scripts/ci-run-redacted.mjs --label channels-postgres-frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Initialize disposable PostgreSQL runtime schema
-        run: pnpm --filter @workspace/db run push-force
-
       - name: Run secure channel PostgreSQL HTTP authority proof
-        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/merchant-channels-postgres-http.integration.test.ts
+        run: bash scripts/run-isolated-postgres-audit.sh channels-runtime
 
       - name: Run saved answers PostgreSQL management proof
         run: bash scripts/run-isolated-postgres-audit.sh knowledge-rls

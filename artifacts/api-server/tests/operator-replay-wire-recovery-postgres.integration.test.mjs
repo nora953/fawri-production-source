@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {createDisposableAuthenticationRole} from "./helpers/disposable-authentication-role.mjs";
 import {grantReceiptExecutionFixture} from "./helpers/receipt-execution-role.mjs";
 import assert from 'node:assert/strict';
@@ -15,7 +16,9 @@ Object.assign(process.env,{
 });
 const {publicKey}=generateKeyPairSync('rsa',{modulusLength:2048});
 Object.assign(process.env,{FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_SAAS_BILLING_PROVIDER:'superqi_sandbox',FAWRI_SAAS_BILLING_PROVIDERS:'superqi_sandbox,test_fake',FAWRI_SUPERQI_SANDBOX_ENABLED:'1',FAWRI_SUPERQI_SANDBOX_USERNAME:'synthetic-user',FAWRI_SUPERQI_SANDBOX_PASSWORD:'synthetic-password',FAWRI_SUPERQI_SANDBOX_TERMINAL_ID:'synthetic-terminal',FAWRI_SUPERQI_SANDBOX_NOTIFICATION_URL:'https://operator.example.invalid/webhook',FAWRI_SUPERQI_SANDBOX_FINISH_URL:'https://operator.example.invalid/finish',FAWRI_SUPERQI_SANDBOX_WEBHOOK_PUBLIC_KEY_B64:Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64')});
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const parentRuntime=await createDisposableKnowledgeRuntime();
+const pool=parentRuntime.admin;
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 const {superQiConfirmedProviderEventId}=await import('../src/services/superQiSandboxWebhook.ts');
@@ -41,12 +44,12 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
     ['owned role grants',()=>roleCreated?pool.query(`DROP OWNED BY ${role}`):undefined],
     ['owned role',()=>roleCreated?pool.query(`DROP ROLE ${role}`):undefined],
-    ['pool',()=>pool.end()],
+    ['parent runtime',()=>parentRuntime.dispose()],
   ]));
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   assert.equal((await pool.query("SELECT has_function_privilege($1,$2,'EXECUTE') AS allowed",[role,capability])).rows[0].allowed,false);
   await grantReceiptExecutionFixture(pool,role);
-  authFixture=await createDisposableAuthenticationRole(pool,process.env.DATABASE_URL);
+  authFixture=await createDisposableAuthenticationRole(pool,bootstrapUrl);
   process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
   async function admin(roleName,permissions=[]){
     const id=`wire-admin-${randomUUID()}`;ids.push(id);
@@ -80,7 +83,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
   };}
   async function run(f,boundary){
     const token=await issue(),marker=`operator-wire-owned-${randomUUID()}`;markers.push(marker);
-    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
+    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env,DATABASE_URL:bootstrapUrl},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
     const messages=[];let readyResolve;const ready=new Promise(resolve=>{readyResolve=resolve;});
     child.on('message',message=>{messages.push(message);if(message.type==='ready')readyResolve();});child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
     const done=new Promise(resolve=>{child.once('exit',(code,signal)=>resolve({code,signal,messages}));child.once('error',()=>resolve({code:'SPAWN_FAILURE',messages}));});
@@ -90,7 +93,7 @@ test('real operator HTTP replay recovers committed receipt/grant after PostgreSQ
   }
   async function runPausedWithRevocation(f,revoke){
     const token=await issue(),marker=`operator-wire-owned-${randomUUID()}`;markers.push(marker);
-    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
+    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env,DATABASE_URL:bootstrapUrl},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
     const messages=[];let readyResolve,pausedResolve;
     const ready=new Promise(resolve=>{readyResolve=resolve;});
     const paused=new Promise(resolve=>{pausedResolve=resolve;});

@@ -1,3 +1,4 @@
+import {createDisposableAuthenticationRole} from './helpers/disposable-authentication-role.mjs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
@@ -17,7 +18,8 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
   const merchants = [`meta-a-${suffix}`, `meta-b-${suffix}`];
   const pages = merchants.map(id => `page-${id}`);
   let runtimePool;
-  let roleCreated = false;
+  let roleCreated = false,authFixture;
+  const password=randomUUID().replaceAll('-',''),originalAuthUrl=process.env.FAWRI_AUTH_DATABASE_URL;
   t.after(async () => cleanupResources([
     ['runtime pool', () => runtimePool?.end()],
     ['environment', async () => {
@@ -26,11 +28,14 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
       else process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = originalAuthority;
     }],
     ['fixture accounts', () => admin.query('DELETE FROM accounts WHERE id = ANY($1::text[])', [merchants])],
+    ['authentication pool',async()=>{await (await import('../src/services/authenticationPostgresAuthority.ts')).closeAuthenticationPool();}],
+    ['authentication role',()=>authFixture?.dispose()],
+    ['authentication environment',()=>{if(originalAuthUrl===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=originalAuthUrl;}],
     ['role grants', async () => { if (roleCreated) await admin.query(`DROP OWNED BY ${role}`); }],
     ['role', async () => { if (roleCreated) await admin.query(`DROP ROLE ${role}`); }],
     ['admin pool', () => admin.end()],
   ]));
-  await admin.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+  await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
   roleCreated = true;
   await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
   await admin.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${role}`);
@@ -42,13 +47,15 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
   const policy = await admin.query("SELECT relrowsecurity FROM pg_class WHERE oid = 'public.merchant_channels'::regclass");
   assert.equal(policy.rows[0].relrowsecurity, true, 'fixture must test actual committed RLS policies');
   const target = new URL(originalUrl);
-  target.searchParams.set('options', `-c role=${role}`);
+  target.username=role;target.password=password;target.search='';
+  authFixture=await createDisposableAuthenticationRole(admin,originalUrl);
+  process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
   process.env.DATABASE_URL = target.toString();
   process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
   runtimePool = (await import('@workspace/db')).pool;
   runtimePool.options.max = 1;
-  const flags = (await runtimePool.query('SELECT current_user AS role, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user')).rows[0];
-  assert.deepEqual(flags, { role, rolsuper: false, rolbypassrls: false });
+  const flags = (await runtimePool.query('SELECT current_user AS role,session_user AS login, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user')).rows[0];
+  assert.deepEqual(flags, { role,login:role, rolsuper: false, rolbypassrls: false });
   const authority = await import('../src/services/operationalPostgresAuthority.ts');
   const channels = await import('../src/services/postgresMetaChannelAuthority.ts');
   const middleware = await import('../src/middleware/merchantWebhookAccess.ts');

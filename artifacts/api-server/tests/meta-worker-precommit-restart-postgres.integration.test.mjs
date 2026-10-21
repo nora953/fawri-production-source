@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {createDisposableAuthenticationRole,restrictTenantAuthenticationPrivileges} from './helpers/disposable-authentication-role.mjs';
 import assert from 'node:assert/strict';
 import {createHmac,createHash,randomUUID,randomInt} from 'node:crypto';
@@ -8,7 +9,9 @@ import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres
 import {cleanupResources,stopTestChild} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 Object.assign(process.env,{FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_DISABLE_JOB_WORKERS:'1',FAWRI_JOB_POLL_INTERVAL_MS:'60000',FAWRI_JOB_VISIBILITY_TIMEOUT_MS:'1000',FAWRI_META_TOKEN_KEY_ID:'synthetic-meta-restart-key',FAWRI_META_TOKEN_KEY_BASE64:Buffer.alloc(32,31).toString('base64'),FAWRI_AUTH_SECURITY_SECRET:'synthetic-meta-restart-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-meta-restart-password-salt'});
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const parentRuntime=await createDisposableKnowledgeRuntime();
+const pool=parentRuntime.admin;
 const accounts=await import('../src/services/postgresMerchantAccountAuthority.ts');
 const settings=await import('../src/services/postgresMerchantSettingsAuthority.ts');
 const channels=await import('../src/services/postgresMetaChannelAuthority.ts');
@@ -25,12 +28,12 @@ test('original Meta worker precommit SIGKILL rolls back inbound state and retrie
     ['owned ledger',()=>pool.query('DELETE FROM reply_ledger WHERE merchant_id=ANY($1::text[])',[merchants])],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchants])],
     ['owned authentication role',()=>authFixture?.dispose()],
-    ['owned grants',()=>roleCreated?pool.query(`DROP OWNED BY ${role}`):undefined],['owned role',()=>roleCreated?pool.query(`DROP ROLE ${role}`):undefined],['pool',()=>pool.end()],
+    ['owned grants',()=>roleCreated?pool.query(`DROP OWNED BY ${role}`):undefined],['owned role',()=>roleCreated?pool.query(`DROP ROLE ${role}`):undefined],['parent runtime',()=>parentRuntime.dispose()],
   ]));
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);await pool.query(`GRANT EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) TO ${role}`);
   await restrictTenantAuthenticationPrivileges(pool,role);
-  authFixture=await createDisposableAuthenticationRole(pool,process.env.DATABASE_URL);
+  authFixture=await createDisposableAuthenticationRole(pool,bootstrapUrl);
   for(let i=0;i<2;i++){
     const created=await accounts.upsertPendingMerchantAuthoritative({phone:`+1994${String(randomInt(0,100000000)).padStart(8,'0')}`,passwordHash:'synthetic',ownerName:'Synthetic',storeName:'Synthetic',activityType:'retail',language:'ar',requestedPlan:'silver'});const id=created.account.id;merchants.push(id);
     await accounts.markMerchantOtpVerifiedAuthoritative(id);await pool.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[id]);
@@ -44,7 +47,7 @@ test('original Meta worker precommit SIGKILL rolls back inbound state and retrie
   });graph=await new Promise((r,j)=>{const s=fake.listen(0,'127.0.0.1',()=>r(s));s.once('error',j);});
   async function start(crash=false){
     const marker=`meta-restart-owned-${randomUUID()}`;markers.push(marker);
-    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env,FAWRI_AUTH_DATABASE_URL:authFixture.url,META_APP_SECRET:secret,META_VERIFY_TOKEN:'synthetic-verify',META_GRAPH_BASE_URL:`http://127.0.0.1:${graph.address().port}`,FAWRI_META_REPLY_TRANSPORT:'live',FAWRI_TEST_META_ROLE:role,FAWRI_TEST_META_PASSWORD:runtimePassword,FAWRI_TEST_META_MARKER:marker,FAWRI_TEST_META_DEADLETTER_CRASH:'0',FAWRI_TEST_META_PRECOMMIT_CRASH:crash?'1':'0',FAWRI_TEST_META_RESTART_EVENT:event,LOG_LEVEL:'silent'},stdio:['ignore','pipe','pipe','ipc']});
+    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env,DATABASE_URL:bootstrapUrl,FAWRI_AUTH_DATABASE_URL:authFixture.url,META_APP_SECRET:secret,META_VERIFY_TOKEN:'synthetic-verify',META_GRAPH_BASE_URL:`http://127.0.0.1:${graph.address().port}`,FAWRI_META_REPLY_TRANSPORT:'live',FAWRI_TEST_META_ROLE:role,FAWRI_TEST_META_PASSWORD:runtimePassword,FAWRI_TEST_META_MARKER:marker,FAWRI_TEST_META_DEADLETTER_CRASH:'0',FAWRI_TEST_META_PRECOMMIT_CRASH:crash?'1':'0',FAWRI_TEST_META_RESTART_EVENT:event,LOG_LEVEL:'silent'},stdio:['ignore','pipe','pipe','ipc']});
     const messages=[],pending=new Map();let readyResolve;const ready=new Promise(r=>{readyResolve=r;});
     child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});child.on('message',m=>{messages.push(m);if(m.type==='ready')readyResolve(m);else if(pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.failure?p.reject(Error(m.code)):p.resolve(m);}});
     const done=new Promise(r=>child.once('exit',(code,signal)=>{for(const p of pending.values())p.reject(Error('owned worker exited'));pending.clear();r({code,signal});}));

@@ -1,3 +1,13 @@
+## Central private scope proof / legacy consumer correction — 2026-10-21
+
+Exact executable `2fe24ef4cdae762d657e8551505ace9f7642e238`: **35/46 workflows SUCCESS,11 FAILURE**. Isolated39645535304/job119379983364:73 invocations,61 clean/12 not clean. **New central actual-LOGIN scope proof6 PASS** (includes parent), including committed issuer before locks, generic no-mint, forged setting cannot rebind private scope, rollback/reuse, issuer revoke/recovery and subscription caller. Existing core private16/auth10/admin9/runtime81 and cashier proofs retain their exact-source counters. Full migration41/schema/restore unchanged. This is NOT full-source acceptance. Evidence: [P0-CENTRAL-SCOPE-CONSUMERS-ATTEMPT-20261021.json](evidence/P0-CENTRAL-SCOPE-CONSUMERS-ATTEMPT-20261021.json).
+
+Containing correction separates primary/auth actual LOGINs from root seed/inspection in six legacy settings/regional/channel/catalog/inventory/media fixtures, Auth compatibility child, four Meta parent fixtures, receipt executor/HTTP/wire parents, provider discovery/race parents and Meta directory. Keeps original child credentials, transport faults, chronology, concurrency, source business assertions and operator-only execution. Seven dedicated legacy workflow proofs move to the canonical network-none runner with committed migrations; all original Auth unit files retained. No bootstrap bypass or primary issuer grants. Source/migrations/security checks UNCHANGED by correction. Local syntax/whitespace/YAML PASS; new DB/CI acceptance PENDING.
+
+Raw public tenant GUC trust remains OPEN; public predicate cutover must follow exact-source consumer acceptance. Hosted identity/ACL/pooler, auth/privacy/cashier integrity, provider/storage/retention and full P0 case inventory remain uncertified. No measured whole-P0 percentage. No hosted write/deploy/main/merge. **NO-GO**. Next inspect containing HEAD/CI and all counters, repair remaining failures before cutover.
+
+---
+
 ## Central merchant scope increment — 2026-10-21
 
 Recovered fixture source `5b7f7cb9065d2686ccd3ffdc209c4e27addfb3ad`: isolated39644611813/job119376758882 **72/72 clean invocations**, support5/reminder1/reviewHTTP20/MetaRestore6 PASS using actual LOGINs. Overall45/46 workflows SUCCESS; Foundation host-service attestation failure retained. Evidence: [P0-RECOVERY-FIXTURE-ACCEPTANCE-20261021.json](evidence/P0-RECOVERY-FIXTURE-ACCEPTANCE-20261021.json).

@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import assert from 'node:assert/strict';
 import {randomUUID,randomInt} from 'node:crypto';
 import test from 'node:test';
@@ -11,7 +12,9 @@ Object.assign(process.env,{
   FAWRI_SAAS_BILLING_PROVIDER:'test_fake',
   FAWRI_SAAS_BILLING_PROVIDERS:'test_fake',
 });
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const parentRuntime=await createDisposableKnowledgeRuntime();
+const pool=parentRuntime.admin;
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 
@@ -22,7 +25,7 @@ test('cross-authority identity guard rejects second writer in READ COMMITTED',as
     ['reader rollback',async()=>{if(reader){await reader.query('ROLLBACK');reader.release();}}],
     ['writer rollback',async()=>{if(writer){await writer.query('ROLLBACK');writer.release();}}],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchants])],
-    ['pool',()=>pool.end()],
+    ['parent runtime',()=>parentRuntime.dispose()],
   ]));
   async function merchant(){
     const id=`phantom-merchant-${randomUUID()}`;merchants.push(id);

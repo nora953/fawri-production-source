@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from "./helpers/disposable-knowledge-runtime.mjs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -72,15 +73,15 @@ test("merchant settings routes use secure v2 PostgreSQL sessions with tenant iso
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
   });
 
+  const runtime=await createDisposableKnowledgeRuntime();
+  const pool=runtime.admin;
   const [
-    { pool },
     { authPostgresSessionAuthority },
     { MERCHANT_SESSION_COOKIE },
     { default: express },
     { default: cookieParser },
     { default: merchantSettingsRouter },
   ] = await Promise.all([
-    import("@workspace/db"),
     import("../src/services/authPostgresSessionAuthority.js"),
     import("../src/middleware/authSession.js"),
     import("express"),
@@ -104,7 +105,7 @@ test("merchant settings routes use secure v2 PostgreSQL sessions with tenant iso
       await new Promise<void>((resolve) => server?.close(() => resolve()));
     }
     if (seeded) await cleanup();
-    await pool.end();
+    await runtime.dispose();
     await rm(runtimeDirectory, { recursive: true, force: true });
   });
 

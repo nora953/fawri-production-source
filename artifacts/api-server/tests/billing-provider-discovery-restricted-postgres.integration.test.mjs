@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {createDisposableAuthenticationRole,restrictTenantAuthenticationPrivileges} from "./helpers/disposable-authentication-role.mjs";
 import assert from 'node:assert/strict';
 import {randomUUID,randomInt,generateKeyPairSync,createSign} from 'node:crypto';
@@ -17,7 +18,9 @@ Object.assign(process.env,{
   FAWRI_SUPERQI_SANDBOX_FINISH_URL:'https://merchant.example.invalid/dashboard/subscription',
   FAWRI_SUPERQI_SANDBOX_WEBHOOK_PUBLIC_KEY_B64:Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64'),
 });
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const parentRuntime=await createDisposableKnowledgeRuntime();
+const pool=parentRuntime.admin;
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 const {superQiWebhookSigningPayload}=await import('../src/services/superQiSandboxTransport.ts');
@@ -39,13 +42,13 @@ test('verified provider callbacks discover mapped orders without global tenant a
     ['authentication fixture',()=>authFixture?.dispose()],
     ['owned inbox',()=>pool.query('DELETE FROM verified_provider_payment_receipts WHERE payment_ref=ANY($1::text[])',[paymentRefs])],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchantIds])],
-    ['owned grants',()=>pool.query(`DROP OWNED BY ${role}`)],['owned role',()=>pool.query(`DROP ROLE ${role}`)],['pool',()=>pool.end()],
+    ['owned grants',()=>pool.query(`DROP OWNED BY ${role}`)],['owned role',()=>pool.query(`DROP ROLE ${role}`)],['parent runtime',()=>parentRuntime.dispose()],
   ]));
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
   await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
   await restrictTenantAuthenticationPrivileges(pool,role);
-  authFixture=await createDisposableAuthenticationRole(pool,process.env.DATABASE_URL);
+  authFixture=await createDisposableAuthenticationRole(pool,bootstrapUrl);
   await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
   await pool.query(`GRANT EXECUTE ON FUNCTION ${functionIdentity} TO ${role}`);
   // The unmatched-receipt case must exercise the resolver's zero-row result,
@@ -53,7 +56,7 @@ test('verified provider callbacks discover mapped orders without global tenant a
   await pool.query(`GRANT EXECUTE ON FUNCTION ${resolverIdentity} TO ${role}`);
   const providerEnv=Object.fromEntries(Object.entries(process.env).filter(([key])=>key.startsWith('FAWRI_SUPERQI_')||['FAWRI_OPERATIONAL_POSTGRES_AUTHORITY','FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY','FAWRI_SAAS_BILLING_PROVIDER','FAWRI_SAAS_BILLING_PROVIDERS'].includes(key)));
   async function run(payload,receivedAt){
-    const child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/billing-provider-discovery-child.mjs',import.meta.url))],{env:{...process.env,FAWRI_AUTH_DATABASE_URL:authFixture.url},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
+    const child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/billing-provider-discovery-child.mjs',import.meta.url))],{env:{...process.env,DATABASE_URL:bootstrapUrl,FAWRI_AUTH_DATABASE_URL:authFixture.url},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
     const messages=[];let readyResolve;const ready=new Promise(resolve=>{readyResolve=resolve;});
     child.on('message',message=>{messages.push(message);if(message.type==='ready')readyResolve();});child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
     const done=new Promise(resolve=>{child.once('exit',(code,signal)=>resolve({code,signal,messages}));child.once('error',()=>resolve({code:'SPAWN_FAILURE',messages}));});let timer;

@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from "./helpers/disposable-knowledge-runtime.mjs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -44,8 +45,9 @@ test(
       FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER: "filesystem",
     });
 
+    const runtime=await createDisposableKnowledgeRuntime();
+    const pool=runtime.admin;
     const [
-      { pool },
       { hashPassword },
       merchantAccounts,
       merchantManagement,
@@ -53,7 +55,6 @@ test(
       supportImages,
       physicalCleanup,
     ] = await Promise.all([
-      import("@workspace/db"),
       import("../src/services/authPasswordService.js"),
       import("../src/services/postgresMerchantAccountAuthority.js"),
       import("../src/services/postgresMerchantManagementAuthority.js"),
@@ -72,7 +73,7 @@ test(
     let merchantId = "";
 
     t.after(async () => {
-      await pool.end();
+      await runtime.dispose();
       fs.rmSync(dataRoot, { recursive: true, force: true });
     });
 

@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {restrictTenantAuthenticationPrivileges,createDisposableAuthenticationRole} from "./helpers/disposable-authentication-role.mjs";
 import assert from 'node:assert/strict';
 import {createHmac,randomUUID,randomInt} from 'node:crypto';
@@ -12,7 +13,9 @@ import {cleanupResources,stopTestChild} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 const dataDir=mkdtempSync(path.join(os.tmpdir(),'fawri-meta-app-owned-'));
 Object.assign(process.env,{FAWRI_DATA_DIR:dataDir,FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_META_TOKEN_KEY_ID:'synthetic-meta-app-key',FAWRI_META_TOKEN_KEY_BASE64:Buffer.alloc(32,29).toString('base64'),FAWRI_AUTH_SECURITY_SECRET:'synthetic-meta-app-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-meta-app-password-salt'});
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const parentRuntime=await createDisposableKnowledgeRuntime();
+const pool=parentRuntime.admin;
 const accounts=await import('../src/services/postgresMerchantAccountAuthority.ts');
 const settings=await import('../src/services/postgresMerchantSettingsAuthority.ts');
 const channels=await import('../src/services/postgresMetaChannelAuthority.ts');
@@ -30,12 +33,12 @@ test('signed actual Meta app reaches original manual filter, tenant queue and li
     ['owned grants',()=>roleCreated?pool.query(`DROP OWNED BY ${role}`):undefined],
     ['owned role',()=>roleCreated?pool.query(`DROP ROLE ${role}`):undefined],
     ['owned auth role',()=>authRole?.dispose()],
-    ['pool',()=>pool.end()],['owned directory',()=>rmSync(dataDir,{recursive:true,force:true})],
+    ['parent runtime',()=>parentRuntime.dispose()],['owned directory',()=>rmSync(dataDir,{recursive:true,force:true})],
   ]));
   await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
   await restrictTenantAuthenticationPrivileges(pool,role);
-  authRole=await createDisposableAuthenticationRole(pool,process.env.DATABASE_URL);
+  authRole=await createDisposableAuthenticationRole(pool,bootstrapUrl);
   assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_resolve_meta_page_merchants(text[])','EXECUTE') AS allowed",[role])).rows[0].allowed,false);
   await pool.query(`GRANT EXECUTE ON FUNCTION public.fawri_resolve_meta_page_merchants(text[]) TO ${role}`);
   for(let i=0;i<2;i++){
@@ -56,7 +59,7 @@ test('signed actual Meta app reaches original manual filter, tenant queue and li
   graph=await new Promise((r,j)=>{const s=fake.listen(0,'127.0.0.1',()=>r(s));s.once('error',j);});
   const secret=`synthetic-meta-app-secret-${suffix}`;
   const pending=new Map();let readyResolve;const ready=new Promise(r=>{readyResolve=r;});
-  child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/meta-full-app-restricted-child.mjs',import.meta.url))],{env:{...process.env,FAWRI_AUTH_DATABASE_URL:authRole.url,META_APP_SECRET:secret,META_VERIFY_TOKEN:'synthetic-verify',META_GRAPH_BASE_URL:`http://127.0.0.1:${graph.address().port}`,FAWRI_META_REPLY_TRANSPORT:'live',FAWRI_JOB_POLL_INTERVAL_MS:'60000',FAWRI_TEST_META_ROLE:role,FAWRI_TEST_META_PASSWORD:runtimePassword,FAWRI_TEST_META_MARKER:marker,LOG_LEVEL:'silent'},stdio:['ignore','pipe','pipe','ipc']});
+  child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/meta-full-app-restricted-child.mjs',import.meta.url))],{env:{...process.env,DATABASE_URL:bootstrapUrl,FAWRI_AUTH_DATABASE_URL:authRole.url,META_APP_SECRET:secret,META_VERIFY_TOKEN:'synthetic-verify',META_GRAPH_BASE_URL:`http://127.0.0.1:${graph.address().port}`,FAWRI_META_REPLY_TRANSPORT:'live',FAWRI_JOB_POLL_INTERVAL_MS:'60000',FAWRI_TEST_META_ROLE:role,FAWRI_TEST_META_PASSWORD:runtimePassword,FAWRI_TEST_META_MARKER:marker,LOG_LEVEL:'silent'},stdio:['ignore','pipe','pipe','ipc']});
   child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});
   child.on('message',m=>{if(m.ready)readyResolve(m);else if(pending.has(m.id)){pending.get(m.id)(m);pending.delete(m.id);}});
   function command(command,extra={}){const id=randomUUID();let timer;return new Promise((resolve,reject)=>{pending.set(id,m=>m.failure?reject(new Error(m.code)):resolve(m));timer=setTimeout(()=>{pending.delete(id);reject(new Error('owned Meta command timeout'));},20000);child.send({id,command,...extra});}).finally(()=>clearTimeout(timer));}

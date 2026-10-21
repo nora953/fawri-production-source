@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {createDisposableAuthenticationRole} from "./helpers/disposable-authentication-role.mjs";
 import {grantReceiptExecutionFixture} from "./helpers/receipt-execution-role.mjs";
 import assert from 'node:assert/strict';
@@ -13,7 +14,8 @@ const sql='SELECT * FROM public.fawri_authorize_verified_receipt_replay($1,$2,$3
 test('direct execution LOGIN owns all replay phases without borrowing tenant or bootstrap credentials', {timeout:120000}, async t=>{
   const nonce=randomUUID().replaceAll('-',''),ids=[],fixtures=[],roles=[],clients=[],urls=[],faults=[];
   const admin=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:5000});await admin.connect();
-  const saved={};let authFixture;let mainPool,originalQuery,originalConnect,closePool=async()=>{},bootstrapCalls=0;
+  const bootstrapUrl=process.env.DATABASE_URL;
+  const saved={};let authFixture,parentRuntime;let mainPool,originalQuery,originalConnect,closePool=async()=>{},bootstrapCalls=0;
   t.after(()=>cleanupResources([
     ['main pool methods',async()=>{if(mainPool){mainPool.query=originalQuery;mainPool.connect=originalConnect;}}],
     ['owned triggers',async()=>{for(const f of faults){await admin.query(`DROP TRIGGER IF EXISTS ${f.name} ON ${f.table}`);await admin.query(`DROP FUNCTION IF EXISTS ${f.name}()`);}}],
@@ -26,7 +28,7 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
     ['owned trusted devices',()=>admin.query('DELETE FROM trusted_devices WHERE account_id=ANY($1::text[])',[ids])],
     ['owned accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
     ['owned role grants',async()=>{for(const r of roles){await admin.query(`DROP OWNED BY ${r}`);await admin.query(`DROP ROLE ${r}`);}}],
-    ['main pool',()=>mainPool?.end()],
+    ['parent runtime',()=>parentRuntime?.dispose()],
     ['environment',async()=>{for(const[k,v]of Object.entries(saved)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}],
     ['bootstrap connection',()=>admin.end()],
   ]));
@@ -38,7 +40,8 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
     FAWRI_SUPERQI_SANDBOX_NOTIFICATION_URL:'https://execute.example.invalid/webhook',FAWRI_SUPERQI_SANDBOX_FINISH_URL:'https://execute.example.invalid/finish',
     FAWRI_SUPERQI_SANDBOX_WEBHOOK_PUBLIC_KEY_B64:Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64')};
   for(const[k,v]of Object.entries(env)){saved[k]=process.env[k];if(v===undefined)delete process.env[k];else process.env[k]=v;}
-  authFixture=await createDisposableAuthenticationRole(admin,process.env.DATABASE_URL);
+  parentRuntime=await createDisposableKnowledgeRuntime();
+  authFixture=await createDisposableAuthenticationRole(admin,bootstrapUrl);
   process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
   ({pool:mainPool}=await import('@workspace/db'));originalQuery=mainPool.query;originalConnect=mainPool.connect;
   ({closeReceiptOperatorExecutionPool:closePool}=await import('../src/services/operatorReceiptExecutionPostgresAuthority.ts'));
