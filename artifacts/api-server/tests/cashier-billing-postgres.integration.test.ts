@@ -121,7 +121,7 @@ test(
     );
     assert.equal(beforePayment.rows.length, 0);
 
-    const activationEvent = {
+    const activationEvent = { merchantId: activation.order.merchant_id,
       provider: "test_fake" as const,
       providerEventId: "event-activate-1",
       orderId: activation.order.id,
@@ -174,7 +174,7 @@ test(
       provider: "test_fake",
       now: addTime,
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: addCheckout.order.merchant_id,
       provider: "test_fake",
       providerEventId: "event-add-three",
       orderId: addCheckout.order.id,
@@ -216,7 +216,7 @@ test(
       provider: "test_fake",
       now: new Date("2026-10-15T00:00:00.000Z"),
     });
-    const failed = await billing.applyVerifiedCashierBillingProviderEvent({
+    const failed = await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: failedCheckout.order.merchant_id,
       provider: "test_fake",
       providerEventId: "event-failed-add-four",
       orderId: failedCheckout.order.id,
@@ -251,7 +251,7 @@ test(
       provider: "test_fake",
       now: new Date("2026-10-15T00:02:00.000Z"),
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: addFour.order.merchant_id,
       provider: "test_fake",
       providerEventId: "event-valid-add-four",
       orderId: addFour.order.id,
@@ -304,7 +304,7 @@ test(
     // Reusing an old provider payment reference on this new order is a replay.
     await assert.rejects(
       () =>
-        billing.applyVerifiedCashierBillingProviderEvent({
+        billing.applyVerifiedCashierBillingProviderEvent({ merchantId: renewal.order.merchant_id,
           provider: "test_fake",
           providerEventId: "event-replayed-payment-ref",
           orderId: renewal.order.id,
@@ -321,7 +321,7 @@ test(
         error.code === "CASHIER_BILLING_PAYMENT_REPLAY",
     );
 
-    const renewed = await billing.applyVerifiedCashierBillingProviderEvent({
+    const renewed = await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: renewal.order.merchant_id,
       provider: "test_fake",
       providerEventId: "event-renew-grace",
       orderId: renewal.order.id,
@@ -364,7 +364,7 @@ test(
         WHERE merchant_id = $1`,
       [merchantId],
     );
-    const staleOutcome = await billing.applyVerifiedCashierBillingProviderEvent({
+    const staleOutcome = await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: staleCheckout.order.merchant_id,
       provider: "test_fake",
       providerEventId: "event-stale-add-five",
       orderId: staleCheckout.order.id,
@@ -403,7 +403,7 @@ test(
       provider: "test_fake",
       now: restrictedTime,
     });
-    const restored = await billing.applyVerifiedCashierBillingProviderEvent({
+    const restored = await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: restrictedRenewal.order.merchant_id,
       provider: "test_fake",
       providerEventId: "event-renew-restricted",
       orderId: restrictedRenewal.order.id,

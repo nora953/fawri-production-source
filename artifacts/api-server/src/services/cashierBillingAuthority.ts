@@ -65,6 +65,9 @@ export type CashierBillingOrderRecord = {
 };
 
 export type VerifiedCashierBillingProviderEvent = {
+  // Authorized server context for direct merchant calls, never provider payload.
+  // Confirmed-provider and operator replay scopes resolve their own merchant.
+  merchantId?: string;
   provider: "test_fake" | "superqi_sandbox";
   providerEventId: string;
   orderId: string;
@@ -1044,10 +1047,9 @@ export async function applyVerifiedCashierBillingProviderEvent(
     ? requiredText(input.providerPaymentRef, "provider_payment_ref", 300)
     : "";
 
-  const discovery = replay || confirmed ? [] : await operationalQueryRows<{merchant_id:string}>(await operationalDatabasePool(),
-    `SELECT merchant_id FROM cashier_billing_orders WHERE id = $1 LIMIT 2`,[orderId]);
-  if (!replay && !confirmed && discovery.length !== 1) fail("CASHIER_BILLING_ORDER_NOT_FOUND","cashier billing order not found",404);
-  const merchantId = confirmed ? requiredText(confirmed.merchantId,"merchant_id",200) : replay ? requiredText(replay.merchantId,"merchant_id",200) : discovery[0].merchant_id;
+  const merchantId = confirmed ? requiredText(confirmed.merchantId,"merchant_id",200)
+    : replay ? requiredText(replay.merchantId,"merchant_id",200)
+    : requiredText(input.merchantId,"merchant_id",200);
   let sqlFailure: unknown;
   const processEvent = async (
     client: OperationalQueryTarget,

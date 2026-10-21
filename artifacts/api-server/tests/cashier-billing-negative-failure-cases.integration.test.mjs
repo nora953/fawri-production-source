@@ -36,7 +36,7 @@ test('cashier negative payment contracts: replay, expiry, concurrency and SQL re
     return result.order;
   }
   function event(order, overrides = {}) {
-    return { provider: 'test_fake', providerEventId: randomUUID(), orderId: order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'c'.repeat(64), occurredAt: new Date(), amountIqd: order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID(), ...overrides };
+    return { merchantId: order.merchant_id, provider: 'test_fake', providerEventId: randomUUID(), orderId: order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'c'.repeat(64), occurredAt: new Date(), amountIqd: order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID(), ...overrides };
   }
   await t.test('matching payment after proactive expiry has durable reconciliation', async () => {
     const order = await checkout(new Date(Date.now() - 3600000));

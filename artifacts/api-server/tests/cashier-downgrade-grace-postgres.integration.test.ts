@@ -168,7 +168,7 @@ test(
       idempotencyKey: "downgrade-renewal",
       provider: "test_fake",
     });
-    const outcome = await billing.applyVerifiedCashierBillingProviderEvent({
+    const outcome = await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: checkout.order.merchant_id,
       provider: "test_fake",
       providerEventId: "downgrade-renewal-event",
       orderId: checkout.order.id,

@@ -105,7 +105,7 @@ test(
     assert.equal(activation.order.billing_period_start, "2026-10-01T00:00:00.000Z");
     assert.equal(activation.order.billing_period_end, "2026-11-01T00:00:00.000Z");
 
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: activation.order.merchant_id,
       provider: "test_fake",
       providerEventId: "full-lifecycle-activate-event",
       orderId: activation.order.id,
@@ -242,7 +242,7 @@ test(
       provider: "test_fake",
       now: addAt,
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: addSeat.order.merchant_id,
       provider: "test_fake",
       providerEventId: "full-lifecycle-add-seat-event",
       orderId: addSeat.order.id,
@@ -333,7 +333,7 @@ test(
       provider: "test_fake",
       now: renewalAt,
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: renewal.order.merchant_id,
       provider: "test_fake",
       providerEventId: "full-lifecycle-renew-event",
       orderId: renewal.order.id,

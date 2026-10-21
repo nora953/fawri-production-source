@@ -77,6 +77,9 @@ export type SaasBillingOrderRecord = {
 };
 
 export type VerifiedSaasBillingProviderEvent = {
+  // Authorized server context for direct merchant calls, never provider payload.
+  // Confirmed-provider and operator replay scopes resolve their own merchant.
+  merchantId?: string;
   provider: "test_fake" | "superqi_sandbox";
   providerEventId: string;
   orderId: string;
@@ -793,10 +796,9 @@ export async function applyVerifiedSaasBillingProviderEvent(
     fail("SAAS_BILLING_CURRENCY_MISMATCH", "billing currency mismatch", 409);
   }
 
-  const owner = replay || confirmed ? null : await (await pool()).query(
-    `SELECT merchant_id FROM saas_billing_orders WHERE id = $1 LIMIT 2`, [orderId]);
-  if (!replay && !confirmed && owner?.rows.length !== 1) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
-  const merchantId = confirmed ? requiredText(confirmed.merchantId,180) : replay ? requiredText(replay.merchantId,180) : String(owner!.rows[0].merchant_id);
+  const merchantId = confirmed ? requiredText(confirmed.merchantId,180)
+    : replay ? requiredText(replay.merchantId,180)
+    : requiredText(input.merchantId,180);
   let sqlFailure: unknown;
   const processEvent = async (client: SubscriptionPlanCycleTransaction, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
     // Replay already issues on its operator lease; confirmed callbacks own a fresh primary transaction.
@@ -1222,7 +1224,9 @@ export async function applyVerifiedSaasBillingProviderEvent(
     }
   };
   // Commit verified receipt admission before any entitlement transaction begins.
-  const runTransaction = replay ? replay.transaction : transaction;
+  const runTransaction = replay ? replay.transaction : confirmed ? transaction
+    : <T>(work: (client: SubscriptionPlanCycleTransaction) => Promise<T>) =>
+        withMerchantOperationalTransaction(merchantId, work);
   const admitted = await runTransaction((client) => processEvent(client, true));
   if (admitted.status !== "reconciliation_required" ||
       admitted.reasonCode !== "SAAS_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;

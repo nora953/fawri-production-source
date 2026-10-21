@@ -1,5 +1,17 @@
 # FAWRI P0 continuation checkpoint
 
+## Direct merchant billing context continuation — 2026-10-21T03:11:00.028334+00:00
+
+Branch: fix/p0-provider-receipt-order-discovery-20261015. Open Draft PR550, actual base test/p0-integrated-billing-meta-20261015. Latest inspected live commit c73a9a34a0efa3511c1d3bd10f79e057cdd72c7e is the exact accepted executable:45/45 completed SUCCESS;70 isolated invocations exit0/fail0/skip0/cancel0. Isolated run39536357291/job119013802418, checkout d1539fed0fae4ddcf5991b524821f7178471c514 has identical tree bc99a0f6286b38b8e7660cd37edf097f2e8bcc3f. Provider discovery19, inbox18, receipt executor15/HTTP20/wire17 PASS. Migration candidate/schema/isolated41 migrations PASS. Evidence: evidence/P0-PROVIDER-SCOPE-CALLER-ACCEPTANCE-20261021.json. Earlier8bc failure and correction remain recorded.
+
+Containing increment removes unscoped global order-owner SELECTs from direct SaaS/cashier payment calls. Direct trusted server callers must provide merchantId; confirmed-provider/operator replay scopes continue to derive their own identity. SaaS direct processing now runs under withMerchantOperationalTransaction, as cashier already did. Test-fake event constructors carry explicit owning merchant. No public provider-body identity trust introduced; no provider signature/receipt/replay checks removed.
+
+Actually executed locally: billing-merchant-context-unit4 PASS, missing/blank/oversized context denied before DB and invalid signature/currency denied; syntax and git diff whitespace checks PASS. New owned PostgreSQL regression tests actual restricted LOGINs, missing-context zero pool calls, foreign order denial/no event write, concurrent own apply once and session reset. This new database test and full regressions are PENDING CI; not yet passed. Runner adds2 invocations (expected72, actual count must be observed). No local PostgreSQL available.
+
+Next: inspect exact containing source CI; fix failures without skip/bypass, record actual72 counters and links. Then wire canonical private issuance before locks in central operational/subscription merchant wrappers, modernize affected bootstrap fixtures to actual tenant/auth LOGINs, and finally migrate the public predicate. Public fawri_tenant_or_audited_admin STILL TRUSTS raw fawri.tenant_id; successful P0_TENANT_GUC_TRUST_PROOF remains an OPEN vulnerability. Hosted grants/pooler, sensitive auth/privacy and other recorded critical gates remain open. No production/staging/Neon changes, Railway deploy, main push or PR merge. **Release decision: NO-GO.**
+
+Historical checkpoints below; pending statements in them are superseded only by the exact-source evidence above.
+
 ## Provider overlap barrier correction — 2026-10-21T06:02:09.059431+03:00
 
 8bc89fdb6d1f3669a400f06a6901b89f34299894:44/45 workflows SUCCESS;70 invocations,69 clean. Provider inbox scope/issuer revocation/recovery assertions PASS, receipt execution15/HTTP20/wire17 remain PASS. Only discovery fixture failed:8 PASS/3 FAIL (2 post-discovery barriers plus parent). Its FOR UPDATE merchant barrier blocked the scope issuer's FK KEY SHARE before the primary could reach the intended row lock. Full evidence: `evidence/P0-PROVIDER-SCOPE-CALLER-ATTEMPT-20261021.json`.

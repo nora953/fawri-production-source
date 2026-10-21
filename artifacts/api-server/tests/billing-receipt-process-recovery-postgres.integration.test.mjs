@@ -44,7 +44,7 @@ test('committed verified receipts survive owned application/backend interruption
     const checkout = kind === 'saas'
       ? await saas.createSaasBillingCheckout({merchantId,operation:'activate',plan:'silver',idempotencyKey,provider:'test_fake'})
       : await cashier.createCashierBillingCheckout({merchantId,operation:'activate',requestedSeats:1,idempotencyKey,provider:'test_fake'});
-    const event = {provider:'test_fake',providerEventId:randomUUID(),orderId:checkout.order.id,eventType:'payment_succeeded',signatureVerified:true,payloadHash:'e'.repeat(64),occurredAt:new Date(),amountIqd:checkout.order.amount_iqd,currency:'IQD',providerPaymentRef:randomUUID()};
+    const event = { merchantId: checkout.order.merchant_id,provider:'test_fake',providerEventId:randomUUID(),orderId:checkout.order.id,eventType:'payment_succeeded',signatureVerified:true,payloadHash:'e'.repeat(64),occurredAt:new Date(),amountIqd:checkout.order.amount_iqd,currency:'IQD',providerPaymentRef:randomUUID()};
     return {merchantId,event,idempotencyKey};
   }
   async function snapshot(kind, fixture) {

@@ -90,7 +90,7 @@ test(
       idempotencyKey: "history-activate",
       provider: "test_fake",
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: activation.order.merchant_id,
       provider: "test_fake",
       providerEventId: "history-activation-event",
       orderId: activation.order.id,
@@ -173,7 +173,7 @@ test(
       idempotencyKey: "history-renew",
       provider: "test_fake",
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: renewal.order.merchant_id,
       provider: "test_fake",
       providerEventId: "history-renewal-event",
       orderId: renewal.order.id,

@@ -24,7 +24,7 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     return { merchantId: id, order: result.order };
   }
   function event(order, override = {}) {
-    return { provider: 'test_fake', providerEventId: randomUUID(), orderId: order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'a'.repeat(64), occurredAt: new Date(), amountIqd: order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID(), ...override };
+    return { merchantId: order.merchant_id, provider: 'test_fake', providerEventId: randomUUID(), orderId: order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'a'.repeat(64), occurredAt: new Date(), amountIqd: order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID(), ...override };
   }
   await t.test('matching verified payment after list marks checkout expired must be durably reconciled', async () => {
     const fixture = await checkout(new Date(Date.now() - 60 * 60 * 1000));

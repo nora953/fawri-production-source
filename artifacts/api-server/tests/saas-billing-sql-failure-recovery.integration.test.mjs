@@ -28,7 +28,7 @@ test('verified payment SQL failure retains reconciliation evidence and supports 
   const checkout = await billing.createSaasBillingCheckout({ merchantId, operation: 'activate', plan: 'silver', idempotencyKey: randomUUID() });
   await pool.query(`CREATE FUNCTION ${identifier}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic audit SQL fault' USING ERRCODE='P0001'; END $$`);
   await pool.query(`CREATE TRIGGER ${identifier} BEFORE INSERT ON saas_entitlement_applications FOR EACH ROW EXECUTE FUNCTION ${identifier}()`);
-  const event = { provider: 'test_fake', providerEventId: randomUUID(), orderId: checkout.order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'b'.repeat(64), occurredAt: new Date(), amountIqd: checkout.order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID() };
+  const event = { merchantId: checkout.order.merchant_id, provider: 'test_fake', providerEventId: randomUUID(), orderId: checkout.order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'b'.repeat(64), occurredAt: new Date(), amountIqd: checkout.order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID() };
   let errorCode;
   try { await billing.applyVerifiedSaasBillingProviderEvent(event); }
   catch (error) { errorCode = error.code; }
