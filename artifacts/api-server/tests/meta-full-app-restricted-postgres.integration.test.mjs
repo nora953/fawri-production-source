@@ -115,7 +115,9 @@ test('signed actual Meta app reaches original manual filter, tenant queue and li
     assert.equal((await command('run')).ran,true);
     assert.equal(confirmedFailures.length,1);assert.equal(sends.length,2);assert.equal(await debits(),3);assert.equal(await credits(),0);
     const wrong=await entitlement.restoreMerchantAutoReplyPostgres(result.event,{kind:'refund',reasonCode:'META_REPLY_FAILED'},new Date(),merchants[1]);
-    assert.deepEqual(wrong,{restored:false,reason:'reservation_identity_invalid'});assert.equal(await credits(),0);
+    // Actual tenant RLS hides the foreign reservation before identity checks.
+    // Preserve denial/no-credit and all subsequent worker/refund assertions.
+    assert.deepEqual(wrong,{restored:false,reason:'reservation_not_found'});assert.equal(await credits(),0);
     const denied=await command('restore',{kind:'refund',event:result.event,merchant:merchants[1]});
     assert.equal(denied.result.reason,'reservation_not_found');assert.equal(await credits(),0);
     const pending=(await jobs()).find(j=>j.dedupe_key===`meta-refund:${result.event}`);assert.equal(pending.status,'queued');
