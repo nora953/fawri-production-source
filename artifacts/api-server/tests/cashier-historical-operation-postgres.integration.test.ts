@@ -36,6 +36,9 @@ test(
       FAWRI_SAAS_BILLING_PROVIDERS: "test_fake",
     });
 
+    const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    // Application imports below use the actual tenant LOGIN, never this root inspector.
     const [
       { pool },
       { hashPassword },
@@ -45,7 +48,7 @@ test(
       historical,
       operational,
     ] = await Promise.all([
-      import("@workspace/db"),
+      Promise.resolve({pool:runtimeFixture.admin}),
       import("../src/services/authPasswordService.js"),
       import("../src/services/postgresMerchantAccountAuthority.js"),
       import("../src/services/cashierBillingAuthority.js"),
@@ -59,7 +62,7 @@ test(
       if (merchantId) {
         await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]).catch(() => undefined);
       }
-      await pool.end();
+      await runtimeFixture.dispose();
     });
 
     const merchant = await merchants.upsertPendingMerchantAuthoritative({

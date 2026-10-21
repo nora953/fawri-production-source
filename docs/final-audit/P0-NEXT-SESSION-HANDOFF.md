@@ -1,5 +1,13 @@
 # FAWRI P0 continuation checkpoint
 
+## Cashier actual LOGIN fixture continuation — 2026-10-21T03:16:33.293330+00:00
+
+Containing test increment converts13 owned cashier billing/licensing/history/sync/profit/compensation fixtures to separate actual restricted tenant and authentication LOGINs via the already-reviewed disposable runtime helper. Root pool alias is used for original setup, fault/barrier injection, inspection and cleanup only; application modules import after runtime URL installation. Teardown closes both application pools and removes owned role grants. Existing product assertions, timestamps, fault injection, concurrency and subsystem independence remain unchanged; no source authorization/grants/CI thresholds changed.
+
+Actually executed locally:13 fixture syntax checks PASS; disposable guard/security34 PASS; whitespace PASS. Full owned PostgreSQL regression for these13 fixture conversions is PENDING CI. Direct billing context source is129effec4cb9bcdc21435304842567ad32f929e8; 45/45 workflows completed SUCCESS,72 invocations exit0/fail0/skip0/cancel0; isolated run39537251448/job119016641150. Checkout f5ace76da1f5ef519cecb2e121f2e74a8188ec66 has the identical source tree bcd03e8a7e699e78e5ec874918a98771da5f8e5b. Context unit4/database3 PASS; receipt executor15/HTTP20/wire17, migration/schema and all prior invocations PASS. Exact evidence: evidence/P0-DIRECT-BILLING-CONTEXT-ACCEPTANCE-20261021.json. These results do not cover this containing13-fixture increment.
+
+Next after CI: complete remaining billing/subscription/receipt fixture runtime separation, then wire central operational/subscription private issuance BEFORE merchant/FK locks. Public raw tenant-GUC predicate cutover and hosted certification remain pending. Release NO-GO; no production/staging/Neon write, deployment, merge or main push.
+
 ## Direct merchant billing context continuation — 2026-10-21T03:11:00.028334+00:00
 
 Branch: fix/p0-provider-receipt-order-discovery-20261015. Open Draft PR550, actual base test/p0-integrated-billing-meta-20261015. Latest inspected live commit c73a9a34a0efa3511c1d3bd10f79e057cdd72c7e is the exact accepted executable:45/45 completed SUCCESS;70 isolated invocations exit0/fail0/skip0/cancel0. Isolated run39536357291/job119013802418, checkout d1539fed0fae4ddcf5991b524821f7178471c514 has identical tree bc99a0f6286b38b8e7660cd37edf097f2e8bcc3f. Provider discovery19, inbox18, receipt executor15/HTTP20/wire17 PASS. Migration candidate/schema/isolated41 migrations PASS. Evidence: evidence/P0-PROVIDER-SCOPE-CALLER-ACCEPTANCE-20261021.json. Earlier8bc failure and correction remain recorded.

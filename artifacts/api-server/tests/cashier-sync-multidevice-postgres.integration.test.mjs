@@ -9,7 +9,10 @@ await assertDisposablePostgres();
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
 process.env.FAWRI_SAAS_BILLING_PROVIDERS = 'test_fake';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+// Root SQL is limited to owned setup, barriers, assertions and cleanup.
+const pool=runtimeFixture.admin;
 const billing = await import('../src/services/cashierBillingAuthority.ts');
 const catalog = await import('../src/services/postgresCatalogAuthority.ts');
 const sync = await import('../src/services/postgresCashierSyncAuthority.ts');
@@ -21,7 +24,7 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
   // Register before the first mutation; cleanup failures must remain visible.
   t.after(async () => cleanupResources([
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [owned])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
 
   async function fixture() {
