@@ -17,3 +17,12 @@ Actual-LOGIN regression extends the existing owned, network-none PostgreSQL auth
 Native fixture JavaScript syntax PASS locally. New GitHub Actions runtime/type/unit results PENDING. Preserve failed attempts and exact source/checkout SHAs; only accept after inspecting actual job counters. Next verify new authentication suite, Foundation readiness/type/build gate and relevant CI; fix failures without weakening privileges, removing positive assertions or skipping cases. Remaining cashier credential integrity, offline/grace, sync gaps, complete P0 inventory and hosted gates stay open.
 
 Release NO-GO. Hosted deployment/runtime: BLOCKED_BY_RAILWAY. Hosted DB checks: NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. No Railway/Neon tools, hosted writes, deployment, main push, merge or P1/P2 work. Whole-P0 percent remains unmeasured.
+
+
+## First native attempt and fixture correction
+
+Candidate 44668bde6fd0da69511d6cf57770cb396ebe2315, isolated run39720855404/job119633701906: authentication suite **42 passed/0 failed/0 skipped/0 cancelled**, including all30 ACL cases and all original positive auth journeys; primaryPoolCalls=0. The full run was rejected: old fixture tenant roles still held broad sensitive SELECT and the new admission gate rejected them. Exact75 invocation summaries and first failure trace are preserved in evidence/P0-AUTH-SENSITIVE-SELECT-INITIAL-20261022.json. Foundation119633702454 also passed DB/API types, readiness unit contract and native RLS contract before the same fixture refusal in knowledge integration. These are partial results, not full-source acceptance.
+
+Correction source candidate **2cf55e258762402f001a6960f4521d389a96822f** narrows only disposable tenant-role SELECT grants. Before revocation it records already-readable ordinary columns, removes direct table/sensitive-column SELECT, and restores only those previously-readable non-sensitive columns. It does not grant new ordinary capabilities or change the separate auth LOGIN. The authentication fixture adds a real-LOGIN helper/idempotence/no-grant-expansion positive proof. JavaScript syntax PASS; new native/type/full CI acceptance PENDING.
+
+Next cashier trace remains separate: cashierRuntimeExpiryReconciliation still uses the primary operational pool to refresh station credentials and expire pairing/operator-session rows. Do not blindly add those tables to the no-mutation list before tracing scheduled housekeeping and session validation; cashier credential integrity is not closed by this six-column authentication batch.
