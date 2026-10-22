@@ -72,6 +72,7 @@ export const AUTHENTICATION_INTEGRITY_TABLES = [
   "auth_otp_challenges", "login_attempts", "auth_audit_events",
   "cashier_station_credentials", "cashier_station_pairing_challenges",
   "merchant_cashier_staff_permissions", "cashier_operator_sessions", "merchant_cashier_staff",
+  "merchant_cashier_staff_discount_policies",
 ] as const;
 export const ADMIN_AUTHORITY_AUDIT_TABLES = ["database_admin_access_audits"] as const;
 
