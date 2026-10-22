@@ -1,8 +1,16 @@
+## Canonical hosted ledger reconciliation — 2026-10-23
+
+Read-only hosted staging ledger matches **28/28 canonical executable hashes and timestamps**, after applying the repository preflight's stabilizeMigrationDependencyOrder transformation. The earlier raw-file comparison's3 differences are expected normalization, **not migration drift**. Source45 versus hosted28 leaves17 missing migrations0028–0044. Canonical per-entry hashes appended to [hosted evidence](evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json). No migration or hosted write executed.
+
+Approval provenance diagnostic executable1716a354153fff43994dc80a33c184f880046dc1 is remotely saved and47 CI workflows started; native39867836738 PENDING. Last accepted remediation remains bcebf0e (47/47+83/83), documentation checkpoint d9c0e72c is not an executable acceptance. Next read the exact baseline marker and full clean summaries; green diagnostic may establish a defect, not fix acceptance. Preserve real primary setting->approval->staff lock order, exact replay and transaction rollback/kind invalidation; do not solve provenance with a separate auth transaction. NO-GO; P0 percent unmeasured.
+
+---
+
 ## Approval provenance diagnostic prepared — 2026-10-23
 
 Previous source bcebf0e accepted47/47 workflows+83/83 clean invocations; checkpoint d9c0e72c remotely verified. New actual-LOGIN diagnostic covers genuine PIN-issued approvals and replay for two merchants, missing/cross-tenant denial, primary forged pending/consumed INSERT through actual manual-discount validator, immutable operation rebinding and consumed reset through real consumer with exact rollback/snapshot checks. No production or schema change. Node syntax and diff checks PASS; native runtime/CI PENDING. Green diagnostic may prove a defect and is not remediation acceptance.
 
-Next: inspect exact P0_CASHIER_APPROVAL_PROVENANCE_BASELINE marker and complete native summaries; classify before any provenance fix. Preserve lock order and primary transaction atomicity. Never transfer consumption onto a separate auth connection. Source acceptance and fresh hosted drift evidence: [report](P0-SOURCE-HOSTED-RECONCILIATION-20261023.md).17 missing0028–0044 migrations plus3 historical hash mismatches need reconciliation; actual deployed DB target/login/pooler still unverified. NO-GO, percentage UNMEASURED. No hosted writes/deploy/main/merge/P1/P2.
+Next: inspect exact P0_CASHIER_APPROVAL_PROVENANCE_BASELINE marker and complete native summaries; classify before any provenance fix. Preserve lock order and primary transaction atomicity. Never transfer consumption onto a separate auth connection. Source acceptance and fresh hosted drift evidence: [report](P0-SOURCE-HOSTED-RECONCILIATION-20261023.md).17 missing0028–0044 migrations need approved rollout; all28 hosted canonical hashes match; actual deployed DB target/login/pooler still unverified. NO-GO, percentage UNMEASURED. No hosted writes/deploy/main/merge/P1/P2.
 
 ---
 

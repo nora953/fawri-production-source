@@ -7189,7 +7189,207 @@
         "0043_cashier_identity_tenant_rls",
         "0044_cashier_discount_attribution_tenant_rls"
       ],
-      "interpretation": "25 exact hash+timestamp matches; 3 historical entries have drift, not proof of non-application; 17 source entries0028\u20130044 absent by ledger position/timestamp. Reconcile historical hashes before any rollout."
+      "interpretation": "Raw-file comparison is not canonical migration parity: use stabilizeMigrationDependencyOrder, as the repository preflight does. See canonicalExecutionComparison; missing entries remain0028–0044.",
+      "canonicalExecutionComparison": [
+        {
+          "tag": "0000_even_kulan_gath",
+          "when": 1786021331544,
+          "hostedHash": "8845727c17ff24bd755fe17d404f1f64103192aafb41ca31919c521e2f48b6f2",
+          "canonicalExecutionHash": "8845727c17ff24bd755fe17d404f1f64103192aafb41ca31919c521e2f48b6f2",
+          "match": true
+        },
+        {
+          "tag": "0001_military_proteus",
+          "when": 1786100550622,
+          "hostedHash": "84365443fd1250a5e943189473bb8855158b65ab4fe606f5f42c8ed109203e16",
+          "canonicalExecutionHash": "84365443fd1250a5e943189473bb8855158b65ab4fe606f5f42c8ed109203e16",
+          "match": true
+        },
+        {
+          "tag": "0002_cross_lane_stage",
+          "when": 1786120375361,
+          "hostedHash": "8d4c9e9b8840db28b18ebc507475a614ca68fb4e758fe47fea82f0970a5f71a6",
+          "canonicalExecutionHash": "8d4c9e9b8840db28b18ebc507475a614ca68fb4e758fe47fea82f0970a5f71a6",
+          "match": true
+        },
+        {
+          "tag": "0003_cross_lane_cleanup",
+          "when": 1786120376886,
+          "hostedHash": "22df28f60ad28f10daa99b38ed05f74d9cc72cd9b7ad82d1838764f4a27e56ed",
+          "canonicalExecutionHash": "22df28f60ad28f10daa99b38ed05f74d9cc72cd9b7ad82d1838764f4a27e56ed",
+          "match": true
+        },
+        {
+          "tag": "0004_product_shipping_measurements",
+          "when": 1786314600000,
+          "hostedHash": "dd96e3fe569b51b45f1ba8ad07907684e9afcc4c944081c5cc2a8a3dc75eb319",
+          "canonicalExecutionHash": "dd96e3fe569b51b45f1ba8ad07907684e9afcc4c944081c5cc2a8a3dc75eb319",
+          "match": true
+        },
+        {
+          "tag": "0005_delivery_fee_per_area",
+          "when": 1786393740000,
+          "hostedHash": "25d4f05eb66762386b0291ab62a35a557afb1e32eb311b0ebe6a3503f5baf2a9",
+          "canonicalExecutionHash": "25d4f05eb66762386b0291ab62a35a557afb1e32eb311b0ebe6a3503f5baf2a9",
+          "match": true
+        },
+        {
+          "tag": "0006_saas_billing_authority",
+          "when": 1786400580000,
+          "hostedHash": "a69ef5882feb1c6ed56d07a2782a7e8b556929fd7f2e7ec2dc32cbc98c0f61ea",
+          "canonicalExecutionHash": "a69ef5882feb1c6ed56d07a2782a7e8b556929fd7f2e7ec2dc32cbc98c0f61ea",
+          "match": true
+        },
+        {
+          "tag": "0007_merchant_customer_payment_confirmation_authority",
+          "when": 1786488600000,
+          "hostedHash": "3acc1138be85589dfd0a9e1b24e2734471ec8b26b94f1a6e4e3edfbf527113fd",
+          "canonicalExecutionHash": "3acc1138be85589dfd0a9e1b24e2734471ec8b26b94f1a6e4e3edfbf527113fd",
+          "match": true
+        },
+        {
+          "tag": "0008_admin_device_verification_auth",
+          "when": 1786722600000,
+          "hostedHash": "5edd63108504168baa7e884e14ba0212e594a2ebc7f0a32906100f46ea9b52e7",
+          "canonicalExecutionHash": "5edd63108504168baa7e884e14ba0212e594a2ebc7f0a32906100f46ea9b52e7",
+          "match": true
+        },
+        {
+          "tag": "0009_merchant_management_lifecycle_authority",
+          "when": 1786752000000,
+          "hostedHash": "87e477fd5f7c01e51c15e4a62c2a10f360b8bd2853f58370240fb58e41d13fba",
+          "canonicalExecutionHash": "87e477fd5f7c01e51c15e4a62c2a10f360b8bd2853f58370240fb58e41d13fba",
+          "match": true
+        },
+        {
+          "tag": "0010_provider_cost_authority",
+          "when": 1787356800000,
+          "hostedHash": "9958ef25fca44c9a092d39f795f1513a4c6c15c96f03865048ac26b9768474ee",
+          "canonicalExecutionHash": "9958ef25fca44c9a092d39f795f1513a4c6c15c96f03865048ac26b9768474ee",
+          "match": true
+        },
+        {
+          "tag": "0011_commerce_promotions_timezone_authority",
+          "when": 1787435160000,
+          "hostedHash": "a9a8f72b6c5174b03d75307e346bee2a63ead5b0f9b7ab7978ae1b0487ec559b",
+          "canonicalExecutionHash": "a9a8f72b6c5174b03d75307e346bee2a63ead5b0f9b7ab7978ae1b0487ec559b",
+          "match": true
+        },
+        {
+          "tag": "0012_catalog_variant_signature_guard",
+          "when": 1787600400000,
+          "hostedHash": "9a6522b949e99f8799635208d9288a9125933d752f70ba6e275d38c8f46d16ed",
+          "canonicalExecutionHash": "9a6522b949e99f8799635208d9288a9125933d752f70ba6e275d38c8f46d16ed",
+          "match": true
+        },
+        {
+          "tag": "0013_cashier_staff_station_authority",
+          "when": 1787706000000,
+          "hostedHash": "ba05d067ae0863278125c0dd696f03ca833a5884445b4d5ec2d0018c8ecc1353",
+          "canonicalExecutionHash": "ba05d067ae0863278125c0dd696f03ca833a5884445b4d5ec2d0018c8ecc1353",
+          "match": true
+        },
+        {
+          "tag": "0014_cashier_operation_attribution",
+          "when": 1787710800000,
+          "hostedHash": "19dc84fec4dc93e6bc6644cdf559732fd1ae7b43f8cbe980f2bfdee384c72a75",
+          "canonicalExecutionHash": "19dc84fec4dc93e6bc6644cdf559732fd1ae7b43f8cbe980f2bfdee384c72a75",
+          "match": true
+        },
+        {
+          "tag": "0015_cashier_discount_override_authority",
+          "when": 1787715600000,
+          "hostedHash": "3b04f71b9b5af0af26ab158cf6a23ff7a9861f1103d9f886b37dba5e98fcc321",
+          "canonicalExecutionHash": "3b04f71b9b5af0af26ab158cf6a23ff7a9861f1103d9f886b37dba5e98fcc321",
+          "match": true
+        },
+        {
+          "tag": "0016_cashier_merchant_discount_kind",
+          "when": 1789646400000,
+          "hostedHash": "fbdb100182428b370f2271ac280cc9316bb1377971826a38b43c15cc40bf1329",
+          "canonicalExecutionHash": "fbdb100182428b370f2271ac280cc9316bb1377971826a38b43c15cc40bf1329",
+          "match": true
+        },
+        {
+          "tag": "0017_multi_location_inventory_foundation",
+          "when": 1789776000000,
+          "hostedHash": "86584eb9b9c5b7a20172fd505470412ec605bd0583b77386a4f0d1280a3e7f75",
+          "canonicalExecutionHash": "86584eb9b9c5b7a20172fd505470412ec605bd0583b77386a4f0d1280a3e7f75",
+          "match": true
+        },
+        {
+          "tag": "0018_location_inventory_authority",
+          "when": 1789862400000,
+          "hostedHash": "2fe0e88d7f2470ce6cd039caaa83a43610f32dbda67347ec30190970ee552992",
+          "canonicalExecutionHash": "2fe0e88d7f2470ce6cd039caaa83a43610f32dbda67347ec30190970ee552992",
+          "match": true
+        },
+        {
+          "tag": "0019_location_delivery_area_routing",
+          "when": 1789948800000,
+          "hostedHash": "5210a37de283ee5dc0c95b6b4298c6bbec6a981d6ac3a1f043ac678ca1863533",
+          "canonicalExecutionHash": "5210a37de283ee5dc0c95b6b4298c6bbec6a981d6ac3a1f043ac678ca1863533",
+          "match": true
+        },
+        {
+          "tag": "0020_cashier_operation_location_backfill",
+          "when": 1790035200000,
+          "hostedHash": "998c57797e0afaab69b527115e62f872b4afbb651b7ab89ca4b32676e86fb8b5",
+          "canonicalExecutionHash": "998c57797e0afaab69b527115e62f872b4afbb651b7ab89ca4b32676e86fb8b5",
+          "match": true
+        },
+        {
+          "tag": "0021_merchant_inventory_freshness_policy",
+          "when": 1790121600000,
+          "hostedHash": "e918e8408d8558af1a83e62dc98f4e28c9005c312df42ef9f2a28f7610020b6f",
+          "canonicalExecutionHash": "e918e8408d8558af1a83e62dc98f4e28c9005c312df42ef9f2a28f7610020b6f",
+          "match": true
+        },
+        {
+          "tag": "0022_location_rls_schema_alignment",
+          "when": 1790294400000,
+          "hostedHash": "aa0f835d4964038c6a09a82915b6c4babc61df43f109b6319e7d415b77d0f092",
+          "canonicalExecutionHash": "aa0f835d4964038c6a09a82915b6c4babc61df43f109b6319e7d415b77d0f092",
+          "match": true
+        },
+        {
+          "tag": "0023_canonical_tenant_rls_schema_alignment",
+          "when": 1790380800000,
+          "hostedHash": "278e9207a6b724b39f34b11d4688eea8d078d7d28d579e566353a51bc47c3fec",
+          "canonicalExecutionHash": "278e9207a6b724b39f34b11d4688eea8d078d7d28d579e566353a51bc47c3fec",
+          "match": true
+        },
+        {
+          "tag": "0024_tenant_rls_security_definer_predicate",
+          "when": 1790467200000,
+          "hostedHash": "8c7de098b1b3b331a5eeb8b3b80fdc465ca872036f07725daba7d452289e1657",
+          "canonicalExecutionHash": "8c7de098b1b3b331a5eeb8b3b80fdc465ca872036f07725daba7d452289e1657",
+          "match": true
+        },
+        {
+          "tag": "0025_tenant_rls_policy_predicate_cutover",
+          "when": 1790553600000,
+          "hostedHash": "4b1e69a8635f380631efe41d3d42fb5d6a1dd126dacd583243daeb63219e0b17",
+          "canonicalExecutionHash": "4b1e69a8635f380631efe41d3d42fb5d6a1dd126dacd583243daeb63219e0b17",
+          "match": true
+        },
+        {
+          "tag": "0026_global_e164_phone_identity",
+          "when": 1790640000000,
+          "hostedHash": "e0e515ce07fbdf95efa2e38d173464995355adaf20012bffb892f14ce4d7d011",
+          "canonicalExecutionHash": "e0e515ce07fbdf95efa2e38d173464995355adaf20012bffb892f14ce4d7d011",
+          "match": true
+        },
+        {
+          "tag": "0027_cashier_subscription_licensing",
+          "when": 1791244800000,
+          "hostedHash": "87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f",
+          "canonicalExecutionHash": "87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f",
+          "match": true
+        }
+      ],
+      "canonicalMatches": 28,
+      "canonicalMismatches": []
     }
   },
   "readiness": {
