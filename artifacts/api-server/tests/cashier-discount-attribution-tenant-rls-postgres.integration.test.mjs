@@ -62,8 +62,8 @@ test('cashier discounts approvals and attribution preserve business transactions
   });
   await t.test('cross-merchant writes disappear or reject WITH CHECK while own business writes roll back',async()=>{
     const a=rows[0],b=rows[1],beforeA=await snapshot(a.merchant),beforeB=await snapshot(b.merchant);
-    await tx(a.merchant,async c=>{for(const table of tables.filter(x=>!['merchant_cashier_staff_discount_policies','merchant_cashier_discount_override_approvals'].includes(x))){assert.equal((await c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);assert.equal((await c.query(`DELETE FROM ${table} WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);}});
-    for(const table of ['merchant_cashier_staff_discount_policies','merchant_cashier_discount_override_approvals'])for(const command of [`UPDATE ${table} SET merchant_id=merchant_id WHERE merchant_id=$1`,`DELETE FROM ${table} WHERE merchant_id=$1`])await assert.rejects(()=>tx(a.merchant,c=>c.query(command,[b.merchant])),{code:'42501'});
+    await tx(a.merchant,async c=>{for(const table of tables.filter(x=>!['merchant_cashier_staff_discount_policies','merchant_cashier_discount_override_approvals','merchant_cashier_discount_settings'].includes(x))){assert.equal((await c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);assert.equal((await c.query(`DELETE FROM ${table} WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);}});
+    for(const table of ['merchant_cashier_staff_discount_policies','merchant_cashier_discount_override_approvals','merchant_cashier_discount_settings'])for(const command of [`UPDATE ${table} SET merchant_id=merchant_id WHERE merchant_id=$1`,`DELETE FROM ${table} WHERE merchant_id=$1`])await assert.rejects(()=>tx(a.merchant,c=>c.query(command,[b.merchant])),{code:'42501'});
     for(const table of tables)await assert.rejects(()=>tx(a.merchant,c=>c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$2`,[b.merchant,a.merchant])),{code:'42501'});
     const foreignInserts=[
       c=>c.query("INSERT INTO merchant_cashier_discount_settings(merchant_id) VALUES($1)",[b.merchant]),
@@ -96,11 +96,11 @@ test('cashier discounts approvals and attribution preserve business transactions
   });
   await t.test('kind change atomically invalidates only own pending approvals and preserves version checks',async()=>{
     const a=rows[0],b=rows[1],fresh=await issue(request(a)),beforeA=await snapshot(a.merchant),beforeB=await snapshot(b.merchant);
-    await assert.rejects(()=>tx(a.merchant,async c=>{await updateSetting(c,{merchantId:a.merchant,expectedVersion:1,discountKind:'percentage'});throw Error('synthetic kind rollback');},true),{message:'synthetic kind rollback'});assert.deepEqual(await snapshot(a.merchant),beforeA);
-    const updated=await tx(a.merchant,c=>updateSetting(c,{merchantId:a.merchant,expectedVersion:1,discountKind:'percentage'}),true);assert.deepEqual(updated,{discount_kind:'percentage',version:2});
+    await assert.rejects(()=>auth(async c=>{await updateSetting(c,{merchantId:a.merchant,expectedVersion:1,discountKind:'percentage'});throw Error('synthetic kind rollback');}),{message:'synthetic kind rollback'});assert.deepEqual(await snapshot(a.merchant),beforeA);
+    const updated=await auth(c=>updateSetting(c,{merchantId:a.merchant,expectedVersion:1,discountKind:'percentage'}));assert.deepEqual(updated,{discount_kind:'percentage',version:2});
     assert.equal((await admin.query('SELECT id FROM merchant_cashier_discount_override_approvals WHERE id=$1',[fresh.approval_id])).rows.length,0);
     const status=(await admin.query('SELECT consumed_at FROM merchant_cashier_discount_override_approvals WHERE merchant_id=$1',[a.merchant])).rows;assert.equal(status.length,2);assert.ok(status.every(x=>x.consumed_at!==null));
-    await assert.rejects(()=>tx(a.merchant,c=>updateSetting(c,{merchantId:a.merchant,expectedVersion:1,discountKind:'amount'}),true),{code:'CASHIER_DISCOUNT_KIND_VERSION_CONFLICT'});
+    await assert.rejects(()=>auth(c=>updateSetting(c,{merchantId:a.merchant,expectedVersion:1,discountKind:'amount'})),{code:'CASHIER_DISCOUNT_KIND_VERSION_CONFLICT'});
     await assert.rejects(()=>issue(request(a)),{code:'CASHIER_DISCOUNT_KIND_MISMATCH'});assert.deepEqual(await snapshot(b.merchant),beforeB);
   });
   await t.test('primary kind mutation and auth issuance retain their shared advisory transaction lock',async()=>{

@@ -1,3 +1,13 @@
+## Settings authority diagnostic complete; access-control fix prepared — 2026-10-23
+
+Diagnostic6fe2d4a4ab56a17dcacc134f7a6d3cca1c1f1112 completed47/47 workflows SUCCESS; native39871639878/job120147216866 has85/85 complete clean invocations/83 files. Checkoutffd8e0c1f9669fccab4bee7d9537b2bc44a29712 matches source tree32d60a328a86bba5ac36f695a5faeb9c713b56ff. Configuration mutation authority requires remediation; authorized management/tenant boundary/rollback/restoration PASS. Diagnostic green is not fix acceptance. [Exact evidence](evidence/P0-CASHIER-SETTINGS-AUTHORITY-BASELINE-20261023.json).
+
+Prepared source: settings mutations require trusted auth; merchant kind-management PUT dispatches through existing identity-checked auth transaction, with scoped primary lock/read retained by0046 projection. Pending invalidation accepts existing trusted auth or private scope; no GUC trust/new principal or role grants. Version/advisory/row lock/transaction/invalidation/replay invariants preserved. Native regression requires mutation denial, authorized management/default/version0 positives, auth marker revocation, lock COMMIT/ROLLBACK behavior, column/role ACL recovery and safe callable metadata/owner boundary. Local24 contracts/syntax/diff PASS; full native/typecheck/canonical/CI PENDING. [Scope and verification](P0-CASHIER-SETTINGS-ACCESS-CONTROL-20261023.md).
+
+Next inspect containing source P0_CASHIER_DISCOUNT_SETTINGS_AUTHORITY_REMEDIATION plus85 clean summaries and all workflows/Foundation/canonical47/security. Last accepted remediation4acf1351 remains47/47+84/84. Proof inventory updated to preserve the settings finding, not claim closure. Source candidate47 vs hosted last28; no hosted operations/change/deploy/migration/ACL/secrets/main push/merge/P1/P2. NO-GO, full P0 percentage UNMEASURED. Keep user-facing reporting high-level.
+
+---
+
 ## Access proof reconciliation while settings CI executes — 2026-10-23
 
 Current test source6fe2d4a4ab56a17dcacc134f7a6d3cca1c1f1112 remains PENDING native acceptance. Last bounded inventory44/47 workflows SUCCESS,3 executing,0 failures; native39871639878/job120147216866 progressed through priority/cashier/billing/tenant to Meta lifecycle. No rerun/retry/cancellation. Do not infer the settings diagnostic outcome from a completed step; read its actual marker/full summaries when job logs become available.

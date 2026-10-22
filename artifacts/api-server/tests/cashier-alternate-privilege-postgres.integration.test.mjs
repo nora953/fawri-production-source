@@ -62,7 +62,7 @@ test('reject non-row privilege reachability while preserving scoped row operatio
         assert.equal((await main.query('SELECT has_table_privilege(current_user,$1,$2) AS granted',[`public.${table}`,privilege])).rows[0].granted,true);
         let admission='ACCEPTED',errorCode=null;
         try{await ready(env,main);}catch(error){admission='REJECTED';errorCode=error.code;}
-        assert.equal(admission,'REJECTED');assert.equal(errorCode,'PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE');
+        assert.equal(admission,'REJECTED');assert.equal(errorCode,authTables.includes(table)?'PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE':'PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE');
         probes.push({privilege,admission,errorCode});
       }finally{await admin.query(`REVOKE ${privilege} ON public.${table} FROM ${fixture.role}`);}
       await ready(env,main);
@@ -88,12 +88,12 @@ test('reject non-row privilege reachability while preserving scoped row operatio
         if(mode==='unreachable'){
           await ready(env,client);await assert.rejects(()=>client.query(`SET ROLE ${grantRole}`),{code:'42501'});
         }else{
-          await assert.rejects(()=>ready(env,client),{code:'PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE'});
+          await assert.rejects(()=>ready(env,client),{code:authTables.includes(table)?'PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE':'PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE'});
           if(mode==='direct')await admin.query(`GRANT ${grantRole} TO ${fixture.role} WITH INHERIT FALSE, SET TRUE`);
           if(['direct','set-reachable'].includes(mode)){
             await client.query(`SET ROLE ${grantRole}`);
             assert.deepEqual((await client.query('SELECT session_user AS login,current_user AS active')).rows[0],{login:fixture.role,active:grantRole});
-            await assert.rejects(()=>ready(env,client),{code:'PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE'});
+            await assert.rejects(()=>ready(env,client),{code:authTables.includes(table)?'PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE':'PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE'});
           }
         }
         roleGrantCases++;
@@ -115,7 +115,7 @@ test('reject non-row privilege reachability while preserving scoped row operatio
     const client=await main.connect();
     await admin.query(`GRANT TRUNCATE ON public.${table} TO ${fixture.role}`);
     try{
-      await assert.rejects(()=>ready(env,client),{code:'PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE'});
+      await assert.rejects(()=>ready(env,client),{code:authTables.includes(table)?'PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE':'PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE'});
       await client.query('BEGIN');await client.query("SET LOCAL lock_timeout='2s'");await scope(client,merchants[0]);
       assert.deepEqual((await client.query(`SELECT merchant_id FROM ${table} WHERE merchant_id=ANY($1::text[])`,[merchants])).rows,[{merchant_id:merchants[0]}]);
       assert.equal((await client.query(`SELECT public.${observer}($1::text[]) AS count`,[merchants])).rows[0].count,2);

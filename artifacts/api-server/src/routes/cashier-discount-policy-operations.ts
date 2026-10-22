@@ -135,7 +135,7 @@ router.put(
     try {
       const id = merchantId(res);
       await requireActiveCashierSubscription(id);
-      const discountSetting = await withMerchantOperationalTransaction(
+      const discountSetting = await withMerchantAuthenticationTransaction(
         id,
         (client) => updateMerchantCashierDiscountSetting(client, {
           merchantId: id,

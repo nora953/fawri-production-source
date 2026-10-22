@@ -73,6 +73,7 @@ export const AUTHENTICATION_INTEGRITY_TABLES = [
   "cashier_station_credentials", "cashier_station_pairing_challenges",
   "merchant_cashier_staff_permissions", "cashier_operator_sessions", "merchant_cashier_staff",
   "merchant_cashier_staff_discount_policies", "merchant_cashier_discount_override_approvals",
+  "merchant_cashier_discount_settings",
 ] as const;
 export const ADMIN_AUTHORITY_AUDIT_TABLES = ["database_admin_access_audits"] as const;
 
@@ -255,6 +256,7 @@ export async function getProductionDatabaseRlsReadiness(
                 OR pg_has_role(r.oid,lock_function.proowner,'SET'))
        ) AS cashier_staff_lock_ready,
        NOT EXISTS (SELECT 1 FROM unnest(ARRAY[
+         'public.fawri_lock_cashier_discount_setting(text)',
          'public.fawri_lock_cashier_discount_approval(text,text,text)',
          'public.fawri_consume_cashier_discount_approval(text,text,text,text,text,bigint,text,timestamp with time zone,bigint,text)',
          'public.fawri_invalidate_pending_cashier_discount_approvals(text)'

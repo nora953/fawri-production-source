@@ -56,6 +56,7 @@ test('merchant-wide discount kind is versioned and invalidates pending approvals
   assert.match(route, /'\/cashier\/management\/discount-kind'/);
   assert.match(route, /expectedVersion: req\.body\?\.expected_version/);
   assert.match(route, /discountKind: req\.body\?\.discount_kind/);
+  assert.match(route, /const discountSetting = await withMerchantAuthenticationTransaction/);
   assert.match(route, /discount_setting: discountSetting/);
 
   assert.match(authority, /DEFAULT_MERCHANT_CASHIER_DISCOUNT_KIND[^\n]*'amount'/);

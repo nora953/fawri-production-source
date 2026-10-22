@@ -80,10 +80,10 @@ export async function loadMerchantCashierDiscountSetting(
   try {
     rows = await operationalQueryRows<MerchantDiscountSettingRow>(
       target,
-      `SELECT discount_kind, version
-         FROM merchant_cashier_discount_settings
-        WHERE merchant_id = $1
-        LIMIT 1${lock ? ' FOR UPDATE' : ''}`,
+      lock
+        ? `SELECT discount_kind, version FROM public.fawri_lock_cashier_discount_setting($1::text)`
+        : `SELECT discount_kind, version FROM merchant_cashier_discount_settings
+            WHERE merchant_id = $1 LIMIT 1`,
       [merchantId],
     );
   } catch (error) {

@@ -23,7 +23,7 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
       _values: unknown[] = [],
     ) {
       const compact = sql.replace(/\s+/g, ' ').trim();
-      if (compact.includes('FROM merchant_cashier_discount_settings')) {
+      if ((compact.includes('FROM merchant_cashier_discount_settings') || compact.includes('FROM public.fawri_lock_cashier_discount_setting('))) {
         return {
           rows: [{
             discount_kind: fixture.discountKind ?? 'amount',
