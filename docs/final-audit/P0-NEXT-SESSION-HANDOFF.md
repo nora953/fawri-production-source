@@ -1,3 +1,13 @@
+## Approval access controls accepted; settings authority diagnostic prepared — 2026-10-23
+
+Accepted executable4acf13517337a4038f46f2fb672d76fde42db77a:47/47 workflows SUCCESS; native39869692485/job120140702367 has84/84 complete clean invocations/82 files, zero failures/skips/cancellations. Actual checkout3d64dfc90f8f46eb9e9899fb8d2bb66afe2fbc70 matches source tree8e910f6ac0ded63664f9161b51fcbc25f9c80aaa.14 direct denial/195 grant-reachability cases PASS; authorized flows, replay, tenant boundaries, transaction rollback/locking and exact restoration preserved. Foundation final marker,0045 canonical schema reproduction/all46 migrations, quality and security SUCCESS. Audit120140702494/review120140702455:0 high/0 critical/2 moderate. [Acceptance](P0-CASHIER-APPROVAL-ACCESS-ACCEPTANCE-20261023.md) · [Exact counters/runs](evidence/P0-CASHIER-APPROVAL-ACCESS-ACCEPTANCE-20261023.json). No retry or rerun.
+
+Next group: new settings-authority actual-LOGIN diagnostic prepared/registered, covering two-merchant boundary, configuration authority/business validation consistency, authorized versioned management/pending invalidation/rollback and exact snapshots. Local syntax/diff PASS; native/CI PENDING. No production/schema modification in this next group. Read containing executable's P0_CASHIER_DISCOUNT_SETTINGS_AUTHORITY_BASELINE and all complete native summaries before classification/remediation. Diagnostic success is not security acceptance. Current approval source acceptance must not be confused with the containing new test executable.
+
+NO-GO; P0 percentage UNMEASURED; full requirement/proof inventory and other critical gates OPEN. No hosted operations/deploy/migration/ACL/secret/main push/merge/P1/P2. Source46 vs hosted last28; actual deployed DB identity/pooler unresolved. User-facing security updates stay high-level.
+
+---
+
 ## Remediation published; exact CI continuation — 2026-10-23
 
 Remote executable4acf13517337a4038f46f2fb672d76fde42db77a, tree8e910f6ac0ded63664f9161b51fcbc25f9c80aaa, all22 uploaded blobs/tree verified.47 workflows started; native39869692485/job120140702367 install/build PASS, priority native execution IN_PROGRESS at last observation. Schema39869692394, Foundation39869692042, quality39869692369, security39869692207. Native acceptance PENDING. Inspect P0_CASHIER_APPROVAL_PROVENANCE_REMEDIATION and all84 complete summaries; require actual canonical/schema/quality/Foundation/security results. No repeat status polling or passing-suite rerun. Preserve any failed attempt before correction. Last accepted remediationbcebf0e remains47/47+83/83; diagnostic1716 green47/47+84/84 proves bypass, not fix acceptance.
