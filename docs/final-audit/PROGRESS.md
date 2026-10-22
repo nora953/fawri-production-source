@@ -1,3 +1,9 @@
+## Cashier identity tenant RLS prepared — 2026-10-22
+
+Candidate `81aeaf6e2ccd4f652d435da0775a5b4dffb062da` CI_PENDING. Migration0043 enables established private-scope/auth/audited-admin RLS on seven staff/permission/station/pairing/credential/shift/session tables, adds production admission inventory and canonical reviewed SQL/preimages/snapshot provenance. New actual-LOGIN two-tenant/catalog/no-scope/forged-GUC/write-denial/auth-global/historical-read/disabled-RLS proof prepared. Three earlier ordinary-read positives now explicitly use private scope and assert empty unscoped reads; original secret/mutation/locking/rollback tests preserved. Previous44f4643146/46+79/79 stays historical; this schema source triggers47 workflows and expected80 invocations, not a P0 denominator. [Design/limits](P0-CASHIER-IDENTITY-TENANT-RLS-20261022.md). No new SQL success claimed; NO-GO. Four discount/attribution source tables and broader gates remain OPEN. GitHub/Actions only; no hosted changes/deploy/merge/P1/P2.
+
+---
+
 ## Staff mutation isolation and scoped approver lock accepted — 2026-10-22
 
 **Accepted executable `44f46431c63e7ca723d4e1e283259a9872ab8abf`:46/46 workflows SUCCESS;79/79 isolated invocations exit0/failed0/skipped0/cancelled0/summaryComplete,77 unique files.** Native39749682352/job119727410924: new staff-lock7PASS, manager PIN10PASS, permission/session8PASS, authentication63PASS/50 sensitive SELECT ACL cases/10 columns (parents included). All43 migrations/full schema dump-restore/Node22 HTTP/owned cleanup, schema reproducibility39749682448/job119726808272 and Foundation39749682531/job119726986131 types/build/readiness/native-RLS/integration/final marker PASS. Checkout7f612db589e1f500af71a3dfb57525519e670368 matches source treea4938667bfa5c19e4ecdc8ebddef2e989faddb66. [Exact acceptance](evidence/P0-CASHIER-STAFF-LOCK-ACCEPTANCE-20261022.json) · [design/results](P0-CASHIER-STAFF-LOCK-BOUNDARY-20261022.md).
