@@ -1,3 +1,17 @@
+## GitHub-only recovery: 0041 full source acceptance — 2026-10-22
+
+**Accepted executable: `43065bda4b032244016d0fc78823f5579b01deca`. All46/46 GitHub Actions workflows SUCCESS, none pending.** Native run39713145055/job119608939313 independently re-read:75/75 invocations exit0/fail0/skip0/cancel0/summaryComplete; counters exactly match saved evidence. Source/actual checkout share tree b5f8bfa86d716ce62098d057bd8207a02dc0016d. Previous baseline c60914b8 independently verified46/46 and75/75; that older source still trusted raw tenant GUCs and is superseded for this fix.
+
+Migration0041 public predicate uses private allows_merchant; all six transitional production tenant GUC writes are absent and trusted issuance remains. Manual SQL matches migration and journal index41. Existing native canonical RLS/positive tenant/auth/admin/receipt rollback/expiry/replay/restore proofs are preserved. No new issuer grants or application changes in this recovery batch.
+
+Recovered HEAD `8659289c1ae2d683e8d8bda571f070195fca6e0f` contained stale39/46 infrastructure status. Live attempt3 was40/46. One bounded retry of the six remaining failed jobs recovered all46 workflows; failed attempts remain preserved. Both dependency audit and review now report actual counts:0 high,0 critical,2 moderate (total2). Exact runs/jobs/counters and limits: [GitHub-only full acceptance](evidence/P0-GITHUB-ONLY-FULL-ACCEPTANCE-20261022.json). Containing commit is documentation/evidence only [skip ci], not a new executable test result.
+
+**Release NO-GO; whole-P0 percent unmeasured.** Raw-GUC remediation is verified in isolated source tests, not hosted acceptance. Hosted deployment/runtime identity: **BLOCKED_BY_RAILWAY**. Hosted database schema/roles/owner/ACL/pooler checks: NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. Historical hosted observations remain dated2026-10-21 and must not be described as fresh. Remaining auth/privacy/cashier/offline stock/sync/retention/provider/storage and full P0 requirement/proof inventory gates stay open. No Railway/Neon connector, hosted write/deploy, main push/merge, credential rotation or P1/P2 work.
+
+Next: preserve this exact-source acceptance; do not rerun75 suites for docs-only changes. Continue independent GitHub P0 review/inventory. Keep hosted steps blocked under this session restriction. Older entries below are historical and their pending0041/39-of46 instructions are superseded here.
+
+---
+
 ## 0041 native validation complete; CI infrastructure blocked — 2026-10-22
 
 Executable `43065bda4b032244016d0fc78823f5579b01deca`: **75/75 isolated invocations clean, zero fail/skip/cancel, complete summaries**. [Run39713145055](https://github.com/nora953/fawri-production-source/actions/runs/39713145055),job119608939313 SUCCESS. Actual checkout b19291f158a231ad87ddfd9c468c3e4d14c97263 has identical tree b5f8bfa86d716ce62098d057bd8207a02dc0016d. All42 migrations, canonical generation/schema validation, native GUC-forgery denial/positive own-tenant authority, scope16/admin9/central6/receipt executor15, full dump/restore identical fingerprint and Node22 PASS.
