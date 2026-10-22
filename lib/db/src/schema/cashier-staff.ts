@@ -76,7 +76,7 @@ export const merchantCashierStaff = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt} AND ${table.pinChangedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export const merchantCashierStaffPermissions = pgTable(
   "merchant_cashier_staff_permissions",
@@ -121,7 +121,7 @@ export const merchantCashierStaffPermissions = pgTable(
       )`,
     ),
   }),
-);
+).enableRLS();
 
 export const merchantCashierStations = pgTable(
   "merchant_cashier_stations",
@@ -202,7 +202,7 @@ export const merchantCashierStations = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt} AND (${table.lastSeenAt} IS NULL OR ${table.lastSeenAt} >= ${table.createdAt})`,
     ),
   }),
-);
+).enableRLS();
 
 export const cashierStationPairingChallenges = pgTable(
   "cashier_station_pairing_challenges",
@@ -255,7 +255,7 @@ export const cashierStationPairingChallenges = pgTable(
       sql`(${table.status} = 'active' AND ${table.usedAt} IS NULL AND ${table.usedByDeviceId} IS NULL AND ${table.revokedAt} IS NULL) OR (${table.status} = 'used' AND ${table.usedAt} IS NOT NULL AND ${table.usedByDeviceId} IS NOT NULL AND ${table.revokedAt} IS NULL) OR (${table.status} = 'revoked' AND ${table.usedAt} IS NULL AND ${table.usedByDeviceId} IS NULL AND ${table.revokedAt} IS NOT NULL) OR (${table.status} = 'expired' AND ${table.usedAt} IS NULL AND ${table.usedByDeviceId} IS NULL AND ${table.revokedAt} IS NULL)`,
     ),
   }),
-);
+).enableRLS();
 
 export const cashierStationCredentials = pgTable(
   "cashier_station_credentials",
@@ -314,7 +314,7 @@ export const cashierStationCredentials = pgTable(
       sql`(${table.status} = 'active' AND ${table.revokedAt} IS NULL) OR (${table.status} = 'revoked' AND ${table.revokedAt} IS NOT NULL) OR (${table.status} = 'expired' AND ${table.revokedAt} IS NULL)`,
     ),
   }),
-);
+).enableRLS();
 
 export const cashierShifts = pgTable(
   "cashier_shifts",
@@ -369,7 +369,7 @@ export const cashierShifts = pgTable(
       sql`(${table.status} = 'open' AND ${table.endedAt} IS NULL AND ${table.closeReason} IS NULL) OR (${table.status} = 'closed' AND ${table.endedAt} IS NOT NULL AND ${table.endedAt} >= ${table.startedAt} AND ${table.closeReason} IS NOT NULL)`,
     ),
   }),
-);
+).enableRLS();
 
 export const cashierOperatorSessions = pgTable(
   "cashier_operator_sessions",
@@ -440,7 +440,7 @@ export const cashierOperatorSessions = pgTable(
       sql`(${table.status} = 'active' AND ${table.revokedAt} IS NULL) OR (${table.status} = 'revoked' AND ${table.revokedAt} IS NOT NULL) OR (${table.status} = 'expired' AND ${table.revokedAt} IS NULL)`,
     ),
   }),
-);
+).enableRLS();
 
 export type MerchantCashierStaff = typeof merchantCashierStaff.$inferSelect;
 export type NewMerchantCashierStaff = typeof merchantCashierStaff.$inferInsert;
