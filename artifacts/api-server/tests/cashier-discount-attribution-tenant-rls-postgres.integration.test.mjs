@@ -62,7 +62,8 @@ test('cashier discounts approvals and attribution preserve business transactions
   });
   await t.test('cross-merchant writes disappear or reject WITH CHECK while own business writes roll back',async()=>{
     const a=rows[0],b=rows[1],beforeA=await snapshot(a.merchant),beforeB=await snapshot(b.merchant);
-    await tx(a.merchant,async c=>{for(const table of tables){assert.equal((await c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);assert.equal((await c.query(`DELETE FROM ${table} WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);}});
+    await tx(a.merchant,async c=>{for(const table of tables.filter(x=>x!=='merchant_cashier_staff_discount_policies')){assert.equal((await c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);assert.equal((await c.query(`DELETE FROM ${table} WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);}});
+    for(const command of ['UPDATE merchant_cashier_staff_discount_policies SET version=version WHERE merchant_id=$1','DELETE FROM merchant_cashier_staff_discount_policies WHERE merchant_id=$1'])await assert.rejects(()=>tx(a.merchant,c=>c.query(command,[b.merchant])),{code:'42501'});
     for(const table of tables)await assert.rejects(()=>tx(a.merchant,c=>c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$2`,[b.merchant,a.merchant])),{code:'42501'});
     const foreignInserts=[
       c=>c.query("INSERT INTO merchant_cashier_discount_settings(merchant_id) VALUES($1)",[b.merchant]),
@@ -70,7 +71,10 @@ test('cashier discounts approvals and attribution preserve business transactions
       c=>c.query("INSERT INTO merchant_cashier_discount_override_approvals(id,merchant_id,station_id,operator_staff_id,approver_staff_id,operation_id,manual_discount_minor,manual_discount_reason,expires_at) VALUES($1,$2,$3,$4,$5,$6,250,'foreign',now()+interval '1 minute')",[`foreign-approval-${randomUUID()}`,b.merchant,b.station,b.cashier,b.manager,`foreign-op-${randomUUID()}`]),
       c=>c.query("INSERT INTO cashier_operation_attribution(id,merchant_id,operation_id,sale_id,operation_kind,station_id,staff_id,shift_id,device_id,station_credential_id,operator_session_id,occurred_at) VALUES($1,$2,$3,'foreign-sale','sale',$4,$5,$6,'device','credential','session',now())",[`foreign-attribution-${randomUUID()}`,b.merchant,`foreign-op-${randomUUID()}`,b.station,b.cashier,b.shift]),
     ];for(const execute of foreignInserts)await assert.rejects(()=>tx(a.merchant,execute),{code:'42501'});
-    await tx(a.merchant,async c=>{await upsertPolicy(c,{merchantId:a.merchant,staffId:a.cashier,policy:{enabled:true,max_percentage_bps:10000,max_amount_minor:125,can_approve_override:false}});assert.equal((await c.query("UPDATE cashier_operation_attribution SET device_id='own-change' WHERE id=$1 RETURNING id",[a.attribution])).rows.length,1);});
+    const policyInput={merchantId:a.merchant,staffId:a.cashier,policy:{enabled:true,max_percentage_bps:10000,max_amount_minor:125,can_approve_override:false}};
+    await assert.rejects(()=>tx(a.merchant,c=>upsertPolicy(c,policyInput)),{code:'42501'});
+    await assert.rejects(()=>auth(async c=>{await upsertPolicy(c,policyInput);throw Error('synthetic policy rollback');}),{message:'synthetic policy rollback'});
+    await tx(a.merchant,async c=>{assert.equal((await c.query("UPDATE cashier_operation_attribution SET device_id='own-change' WHERE id=$1 RETURNING id",[a.attribution])).rows.length,1);});
     assert.deepEqual(await snapshot(a.merchant),beforeA);assert.deepEqual(await snapshot(b.merchant),beforeB);
   });
   await t.test('trusted auth remains global without tenant GUC and marker revocation hides every table',async()=>{
