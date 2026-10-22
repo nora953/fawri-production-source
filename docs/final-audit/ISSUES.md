@@ -1,3 +1,15 @@
+## Non-row admission accepted; policy-validator baseline prepared — 2026-10-22
+
+**Accepted645b534aea0d32848b4467b5bbebf8fd671deddb:47/47 parent workflows SUCCESS,82/82 isolated invocations clean,80 unique files.** Native39824457555/job119983935469:58 protected tables/174 direct non-row grant denials and20 role/column cases, original three probes now REJECTED, revocation recovery/catalog/rollback PASS. Checkoutcadabf4a7f4287bf7ea8899a60fed72a860e6887 shares source tree3fa9347d7286d9059f556652180d375eaa7bad4a. Foundation39824457202/job119983933998 final marker, schema39824456460/job119983931446 reproduction, quality39824457487 and security39824456372 SUCCESS, audit119983930705/review119983930995:0 high/0 critical/2 moderate. No failure/retry/rerun. [Exact acceptance](evidence/P0-CASHIER-NONROW-PRIVILEGE-ACCEPTANCE-20261022.json). Previous pending observations historical only; guard rejects admission, does not revoke SQL privileges or certify hosted ACLs.
+
+**Next group advanced:** real actual-LOGIN discount-policy diagnostic prepared and registered. Two-merchant authority refuses discount250/limit100 without manager approval; attempt primary own-limit UPDATE300 then call identical actual validator and record mutation/readiness/decision. Finally restore exact fields/version/PostgreSQL microsecond timestamps through auth and check other merchant/staff/permission/PIN/session/approval invariants and restored rejection. Local node --check PASS, native result PENDING; diagnostic success may report a gap and is not security acceptance. No HTTP/full sale executed. [Bounded proof/limits](P0-CASHIER-DISCOUNT-POLICY-INTEGRITY-20261022.md).
+
+**Exact next:** read final new test source's P0_CASHIER_DISCOUNT_POLICY_INTEGRITY_BASELINE marker, full native summaries and source/checkout/run/job; classify observations before remediation. One status check per continuation, no wait loop or rerun passing tests for docs. If confirmed, restrict policy table mutations while preserving auth writers/primary reads, role/column grants, HTTP version/role/rollback and manager issue/consume locks. Earlier accepted source not rerun for metadata.
+
+**NO-GO**, P0 percentage UNMEASURED; full same-tenant/alternate-path/auth/privacy/offline/grace/sync/retention/provider/storage/P0 inventory OPEN. GitHub/Actions only; hosted runtime BLOCKED_BY_RAILWAY; hosted DB NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. No external connector/hosted changes/deploy/main push/merge/credentials/P1/P2.
+
+---
+
 ## Sequential continuation: non-row CI pending; policy authority source trace saved — 2026-10-22
 
 Executable645b534aea0d32848b4467b5bbebf8fd671deddb remains PENDING native/CI acceptance. A single resume inventory observed15/47 parent workflows SUCCESS,32 queued/in_progress,0 failures; isolated39824457555 queued. No second status read, wait loop, rerun, retry or cancellation. Latest globally accepted isolated executable remains bec6e7114be692981df07bc7b25ad456116fda42 (47/47+81/81). Green baseline5d3dde10 (82/82 native) proved the non-row grant-admission gap and is not fix acceptance.
