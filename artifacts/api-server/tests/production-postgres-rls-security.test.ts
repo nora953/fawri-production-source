@@ -6,6 +6,7 @@ import {
   assertProductionDatabaseRlsReady,
   PRODUCTION_TENANT_RLS_TABLES,
   PRODUCTION_PROTECTED_RLS_TABLES,
+  AUTHENTICATION_INTEGRITY_TABLES,
   ProductionDatabaseRlsSecurityError,
 } from "../src/services/postgresRuntimeRlsSecurity";
 
@@ -75,6 +76,10 @@ test("production database RLS readiness is inert outside the production gate", a
     },
   );
   assert.equal(queried, false);
+});
+
+test("staff discount policy mutations remain trusted authentication authority", () => {
+  assert.ok((AUTHENTICATION_INTEGRITY_TABLES as readonly string[]).includes("merchant_cashier_staff_discount_policies"));
 });
 
 test("production rejects superuser and BYPASSRLS runtime roles", async () => {
