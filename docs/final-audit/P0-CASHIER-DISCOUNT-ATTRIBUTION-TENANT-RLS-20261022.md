@@ -1,8 +1,6 @@
 # P0 cashier discount and attribution tenant RLS — 2026-10-22
 
-**Executable `bec6e7114be692981df07bc7b25ad456116fda42`: native/runtime verification COMPLETE; overall parent CI conclusions still PENDING.** Isolated39797881955/job119889907395:81/81 invocations exit0/failed0/skipped0/cancelled0/summaryComplete,79 unique files. [Exact saved results](evidence/P0-CASHIER-DISCOUNT-ATTRIBUTION-RESULTS-20261022.json). Start checkpoint60d0a667; prior81aeaf6e47/47+80/80 remains the last globally accepted executable.
-
-Latest observed workflow inventory:44/47 completed SUCCESS, no failures.39797882225 (regional),39797882190 (catalog UI) and39797881966 (security) still report in_progress at run/attempt level, although their latest job resources all report completed/success. Cause of the inconsistent status observations is unknown; do not infer completed parent conclusions or rerun passing jobs. Re-read those three conclusions next. No full acceptance claimed yet.
+**Accepted executable `bec6e7114be692981df07bc7b25ad456116fda42`:47/47 parent workflows completed SUCCESS;81/81 isolated invocations clean,79 unique files.** One bounded resume read reconciled the three previously pending parents to success. No retries, no test rerun, no inferred parent result. The earlier pending observation remains in the exact evidence for history. [Exact accepted results](evidence/P0-CASHIER-DISCOUNT-ATTRIBUTION-RESULTS-20261022.json).
 
 ## Change and source trace
 
@@ -26,14 +24,12 @@ Settings changes and primary approval consumption already use private merchant s
 | Existing native/HTTP regression |Identity isolation, credential housekeeping, durable PIN lockout, scoped staff locks, approval rollback/replay/concurrency, real sale/return/void/history/attribution/report flows remain clean in complete isolated run |
 | Schema |39797882592/job119889909526 SUCCESS; reviewed SQL/preimages/journal/deterministic snapshot reproduced |
 | Foundation/quality |39797882433/job119889909146 final marker/types/build/readiness/native-RLS/integration and final quality39797881969 SUCCESS |
-| Security jobs |All4 jobs completed/success; audit119889907757/review119889908090:0 high/0 critical/2 moderate; parent39797881966 conclusion still pending as observed |
+| Security jobs |All4 jobs completed/success; audit119889907757/review119889908090:0 high/0 critical/2 moderate; parent39797881966 now completed SUCCESS |
 
 Source and actual checkout950170c62cc42c47c7d07a4a96a22e6dd0ecfa7e share tree445ea1378759f227f598547936279977e5c3f1d6. SQL SHA-256abb05446f350956056ddf7c62b36e5f2fbdb8306833ac59a6d5762e3b3e210a1; snapshot5d6a49f45140545737105b1b2aa5ceec6743599c5f79070392fd84e4356de48f.14 source files changed. No observed CI failure or retry in this increment. Local syntax PASS; unattested execution refuses before DB import. Actual runtime assertions use owned network-none PostgreSQL on GitHub Actions. Counts include parents/repeated invocations, not a P0 denominator. Later report/evidence/ledger checkpoints are docs-only[skip ci], not new executable tests.
 
 ## Exact continuation and limits
 
-First reconcile run conclusions39797882225/39797882190/39797881966 on this exact source. If successful, update global acceptance/docs only; do not rerun81 passing invocations for metadata. If a real failed step appears, classify its exact evidence before changing source or requesting any bounded retry.
-
-After global acceptance: inventory caller-visible database views/routines and remaining cashier table/column/ownership/TRUNCATE/REFERENCES/TRIGGER privilege reachability under the actual restricted LOGIN. Prove concrete alternate-path denials before remediation. All18 cashier tables in the canonical source snapshot now have RLS enabled, but that is source inventory plus bounded runtime proof, not full cashier authorization or hosted certification. Same-tenant credential/business mutation integrity, alternative access paths, full auth/privacy, offline/grace/sync/retention/provider/storage/full-P0 inventory remain OPEN.
+Acceptance reconciliation is complete. Continue with inventory caller-visible database views/routines and remaining cashier table/column/ownership/TRUNCATE/REFERENCES/TRIGGER privilege reachability under the actual restricted LOGIN. Prove concrete alternate-path denials before remediation. All18 cashier tables in the canonical source snapshot now have RLS enabled, but that is source inventory plus bounded runtime proof, not full cashier authorization or hosted certification. Same-tenant credential/business mutation integrity, alternative access paths, full auth/privacy, offline/grace/sync/retention/provider/storage/full-P0 inventory remain OPEN.
 
 **NO-GO; whole-P0 percentage UNMEASURED.** Hosted runtime BLOCKED_BY_RAILWAY; hosted DB NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. GitHub/Actions only; no external-service connector, hosted mutation, deployment, main push, merge, credential rotation or P1/P2.
