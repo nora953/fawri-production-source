@@ -1,3 +1,9 @@
+## Cashier permission/session boundary prepared — 2026-10-22
+
+Candidate `2b4d154f01521318abb02f7080cdf6c02e834e05` extends prior accepted manager-PIN sourcef0418c13; actual CI results pending. Staff discount-policy writes and non-manager permission/session cleanup use trusted auth transactions. Tenant admission rejects permission/session mutations and operator token-hash reads. New guarded actual-LOGIN/secure-HTTP/rollback test is in the existing network-none runner. [Scope and remaining gates](P0-CASHIER-PERMISSION-SESSION-AUTHORITY-20261022.md). No DB success or whole-P0 completion claimed. Direct staff mutation/public cashier row isolation remain OPEN; preserve commerce FOR UPDATE. NO-GO. GitHub/Actions only, no hosted change/deploy/merge/P1/P2.
+
+---
+
 ## Manager override PIN lockout remediated in isolation — 2026-10-22
 
 **Accepted executable `f0418c1350a4d51dc112fb805304978541ab1dfc`:46/46 workflows SUCCESS;77/77 isolated invocations exit0/fail0/skip0/cancel0/summaryComplete.** Native39740821742/job119697340772: manager PIN10PASS/auth58PASS (parents included),45 sensitive-column ACL cases, primaryPoolCalls0. All42 migrations/dump-restore and Foundation types/build/unit/native-RLS/integration PASS. Actual checkout6f2c8791a84f80006d93d0d60cf58bc4ca1570a6/tree18946b39ab1fe8974f52dd86ab43eb30b908dd52 matches source. [Exact acceptance](evidence/P0-MANAGER-PIN-PERSISTENCE-ACCEPTANCE-20261022.json), [report](P0-MANAGER-OVERRIDE-PIN-PERSISTENCE-20261022.md).
