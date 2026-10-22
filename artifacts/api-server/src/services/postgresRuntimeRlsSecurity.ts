@@ -69,9 +69,22 @@ export const AUTHENTICATION_INTEGRITY_TABLES = [
 ] as const;
 export const ADMIN_AUTHORITY_AUDIT_TABLES = ["database_admin_access_audits"] as const;
 
+// Ordinary account identity/status reads are used by operational journeys.
+// Credential material and owner recovery metadata belong to the auth LOGIN.
+export const AUTHENTICATION_SENSITIVE_COLUMNS = [
+  { table_name: "accounts", column_name: "password_hash" },
+  { table_name: "accounts", column_name: "metadata" },
+  { table_name: "account_sessions", column_name: "token_hash" },
+  { table_name: "account_sessions", column_name: "device_fingerprint_hash" },
+  { table_name: "auth_otp_challenges", column_name: "code_hash" },
+  { table_name: "trusted_devices", column_name: "device_fingerprint_hash" },
+] as const;
+
 export type ProductionDatabaseRlsReadiness = {
   authenticationAuthorityPresent: boolean;
   authenticationMutationRoles: string[];
+  authenticationSensitiveColumnsPresent: boolean;
+  authenticationSensitiveReadRoles: string[];
   auditAccessRoles: string[];
   directoryIssuerPresent: boolean;
   operatorAuthorityRoles: string[];
@@ -132,6 +145,8 @@ export async function getProductionDatabaseRlsReadiness(
   const rows = await operationalQueryRows<{
     authentication_authority_present: boolean;
     authentication_mutation_roles: string[];
+    authentication_sensitive_columns_present: boolean;
+    authentication_sensitive_read_roles: string[];
     audit_access_roles: string[];
     directory_issuer_present: boolean;
     operator_authority_roles: string[];
@@ -166,6 +181,15 @@ export async function getProductionDatabaseRlsReadiness(
           OR candidate.oid=(SELECT oid FROM session_role_state)
           OR pg_has_role((SELECT oid FROM session_role_state),candidate.oid,'USAGE')
           OR pg_has_role((SELECT oid FROM session_role_state),candidate.oid,'SET')
+     ),
+     sensitive_column_state AS (
+       SELECT c.oid AS table_oid, a.attnum
+       FROM jsonb_to_recordset($5::jsonb) AS expected_column(table_name text, column_name text)
+       LEFT JOIN pg_namespace n ON n.nspname='public'
+       LEFT JOIN pg_class c ON c.relnamespace=n.oid
+         AND c.relname=expected_column.table_name AND c.relkind IN ('r','p')
+       LEFT JOIN pg_attribute a ON a.attrelid=c.oid
+         AND a.attname=expected_column.column_name AND a.attnum>0 AND NOT a.attisdropped
      ),
      table_state AS (
        SELECT
@@ -203,6 +227,14 @@ export async function getProductionDatabaseRlsReadiness(
              AND (has_table_privilege(r.oid,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
                OR has_any_column_privilege(r.oid,c.oid,'INSERT,UPDATE,REFERENCES')))),
          ARRAY[]::text[]) AS authentication_mutation_roles,
+       (SELECT count(*) = jsonb_array_length($5::jsonb)
+          AND bool_and(table_oid IS NOT NULL AND attnum IS NOT NULL)
+          FROM sensitive_column_state) AS authentication_sensitive_columns_present,
+       COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
+         WHERE EXISTS (SELECT 1 FROM sensitive_column_state c
+           WHERE c.table_oid IS NOT NULL AND c.attnum IS NOT NULL
+             AND has_column_privilege(r.oid,c.table_oid,c.attnum,'SELECT'))),
+         ARRAY[]::text[]) AS authentication_sensitive_read_roles,
        COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
          WHERE EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
            WHERE n.nspname='public' AND c.relname=ANY($4::text[]) AND c.relkind IN ('r','p')
@@ -251,7 +283,7 @@ export async function getProductionDatabaseRlsReadiness(
            WHERE NOT table_exists OR NOT rls_enabled),
          ARRAY[]::text[]
        ) AS missing_or_unprotected_tenant_tables`,
-    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES), Object.values(OPERATOR_DATABASE_CAPABILITIES), Array.from(AUTHENTICATION_INTEGRITY_TABLES), Array.from(ADMIN_AUTHORITY_AUDIT_TABLES)],
+    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES), Object.values(OPERATOR_DATABASE_CAPABILITIES), Array.from(AUTHENTICATION_INTEGRITY_TABLES), Array.from(ADMIN_AUTHORITY_AUDIT_TABLES), JSON.stringify(AUTHENTICATION_SENSITIVE_COLUMNS)],
   );
 
   const row = rows[0];
@@ -265,6 +297,8 @@ export async function getProductionDatabaseRlsReadiness(
   return {
     authenticationAuthorityPresent: booleanValue(row.authentication_authority_present),
     authenticationMutationRoles: stringArray(row.authentication_mutation_roles),
+    authenticationSensitiveColumnsPresent: booleanValue(row.authentication_sensitive_columns_present),
+    authenticationSensitiveReadRoles: stringArray(row.authentication_sensitive_read_roles),
     auditAccessRoles: stringArray(row.audit_access_roles),
     directoryIssuerPresent: booleanValue(row.directory_issuer_present),
     operatorAuthorityRoles: stringArray(row.operator_authority_roles),
@@ -371,6 +405,8 @@ export async function assertProductionDatabaseRlsReady(
   }
   if (!readiness.authenticationAuthorityPresent) fail("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED", "production requires role-bound authentication migration");
   if (readiness.authenticationMutationRoles.length) fail("PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE", "tenant runtime must not reach authentication mutation privileges");
+  if (!readiness.authenticationSensitiveColumnsPresent) fail("PRODUCTION_AUTH_SENSITIVE_COLUMNS_REQUIRED", "production authentication sensitive columns must exist");
+  if (readiness.authenticationSensitiveReadRoles.length) fail("PRODUCTION_AUTH_SENSITIVE_READ_AUTHORITY_REACHABLE", "tenant runtime must not read authentication credential material");
   if (readiness.auditAccessRoles.length) fail("PRODUCTION_ADMIN_AUDIT_ACCESS_REACHABLE", "tenant runtime must not directly access authority audit records");
   try {
     const url = new URL(String(env.FAWRI_AUTH_DATABASE_URL || "").trim());
