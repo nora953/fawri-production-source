@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { withMerchantAuthenticationTransaction } from './authenticationPostgresAuthority';
 import { verifyPassword } from './authPasswordService';
 import {
   cashierManualDiscountLimitMinor,
@@ -33,10 +34,13 @@ type ApproverRow = {
   display_name: string;
   role: string;
   status: string;
+  revoked_at: DbInstant | null;
+};
+
+type ApproverPinRow = ApproverRow & {
   pin_hash: string;
   failed_pin_attempts: number | string;
   pin_locked_until: DbInstant | null;
-  revoked_at: DbInstant | null;
 };
 
 type ApprovalRow = {
@@ -169,11 +173,27 @@ async function loadApprover(
 ): Promise<ApproverRow | null> {
   const rows = await operationalQueryRows<ApproverRow>(
     target,
+    `SELECT id, display_name, role, status, revoked_at
+       FROM merchant_cashier_staff
+      WHERE merchant_id = $1 AND id = $2
+      LIMIT 1${forUpdate ? ' FOR UPDATE' : ''}`,
+    [merchantId, staffId],
+  );
+  return rows[0] || null;
+}
+
+async function loadApproverForPin(
+  target: OperationalQueryTarget,
+  merchantId: string,
+  staffId: string,
+): Promise<ApproverPinRow | null> {
+  const rows = await operationalQueryRows<ApproverPinRow>(
+    target,
     `SELECT id, display_name, role, status, pin_hash, failed_pin_attempts,
             pin_locked_until, revoked_at
        FROM merchant_cashier_staff
       WHERE merchant_id = $1 AND id = $2
-      LIMIT 1${forUpdate ? ' FOR UPDATE' : ''}`,
+      LIMIT 1 FOR UPDATE`,
     [merchantId, staffId],
   );
   return rows[0] || null;
@@ -221,13 +241,13 @@ async function assertApproverAuthority(
 async function verifyApproverPin(
   target: OperationalQueryTarget,
   merchantId: string,
-  approver: ApproverRow,
+  approver: ApproverPinRow,
   pinValue: unknown,
-): Promise<void> {
+): Promise<CashierStaffAuthorityError | null> {
   const enteredPin = pin(pinValue);
   const lockedUntil = approver.pin_locked_until ? toMillis(approver.pin_locked_until) : 0;
   if (lockedUntil > Date.now()) {
-    throw new CashierStaffAuthorityError(
+    return new CashierStaffAuthorityError(
       'CASHIER_PIN_LOCKED',
       'cashier PIN is temporarily locked',
       429,
@@ -246,7 +266,7 @@ async function verifyApproverPin(
         WHERE merchant_id = $1 AND id = $2`,
       [merchantId, approver.id, locksNow ? 0 : failed, lockUntil],
     );
-    throw new CashierStaffAuthorityError(
+    return new CashierStaffAuthorityError(
       locksNow ? 'CASHIER_PIN_LOCKED' : 'CASHIER_OPERATOR_INVALID',
       locksNow ? 'cashier PIN is temporarily locked' : 'cashier operator credentials are invalid',
       locksNow ? 429 : 401,
@@ -259,6 +279,7 @@ async function verifyApproverPin(
       WHERE merchant_id = $1 AND id = $2`,
     [merchantId, approver.id],
   );
+  return null;
 }
 
 export async function listCashierDiscountOverrideApproversAuthoritative(
@@ -334,7 +355,7 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
     );
   }
 
-  return withMerchantOperationalTransaction(input.context.merchant_id, async (client) => {
+  const decision = await withMerchantAuthenticationTransaction(input.context.merchant_id, async (client) => {
     await lockMerchantCashierDiscountKindMutation(client, input.context.merchant_id);
     const discountSetting = await loadMerchantCashierDiscountSetting(
       client,
@@ -374,11 +395,10 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
       );
     }
 
-    const approver = await loadApprover(
+    const approver = await loadApproverForPin(
       client,
       input.context.merchant_id,
       approverStaffId,
-      true,
     );
     if (!approver) {
       throw new CashierStaffAuthorityError(
@@ -392,7 +412,10 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
       input.context.merchant_id,
       approver,
     );
-    await verifyApproverPin(client, input.context.merchant_id, approver, input.pin);
+    const pinError = await verifyApproverPin(client, input.context.merchant_id, approver, input.pin);
+    // Refusals carrying PIN state must COMMIT before the API throws the error.
+    // SQL/approval/business failures still throw within the transaction and roll back.
+    if (pinError) return { ok: false as const, error: pinError };
 
     const managerLimitMinor = cashierManualDiscountLimitMinor({
       postPromotionTotalMinor: discountBaseMinor,
@@ -460,12 +483,14 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
         500,
       );
     }
-    return {
+    return { ok: true as const, approval: {
       approval_id: row.id,
       approver_staff_id: row.approver_staff_id,
       expires_at: toIso(row.expires_at),
-    };
+    } };
   });
+  if (!decision.ok) throw decision.error;
+  return decision.approval;
 }
 
 export async function consumeCashierDiscountOverrideApproval(
