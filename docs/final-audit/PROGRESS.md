@@ -1,3 +1,13 @@
+## Access proof reconciliation while settings CI executes — 2026-10-23
+
+Current test source6fe2d4a4ab56a17dcacc134f7a6d3cca1c1f1112 remains PENDING native acceptance. Last bounded inventory44/47 workflows SUCCESS,3 executing,0 failures; native39871639878/job120147216866 progressed through priority/cashier/billing/tenant to Meta lifecycle. No rerun/retry/cancellation. Do not infer the settings diagnostic outcome from a completed step; read its actual marker/full summaries when job logs become available.
+
+Reconciled11 bounded access-control claims against exact accepted4acf1351 native proof and added15-row [source/hosted proof inventory](evidence/P0-ACCESS-CONTROL-PROOF-INVENTORY-20261023.json). This is an access-domain subset, not the full P0 denominator;0 new runtime executions or newly accepted cases. Hosted identity/rollout and broader role/privacy reconciliation stay BLOCKED/TRIAGE. Source PASS never implies hosted acceptance. No percentage calculated.
+
+Next: read exact6fe P0_CASHIER_DISCOUNT_SETTINGS_AUTHORITY_BASELINE, all85 native summaries and final CI status; classify before focused access-control remediation. Preserve authorized management, transaction/lock/version/invalidation/rollback invariants. Last accepted remediation remains4acf1351 (47/47+84/84). NO-GO; no hosted operations/deployment/ACL/secrets/migration/main push/merge/P1/P2. This checkpoint docs-only [skip ci].
+
+---
+
 ## Approval access controls accepted; settings authority diagnostic prepared — 2026-10-23
 
 Accepted executable4acf13517337a4038f46f2fb672d76fde42db77a:47/47 workflows SUCCESS; native39869692485/job120140702367 has84/84 complete clean invocations/82 files, zero failures/skips/cancellations. Actual checkout3d64dfc90f8f46eb9e9899fb8d2bb66afe2fbc70 matches source tree8e910f6ac0ded63664f9161b51fcbc25f9c80aaa.14 direct denial/195 grant-reachability cases PASS; authorized flows, replay, tenant boundaries, transaction rollback/locking and exact restoration preserved. Foundation final marker,0045 canonical schema reproduction/all46 migrations, quality and security SUCCESS. Audit120140702494/review120140702455:0 high/0 critical/2 moderate. [Acceptance](P0-CASHIER-APPROVAL-ACCESS-ACCEPTANCE-20261023.md) · [Exact counters/runs](evidence/P0-CASHIER-APPROVAL-ACCESS-ACCEPTANCE-20261023.json). No retry or rerun.
