@@ -1,3 +1,14 @@
+## Discount policy accepted; hosted read-only recovery complete — 2026-10-23
+
+Executable bcebf0e436a7805b60822d0338a5d4e511b36846 accepted:47/47 workflows SUCCESS;83/83 clean native invocations/81 unique files; actual checkout95ce575d0cafd9f9862311dfcb86cc7801a960f7 tree80dae12b29f96bd1c25b9745ba406873f32cb816 matches. Primary mutation42501/approval-required validator/trusted-auth positive/exact rollback,12 denials/165 grant cases PASS. Foundation/schema/quality/security accepted;0 high/0 critical/2 moderate. No test rerun. [Acceptance](evidence/P0-CASHIER-DISCOUNT-POLICY-ACCEPTANCE-20261023.json).
+
+Railway connection restored and identities verified; hosted old main d38d292 (2026-10-10) ready200, not current P0. Neon explicit staging-runtime still28 vs45 source migrations, no private scope, unsafe candidate role attributes/non-RLS grants. Actual deployed DB target/login/pooler UNVERIFIED; no secrets read. [Report, limits and incident checklist](P0-SOURCE-HOSTED-RECONCILIATION-20261023.md) · [Hosted catalogs](evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json). Latest user instruction authorizes read-only Railway/Neon; historical GitHub-only restriction superseded for these reads only.
+
+Next exact engineering task: actual-LOGIN approval provenance diagnostic with trusted issuance/replay/rollback and two-tenant controls, then classify before remediation. Hosted rollout/ACL/rotation requires separate approval. NO-GO; whole P0 percentage UNMEASURED; full remaining P0 inventory OPEN. No hosted writes/deploy/main push/merge/P1/P2.
+
+---
+
+
 ## Policy mutation validator bypass proven; trusted-auth restriction prepared — 2026-10-22
 
 **Baseline d051f0c32e29e66ddda60787f6f873c6948a841f:**47/47 parent workflows SUCCESS;83/83 clean native invocations/81 unique files. Native39826479484/job119990994336, source and checkout5013e81e6373d7cb727f66ca7571be6af719c7f5 tree338d5d9067d65aec29f530827469c39690233131 match. Actual primary own-policy100->300 ACCEPTED; readiness ACCEPTED; unchanged real validator discount250 without approval ACCEPTED. Auth exact restoration returned original approval-required denial; other merchant/staff/permission/PIN/session/approval state unchanged. No HTTP/full sale/hosted exposure claimed. [Exact baseline](evidence/P0-CASHIER-DISCOUNT-POLICY-BASELINE-20261022.json).
