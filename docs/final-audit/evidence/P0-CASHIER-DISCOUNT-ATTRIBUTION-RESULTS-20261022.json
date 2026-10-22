@@ -1749,7 +1749,7 @@
   "retriesRequested": 0,
   "observedCiFailures": 0,
   "limits": {
-    "globalAcceptance": "PENDING remaining parent conclusions",
+    "globalAcceptance": "ACCEPTED for bounded isolated executable; release NO-GO",
     "sameTenantCredentialBusinessMutationIntegrity": "NOT_CERTIFIED",
     "alternateViewsRoutinesRemainingPrivileges": "OPEN",
     "fullAuthPrivacyOfflineGraceSyncRetentionProviderStorageP0Inventory": "OPEN",
