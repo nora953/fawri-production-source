@@ -1,3 +1,15 @@
+## Policy diagnostic executing; approval provenance source review saved — 2026-10-22
+
+Current test executable d051f0c32e29e66ddda60787f6f873c6948a841f is PENDING. One resume inventory:25/47 parent workflows SUCCESS,22 queued/in_progress,0 failures. Native39826479484/job119990994336 executing migrations/selected tests. No repeat status poll, retry, rerun or cancellation. Last accepted isolated source645b534aea0d32848b4467b5bbebf8fd671deddb remains47/47+82/82 with174 direct/20 role grant cases. Do not call the policy mutation/validator outcome until its marker exists.
+
+Independent five-file source review completed for subsequent approval-provenance group: auth PIN issuance, primary setting->approval->staff lock consumption, exact binding/window/replay, kind-change advisory lock/atomic pending invalidation and tenant schema constraints. Potential primary INSERT or immutable/consumed-marker tampering requires actual LOGIN proof; no forged-approval/PIN/HTTP/hosted bypass claimed. Preserve legitimate replay and transaction boundaries. [Review/proof plan](P0-CASHIER-APPROVAL-MUTATION-TRACE-20261022.md) · [Exact blobs and single current status observation](evidence/P0-CASHIER-APPROVAL-MUTATION-TRACE-20261022.json).
+
+**Next remains current policy test first:** read P0_CASHIER_DISCOUNT_POLICY_INTEGRITY_BASELINE and full suite results once available; prove/classify before policy remediation. Approval provenance proof follows that group. If pending, advance independent review without loops or cancelling its CI. This checkpoint docs-only [skip ci]; no new code/tests/schema/grants/native execution.
+
+NO-GO; P0 percentage UNMEASURED; full remaining P0 scope OPEN. GitHub/Actions only. Hosted runtime BLOCKED_BY_RAILWAY; hosted DB NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. No external connector/hosted changes/deploy/main push/merge/credential rotation/P1/P2.
+
+---
+
 ## Non-row admission accepted; policy-validator baseline prepared — 2026-10-22
 
 **Accepted645b534aea0d32848b4467b5bbebf8fd671deddb:47/47 parent workflows SUCCESS,82/82 isolated invocations clean,80 unique files.** Native39824457555/job119983935469:58 protected tables/174 direct non-row grant denials and20 role/column cases, original three probes now REJECTED, revocation recovery/catalog/rollback PASS. Checkoutcadabf4a7f4287bf7ea8899a60fed72a860e6887 shares source tree3fa9347d7286d9059f556652180d375eaa7bad4a. Foundation39824457202/job119983933998 final marker, schema39824456460/job119983931446 reproduction, quality39824457487 and security39824456372 SUCCESS, audit119983930705/review119983930995:0 high/0 critical/2 moderate. No failure/retry/rerun. [Exact acceptance](evidence/P0-CASHIER-NONROW-PRIVILEGE-ACCEPTANCE-20261022.json). Previous pending observations historical only; guard rejects admission, does not revoke SQL privileges or certify hosted ACLs.
