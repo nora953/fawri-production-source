@@ -91,6 +91,7 @@ export const AUTHENTICATION_SENSITIVE_COLUMNS = [
 ] as const;
 
 export type ProductionDatabaseRlsReadiness = {
+  nonRowPrivilegeRoles: string[];
   cashierStaffLockReady: boolean;
   authenticationAuthorityPresent: boolean;
   authenticationMutationRoles: string[];
@@ -154,6 +155,7 @@ export async function getProductionDatabaseRlsReadiness(
 ): Promise<ProductionDatabaseRlsReadiness> {
   const queryTarget = target || (await operationalDatabasePool());
   const rows = await operationalQueryRows<{
+    non_row_privilege_roles: string[];
     cashier_staff_lock_ready: boolean;
     authentication_authority_present: boolean;
     authentication_mutation_roles: string[];
@@ -232,6 +234,14 @@ export async function getProductionDatabaseRlsReadiness(
      )
      SELECT
        public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
+       -- RLS mediates row DML, not these table/constraint/trigger authorities.
+       -- Include PUBLIC-effective, inherited and activatable role privileges.
+       COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
+         WHERE EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+           WHERE n.nspname='public' AND c.relname=ANY($1::text[]) AND c.relkind IN ('r','p')
+             AND (has_table_privilege(r.oid,c.oid,'TRUNCATE,TRIGGER,REFERENCES')
+               OR has_any_column_privilege(r.oid,c.oid,'REFERENCES')))),
+         ARRAY[]::text[]) AS non_row_privilege_roles,
        EXISTS (SELECT 1 FROM pg_proc lock_function
          WHERE lock_function.oid=to_regprocedure('public.fawri_lock_cashier_approver(text,text)')
            AND lock_function.prosecdef AND lock_function.provolatile='v'
@@ -316,6 +326,7 @@ export async function getProductionDatabaseRlsReadiness(
   }
 
   return {
+    nonRowPrivilegeRoles: stringArray(row.non_row_privilege_roles),
     cashierStaffLockReady: booleanValue(row.cashier_staff_lock_ready),
     authenticationAuthorityPresent: booleanValue(row.authentication_authority_present),
     authenticationMutationRoles: stringArray(row.authentication_mutation_roles),
@@ -428,6 +439,10 @@ export async function assertProductionDatabaseRlsReady(
   if (!readiness.cashierStaffLockReady) fail("PRODUCTION_CASHIER_STAFF_LOCK_REQUIRED", "production requires the protected cashier approver lock function");
   if (!readiness.authenticationAuthorityPresent) fail("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED", "production requires role-bound authentication migration");
   if (readiness.authenticationMutationRoles.length) fail("PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE", "tenant runtime must not reach authentication mutation privileges");
+  if (readiness.nonRowPrivilegeRoles.length > 0) {
+    fail("PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE",
+      "tenant runtime must not reach protected table truncate, trigger or reference privileges");
+  }
   if (!readiness.authenticationSensitiveColumnsPresent) fail("PRODUCTION_AUTH_SENSITIVE_COLUMNS_REQUIRED", "production authentication sensitive columns must exist");
   if (readiness.authenticationSensitiveReadRoles.length) fail("PRODUCTION_AUTH_SENSITIVE_READ_AUTHORITY_REACHABLE", "tenant runtime must not read authentication credential material");
   if (readiness.auditAccessRoles.length) fail("PRODUCTION_ADMIN_AUDIT_ACCESS_REACHABLE", "tenant runtime must not directly access authority audit records");
