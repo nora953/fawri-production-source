@@ -302,6 +302,13 @@
       "when": 1791936000014,
       "tag": "0042_scoped_cashier_approver_lock",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791936000015,
+      "tag": "0043_cashier_identity_tenant_rls",
+      "breakpoints": true
     }
   ]
 }
