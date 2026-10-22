@@ -169,14 +169,11 @@ async function loadApprover(
   target: OperationalQueryTarget,
   merchantId: string,
   staffId: string,
-  forUpdate = false,
 ): Promise<ApproverRow | null> {
   const rows = await operationalQueryRows<ApproverRow>(
     target,
     `SELECT id, display_name, role, status, revoked_at
-       FROM merchant_cashier_staff
-      WHERE merchant_id = $1 AND id = $2
-      LIMIT 1${forUpdate ? ' FOR UPDATE' : ''}`,
+       FROM public.fawri_lock_cashier_approver($1::text, $2::text)`,
     [merchantId, staffId],
   );
   return rows[0] || null;
@@ -566,7 +563,7 @@ export async function consumeCashierDiscountOverrideApproval(
 
   if (approval.consumed_at) return;
 
-  const approver = await loadApprover(target, input.merchantId, approval.approver_staff_id, true);
+  const approver = await loadApprover(target, input.merchantId, approval.approver_staff_id);
   if (!approver) {
     throw new CashierStaffAuthorityError(
       'CASHIER_DISCOUNT_OVERRIDE_APPROVER_REQUIRED',
