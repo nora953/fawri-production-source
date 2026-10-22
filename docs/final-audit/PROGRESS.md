@@ -1,3 +1,11 @@
+## Manager override PIN regression confirmed; remediation pending — 2026-10-22
+
+Baseline f00230603ba51a50c01e39f3e8befb8b06e2677d/native39740085994/job119694925095 confirmed five wrong-PIN counters all0, no lock, correct PIN then accepted; strict new regression failed while all previous76 invocations stayed clean (45/46 workflows SUCCESS). [Exact baseline](evidence/P0-MANAGER-PIN-BASELINE-20261022.json).
+
+**Candidate f0418c1350a4d51dc112fb805304978541ab1dfc PENDING CI**, not accepted by priorbe49712446/46+76/76. Two production files: commit PIN refusal decision before throwing outside auth transaction; split PIN issuance from non-secret FOR UPDATE consumption; tenant pin_hash SELECT admission. Expanded actual-LOGIN persistence/concurrency/positive/rollback/consume/replay/role/no-fallback proof; runner expected77 invocations, exact result pending. [Task report](P0-MANAGER-OVERRIDE-PIN-PERSISTENCE-20261022.md). Source policy5 failures/15 minutes, RLS/issuer/migrations unchanged. Next inspect exact-source CI and save actual counters; fix failures without weakening assertions. Remaining staff/session mutation and cashier row isolation/other P0 gates OPEN. NO-GO, hosted tasks blocked/outside GitHub-only scope, whole-P0 percent unmeasured.
+
+---
+
 ## Cashier credential housekeeping accepted in isolation — 2026-10-22
 
 **Accepted executable: `be497124f86ce12b6e2041f1246f0a5e33874cef`.46/46 workflows SUCCESS;76/76 isolated invocations exit0/fail0/skip0/cancel0/summaryComplete.** Native39722922331/job119640266600: new housekeeping10PASS/authentication53PASS (parents included), auth40 sensitive-column ACL cases, primaryPoolCalls0 in both. All42 migrations/full dump-restore and Foundation types/build/readiness-unit/native-RLS/integration PASS. Actual checkout19586602febbf282e952e16c58fae38ffbe75995 and source share tree8318994b4ac017f9ec57ea3c21294a7f730f6c05. Dependency audit/review0 high/0 critical/2 moderate. [Exact evidence](evidence/P0-CASHIER-CREDENTIAL-HOUSEKEEPING-ACCEPTANCE-20261022.json), [source trace/remaining work](P0-CASHIER-CREDENTIAL-HOUSEKEEPING-20261022.md).
