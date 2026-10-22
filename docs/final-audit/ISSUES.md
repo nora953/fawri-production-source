@@ -1,3 +1,9 @@
+## Staff mutation / scoped approver lock prepared — 2026-10-22
+
+Candidate `583492a5df7ebff0b184bfa3d043846d48628984` PENDING CI. Migration0042 introduces a fixed non-secret, private-scope-checked row-lock function so commerce can retain manager serialization after tenant staff mutation privileges are banned. No mutable-column exemption. Readiness requires safe function metadata/EXECUTE/unreachable owner and rejects all reachable staff table/column writes. Native actual-LOGIN mutation/grant/scope/real-lock/rollback and existing consume regressions prepared; previous2b4d154f46/46+78/78 remains accepted historical evidence. [Design/limits](P0-CASHIER-STAFF-LOCK-BOUNDARY-20261022.md). No new DB success claimed. GitHub/Actions only; NO-GO; hosted writes/deployment/merge/P1/P2 remain outside scope.
+
+---
+
 ## Cashier permission/session authority accepted in isolation — 2026-10-22
 
 **Accepted executable `2b4d154f01521318abb02f7080cdf6c02e834e05`:46/46 workflows SUCCESS;78/78 isolated invocations exit0/failed0/skipped0/cancelled0/summaryComplete (76 unique files).** Native39746441245/job119715940401: new permission/session8PASS, authentication63PASS (50 sensitive SELECT ACL cases/10 columns), manager PIN10PASS; parents included. All42 migrations/full dump-restore/Node22 HTTP/owned cleanup and Foundation39746441434/job119715941742 types/build/readiness/native-RLS/integration PASS. Actual checkout6484818c27cba31f1f02c4c171e1fb97bc7277f3 matches source treeeae74e44da5047f37246539e1960e37d728b5323. [Exact acceptance](evidence/P0-CASHIER-PERMISSION-SESSION-ACCEPTANCE-20261022.json) · [bounded report](P0-CASHIER-PERMISSION-SESSION-AUTHORITY-20261022.md).
