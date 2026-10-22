@@ -29,6 +29,7 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
     authentication_authority_present:true, authentication_mutation_roles:[], audit_access_roles:[],
+    authentication_sensitive_columns_present:true, authentication_sensitive_read_roles:[],
     directory_issuer_present: true,
     operator_authority_roles: [],
     role_name: "fawri_runtime",
@@ -159,7 +160,7 @@ test("production rejects a session able to activate a privileged role", async ()
 
 test("production fails closed on absent or malformed role safety booleans", async () => {
   for (const field of [
-    "directory_issuer_present", "role_superuser", "role_bypass_rls", "session_role_superuser",
+    "authentication_sensitive_columns_present", "directory_issuer_present", "role_superuser", "role_bypass_rls", "session_role_superuser",
     "session_role_bypass_rls", "session_role_create_role",
   ]) {
     for (const value of [undefined, null, "false", "true", 0, 1, {}, []]) {
@@ -170,7 +171,7 @@ test("production fails closed on absent or malformed role safety booleans", asyn
 
 test("production fails closed on absent or malformed privilege inventories", async () => {
   for (const field of [
-    "authentication_mutation_roles", "audit_access_roles", "operator_authority_roles", "session_inherited_privileged_roles", "session_owned_tables",
+    "authentication_sensitive_read_roles", "authentication_mutation_roles", "audit_access_roles", "operator_authority_roles", "session_inherited_privileged_roles", "session_owned_tables",
     "session_reachable_privileged_roles", "owned_tenant_tables",
     "missing_or_unprotected_tenant_tables",
   ]) {
@@ -205,6 +206,8 @@ test("production directory cannot silently use the tenant database when operator
 
 
 test("production rejects auth mutation and audit access inventories",async()=>{
+  await rejectsWith("PRODUCTION_AUTH_SENSITIVE_COLUMNS_REQUIRED",safeRow({authentication_sensitive_columns_present:false}));
+  await rejectsWith("PRODUCTION_AUTH_SENSITIVE_READ_AUTHORITY_REACHABLE",safeRow({authentication_sensitive_read_roles:["credential_reader"]}));
   await rejectsWith("PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE",safeRow({authentication_mutation_roles:["auth_writer"]}));
   await rejectsWith("PRODUCTION_ADMIN_AUDIT_ACCESS_REACHABLE",safeRow({audit_access_roles:["audit_reader"]}));
   await rejectsWith("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED",safeRow({authentication_authority_present:false}));
