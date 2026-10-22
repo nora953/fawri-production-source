@@ -119,8 +119,10 @@ test('manager override PIN failures persist and enforce lockout on actual databa
       const target={query:async(sql,values)=>{captured.push(sql);return client.query(sql,values);}};
       await consume(target,use);throw Error('synthetic commerce rollback');
     }),{message:'synthetic commerce rollback'});
-    const projection=captured.find(sql=>sql.includes('FROM merchant_cashier_staff\n'));
-    assert.ok(projection);assert.match(projection,/FOR UPDATE/);assert.doesNotMatch(projection,/pin_hash/);
+    const projection=captured.find(sql=>sql.includes('public.fawri_lock_cashier_approver('));
+    assert.ok(projection);assert.doesNotMatch(projection,/pin_hash/);
+    const definition=(await admin.query("SELECT pg_get_functiondef('public.fawri_lock_cashier_approver(text,text)'::regprocedure) AS body")).rows[0].body;
+    assert.match(definition,/FOR UPDATE/);assert.match(definition,/fawri_security\.allows_merchant/);assert.doesNotMatch(definition,/pin_hash/);
     assert.equal((await admin.query('SELECT consumed_at FROM merchant_cashier_discount_override_approvals WHERE id=$1',[approved.approval_id])).rows[0].consumed_at,null);
     await commerce(c=>consume(c,use));
     const consumed=(await admin.query('SELECT consumed_at FROM merchant_cashier_discount_override_approvals WHERE id=$1',[approved.approval_id])).rows[0].consumed_at;assert.ok(consumed);
