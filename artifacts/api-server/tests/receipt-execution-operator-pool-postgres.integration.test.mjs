@@ -158,7 +158,10 @@ test('direct execution LOGIN owns all replay phases without borrowing tenant or 
   });
   async function fault(f,phase){
     const name=`exec_${phase}_${randomUUID().replaceAll('-','')}`,table=phase==='grant'?f.applications:'database_admin_access_audits';faults.push({name,table});
-    const condition=phase==='grant'?`NEW.order_id='${f.order}'`:`NEW.admin_account_id='${actor}' AND NEW.reason_code='BILLING_RECEIPT_REPLAY_EXECUTE' AND fawri_security.allows_merchant('${f.merchant}')${phase==='commit'?` AND EXISTS(SELECT 1 FROM ${f.applications} WHERE order_id='${f.order}')`:''}`;
+    // The executor has no direct private-schema access. Use the canonical public
+    // predicate: this LOGIN has neither authentication nor directory capability,
+    // so only its issued transaction scope can select the later fault phases.
+    const condition=phase==='grant'?`NEW.order_id='${f.order}'`:`NEW.admin_account_id='${actor}' AND NEW.reason_code='BILLING_RECEIPT_REPLAY_EXECUTE' AND public.fawri_tenant_or_audited_admin('${f.merchant}')${phase==='commit'?` AND EXISTS(SELECT 1 FROM ${f.applications} WHERE order_id='${f.order}')`:''}`;
     await admin.query(`CREATE FUNCTION ${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF ${condition} THEN RAISE EXCEPTION 'synthetic execution fault' USING ERRCODE='P0001'; END IF; RETURN NEW; END $$`);
     await admin.query(phase==='grant'?`CREATE TRIGGER ${name} BEFORE INSERT ON ${table} FOR EACH ROW EXECUTE FUNCTION ${name}()`:`CREATE CONSTRAINT TRIGGER ${name} AFTER INSERT ON ${table} DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION ${name}()`);
     return async()=>{await admin.query(`DROP TRIGGER ${name} ON ${table}`);await admin.query(`DROP FUNCTION ${name}()`);};

@@ -1,3 +1,11 @@
+## 74/75 native invocations; deferred fault selector correction — 2026-10-22
+
+Executable9cbfb3b0:43/46 workflows SUCCESS,3 FAILURE; isolated39712368980/job119606438648 has75 invocations,74 clean. Scope protocol16, admin9, central6, knowledge/public RLS, all42 migrations, dump/restore fingerprint and Node22 PASS. Only receipt executor remains12PASS/3FAIL (two COMMIT fault cases plus parent): its deferred invoker trigger calls the private predicate without private-schema access, aborting before durable receipt admission. Containing test-only correction uses the canonical public predicate for fault selection; this executor has no auth/directory capability, so only its issued transaction scope matches. No new grants or product/migration changes; original failure-phase/no-application/durable-event/once-only assertions retained. See evidence/P0-PRIVATE-PREDICATE-SECOND-ATTEMPT-20261022.json.
+
+Other failed workflows are infrastructure: schema setup HTTP503 fetching pnpm on attempts1/2; security dependency review HTTP503, and dependency audit failed closed without vulnerability counts. Observability's503 recovered on same-source retry. No security advisory conclusion is inferred from unavailable output. Next inspect containing exact-source CI, verify receipt15 and every75 summary, require all46 workflows including actual dependency counts before full acceptance. Release NO-GO; no hosted write/deploy/main/merge; whole P0 percentage unmeasured.
+
+---
+
 ## Native 0041 attempt reviewed / fixture corrections — 2026-10-22
 
 Executable `365e7473a428391bcf2cea599d4fdb2c117204f8`:41/46 workflows SUCCESS,5 FAILURE. Isolated39711627110/job119604061266:75 invocations,73 clean,2 not clean (scope protocol14PASS/2FAIL; receipt execution10PASS/5FAIL including parents). Native GUC-forgery denial, central public subscription RLS, canonical knowledge RLS, admin boundary, all42 migrations, full dump/restore with identical fingerprint and Node22 journey PASS. Full build/types PASS. Exact links/counters/causes: [P0-PRIVATE-PREDICATE-ATTEMPT-20261022.json](evidence/P0-PRIVATE-PREDICATE-ATTEMPT-20261022.json). This is NOT full-source acceptance.
