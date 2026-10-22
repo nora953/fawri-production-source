@@ -230,3 +230,7 @@ test("production rejects missing or unsafe private scope admission evidence", as
 test("production requires the protected cashier approver locking capability",async()=>{
   await rejectsWith("PRODUCTION_CASHIER_STAFF_LOCK_REQUIRED",safeRow({cashier_staff_lock_ready:false}));
 });
+
+test("cashier identity tables require tenant RLS",()=>{
+  for(const name of ["merchant_cashier_staff","merchant_cashier_staff_permissions","merchant_cashier_stations","cashier_station_pairing_challenges","cashier_station_credentials","cashier_shifts","cashier_operator_sessions"])assert.ok((PRODUCTION_TENANT_RLS_TABLES as readonly string[]).includes(name));
+});
