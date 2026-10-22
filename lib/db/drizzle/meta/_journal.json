@@ -309,6 +309,13 @@
       "when": 1791936000015,
       "tag": "0043_cashier_identity_tenant_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791936000016,
+      "tag": "0044_cashier_discount_attribution_tenant_rls",
+      "breakpoints": true
     }
   ]
 }
