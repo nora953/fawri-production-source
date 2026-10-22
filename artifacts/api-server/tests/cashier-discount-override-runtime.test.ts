@@ -48,16 +48,14 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
           }] as unknown as T[],
         };
       }
-      if (compact.includes('FROM merchant_cashier_staff ') && compact.includes('WHERE merchant_id')) {
+      if (compact.includes('FROM public.fawri_lock_cashier_approver($1::text, $2::text)')) {
+        assert.deepEqual(_values, ['merchant-1', 'manager-1']);
         return {
           rows: [{
             id: 'manager-1',
             display_name: 'Manager One',
             role: 'manager',
             status: 'active',
-            pin_hash: 'unused-during-consume',
-            failed_pin_attempts: 0,
-            pin_locked_until: null,
             revoked_at: null,
           }] as unknown as T[],
         };
