@@ -36,7 +36,12 @@ test('scoped approver lock preserves commerce serialization without tenant staff
     for(const column of columns)await assert.rejects(()=>main.query(`UPDATE merchant_cashier_staff SET ${quote(column)}=${quote(column)} WHERE false`),{code:'42501'});
     for(const statement of ['INSERT INTO merchant_cashier_staff(id) VALUES($1)','DELETE FROM merchant_cashier_staff WHERE id=$1','TRUNCATE merchant_cashier_staff'])await assert.rejects(()=>main.query(statement,statement.startsWith('TRUNCATE')?[]:[ids[0]]),{code:'42501'});
     await assert.rejects(()=>main.query('SELECT pin_hash FROM merchant_cashier_staff'),{code:'42501'});
-    assert.deepEqual((await main.query('SELECT id,role FROM merchant_cashier_staff WHERE id=$1',[ids[0]])).rows,[{id:ids[0],role:'manager'}]);await ready(env,main);
+    assert.deepEqual((await main.query('SELECT id,role FROM merchant_cashier_staff WHERE id=$1',[ids[0]])).rows,[]);
+    const scoped=await main.connect();
+    try{await scoped.query('BEGIN');await scope(scoped,merchants[0]);
+      assert.deepEqual((await scoped.query('SELECT id,role FROM merchant_cashier_staff WHERE id=$1',[ids[0]])).rows,[{id:ids[0],role:'manager'}]);
+    }finally{await scoped.query('ROLLBACK');scoped.release();}
+    await ready(env,main);
   });
   await t.test('table and column mutation grants fail readiness through direct PUBLIC inherited and SET roles',async()=>{
     for(const mode of ['direct','public','inherit-only','set-reachable','unreachable'])for(const privilege of ['INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER','UPDATE(pin_hash)','UPDATE(role)','UPDATE(failed_pin_attempts)']){
