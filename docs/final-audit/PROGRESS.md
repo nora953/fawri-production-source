@@ -1,3 +1,9 @@
+## Cashier discount/attribution tenant RLS prepared — 2026-10-22
+
+Candidate `bec6e7114be692981df07bc7b25ad456116fda42` CI_PENDING. Migration0044 adds established RLS to four remaining settings/policy/override-approval/attribution tables, canonical reviewed SQL/preimages/snapshot/journal and production inventory. New actual-LOGIN two-tenant read/write/auth/consume replay-concurrency/settings rollback/pending invalidation/shared advisory lock/drift proof prepared; existing full HTTP attribution regressions retained. [Design/trace/limits](P0-CASHIER-DISCOUNT-ATTRIBUTION-TENANT-RLS-20261022.md). No new DB success claimed; previous81aeaf6e47/47+80/80 remains historical. Expected81 invocations/47 workflows not P0 percentage. Next after exact acceptance: alternate views/routines and remaining cashier privileges. NO-GO, GitHub/Actions only; no hosted change/deploy/main merge/P1/P2.
+
+---
+
 ## Cashier identity tenant RLS accepted in isolation — 2026-10-22
 
 **Accepted executable `81aeaf6e2ccd4f652d435da0775a5b4dffb062da`:47/47 workflows SUCCESS;80/80 isolated invocations exit0/failed0/skipped0/cancelled0/summaryComplete,78 unique files.** Native39789294155/job119860712686: identity RLS8PASS, staff-lock7PASS, permission/session8PASS, housekeeping10PASS, manager PIN10PASS, auth63PASS/50 sensitive-read ACL cases/10 columns (parents included). All44 migrations/full schema dump-restore/owned cleanup/Node22 HTTP, schema39789294139/job119860711191 and Foundation39789294370/job119860713266 types/build/readiness/native-RLS/integration/final marker PASS. Checkout4178279c91a971331029da586aa67281b1d01d43 matches source tree80cc0aac58de49c8116c0ba3bce27c7f6cc458e8. [Exact acceptance](evidence/P0-CASHIER-IDENTITY-TENANT-RLS-ACCEPTANCE-20261022.json) · [bounded report](P0-CASHIER-IDENTITY-TENANT-RLS-20261022.md).
