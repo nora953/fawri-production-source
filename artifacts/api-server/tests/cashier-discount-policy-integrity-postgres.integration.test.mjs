@@ -6,16 +6,19 @@ import {cleanupResources} from './helpers/cleanup-resources.mjs';
 import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 
 await assertDisposablePostgres();
-// Diagnostic baseline: a green run may record a policy-authority gap. This calls
-// the real sale validator with a synthetic trusted context, not an HTTP sale.
-test('measure own-policy mutation effect on actual manual-discount authority',{timeout:120000},async t=>{
+// Immutable d051f0c baseline records the bypass. This regression requires
+// primary mutation denial and trusted-auth writes; it is not an HTTP sale test.
+test('protect policy mutation while preserving actual manual-discount authority',{timeout:120000},async t=>{
   const fixture=await createDisposableKnowledgeRuntime(),admin=fixture.admin,main=fixture.runtimePool;
   const merchants=[`policy-a-${randomUUID()}`,`policy-b-${randomUUID()}`],rows=[];
+  const grantRole=`policy_acl_${randomUUID().replaceAll('-','')}`;let grantRoleCreated=false;
   const saved={FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY,FAWRI_DEPLOYMENT_MODE:process.env.FAWRI_DEPLOYMENT_MODE};
   t.after(()=>cleanupResources([
     ['stations',()=>admin.query('DELETE FROM merchant_cashier_stations WHERE merchant_id=ANY($1::text[])',[merchants])],
     ['staff',()=>admin.query('DELETE FROM merchant_cashier_staff WHERE merchant_id=ANY($1::text[])',[merchants])],
     ['accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchants])],
+    ['grant role privileges',()=>grantRoleCreated?admin.query(`DROP OWNED BY ${grantRole}`):undefined],
+    ['grant role',()=>grantRoleCreated?admin.query(`DROP ROLE ${grantRole}`):undefined],
     ['runtime',()=>fixture.dispose()],
     ['environment',async()=>{for(const[k,v]of Object.entries(saved)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}],
   ]));
@@ -25,6 +28,7 @@ test('measure own-policy mutation effect on actual manual-discount authority',{t
   const {withMerchantAuthenticationTransaction:auth}=await import('../src/services/authenticationPostgresAuthority.ts');
   const {assertProductionDatabaseRlsReady:ready}=await import('../src/services/postgresRuntimeRlsSecurity.ts');
   const {hashPassword}=await import('../src/services/authPasswordService.ts');
+  const {upsertCashierDiscountPolicy:upsertPolicy}=await import('../src/services/cashierDiscountPolicyAuthority.ts');
   const env={...process.env,NODE_ENV:'production',FAWRI_OPERATOR_DATABASE_URL:'postgresql://unused@127.0.0.1/fawri_ci'};
   for(const merchant of merchants){
     const row={merchant,station:`station-${merchant}`,cashier:`cashier-${merchant}`,manager:`manager-${merchant}`};
@@ -69,6 +73,10 @@ test('measure own-policy mutation effect on actual manual-discount authority',{t
       try{await ready(env,main);observations.readiness='ACCEPTED';}catch(error){observations.readiness='REJECTED';observations.readinessCode=error.code;}
       try{await validate(a.input);observations.sameValidatorWithoutApproval='ACCEPTED';}
       catch(error){if(error.code!=='CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED')throw error;observations.sameValidatorWithoutApproval='OVERRIDE_REQUIRED';}
+      assert.equal(observations.primaryPolicyMutation,'DENIED_42501');assert.equal(observations.readiness,'ACCEPTED');assert.equal(observations.sameValidatorWithoutApproval,'OVERRIDE_REQUIRED');
+      assert.deepEqual(await snapshot(a.merchant),beforeA);
+      await auth(a.merchant,c=>upsertPolicy(c,{merchantId:a.merchant,staffId:a.cashier,policy:{enabled:true,max_percentage_bps:10000,max_amount_minor:300,can_approve_override:false}}));
+      await validate(a.input);observations.trustedAuthPolicyPositive=true;
       const duringA=await snapshot(a.merchant);
       for(const table of Object.keys(beforeA).filter(x=>x!=='merchant_cashier_staff_discount_policies'))assert.deepEqual(duringA[table],beforeA[table]);
       assert.deepEqual(await snapshot(b.merchant),beforeB);
@@ -80,5 +88,34 @@ test('measure own-policy mutation effect on actual manual-discount authority',{t
     await assert.rejects(()=>validate(a.input),{code:'CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED'});
     await ready(env,main);
   });
-  console.log('P0_CASHIER_DISCOUNT_POLICY_INTEGRITY_BASELINE '+JSON.stringify({diagnosticOnly:true,actualLogins:2,merchants:2,initialLimitMinor:100,requestedDiscountMinor:250,mutatedLimitMinor:300,observations,policyRestoredExactly:true,otherMerchantUnchanged:true,staffPermissionPinSessionApprovalStateUnchanged:true,actualValidatorCalled:true,httpSaleExecuted:false,hostedCertified:false,releaseAccepted:false}));
+  const table='merchant_cashier_staff_discount_policies';let denialCases=0,grantCases=0;
+  const columns=(await admin.query("SELECT attname FROM pg_attribute WHERE attrelid='public.merchant_cashier_staff_discount_policies'::regclass AND attnum>0 AND NOT attisdropped ORDER BY attnum")).rows.map(x=>x.attname);
+  await t.test('primary denies all policy column updates and table insert delete truncate while own reads remain',async()=>{
+    for(const column of columns){await assert.rejects(()=>primary(a.merchant,c=>c.query(`UPDATE ${table} SET ${column}=${column} WHERE merchant_id=$1`,[a.merchant])),{code:'42501'});denialCases++;}
+    for(const sql of [`INSERT INTO ${table} SELECT * FROM ${table} WHERE FALSE`,`DELETE FROM ${table} WHERE merchant_id=$1`,`TRUNCATE TABLE ${table}`]){await assert.rejects(()=>primary(a.merchant,c=>c.query(sql,sql.includes('$1')?[a.merchant]:[])),{code:'42501'});denialCases++;}
+    for(const merchant of merchants)await primary(merchant,async c=>{const read=await c.query(`SELECT merchant_id FROM ${table} WHERE merchant_id=ANY($1::text[])`,[merchants]);assert.equal(read.rows.length,2);assert.ok(read.rows.every(x=>x.merchant_id===merchant));});
+    assert.deepEqual(await snapshot(a.merchant),beforeA);assert.deepEqual(await snapshot(b.merchant),beforeB);
+  });
+  await t.test('policy table and every mutation column grant fail readiness through reachable roles',async()=>{
+    await admin.query(`CREATE ROLE ${grantRole} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOINHERIT`);grantRoleCreated=true;
+    const privileges=['INSERT','UPDATE','DELETE','TRUNCATE','TRIGGER','REFERENCES',...columns.flatMap(column=>[`UPDATE(${column})`,`INSERT(${column})`,`REFERENCES(${column})`])];
+    const client=await main.connect();
+    try{for(const privilege of privileges)for(const mode of ['direct','public','inherit-only','set-reachable','unreachable']){
+      const grantee=mode==='direct'?fixture.role:mode==='public'?'PUBLIC':grantRole;
+      try{
+        await admin.query(`GRANT ${privilege} ON public.${table} TO ${grantee}`);
+        if(!['direct','public'].includes(mode))await admin.query(`GRANT ${grantRole} TO ${fixture.role} WITH INHERIT ${mode==='inherit-only'?'TRUE':'FALSE'}, SET ${mode==='set-reachable'?'TRUE':'FALSE'}`);
+        if(mode==='unreachable'){await ready(env,client);await assert.rejects(()=>client.query(`SET ROLE ${grantRole}`),{code:'42501'});}
+        else{
+          await assert.rejects(()=>ready(env,client),{code:'PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE'});
+          if(mode==='direct')await admin.query(`GRANT ${grantRole} TO ${fixture.role} WITH INHERIT FALSE, SET TRUE`);
+          if(['direct','set-reachable'].includes(mode)){await client.query(`SET ROLE ${grantRole}`);await assert.rejects(()=>ready(env,client),{code:'PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE'});}
+        }
+        grantCases++;
+      }finally{await client.query('RESET ROLE');if(mode!=='public')await admin.query(`REVOKE ${grantRole} FROM ${fixture.role}`);await admin.query(`REVOKE ${privilege} ON public.${table} FROM ${grantee}`);}
+      await ready(env,client);
+    }}finally{await client.query('RESET ROLE');client.release();}
+    assert.deepEqual(await snapshot(a.merchant),beforeA);assert.deepEqual(await snapshot(b.merchant),beforeB);
+  });
+  console.log('P0_CASHIER_DISCOUNT_POLICY_INTEGRITY_REMEDIATION '+JSON.stringify({diagnosticOnly:false,policyColumns:columns.length,denialCases,grantCases,actualLogins:2,merchants:2,initialLimitMinor:100,requestedDiscountMinor:250,mutatedLimitMinor:300,observations,policyRestoredExactly:true,otherMerchantUnchanged:true,staffPermissionPinSessionApprovalStateUnchanged:true,actualValidatorCalled:true,httpSaleExecuted:false,hostedCertified:false,releaseAccepted:false}));
 });
