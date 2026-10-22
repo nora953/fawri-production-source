@@ -1,3 +1,11 @@
+## Cashier credential housekeeping candidate — 2026-10-22
+
+Executable `be497124f86ce12b6e2041f1246f0a5e33874cef` is **PENDING CI**. The previous2cf55e25 source remains accepted46/46 workflows and75/75 isolated invocations, not this increment. [Bounded report/source trace](P0-CASHIER-CREDENTIAL-HOUSEKEEPING-20261022.md). Two production files: housekeeping refresh/expiry moves to auth transaction; tenant admission rejects station credential/pairing table mutations and raw token/code SELECT. Historical ordinary reads remain. Guarded actual-LOGIN suite adds valid/invalid binding, expiry preservation/atomic rollback and marker/missing/tenant URL no-fallback checks; priority runner expected76 invocations. No migration/issuer/RLS/hosted/policy changes. JS syntax PASS; native/types/build/full CI PENDING.
+
+Next inspect exact-source Actions and the new housekeeping proof; preserve failures and fix without relaxing admission or removing positive assertions. Remaining staff/session mutations, primary approval-consumption PIN projection/FOR UPDATE and manager approval PIN-counter rollback hypothesis are documented, not declared fixed. NO-GO; hosted runtime BLOCKED_BY_RAILWAY, hosted DB outside GitHub-only scope. Whole-P0 percentage unmeasured.
+
+---
+
 ## Authentication sensitive SELECT admission accepted in isolation — 2026-10-22
 
 **Accepted executable: `2cf55e258762402f001a6960f4521d389a96822f`. 46/46 workflows SUCCESS; 75/75 isolated invocations exit0/fail0/skip0/cancel0/summaryComplete.** Native run39721170510/job119634687396: authentication43PASS (parent included), all30 credential column/ACL grant-revoke cases and original signup/OTP/session/admin/rollback positives; primaryPoolCalls0. Actual checkout e1e206fc6b15d6cd703f09d9119813d3986808f6 and source share tree2ea8af20b2fb92b1e62500f48f748361f2123a75. Full42 migrations/dump-restore and Foundation types/build/unit/RLS/integration PASS. Dependency audit/review:0 high,0 critical,2 moderate. [Exact evidence](evidence/P0-AUTH-SENSITIVE-SELECT-ACCEPTANCE-20261022.json), [bounded report](P0-AUTH-SENSITIVE-SELECT-20261022.md).
