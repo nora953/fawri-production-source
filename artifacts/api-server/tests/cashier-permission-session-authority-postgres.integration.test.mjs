@@ -60,7 +60,12 @@ test('cashier permissions and operator sessions require the authentication LOGIN
       for(const sql of [`INSERT INTO ${table}(merchant_id) VALUES($1)`,`UPDATE ${table} SET merchant_id=$1 WHERE false`,`DELETE FROM ${table} WHERE merchant_id=$1`,`TRUNCATE ${table}`])await assert.rejects(()=>main.query(sql,sql.startsWith('TRUNCATE')?[]:[merchants[0]]),{code:'42501'});
     }
     await assert.rejects(()=>main.query('SELECT token_hash FROM cashier_operator_sessions'),{code:'42501'});
-    assert.equal((await main.query('SELECT staff_id,permission_snapshot FROM cashier_operator_sessions WHERE staff_id=$1',[manager])).rows.length,1);
+    assert.equal((await main.query('SELECT staff_id,permission_snapshot FROM cashier_operator_sessions WHERE staff_id=$1',[manager])).rows.length,0);
+    const {issueMerchantTransactionScope}=await import('../src/services/tenantTransactionScope.ts');
+    const scoped=await main.connect();
+    try{await scoped.query('BEGIN');await issueMerchantTransactionScope(scoped,merchants[0]);
+      assert.equal((await scoped.query('SELECT staff_id,permission_snapshot FROM cashier_operator_sessions WHERE staff_id=$1',[manager])).rows.length,1);
+    }finally{await scoped.query('ROLLBACK');scoped.release();}
     await ready(readinessEnv,main);
   });
   await t.test('readiness rejects newly reachable mutation grants and accepts their revocation',async()=>{
