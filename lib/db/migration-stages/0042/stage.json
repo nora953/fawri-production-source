@@ -1,0 +1,7 @@
+{
+  "index": 42,
+  "name": "scoped_cashier_approver_lock",
+  "when": 1791936000014,
+  "mode": "manual_sql",
+  "preimage_files": []
+}
