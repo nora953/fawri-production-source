@@ -1,3 +1,15 @@
+## Sequential continuation: non-row CI pending; policy authority source trace saved — 2026-10-22
+
+Executable645b534aea0d32848b4467b5bbebf8fd671deddb remains PENDING native/CI acceptance. A single resume inventory observed15/47 parent workflows SUCCESS,32 queued/in_progress,0 failures; isolated39824457555 queued. No second status read, wait loop, rerun, retry or cancellation. Latest globally accepted isolated executable remains bec6e7114be692981df07bc7b25ad456116fda42 (47/47+81/81). Green baseline5d3dde10 (82/82 native) proved the non-row grant-admission gap and is not fix acceptance.
+
+**Independent work completed:** nine exact-source files traced for staff discount-policy mutation authority. Policy PUT/hardening use trusted auth, while sale validation reads policy through scoped primary and returns without approval inside the stored limit. Policy table is RLS-protected but absent from authentication mutation restriction; existing accepted business-RLS suite allows own primary policy upsert100->125 with rollback. A possible own-limit escalation is an inference; actual validator bypass/HTTP exploit/hosted exposure NOT_PROVEN. [Trace/proof plan](P0-CASHIER-DISCOUNT-POLICY-MUTATION-TRACE-20261022.md) · [Exact blobs/status/facts](evidence/P0-CASHIER-DISCOUNT-POLICY-MUTATION-TRACE-20261022.json).
+
+**Next:** check645 result once and classify exact native/CI evidence first. If pending, continue independent source review without polling. Afterward prove actual validator discount250/limit100 missing-approval rejection; attempt scoped primary policy increase to300 and repeat identical validator call, restore via auth and verify two-merchant/manager/PIN/permission/session/approval invariants. Only then restrict policy mutation if confirmed, preserving trusted-auth writes/primary reads/HTTP version-rollback and approval locks. Do not launch a subsequent runtime source merely to cancel645 queued CI.
+
+This checkpoint is docs-only [skip ci], no production/test/schema changes or new native assertions. P0 scope OPEN, release NO-GO, percentage UNMEASURED. GitHub/Actions only; hosted runtime BLOCKED_BY_RAILWAY, hosted DB NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. No external connector/hosted changes/deploy/main push/merge/credentials/P1/P2.
+
+---
+
 ## Native non-row privilege gap confirmed; remediation pending CI — 2026-10-22
 
 **Proven baseline:** executable5d3dde10a03ca3c3f92a9435c005f8334546b315, isolated39821762823/job119974573789 SUCCESS;82/82 invocations clean. Source/checkout tree5dab5e9028856478e07edf762a2068543368977e matches. Actual LOGIN18 cashier tables: active RLS, no baseline non-row privileges or reachable owners;0 observed user-schema views/15 routines. Explicit disposable grants of TRUNCATE/REFERENCES/TRIGGER on settings were all incorrectly ACCEPTED by readiness. Actual privately scoped TRUNCATE removed both synthetic rows; rollback restored2 and grants revoked. This is an admission gap under grant drift, not an existing unsafe hosted/default grant. [Exact baseline](evidence/P0-CASHIER-NONROW-PRIVILEGE-BASELINE-20261022.json).
