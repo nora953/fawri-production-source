@@ -73,7 +73,11 @@ test('cashier credential housekeeping uses auth LOGIN while tenant credential wr
         await assert.rejects(()=>tenant.query(sql),{code:'42501'});
     }
     await assert.rejects(()=>tenant.query(`SET ROLE ${fixture.authRole}`),{code:'42501'});
-    assert.equal((await tenant.query('SELECT id,station_id,issued_at,expires_at FROM cashier_station_credentials WHERE id=$1',[matching.credential])).rows[0].id,matching.credential);
+    assert.equal((await tenant.query('SELECT id,station_id,issued_at,expires_at FROM cashier_station_credentials WHERE id=$1',[matching.credential])).rows.length,0);
+    const {issueMerchantTransactionScope}=await import('../src/services/tenantTransactionScope.ts');
+    try{await tenant.query('BEGIN');await issueMerchantTransactionScope(tenant,matching.merchant);
+      assert.equal((await tenant.query('SELECT id,station_id,issued_at,expires_at FROM cashier_station_credentials WHERE id=$1',[matching.credential])).rows[0].id,matching.credential);
+    }finally{await tenant.query('ROLLBACK');}
   });
   await t.test('blank, wrong-token and wrong-device refreshes leave all credentials unchanged',async()=>{
     const before=await snapshot('cashier_station_credentials');
