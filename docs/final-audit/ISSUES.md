@@ -1,3 +1,9 @@
+## Sensitive authentication SELECT candidate — 2026-10-22
+
+New executable candidate `44668bde6fd0da69511d6cf57770cb396ebe2315` is **PENDING GitHub Actions**, not covered by previous-source 46/46+75/75 acceptance. [Bounded source trace and test design](P0-AUTH-SENSITIVE-SELECT-20261022.md). Tenant production readiness now rejects SELECT access to six credential/recovery columns through current/session/direct/PUBLIC/inherited/SET roles and fails closed on missing schema or malformed evidence. Ordinary account identity/status SELECT is preserved. Existing auth actual-LOGIN suite adds 30 ACL grant/revoke cases plus ordinary-read/table-read/missing-column controls while keeping signup/OTP/session/admin/rollback/fallback assertions. No migration, issuer/RLS or hosted ACL changes. Syntax check PASS; native/type/unit results PENDING. Next inspect exact-source Isolated PostgreSQL and Foundation jobs, fix any failures and save actual counters. Remaining cashier/offline/sync/full-inventory/hosted gates remain open. **NO-GO**, whole-P0 percentage unmeasured. Hosted runtime BLOCKED_BY_RAILWAY; hosted DB outside GitHub-only session scope.
+
+---
+
 ## GitHub-only recovery: 0041 full source acceptance — 2026-10-22
 
 **Accepted executable: `43065bda4b032244016d0fc78823f5579b01deca`. All46/46 GitHub Actions workflows SUCCESS, none pending.** Native run39713145055/job119608939313 independently re-read:75/75 invocations exit0/fail0/skip0/cancel0/summaryComplete; counters exactly match saved evidence. Source/actual checkout share tree b5f8bfa86d716ce62098d057bd8207a02dc0016d. Previous baseline c60914b8 independently verified46/46 and75/75; that older source still trusted raw tenant GUCs and is superseded for this fix.
