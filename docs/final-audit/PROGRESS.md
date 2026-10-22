@@ -1,3 +1,13 @@
+## Branch publication recovered; remaining P0 gaps reconciled — 2026-10-22
+
+Acceptance docs/evidence are on branch at `accf522b0d70e9ccf7b8a73176b387b54880c2f8`; tree matches prepared d990ee89 exactly. **Do not fast-forward to the orphan commit.** Contents create/update works with fully qualified branch `refs/heads/fix/p0-provider-receipt-order-discovery-20261015`; update_ref prefix handling remains unsuitable.
+
+Bounded reconciliation saved at `2d1e464be5c4a87e0a58380c9f8e1788281e2117`: [report](P0-GITHUB-ONLY-GAP-RECONCILIATION-20261022.md), [machine records](evidence/P0-GITHUB-ONLY-GAP-RECONCILIATION-20261022.json). Five existing gaps mapped: auth sensitive SELECT, cashier credential/session role gates, primary offline/grace, missing-sequence recovery and complete P0 inventory. UI import independently parsed222 unique/allP1 (84TRIAGE/138NOT_RUN); not a P0 denominator. **New runtime cases executed0; newly accepted P0 cases0; no application changes.**
+
+Next bounded engineering task: trace legitimate primary-role authentication-table reads and sensitive columns, then design/run actual-LOGIN read-negative/readiness grant tests on disposable GitHub Actions infrastructure without breaking real signup/session/management behavior. Existing executable43065bda stays accepted46/46 workflows and75/75 invocations; do not rerun for docs-only edits. Hosted tasks remain BLOCKED_BY_RAILWAY or outside GitHub-only scope. Release **NO-GO**; whole-P0 percentage unmeasured.
+
+---
+
 ## GitHub-only recovery: 0041 full source acceptance — 2026-10-22
 
 **Accepted executable: `43065bda4b032244016d0fc78823f5579b01deca`. All46/46 GitHub Actions workflows SUCCESS, none pending.** Native run39713145055/job119608939313 independently re-read:75/75 invocations exit0/fail0/skip0/cancel0/summaryComplete; counters exactly match saved evidence. Source/actual checkout share tree b5f8bfa86d716ce62098d057bd8207a02dc0016d. Previous baseline c60914b8 independently verified46/46 and75/75; that older source still trusted raw tenant GUCs and is superseded for this fix.
