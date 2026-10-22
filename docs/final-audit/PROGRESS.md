@@ -1,3 +1,15 @@
+## Policy mutation validator bypass proven; trusted-auth restriction prepared — 2026-10-22
+
+**Baseline d051f0c32e29e66ddda60787f6f873c6948a841f:**47/47 parent workflows SUCCESS;83/83 clean native invocations/81 unique files. Native39826479484/job119990994336, source and checkout5013e81e6373d7cb727f66ca7571be6af719c7f5 tree338d5d9067d65aec29f530827469c39690233131 match. Actual primary own-policy100->300 ACCEPTED; readiness ACCEPTED; unchanged real validator discount250 without approval ACCEPTED. Auth exact restoration returned original approval-required denial; other merchant/staff/permission/PIN/session/approval state unchanged. No HTTP/full sale/hosted exposure claimed. [Exact baseline](evidence/P0-CASHIER-DISCOUNT-POLICY-BASELINE-20261022.json).
+
+**Prepared fix PENDING native/CI:** add policy table to auth mutation inventory (one production table-name addition); fixture uses derived existing restriction. No migration/business/PIN/discount-threshold/lock/grant/hosted change. Admission rejects unsafe policy ACLs; does not revoke hosted privileges. Native requires original primary42501/no-approval rejection, trusted-auth policy positive/exact restoration,12 direct mutation denials,165 table/column/reachable-role grant/revoke cases and both scoped read positives. Older business-RLS own-policy primary write changed to explicit denial plus auth rollback positive; attribution writes/rollback unchanged. Local node --check PASS; corrected-source acceptance not claimed. [Fix/report/continuation](P0-CASHIER-DISCOUNT-POLICY-INTEGRITY-20261022.md).
+
+**Next:** read final source P0_CASHIER_DISCOUNT_POLICY_INTEGRITY_REMEDIATION and full native/CI/Foundation/quality/schema/security exact results once available. No polling/wait loop, duplicate test run or passing-test rerun for docs. Preserve failures before correction/bounded justified retry. Last accepted remediation645b534 remains47/47+82/82; diagnostic d051 green is not fix acceptance. After acceptance, actual approval provenance proof follows saved source trace, preserving locks/replay/kind-change atomicity.
+
+NO-GO; whole-P0 percentage UNMEASURED; full remaining P0 scope OPEN. GitHub/Actions only; hosted runtime BLOCKED_BY_RAILWAY, hosted DB NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. No external connector/hosted change/deploy/main push/merge/credential rotation/P1/P2.
+
+---
+
 ## Policy diagnostic executing; approval provenance source review saved — 2026-10-22
 
 Current test executable d051f0c32e29e66ddda60787f6f873c6948a841f is PENDING. One resume inventory:25/47 parent workflows SUCCESS,22 queued/in_progress,0 failures. Native39826479484/job119990994336 executing migrations/selected tests. No repeat status poll, retry, rerun or cancellation. Last accepted isolated source645b534aea0d32848b4467b5bbebf8fd671deddb remains47/47+82/82 with174 direct/20 role grant cases. Do not call the policy mutation/validator outcome until its marker exists.
