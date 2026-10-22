@@ -1,3 +1,13 @@
+## Remediation published; exact CI continuation — 2026-10-23
+
+Remote executable4acf13517337a4038f46f2fb672d76fde42db77a, tree8e910f6ac0ded63664f9161b51fcbc25f9c80aaa, all22 uploaded blobs/tree verified.47 workflows started; native39869692485/job120140702367 install/build PASS, priority native execution IN_PROGRESS at last observation. Schema39869692394, Foundation39869692042, quality39869692369, security39869692207. Native acceptance PENDING. Inspect P0_CASHIER_APPROVAL_PROVENANCE_REMEDIATION and all84 complete summaries; require actual canonical/schema/quality/Foundation/security results. No repeat status polling or passing-suite rerun. Preserve any failed attempt before correction. Last accepted remediationbcebf0e remains47/47+83/83; diagnostic1716 green47/47+84/84 proves bypass, not fix acceptance.
+
+Independent next source trace saved: [merchant discount-kind authority](P0-CASHIER-DISCOUNT-KIND-AUTHORITY-TRACE-20261023.md), five exact blobs. Kind settings still primary-writable while actual validator chooses amount/percentage ceiling. Actual bypass/invalidation impact NOT_PROVEN. After current result, use actual LOGIN/validator and exact two-merchant restoration before any next fix; preserve authenticated kind management/version/advisory/pending invalidation. No additional executable launched during current CI.
+
+NO-GO; source candidate46/hosted last28 migrations, historical28 canonical hashes match. Hosted role/actual deployed DB target/login/pooler/full P0 inventory gates remain open. No hosted change/deploy/main push/merge/P1/P2. This checkpoint documentation only [skip ci].
+
+---
+
 ## Approval provenance bypass proven; scoped mutation remediation prepared — 2026-10-23
 
 Diagnostic1716a354153fff43994dc80a33c184f880046dc1:47/47 workflows SUCCESS,84/84 clean native invocations/82 files. Native39867836738/job120134422668, checkoutab9913435a238b01d6cca2eac9b02c7d51f0b21b matches source treedd691a701a05f0d8b6c437dad8fd933bd85da4e4. Actual primary forged pending/pre-consumed approvals accepted by unchanged validator without issuance/PIN; issued operation rebind/consumed reset accepted by actual consumer. Cross-tenant denial/genuine issuance/replay/restoration PASS. No HTTP/full sale/hosted exploit claimed. [Exact baseline](evidence/P0-CASHIER-APPROVAL-PROVENANCE-BASELINE-20261023.json).
