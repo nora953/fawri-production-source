@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { randomUUID, randomInt } from 'node:crypto';
 import test from 'node:test';
 import { assertDisposablePostgres } from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
+import {createDisposableAuthenticationRole} from './helpers/disposable-authentication-role.mjs';
 import { cleanupResources } from './helpers/cleanup-resources.mjs';
 
-// Characterizes a known SQL-role boundary weakness; passing is NOT release
-// acceptance. Never run against a hosted DB or weaken the isolation attestation.
+// Exercises the public RLS boundary after private tenant authority cutover.
+// Never run against a hosted DB or weaken the isolation attestation.
 await assertDisposablePostgres();
 const { Client } = await import('pg');
 
@@ -20,6 +21,9 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
   const runtimeUrls = new Map();
   const ownedApplicationAudits = [];
   await admin.connect();
+  const authFixture=await createDisposableAuthenticationRole(admin,process.env.DATABASE_URL);
+  const issuer=new Client({connectionString:authFixture.url,connectionTimeoutMillis:5000});
+  await issuer.connect();
   t.after(() => cleanupResources([
     ['runtime sessions', async () => { for (const client of clients) await client.end(); }],
     ['owned audit records', async () => {
@@ -32,6 +36,7 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
     ['owned merchants', () => admin.query('DELETE FROM merchants WHERE id=ANY($1::text[])', [tenants])],
     ['owned admin profile', () => admin.query('DELETE FROM admin_profiles WHERE id=$1', [actor])],
     ['owned accounts', () => admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [[actor, ...tenants]])],
+    ['scope issuer',async()=>{await issuer.end();await authFixture.dispose();}],
     ['owned roles', async () => {
       for (const role of roles) {
         await admin.query(`DROP OWNED BY ${role}`);
@@ -85,6 +90,10 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
     try { return await work(); }
     finally { await client.query('ROLLBACK'); }
   }
+  async function issue(client,merchant){
+    const target=(await client.query('SELECT session_user::text AS login,pg_backend_pid() AS pid,txid_current()::text AS xid')).rows[0];
+    await issuer.query('SELECT fawri_security.issue_scope($1::name,$2::integer,$3::bigint,$4::text)',[target.login,target.pid,target.xid,merchant]);
+  }
   const visible = async client => (await client.query('SELECT merchant_id FROM merchant_settings ORDER BY merchant_id')).rows.map(row => row.merchant_id);
   async function setAudit(client) {
     await client.query("SELECT set_config('fawri.admin_account_id',$1,true),set_config('fawri.admin_audit_id',$2,true)", [actor, auditId]);
@@ -98,6 +107,8 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
       assert.deepEqual(await visible(client), []);
       await transaction(client, async () => {
         await client.query("SELECT set_config('fawri.tenant_id',$1,true)", [tenants[0]]);
+        assert.deepEqual(await visible(client), [], 'raw setting alone grants no authority');
+        await issue(client,tenants[0]);
         assert.deepEqual(await visible(client), [tenants[0]]);
         assert.equal((await client.query('UPDATE merchant_settings SET version=version+1 WHERE merchant_id=$1', [tenants[0]])).rowCount, 1);
         assert.equal((await client.query('UPDATE merchant_settings SET version=version+1 WHERE merchant_id=$1', [tenants[1]])).rowCount, 0);
@@ -112,16 +123,15 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
     }
   });
 
-  await t.test('shared SQL login can forge a tenant GUC without any admin audit privilege', async () => {
-    // A shared runtime login is trusted to choose the tenant. Audit transaction
-    // binding does not turn that user-controlled GUC into an authenticated ID.
+  await t.test('shared SQL login cannot forge tenant authority through a GUC', async () => {
+    // The public predicate must ignore caller-controlled tenant settings.
     await transaction(tenantOnly, async () => {
       await tenantOnly.query("SELECT set_config('fawri.tenant_id',$1,true)", [tenants[1]]);
-      assert.deepEqual(await visible(tenantOnly), [tenants[1]]);
-      assert.equal((await tenantOnly.query('UPDATE merchant_settings SET version=version+1 WHERE merchant_id=$1', [tenants[1]])).rowCount, 1);
+      assert.deepEqual(await visible(tenantOnly), []);
+      assert.equal((await tenantOnly.query('UPDATE merchant_settings SET version=version+1 WHERE merchant_id=$1', [tenants[1]])).rowCount, 0);
     });
     assert.deepEqual(await visible(tenantOnly), []);
-    console.log('P0_TENANT_GUC_TRUST_PROOF ' + JSON.stringify({ auditTableAccess: false, arbitrarySqlRequired: true, foreignTenantIdentifierRequired: true, tenantGucForgery: true, httpExploitTested: false, releaseAccepted: false }));
+    console.log('P0_TENANT_GUC_FORGERY_DENIED ' + JSON.stringify({ auditTableAccess: false, arbitrarySqlRequired: true, foreignTenantIdentifierRequired: true, tenantGucForgery: false, httpExploitTested: false, releaseAccepted: false }));
   });
 
   await t.test('audit CRUD grants and forged actor GUCs cannot confer operator authority', async () => {
@@ -235,7 +245,9 @@ test('P0 audit records are authority-bearing capabilities under restricted direc
       assert.deepEqual(await visible(client), [], 'live committed IDs must not authorize a fresh transaction');
       assert.equal((await client.query('UPDATE merchant_settings SET version=version+1 WHERE merchant_id=$1', [tenants[1]])).rowCount, 0);
       await client.query("SELECT set_config('fawri.tenant_id',$1,true)", [tenants[0]]);
-      assert.deepEqual(await visible(client), [tenants[0]], 'own tenant remains usable during rejected admin replay');
+      assert.deepEqual(await visible(client), [], 'forged tenant setting cannot rescue rejected admin replay');
+      await issue(client,tenants[0]);
+      assert.deepEqual(await visible(client), [tenants[0]], 'issued own tenant remains usable during rejected admin replay');
     })));
     for (const client of [operator, writable, tenantOnly, otherSession]) assert.deepEqual(await visible(client), []);
     await admin.query("UPDATE accounts SET state='suspended' WHERE id=$1", [actor]);

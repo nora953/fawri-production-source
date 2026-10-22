@@ -288,6 +288,13 @@
       "when": 1791936000012,
       "tag": "0040_transaction_scoped_tenant_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791936000013,
+      "tag": "0041_private_tenant_predicate_cutover",
+      "breakpoints": true
     }
   ]
 }

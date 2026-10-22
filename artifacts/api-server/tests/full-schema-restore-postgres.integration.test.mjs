@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
+import {Client} from 'pg';
+import {createDisposableAuthenticationRole} from './helpers/disposable-authentication-role.mjs';
 import { assertDisposablePostgres } from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 await assertDisposablePostgres();
 const { pool } = await import('@workspace/db');
@@ -13,7 +15,7 @@ const ids = ['audit-restore-merchant-a', 'audit-restore-merchant-b'];
 test(`full committed schema restore ${phase}: data, policies, ACLs and restricted tenant reads`, async t => {
   t.after(() => pool.end());
   if (phase === 'seed') {
-    await pool.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+    await pool.query(`CREATE ROLE ${role} LOGIN PASSWORD 'owned-offline-restore-fixture-only' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
     await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await pool.query(`GRANT SELECT ON merchant_channels TO ${role}`);
     for (const [index, id] of ids.entries()) {
@@ -120,20 +122,30 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
       }
     }
   }
-  const client = await pool.connect();
+  // Actual restricted LOGIN on both sides of dump/restore. No SET ROLE and no
+  // forged tenant GUC positive: the separate trusted issuer commits each scope.
+  const authentication=await createDisposableAuthenticationRole(pool,process.env.DATABASE_URL);
+  const url=new URL(process.env.DATABASE_URL);url.username=role;url.password='owned-offline-restore-fixture-only';url.search='';
+  const client=new Client({connectionString:url.toString(),connectionTimeoutMillis:5000});
+  const issuer=new Client({connectionString:authentication.url,connectionTimeoutMillis:5000});
   try {
-    await client.query('BEGIN');
-    await client.query(`SET LOCAL ROLE ${role}`);
-    const flags = (await client.query('SELECT current_user AS role, rolsuper, rolbypassrls FROM pg_roles WHERE rolname=current_user')).rows[0];
-    assert.deepEqual(flags, { role, rolsuper: false, rolbypassrls: false });
-    assert.equal((await client.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count, 0);
-    for (const id of ids) {
-      await client.query("SELECT set_config('fawri.tenant_id',$1,true)", [id]);
-      assert.deepEqual((await client.query('SELECT merchant_id,page_id FROM merchant_channels')).rows, [{ merchant_id: id, page_id: `page-${id}` }]);
+    await client.connect();await issuer.connect();
+    const flags=(await client.query('SELECT session_user AS login,current_user AS role,rolsuper,rolbypassrls FROM pg_roles WHERE rolname=session_user')).rows[0];
+    assert.deepEqual(flags,{login:role,role,rolsuper:false,rolbypassrls:false});
+    assert.equal((await client.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count,0);
+    for(const id of ids){
+      await client.query('BEGIN');
+      try{
+        const target=(await client.query('SELECT session_user::text AS login,pg_backend_pid() AS pid,txid_current()::text AS xid')).rows[0];
+        await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[id]);
+        assert.deepEqual((await client.query('SELECT merchant_id,page_id FROM merchant_channels')).rows,[],'forged GUC denied after restore');
+        await issuer.query('SELECT fawri_security.issue_scope($1::name,$2::integer,$3::bigint,$4::text)',[target.login,target.pid,target.xid,id]);
+        assert.deepEqual((await client.query('SELECT merchant_id,page_id FROM merchant_channels')).rows,[{merchant_id:id,page_id:`page-${id}`}]);
+      }finally{await client.query('ROLLBACK');}
+      assert.equal((await client.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count,0,'scope cannot survive pool reuse');
     }
   } finally {
-    await client.query('ROLLBACK');
-    client.release();
+    await client.end();await issuer.end();await authentication.dispose();
   }
   console.log('AUDIT_FULL_SCHEMA_RESTORE_RESULT ' + JSON.stringify({ phase, migrationCount: migrations.length, tableCount: tables.length, policyCount: policies.length, functionCount: functions.length, fixtureChannels: channels.length, restrictedTenantReads: true, privateScopeAuthorityAclPreserved:true, privateSchemaCount:privateSchemas.length, privateTableCount:privateTables.length, privateFunctionCount:privateFunctions.length, fingerprint }));
   if (phase === 'verify') assert.equal(fingerprint, before.fingerprint, 'restored schema/data/policy/ACL fingerprint must match');

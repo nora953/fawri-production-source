@@ -803,7 +803,6 @@ export async function applyVerifiedSaasBillingProviderEvent(
   const processEvent = async (client: SubscriptionPlanCycleTransaction, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
     // Replay already issues on its operator lease; confirmed callbacks own a fresh primary transaction.
     if(confirmed) await issueMerchantTransactionScope(client,merchantId);
-    if(replay || confirmed) await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchantId]);
     // Match checkout and plan-cycle ordering before acquiring billing row locks.
     await client.query("SELECT id FROM merchants WHERE id = $1 FOR UPDATE", [merchantId]);
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [

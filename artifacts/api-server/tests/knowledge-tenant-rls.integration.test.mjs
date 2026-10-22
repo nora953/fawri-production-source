@@ -58,12 +58,10 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
     assert.deepEqual((await runtimePool.query("SELECT current_user AS active, session_user AS login")).rows[0], {active: role, login: role});
     const { assertProductionDatabaseRlsReady } = await import("../src/services/postgresRuntimeRlsSecurity.ts");
     await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required", FAWRI_AUTH_DATABASE_URL:"postgresql://auth@127.0.0.1/fawri_ci", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci" });
-    // Exercise the actual application caller with the canonical private predicate
-    // on owned-test policies. Restore the original public policies in finally;
-    // this is not a production RLS cutover or a denial claim for the old predicate.
+    // Exercise the actual application caller through unchanged canonical public
+    // RLS policies after 0041; no disposable replacement predicate is installed.
     policies=(await admin.query("SELECT tablename,policyname,qual,with_check FROM pg_policies WHERE schemaname='public' AND tablename=ANY($1::text[])",[["knowledge_embeddings","learned_answers","training_requests","saved_answers","knowledge_audit_events"]])).rows;
     assert.equal(policies.length,5);
-    for(const policy of policies)await admin.query(`ALTER POLICY "${policy.policyname}" ON public.${policy.tablename} USING(fawri_security.allows_merchant(merchant_id)) WITH CHECK(fawri_security.allows_merchant(merchant_id))`);
     const knowledge = await import("../src/services/knowledge/postgresKnowledgeRuntime.ts");
     const { PostgresKnowledgeManagementRuntime } = await import("../src/services/knowledge/postgresKnowledgeManagementRuntime.ts");
     const { deleteMerchantKnowledgePostgresData } = await import("../src/services/knowledge/postgresKnowledgeLifecycle.ts");
@@ -124,7 +122,6 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
     assert.equal((await management.listSavedAnswers(tenants[1])).length, 2);
     console.log('P0_KNOWLEDGE_SCOPE_CALLER_PROOF '+JSON.stringify({actualRuntimeLogin:true,separateAuthIssuer:true,canonicalPrivatePolicy:true,scopeTupleVerified:true,forgedTenantGucDenied:true,foreignUpdateDenied:true,issuerRevocationPreventsWork:true,rollbackIsolation:true,reusedPoolIsolation:true,productionPredicateChanged:false,releaseAccepted:false}));
   } finally {
-    for(const policy of policies)await admin.query(`ALTER POLICY "${policy.policyname}" ON public.${policy.tablename} USING(${policy.qual}) WITH CHECK(${policy.with_check})`);
     const {closeAuthenticationPool}=await import("../src/services/authenticationPostgresAuthority.ts");
     await closeAuthenticationPool();
     if (runtimePool) await runtimePool.end();

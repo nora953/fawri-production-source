@@ -43,7 +43,6 @@ export async function executeVerifiedReceiptReplay(actor:{id:string;sessionId:st
   await confirmReceiptReplay(receipt,fetchImpl);
   const scope:BillingReplayScope={transaction:work=>transaction(async client=>{
     await issueMerchantTransactionScope(client,receipt.merchant_id);
-    await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[receipt.merchant_id]);
     return work(client);
   }),merchantId:receipt.merchant_id,requestId:receipt.request_ref,firstReceivedAt:receipt.first_received_at,authorize:async(client:SubscriptionPlanCycleTransaction)=>{
     const current=await authorize(client);

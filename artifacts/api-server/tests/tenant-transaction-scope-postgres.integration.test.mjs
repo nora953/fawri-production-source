@@ -263,7 +263,7 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
     await admin.query('GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO '+auth);
     await admin.query('GRANT EXECUTE ON FUNCTION fawri_security.allows_merchant(text) TO '+tenant);
     await admin.query('DROP POLICY owned_scope ON '+schema+'.probe_rows');
-    await admin.query('CREATE POLICY owned_scope ON '+schema+'.probe_rows USING(fawri_security.allows_merchant(merchant_id)) WITH CHECK(fawri_security.allows_merchant(merchant_id))');
+    await admin.query('CREATE POLICY owned_scope ON '+schema+'.probe_rows USING(public.fawri_tenant_or_audited_admin(merchant_id)) WITH CHECK(public.fawri_tenant_or_audited_admin(merchant_id))');
     try{
       await transaction(primary,async target=>{
         await issueMerchantTransactionScope(primary,merchants[0]);
@@ -380,5 +380,5 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
       await admin.query('CREATE POLICY owned_scope ON '+schema+'.probe_rows USING('+schema+'.allows_merchant(merchant_id)) WITH CHECK('+schema+'.allows_merchant(merchant_id))');
     }
   });
-  if(protocolPassed)console.log('P0_TENANT_SCOPE_PROTOCOL_PROOF '+JSON.stringify({canonicalRestrictedOwnerVerified:true,canonicalOwnerCapabilityRevocationDenied:true,productionStartupPrivateScopeAdmissionVerified:true,privateScopePrivilegeAdmissionVerified:true,canonicalMigrationExercised:true,serverAuthenticatedPoolIssuance:true,serverIsolationRejection:true,serverAutocommitRejection:true,issuerFailurePoolRecovery:true,restrictedRuntimeLogin:true,sameLoginCrossBackendReplayDenied:true,sameBackendLaterTransactionReplayDenied:true,gucSpoofDenied:true,foreignReadAndUpdateDenied:true,privateAuthorityCrudDenied:true,forgedIssuerCallDenied:true,immutableScope:true,expiredScopeRenewalDenied:true,completedOnlyBoundedCleanup:true,restrictedNonLoginFunctionOwner:true,readCommittedSupported:true,repeatableReadAndSerializableFailClosed:true,concurrentConnections:4,reuseRounds:2,productionPredicateChanged:false,hostedCertified:false,releaseAccepted:false}));
+  if(protocolPassed)console.log('P0_TENANT_SCOPE_PROTOCOL_PROOF '+JSON.stringify({canonicalRestrictedOwnerVerified:true,canonicalOwnerCapabilityRevocationDenied:true,productionStartupPrivateScopeAdmissionVerified:true,privateScopePrivilegeAdmissionVerified:true,canonicalMigrationExercised:true,serverAuthenticatedPoolIssuance:true,serverIsolationRejection:true,serverAutocommitRejection:true,issuerFailurePoolRecovery:true,restrictedRuntimeLogin:true,sameLoginCrossBackendReplayDenied:true,sameBackendLaterTransactionReplayDenied:true,gucSpoofDenied:true,foreignReadAndUpdateDenied:true,privateAuthorityCrudDenied:true,forgedIssuerCallDenied:true,immutableScope:true,expiredScopeRenewalDenied:true,completedOnlyBoundedCleanup:true,restrictedNonLoginFunctionOwner:true,readCommittedSupported:true,repeatableReadAndSerializableFailClosed:true,concurrentConnections:4,reuseRounds:2,publicPredicateUsesPrivateScope:true,hostedCertified:false,releaseAccepted:false}));
 });

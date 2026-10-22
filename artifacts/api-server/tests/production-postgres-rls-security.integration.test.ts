@@ -71,7 +71,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
        public.fawri_tenant_or_audited_admin('merchant-rls-probe') AS own_tenant,
        public.fawri_tenant_or_audited_admin('merchant-other') AS other_tenant`,
   );
-  assert.equal(predicateProbe.rows[0]?.own_tenant, true);
+  assert.equal(predicateProbe.rows[0]?.own_tenant, false, "raw tenant GUC is not authority");
   assert.equal(predicateProbe.rows[0]?.other_tenant, false);
   await client.query(`SELECT set_config('fawri.tenant_id', '', false)`);
 
@@ -367,16 +367,16 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
   });
 
-  await t.test("tenant context cannot leak between sequential transactions on the same pooled connection", async () => {
-    // The same physical client is reused for both merchants. This is stronger
-    // than a source-only assertion about set_config(..., true).
+  await t.test("forged tenant settings cannot authorize sequential transactions on the same pooled connection", async () => {
+    // The same physical client tries both forged IDs. Positive actual-LOGIN
+    // issuance and CRUD remain in the central scope and audit-boundary proofs.
     await client.query("BEGIN");
     try {
       await client.query("SELECT set_config('fawri.tenant_id', $1, true)", ["merchant-a-isolation-probe"]);
       const tenantA = await client.query<{ own: boolean; foreign: boolean }>(
         "SELECT public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe') AS own, public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe') AS foreign",
       );
-      assert.equal(tenantA.rows[0]?.own, true);
+      assert.equal(tenantA.rows[0]?.own, false, "forged A denied");
       assert.equal(tenantA.rows[0]?.foreign, false);
       await client.query("COMMIT");
     } catch (error) {
@@ -400,7 +400,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
       const tenantB = await client.query<{ own: boolean; foreign: boolean }>(
         "SELECT public.fawri_tenant_or_audited_admin('merchant-b-isolation-probe') AS own, public.fawri_tenant_or_audited_admin('merchant-a-isolation-probe') AS foreign",
       );
-      assert.equal(tenantB.rows[0]?.own, true);
+      assert.equal(tenantB.rows[0]?.own, false, "forged B denied");
       assert.equal(tenantB.rows[0]?.foreign, false);
       await client.query("ROLLBACK");
     } catch (error) {

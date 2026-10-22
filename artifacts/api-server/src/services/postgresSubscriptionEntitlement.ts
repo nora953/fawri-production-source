@@ -415,7 +415,6 @@ async function withMerchantSubscriptionTransaction<T>(
   return withTransaction(async (client) => {
     const { issueMerchantTransactionScope } = await import("./tenantTransactionScope");
     await issueMerchantTransactionScope(client, merchantId);
-    await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
     return work(client);
   });
 }

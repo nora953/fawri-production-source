@@ -80,9 +80,6 @@ class PostgresKnowledgeSqlClient implements KnowledgeSqlClient {
       // Issue and commit on the trusted auth connection before any merchant/FK
       // row locks. Keep this primary lease until the outer transaction ends.
       await issueMerchantTransactionScope(connection, this.merchantId!);
-      // Transitional compatibility with the existing public RLS predicate.
-      // This setting is not the private scope's authorization boundary.
-      await connection.query("SELECT set_config('fawri.tenant_id', $1, true)", [this.merchantId]);
       const executor: KnowledgeSqlExecutor = {
         async query<Row extends Record<string, unknown>>(
           sql: string,

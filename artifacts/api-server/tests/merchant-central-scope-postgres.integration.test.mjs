@@ -23,6 +23,8 @@ test('central merchant wrappers commit private authority before protected work o
   const privateScope=async(client,own,foreign)=>{
     const row=(await client.query('SELECT session_user::text AS login,current_user::text AS active,pg_backend_pid() AS pid,txid_current()::text AS xid,fawri_security.allows_merchant($1) AS own,fawri_security.allows_merchant($2) AS foreign',[own,foreign])).rows[0];
     assert.equal(row.login,fixture.role);assert.equal(row.active,fixture.role);assert.equal(row.own,true);assert.equal(row.foreign,false);
+    const visible=(await client.query('SELECT merchant_id FROM subscriptions WHERE merchant_id=ANY($1::text[]) ORDER BY merchant_id',[[own,foreign]])).rows;
+    assert.deepEqual(visible,[{merchant_id:own}],'canonical public RLS permits only issued merchant');
     const committed=(await fixture.admin.query('SELECT merchant_id,pg_xact_status(transaction_id::text::xid8) AS state FROM fawri_security.transaction_scopes WHERE runtime_login=$1 AND backend_pid=$2 AND transaction_id=$3',[fixture.role,row.pid,row.xid])).rows;
     assert.deepEqual(committed,[{merchant_id:own,state:'in progress'}]);
   };
@@ -30,6 +32,7 @@ test('central merchant wrappers commit private authority before protected work o
     await withOperationalTransaction(async client=>{
       await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[merchants[0]]);
       assert.equal((await client.query('SELECT fawri_security.allows_merchant($1) AS allowed',[merchants[0]])).rows[0].allowed,false);
+      assert.deepEqual((await client.query('SELECT merchant_id FROM subscriptions')).rows,[],'forged tenant GUC grants no public-table access');
     });
   });
   await t.test('operational scope is committed before the first merchant lock and cannot be changed by GUC',async()=>{
@@ -64,5 +67,5 @@ test('central merchant wrappers commit private authority before protected work o
     const reset=(await fixture.runtimePool.query("SELECT nullif(current_setting('fawri.tenant_id',true),'') AS tenant,fawri_security.allows_merchant($1) AS allowed",[merchants[1]])).rows[0];
     assert.deepEqual(reset,{tenant:null,allowed:false});
   });
-  console.log('P0_CENTRAL_MERCHANT_SCOPE_PROOF '+JSON.stringify({actualLogin:true,issuerCommittedBeforeLocks:true,genericCannotMint:true,gucCannotRebindPrivateScope:true,revocationFailClosed:true,rollbackAndSessionReset:true,subscriptionCaller:true,publicPredicateChanged:false,releaseAccepted:false}));
+  console.log('P0_CENTRAL_MERCHANT_SCOPE_PROOF '+JSON.stringify({actualLogin:true,issuerCommittedBeforeLocks:true,genericCannotMint:true,gucCannotRebindPrivateScope:true,revocationFailClosed:true,rollbackAndSessionReset:true,subscriptionCaller:true,publicPredicateChanged:true,releaseAccepted:false}));
 });

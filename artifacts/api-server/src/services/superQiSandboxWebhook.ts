@@ -76,7 +76,6 @@ async function attachProviderPaymentReference(
 
   await withOperationalTransaction(async client => {
     await issueMerchantTransactionScope(client,scope.merchantId);
-    await client.query("SELECT set_config('fawri.tenant_id',$1,true)",[scope.merchantId]);
     await client.query('SELECT id FROM merchants WHERE id=$1 FOR UPDATE',[scope.merchantId]);
     await authorizeConfirmedProviderBillingScope(client,scope);
   const collision = await client.query(

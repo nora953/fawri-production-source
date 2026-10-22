@@ -33,28 +33,23 @@ function harness(failAt){
   vm.runInContext(compiled+'\nglobalThis.run=withMerchantSubscriptionTransaction;globalThis.runOperational=withMerchantOperationalTransaction;',context);
   return {run:context.run,runOperational:context.runOperational,calls,releaseReasons,get releases(){return releases;}};
 }
-test('tenant context is parameterized and set inside BEGIN before work and COMMIT',async()=>{
+test('private scope is issued inside BEGIN before work and COMMIT',async()=>{
   const h=harness();const merchant="owned-merchant-'literal";
   assert.equal(await h.run(merchant,async c=>{await c.query('OWNED_WORK');return 42;}),42);
-  assert.deepEqual(h.calls.map(c=>c.sql),['BEGIN','PRIVATE_SCOPE',"SELECT set_config('fawri.tenant_id', $1, true)",'OWNED_WORK','COMMIT']);
-  assert.equal(h.calls[2].values[0],merchant);assert.equal(h.releases,1);assert.deepEqual(h.releaseReasons,[false]);
+  assert.deepEqual(h.calls.map(c=>c.sql),['BEGIN','PRIVATE_SCOPE','OWNED_WORK','COMMIT']);
+  assert.equal(h.calls[1].merchant,merchant);assert.equal(h.releases,1);assert.deepEqual(h.releaseReasons,[false]);
 });
 test('work failure rolls back and releases without COMMIT',async()=>{
   const h=harness();await assert.rejects(h.run('owned-a',async()=>{throw Error('owned-work-failure');}),/owned-work-failure/);
-  assert.deepEqual(h.calls.map(c=>c.sql),['BEGIN','PRIVATE_SCOPE',"SELECT set_config('fawri.tenant_id', $1, true)",'ROLLBACK']);assert.equal(h.releases,1);
-});
-test('tenant-setting failure prevents work and rolls back',async()=>{
-  const h=harness("SELECT set_config('fawri.tenant_id', $1, true)");let worked=false;
-  await assert.rejects(h.run('owned-a',async()=>{worked=true;}),/synthetic-query-failure/);
-  assert.equal(worked,false);assert.equal(h.calls.at(-1).sql,'ROLLBACK');assert.equal(h.releases,1);
+  assert.deepEqual(h.calls.map(c=>c.sql),['BEGIN','PRIVATE_SCOPE','ROLLBACK']);assert.equal(h.releases,1);
 });
 test('COMMIT failure propagates uncertainty and releases after rollback attempt',async()=>{
   const h=harness('COMMIT');await assert.rejects(h.run('owned-a',async()=>true),/synthetic-query-failure/);
   assert.deepEqual(h.calls.slice(-2).map(c=>c.sql),['COMMIT','ROLLBACK']);assert.equal(h.releases,1);assert.deepEqual(h.releaseReasons,[true]);
 });
-test('same pooled adapter receives a fresh transaction-local tenant on every call',async()=>{
+test('same pooled adapter receives a fresh private merchant scope on every call',async()=>{
   const h=harness();for(const merchant of ['owned-a','owned-b'])await h.run(merchant,async()=>true);
-  assert.deepEqual(h.calls.filter(c=>c.values).map(c=>c.values[0]),['owned-a','owned-b']);
+  assert.deepEqual(h.calls.filter(c=>c.sql==='PRIVATE_SCOPE').map(c=>c.merchant),['owned-a','owned-b']);
   assert.equal(h.calls.filter(c=>c.sql==='BEGIN').length,2);assert.equal(h.releases,2);
 });
 
@@ -69,16 +64,16 @@ test('failed ROLLBACK preserves original work error and discards connection',asy
   assert.deepEqual(h.releaseReasons,[true]);
 });
 
-test('issuer failure prevents tenant setting and work, preserving rollback',async()=>{
+test('issuer failure prevents protected work, preserving rollback',async()=>{
   const h=harness('PRIVATE_SCOPE');let worked=false;
   await assert.rejects(h.run('owned-a',async()=>{worked=true;}),/synthetic-issuer-failure/);
   assert.equal(worked,false);assert.deepEqual(h.calls.map(c=>c.sql),['BEGIN','PRIVATE_SCOPE','ROLLBACK']);
   assert.equal(h.calls[1].merchant,'owned-a');assert.deepEqual(h.releaseReasons,[false]);
 });
 
-test('operational wrapper awaits private scope before tenant setting, first lock and work',async()=>{
+test('operational wrapper awaits private scope before the first lock and work',async()=>{
   const h=harness();await h.runOperational('owned-a',async client=>client.query('FIRST_LOCK'));
-  assert.deepEqual(h.calls.map(c=>c.sql),['BEGIN','PRIVATE_SCOPE',"SELECT set_config('fawri.tenant_id', $1, true)",'FIRST_LOCK','COMMIT']);
+  assert.deepEqual(h.calls.map(c=>c.sql),['BEGIN','PRIVATE_SCOPE','FIRST_LOCK','COMMIT']);
   assert.equal(h.calls[1].merchant,'owned-a');assert.deepEqual(h.releaseReasons,[false]);
 });
 test('operational issuer rejection prevents locks and work without generic issuer recursion',async()=>{
