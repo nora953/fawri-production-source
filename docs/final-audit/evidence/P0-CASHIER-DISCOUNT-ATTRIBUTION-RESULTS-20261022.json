@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "recordedDate": "2026-10-22",
-  "phaseStatus": "NATIVE_VERIFIED_GLOBAL_CI_PENDING",
+  "phaseStatus": "ACCEPTED_IN_ISOLATED_GITHUB_ACTIONS",
   "repository": "nora953/fawri-production-source",
   "branch": "fix/p0-provider-receipt-order-discovery-20261015",
   "draftPr": 550,
@@ -1105,25 +1105,9 @@
   },
   "workflowStatusAsObserved": {
     "total": 47,
-    "success": 44,
-    "pending": [
-      {
-        "id": 39797882225,
-        "name": "Merchant regional PostgreSQL authority",
-        "status": "in_progress"
-      },
-      {
-        "id": 39797882190,
-        "name": "Product catalog UI cutover",
-        "status": "in_progress"
-      },
-      {
-        "id": 39797881966,
-        "name": "Final security and supply chain",
-        "status": "in_progress"
-      }
-    ],
-    "note": "Three run/attempt resources still in_progress although latest job resources all completed/success; do not equate job success to completed parent workflow."
+    "success": 47,
+    "pending": [],
+    "note": "One bounded resume read: all parent workflows now completed/success. No test rerun or retry."
   },
   "pendingParentJobObservations": [
     {
@@ -1170,6 +1154,640 @@
     }
   ],
   "workflows": [
+    {
+      "id": 39797882219,
+      "name": "Clean deployment golden gate",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882219"
+    },
+    {
+      "id": 39797882116,
+      "name": "Pre-release performance smoke gate",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882116"
+    },
+    {
+      "id": 39797882391,
+      "name": "Order operations",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882391"
+    },
+    {
+      "id": 39797882238,
+      "name": "Global subscription golden journey",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882238"
+    },
+    {
+      "id": 39797882284,
+      "name": "Location routing engine",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882284"
+    },
+    {
+      "id": 39797882433,
+      "name": "Foundation integration final gate",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882433"
+    },
+    {
+      "id": 39797881988,
+      "name": "Merchant deletion cashier lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881988"
+    },
+    {
+      "id": 39797882013,
+      "name": "Global admin golden journey",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882013"
+    },
+    {
+      "id": 39797882437,
+      "name": "Cashier dashboard surface regression",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882437"
+    },
+    {
+      "id": 39797882062,
+      "name": "Dashboard channel coherence",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882062"
+    },
+    {
+      "id": 39797882097,
+      "name": "Observability mounted routes",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882097"
+    },
+    {
+      "id": 39797882592,
+      "name": "PostgreSQL schema validation",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882592"
+    },
+    {
+      "id": 39797882084,
+      "name": "Isolated Neon preflight static safety",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882084"
+    },
+    {
+      "id": 39797882401,
+      "name": "Merchant deletion promotions lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882401"
+    },
+    {
+      "id": 39797882358,
+      "name": "Merchant deletion audit PII",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882358"
+    },
+    {
+      "id": 39797881949,
+      "name": "PostgreSQL outage recovery proof",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881949"
+    },
+    {
+      "id": 39797881955,
+      "name": "Isolated PostgreSQL engineering audit",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881955"
+    },
+    {
+      "id": 39797881959,
+      "name": "Merchant deletion physical media lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881959"
+    },
+    {
+      "id": 39797882241,
+      "name": "AWS KMS production adapter readiness",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882241"
+    },
+    {
+      "id": 39797882181,
+      "name": "Cashier operational cutoff",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882181"
+    },
+    {
+      "id": 39797882199,
+      "name": "Auth OTP contract continuity",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882199"
+    },
+    {
+      "id": 39797881965,
+      "name": "Merchant account security UI",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881965"
+    },
+    {
+      "id": 39797882175,
+      "name": "Global Merchant PostgreSQL HTTP Journey",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882175"
+    },
+    {
+      "id": 39797882124,
+      "name": "Meta webhook PostgreSQL ingress cutover",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882124"
+    },
+    {
+      "id": 39797882272,
+      "name": "Location inventory authority",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882272"
+    },
+    {
+      "id": 39797882096,
+      "name": "Meta webhook pipeline",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882096"
+    },
+    {
+      "id": 39797882131,
+      "name": "Staging container contract",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882131"
+    },
+    {
+      "id": 39797882178,
+      "name": "Complete schema candidate",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882178"
+    },
+    {
+      "id": 39797881961,
+      "name": "PostgreSQL migration candidate",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881961"
+    },
+    {
+      "id": 39797882697,
+      "name": "Cashier subscription lifecycle",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882697"
+    },
+    {
+      "id": 39797882071,
+      "name": "Knowledge embedding readiness",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882071"
+    },
+    {
+      "id": 39797881962,
+      "name": "Subscription service guarantee validation",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881962"
+    },
+    {
+      "id": 39797882273,
+      "name": "Billing provider readiness",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882273"
+    },
+    {
+      "id": 39797882315,
+      "name": "Bot logic adversarial matrix",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882315"
+    },
+    {
+      "id": 39797882519,
+      "name": "Complete migration safety",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882519"
+    },
+    {
+      "id": 39797882328,
+      "name": "Backup and restore drill",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882328"
+    },
+    {
+      "id": 39797882679,
+      "name": "Global merchant golden journey",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882679"
+    },
+    {
+      "id": 39797882136,
+      "name": "Meta OAuth operational cutoff",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882136"
+    },
+    {
+      "id": 39797881969,
+      "name": "Final quality gates",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881969"
+    },
+    {
+      "id": 39797882287,
+      "name": "Catalog variant signature schema contract",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882287"
+    },
+    {
+      "id": 39797882494,
+      "name": "Merchant deletion provider identifiers",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882494"
+    },
+    {
+      "id": 39797882232,
+      "name": "Merchant access security",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882232"
+    },
+    {
+      "id": 39797882037,
+      "name": "Auth PostgreSQL concurrency proof",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882037"
+    },
+    {
+      "id": 39797882524,
+      "name": "Merchant settings",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882524"
+    },
+    {
+      "id": 39797882225,
+      "name": "Merchant regional PostgreSQL authority",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882225"
+    },
+    {
+      "id": 39797882190,
+      "name": "Product catalog UI cutover",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882190"
+    },
+    {
+      "id": 39797881966,
+      "name": "Final security and supply chain",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "bec6e7114be692981df07bc7b25ad456116fda42",
+      "attempt": 1,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797881966"
+    }
+  ],
+  "sourceDiff": [
+    {
+      "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 0
+    },
+    {
+      "path": "artifacts/api-server/tests/cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
+      "status": "added",
+      "additions": 109,
+      "deletions": 0
+    },
+    {
+      "path": "artifacts/api-server/tests/production-postgres-rls-security.test.ts",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 0
+    },
+    {
+      "path": "lib/db/drizzle/0044_cashier_discount_attribution_tenant_rls.sql",
+      "status": "added",
+      "additions": 15,
+      "deletions": 0
+    },
+    {
+      "path": "lib/db/drizzle/meta/0044_snapshot.json",
+      "status": "added",
+      "additions": 19827,
+      "deletions": 0
+    },
+    {
+      "path": "lib/db/drizzle/meta/_journal.json",
+      "status": "modified",
+      "additions": 7,
+      "deletions": 0
+    },
+    {
+      "path": "lib/db/migration-stages/0044/preimage/cashier-discount.ts",
+      "status": "added",
+      "additions": 192,
+      "deletions": 0
+    },
+    {
+      "path": "lib/db/migration-stages/0044/preimage/cashier-operation-attribution.ts",
+      "status": "added",
+      "additions": 89,
+      "deletions": 0
+    },
+    {
+      "path": "lib/db/migration-stages/0044/preimage/tenant-security.ts",
+      "status": "added",
+      "additions": 125,
+      "deletions": 0
+    },
+    {
+      "path": "lib/db/migration-stages/0044/stage.json",
+      "status": "added",
+      "additions": 12,
+      "deletions": 0
+    },
+    {
+      "path": "lib/db/src/schema/cashier-discount.ts",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3
+    },
+    {
+      "path": "lib/db/src/schema/cashier-operation-attribution.ts",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "lib/db/src/schema/tenant-security.ts",
+      "status": "modified",
+      "additions": 8,
+      "deletions": 0
+    },
+    {
+      "path": "scripts/execute-disposable-postgres-audit.mjs",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "sourceCashierInventory": [
+    {
+      "table": "public.merchant_cashier_discount_override_approvals",
+      "rls": true
+    },
+    {
+      "table": "public.merchant_cashier_discount_settings",
+      "rls": true
+    },
+    {
+      "table": "public.merchant_cashier_staff_discount_policies",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_operation_attribution",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_operator_sessions",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_shifts",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_station_credentials",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_station_pairing_challenges",
+      "rls": true
+    },
+    {
+      "table": "public.merchant_cashier_staff",
+      "rls": true
+    },
+    {
+      "table": "public.merchant_cashier_staff_permissions",
+      "rls": true
+    },
+    {
+      "table": "public.merchant_cashier_stations",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_billing_events",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_billing_orders",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_device_operation_timeline",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_entitlement_applications",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_entitlement_audit_events",
+      "rls": true
+    },
+    {
+      "table": "public.cashier_station_seat_assignments",
+      "rls": true
+    },
+    {
+      "table": "public.merchant_cashier_subscriptions",
+      "rls": true
+    }
+  ],
+  "sourceCashierTables": 18,
+  "sourceCashierTablesWithoutRls": [],
+  "sourceInventoryIsHostedCertification": false,
+  "local": {
+    "syntax": "pass",
+    "unattestedInvocation": "expected refusal before DB import",
+    "runtimeAssertions": "owned network-none GitHub Actions only"
+  },
+  "retriesRequested": 0,
+  "observedCiFailures": 0,
+  "limits": {
+    "globalAcceptance": "PENDING remaining parent conclusions",
+    "sameTenantCredentialBusinessMutationIntegrity": "NOT_CERTIFIED",
+    "alternateViewsRoutinesRemainingPrivileges": "OPEN",
+    "fullAuthPrivacyOfflineGraceSyncRetentionProviderStorageP0Inventory": "OPEN",
+    "hostedCertified": false,
+    "releaseAccepted": false,
+    "releaseDecision": "NO-GO",
+    "wholeP0Percentage": "UNMEASURED",
+    "externalConnectorUsed": false,
+    "hostedChanges": false,
+    "deployed": false,
+    "mainPush": false,
+    "merged": false,
+    "P1P2Started": false
+  },
+  "next": "Caller-visible routines/views and non-row privilege reachability diagnostic on actual restricted LOGIN; preserve accepted source and do not re-run for documentation.",
+  "previousWorkflowStatusAsObserved": {
+    "total": 47,
+    "success": 44,
+    "pending": [
+      {
+        "id": 39797882225,
+        "name": "Merchant regional PostgreSQL authority",
+        "status": "in_progress"
+      },
+      {
+        "id": 39797882190,
+        "name": "Product catalog UI cutover",
+        "status": "in_progress"
+      },
+      {
+        "id": 39797881966,
+        "name": "Final security and supply chain",
+        "status": "in_progress"
+      }
+    ],
+    "note": "Three run/attempt resources still in_progress although latest job resources all completed/success; do not equate job success to completed parent workflow."
+  },
+  "previousWorkflowObservations": [
     {
       "id": 39797882219,
       "name": "Clean deployment golden gate",
@@ -1593,192 +2211,5 @@
       "attempt": 1,
       "url": "https://github.com/nora953/fawri-production-source/actions/runs/39797882524"
     }
-  ],
-  "sourceDiff": [
-    {
-      "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
-      "status": "modified",
-      "additions": 2,
-      "deletions": 0
-    },
-    {
-      "path": "artifacts/api-server/tests/cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
-      "status": "added",
-      "additions": 109,
-      "deletions": 0
-    },
-    {
-      "path": "artifacts/api-server/tests/production-postgres-rls-security.test.ts",
-      "status": "modified",
-      "additions": 4,
-      "deletions": 0
-    },
-    {
-      "path": "lib/db/drizzle/0044_cashier_discount_attribution_tenant_rls.sql",
-      "status": "added",
-      "additions": 15,
-      "deletions": 0
-    },
-    {
-      "path": "lib/db/drizzle/meta/0044_snapshot.json",
-      "status": "added",
-      "additions": 19827,
-      "deletions": 0
-    },
-    {
-      "path": "lib/db/drizzle/meta/_journal.json",
-      "status": "modified",
-      "additions": 7,
-      "deletions": 0
-    },
-    {
-      "path": "lib/db/migration-stages/0044/preimage/cashier-discount.ts",
-      "status": "added",
-      "additions": 192,
-      "deletions": 0
-    },
-    {
-      "path": "lib/db/migration-stages/0044/preimage/cashier-operation-attribution.ts",
-      "status": "added",
-      "additions": 89,
-      "deletions": 0
-    },
-    {
-      "path": "lib/db/migration-stages/0044/preimage/tenant-security.ts",
-      "status": "added",
-      "additions": 125,
-      "deletions": 0
-    },
-    {
-      "path": "lib/db/migration-stages/0044/stage.json",
-      "status": "added",
-      "additions": 12,
-      "deletions": 0
-    },
-    {
-      "path": "lib/db/src/schema/cashier-discount.ts",
-      "status": "modified",
-      "additions": 3,
-      "deletions": 3
-    },
-    {
-      "path": "lib/db/src/schema/cashier-operation-attribution.ts",
-      "status": "modified",
-      "additions": 1,
-      "deletions": 1
-    },
-    {
-      "path": "lib/db/src/schema/tenant-security.ts",
-      "status": "modified",
-      "additions": 8,
-      "deletions": 0
-    },
-    {
-      "path": "scripts/execute-disposable-postgres-audit.mjs",
-      "status": "modified",
-      "additions": 1,
-      "deletions": 1
-    }
-  ],
-  "sourceCashierInventory": [
-    {
-      "table": "public.merchant_cashier_discount_override_approvals",
-      "rls": true
-    },
-    {
-      "table": "public.merchant_cashier_discount_settings",
-      "rls": true
-    },
-    {
-      "table": "public.merchant_cashier_staff_discount_policies",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_operation_attribution",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_operator_sessions",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_shifts",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_station_credentials",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_station_pairing_challenges",
-      "rls": true
-    },
-    {
-      "table": "public.merchant_cashier_staff",
-      "rls": true
-    },
-    {
-      "table": "public.merchant_cashier_staff_permissions",
-      "rls": true
-    },
-    {
-      "table": "public.merchant_cashier_stations",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_billing_events",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_billing_orders",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_device_operation_timeline",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_entitlement_applications",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_entitlement_audit_events",
-      "rls": true
-    },
-    {
-      "table": "public.cashier_station_seat_assignments",
-      "rls": true
-    },
-    {
-      "table": "public.merchant_cashier_subscriptions",
-      "rls": true
-    }
-  ],
-  "sourceCashierTables": 18,
-  "sourceCashierTablesWithoutRls": [],
-  "sourceInventoryIsHostedCertification": false,
-  "local": {
-    "syntax": "pass",
-    "unattestedInvocation": "expected refusal before DB import",
-    "runtimeAssertions": "owned network-none GitHub Actions only"
-  },
-  "retriesRequested": 0,
-  "observedCiFailures": 0,
-  "limits": {
-    "globalAcceptance": "PENDING remaining parent conclusions",
-    "sameTenantCredentialBusinessMutationIntegrity": "NOT_CERTIFIED",
-    "alternateViewsRoutinesRemainingPrivileges": "OPEN",
-    "fullAuthPrivacyOfflineGraceSyncRetentionProviderStorageP0Inventory": "OPEN",
-    "hostedCertified": false,
-    "releaseAccepted": false,
-    "releaseDecision": "NO-GO",
-    "wholeP0Percentage": "UNMEASURED",
-    "externalConnectorUsed": false,
-    "hostedChanges": false,
-    "deployed": false,
-    "mainPush": false,
-    "merged": false,
-    "P1P2Started": false
-  },
-  "next": "Read three pending run conclusions and reconcile existing results without re-running81 suites. After final acceptance, inventory caller-visible views/routines and remaining cashier table/column/ownership/TRUNCATE/REFERENCES/TRIGGER privilege reachability under actual restricted LOGIN."
+  ]
 }
