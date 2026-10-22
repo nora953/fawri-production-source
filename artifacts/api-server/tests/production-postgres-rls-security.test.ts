@@ -28,6 +28,7 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
+    non_row_privilege_roles: [],
     cashier_staff_lock_ready:true, authentication_authority_present:true, authentication_mutation_roles:[], audit_access_roles:[],
     authentication_sensitive_columns_present:true, authentication_sensitive_read_roles:[],
     directory_issuer_present: true,
@@ -171,7 +172,7 @@ test("production fails closed on absent or malformed role safety booleans", asyn
 
 test("production fails closed on absent or malformed privilege inventories", async () => {
   for (const field of [
-    "authentication_sensitive_read_roles", "authentication_mutation_roles", "audit_access_roles", "operator_authority_roles", "session_inherited_privileged_roles", "session_owned_tables",
+    "non_row_privilege_roles", "authentication_sensitive_read_roles", "authentication_mutation_roles", "audit_access_roles", "operator_authority_roles", "session_inherited_privileged_roles", "session_owned_tables",
     "session_reachable_privileged_roles", "owned_tenant_tables",
     "missing_or_unprotected_tenant_tables",
   ]) {
@@ -179,6 +180,11 @@ test("production fails closed on absent or malformed privilege inventories", asy
       await rejectsWith("PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED", safeRow({ [field]: value }));
     }
   }
+});
+
+test("production rejects reachable non-row privileges on protected tables", async () => {
+  await rejectsWith("PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE",
+    safeRow({non_row_privilege_roles:["constraint_or_trigger_writer"]}));
 });
 
 test("production rejects CREATEROLE and inherited privileged membership with complete evidence", async () => {
