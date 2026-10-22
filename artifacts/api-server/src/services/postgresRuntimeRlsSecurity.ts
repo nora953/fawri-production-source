@@ -81,6 +81,7 @@ export const AUTHENTICATION_SENSITIVE_COLUMNS = [
   { table_name: "trusted_devices", column_name: "device_fingerprint_hash" },
   { table_name: "cashier_station_credentials", column_name: "token_hash" },
   { table_name: "cashier_station_pairing_challenges", column_name: "code_hash" },
+  { table_name: "merchant_cashier_staff", column_name: "pin_hash" },
 ] as const;
 
 export type ProductionDatabaseRlsReadiness = {
