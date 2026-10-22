@@ -1,3 +1,11 @@
+## Approval provenance diagnostic prepared — 2026-10-23
+
+Previous source bcebf0e accepted47/47 workflows+83/83 clean invocations; checkpoint d9c0e72c remotely verified. New actual-LOGIN diagnostic covers genuine PIN-issued approvals and replay for two merchants, missing/cross-tenant denial, primary forged pending/consumed INSERT through actual manual-discount validator, immutable operation rebinding and consumed reset through real consumer with exact rollback/snapshot checks. No production or schema change. Node syntax and diff checks PASS; native runtime/CI PENDING. Green diagnostic may prove a defect and is not remediation acceptance.
+
+Next: inspect exact P0_CASHIER_APPROVAL_PROVENANCE_BASELINE marker and complete native summaries; classify before any provenance fix. Preserve lock order and primary transaction atomicity. Never transfer consumption onto a separate auth connection. Source acceptance and fresh hosted drift evidence: [report](P0-SOURCE-HOSTED-RECONCILIATION-20261023.md).17 missing0028–0044 migrations plus3 historical hash mismatches need reconciliation; actual deployed DB target/login/pooler still unverified. NO-GO, percentage UNMEASURED. No hosted writes/deploy/main/merge/P1/P2.
+
+---
+
 ## Discount policy accepted; hosted read-only recovery complete — 2026-10-23
 
 Executable bcebf0e436a7805b60822d0338a5d4e511b36846 accepted:47/47 workflows SUCCESS;83/83 clean native invocations/81 unique files; actual checkout95ce575d0cafd9f9862311dfcb86cc7801a960f7 tree80dae12b29f96bd1c25b9745ba406873f32cb816 matches. Primary mutation42501/approval-required validator/trusted-auth positive/exact rollback,12 denials/165 grant cases PASS. Foundation/schema/quality/security accepted;0 high/0 critical/2 moderate. No test rerun. [Acceptance](evidence/P0-CASHIER-DISCOUNT-POLICY-ACCEPTANCE-20261023.json).
