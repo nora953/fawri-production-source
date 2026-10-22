@@ -28,7 +28,7 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
-    authentication_authority_present:true, authentication_mutation_roles:[], audit_access_roles:[],
+    cashier_staff_lock_ready:true, authentication_authority_present:true, authentication_mutation_roles:[], audit_access_roles:[],
     authentication_sensitive_columns_present:true, authentication_sensitive_read_roles:[],
     directory_issuer_present: true,
     operator_authority_roles: [],
@@ -160,7 +160,7 @@ test("production rejects a session able to activate a privileged role", async ()
 
 test("production fails closed on absent or malformed role safety booleans", async () => {
   for (const field of [
-    "authentication_sensitive_columns_present", "directory_issuer_present", "role_superuser", "role_bypass_rls", "session_role_superuser",
+    "cashier_staff_lock_ready", "authentication_sensitive_columns_present", "directory_issuer_present", "role_superuser", "role_bypass_rls", "session_role_superuser",
     "session_role_bypass_rls", "session_role_create_role",
   ]) {
     for (const value of [undefined, null, "false", "true", 0, 1, {}, []]) {
@@ -225,4 +225,8 @@ test("production rejects missing or unsafe private scope admission evidence", as
     await assert.rejects(() => assertProductionDatabaseRlsReady(productionEnv(), client),
       {code:"PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE"});
   }
+});
+
+test("production requires the protected cashier approver locking capability",async()=>{
+  await rejectsWith("PRODUCTION_CASHIER_STAFF_LOCK_REQUIRED",safeRow({cashier_staff_lock_ready:false}));
 });
