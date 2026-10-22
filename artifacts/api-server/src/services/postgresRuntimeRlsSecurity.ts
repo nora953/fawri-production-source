@@ -67,6 +67,7 @@ export const AUTHENTICATION_INTEGRITY_TABLES = [
   "accounts", "admin_profiles", "admin_permissions", "account_sessions", "trusted_devices",
   "auth_otp_challenges", "login_attempts", "auth_audit_events",
   "cashier_station_credentials", "cashier_station_pairing_challenges",
+  "merchant_cashier_staff_permissions", "cashier_operator_sessions",
 ] as const;
 export const ADMIN_AUTHORITY_AUDIT_TABLES = ["database_admin_access_audits"] as const;
 
@@ -82,6 +83,7 @@ export const AUTHENTICATION_SENSITIVE_COLUMNS = [
   { table_name: "cashier_station_credentials", column_name: "token_hash" },
   { table_name: "cashier_station_pairing_challenges", column_name: "code_hash" },
   { table_name: "merchant_cashier_staff", column_name: "pin_hash" },
+  { table_name: "cashier_operator_sessions", column_name: "token_hash" },
 ] as const;
 
 export type ProductionDatabaseRlsReadiness = {
