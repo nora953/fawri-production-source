@@ -8,6 +8,8 @@ import {
 import { productionReleaseGateRequired } from "./productionReleaseReadiness";
 
 export const PRODUCTION_TENANT_RLS_TABLES = [
+  "merchant_cashier_discount_settings", "merchant_cashier_staff_discount_policies",
+  "merchant_cashier_discount_override_approvals", "cashier_operation_attribution",
   "merchant_cashier_staff", "merchant_cashier_staff_permissions", "merchant_cashier_stations",
   "cashier_station_pairing_challenges", "cashier_station_credentials", "cashier_shifts", "cashier_operator_sessions",
   "merchant_settings",
