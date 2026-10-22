@@ -6,7 +6,7 @@
   "denominatorFrozen": false,
   "overallP0Percentage": null,
   "newRuntimeTestsExecutedByInventory": 0,
-  "sourceAcceptance": "4acf13517337a4038f46f2fb672d76fde42db77a",
+  "sourceAcceptance": "00c56c26b2a76e0b709aa616a745dc3681b15f2a",
   "rows": [
     {
       "requirement_id": "P0-ACCESS-SCOPE-BOUNDARY",
@@ -155,14 +155,14 @@
       "requirement_id": "P0-ACCESS-SETTINGS-AUTHORITY",
       "requirement": "Settings configuration authority and authorized management consistency",
       "proof_layer": "isolated_actual_login",
-      "status": "FAIL",
-      "source_sha": "6fe2d4a4ab56a17dcacc134f7a6d3cca1c1f1112",
+      "status": "PASS",
+      "source_sha": "00c56c26b2a76e0b709aa616a745dc3681b15f2a",
       "test_path": "artifacts/api-server/tests/cashier-discount-settings-authority-postgres.integration.test.mjs",
-      "evidence_uri": "evidence/P0-CASHIER-SETTINGS-AUTHORITY-BASELINE-20261023.json",
-      "run": 39871639878,
-      "job": 120147216866,
-      "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Completed diagnostic identifies configuration-authority remediation need; authorized management/restoration pass. New remediation source acceptance pending."
+      "evidence_uri": "evidence/P0-CASHIER-SETTINGS-ACCESS-ACCEPTANCE-20261023.json",
+      "run": 39873207354,
+      "job": 120152397388,
+      "last_verified_at": "2026-10-23",
+      "limits": "Bounded source acceptance only; baseline6fe2d4a4 retained separately. No hosted/full-domain certification."
     },
     {
       "requirement_id": "P0-ACCESS-HOSTED-IDENTITY",

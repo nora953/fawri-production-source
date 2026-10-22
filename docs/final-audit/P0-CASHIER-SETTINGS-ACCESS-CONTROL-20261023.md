@@ -1,3 +1,9 @@
+## Acceptance update — 2026-10-23
+
+Source00c56c26 accepted:47/47 workflows,85/85 clean native invocations. [Exact acceptance](P0-CASHIER-SETTINGS-ACCESS-ACCEPTANCE-20261023.md). Earlier preparation notes below are historical; release NO-GO.
+
+---
+
 # P0 cashier settings access control — 2026-10-23
 
 ## Verified diagnostic
