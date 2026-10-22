@@ -1,3 +1,9 @@
+## Sensitive authentication SELECT candidate — 2026-10-22
+
+New executable candidate `44668bde6fd0da69511d6cf57770cb396ebe2315` is **PENDING GitHub Actions**, not covered by previous-source 46/46+75/75 acceptance. [Bounded source trace and test design](P0-AUTH-SENSITIVE-SELECT-20261022.md). Tenant production readiness now rejects SELECT access to six credential/recovery columns through current/session/direct/PUBLIC/inherited/SET roles and fails closed on missing schema or malformed evidence. Ordinary account identity/status SELECT is preserved. Existing auth actual-LOGIN suite adds 30 ACL grant/revoke cases plus ordinary-read/table-read/missing-column controls while keeping signup/OTP/session/admin/rollback/fallback assertions. No migration, issuer/RLS or hosted ACL changes. Syntax check PASS; native/type/unit results PENDING. Next inspect exact-source Isolated PostgreSQL and Foundation jobs, fix any failures and save actual counters. Remaining cashier/offline/sync/full-inventory/hosted gates remain open. **NO-GO**, whole-P0 percentage unmeasured. Hosted runtime BLOCKED_BY_RAILWAY; hosted DB outside GitHub-only session scope.
+
+---
+
 ## Branch publication recovered; remaining P0 gaps reconciled — 2026-10-22
 
 Acceptance docs/evidence are on branch at `accf522b0d70e9ccf7b8a73176b387b54880c2f8`; tree matches prepared d990ee89 exactly. **Do not fast-forward to the orphan commit.** Contents create/update works with fully qualified branch `refs/heads/fix/p0-provider-receipt-order-discovery-20261015`; update_ref prefix handling remains unsuitable.
