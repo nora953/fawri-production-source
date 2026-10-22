@@ -23,7 +23,7 @@ test('separate authentication LOGIN protects authority data and preserves signup
   for(const[k,v]of Object.entries({NODE_ENV:'test',FAWRI_DEPLOYMENT_MODE:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',FAWRI_AUTH_SECURITY_SECRET:'synthetic-auth-pool-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-auth-pool-salt',FAWRI_AUTH_DATABASE_URL:undefined,FAWRI_OPERATOR_DATABASE_URL:'postgresql://unused_operator@127.0.0.1/unused'})){
     saved[k]=process.env[k];if(v===undefined)delete process.env[k];else process.env[k]=v;
   }
-  const {AUTHENTICATION_INTEGRITY_TABLES,assertProductionDatabaseRlsReady}=await import('../src/services/postgresRuntimeRlsSecurity.ts');
+  const {AUTHENTICATION_INTEGRITY_TABLES,AUTHENTICATION_SENSITIVE_COLUMNS,assertProductionDatabaseRlsReady}=await import('../src/services/postgresRuntimeRlsSecurity.ts');
   for(const kind of ['tenant','authentication']){
     const r=`auth_${kind}_${nonce}`,password=randomUUID().replaceAll('-','');
     await admin.query(`CREATE ROLE ${r} LOGIN PASSWORD '${password}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);roles.push(r);
@@ -120,6 +120,70 @@ test('separate authentication LOGIN protects authority data and preserves signup
     }),{message:'synthetic rollback'});
     assert.deepEqual((await admin.query('SELECT a.state,m.store_name FROM accounts a JOIN merchants m ON m.account_id=a.id WHERE a.id=$1',[merchant.account.id])).rows[0],before);
   });
+  await t.test('ordinary account identity reads remain usable without credential access',async()=>{
+    await admin.query(`GRANT SELECT(id,phone,state) ON public.accounts TO ${roles[0]}`);
+    try {
+      const row=(await clients[0].query('SELECT id,phone,state FROM public.accounts WHERE id=$1',[merchant.account.id])).rows[0];
+      assert.equal(row.id,merchant.account.id);assert.equal(row.phone,merchant.account.phone);assert.equal(row.state,'active');
+      await assert.doesNotReject(()=>assertProductionDatabaseRlsReady(process.env,clients[0]));
+      for(const {table_name,column_name} of AUTHENTICATION_SENSITIVE_COLUMNS)
+        await assert.rejects(()=>clients[0].query(`SELECT ${column_name} FROM public.${table_name} LIMIT 1`),{code:'42501'});
+    } finally { await admin.query(`REVOKE SELECT(id,phone,state) ON public.accounts FROM ${roles[0]}`); }
+  });
+  const readRole=`auth_read_${nonce}`;
+  await admin.query(`CREATE ROLE ${readRole} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);roles.push(readRole);
+  await admin.query(`GRANT USAGE ON SCHEMA public TO ${readRole}`);
+  for(const {table_name,column_name} of AUTHENTICATION_SENSITIVE_COLUMNS) {
+    for(const mode of ['direct','public','inherit-only','set-reachable','unreachable']) {
+      await t.test(`sensitive read ${table_name}.${column_name}: ${mode} grant and revoke on actual LOGIN`,async()=>{
+        const grantee=mode==='direct'?roles[0]:mode==='public'?'PUBLIC':readRole;
+        const sql=`SELECT ${column_name} FROM public.${table_name} LIMIT 1`;
+        await assert.rejects(()=>clients[0].query(sql),{code:'42501'});
+        try {
+          await admin.query(`GRANT SELECT(${column_name}) ON public.${table_name} TO ${grantee}`);
+          if(!['direct','public'].includes(mode))await admin.query(`GRANT ${readRole} TO ${roles[0]} WITH INHERIT ${mode==='inherit-only'?'TRUE':'FALSE'}, SET ${mode==='set-reachable'?'TRUE':'FALSE'}`);
+          const identity=(await clients[0].query('SELECT session_user AS login,current_user AS active')).rows[0];
+          assert.deepEqual(identity,{login:roles[0],active:roles[0]});
+          if(mode==='unreachable') {
+            await assert.doesNotReject(()=>assertProductionDatabaseRlsReady(process.env,clients[0]));
+            await assert.rejects(()=>clients[0].query(sql),{code:'42501'});
+            await assert.rejects(()=>clients[0].query(`SET ROLE ${readRole}`),{code:'42501'});
+          } else {
+            await assert.rejects(()=>assertProductionDatabaseRlsReady(process.env,clients[0]),{code:'PRODUCTION_AUTH_SENSITIVE_READ_AUTHORITY_REACHABLE'});
+            if(mode==='set-reachable') {
+              await assert.rejects(()=>clients[0].query(sql),{code:'42501'});
+              await clients[0].query(`SET ROLE ${readRole}`);
+            }
+            await assert.doesNotReject(()=>clients[0].query(sql));
+            // A restricted effective role cannot hide the original LOGIN's ACL.
+            if(mode==='direct') {
+              await admin.query(`GRANT ${readRole} TO ${roles[0]} WITH INHERIT FALSE, SET TRUE`);
+              await clients[0].query(`SET ROLE ${readRole}`);
+              await assert.rejects(()=>clients[0].query(sql),{code:'42501'});
+              await assert.rejects(()=>assertProductionDatabaseRlsReady(process.env,clients[0]),{code:'PRODUCTION_AUTH_SENSITIVE_READ_AUTHORITY_REACHABLE'});
+            }
+          }
+        } finally {
+          await clients[0].query('RESET ROLE');
+          if(mode!=='public')await admin.query(`REVOKE ${readRole} FROM ${roles[0]}`);
+          await admin.query(`REVOKE SELECT(${column_name}) ON public.${table_name} FROM ${grantee}`);
+        }
+        await assert.rejects(()=>clients[0].query(sql),{code:'42501'});
+        await assert.doesNotReject(()=>assertProductionDatabaseRlsReady(process.env,clients[0]));
+      });
+    }
+  }
+  await t.test('table SELECT and missing sensitive columns fail readiness without weakening auth',async()=>{
+    await admin.query(`GRANT SELECT ON public.accounts TO ${roles[0]}`);
+    try { await assert.rejects(()=>assertProductionDatabaseRlsReady(process.env,clients[0]),{code:'PRODUCTION_AUTH_SENSITIVE_READ_AUTHORITY_REACHABLE'}); }
+    finally { await admin.query(`REVOKE SELECT ON public.accounts FROM ${roles[0]}`); }
+    await admin.query('ALTER TABLE public.accounts RENAME COLUMN password_hash TO password_hash_readiness_probe');
+    try { await assert.rejects(()=>assertProductionDatabaseRlsReady(process.env,clients[0]),{code:'PRODUCTION_AUTH_SENSITIVE_COLUMNS_REQUIRED'}); }
+    finally { await admin.query('ALTER TABLE public.accounts RENAME COLUMN password_hash_readiness_probe TO password_hash'); }
+    assert.equal((await merchants.findMerchantByPhoneAuthoritative(merchant.account.phone)).account.id,merchant.account.id);
+    await assert.doesNotReject(()=>assertProductionDatabaseRlsReady(process.env,clients[0]));
+    assert.equal(mainCalls,0);
+  });
   await t.test('marker revocation, missing auth URL and tenant URL fail closed in production',async()=>{
     await admin.query(`REVOKE EXECUTE ON FUNCTION public.fawri_authentication_runtime() FROM ${roles[1]}`);
     try{await assert.rejects(()=>admins.findAdminByIdAuthoritative(assistant.account.id),{code:'AUTH_DATABASE_IDENTITY_INVALID'});}finally{await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO ${roles[1]}`);}
@@ -128,5 +192,5 @@ test('separate authentication LOGIN protects authority data and preserves signup
     process.env.FAWRI_AUTH_DATABASE_URL=urls[0];await assert.rejects(()=>admins.findAdminByIdAuthoritative(assistant.account.id),{code:'AUTH_DATABASE_IDENTITY_INVALID'});
     assert.equal(mainCalls,0);await closeAuth();process.env.FAWRI_AUTH_DATABASE_URL=urls[1];
   });
-  console.log('P0_AUTHENTICATION_POOL_PROOF '+JSON.stringify({directRestrictedLogins:2,tenantAuthMutationsDenied:true,tenantAuditCrudDenied:true,trustedAuthWithoutTenantGuc:true,signupAndLookup:true,otpSingleUse:true,sessionIssueValidateRotateRevoke:true,adminPermissionPasswordStateChanges:true,mixedTransactionRollback:true,primaryPoolCalls:mainCalls,productionFallbackDenied:true,hostedCertified:false,releaseAccepted:false}));
+  console.log('P0_AUTHENTICATION_POOL_PROOF '+JSON.stringify({directRestrictedLogins:2,sensitiveColumns:AUTHENTICATION_SENSITIVE_COLUMNS.length,sensitiveReadAclCases:AUTHENTICATION_SENSITIVE_COLUMNS.length*5,sensitiveReadGrantRevokeReadiness:true,ordinaryIdentityReadPreserved:true,missingSensitiveColumnRejected:true,tenantAuthMutationsDenied:true,tenantAuditCrudDenied:true,trustedAuthWithoutTenantGuc:true,signupAndLookup:true,otpSingleUse:true,sessionIssueValidateRotateRevoke:true,adminPermissionPasswordStateChanges:true,mixedTransactionRollback:true,primaryPoolCalls:mainCalls,productionFallbackDenied:true,hostedCertified:false,releaseAccepted:false}));
 });
