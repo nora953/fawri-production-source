@@ -31,7 +31,7 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
           }] as unknown as T[],
         };
       }
-      if (compact.includes('FROM merchant_cashier_discount_override_approvals')) {
+      if (compact.includes('FROM public.fawri_lock_cashier_discount_approval(')) {
         return {
           rows: [{
             id: 'approval-1',
@@ -78,9 +78,9 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
           }] as unknown as T[],
         };
       }
-      if (compact.startsWith('UPDATE merchant_cashier_discount_override_approvals')) {
+      if (compact.includes('FROM public.fawri_consume_cashier_discount_approval(')) {
         updates.push(compact);
-        return { rows: [] as T[] };
+        return { rows: [{ decision_code: 'OK', manager_limit_minor: 300 }] as unknown as T[] };
       }
       throw new Error(`Unexpected SQL in override runtime test: ${compact}`);
     },
@@ -110,7 +110,7 @@ test('approved percentage discount at the exact manager percentage limit remains
     saleOccurredAt: '2026-09-09T10:03:00.000Z',
   });
   assert.equal(updates.length, 1);
-  assert.match(updates[0], /SET consumed_at = now\(\)/);
+  assert.match(updates[0], /public\.fawri_consume_cashier_discount_approval/);
 });
 
 test('manager percentage ceiling ignores the manager fixed amount limit and rejects one unit above 50%', async () => {

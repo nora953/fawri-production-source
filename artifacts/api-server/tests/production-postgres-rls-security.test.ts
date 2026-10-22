@@ -30,7 +30,7 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
     non_row_privilege_roles: [],
-    cashier_staff_lock_ready:true, authentication_authority_present:true, authentication_mutation_roles:[], audit_access_roles:[],
+    cashier_staff_lock_ready:true, cashier_approval_authority_ready:true, authentication_authority_present:true, authentication_mutation_roles:[], audit_access_roles:[],
     authentication_sensitive_columns_present:true, authentication_sensitive_read_roles:[],
     directory_issuer_present: true,
     operator_authority_roles: [],
@@ -166,7 +166,7 @@ test("production rejects a session able to activate a privileged role", async ()
 
 test("production fails closed on absent or malformed role safety booleans", async () => {
   for (const field of [
-    "cashier_staff_lock_ready", "authentication_sensitive_columns_present", "directory_issuer_present", "role_superuser", "role_bypass_rls", "session_role_superuser",
+    "cashier_staff_lock_ready", "cashier_approval_authority_ready", "authentication_sensitive_columns_present", "directory_issuer_present", "role_superuser", "role_bypass_rls", "session_role_superuser",
     "session_role_bypass_rls", "session_role_create_role",
   ]) {
     for (const value of [undefined, null, "false", "true", 0, 1, {}, []]) {
@@ -248,4 +248,8 @@ test("cashier identity tables require tenant RLS",()=>{
 
 test("cashier discount and attribution tables require tenant RLS",()=>{
   for(const name of ["merchant_cashier_discount_settings","merchant_cashier_staff_discount_policies","merchant_cashier_discount_override_approvals","cashier_operation_attribution"])assert.ok((PRODUCTION_TENANT_RLS_TABLES as readonly string[]).includes(name));
+});
+
+ test("production requires scoped cashier approval mutation capabilities", async () => {
+  await rejectsWith("PRODUCTION_CASHIER_APPROVAL_AUTHORITY_REQUIRED",safeRow({cashier_approval_authority_ready:false}));
 });

@@ -62,8 +62,8 @@ test('cashier discounts approvals and attribution preserve business transactions
   });
   await t.test('cross-merchant writes disappear or reject WITH CHECK while own business writes roll back',async()=>{
     const a=rows[0],b=rows[1],beforeA=await snapshot(a.merchant),beforeB=await snapshot(b.merchant);
-    await tx(a.merchant,async c=>{for(const table of tables.filter(x=>x!=='merchant_cashier_staff_discount_policies')){assert.equal((await c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);assert.equal((await c.query(`DELETE FROM ${table} WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);}});
-    for(const command of ['UPDATE merchant_cashier_staff_discount_policies SET version=version WHERE merchant_id=$1','DELETE FROM merchant_cashier_staff_discount_policies WHERE merchant_id=$1'])await assert.rejects(()=>tx(a.merchant,c=>c.query(command,[b.merchant])),{code:'42501'});
+    await tx(a.merchant,async c=>{for(const table of tables.filter(x=>!['merchant_cashier_staff_discount_policies','merchant_cashier_discount_override_approvals'].includes(x))){assert.equal((await c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);assert.equal((await c.query(`DELETE FROM ${table} WHERE merchant_id=$1 RETURNING merchant_id`,[b.merchant])).rows.length,0);}});
+    for(const table of ['merchant_cashier_staff_discount_policies','merchant_cashier_discount_override_approvals'])for(const command of [`UPDATE ${table} SET merchant_id=merchant_id WHERE merchant_id=$1`,`DELETE FROM ${table} WHERE merchant_id=$1`])await assert.rejects(()=>tx(a.merchant,c=>c.query(command,[b.merchant])),{code:'42501'});
     for(const table of tables)await assert.rejects(()=>tx(a.merchant,c=>c.query(`UPDATE ${table} SET merchant_id=$1 WHERE merchant_id=$2`,[b.merchant,a.merchant])),{code:'42501'});
     const foreignInserts=[
       c=>c.query("INSERT INTO merchant_cashier_discount_settings(merchant_id) VALUES($1)",[b.merchant]),
@@ -88,7 +88,7 @@ test('cashier discounts approvals and attribution preserve business transactions
     await assert.rejects(()=>tx(a.merchant,c=>consume(c,{...input,approvalId:b.pendingApproval.approval_id,operationId:b.pendingRequest.operationId}),true),{code:'CASHIER_DISCOUNT_OVERRIDE_INVALID'});
     await assert.rejects(()=>tx(a.merchant,async c=>{await consume(c,input);throw Error('synthetic consume rollback');},true),{message:'synthetic consume rollback'});
     assert.equal((await admin.query('SELECT consumed_at FROM merchant_cashier_discount_override_approvals WHERE id=$1',[input.approvalId])).rows[0].consumed_at,null);
-    let updates=0;await Promise.all([1,2].map(()=>tx(a.merchant,c=>consume({query:async(sql,values)=>{if(sql.includes('SET consumed_at = now()'))updates++;return c.query(sql,values);}},input),true)));assert.equal(updates,1);
+    let updates=0;await Promise.all([1,2].map(()=>tx(a.merchant,c=>consume({query:async(sql,values)=>{if(sql.includes('FROM public.fawri_consume_cashier_discount_approval('))updates++;return c.query(sql,values);}},input),true)));assert.equal(updates,1);
     const consumed=(await admin.query('SELECT consumed_at FROM merchant_cashier_discount_override_approvals WHERE id=$1',[input.approvalId])).rows[0].consumed_at;assert.ok(consumed);
     await tx(a.merchant,c=>consume(c,input),true);assert.deepEqual((await admin.query('SELECT consumed_at FROM merchant_cashier_discount_override_approvals WHERE id=$1',[input.approvalId])).rows[0].consumed_at,consumed);
     await assert.rejects(()=>tx(a.merchant,c=>consume(c,{...input,reason:'changed-reason'}),true),{code:'CASHIER_DISCOUNT_OVERRIDE_INVALID'});

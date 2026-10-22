@@ -516,10 +516,7 @@ export async function consumeCashierDiscountOverrideApproval(
       `SELECT id, merchant_id, station_id, operator_staff_id, approver_staff_id,
               operation_id, manual_discount_minor, manual_discount_reason,
               expires_at, consumed_at, created_at
-         FROM merchant_cashier_discount_override_approvals
-        WHERE merchant_id = $1 AND id = $2 AND operation_id = $3
-        LIMIT 1
-        FOR UPDATE`,
+         FROM public.fawri_lock_cashier_discount_approval($1::text,$2::text,$3::text)`,
       [input.merchantId, input.approvalId, input.operationId],
     );
   } catch (error) {
@@ -589,10 +586,25 @@ export async function consumeCashierDiscountOverrideApproval(
     );
   }
 
-  await target.query(
-    `UPDATE merchant_cashier_discount_override_approvals
-        SET consumed_at = now()
-      WHERE merchant_id = $1 AND id = $2 AND operation_id = $3 AND consumed_at IS NULL`,
-    [input.merchantId, approval.id, input.operationId],
+  // The capability independently validates binding/window/current manager policy.
+  // It runs on target, retaining this commerce transaction and its row locks.
+  const decisions = await operationalQueryRows<{ decision_code: string; manager_limit_minor: string | number | null }>(
+    target,
+    `SELECT * FROM public.fawri_consume_cashier_discount_approval(
+      $1::text,$2::text,$3::text,$4::text,$5::text,$6::bigint,$7::text,$8::timestamptz,$9::bigint,$10::text)`,
+    [input.merchantId, approval.id, input.operationId, input.stationId, input.operatorStaffId,
+      input.manualDiscountMinor, input.reason, input.saleOccurredAt, discountBaseMinor, kind],
   );
+  const decision = decisions[0];
+  if (!decision || decision.decision_code !== 'OK') {
+    throw new CashierStaffAuthorityError(
+      decision?.decision_code || 'CASHIER_DISCOUNT_OVERRIDE_STATE_INVALID',
+      'manager discount override consumption was rejected',
+      decision?.decision_code === 'CASHIER_DISCOUNT_KIND_MISMATCH' ? 409 : decision ? 403 : 500,
+      decision?.manager_limit_minor == null ? undefined : {
+        requested_discount_minor: input.manualDiscountMinor,
+        manager_limit_minor: Number(decision.manager_limit_minor),
+      },
+    );
+  }
 }

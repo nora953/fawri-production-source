@@ -61,8 +61,7 @@ async function invalidatePendingDiscountOverrideApprovals(
 ): Promise<void> {
   try {
     await target.query(
-      `DELETE FROM merchant_cashier_discount_override_approvals
-        WHERE merchant_id = $1 AND consumed_at IS NULL`,
+      `SELECT public.fawri_invalidate_pending_cashier_discount_approvals($1::text)`,
       [merchantId],
     );
   } catch (error) {

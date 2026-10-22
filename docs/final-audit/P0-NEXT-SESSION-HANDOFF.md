@@ -1,3 +1,13 @@
+## Approval provenance bypass proven; scoped mutation remediation prepared — 2026-10-23
+
+Diagnostic1716a354153fff43994dc80a33c184f880046dc1:47/47 workflows SUCCESS,84/84 clean native invocations/82 files. Native39867836738/job120134422668, checkoutab9913435a238b01d6cca2eac9b02c7d51f0b21b matches source treedd691a701a05f0d8b6c437dad8fd933bd85da4e4. Actual primary forged pending/pre-consumed approvals accepted by unchanged validator without issuance/PIN; issued operation rebind/consumed reset accepted by actual consumer. Cross-tenant denial/genuine issuance/replay/restoration PASS. No HTTP/full sale/hosted exploit claimed. [Exact baseline](evidence/P0-CASHIER-APPROVAL-PROVENANCE-BASELINE-20261023.json).
+
+Prepared fix: approval mutations join auth-only admission inventory;0045 scope-checked locking/independently validated consumption/pending invalidation capabilities remain on original commerce transaction. Settings->approval->staff lock order, binding/window/exact replay/current manager policy, kind advisory lock/invalidation/rollback retained. No auth-connection consumption or hosted ACL change. New readiness requires safe existing callable capabilities/unreachable owners. Expanded native regression requires original attacks denied plus direct RPC denial, column/role grant matrix, metadata safety and preserved genuine flows. Local24 contract tests and syntax/diff PASS; native/canonical/typecheck/complete CI PENDING. [Design/tests/limits](P0-CASHIER-APPROVAL-PROVENANCE-20261023.md).
+
+Next read containing exact-source P0_CASHIER_APPROVAL_PROVENANCE_REMEDIATION marker/full native84 summaries and complete CI/Foundation/schema/security. Green diagnostic is not fix acceptance; last accepted remediation bcebf0e remains47/47+83/83. No passing-suite rerun. Source candidate46 migrations vs last hosted28;28/28 historical canonical hashes match. Actual deployed DB login/target/pooler and hosted rollout remain unverified/unapproved. NO-GO; whole P0 percentage UNMEASURED. No hosted changes/deploy/main push/merge/P1/P2.
+
+---
+
 ## Canonical hosted ledger reconciliation — 2026-10-23
 
 Read-only hosted staging ledger matches **28/28 canonical executable hashes and timestamps**, after applying the repository preflight's stabilizeMigrationDependencyOrder transformation. The earlier raw-file comparison's3 differences are expected normalization, **not migration drift**. Source45 versus hosted28 leaves17 missing migrations0028–0044. Canonical per-entry hashes appended to [hosted evidence](evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json). No migration or hosted write executed.

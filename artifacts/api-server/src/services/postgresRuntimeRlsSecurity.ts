@@ -72,7 +72,7 @@ export const AUTHENTICATION_INTEGRITY_TABLES = [
   "auth_otp_challenges", "login_attempts", "auth_audit_events",
   "cashier_station_credentials", "cashier_station_pairing_challenges",
   "merchant_cashier_staff_permissions", "cashier_operator_sessions", "merchant_cashier_staff",
-  "merchant_cashier_staff_discount_policies",
+  "merchant_cashier_staff_discount_policies", "merchant_cashier_discount_override_approvals",
 ] as const;
 export const ADMIN_AUTHORITY_AUDIT_TABLES = ["database_admin_access_audits"] as const;
 
@@ -94,6 +94,7 @@ export const AUTHENTICATION_SENSITIVE_COLUMNS = [
 export type ProductionDatabaseRlsReadiness = {
   nonRowPrivilegeRoles: string[];
   cashierStaffLockReady: boolean;
+  cashierApprovalAuthorityReady: boolean;
   authenticationAuthorityPresent: boolean;
   authenticationMutationRoles: string[];
   authenticationSensitiveColumnsPresent: boolean;
@@ -158,6 +159,7 @@ export async function getProductionDatabaseRlsReadiness(
   const rows = await operationalQueryRows<{
     non_row_privilege_roles: string[];
     cashier_staff_lock_ready: boolean;
+    cashier_approval_authority_ready: boolean;
     authentication_authority_present: boolean;
     authentication_mutation_roles: string[];
     authentication_sensitive_columns_present: boolean;
@@ -252,6 +254,18 @@ export async function getProductionDatabaseRlsReadiness(
              WHERE pg_has_role(r.oid,lock_function.proowner,'USAGE')
                 OR pg_has_role(r.oid,lock_function.proowner,'SET'))
        ) AS cashier_staff_lock_ready,
+       NOT EXISTS (SELECT 1 FROM unnest(ARRAY[
+         'public.fawri_lock_cashier_discount_approval(text,text,text)',
+         'public.fawri_consume_cashier_discount_approval(text,text,text,text,text,bigint,text,timestamp with time zone,bigint,text)',
+         'public.fawri_invalidate_pending_cashier_discount_approvals(text)'
+       ]::text[]) expected(signature)
+         LEFT JOIN pg_proc fn ON fn.oid=to_regprocedure(expected.signature)
+         WHERE fn.oid IS NULL OR NOT fn.prosecdef OR fn.provolatile<>'v'
+           OR fn.proisstrict IS NOT TRUE
+           OR NOT coalesce(fn.proconfig @> ARRAY['search_path=pg_catalog']::text[],false)
+           OR NOT has_function_privilege(current_user,fn.oid,'EXECUTE')
+           OR EXISTS (SELECT 1 FROM reachable_roles r WHERE pg_has_role(r.oid,fn.proowner,'USAGE') OR pg_has_role(r.oid,fn.proowner,'SET'))
+       ) AS cashier_approval_authority_ready,
        to_regprocedure('public.fawri_authentication_runtime()') IS NOT NULL AS authentication_authority_present,
        COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
          WHERE EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
@@ -329,6 +343,7 @@ export async function getProductionDatabaseRlsReadiness(
   return {
     nonRowPrivilegeRoles: stringArray(row.non_row_privilege_roles),
     cashierStaffLockReady: booleanValue(row.cashier_staff_lock_ready),
+    cashierApprovalAuthorityReady: booleanValue(row.cashier_approval_authority_ready),
     authenticationAuthorityPresent: booleanValue(row.authentication_authority_present),
     authenticationMutationRoles: stringArray(row.authentication_mutation_roles),
     authenticationSensitiveColumnsPresent: booleanValue(row.authentication_sensitive_columns_present),
@@ -437,6 +452,7 @@ export async function assertProductionDatabaseRlsReady(
     fail("PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE",
       "tenant runtime must not reach privileged operator database capabilities");
   }
+  if (!readiness.cashierApprovalAuthorityReady) fail("PRODUCTION_CASHIER_APPROVAL_AUTHORITY_REQUIRED", "production requires protected cashier approval mutation capabilities");
   if (!readiness.cashierStaffLockReady) fail("PRODUCTION_CASHIER_STAFF_LOCK_REQUIRED", "production requires the protected cashier approver lock function");
   if (!readiness.authenticationAuthorityPresent) fail("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED", "production requires role-bound authentication migration");
   if (readiness.authenticationMutationRoles.length) fail("PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE", "tenant runtime must not reach authentication mutation privileges");

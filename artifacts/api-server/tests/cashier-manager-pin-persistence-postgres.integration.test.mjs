@@ -133,7 +133,7 @@ test('manager override PIN failures persist and enforce lockout on actual databa
   });
   await t.test('concurrent matching consumption updates once and pre-consumption demotion remains authoritative',async()=>{
     await reset();const request=input('1357'),approved=await issue(request),use=consumption(request,approved);let updates=0;
-    await Promise.all([1,2].map(()=>commerce(client=>consume({query:async(sql,values)=>{if(sql.includes('SET consumed_at = now()'))updates++;return client.query(sql,values);}},use))));
+    await Promise.all([1,2].map(()=>commerce(client=>consume({query:async(sql,values)=>{if(sql.includes('FROM public.fawri_consume_cashier_discount_approval('))updates++;return client.query(sql,values);}},use))));
     assert.equal(updates,1);
     await reset();const request2=input('1357'),approved2=await issue(request2);
     await admin.query("UPDATE merchant_cashier_staff SET role='cashier' WHERE id=$1",[manager]);
