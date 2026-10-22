@@ -1,6 +1,6 @@
 # Cashier credential housekeeping boundary — 2026-10-22
 
-Recovered docs checkpoint05869f0f5b514ae52da90b049642103f621c89ae; previous accepted executable2cf55e258762402f001a6960f4521d389a96822f (46/46 workflows,75/75 isolated invocations). This increment is PENDING CI; old counts do not accept new code. Release NO-GO.
+Recovered docs checkpoint05869f0f5b514ae52da90b049642103f621c89ae; previous accepted executable2cf55e258762402f001a6960f4521d389a96822f (46/46 workflows,75/75 isolated invocations). **Accepted executable be497124f86ce12b6e2041f1246f0a5e33874cef:46/46 workflows SUCCESS and76/76 isolated invocations clean.** [Exact acceptance evidence](evidence/P0-CASHIER-CREDENTIAL-HOUSEKEEPING-ACCEPTANCE-20261022.json). Release NO-GO.
 
 ## Source trace and bounded change
 
@@ -10,9 +10,9 @@ The two housekeeping functions now use identity-checked withAuthenticationTransa
 
 ## New native proof
 
-A guarded owned network-none PostgreSQL fixture uses independently authenticated tenant/auth non-owner LOGINs. Main pool query/connect are instrumented to throw, and real tenant SQL must reject raw secret reads and credential CRUD/TRUNCATE even under forged GUCs. Native cases exercise ordinary historical reads; blank/wrong inputs; disabled/revoked/stale-version/mismatched-device negatives; valid active/expired binding refresh only; both merchants' elapsed global expiry; future/terminal preservation; idempotence; unchanged staff/station/shifts/credentials; second-statement privilege failure rolling back the first expiry transition; marker revocation and missing/tenant auth URL fail-closed with no primary fallback; disabled-authority no-op. It joins the priority runner (expected76 invocations; actual counts PENDING). Existing authentication dynamic ACL matrix extends from six to eight sensitive columns; all original assertions remain.
+A guarded owned network-none PostgreSQL fixture uses independently authenticated tenant/auth non-owner LOGINs. Main pool query/connect are instrumented to throw, and real tenant SQL must reject raw secret reads and credential CRUD/TRUNCATE even under forged GUCs. Native cases exercise ordinary historical reads; blank/wrong inputs; disabled/revoked/stale-version/mismatched-device negatives; valid active/expired binding refresh only; both merchants' elapsed global expiry; future/terminal preservation; idempotence; unchanged staff/station/shifts/credentials; second-statement privilege failure rolling back the first expiry transition; marker revocation and missing/tenant auth URL fail-closed with no primary fallback; disabled-authority no-op. It joins the priority runner (actual76/76 clean invocations). Existing authentication dynamic ACL matrix extends from six to eight sensitive columns (40 ACL cases); all original assertions remain.
 
-JavaScript syntax checks PASS locally. New native/type/build/full CI results PENDING. Inspect exact-source results and preserve all attempts before acceptance.
+JavaScript syntax checks PASS locally. Exact-source native [run39722922331](https://github.com/nora953/fawri-production-source/actions/runs/39722922331)/job119640266600:76/76 invocations exit0/fail0/skip0/cancel0/summaryComplete. New housekeeping suite10PASS and authentication53PASS (both counts include parent); both primaryPoolCalls0. All42 migrations/full dump-restore PASS. Foundation39722922237/job119640266258 final marker/types/build/readiness-unit/native-RLS/integration PASS. All46 exact-source workflows SUCCESS; dependency audit/review39722922256:0 high,0 critical,2 moderate. Actual checkout19586602febbf282e952e16c58fae38ffbe75995 and source share tree8318994b4ac017f9ec57ea3c21294a7f730f6c05. No failed attempt in this increment. Counts include repeated invocations/TAP parents and do not measure whole-P0 completion. Containing checkpoint is docs-only [skip ci], not a new executable result.
 
 ## Remaining cashier boundary work
 
