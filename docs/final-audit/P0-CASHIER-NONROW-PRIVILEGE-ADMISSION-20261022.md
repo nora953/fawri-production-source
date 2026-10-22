@@ -1,5 +1,9 @@
 # P0 protected-table non-row privilege admission — 2026-10-22
 
+## Verified remediation acceptance
+
+Executable645b534aea0d32848b4467b5bbebf8fd671deddb is accepted in isolated GitHub Actions:47/47 parent workflows SUCCESS,82/82 clean native invocations,80 unique files. Native39824457555/job119983935469 confirms174 protected-table direct grant cases and20 role/column cases, all three original probes now REJECTED. Revocation recovery,18-table catalog isolation and rollback restoration PASS. Foundation39824457202/job119983933998 final marker, schema39824456460/job119983931446 canonical reproduction, quality39824457487 and security39824456372 SUCCESS; audit119983930705/review119983930995:0 high/0 critical/2 moderate. No failed CI/retry. [Exact accepted evidence](evidence/P0-CASHIER-NONROW-PRIVILEGE-ACCEPTANCE-20261022.json). Prior pending observations remain historical only.
+
 ## Proven baseline
 
 Executable `5d3dde10a03ca3c3f92a9435c005f8334546b315`, isolated run39821762823/job119974573789 completed SUCCESS. All82 invocations clean (exit0/failed0/skipped0/cancelled0/summaryComplete). Checkout770e33b892747f61a9811e3215058edee95d0f06 and source share tree5dab5e9028856478e07edf762a2068543368977e. [Immutable baseline inventory/results](evidence/P0-CASHIER-NONROW-PRIVILEGE-BASELINE-20261022.json).
@@ -18,10 +22,10 @@ Only runtime readiness and unit/native tests change. No migrations, ordinary bus
 
 Native regression retains baseline inventory and the table-wide TRUNCATE demonstration while requiring readiness rejection first. It tests all protected tables' direct TRUNCATE/REFERENCES/TRIGGER grants, four privilege forms (including REFERENCES(merchant_id)) across direct/PUBLIC/inherit-only/SET-reachable/unreachable roles, original LOGIN privileges behind SET ROLE, revocation recovery, and unchanged two-merchant row visibility/rollback. The fixture-only observer remains explicitly outside canonical application routines.
 
-Local node --check PASS for native test. Full TypeScript/unit/native execution PENDING on the final new source; no local dependency or DB execution claimed. Prior green results do not cover this remediation.
+Local node --check PASS for native test. Full TypeScript/unit/native CI execution is now verified on645b534. No local dependency or DB execution claimed. See the accepted evidence above.
 
 ## Continuation
 
-Read the new source's exact isolated native marker P0_CASHIER_NONROW_PRIVILEGE_REMEDIATION and AUDIT_SUITE_RESULT records, Foundation/quality/schema/security results. Check status once per continuation; if pending, record and advance independent source work. Preserve failures before correction or a justified bounded retry. Do not rerun passing tests for docs/status alone.
+Completed: read and verified the new source's exact isolated native marker P0_CASHIER_NONROW_PRIVILEGE_REMEDIATION and AUDIT_SUITE_RESULT records, Foundation/quality/schema/security results. Check status once per continuation; if pending, record and advance independent source work. Preserve failures before correction or a justified bounded retry. Do not rerun passing tests for docs/status alone.
 
 After bounded acceptance, continue alternate routine/trigger/view and complete same-tenant authority review. P0 auth/privacy/offline/grace/sync/retention/provider/storage inventory remains OPEN. Release NO-GO, whole-P0 percentage UNMEASURED. GitHub/Actions only; no hosted connector, deployment, main push, merge, credential rotation or P1/P2.
