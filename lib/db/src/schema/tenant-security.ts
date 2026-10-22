@@ -123,3 +123,11 @@ export const cashierStationPairingChallengesTenantPolicy = tenantPolicy("cashier
 export const cashierStationCredentialsTenantPolicy = tenantPolicy("cashier_station_credentials_tenant_boundary", cashierStationCredentials);
 export const cashierShiftsTenantPolicy = tenantPolicy("cashier_shifts_tenant_boundary", cashierShifts);
 export const cashierOperatorSessionsTenantPolicy = tenantPolicy("cashier_operator_sessions_tenant_boundary", cashierOperatorSessions);
+
+import { merchantCashierDiscountSettings, merchantCashierStaffDiscountPolicies, merchantCashierDiscountOverrideApprovals } from "./cashier-discount";
+import { cashierOperationAttribution } from "./cashier-operation-attribution";
+
+export const merchantCashierDiscountSettingsTenantPolicy = tenantPolicy("merchant_cashier_discount_settings_tenant_boundary", merchantCashierDiscountSettings);
+export const merchantCashierStaffDiscountPoliciesTenantPolicy = tenantPolicy("merchant_cashier_staff_discount_policies_tenant_boundary", merchantCashierStaffDiscountPolicies);
+export const merchantCashierDiscountOverrideApprovalsTenantPolicy = tenantPolicy("merchant_cashier_discount_override_approvals_tenant_boundary", merchantCashierDiscountOverrideApprovals);
+export const cashierOperationAttributionTenantPolicy = tenantPolicy("cashier_operation_attribution_tenant_boundary", cashierOperationAttribution);
