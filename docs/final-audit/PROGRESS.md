@@ -1,3 +1,17 @@
+## Manager override PIN lockout remediated in isolation — 2026-10-22
+
+**Accepted executable `f0418c1350a4d51dc112fb805304978541ab1dfc`:46/46 workflows SUCCESS;77/77 isolated invocations exit0/fail0/skip0/cancel0/summaryComplete.** Native39740821742/job119697340772: manager PIN10PASS/auth58PASS (parents included),45 sensitive-column ACL cases, primaryPoolCalls0. All42 migrations/dump-restore and Foundation types/build/unit/native-RLS/integration PASS. Actual checkout6f2c8791a84f80006d93d0d60cf58bc4ca1570a6/tree18946b39ab1fe8974f52dd86ab43eb30b908dd52 matches source. [Exact acceptance](evidence/P0-MANAGER-PIN-PERSISTENCE-ACCEPTANCE-20261022.json), [report](P0-MANAGER-OVERRIDE-PIN-PERSISTENCE-20261022.md).
+
+Baselinef0023060 strict native test confirmed counters all0/no lock/correct PIN accepted after five errors, with production unchanged; only new test failed while previous76 invocations stayed clean. [Baseline retained](evidence/P0-MANAGER-PIN-BASELINE-20261022.json). Fix commits PIN refusal decisions on auth LOGIN before throwing outside; SQL/business/conflict errors still roll back. Non-secret commerce approver projection retains FOR UPDATE/binding/window/replay/role checks. Tenant PIN-hash read admission added;9 protected columns. Fixed counters1,2,3,4,0/fifth locked/correct PIN blocked, concurrent failures/recovery/rollback/consume/replay/demotion/no-fallback all PASS. Threshold5/15min, RLS/issuer/migrations and policies unchanged.
+
+Dependency audit first attempt failed closed without vulnerability counts; exact failure retained. One same-source failed-job retry request recovered successful security attempt2 (audit119699938164/review119699988452):0 high/0 critical/2 moderate. No policy/dependency/source relaxation. Containing checkpoint is docs-only[skip ci], not new tests. Prior76-invocation acceptance stays historical.
+
+**Next bounded task:** trace primary staff/permission/operator-session snapshot mutations in cashier-discount-policy-operations and cashierStaffDiscountRoleHardening, preserving commerce locking; design actual-LOGIN mutation restriction proof before expanding privileges checks. Remaining staff/session integrity and non-secret cashier row isolation, offline/grace/sync/retention/provider/storage/full P0 inventory OPEN.
+
+**NO-GO.** Hosted runtime BLOCKED_BY_RAILWAY; hosted DB NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. No external service connector/hosted change/deploy/main push/merge/credential rotation/P1/P2. Whole-P0 percentage unmeasured; TAP/invocations are not a P0 denominator. Preserve acceptance; do not rerun77 suites for docs-only changes. Older pending/hypothesis entries below are superseded.
+
+---
+
 ## Manager override PIN regression confirmed; remediation pending — 2026-10-22
 
 Baseline f00230603ba51a50c01e39f3e8befb8b06e2677d/native39740085994/job119694925095 confirmed five wrong-PIN counters all0, no lock, correct PIN then accepted; strict new regression failed while all previous76 invocations stayed clean (45/46 workflows SUCCESS). [Exact baseline](evidence/P0-MANAGER-PIN-BASELINE-20261022.json).
