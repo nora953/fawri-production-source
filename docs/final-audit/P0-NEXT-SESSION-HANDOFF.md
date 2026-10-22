@@ -1,3 +1,13 @@
+## Native 0041 attempt reviewed / fixture corrections — 2026-10-22
+
+Executable `365e7473a428391bcf2cea599d4fdb2c117204f8`:41/46 workflows SUCCESS,5 FAILURE. Isolated39711627110/job119604061266:75 invocations,73 clean,2 not clean (scope protocol14PASS/2FAIL; receipt execution10PASS/5FAIL including parents). Native GUC-forgery denial, central public subscription RLS, canonical knowledge RLS, admin boundary, all42 migrations, full dump/restore with identical fingerprint and Node22 journey PASS. Full build/types PASS. Exact links/counters/causes: [P0-PRIVATE-PREDICATE-ATTEMPT-20261022.json](evidence/P0-PRIVATE-PREDICATE-ATTEMPT-20261022.json). This is NOT full-source acceptance.
+
+Containing correction updates obsolete operational source contracts to awaited private issuance, converts legacy cross-lane edge positive to actual tenant/auth LOGINs with raw-GUC negative, and changes receipt deferred fault trigger selection from the removed tenant GUC to actual private scope. Original admission/COMMIT rejection, rollback/durable event and exactly-once retry assertions remain. Deliberate private-function owner corruption now makes the public SQL readiness probe fail BEFORE scope admission; only that assertion expects exact PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED, while direct scope owner rejection remains exact OPERATIONAL_TENANT_SCOPE_ROLE_UNSAFE. No source/migration/grant changes. Promotions install failed HTTP503 fetching pnpm, no execution; preserve it as failed evidence. Local new operational contract9PASS, syntax/whitespace PASS.
+
+Next: inspect containing exact-source CI and all75 summaries; repair actual failures without bypass/skips, require all workflows and full migration/restore proofs before acceptance. Last full acceptance remains c60914b8 (46/46;75 clean), not365e7473 or this correction. New GUC denial is proven in isolated native tests but hosted rollout/certification and other P0 gates remain open. Full-P0 percentage unmeasured. NO-GO; no hosted writes/deploy/main/merge. Keep bounded batches and persist evidence/handoff after each completed run.
+
+---
+
 ## Private public-predicate cutover candidate — 2026-10-22
 
 Recovered live HEAD `5f7af109363fe3c7ca8383afb47a8187f8ac2d63` into a fresh clean checkout; no prior dirty worktree touched. Containing executable introduces canonical migration0041 `private_tenant_predicate_cutover` (SQL==manual stage, journal index41, deterministic snapshot parent0040). Public RLS predicate now delegates tenant authority to the existing private LOGIN/backend/full-XID scope, retaining authentication and audited operator branches verbatim. Removes all six transitional production tenant GUC writes. No issuer grants or hosted changes.

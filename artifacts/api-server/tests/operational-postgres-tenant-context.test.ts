@@ -6,11 +6,11 @@ import { readFileSync } from "node:fs";
 // Runtime integration tests must additionally prove context cleanup with a real pool.
 const source = readFileSync(new URL("../src/services/operationalPostgresAuthority.ts", import.meta.url), "utf8");
 
-test("merchant transaction uses a parameterized transaction-local tenant setting", () => {
+test("merchant transaction awaits trusted private scope issuance", () => {
   assert.match(source, /export async function withMerchantOperationalTransaction/);
   assert.match(source, /return withOperationalTransaction\(async \(client\) => \{/);
-  assert.match(source, /set_config\('fawri\.tenant_id', \$1, true\)/);
-  assert.match(source, /\[merchantId\]/);
+  assert.match(source, /await issueMerchantTransactionScope\(client, merchantId\)/);
+  assert.doesNotMatch(source, /fawri\.tenant_id/);
 });
 
 test("merchant transaction rejects missing or oversized identifiers", () => {
@@ -30,9 +30,9 @@ test("transaction-local context is not promoted to session-level context", () =>
   assert.doesNotMatch(source, /SET\s+SESSION\s+fawri\.tenant_id/i);
 });
 
-test("tenant setting is established before the merchant callback is invoked", () => {
+test("trusted private scope is issued before the merchant callback is invoked", () => {
   const tenantFunction = source.slice(source.indexOf("export async function withMerchantOperationalTransaction"));
-  const setContext = tenantFunction.indexOf("await client.query(");
+  const setContext = tenantFunction.indexOf("await issueMerchantTransactionScope(client, merchantId)");
   const invokeWork = tenantFunction.indexOf("return work(client)");
   assert.ok(setContext >= 0 && invokeWork > setContext, "tenant context must precede merchant work");
 });
@@ -64,7 +64,7 @@ test("runtime rejects invalid merchant IDs before acquiring a database connectio
 test("tenant validation normalizes surrounding whitespace before applying context", () => {
   const merchantFunction = source.slice(source.indexOf("export async function withMerchantOperationalTransaction"));
   assert.match(merchantFunction, /String\(merchantIdValue \|\| ""\)\.trim\(\)/);
-  assert.match(merchantFunction, /\[merchantId\]/);
+  assert.match(merchantFunction, /issueMerchantTransactionScope\(client, merchantId\)/);
 });
 
 test("tenant IDs at the 200-character boundary are not rejected by length guard", () => {

@@ -367,7 +367,9 @@ test('tenant scope binds actual LOGIN backend and transaction without trusting G
           await admin.query('GRANT '+grantRole+' TO '+r+' WITH INHERIT FALSE, SET TRUE');
           try{
             await assert.rejects(()=>assertTenantScopeSession(c,isIssuer),unsafe);
-            if(!isIssuer)await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv,c),{code:'PRODUCTION_TENANT_SCOPE_ROLE_UNSAFE'});
+            // The public predicate now invokes this deliberately broken definer.
+            // Readiness fails during its SQL probe before later role admission.
+            if(!isIssuer)await assert.rejects(()=>assertProductionDatabaseRlsReady(productionEnv,c),{code:'PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED'});
           }
           finally{await admin.query('REVOKE '+grantRole+' FROM '+r);}
         }
