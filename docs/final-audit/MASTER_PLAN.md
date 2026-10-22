@@ -1,3 +1,15 @@
+## Authentication sensitive SELECT admission accepted in isolation — 2026-10-22
+
+**Accepted executable: `2cf55e258762402f001a6960f4521d389a96822f`. 46/46 workflows SUCCESS; 75/75 isolated invocations exit0/fail0/skip0/cancel0/summaryComplete.** Native run39721170510/job119634687396: authentication43PASS (parent included), all30 credential column/ACL grant-revoke cases and original signup/OTP/session/admin/rollback positives; primaryPoolCalls0. Actual checkout e1e206fc6b15d6cd703f09d9119813d3986808f6 and source share tree2ea8af20b2fb92b1e62500f48f748361f2123a75. Full42 migrations/dump-restore and Foundation types/build/unit/RLS/integration PASS. Dependency audit/review:0 high,0 critical,2 moderate. [Exact evidence](evidence/P0-AUTH-SENSITIVE-SELECT-ACCEPTANCE-20261022.json), [bounded report](P0-AUTH-SENSITIVE-SELECT-20261022.md).
+
+One production file adds fail-closed readiness inventory for six credential/recovery columns, including current/session/PUBLIC/inherited/SET-reachable SELECT and schema completeness. Ordinary account identity/status reads remain allowed. Disposable helper only restores previously-readable non-sensitive columns after removing legacy direct credential SELECT; auth LOGIN and all business assertions remain. Initial44668bde auth42PASS but full fixture refusals are retained in [initial evidence](evidence/P0-AUTH-SENSITIVE-SELECT-INITIAL-20261022.json); no blanket rerun masks those failures. No migrations/issuer grants/RLS changes. Containing commit is docs-only [skip ci], not a new executable test result.
+
+**Release NO-GO; whole-P0 percentage unmeasured.** Bounded admission acceptance does not certify all auth/privacy or alternate function/view exposure. Hosted runtime BLOCKED_BY_RAILWAY; hosted DB NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY. No external service connectors, hosted changes/deploy, main push/merge, credential rotation or P1/P2. Cashier credentials/offline/grace/sync/retention/provider/storage/full P0 inventory gates remain open.
+
+**Next bounded task:** trace cashierRuntimeExpiryReconciliation's operational station refresh/expiry mutations against authentication-based cashier validation and legitimate housekeeping, then design actual-LOGIN credential read/mutation isolation regression. Do not blindly ban cashier-table mutations before this trace. Preserve this source acceptance; do not rerun75 suites for docs-only edits. Older pending-candidate instructions below are historical and superseded.
+
+---
+
 ## GitHub-only recovery: 0041 full source acceptance — 2026-10-22
 
 **Accepted executable: `43065bda4b032244016d0fc78823f5579b01deca`. All46/46 GitHub Actions workflows SUCCESS, none pending.** Native run39713145055/job119608939313 independently re-read:75/75 invocations exit0/fail0/skip0/cancel0/summaryComplete; counters exactly match saved evidence. Source/actual checkout share tree b5f8bfa86d716ce62098d057bd8207a02dc0016d. Previous baseline c60914b8 independently verified46/46 and75/75; that older source still trusted raw tenant GUCs and is superseded for this fix.
