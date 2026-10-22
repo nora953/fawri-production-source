@@ -66,6 +66,7 @@ export const PRODUCTION_PROTECTED_RLS_TABLES = [
 export const AUTHENTICATION_INTEGRITY_TABLES = [
   "accounts", "admin_profiles", "admin_permissions", "account_sessions", "trusted_devices",
   "auth_otp_challenges", "login_attempts", "auth_audit_events",
+  "cashier_station_credentials", "cashier_station_pairing_challenges",
 ] as const;
 export const ADMIN_AUTHORITY_AUDIT_TABLES = ["database_admin_access_audits"] as const;
 
@@ -78,6 +79,8 @@ export const AUTHENTICATION_SENSITIVE_COLUMNS = [
   { table_name: "account_sessions", column_name: "device_fingerprint_hash" },
   { table_name: "auth_otp_challenges", column_name: "code_hash" },
   { table_name: "trusted_devices", column_name: "device_fingerprint_hash" },
+  { table_name: "cashier_station_credentials", column_name: "token_hash" },
+  { table_name: "cashier_station_pairing_challenges", column_name: "code_hash" },
 ] as const;
 
 export type ProductionDatabaseRlsReadiness = {
