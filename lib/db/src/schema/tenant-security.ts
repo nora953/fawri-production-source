@@ -113,3 +113,13 @@ export const trainingRequestsTenantPolicy = tenantPolicy("training_requests_tena
 export const learnedAnswersTenantPolicy = tenantPolicy("learned_answers_tenant_boundary", learnedAnswers);
 export const knowledgeAuditEventsTenantPolicy = tenantPolicy("knowledge_audit_events_tenant_boundary", knowledgeAuditEvents);
 export const knowledgeEmbeddingsTenantPolicy = tenantPolicy("knowledge_embeddings_tenant_boundary", knowledgeEmbeddings);
+
+import { merchantCashierStaff, merchantCashierStaffPermissions, merchantCashierStations, cashierStationPairingChallenges, cashierStationCredentials, cashierShifts, cashierOperatorSessions } from "./cashier-staff";
+
+export const merchantCashierStaffTenantPolicy = tenantPolicy("merchant_cashier_staff_tenant_boundary", merchantCashierStaff);
+export const merchantCashierStaffPermissionsTenantPolicy = tenantPolicy("merchant_cashier_staff_permissions_tenant_boundary", merchantCashierStaffPermissions);
+export const merchantCashierStationsTenantPolicy = tenantPolicy("merchant_cashier_stations_tenant_boundary", merchantCashierStations);
+export const cashierStationPairingChallengesTenantPolicy = tenantPolicy("cashier_station_pairing_challenges_tenant_boundary", cashierStationPairingChallenges);
+export const cashierStationCredentialsTenantPolicy = tenantPolicy("cashier_station_credentials_tenant_boundary", cashierStationCredentials);
+export const cashierShiftsTenantPolicy = tenantPolicy("cashier_shifts_tenant_boundary", cashierShifts);
+export const cashierOperatorSessionsTenantPolicy = tenantPolicy("cashier_operator_sessions_tenant_boundary", cashierOperatorSessions);
