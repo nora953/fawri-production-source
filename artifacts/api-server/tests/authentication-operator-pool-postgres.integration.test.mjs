@@ -184,6 +184,19 @@ test('separate authentication LOGIN protects authority data and preserves signup
     await assert.doesNotReject(()=>assertProductionDatabaseRlsReady(process.env,clients[0]));
     assert.equal(mainCalls,0);
   });
+  await t.test('legacy broad fixture SELECT is narrowed without expanding existing ordinary grants',async()=>{
+    const {restrictTenantAuthenticationPrivileges}=await import('./helpers/disposable-authentication-role.mjs');
+    await admin.query(`GRANT SELECT ON public.accounts,public.account_sessions,public.auth_otp_challenges,public.trusted_devices TO ${roles[0]}`);
+    await restrictTenantAuthenticationPrivileges(admin,roles[0]);
+    for(const {table_name,column_name} of AUTHENTICATION_SENSITIVE_COLUMNS)
+      await assert.rejects(()=>clients[0].query(`SELECT ${column_name} FROM public.${table_name} LIMIT 1`),{code:'42501'});
+    assert.equal((await clients[0].query('SELECT id,phone,state FROM public.accounts WHERE id=$1',[merchant.account.id])).rows[0].id,merchant.account.id);
+    // A second pass must be idempotent and must not create unrelated grants.
+    await restrictTenantAuthenticationPrivileges(admin,roles[0]);
+    assert.equal((await clients[0].query("SELECT has_column_privilege(current_user,'public.admin_profiles','display_name','SELECT') AS allowed")).rows[0].allowed,false);
+    await assert.doesNotReject(()=>assertProductionDatabaseRlsReady(process.env,clients[0]));
+    assert.equal((await merchants.findMerchantByPhoneAuthoritative(merchant.account.phone)).account.id,merchant.account.id);
+  });
   await t.test('marker revocation, missing auth URL and tenant URL fail closed in production',async()=>{
     await admin.query(`REVOKE EXECUTE ON FUNCTION public.fawri_authentication_runtime() FROM ${roles[1]}`);
     try{await assert.rejects(()=>admins.findAdminByIdAuthoritative(assistant.account.id),{code:'AUTH_DATABASE_IDENTITY_INVALID'});}finally{await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO ${roles[1]}`);}
@@ -192,5 +205,5 @@ test('separate authentication LOGIN protects authority data and preserves signup
     process.env.FAWRI_AUTH_DATABASE_URL=urls[0];await assert.rejects(()=>admins.findAdminByIdAuthoritative(assistant.account.id),{code:'AUTH_DATABASE_IDENTITY_INVALID'});
     assert.equal(mainCalls,0);await closeAuth();process.env.FAWRI_AUTH_DATABASE_URL=urls[1];
   });
-  console.log('P0_AUTHENTICATION_POOL_PROOF '+JSON.stringify({directRestrictedLogins:2,sensitiveColumns:AUTHENTICATION_SENSITIVE_COLUMNS.length,sensitiveReadAclCases:AUTHENTICATION_SENSITIVE_COLUMNS.length*5,sensitiveReadGrantRevokeReadiness:true,ordinaryIdentityReadPreserved:true,missingSensitiveColumnRejected:true,tenantAuthMutationsDenied:true,tenantAuditCrudDenied:true,trustedAuthWithoutTenantGuc:true,signupAndLookup:true,otpSingleUse:true,sessionIssueValidateRotateRevoke:true,adminPermissionPasswordStateChanges:true,mixedTransactionRollback:true,primaryPoolCalls:mainCalls,productionFallbackDenied:true,hostedCertified:false,releaseAccepted:false}));
+  console.log('P0_AUTHENTICATION_POOL_PROOF '+JSON.stringify({directRestrictedLogins:2,sensitiveColumns:AUTHENTICATION_SENSITIVE_COLUMNS.length,sensitiveReadAclCases:AUTHENTICATION_SENSITIVE_COLUMNS.length*5,sensitiveReadGrantRevokeReadiness:true,ordinaryIdentityReadPreserved:true,missingSensitiveColumnRejected:true,legacyFixtureSelectNarrowed:true,tenantAuthMutationsDenied:true,tenantAuditCrudDenied:true,trustedAuthWithoutTenantGuc:true,signupAndLookup:true,otpSingleUse:true,sessionIssueValidateRotateRevoke:true,adminPermissionPasswordStateChanges:true,mixedTransactionRollback:true,primaryPoolCalls:mainCalls,productionFallbackDenied:true,hostedCertified:false,releaseAccepted:false}));
 });
