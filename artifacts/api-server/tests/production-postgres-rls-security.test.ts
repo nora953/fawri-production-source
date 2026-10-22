@@ -234,3 +234,7 @@ test("production requires the protected cashier approver locking capability",asy
 test("cashier identity tables require tenant RLS",()=>{
   for(const name of ["merchant_cashier_staff","merchant_cashier_staff_permissions","merchant_cashier_stations","cashier_station_pairing_challenges","cashier_station_credentials","cashier_shifts","cashier_operator_sessions"])assert.ok((PRODUCTION_TENANT_RLS_TABLES as readonly string[]).includes(name));
 });
+
+test("cashier discount and attribution tables require tenant RLS",()=>{
+  for(const name of ["merchant_cashier_discount_settings","merchant_cashier_staff_discount_policies","merchant_cashier_discount_override_approvals","cashier_operation_attribution"])assert.ok((PRODUCTION_TENANT_RLS_TABLES as readonly string[]).includes(name));
+});
