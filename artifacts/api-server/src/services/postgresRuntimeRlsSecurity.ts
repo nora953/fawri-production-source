@@ -67,7 +67,7 @@ export const AUTHENTICATION_INTEGRITY_TABLES = [
   "accounts", "admin_profiles", "admin_permissions", "account_sessions", "trusted_devices",
   "auth_otp_challenges", "login_attempts", "auth_audit_events",
   "cashier_station_credentials", "cashier_station_pairing_challenges",
-  "merchant_cashier_staff_permissions", "cashier_operator_sessions",
+  "merchant_cashier_staff_permissions", "cashier_operator_sessions", "merchant_cashier_staff",
 ] as const;
 export const ADMIN_AUTHORITY_AUDIT_TABLES = ["database_admin_access_audits"] as const;
 
@@ -87,6 +87,7 @@ export const AUTHENTICATION_SENSITIVE_COLUMNS = [
 ] as const;
 
 export type ProductionDatabaseRlsReadiness = {
+  cashierStaffLockReady: boolean;
   authenticationAuthorityPresent: boolean;
   authenticationMutationRoles: string[];
   authenticationSensitiveColumnsPresent: boolean;
@@ -149,6 +150,7 @@ export async function getProductionDatabaseRlsReadiness(
 ): Promise<ProductionDatabaseRlsReadiness> {
   const queryTarget = target || (await operationalDatabasePool());
   const rows = await operationalQueryRows<{
+    cashier_staff_lock_ready: boolean;
     authentication_authority_present: boolean;
     authentication_mutation_roles: string[];
     authentication_sensitive_columns_present: boolean;
@@ -226,6 +228,15 @@ export async function getProductionDatabaseRlsReadiness(
      )
      SELECT
        public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
+       EXISTS (SELECT 1 FROM pg_proc lock_function
+         WHERE lock_function.oid=to_regprocedure('public.fawri_lock_cashier_approver(text,text)')
+           AND lock_function.prosecdef AND lock_function.provolatile='v'
+           AND lock_function.proconfig @> ARRAY['search_path=pg_catalog']::text[]
+           AND has_function_privilege(current_user,lock_function.oid,'EXECUTE')
+           AND NOT EXISTS (SELECT 1 FROM reachable_roles r
+             WHERE pg_has_role(r.oid,lock_function.proowner,'USAGE')
+                OR pg_has_role(r.oid,lock_function.proowner,'SET'))
+       ) AS cashier_staff_lock_ready,
        to_regprocedure('public.fawri_authentication_runtime()') IS NOT NULL AS authentication_authority_present,
        COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
          WHERE EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
@@ -301,6 +312,7 @@ export async function getProductionDatabaseRlsReadiness(
   }
 
   return {
+    cashierStaffLockReady: booleanValue(row.cashier_staff_lock_ready),
     authenticationAuthorityPresent: booleanValue(row.authentication_authority_present),
     authenticationMutationRoles: stringArray(row.authentication_mutation_roles),
     authenticationSensitiveColumnsPresent: booleanValue(row.authentication_sensitive_columns_present),
@@ -409,6 +421,7 @@ export async function assertProductionDatabaseRlsReady(
     fail("PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE",
       "tenant runtime must not reach privileged operator database capabilities");
   }
+  if (!readiness.cashierStaffLockReady) fail("PRODUCTION_CASHIER_STAFF_LOCK_REQUIRED", "production requires the protected cashier approver lock function");
   if (!readiness.authenticationAuthorityPresent) fail("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED", "production requires role-bound authentication migration");
   if (readiness.authenticationMutationRoles.length) fail("PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE", "tenant runtime must not reach authentication mutation privileges");
   if (!readiness.authenticationSensitiveColumnsPresent) fail("PRODUCTION_AUTH_SENSITIVE_COLUMNS_REQUIRED", "production authentication sensitive columns must exist");
