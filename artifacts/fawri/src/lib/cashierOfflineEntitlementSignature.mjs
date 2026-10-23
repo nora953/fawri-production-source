@@ -122,3 +122,25 @@ export function assertOfflineEntitlementClaims(claims, binding, nowMs) {
   }
   return claims;
 }
+
+// Full authorization schema, after exact-byte signature verification.
+export async function verifyCashierOfflineAuthorization(envelope, keys, binding, nowMs) {
+  const claims = await verifyOfflineEntitlementEnvelope(envelope, keys);
+  assertOfflineEntitlementClaims(claims, binding, nowMs);
+  const issued = Date.parse(claims.server_time);
+  const expires = Date.parse(claims.expires_at);
+  const billingEnd = Date.parse(claims.billing_period_end);
+  const graceEnd = Date.parse(claims.grace_until);
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  if (claims.key_id !== envelope.key_id ||
+      claims.offline_inventory_authority !== true ||
+      typeof binding.location_id !== 'string' || !binding.location_id ||
+      claims.location_id !== binding.location_id ||
+      !Number.isSafeInteger(binding.credential_version) || binding.credential_version <= 0 ||
+      claims.credential_version !== binding.credential_version ||
+      !Number.isFinite(expires) || expires <= issued || nowMs >= expires ||
+      expires > graceEnd || expires > billingEnd + sevenDays || expires > issued + sevenDays) {
+    throw new Error('Offline cashier authority is invalid or expired');
+  }
+  return claims;
+}

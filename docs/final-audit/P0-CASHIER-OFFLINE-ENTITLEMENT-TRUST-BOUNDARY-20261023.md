@@ -1,3 +1,24 @@
+# Signed offline implementation checkpoint — 2026-10-24
+
+**CASHIER-OFFLINE-001 OPEN / NO-GO**. Server issuer published in `b7b86d901b512fe0eaa687d720af08702ca09dbc`. Client batch adds pinned release-key verification before persistence, restored offline authorization and every offline sale; signed merchant/station/device/location/credential/subscription/version/expiry/main-station claims replace mutable cached fields as authority. WebCrypto executes outside live IndexedDB transactions; cache recheck rejects concurrent refresh/clear before clock update. Unsigned legacy records require online refresh and are never upgraded locally. A successful online authenticated entitlement check authorizes online sales with missing offline signing configuration; HTTP denials never use offline fallback. Pending sale/outbox and server sync algorithms are unchanged.
+
+Local 28/28 targeted tests PASS (source contracts plus actual crypto/issuer/cache/sale-auth functions with synthetic storage adapter). Local native browser NOT_RUN: no installed Chrome. New dedicated CI requires real Chrome, no skipped prerequisite, and executes eight bounded signed/native storage/local inventory/synthetic acknowledgement cases. These are PREPARED, not accepted until exact source CI logs are read. Server HTTP+database session issuance/reconnection and long-duration physical-device proof remain separate open gates. No complete sync/production closure inferred from synthetic acknowledgement.
+
+## Configuration and rotation contract
+
+- Server-only `FAWRI_CASHIER_OFFLINE_PRIVATE_JWK`: one P-256 signing private JWK. Never use a VITE prefix or include it in a response, artifact, log or source. No operational key was generated/stored in this work; tests generate disposable keys in memory.
+- `FAWRI_CASHIER_OFFLINE_KEY_ID`: active identifier. `FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS`: public JWK map matching that active key; private/public mismatch disables issuance without disrupting online login.
+- Browser `VITE_FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS`: release-provisioned public verification JWK map. Never trust a keyring from API payloads, local storage or entitlement envelopes. Empty/invalid map disables offline authorization.
+- Rotation order for future approved rollout: ship old+new public keys to clients first; then activate the new server key ID. Keep old verification key until all issued old leases expire (maximum seven days) and old clients have refreshed. Remove retired public keys in a later reviewed release. Unknown keys fail closed. No live key configuration/rotation/deployment performed here.
+- Expiry is capped by station credential expiry, explicit signed grace, billing end plus seven days and issuance plus seven days. Reconnect refresh remains necessary. Server revocation/new subscription versions cannot be learned during disconnection; the signed lease bounds that delay. Retained-version/clock-watermark tests do not prove resistance to a device owner replacing the whole browser profile or manipulating the OS clock across restarts. No tamper-resistant hardware/trusted offline clock claim.
+- Hosted key provisioning, deployed release parity, session/role/device revalidation and branch uniqueness under real rollout are **BLOCKED_HOSTED_VERIFICATION** under current instructions. Existing operator-session lifetime still applies; seven-day license grace is not a seven-day operator session.
+
+Exact next: inspect containing source's signed-native CI marker (8 actual outcomes), full typecheck/build and existing isolated cashier sync regression. Resolve any failures without weakening identity, signature, expiry, stock or denial assertions. Keep zod HIGH advisory/security CI blocker open; no overall P0 percentage or release acceptance.
+
+---
+
+Historical source review follows; its statements describe the pre-implementation boundary.
+
 # P0 — Cashier offline entitlement trust boundary (2026-10-23)
 
 Status: **OPEN / RELEASE NO-GO**. Scope: source-traced design and test contract only; no runtime or hosted changes. Issue: CASHIER-OFFLINE-001.

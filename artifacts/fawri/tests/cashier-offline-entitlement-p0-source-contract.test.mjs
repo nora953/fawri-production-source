@@ -42,7 +42,7 @@ test("offline clock rollback and stale online snapshots remain rejected", () => 
 test("operator login persists entitlement before storing a usable session", () => {
   const login = operator.slice(operator.indexOf("const session: CashierOperatorSession = {"));
   assert.ok(login.length > 0, "operator login session assignment must exist");
-  const persist = login.indexOf("await persistEntitlementFromPayload(payload, context.station_id)");
+  const persist = login.indexOf("await persistEntitlementFromPayload(payload, context.station_id, context)");
   const storage = login.indexOf("sessionStorage.setItem(OPERATOR_STORAGE_KEY");
   assert.ok(persist >= 0 && storage > persist, "do not store login session before entitlement persistence");
 });

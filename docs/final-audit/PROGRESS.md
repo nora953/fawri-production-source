@@ -1,3 +1,13 @@
+## P0 signed offline client integration — 2026-10-24
+
+Server issuer checkpoint `b7b86d901b512fe0eaa687d720af08702ca09dbc` is published. Client integration verifies release-pinned signatures before storing/restoring authorization and every offline sale; binds main station, merchant/device/location/credential and subscription version; rejects unsigned legacy cache, stale retained versions, altered claims, rollback and expiry. Online sales obtain current server authorization and remain available with absent offline signing config; HTTP denials cannot fall back. Existing branch inventory and outbox/server-sync algorithms unchanged.
+
+Local targeted tests28/28 PASS,0 failed/skipped. Storage adapter proof is distinct from native IndexedDB. New CI real-browser eight-case audit is PREPARED / CI_PENDING; no native acceptance claimed. Full build/typecheck and existing cashier SQL/sync acceptance pending containing source. Key rotation, migration and offline revocation/clock limits documented in [existing offline report](P0-CASHIER-OFFLINE-ENTITLEMENT-TRUST-BOUNDARY-20261023.md).
+
+CASHIER-OFFLINE-001 remains OPEN. Hosted key/configuration/parity/device/session/sync proof **BLOCKED_HOSTED_VERIFICATION**. Recovered fdcf security failure (zod HIGH GHSA-mrhx-c7xc-m3w5) remains OPEN. NO-GO; no main/merge/deploy/P1/P2. Exact next: inspect signed native marker, typecheck/build and existing isolated regression; correct failures before bounded source acceptance.
+
+---
+
 ## P0 offline signing issuer — 2026-10-24
 
 Recovered actual PR550 HEAD `fdcf9541bba12a15bffef5c9c4adde41f13e9c0b`; draft/base unchanged. CI observation: 47 SUCCESS, 1 FAILURE (security40028233610), 1 executing (isolated40028233764), total49. Security dependency-audit120669704535 reports zod HIGH GHSA-mrhx-c7xc-m3w5; this is an OPEN release blocker, not a signature-test failure. No retry/ignore/downgraded gate.
