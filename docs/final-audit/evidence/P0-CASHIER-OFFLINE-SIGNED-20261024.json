@@ -2,22 +2,441 @@
   "date_baghdad": "2026-10-24",
   "release": "NO-GO",
   "issue": "CASHIER-OFFLINE-001",
-  "status": "BOUNDED_SOURCE_RUNTIME_VERIFIED_HOSTED_OPEN",
-  "source": "57276dfbe26e5f05743255c7727f3b3b0a9fed05",
-  "tree": "6690ec3d1af42320d0b67445952f1d11a6f6f529",
-  "actual_checkout": "1b6bb62b66ec5f2d50fe844fbc8e6de4f166ecaa",
+  "status": "SOURCE_RUNTIME_VERIFIED_HOSTED_BLOCKED",
+  "source": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+  "tree": "8b0f1905cceaad6e9e25a6f0efa7441bb896fb36",
+  "actual_checkout": "310e19e98baf809e455f2a20045d46443a5063db",
   "checkout_tree_matches": true,
   "ci": {
-    "total": 51,
-    "success": 50,
-    "failure": 1,
-    "pending": 0
+    "total": 52,
+    "success": 52,
+    "failure": 0,
+    "pending": 0,
+    "cancelled": 0,
+    "runs": [
+      {
+        "id": 40032569717,
+        "name": "Merchant deletion audit PII",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569717"
+      },
+      {
+        "id": 40032569814,
+        "name": "AWS KMS production adapter readiness",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569814"
+      },
+      {
+        "id": 40032569921,
+        "name": "Final security and supply chain",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569921"
+      },
+      {
+        "id": 40032569492,
+        "name": "Foundation integration final gate",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569492"
+      },
+      {
+        "id": 40032569606,
+        "name": "PostgreSQL schema validation",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569606"
+      },
+      {
+        "id": 40032569694,
+        "name": "Isolated Neon preflight static safety",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569694"
+      },
+      {
+        "id": 40032569722,
+        "name": "Complete migration safety",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569722"
+      },
+      {
+        "id": 40032569912,
+        "name": "Merchant access security",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569912"
+      },
+      {
+        "id": 40032569687,
+        "name": "Observability mounted routes",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569687"
+      },
+      {
+        "id": 40032569881,
+        "name": "Product catalog UI cutover",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569881"
+      },
+      {
+        "id": 40032569938,
+        "name": "Backup and restore drill",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569938"
+      },
+      {
+        "id": 40032569760,
+        "name": "Order operations",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569760"
+      },
+      {
+        "id": 40032569878,
+        "name": "Subscription service guarantee validation",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569878"
+      },
+      {
+        "id": 40032569972,
+        "name": "Catalog variant signature schema contract",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569972"
+      },
+      {
+        "id": 40032570079,
+        "name": "Pre-release performance smoke gate",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570079"
+      },
+      {
+        "id": 40032569923,
+        "name": "P0 zod security upgrade candidate",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569923"
+      },
+      {
+        "id": 40032569683,
+        "name": "Complete schema candidate",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569683"
+      },
+      {
+        "id": 40032569942,
+        "name": "Billing provider readiness",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569942"
+      },
+      {
+        "id": 40032569857,
+        "name": "Merchant deletion cashier lifecycle",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569857"
+      },
+      {
+        "id": 40032569861,
+        "name": "Location inventory authority",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569861"
+      },
+      {
+        "id": 40032569655,
+        "name": "PostgreSQL outage recovery proof",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569655"
+      },
+      {
+        "id": 40032569524,
+        "name": "Merchant account security UI",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569524"
+      },
+      {
+        "id": 40032569771,
+        "name": "Cashier dashboard surface regression",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569771"
+      },
+      {
+        "id": 40032569676,
+        "name": "Browser storage authority audit",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569676"
+      },
+      {
+        "id": 40032570000,
+        "name": "Merchant deletion physical media lifecycle",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570000"
+      },
+      {
+        "id": 40032569896,
+        "name": "P0 Support privacy authority diagnostic",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569896"
+      },
+      {
+        "id": 40032569980,
+        "name": "Bot logic adversarial matrix",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569980"
+      },
+      {
+        "id": 40032569899,
+        "name": "Global subscription golden journey",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569899"
+      },
+      {
+        "id": 40032569880,
+        "name": "Auth PostgreSQL concurrency proof",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569880"
+      },
+      {
+        "id": 40032569849,
+        "name": "Location routing engine",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569849"
+      },
+      {
+        "id": 40032569781,
+        "name": "Staging container contract",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569781"
+      },
+      {
+        "id": 40032569977,
+        "name": "Clean deployment golden gate",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569977"
+      },
+      {
+        "id": 40032569930,
+        "name": "Commerce cashier closeout",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569930"
+      },
+      {
+        "id": 40032570040,
+        "name": "Merchant regional PostgreSQL authority",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570040"
+      },
+      {
+        "id": 40032569998,
+        "name": "Global merchant golden journey",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569998"
+      },
+      {
+        "id": 40032569882,
+        "name": "Meta webhook pipeline",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569882"
+      },
+      {
+        "id": 40032569871,
+        "name": "Cashier subscription lifecycle",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569871"
+      },
+      {
+        "id": 40032570043,
+        "name": "Meta webhook PostgreSQL ingress cutover",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570043"
+      },
+      {
+        "id": 40032570260,
+        "name": "Knowledge embedding readiness",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570260"
+      },
+      {
+        "id": 40032569947,
+        "name": "Cashier operational cutoff",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569947"
+      },
+      {
+        "id": 40032570780,
+        "name": "Meta OAuth operational cutoff",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570780"
+      },
+      {
+        "id": 40032569952,
+        "name": "Merchant settings",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569952"
+      },
+      {
+        "id": 40032570044,
+        "name": "Merchant deletion provider identifiers",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570044"
+      },
+      {
+        "id": 40032570467,
+        "name": "Merchant deletion promotions lifecycle",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570467"
+      },
+      {
+        "id": 40032570072,
+        "name": "Global Merchant PostgreSQL HTTP Journey",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570072"
+      },
+      {
+        "id": 40032570016,
+        "name": "Final quality gates",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570016"
+      },
+      {
+        "id": 40032570066,
+        "name": "P0 signed cashier offline authority",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570066"
+      },
+      {
+        "id": 40032569903,
+        "name": "Dashboard channel coherence",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569903"
+      },
+      {
+        "id": 40032570152,
+        "name": "PostgreSQL migration candidate",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570152"
+      },
+      {
+        "id": 40032569904,
+        "name": "Global admin golden journey",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569904"
+      },
+      {
+        "id": 40032570490,
+        "name": "Auth OTP contract continuity",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032570490"
+      },
+      {
+        "id": 40032569968,
+        "name": "Isolated PostgreSQL engineering audit",
+        "head_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/nora953/fawri-production-source/actions/runs/40032569968"
+      }
+    ]
   },
   "native": {
-    "run": 40030678854,
-    "job": 120677883632,
+    "run": 40032570066,
+    "job": 120684154158,
     "browser": "Chrome/155.0.8059.39",
-    "source": "1b6bb62b66ec5f2d50fe844fbc8e6de4f166ecaa",
+    "source": "310e19e98baf809e455f2a20045d46443a5063db",
     "results": [
       {
         "name": "real WebCrypto + IndexedDB signed main sale and complete outbox",
@@ -89,8 +508,8 @@
     ]
   },
   "sql": {
-    "run": 40030678747,
-    "job": 120678384112,
+    "run": 40032569968,
+    "job": 120684424579,
     "invocations": 89,
     "unique_files": 87,
     "passed": 700,
@@ -1082,77 +1501,118 @@
     ]
   },
   "quality": {
-    "run": 40030678730,
-    "status": "success"
+    "run": 40032570016,
+    "typecheck_job": 120684153493,
+    "build_job": 120684153712,
+    "status": "SUCCESS",
+    "source": {
+      "passed": 413,
+      "failed": 0,
+      "skipped": 1
+    },
+    "api": {
+      "passed": 871,
+      "failed": 0,
+      "skipped": 1
+    },
+    "frontend": {
+      "passed": 188,
+      "failed": 0,
+      "skipped": 0
+    },
+    "retained_opt_in_skips": [
+      "validated PostgreSQL merchant context reaches business routes without merchants.json authority",
+      "P0 restricted role must not read unscoped order items (requires explicit isolated PostgreSQL audit opt-in)"
+    ]
   },
   "security": {
-    "run": 40030678847,
-    "audit_job": 120677883670,
-    "review_job": 120677883338,
-    "repository_security_job": 120677883804,
-    "lockfile_job": 120677883764,
-    "repository": "success",
-    "lockfile": "success",
-    "high": 1,
+    "run": 40032569921,
+    "audit_job": 120684152321,
+    "review_job": 120684152541,
+    "repository_security_job": 120684152529,
+    "lockfile_job": 120684152648,
+    "status": "SUCCESS",
+    "high": 0,
     "critical": 0,
     "moderate": 2,
-    "advisory": "GHSA-mrhx-c7xc-m3w5",
-    "package": "zod",
-    "installed": "3.25.76",
-    "fixed": "4.6.6",
+    "zod": "4.6.7",
+    "remediated_advisory": "GHSA-mrhx-c7xc-m3w5",
     "advisory_source": "github/advisory-database@76f6efb1d6250c5423ce0d7a652c4cbe715dfd05/advisories/github-reviewed/2026/10/GHSA-mrhx-c7xc-m3w5/GHSA-mrhx-c7xc-m3w5.json"
   },
-  "hosted": "BLOCKED_HOSTED_VERIFICATION",
-  "limits": [
-    "Native acknowledgement is synthetic, not hosted sync.",
-    "Real SQL/HTTP original-shift recovery is isolated network-none with fake billing only.",
-    "No hosted provisioning/deployment/session-device rollout or trusted offline hardware clock certification.",
-    "Retained offline leases cannot learn new revocations until reconnect/expiry."
-  ],
-  "follow_up": {
-    "task": "Reject private material in public Vite key configuration before bundling",
-    "local_tests": 2,
-    "status": "PREPARED_CI_PENDING"
-  },
-  "next": "Verify normal branch security, build/typecheck, signed native and isolated regressions on containing zod4.6.7 source; candidate hash-only telemetry must finish. Hosted parity/rollout remains BLOCKED_HOSTED_VERIFICATION; release NO-GO.",
-  "key_config_guard": {
-    "source": "9c2b450be41ffb894a34f62903fb52624bd6dfe9",
-    "local_tests": 2,
-    "validated_build": "zod candidate job120681864338 step9 PASS",
-    "normal_ci": "PENDING_CONTAINING_SOURCE"
-  },
-  "native_later_source": {
-    "source": "44dcb003f12004b2b5fd120a48d7329d01cd43f8",
-    "run": 40031885243,
-    "first_job": 120681863358,
-    "first_result": "INFRA_BROWSER_PREREQUISITE_TIMEOUT_ZERO_ASSERTIONS",
-    "retry_job": 120682697235,
-    "retry_status": "SUCCESS_8_OF_8",
-    "actual_checkout": "c188516b0c6ca481647c726512c6579faf8d7da4"
-  },
-  "zod_candidate": {
-    "base_source": "44dcb003f12004b2b5fd120a48d7329d01cd43f8",
-    "run": 40031885405,
-    "job": 120681864338,
-    "target": "4.6.7",
-    "validation_steps": "security/build/typecheck/source/API/frontend/isolated HTTP/diff-scope/repository secret scan all PASS",
-    "overall_at_adoption": "LOG_EMISSION_IN_PROGRESS_AFTER_ALL_VALIDATION_AND_ARTIFACT_UPLOAD",
-    "artifact": {
-      "id": 12534199975,
-      "sha256": "96288aaf5dba88dee56bbb9b24e8ab0e4042c5d47176191f37c926be6b09e4a6",
-      "sha256_verified_locally": true
-    },
+  "dependency_candidate": {
+    "final_run": 40032569923,
+    "final_job": 120684152253,
+    "status": "SUCCESS",
     "files": {
-      "pnpm-lock.yaml": {
-        "sha256": "9cc314cf65e0e87f6596124a653479dadc5feb5666b03ee869fc0dd68a8c4653",
-        "changed_lines": 30
-      },
-      "pnpm-workspace.yaml": {
-        "sha256": "4c0c81f7ff22701a793b75f87dcd0dc73957cfbba4acf67bb6c3dfb436bfcd09",
-        "changed_lines": 2
+      "pnpm-lock.yaml": "9cc314cf65e0e87f6596124a653479dadc5feb5666b03ee869fc0dd68a8c4653",
+      "pnpm-workspace.yaml": "4c0c81f7ff22701a793b75f87dcd0dc73957cfbba4acf67bb6c3dfb436bfcd09"
+    },
+    "adopted_artifact": {
+      "run": 40031885405,
+      "job": 120681864338,
+      "id": 12534199975,
+      "digest": "sha256:96288aaf5dba88dee56bbb9b24e8ab0e4042c5d47176191f37c926be6b09e4a6",
+      "digest_verified_locally": true,
+      "validation_steps": "ALL_PASS_BEFORE_UPLOAD",
+      "overall": {
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1
       }
     },
-    "review": "Only zod version/integrity and existing OpenAI/drizzle-zod peer references changed; no unrelated package or security-policy change.",
-    "normal_branch_ci": "PENDING_NEW_SOURCE"
-  }
+    "reviewed_change": "Only catalog zod3.25.76->4.6.7, package integrity and existing OpenAI/drizzle-zod peer references; no unrelated dependency/security-policy change."
+  },
+  "key_config_guard": {
+    "local_tests": 2,
+    "full_build": "SUCCESS_ON_THIS_SOURCE",
+    "private_material_rejected_before_bundle": true,
+    "empty_ring_online_only_allowed": true
+  },
+  "failure_history": [
+    {
+      "source": "c8ce5060dfa60ff188fbe5c72ff1f13516c98d73",
+      "run": 40030037846,
+      "job": 120675748039,
+      "classification": "PROFILE_CLEANUP_ENOTEMPTY_BEFORE_EVIDENCE_EMISSION",
+      "accepted_outcomes": 0,
+      "correction": "owned Chrome process-group teardown and bounded removal retries"
+    },
+    {
+      "source": "44dcb003f12004b2b5fd120a48d7329d01cd43f8",
+      "run": 40031885243,
+      "first_job": 120681863358,
+      "classification": "BROWSER_STARTUP_TIMEOUT_ZERO_ASSERTIONS",
+      "retry_job": 120682697235,
+      "retry": "SUCCESS_8_OF_8",
+      "retry_scope": "only failed job; no successful-suite manual retry"
+    },
+    {
+      "source": "44dcb003f12004b2b5fd120a48d7329d01cd43f8",
+      "run": 40031885405,
+      "classification": "OVERSIZED_OPTIONAL_LOG_EMISSION_DELAY_AFTER_VALIDATION_AND_ARTIFACT_EVENTUALLY_SUCCESS",
+      "correction": "bounded hash-only output; final candidate job SUCCESS"
+    }
+  ],
+  "prior_verified_runtime": {
+    "source": "57276dfbe26e5f05743255c7727f3b3b0a9fed05",
+    "run": 40030678747,
+    "job": 120678384112,
+    "invocations": 89,
+    "passed": 700,
+    "native_run": 40030678854,
+    "native_passed": 8,
+    "ci_success": 50,
+    "ci_failure": 1,
+    "remaining_at_that_source": "zod High, now remediated on current source"
+  },
+  "hosted": "BLOCKED_HOSTED_VERIFICATION",
+  "completeP0Inventory": false,
+  "overallP0Percentage": null,
+  "limits": [
+    "Native acknowledgement is synthetic; isolated authenticated SQL/HTTP original-shift sync recovery is separately verified.",
+    "No hosted provisioning/deployment/schema/role/device/release/key rollout or real-provider acceptance was performed.",
+    "Offline leases cannot learn new revocations until reconnect/expiry; no trusted hardware clock/full-profile-tampering guarantee.",
+    "Seven-day licensing grace does not extend the existing operator-session lifetime."
+  ],
+  "next": "Reconcile remaining P0 requirement/role/privacy inventory using current bounded proofs, without repeating completed signed-offline/0048 work. Hosted verification stays blocked; no deployment/main/merge/P1/P2."
 }

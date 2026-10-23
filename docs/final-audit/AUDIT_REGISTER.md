@@ -1,3 +1,27 @@
+## CURRENT VERIFIED P0 CHECKPOINT — 2026-10-24
+
+Executable `2f782c850c50526e2fe977f026b6f07ff0d867b7`, tree `8b0f1905cceaad6e9e25a6f0efa7441bb896fb36`; actual CI checkout `310e19e98baf809e455f2a20045d46443a5063db` independently has the identical tree. **52/52 workflows SUCCESS;0pending/failed/cancelled.** This final source evidence supersedes pending observations above/below only within its tested scope. A containing documentation-only checkpoint does not imply a separate runtime execution.
+
+**Completed:** authenticated server-only ES256/P-256 offline issuance; merchant/station/device/location/credential/subscription/version/expiry/main-station claims; pinned release-key checks before persistence, offline restore and each offline sale; unsigned legacy-cache rejection; safe online-only/missing-key rollout behavior; current employee policy before online sale; preserved authorized discount permissions and reconnect refresh; pre-bundle rejection of private JWK material; validated zod3.25.76→4.6.7 catalog/lock migration. Private signing key never included in browser/API/source. No operational key provisioned.
+
+**Executed evidence:** native40032570066/job120684154158 Chrome155.0.8059.39 **8/8PASS**. Isolated40032569968/job120684424579 **89/89clean invocations/87unique files,700TAP passes,0fail/skip/cancel**, including actual signed login/refresh/secondary/missing-config HTTP and retained historical-sale ACK/replay/stock/attribution proof. Quality40032570016 full build/typecheck SUCCESS: source413PASS/1retained opt-in SKIP, API871PASS/1retained opt-in SKIP, frontend188PASS/0SKIP; these broader skips are not hidden in native counts. Security40032569921 all four jobs SUCCESS: **0high/0critical/2moderate**. Candidate40032569923/job120684152253 SUCCESS confirms exact adopted catalog/lock hashes and isolated HTTP compatibility; original candidate40031885405 also ultimately SUCCESS after slow oversized optional log emission. Bounded hash-only output now replaces that unnecessary text. Failed cleanup/startup attempts and scoped failed-job retry remain recorded, not overwritten.
+
+[Exact current evidence and all52 runs](evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json) · [bounded access proof reconciliation](evidence/P0-ACCESS-CONTROL-PROOF-INVENTORY-20261023.json) · [offline implementation/rotation/migration/limits](P0-CASHIER-OFFLINE-ENTITLEMENT-TRUST-BOUNDARY-20261023.md).
+
+| Requirement | Current disposition |
+| --- | --- |
+| CASHIER-OFFLINE-001 | SOURCE_RUNTIME_VERIFIED; hosted acceptance OPEN/BLOCKED_HOSTED_VERIFICATION |
+| GHSA-mrhx-c7xc-m3w5 / zod High | SOURCE_REMEDIATED_AND_CI_VERIFIED on4.6.7; no exception or weakened threshold |
+| Existing emergency0048 source scope | Current strict remediation/HTTP regressions PASS; obsolete pending inventory row reconciled; no hosted acceptance inferred |
+| Hosted key/release/schema/role/identity/pooling/device/branch/provider/rollout evidence | BLOCKED_HOSTED_VERIFICATION under GitHub-only restriction; no hosted connector or mutation performed |
+| Incident review and complete unique P0 requirement/role/privacy inventory | OPEN; bounded proof inventory is not the full P0 denominator |
+
+**Release NO-GO.** No overall P0 percentage. Seven-day signed licensing/grace bounds do not extend operator-session lifetime or provide instant offline revocation/trusted hardware time; complete-profile/OS-clock tampering and hosted production readiness are not certified. Native acknowledgement is synthetic; actual network-none SQL/HTTP original-shift recovery is separately verified.
+
+**Exact next GitHub-only action:** use the updated bounded proof inventory to reconcile remaining unique P0 requirement/actor/privacy/retention/missing-order rows and their evidence; keep whole-P0 completeness false until every required row is accounted for. Do not restart signed-entitlement, zod, Support or0048 remediation without changed code/new demonstrated failure. Any live key provisioning, hosted identity/schema/ACL/provider/device acceptance, rollout or deployment remains blocked under current authorization. Keep PR550 Draft and existing base; no main/merge/deploy/P1/P2.
+
+---
+
 ## CURRENT P0 SOURCE ACCEPTANCE — 2026-10-23
 
 0048 candidate `655b7a37dddb987778cda7e589fbd3a438b7fc8d` passed 48/48 GitHub workflows and 89/89 native suite invocations (700 TAP passes). Its synthetic PR merge has zero changed files compared with the candidate. Documentation-only checkpoint `5aac594263a17707b4572f59f0b0a9e18f12869e` also finished 48/48 workflows successfully. Earlier 0048 PENDING statements below are retained historical observations, not the current source CI state. Evidence: [0048 CI verification](P0-0048-CI-VERIFICATION-20261023.md), [documentation CI observation](P0-0048-DOC-HEAD-CI-OBSERVATION-20261023.md).

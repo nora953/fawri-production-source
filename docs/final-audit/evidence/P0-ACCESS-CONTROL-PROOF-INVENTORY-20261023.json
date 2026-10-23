@@ -6,7 +6,7 @@
   "denominatorFrozen": false,
   "overallP0Percentage": null,
   "newRuntimeTestsExecutedByInventory": 0,
-  "sourceAcceptance": "94bc0546a8cdfa54884f1b0d3826ba2d43c52fe0",
+  "sourceAcceptance": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
   "rows": [
     {
       "requirement_id": "P0-ACCESS-SCOPE-BOUNDARY",
@@ -19,7 +19,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "tenant-transaction-scope-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 16,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-AUTHENTICATION-BOUNDARY",
@@ -32,7 +49,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "authentication-operator-pool-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 63,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-CREDENTIAL-LIFECYCLE",
@@ -45,7 +79,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-credential-housekeeping-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-MANAGER-PIN",
@@ -58,7 +109,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-manager-pin-persistence-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-PERMISSION-SESSION",
@@ -71,7 +139,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-permission-session-authority-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-STAFF-LOCK",
@@ -84,7 +169,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-staff-lock-boundary-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-CASHIER-IDENTITY-RLS",
@@ -97,7 +199,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-identity-tenant-rls-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-CASHIER-BUSINESS-RLS",
@@ -110,7 +229,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-DISCOUNT-POLICY-AUTHORITY",
@@ -123,7 +259,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-discount-policy-integrity-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-APPROVAL-AUTHORITY",
@@ -136,7 +289,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-approval-provenance-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-ADMIN-AUDIT-BOUNDARY",
@@ -149,7 +319,24 @@
       "run": 39869692485,
       "job": 120140702367,
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance."
+      "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "admin-audit-boundary-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-SETTINGS-AUTHORITY",
@@ -162,7 +349,24 @@
       "run": 39873207354,
       "job": 120152397388,
       "last_verified_at": "2026-10-23",
-      "limits": "Bounded source acceptance only; baseline6fe2d4a4 retained separately. No hosted/full-domain certification."
+      "limits": "Bounded source acceptance only; baseline6fe2d4a4 retained separately. No hosted/full-domain certification.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "cashier-discount-settings-authority-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-HOSTED-IDENTITY",
@@ -175,7 +379,8 @@
       "run": "",
       "job": "",
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "No new hosted inspection performed. Historical hosted evidence does not accept current source."
+      "limits": "No new hosted inspection performed. Historical hosted evidence does not accept current source.",
+      "current_constraint": "BLOCKED_HOSTED_VERIFICATION; no new hosted read/write authorized or performed"
     },
     {
       "requirement_id": "P0-ACCESS-HOSTED-ROLLOUT",
@@ -188,7 +393,8 @@
       "run": "",
       "job": "",
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
-      "limits": "No new hosted inspection performed. Historical hosted evidence does not accept current source."
+      "limits": "No new hosted inspection performed. Historical hosted evidence does not accept current source.",
+      "current_constraint": "BLOCKED_HOSTED_VERIFICATION; no new hosted read/write authorized or performed"
     },
     {
       "requirement_id": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -214,20 +420,78 @@
       "run": 39900140208,
       "job": 120239595738,
       "last_verified_at": "2026-10-23",
-      "limits": "Bounded5-table Support source acceptance only; native86 and image5 have0 skips, broader groups retain2 existing skips; emergency and hosted/fullP0 acceptance excluded."
+      "limits": "Bounded5-table Support source acceptance only; native86 and image5 have0 skips, broader groups retain2 existing skips; emergency and hosted/fullP0 acceptance excluded.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "support-privacy-tenant-rls-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+      }
     },
     {
       "requirement_id": "P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
       "requirement": "Emergency internal authority and merchant notices retain authorized actors and deny improper SQL access",
-      "proof_layer": "catalog_baseline_new_owned_runtime_pending",
-      "status": "TRIAGE",
-      "source_sha": "94bc0546a8cdfa54884f1b0d3826ba2d43c52fe0",
-      "test_path": "artifacts/api-server/tests/emergency-privacy-authority-postgres.integration.test.mjs",
-      "evidence_uri": "P0-EMERGENCY-PRIVACY-PROOF-20261023.md",
-      "run": "",
-      "job": "",
-      "last_verified_at": "2026-10-23",
-      "limits": "Four-table catalog facts remain from baseline; new actual read classification and owned HTTP results pending. No new mutation/HTTP exploit or hosted claim."
+      "proof_layer": "isolated_actual_login_and_http",
+      "status": "PASS",
+      "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+      "test_path": "artifacts/api-server/tests/emergency-privacy-remediation-postgres.integration.test.mjs",
+      "evidence_uri": "evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json",
+      "run": 40032569968,
+      "job": 120684424579,
+      "last_verified_at": "2026-10-24",
+      "limits": "Current emergency-remediation and actual HTTP contracts pass on this source; hosted/complete privacy matrix remain unaccepted. Earlier pending state preserved as historical_state.",
+      "latest_regression": {
+        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+        "run": 40032569968,
+        "job": 120684424579,
+        "result": {
+          "suite": "emergency-privacy-remediation-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        }
+      },
+      "historical_state": {
+        "status": "TRIAGE",
+        "source_sha": "94bc0546a8cdfa54884f1b0d3826ba2d43c52fe0",
+        "proof_layer": "catalog_baseline_new_owned_runtime_pending",
+        "evidence_uri": "P0-EMERGENCY-PRIVACY-PROOF-20261023.md",
+        "limits": "Four-table catalog facts remain from baseline; new actual read classification and owned HTTP results pending. No new mutation/HTTP exploit or hosted claim."
+      }
+    },
+    {
+      "requirement_id": "CASHIER-OFFLINE-001",
+      "requirement": "Server-signed main-station offline entitlement, pinned verification, identity/version/expiry and safe legacy/online/sync behavior",
+      "proof_layer": "real_browser_crypto_indexeddb_and_isolated_authenticated_http_sql",
+      "status": "PASS",
+      "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+      "evidence_uri": "evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json",
+      "native_run": 40032570066,
+      "native_job": 120684154158,
+      "native_passed": 8,
+      "run": 40032569968,
+      "job": 120684424579,
+      "test_path": "artifacts/api-server/tests/cashier-closed-shift-recovery-http-postgres.integration.test.mjs",
+      "last_verified_at": "2026-10-24",
+      "hosted_status": "BLOCKED_HOSTED_VERIFICATION",
+      "issue_release_status": "OPEN_HOSTED_ACCEPTANCE",
+      "limits": "Bounded source acceptance only. Native ACK synthetic, authenticated SQL recovery separately verified. No live key provisioning, release/identity/branch/device parity, complete physical-device/OS-clock/profile-tampering certification or immediate offline revocation."
     }
   ],
   "emergencyBaseline": {
@@ -241,6 +505,11 @@
     "cancelled": 0,
     "securityAccepted": false,
     "candidate0048": "PENDING",
-    "nextNativeTarget": 89
-  }
+    "nextNativeTarget": 89,
+    "historical": true,
+    "superseded_current_source": "2f782c850c50526e2fe977f026b6f07ff0d867b7"
+  },
+  "updated_at": "2026-10-24",
+  "release": "NO-GO",
+  "next": "Complete remaining unique P0 requirement/role/privacy matrix reconciliation; do not repeat verified signed-offline, Support or emergency source suites without changed code/new assertions. Hosted gates BLOCKED_HOSTED_VERIFICATION."
 }
