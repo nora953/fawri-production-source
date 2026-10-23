@@ -229,5 +229,18 @@
       "last_verified_at": "2026-10-23",
       "limits": "Four-table catalog facts remain from baseline; new actual read classification and owned HTTP results pending. No new mutation/HTTP exploit or hosted claim."
     }
-  ]
+  ],
+  "emergencyBaseline": {
+    "source": "fc4534402723d3cc75294518450f28683dce1f93",
+    "workflow": 39901265636,
+    "job": 120243153318,
+    "invocations": 88,
+    "tapPassed": 693,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "securityAccepted": false,
+    "candidate0048": "PENDING",
+    "nextNativeTarget": 89
+  }
 }

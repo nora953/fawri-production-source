@@ -67,6 +67,9 @@ export const PRODUCTION_TENANT_RLS_TABLES = [
 export const PRODUCTION_PROTECTED_RLS_TABLES = [
   ...PRODUCTION_TENANT_RLS_TABLES,
   "verified_provider_payment_receipts",
+  // No tenant column is required for these internal authentication boundaries.
+  "emergency_authorizations", "emergency_access_requests",
+  "emergency_owner_alerts", "emergency_merchant_notices",
 ] as const;
 
 export const AUTHENTICATION_INTEGRITY_TABLES = [
