@@ -13,3 +13,9 @@ Scope: verification of existing candidate only. No hosted interaction, deploymen
 - **Release NO-GO.** Source-level 0048 CI is green; do not claim hosted acceptance or global P0 closure. Next action: independently compare merge tree to branch source for changed security files and close remaining hosted gates only when authorized.
 
 Evidence: GitHub Actions run IDs and job IDs above. Existing accepted Support source `94bc0546a8cdfa54884f1b0d3826ba2d43c52fe0` remains separate and unchanged.
+
+## Independent merge-source comparison follow-up
+
+- Compared candidate `655b7a37dddb987778cda7e589fbd3a438b7fc8d` against PR test merge `c6e9c85b0989273b926d43fe85211085acf70e6a` using GitHub compare: **0 changed files**. The merge adds one commit in ancestry but no file-level delta relative to candidate.
+- Verified branch HEAD before this update: `a27ff626021ad914031f7f93f802bf24f3d50fc4`; comparison from candidate to branch HEAD shows **only** `docs/final-audit/P0-0048-CI-VERIFICATION-20261023.md` changed. Thus the CI-tested application/migration files remain unchanged on the branch.
+- Scope: repository comparison plus CI evidence, **not** hosted certification. Release remains **NO-GO**.
