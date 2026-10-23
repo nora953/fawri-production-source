@@ -1,3 +1,15 @@
+## P0 body-parser fixed graph adopted from verified CI — 2026-10-24
+
+Candidate source `83e1aa5c9a0c7d2230a7bcb47be04e54e13a8dfc`, run40038895996/job120705010283 **SUCCESS**. Candidate0High/0Critical/2Moderate; frozen install, full build/typecheck, source contracts, API872PASS/1existing opt-in SKIP, frontend188PASS/0SKIP and isolated actual HTTP1PASS all passed. New loopback Express compressed JSON/raw verification/malformed-input recovery test PASS. Not a full hosted app or independent complete upstream vulnerability reproduction.
+
+Adopted exact artifact12538391823: ZIP SHA256 `ff71ce459db9a362aeee17146bc63ce59ccc2c9bfde180a2af5c1e0937017e8a`; catalog `a35572c0b8725628bde008b398e36bf7adec3dbd855fec7dacb9f97c6e84f0c9`; lock `40605533804a6f83434d386839901b0a4bdacc05fac166032efef2226da35e8c`. Reviewed generated diff26added/17removed across two files: body-parser2.3.0→2.4.0, content-type2.0.0→2.1.0, iconv-lite0.7.2→0.7.3 and parser qs6.16.1 plus corresponding Express/raw-body/type-is snapshot references. Existing Express qs6.16.0 and zod4.6.7 preserved. No handcrafted integrity, unrelated package upgrade or advisory exception. **Normal containing-source security/CI PENDING**; GHSA-27r3-jxmh-p828 is SOURCE_REMEDIATED_CI_PENDING.
+
+Reconciled four already-executed bounded requirements in existing access inventory using recovered6f79933/run40033977598/job120688827685: retention/management6PASS; tenant deletion/local media1PASS; unmatched receipt18PASS; full-schema restore seed1PASS+verify1PASS. No tests rerun or new execution credit. This expands indexed requirements, not the full-P0 denominator. Receipt duration/privileged deletion/ownership repair policy, complete sensitive-field/actor matrix and hosted object/backup/PITR acceptance remain explicit open subgates.
+
+Exact next: verify normal adopted-source security0High/0Critical, quality/parser regression/native offline/full isolated results, preserving prior failures and bounded proof limits. Then continue unaccounted P0 data/actor/retention requirements. Hosted gates BLOCKED_HOSTED_VERIFICATION; incident review OPEN; PR550 Draft/existing base retained. **NO-GO**; no percentage, hosted operation, deployment, main, merge or P1/P2.
+
+---
+
 ## P0 recovery: newly published body-parser High — 2026-10-24
 
 Recovered GitHub HEAD `6f79933e89aa9409083741f06cf2be15c7316ab2`; PR550 remains Draft with its existing base. Its final CI is **50/52 SUCCESS,2FAILURE,0pending**: security40033977706 and candidate40033977566 fail on **body-parser GHSA-27r3-jxmh-p828** (1High/0Critical/2Moderate), not zod. Security job120688828415 and candidate120688827737 both identify this advisory. Earlier 52/52 on2f782c8 is historical valid evidence; it is not the current security gate result.

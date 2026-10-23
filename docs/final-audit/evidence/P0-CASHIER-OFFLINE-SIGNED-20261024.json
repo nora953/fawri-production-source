@@ -1641,5 +1641,41 @@
     "candidate": "PREPARED_CI_PENDING",
     "runtime_compatibility_test": "PREPARED_NOT_RUN",
     "release": "NO-GO"
+  },
+  "body_parser_remediation": {
+    "status": "SOURCE_REMEDIATED_CI_PENDING",
+    "advisory": "GHSA-27r3-jxmh-p828",
+    "candidate_source": "83e1aa5c9a0c7d2230a7bcb47be04e54e13a8dfc",
+    "run": 40038895996,
+    "job": 120705010283,
+    "conclusion": "success",
+    "candidate_security": {
+      "high": 0,
+      "critical": 0,
+      "moderate": 2
+    },
+    "api": {
+      "passed": 872,
+      "skipped": 1,
+      "failed": 0
+    },
+    "frontend": {
+      "passed": 188,
+      "skipped": 0,
+      "failed": 0
+    },
+    "isolated_http": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "artifact": 12538391823,
+    "sha256": {
+      "zip": "ff71ce459db9a362aeee17146bc63ce59ccc2c9bfde180a2af5c1e0937017e8a",
+      "catalog": "a35572c0b8725628bde008b398e36bf7adec3dbd855fec7dacb9f97c6e84f0c9",
+      "lock": "40605533804a6f83434d386839901b0a4bdacc05fac166032efef2226da35e8c"
+    },
+    "normal_source_ci": "PENDING",
+    "limits": "Candidate tests verify disposable dependency graph; normal exact-source CI and hosted release remain unaccepted."
   }
 }
