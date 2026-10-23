@@ -1,3 +1,17 @@
+## P0 signed offline bounded source verification — 2026-10-24
+
+Verified executable `57276dfbe26e5f05743255c7727f3b3b0a9fed05`, tree6690ec3d1af42320d0b67445952f1d11a6f6f529. Actual checkout1b6bb62b66ec5f2d50fe844fbc8e6de4f166ecaa independently has the identical tree. Final CI50/51SUCCESS,1securityFAILURE,0pending/cancelled. This supersedes earlier pending observations for this exact source only; not whole-release acceptance.
+
+Native40030678854/job120677883632 Chrome155.0.8059.39:8/8PASS, real WebCrypto/IndexedDB/main sale, persistent authorization, altered/unsigned denial, identity/branch/credential binding, stale version/rotation/rollback/expiry and local synthetic ACK inventory/outbox invariants. Isolated40030678747/job120678384112:89/89clean invocations/87unique files,700TAP passes including parents/repeated lanes,0failed/skipped/cancelled. Expanded original-shift HTTP suite1PASS verifies actual authenticated signed issuance/refresh, missing-key online operation, secondary offline non-issuance plus retained session/device denial, historical ACK/exact replay/no duplicate stock/attribution. Full restore49migrations95tables66policies17functions, equal seed/restore fingerprint and restricted tenant reads PASS. Quality40030678730 full build/typecheck/unit/source tests SUCCESS.
+
+Security40030678847: repository scan120677883804/lockfile120677883764SUCCESS; dependency audit120677883670/review120677883338FAIL due zod HIGH GHSA-mrhx-c7xc-m3w5 (1high/0critical/2moderate). Fixed>=4.6.6/current3.25.76, primary advisory source retained. No exception/false green. [Machine evidence](evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json).
+
+Next meaningful batch adds pre-bundle rejection of private JWK material in VITE public-key configuration; two new local tests PASS, missing configuration still permits online-only build. Containing source build/CI PENDING. No signing/authorization/SQL/sync behavior changed by this final configuration guard.
+
+CASHIER-OFFLINE-001 is BOUNDED_SOURCE_RUNTIME_VERIFIED / HOSTED_OPEN, not release-closed. Hosted key/release/session/device/branch parity and operational rollout BLOCKED_HOSTED_VERIFICATION; offline revocation/OS-clock/profile-reset limits remain explicit in the offline report. Further P0 blockers: zod migration, incident/security review and complete P0 release inventory. NO-GO; no overall percentage/main/merge/deploy/P1/P2. Exact next: verify final guard build/CI, perform validated zod dependency remediation, then remaining authorized P0 source work; hosted gates stay blocked.
+
+---
+
 ## P0 offline rollout compatibility and HTTP recovery proof — 2026-10-24
 
 Actual published client source `c8ce5060dfa60ff188fbe5c72ff1f13516c98d73`: full quality40030037834 SUCCESS, including typecheck120675748181, full build120675748278 and source/API/frontend tests. Last51-workflow observation47SUCCESS/2FAILURE/2executing; not whole-source acceptance. Signed native40030037846/job120675748039 failed Chrome-profile cleanup ENOTEMPTY before evidence emission; no native outcomes accepted. Security40030037777 remains failed. Earlier issuerb7b86d9 had48SUCCESS/1securityFAILURE/1isolatedCANCELLED (automatic concurrency on substantive next commit), not50green.

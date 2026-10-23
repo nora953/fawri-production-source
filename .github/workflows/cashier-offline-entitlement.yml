@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'artifacts/fawri/src/lib/cashierOffline*'
+      - 'artifacts/fawri/build/cashierOfflinePublicKeyConfig.mjs'
+      - 'artifacts/fawri/vite.config.ts'
       - 'artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts'
       - 'artifacts/fawri/src/lib/cashierOperatorPosRuntime.ts'
       - 'artifacts/fawri/tests/cashier-offline-entitlement*'
