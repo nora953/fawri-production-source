@@ -89,3 +89,36 @@ export function encodeOfflineEntitlementClaims(claims) {
   // Issuers should pass a fixed-order, validated claim schema.
   return encoder.encode(JSON.stringify(claims));
 }
+
+/**
+ * Validate the immutable identity and lifecycle of verified claims.
+ * Call only with claims returned by verifyOfflineEntitlementEnvelope.
+ */
+export function assertOfflineEntitlementClaims(claims, binding, nowMs) {
+  if (!claims || typeof claims !== "object" || Array.isArray(claims) ||
+      !binding || typeof binding !== "object" ||
+      claims.purpose !== "fawri.cashier.offline-entitlement.v1" ||
+      typeof binding.merchant_id !== "string" || !binding.merchant_id ||
+      typeof binding.station_id !== "string" || !binding.station_id ||
+      typeof binding.device_id !== "string" || !binding.device_id ||
+      claims.merchant_id !== binding.merchant_id ||
+      claims.station_id !== binding.station_id ||
+      claims.device_id !== binding.device_id ||
+      typeof claims.subscription_id !== "string" || !claims.subscription_id ||
+      (claims.state !== "active" && claims.state !== "grace") ||
+      !Number.isSafeInteger(claims.licensed_seats) || claims.licensed_seats <= 0 ||
+      !Number.isSafeInteger(claims.version) || claims.version <= 0 ||
+      !Number.isFinite(nowMs) || nowMs < 0) {
+    throw new Error("Invalid offline entitlement claims or station binding");
+  }
+  const issued = Date.parse(claims.server_time);
+  const billingEnd = Date.parse(claims.billing_period_end);
+  const graceEnd = Date.parse(claims.grace_until);
+  if (!Number.isFinite(issued) || !Number.isFinite(billingEnd) ||
+      !Number.isFinite(graceEnd) || billingEnd >= graceEnd ||
+      issued >= graceEnd || nowMs >= graceEnd ||
+      nowMs + 120000 < issued) {
+    throw new Error("Offline entitlement is outside its valid period");
+  }
+  return claims;
+}
