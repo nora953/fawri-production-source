@@ -3,6 +3,7 @@ import { webcrypto } from "node:crypto";
 import test from "node:test";
 import {
   verifyOfflineEntitlementEnvelope,
+  assertOfflineEntitlementClaims,
   encodeOfflineEntitlementClaims,
 } from "../src/lib/cashierOfflineEntitlementSignature.mjs";
 
@@ -98,4 +99,25 @@ test("signature verification rejects payload mutation after signing", async () =
       payload: toBase64Url(encodeOfflineEntitlementClaims(changed)),
     }, keys),
   );
+});
+
+test("verified claims enforce purpose, station, device and expiry", async () => {
+  const { claims } = await fixture();
+  const signedClaims = {
+    ...claims,
+    purpose: "fawri.cashier.offline-entitlement.v1",
+    device_id: "device-1",
+    licensed_seats: 1,
+    version: 1,
+    server_time: "2026-10-24T00:00:00.000Z",
+    billing_period_end: "2026-10-25T00:00:00.000Z",
+    grace_until: "2026-11-01T00:00:00.000Z",
+  };
+  const binding = { merchant_id: "merchant-1", station_id: "station-1", device_id: "device-1" };
+  const now = Date.parse("2026-10-24T12:00:00.000Z");
+  assert.equal(assertOfflineEntitlementClaims(signedClaims, binding, now), signedClaims);
+  assert.throws(() => assertOfflineEntitlementClaims(signedClaims, { ...binding, device_id: "other" }, now));
+  assert.throws(() => assertOfflineEntitlementClaims(signedClaims, { ...binding, station_id: "other" }, now));
+  assert.throws(() => assertOfflineEntitlementClaims({ ...signedClaims, purpose: "other" }, binding, now));
+  assert.throws(() => assertOfflineEntitlementClaims(signedClaims, binding, Date.parse("2026-11-01T00:00:00.000Z")));
 });
