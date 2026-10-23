@@ -1,3 +1,13 @@
+## Support privacy baseline completed; bounded SQL privacy blocker confirmed — 2026-10-23
+
+Diagnostic source d4ccf125b67d8cb05c61190fa71dd7c46b67da20, executed checkout834f94d6a259849c252c2fee1fa4be4c6a02363f, identical tree55cf7686fc45500015a16f2f630be21abca9de6a. Focused run39875671803/job120160553686 SUCCESS:4 TAP passes,0 failed/skipped/cancelled; owned cleanup SUCCESS. Whole-source CI last snapshot43/48 SUCCESS,5 executing,0 failures; this is not final global acceptance.
+
+New P0-SUPPORT-PRIVACY-AUTHORITY-001 OPEN_CONFIRMED_BOUNDED_SQL: isolated effective-authority measurement confirms missing SQL privacy separation in the tested Support record boundary, while legitimate same-merchant reads and exact restoration pass. Nine Support/emergency tables have no effective RLS in the canonical isolated schema. No mutation attempt, HTTP exploitability, emergency payload access or hosted conclusion. [Exact bounded evidence](evidence/P0-SUPPORT-PRIVACY-AUTHORITY-BASELINE-20261023.json).
+
+Next exact action: finish remaining d4cc CI acceptance, then implement the smallest canonical Support privacy authority boundary with explicit trusted global administrator/background operations and scoped merchant reads/writes. Derive required actors from current routes/services; preserve permission revocation, exact-session preview, consent/expiry, lifecycle/image cleanup and audit-chain behavior. Do not add blanket RLS without preserving these paths or broaden primary authority. Settings00c56c26 remains accepted47/47+85/85; prior cashier acceptance untouched. NO-GO, no overall percentage, no hosted operation/change/deploy/main/merge/P1/P2.
+
+---
+
 ## Support privacy authority diagnostic prepared — 2026-10-23
 
 Settings source00c56c26 remains accepted47/47 workflows and85/85 native invocations; acceptance checkpoint3571f5ab independently verified remotely. No repeated cashier remediation or passing-suite retry.

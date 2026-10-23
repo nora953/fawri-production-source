@@ -1,3 +1,13 @@
+## Completed baseline — 2026-10-23
+
+Source d4ccf125b67d8cb05c61190fa71dd7c46b67da20 / run39875671803 / job120160553686:4 PASS,0 FAIL/SKIP/CANCEL, cleanup SUCCESS. Executed merge834f94d6a259849c252c2fee1fa4be4c6a02363f independently matches source tree55cf7686fc45500015a16f2f630be21abca9de6a. Whole-source last snapshot43/48 SUCCESS,5 executing,0 failures.
+
+**P0-SUPPORT-PRIVACY-AUTHORITY-001: OPEN_CONFIRMED_BOUNDED_SQL.** Actual restricted LOGIN admitted by current readiness lacks demonstrated SQL privacy separation for the tested synthetic Support ticket boundary. Catalog measurement confirms9 Support/emergency tables with no effective RLS/FORCE RLS/policies; effective SELECT/UPDATE grants observed. Only synthetic Support ticket reads executed: no mutation attempt, HTTP exploitability, emergency payload access or hosted conclusion. Own-merchant reads and exact restoration PASS. Diagnostic SUCCESS measures the finding; it is not remediation acceptance.
+
+[Exact marker, counters, source/checkout and workflow snapshot](evidence/P0-SUPPORT-PRIVACY-AUTHORITY-BASELINE-20261023.json). Next reconcile trusted global administrator/background paths and implement canonical scope/authority controls with positive-flow and denial proof. Existing low-severity historical expiry observations are retained separately and are not promoted or repaired in this P0 batch.
+
+---
+
 # P0 Support/emergency privacy authority — 2026-10-23
 
 ## Preserved evidence

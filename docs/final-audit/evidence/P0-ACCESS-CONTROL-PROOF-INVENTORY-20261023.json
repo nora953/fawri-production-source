@@ -202,6 +202,19 @@
       "job": "",
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "This inventory covers bounded access proofs only; not the full P0 denominator."
+    },
+    {
+      "requirement_id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+      "requirement": "Support record SQL privacy separation with legitimate merchant and trusted global operations preserved",
+      "proof_layer": "isolated_actual_login_diagnostic",
+      "status": "FAIL",
+      "source_sha": "d4ccf125b67d8cb05c61190fa71dd7c46b67da20",
+      "test_path": "docs/final-audit/evidence/p0-support-privacy-authority.test.mjs",
+      "evidence_uri": "evidence/P0-SUPPORT-PRIVACY-AUTHORITY-BASELINE-20261023.json",
+      "run": 39875671803,
+      "job": 120160553686,
+      "last_verified_at": "2026-10-23",
+      "limits": "Visibility measurement uses only synthetic Support tickets. No mutation attempt, HTTP exploitability, emergency payload access or hosted finding is established. Effective UPDATE grant metadata is not an executed mutation proof."
     }
   ]
 }
