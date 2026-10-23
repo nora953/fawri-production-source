@@ -75,6 +75,32 @@ test('Support SQL privacy denies foreign scope and retains authorized operations
       assert.equal((await primary.query(`SELECT id FROM ${table} WHERE merchant_id=ANY($1::text[])`,[merchants])).rowCount,0);readDenials++;
     }
   });
+  await t.test('directory capability alone cannot confer Support authority',async()=>{
+    await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_issue_admin_directory_audit(text,text,text) TO ${fixture.role}`);
+    try{
+      await assert.rejects(ready(env),{code:'PRODUCTION_DATABASE_OPERATOR_AUTHORITY_REACHABLE'});
+      await scoped(a.merchant,async client=>{
+        for(const table of tables){
+          assert.equal((await client.query(`SELECT id FROM ${table} WHERE merchant_id=ANY($1::text[])`,[merchants])).rowCount,0);
+          readDenials++;
+        }
+      });
+    }finally{await admin.query(`REVOKE EXECUTE ON FUNCTION public.fawri_issue_admin_directory_audit(text,text,text) FROM ${fixture.role}`);}
+    await ready(env);
+  });
+  await t.test('trusted global reads need no additional private predicate privileges and reports retain both tenants',async()=>{
+      assert.equal((await admin.query("SELECT has_function_privilege($1,'fawri_security.allows_merchant(text)','EXECUTE') AS allowed",[fixture.authRole])).rows[0].allowed,false);
+      const all=await list();
+      assert.ok(rows.every(r=>all.some(ticket=>ticket.id===r.ticket)));
+      const {loadEarlyWarningMerchantUsageReport}=await import('../src/services/earlyWarningMerchantUsageAuthority.ts');
+      const {loadEarlyWarningCostReport}=await import('../src/services/earlyWarningCostAuthority.ts');
+      const {loadEarlyWarningPostgresSnapshot}=await import('../src/services/earlyWarningPostgresAuthority.ts');
+      for(const report of [await loadEarlyWarningMerchantUsageReport(),await loadEarlyWarningCostReport()]){
+        for(const r of rows)assert.equal(report.merchants.find(m=>m.merchant_id===r.merchant)?.support_storage_bytes,1);
+      }
+      const health=await loadEarlyWarningPostgresSnapshot('24h');
+      assert.ok(health.support.created_in_window>=2);
+  });
   await t.test('foreign writes and mismatched parent references are rejected without changing either tenant',async()=>{
     const before=await snapshot();
     for(const table of tables)await scoped(a.merchant,async client=>{

@@ -3,7 +3,7 @@
   "name": "support_privacy_tenant_authority",
   "when": 1791936000019,
   "mode": "reviewed_sql",
-  "sql_sha256": "0ae1741113156de7899ff997f881b9b195dcbd31595438a67c037661a83c8dfc",
+  "sql_sha256": "d2201f98235c01f3f976795bf69345facbacda6659109ac99328c709db0f1863",
   "preimage_files": [
     "tenant-security.ts"
   ]

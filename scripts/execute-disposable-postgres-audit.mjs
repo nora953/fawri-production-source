@@ -24,6 +24,7 @@ const suites = {
 };
 suites['node22-http'] = suites.http;
 suites['auth-contract'] = ['auth-account-repository.test.ts','auth-password-service.test.ts','auth-otp-delivery.test.ts','auth-policy.test.ts','auth-security-store.test.ts','auth-cutover-contract.test.mjs','auth-cutover-path-case.test.ts'];
+suites['support-image-runtime'] = ['support-image-write-order-postgres.integration.test.ts'];
 suites['foundation-runtime'] = ['merchant-settings-clock.integration.test.mjs','queue-expired-lease-race.integration.test.mjs'];
 suites['subscription-reminder'] = ['subscription-reminder-rls.integration.test.mjs'];
 suites['settings-runtime'] = ['merchant-settings-postgres-http.integration.test.ts'];

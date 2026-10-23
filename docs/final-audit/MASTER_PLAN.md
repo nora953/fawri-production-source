@@ -1,3 +1,13 @@
+## Support privacy first CI rejected; focused corrections saved — 2026-10-23
+
+Source651785caa2b521ac4b800cd880f75104ad31d4e5 completed39/48 workflows SUCCESS,9 FAILURE. It is NOT accepted. Native39886897793/job120197063608 ran86 complete summaries:83 clean invocations,3 failed suites; exact TAP counters retained. Support own/foreign read/write and preflight subtests passed4 TAP items; authorized-global transaction subtest failed. No security closure from partial positives. [Original failure evidence](evidence/P0-SUPPORT-PRIVACY-FIRST-CI-20261023.json).
+
+Corrected static schema SQL representation and synchronized reviewed SQL/snapshot. Policies use explicit trusted-auth first evaluation, reject directory-only authority, and delegate tenant scope to the accepted public/private predicate boundary. No added private predicate grants for global LOGINs. Restored authorized deletion/Support global compatibility without broadening primary authority. Updated reminder source contract to assert all resets in both message transactions and no post-commit route SQL. Moved Foundation image test into existing owned network-none provisioner; attestation remains mandatory. Added directory-only denial plus actual global observability/Support positives without private-predicate grants.
+
+Local9 updated Support guards plus2 related contracts PASS; MJS/bash syntax/whitespace PASS. Typecheck and full build passed on first source; new exact-source native/canonical/CI acceptance PENDING. Original 86 summaries and9 failed workflow conclusions remain preserved; no manual retry or assertion weakening. Next inspect containing correction's canonical0047 and all86 native summaries, Support HTTP, authorized deletion, observability and Foundation image assertions. Emergency4-table privacy scope and hosted/fullP0 gates remain OPEN. NO-GO; no percentage; no hosted operations/change/deploy/main/merge/P1/P2.
+
+---
+
 ## Baseline CI complete; scoped Support privacy correction prepared — 2026-10-23
 
 Recovered remote f6301e56/PR550 unchanged. Diagnostic d4ccf125 completed48/48 workflows SUCCESS,0 pending/failed/cancelled. Native39875671648/job120160553076:85 complete clean invocations/83 unique files,680 TAP passes including parents/repeated lanes,0 failed/skipped/cancelled. Schema39875671590/job120160553610 committed/historical reproduction PASS. Focused39875671803/job1201605536864PASS remains a diagnostic confirming the bounded finding, not remediation acceptance. [Final exact baseline evidence](evidence/P0-SUPPORT-PRIVACY-AUTHORITY-BASELINE-20261023.json).

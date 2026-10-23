@@ -1,3 +1,11 @@
+## First-source failure classification and correction
+
+651785ca is NOT accepted:39/48 workflows succeeded,9 failed. [Exact original evidence](evidence/P0-SUPPORT-PRIVACY-FIRST-CI-20261023.json) retains all86 native summaries and failure classes. Canonical generation correctly rejected erroneous schema SQL representation. A direct private-predicate evaluation also regressed trusted global LOGINs with no such direct grant. Corrected policies use explicit trusted-auth first evaluation, deny directory-only capability, and delegate ordinary tenant decisions to the accepted public/private scope predicate. No added grants or new privileged entrypoint.
+
+Reminder guard assertions now target both atomic message transactions and prohibit route-level post-commit SQL. Image assertions run through mandatory owned attestation. Additional native proof covers directory-only denial and legitimate global Support/observability under a trusted LOGIN without private-predicate grants. Local11 related guards/contracts passed; current correction runtime/canonical acceptance remains PENDING.
+
+---
+
 # P0 scoped Support privacy correction — 2026-10-23
 
 ## Bounded source change

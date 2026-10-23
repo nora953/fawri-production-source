@@ -156,9 +156,7 @@ jobs:
         run: bash scripts/run-isolated-postgres-audit.sh subscription-reminder
 
       - name: Prove Support image authorization before filesystem persistence
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/support-image-write-order-postgres.integration.test.ts
+        run: bash scripts/run-isolated-postgres-audit.sh support-image-runtime
 
       - name: Prove merchant deletion under restricted tenant RLS
         run: bash scripts/run-isolated-postgres-audit.sh deletion
