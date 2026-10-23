@@ -88,3 +88,14 @@ test("valid signature remains bound to the exact original claim bytes", async ()
   assert.equal(claims.subscription_id, "subscription-1");
   assert.equal(claims.state, "active");
 });
+
+test("signature verification rejects payload mutation after signing", async () => {
+  const { keys, envelope, claims } = await fixture();
+  const changed = { ...claims, licensed_seats: 999 };
+  await assert.rejects(
+    verifyOfflineEntitlementEnvelope({
+      ...envelope,
+      payload: toBase64Url(encodeOfflineEntitlementClaims(changed)),
+    }, keys),
+  );
+});
