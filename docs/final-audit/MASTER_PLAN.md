@@ -1,3 +1,15 @@
+## Support privacy authority diagnostic prepared — 2026-10-23
+
+Settings source00c56c26 remains accepted47/47 workflows and85/85 native invocations; acceptance checkpoint3571f5ab independently verified remotely. No repeated cashier remediation or passing-suite retry.
+
+Historical Support evidence already covers authenticated matching tenant, current permission revocation despite stale session claims, exact-session read-only preview and terminated preview denial. These assertions ran on00c56c26 as5 complete clean TAP tests in native39873207354/job120152397388. Historical consent-expiry/lifecycle evidence is retained in SEQ_286_289_SUPPORT_EXPIRY_POSTGRES_20261013.md and is not reclassified as current proof.
+
+Next bounded gap is effective SQL privacy authority outside the existing protected-table inventory. Prepared a separate owned network-none diagnostic for9 Support/emergency tables, actual restricted LOGIN metadata, two synthetic merchants, legitimate scoped reads, read-only visibility classification and exact restoration. No HTTP/hosted/privacy closure inferred from a green diagnostic. Existing authorized global Support, lifecycle and emergency operations must be mapped before any ACL/RLS change. [Scope](P0-SUPPORT-PRIVACY-AUTHORITY-20261023.md). Local node/bash syntax and whitespace PASS only; runtime PENDING.
+
+Next exact action: read containing P0 Support privacy authority diagnostic run and its P0_SUPPORT_PRIVACY_AUTHORITY_BASELINE/SUPPORT_PRIVACY_SUITE_RESULT markers, classify actual facts, then prepare a defensive access-control correction only if evidence warrants it. All prior accepted evidence remains bound to its original source. No hosted changes or deployment; NO-GO, complete P0 percentage UNMEASURED.
+
+---
+
 ## Settings access controls accepted; remaining privacy matrix continues — 2026-10-23
 
 Accepted executable `00c56c26b2a76e0b709aa616a745dc3681b15f2a`: **47/47 workflows SUCCESS**, zero pending/failed/cancelled. Native39873207354/job120152397388 completed85/85 clean invocations across83 unique files:680 TAP passes (includes parents and repeated lanes),0 failed/skipped/cancelled. Executed checkout135948477cb9b4ed5c9188174eca3865fb596542 independently matches source tree d6ce5e3bdde05f0d222e90418eb1e20a738219ca.
