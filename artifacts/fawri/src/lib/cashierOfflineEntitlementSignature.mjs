@@ -25,7 +25,26 @@ function bytesFromBase64Url(value) {
   if (bits > 0 && (buffer & ((1 << bits) - 1)) !== 0) {
     throw new Error("Invalid entitlement encoding");
   }
-  return new Uint8Array(output);
+  const result = new Uint8Array(output);
+  if (BufferlessBase64Url(result) !== value) throw new Error("Noncanonical entitlement encoding");
+  return result;
+}
+
+function BufferlessBase64Url(bytes) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  let result = "";
+  let buffer = 0;
+  let bits = 0;
+  for (const byte of bytes) {
+    buffer = (buffer << 8) | byte;
+    bits += 8;
+    while (bits >= 6) {
+      bits -= 6;
+      result += alphabet[(buffer >>> bits) & 63];
+    }
+  }
+  if (bits > 0) result += alphabet[(buffer << (6 - bits)) & 63];
+  return result;
 }
 
 /**
