@@ -77,14 +77,14 @@ jobs:
             pnpm-workspace.yaml
           if-no-files-found: error
           retention-days: 14
-      - name: Emit exact public candidate dependency text for GitHub-only recovery
+      - name: Emit bounded candidate dependency hashes
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           import { createHash } from 'node:crypto';
           for (const name of ['pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
             const bytes = fs.readFileSync(name);
-            console.log('P0_ZOD_CANDIDATE_FILE ' + JSON.stringify({ name, sha256: createHash('sha256').update(bytes).digest('hex'), base64: bytes.toString('base64') }));
+            console.log('P0_ZOD_CANDIDATE_FILE ' + JSON.stringify({ name, sha256: createHash('sha256').update(bytes).digest('hex') }));
           }
           NODE
       - name: Destroy owned isolated containers and volumes

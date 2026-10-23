@@ -1114,5 +1114,45 @@
     "local_tests": 2,
     "status": "PREPARED_CI_PENDING"
   },
-  "next": "Verify follow-up key-config build and exact-source CI; resolve zod High with a validated dependency migration; hosted gates remain blocked. No merge/deploy/main/P1/P2."
+  "next": "Verify normal branch security, build/typecheck, signed native and isolated regressions on containing zod4.6.7 source; candidate hash-only telemetry must finish. Hosted parity/rollout remains BLOCKED_HOSTED_VERIFICATION; release NO-GO.",
+  "key_config_guard": {
+    "source": "9c2b450be41ffb894a34f62903fb52624bd6dfe9",
+    "local_tests": 2,
+    "validated_build": "zod candidate job120681864338 step9 PASS",
+    "normal_ci": "PENDING_CONTAINING_SOURCE"
+  },
+  "native_later_source": {
+    "source": "44dcb003f12004b2b5fd120a48d7329d01cd43f8",
+    "run": 40031885243,
+    "first_job": 120681863358,
+    "first_result": "INFRA_BROWSER_PREREQUISITE_TIMEOUT_ZERO_ASSERTIONS",
+    "retry_job": 120682697235,
+    "retry_status": "SUCCESS_8_OF_8",
+    "actual_checkout": "c188516b0c6ca481647c726512c6579faf8d7da4"
+  },
+  "zod_candidate": {
+    "base_source": "44dcb003f12004b2b5fd120a48d7329d01cd43f8",
+    "run": 40031885405,
+    "job": 120681864338,
+    "target": "4.6.7",
+    "validation_steps": "security/build/typecheck/source/API/frontend/isolated HTTP/diff-scope/repository secret scan all PASS",
+    "overall_at_adoption": "LOG_EMISSION_IN_PROGRESS_AFTER_ALL_VALIDATION_AND_ARTIFACT_UPLOAD",
+    "artifact": {
+      "id": 12534199975,
+      "sha256": "96288aaf5dba88dee56bbb9b24e8ab0e4042c5d47176191f37c926be6b09e4a6",
+      "sha256_verified_locally": true
+    },
+    "files": {
+      "pnpm-lock.yaml": {
+        "sha256": "9cc314cf65e0e87f6596124a653479dadc5feb5666b03ee869fc0dd68a8c4653",
+        "changed_lines": 30
+      },
+      "pnpm-workspace.yaml": {
+        "sha256": "4c0c81f7ff22701a793b75f87dcd0dc73957cfbba4acf67bb6c3dfb436bfcd09",
+        "changed_lines": 2
+      }
+    },
+    "review": "Only zod version/integrity and existing OpenAI/drizzle-zod peer references changed; no unrelated package or security-policy change.",
+    "normal_branch_ci": "PENDING_NEW_SOURCE"
+  }
 }

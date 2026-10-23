@@ -1,3 +1,15 @@
+## P0 zod fixed graph adopted from validated CI candidate — 2026-10-24
+
+Candidate40031885405/job120681864338 on base44dcb003f12004b2b5fd120a48d7329d01cd43f8 passed security, full root build/typecheck/signing guards, full source/API/frontend unit groups, isolated HTTP, bounded diff and repository secret scan. Artifact12534199975 downloaded via GitHub: exact ZIP SHA25696288aaf5dba88dee56bbb9b24e8ab0e4042c5d47176191f37c926be6b09e4a6 verified. Public catalog/lock hashes are recorded in existing machine evidence. Reviewed diff changes only zod3.25.76→4.6.7 and existing OpenAI/drizzle-zod peer references (16added/16removed lines across two files); no unrelated package, handwritten integrity or security exception.
+
+Adopted those exact candidate files in this source batch. Normal current-branch CI is PENDING; GHSA-mrhx-c7xc-m3w5 is SOURCE_REMEDIATED_CI_PENDING, not release-closed. Candidate's optional giant base64 log emission stalled after every validation and artifact upload; no overall successful job was claimed. Replaced that unnecessary output with bounded file hashes, retaining normal uploaded artifacts and cleanup. This source commit may automatically cancel the prior telemetry-stalled run; original state/evidence preserved.
+
+Latest bounded offline runtime proof remains57276df: native8PASS, isolated89clean invocations/700TAP. Later44dcb003 native40031885243 first job120681863358 failed browser startup before0assertions; only that failed job was retried, job1206826972358/8PASS. No successful-suite manual retry. Pre-bundle private-key guard passes two actual tests and candidate Vite build. [Exact evidence](evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json).
+
+Next: inspect containing source normal security (require0high/0critical), quality/build/typecheck, native8 and owned SQL/HTTP regressions plus hash-only candidate completion; fix genuine failures without weakening gates. CASHIER-OFFLINE-001 bounded source verification retained, hosted key/release/session/device/branch parity and rollout BLOCKED_HOSTED_VERIFICATION. Incident review and full P0 inventory still OPEN. NO-GO; no percentage/main/merge/deploy/P1/P2.
+
+---
+
 ## P0 zod High remediation candidate prepared — 2026-10-24
 
 Offline runtime source57276df remains bounded verified (native8PASS/isolated89clean invocations700TAP;50/51CI with only zod security failure). Latest published guard source9c2b450be41ffb894a34f62903fb52624bd6dfe9 CI is pending; pre-bundle public/private key guard2local testsPASS.
