@@ -1,3 +1,18 @@
+## P0 release-gate evidence matrix — 2026-10-23 (GitHub-only)
+
+| Gate | Current evidence | Decision / missing proof |
+| --- | --- | --- |
+| Emergency privacy 0048 source | Candidate `655b7a37` 48/48 PR workflows, 89/89 clean native suites, 700 TAP passes; synthetic merge file comparison zero delta | **SOURCE VERIFIED** only; not hosted certified |
+| Latest documentation handoff CI | `3036670` 48/48 successful workflows, including isolated PostgreSQL audit and subscription service guarantee validation | **CI VERIFIED** for that commit; later documentation commits must be checked independently |
+| Hosted migration parity | Historical read-only snapshot: 28/28 applied canonical hashes matched, 17 source migrations 0028–0044 absent; report `P0-SOURCE-HOSTED-RECONCILIATION-20261023.md` | **OPEN**: fresh authorized deployed-target check, migration plan/approval; do not infer current hosted state |
+| Hosted identity and privilege boundary | Historical catalog shows candidate runtime role with elevated attributes; actual app connection target/login/pooler unverified | **OPEN**: authorized read-only deployment identity binding, then reviewed least-privilege correction; no live ACL changes |
+| Incident response | Historical report identifies access-history review, exposure-window assessment and staged secret rotation plan | **OPEN**: incident clearance, owner sign-off and authorized follow-up; never commit secrets |
+| Functional P0 completeness | Historical source coverage for cashier authorization, branch stock, offline primary cashier, reconnection, subscription grace, provider receipts | **OPEN**: reconcile each requirement to exact current test and evidence; passing CI alone does not prove full inventory |
+
+**Release NO-GO.** Do not interpret source CI as hosted certification or compute a whole-P0 percentage without a complete accepted denominator. Continue on Draft PR #550 branch, GitHub-only; no Railway/Neon, deployment, migration, merge, main or P1/P2.
+
+---
+
 ## CURRENT HANDOFF — 2026-10-23 (read first)
 
 - Branch: `fix/p0-provider-receipt-order-discovery-20261015`; Draft PR #550. Source candidate `655b7a37dddb987778cda7e589fbd3a438b7fc8d` accepted for **source CI only**: 48/48 green workflows, 89/89 native invocations, 700 TAP passes, 49 disposable migrations, strict emergency privacy regression passed. Synthetic PR merge has zero changed files versus candidate.
