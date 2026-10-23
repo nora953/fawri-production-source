@@ -5,6 +5,7 @@
   "mode": "reviewed_sql",
   "sql_sha256": "d2201f98235c01f3f976795bf69345facbacda6659109ac99328c709db0f1863",
   "preimage_files": [
-    "tenant-security.ts"
+    "tenant-security.ts",
+    "support.ts"
   ]
 }

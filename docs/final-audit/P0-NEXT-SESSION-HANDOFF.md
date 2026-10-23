@@ -1,3 +1,13 @@
+## Support runtime proof green; final declarative RLS alignment prepared — 2026-10-23
+
+Source e2c1da253a496b3987ecc27bf00a097bc8c30c60 completed45/48 workflows SUCCESS,3 schema reproducibility failures; it is NOT full-source accepted. Native39887868060/job120200194366:86/86 complete clean invocations across84 files,688 TAP passes including parents/repeated lanes,0 failed/skipped/cancelled. Actual Support marker25 read denials/15 mutation denials PASS, authorized merchant/global operations and rollback PASS. Existing Support HTTP permission/session and deletion regressions PASS. Foundation39887868166/job120200194694 final marker PASS; owned image5PASS/0FAIL/SKIP/CANCEL. [Exact bounded runtime proof](evidence/P0-SUPPORT-PRIVACY-RUNTIME-PROOF-20261023.json).
+
+Isolated canonical mismatch reproduced exactly by changing only5 snapshot RLS booleans to false and recomputing canonical ID: generated21dfde8e... vs committed61b7ef0f.... Root cause is missing declarative enableRLS() on Support tables. Final correction keeps protective SQL/snapshot unchanged, adds enableRLS() to5 table definitions and adds original support.ts preimage to0047 so prior history remains reproducible. No tests cancelled or manually rerun; previous native completed before this source update.
+
+Next exact action: inspect containing source canonical0047/all48 migrations and full CI/native acceptance, require exact source/checkout/tree, counters and Support marker before bounded source closure. Emergency authorizations/owner alerts have no tenant key and need distinct trusted-role/privacy treatment; request data and merchant notices require an explicit actor/field matrix. Existing emergency HTTP test is not in the current owned audit runner, so no current restricted-runtime acceptance is claimed. Emergency4-table scope, hosted identity/parity/incident and fullP0 inventory remain OPEN. NO-GO; no percentage; no hosted operation/change/deploy/main/merge/P1/P2.
+
+---
+
 ## Support privacy first CI rejected; focused corrections saved — 2026-10-23
 
 Source651785caa2b521ac4b800cd880f75104ad31d4e5 completed39/48 workflows SUCCESS,9 FAILURE. It is NOT accepted. Native39886897793/job120197063608 ran86 complete summaries:83 clean invocations,3 failed suites; exact TAP counters retained. Support own/foreign read/write and preflight subtests passed4 TAP items; authorized-global transaction subtest failed. No security closure from partial positives. [Original failure evidence](evidence/P0-SUPPORT-PRIVACY-FIRST-CI-20261023.json).

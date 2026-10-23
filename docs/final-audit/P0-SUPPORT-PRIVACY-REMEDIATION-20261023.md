@@ -1,3 +1,13 @@
+## Runtime proof and final metadata alignment
+
+e2c1da25 completed45/48 workflows successfully. Native39887868060/job120200194366:86 clean invocations/84 files,688 TAP passes including parents/repeated lanes,zero failed/skipped/cancelled. Support25 read-denial and15 mutation-denial cases, authorized global/merchant operations, observability and rollback PASS. Foundation final marker and owned image5PASS. [Exact evidence](evidence/P0-SUPPORT-PRIVACY-RUNTIME-PROOF-20261023.json).
+
+Full-source acceptance remains PENDING because3 gates reject one canonical snapshot metadata mismatch. Exact generated SHA256 is reproduced by changing only the5 snapshot RLS flags to false and recomputing canonical ID. The correction declares enableRLS() on all5 source tables and preserves the original support.ts as0047 preimage. Protective SQL/policies and enabled committed snapshot are unchanged. This aligns declarative schema with the already tested runtime, retaining every security assertion and historical generation check.
+
+Next verify the exact containing source in canonical generation and all required CI. Emergency scope remains OPEN; no hosted or wholeP0 acceptance.
+
+---
+
 ## First-source failure classification and correction
 
 651785ca is NOT accepted:39/48 workflows succeeded,9 failed. [Exact original evidence](evidence/P0-SUPPORT-PRIVACY-FIRST-CI-20261023.json) retains all86 native summaries and failure classes. Canonical generation correctly rejected erroneous schema SQL representation. A direct private-predicate evaluation also regressed trusted global LOGINs with no such direct grant. Corrected policies use explicit trusted-auth first evaluation, deny directory-only capability, and delegate ordinary tenant decisions to the accepted public/private scope predicate. No added grants or new privileged entrypoint.
