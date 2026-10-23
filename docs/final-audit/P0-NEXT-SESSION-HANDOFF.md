@@ -432,3 +432,7 @@ Inspect containing commit's exact HEAD/PR/CI, repair real failures without skipp
 ## Durable recovery and safety
 
 No production/staging/Neon writes, Railway deploy, main push or PR merge. Only owned Docker network-none PostgreSQL fixtures. Verify Neon disposable identity before hosted use. All ref updates use expected-SHA non-force leases. Worktree fawri-runtime-scope was created at57da9fc9 and its HEAD stays there; working files contain connector-published newer changes. Fetch live HEAD/use a fresh checkout; never reset older dirty worktrees. GitHub is durable truth. **NO-GO.**
+
+## Functional evidence triage (2026-10-23)
+
+The existing issue ledger records scoped receipt and subscription tests, but does not establish complete P0 acceptance for offline primary cashier, seven-day subscription grace, per-branch stock, reconnection sync, retention, or storage. These remain OPEN until each requirement is mapped to an exact passing assertion and its execution evidence. No new test or hosted verification was performed. Release NO-GO.
