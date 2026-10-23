@@ -1,3 +1,9 @@
+## Accepted exact source94bc0546 — 2026-10-23
+
+48/48 workflows and86/86 clean native invocations; canonical0047/all48 migrations reproduced. [Acceptance](P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.md). Earlier preparation/failure entries below are historical. Emergency4-table scope and release NO-GO remain.
+
+---
+
 ## Runtime proof and final metadata alignment
 
 e2c1da25 completed45/48 workflows successfully. Native39887868060/job120200194366:86 clean invocations/84 files,688 TAP passes including parents/repeated lanes,zero failed/skipped/cancelled. Support25 read-denial and15 mutation-denial cases, authorized global/merchant operations, observability and rollback PASS. Foundation final marker and owned image5PASS. [Exact evidence](evidence/P0-SUPPORT-PRIVACY-RUNTIME-PROOF-20261023.json).

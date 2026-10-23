@@ -6,7 +6,7 @@
   "denominatorFrozen": false,
   "overallP0Percentage": null,
   "newRuntimeTestsExecutedByInventory": 0,
-  "sourceAcceptance": "00c56c26b2a76e0b709aa616a745dc3681b15f2a",
+  "sourceAcceptance": "94bc0546a8cdfa54884f1b0d3826ba2d43c52fe0",
   "rows": [
     {
       "requirement_id": "P0-ACCESS-SCOPE-BOUNDARY",
@@ -206,15 +206,28 @@
     {
       "requirement_id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
       "requirement": "Support record SQL privacy separation with legitimate merchant and trusted global operations preserved",
-      "proof_layer": "isolated_actual_login_diagnostic",
-      "status": "FAIL",
-      "source_sha": "d4ccf125b67d8cb05c61190fa71dd7c46b67da20",
-      "test_path": "docs/final-audit/evidence/p0-support-privacy-authority.test.mjs",
-      "evidence_uri": "evidence/P0-SUPPORT-PRIVACY-AUTHORITY-BASELINE-20261023.json",
-      "run": 39875671803,
-      "job": 120160553686,
+      "proof_layer": "isolated_actual_login_and_http",
+      "status": "PASS",
+      "source_sha": "94bc0546a8cdfa54884f1b0d3826ba2d43c52fe0",
+      "test_path": "artifacts/api-server/tests/support-privacy-tenant-rls-postgres.integration.test.mjs",
+      "evidence_uri": "evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+      "run": 39900140208,
+      "job": 120239595738,
       "last_verified_at": "2026-10-23",
-      "limits": "Visibility measurement uses only synthetic Support tickets. No mutation attempt, HTTP exploitability, emergency payload access or hosted finding is established. Effective UPDATE grant metadata is not an executed mutation proof."
+      "limits": "Bounded5-table Support source acceptance only; native86 and image5 have0 skips, broader groups retain2 existing skips; emergency and hosted/fullP0 acceptance excluded."
+    },
+    {
+      "requirement_id": "P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
+      "requirement": "Emergency internal authority and merchant notices retain authorized actors and deny improper SQL access",
+      "proof_layer": "catalog_baseline_new_owned_runtime_pending",
+      "status": "TRIAGE",
+      "source_sha": "94bc0546a8cdfa54884f1b0d3826ba2d43c52fe0",
+      "test_path": "artifacts/api-server/tests/emergency-privacy-authority-postgres.integration.test.mjs",
+      "evidence_uri": "P0-EMERGENCY-PRIVACY-PROOF-20261023.md",
+      "run": "",
+      "job": "",
+      "last_verified_at": "2026-10-23",
+      "limits": "Four-table catalog facts remain from baseline; new actual read classification and owned HTTP results pending. No new mutation/HTTP exploit or hosted claim."
     }
   ]
 }
