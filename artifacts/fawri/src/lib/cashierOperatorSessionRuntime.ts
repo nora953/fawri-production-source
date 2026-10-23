@@ -1,6 +1,7 @@
 import {
   persistCashierEntitlementAuthority,
   assertCashierSaleEntitlementFromCache,
+  clearCashierEntitlementAuthority,
   type CashierServerEntitlementSnapshot,
 } from './cashierOfflineEntitlementAuthority';
 import type { CashierOfflineEnvelope } from './cashierOfflineEntitlementSignature.mjs';
@@ -283,7 +284,7 @@ async function responsePayload(
     : {};
 }
 
-async function persistEntitlementFromPayload(
+export async function persistEntitlementFromPayload(
   payload: Record<string, unknown>,
   stationId: string,
   context: CashierOperatorContext,
@@ -306,16 +307,11 @@ async function persistEntitlementFromPayload(
       credentialVersion: context.credential_version,
       envelope: payload.cashier_offline_entitlement as CashierOfflineEnvelope | null,
     });
-  } catch (error) {
-    throw new CashierOperatorSessionClientError(
-      error instanceof Error && 'code' in error
-        ? String((error as { code?: unknown }).code || 'CASHIER_ENTITLEMENT_CACHE_FAILED')
-        : 'CASHIER_ENTITLEMENT_CACHE_FAILED',
-      error instanceof Error
-        ? error.message
-        : 'Cashier subscription authority could not be cached safely',
-      503,
-    );
+  } catch {
+    // Online authentication was established by the server response. A client
+    // awaiting public-key rollout must remain online-capable, with no offline
+    // privilege retained from an old or unverifiable envelope.
+    await clearCashierEntitlementAuthority();
   }
 }
 
@@ -619,8 +615,8 @@ export async function validateCashierOperatorSession(options: { requireOnline?: 
       'Could not validate cashier operator session',
     );
   }
-  await persistEntitlementFromPayload(payload, session.context.station_id, session.context);
-  return session;
+  const { applyCashierOperatorPolicyFromPayload } = await import('./cashierOperatorPolicyRefresh');
+  return applyCashierOperatorPolicyFromPayload(session, payload);
 }
 
 async function assertSignedCashierOfflineSession(session: CashierOperatorSession): Promise<void> {

@@ -84,7 +84,7 @@ try {
   });
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  browser = spawn(chromePath, ['--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', `--user-data-dir=${profile}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+  browser = spawn(chromePath, ['--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--remote-debugging-address=127.0.0.1', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1', `--user-data-dir=${profile}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'], detached: true });
   let launchError;
   browser.on('error', e => { launchError = e; }); browser.stderr.on('data', () => {});
   const port = await waitFor(async () => { if (launchError) throw launchError; return Number((await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]); });
@@ -168,12 +168,14 @@ finally {
   for (const ws of sockets) ws.close();
   if (browser && browser.exitCode === null) {
     const stopped = new Promise(ok => browser.once('exit', ok));
-    browser.kill('SIGTERM');
+    try { process.kill(-browser.pid, 'SIGTERM'); } catch (e) { if (e.code !== 'ESRCH') throw e; }
     await Promise.race([stopped, delay(3000)]);
-    if (browser.exitCode === null) { browser.kill('SIGKILL'); await stopped; }
+    try { process.kill(-browser.pid, 'SIGKILL'); } catch (e) { if (e.code !== 'ESRCH') throw e; }
+    if (browser.exitCode === null) await stopped;
   }
   if (server) await new Promise((ok, no) => server.close(e => e ? no(e) : ok()));
-  await rm(profile, { recursive: true, force: true });
+  try { await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); }
+  catch (e) { infrastructureError = `Profile cleanup failed: ${e.code || e.name}`; }
 }
 if (infrastructureError) evidence.infrastructureError = infrastructureError;
 console.log('P0_OFFLINE_SIGNED_NATIVE_RESULT ' + JSON.stringify(evidence));

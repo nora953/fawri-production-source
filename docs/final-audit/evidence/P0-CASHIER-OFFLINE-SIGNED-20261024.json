@@ -1,0 +1,48 @@
+{
+  "date_baghdad": "2026-10-24",
+  "release": "NO-GO",
+  "issue": "CASHIER-OFFLINE-001",
+  "source": "c8ce5060dfa60ff188fbe5c72ff1f13516c98d73",
+  "ci_observation": {
+    "total": 51,
+    "success": 47,
+    "failure": 2,
+    "in_progress": 2
+  },
+  "quality": {
+    "run": 40030037834,
+    "status": "success",
+    "typecheck_job": 120675748181,
+    "build_job": 120675748278
+  },
+  "native": {
+    "run": 40030037846,
+    "job": 120675748039,
+    "status": "failure",
+    "classification": "CHROME_PROFILE_CLEANUP_ENOTEMPTY_BEFORE_EVIDENCE_EMISSION",
+    "accepted_outcomes": 0
+  },
+  "security": {
+    "run": 40030037777,
+    "status": "failure",
+    "advisory": "GHSA-mrhx-c7xc-m3w5",
+    "package": "zod",
+    "fixed": "4.6.6",
+    "advisory_source": "github/advisory-database@76f6efb1d6250c5423ce0d7a652c4cbe715dfd05/advisories/github-reviewed/2026/10/GHSA-mrhx-c7xc-m3w5/GHSA-mrhx-c7xc-m3w5.json"
+  },
+  "follow_up_local": {
+    "targeted": {
+      "pass": 35,
+      "fail": 0,
+      "skip": 0
+    },
+    "tooling": {
+      "pass": 22,
+      "fail": 0
+    },
+    "native": "NOT_RUN_NO_LOCAL_CHROME",
+    "sql_http": "NOT_RUN_LOCAL_GUARDED_CI_PENDING"
+  },
+  "hosted": "BLOCKED_HOSTED_VERIFICATION",
+  "next": "Verify containing follow-up source native8 marker, expanded original-shift HTTP recovery, exact source CI, then address remaining P0 blockers."
+}

@@ -136,3 +136,41 @@ test('actual sale authorization preserves online sales without signing config an
   await assert.rejects(build(async () => ({ ...session, context: { ...session.context, permissions: [] } }),
     async () => { throw Error('Must never fallback'); })(session));
 });
+
+
+test('actual online payload handler clears offline authority on verification/key rollout failure', async () => {
+  const text = stripTypeScriptTypes(await readFile(new URL('../src/lib/cashierOperatorSessionRuntime.ts', import.meta.url), 'utf8'));
+  const start = text.indexOf('async function persistEntitlementFromPayload(');
+  const stop = text.indexOf('function apiError(', start);
+  const body = text.slice(start, stop).replace('export async function', 'async function');
+  let clears = 0, attempts = 0;
+  const persist = new Function('persistCashierEntitlementAuthority', 'clearCashierEntitlementAuthority',
+    'CashierOperatorSessionClientError', `${body}; return persistEntitlementFromPayload;`)(
+      async () => { attempts++; throw Error('Unknown release key'); }, async () => { clears++; }, Error);
+  await persist({ cashier_entitlement: { merchant_id: 'm' }, cashier_offline_entitlement: {} }, 's',
+    { device_id: 'd', location_id: 'b', credential_version: 2 });
+  assert.equal(attempts, 1);
+  assert.equal(clears, 1);
+  await assert.rejects(persist({}, 's', {})); // missing server entitlement remains invalid
+});
+
+
+test('cloud policy application persists current permission and signed entitlement before reusing session', async () => {
+  const text = stripTypeScriptTypes(await readFile(new URL('../src/lib/cashierOperatorPolicyRefresh.ts', import.meta.url), 'utf8'));
+  const start = text.indexOf('export async function applyCashierOperatorPolicyFromPayload(');
+  const body = text.slice(start).replace('export async function', 'async function');
+  const order = [];
+  const refreshed = { station_id: 's', permissions: [] };
+  const previousStorage = globalThis.sessionStorage;
+  globalThis.sessionStorage = { setItem(key, raw) { order.push('session'); assert.deepEqual(JSON.parse(raw).context.permissions, []); } };
+  try {
+    const apply = new Function('refreshedContext', 'updateLocalStationPolicy', 'persistEntitlementFromPayload',
+      'OPERATOR_STORAGE_KEY', 'CashierOperatorPolicyRefreshError', `${body}; return applyCashierOperatorPolicyFromPayload;`)(
+        () => refreshed, async () => order.push('policy'), async () => order.push('signed'), 'operator', Error);
+    const result = await apply({ operator_token: 'token', context: { permissions: ['sale.create'] } }, { operator: refreshed });
+    assert.deepEqual(result.context.permissions, []);
+    assert.deepEqual(order, ['policy', 'signed', 'session']);
+    assert.match(text, /'sale.discount'/);
+    assert.match(text, /'sale.discount_override'/);
+  } finally { globalThis.sessionStorage = previousStorage; }
+});

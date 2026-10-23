@@ -1,3 +1,13 @@
+## P0 offline rollout compatibility and HTTP recovery proof — 2026-10-24
+
+Actual published client source `c8ce5060dfa60ff188fbe5c72ff1f13516c98d73`: full quality40030037834 SUCCESS, including typecheck120675748181, full build120675748278 and source/API/frontend tests. Last51-workflow observation47SUCCESS/2FAILURE/2executing; not whole-source acceptance. Signed native40030037846/job120675748039 failed Chrome-profile cleanup ENOTEMPTY before evidence emission; no native outcomes accepted. Security40030037777 remains failed. Earlier issuerb7b86d9 had48SUCCESS/1securityFAILURE/1isolatedCANCELLED (automatic concurrency on substantive next commit), not50green.
+
+Follow-up source fixes signed-native Chrome process-group teardown/retry and preserves online login while client public-key rollout is incomplete: offline verification failure clears cached authority and cannot create offline privilege. Online validation now applies the actual current operator policy before sale permission evaluation; reconnect policy refresh also persists the signed envelope. Both authorized discount permissions remain supported. Added guarded actual HTTP issuance/refresh/missing-config/secondary-station assertions to existing original-shift recovery suite, preserving revoked-session/wrong-device denials, historical sync ACK, replay/no duplicate stock and attribution. These new SQL/HTTP assertions are PREPARED/CI_PENDING, not locally executed.
+
+Local35 targeted tests PASS,0failed/skipped; separate tooling22PASS. New-source full typecheck/build/native/isolated CI PENDING. zod advisory verified through immutable GitHub advisory-database source76f6efb1: affected <4.6.6, requiring reviewed major-version migration from current3.25.76; no advisory bypass or unsupported dependency bump. Release NO-GO. CASHIER-OFFLINE-001 remains OPEN pending exact-source native/HTTP acceptance and hosted rollout; hosted verification BLOCKED_HOSTED_VERIFICATION. Next: inspect final source native8-case marker and expanded closed-shift HTTP suite, all regressions/security, then complete remaining P0 gates. No deployment/main/merge/P1/P2.
+
+---
+
 ## P0 signed offline client integration — 2026-10-24
 
 Server issuer checkpoint `b7b86d901b512fe0eaa687d720af08702ca09dbc` is published. Client integration verifies release-pinned signatures before storing/restoring authorization and every offline sale; binds main station, merchant/device/location/credential and subscription version; rejects unsigned legacy cache, stale retained versions, altered claims, rollback and expiry. Online sales obtain current server authorization and remain available with absent offline signing config; HTTP denials cannot fall back. Existing branch inventory and outbox/server-sync algorithms unchanged.

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { randomUUID, randomInt, createHash } from 'node:crypto';
+import { randomUUID, randomInt, createHash, generateKeyPairSync } from 'node:crypto';
 import test from 'node:test';
 import { assertDisposablePostgres } from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import { cleanupResources } from './helpers/cleanup-resources.mjs';
+import { verifyCashierOfflineAuthorization } from '../../fawri/src/lib/cashierOfflineEntitlementSignature.mjs';
 
 // A localhost URL alone never authorizes this test. Refuse before DB imports.
 await assertDisposablePostgres();
@@ -24,8 +25,18 @@ const operational = await import('../src/services/operationalPostgresAuthority.t
 
 test('isolated HTTP recovers original-shift sale after staff disable and re-enable', async t => {
   const owned = [];
+  const signingNames = ['FAWRI_CASHIER_OFFLINE_KEY_ID', 'FAWRI_CASHIER_OFFLINE_PRIVATE_JWK', 'FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS'];
+  const previousSigning = Object.fromEntries(signingNames.map(name => [name, process.env[name]]));
+  const pair = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const publicKeys = { 'synthetic-http': pair.publicKey.export({ format: 'jwk' }) };
+  Object.assign(process.env, {
+    FAWRI_CASHIER_OFFLINE_KEY_ID: 'synthetic-http',
+    FAWRI_CASHIER_OFFLINE_PRIVATE_JWK: JSON.stringify(pair.privateKey.export({ format: 'jwk' })),
+    FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS: JSON.stringify(publicKeys),
+  });
   let server;
   t.after(async () => cleanupResources([
+    ['signing configuration restoration', () => { for (const name of signingNames) { if (previousSigning[name] === undefined) delete process.env[name]; else process.env[name] = previousSigning[name]; } }],
     ['HTTP server', () => server ? new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())) : undefined],
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [owned])],
     ['actual runtime fixture', () => runtimeFixture.dispose()],
@@ -66,7 +77,7 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
       const stationId = `audit-station-${i}-${suffix}`, deviceId = `audit-device-${i}-${suffix}`;
       await pool.query(`INSERT INTO merchant_cashier_stations(id,merchant_id,name,branch_key,location_id,status,
         paired_device_id,offline_inventory_authority,credential_version,paired_at,created_at,updated_at)
-        VALUES($1,$2,'Sync station',$3,$4,'active',$5,FALSE,1,now(),now(),now())`,
+        VALUES($1,$2,'Sync station',$3,$4,'active',$5,TRUE,1,now(),now(),now())`,
         [stationId, merchantId, `sync-${i}`, locationId, deviceId]);
       await pool.query(`INSERT INTO cashier_station_seat_assignments(id,merchant_id,subscription_id,station_id,
         status,assigned_at,created_at,updated_at) VALUES($1,$2,$3,$4,'active',now(),now(),now())`,
@@ -119,6 +130,33 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
   const firstLogin = await request('/api/cashier/operator/login', null, { staff_id: member.id, pin: '2468' });
   assert.equal(firstLogin.status, 200, JSON.stringify(firstLogin.body));
   const original = firstLogin.body;
+  const signed = original.cashier_offline_entitlement;
+  assert.ok(signed, 'authenticated licensed main station must receive signed offline authority');
+  const binding = { merchant_id: f.merchantId, station_id: device.stationId, device_id: device.deviceId,
+    location_id: f.locationId, credential_version: original.context.credential_version };
+  const verified = await verifyCashierOfflineAuthorization(signed, publicKeys, binding, Date.now());
+  assert.equal(verified.subscription_id, f.subscriptionId);
+  const me = async () => {
+    const response = await fetch(base + '/api/cashier/operator/me', { signal: AbortSignal.timeout(15000), headers: {
+      'x-fawri-cashier-station-token': device.stationToken, 'x-fawri-cashier-device-id': device.deviceId,
+      'x-fawri-cashier-operator-token': original.operator_token,
+    } });
+    return { status: response.status, body: await response.json() };
+  };
+  const refresh = await me();
+  assert.equal(refresh.status, 200);
+  await verifyCashierOfflineAuthorization(refresh.body.cashier_offline_entitlement, publicKeys, binding, Date.now());
+  delete process.env.FAWRI_CASHIER_OFFLINE_PRIVATE_JWK;
+  const withoutConfig = await me();
+  assert.equal(withoutConfig.status, 200, 'missing offline config must preserve online session');
+  assert.equal(withoutConfig.body.cashier_offline_entitlement, null);
+  process.env.FAWRI_CASHIER_OFFLINE_PRIVATE_JWK = JSON.stringify(pair.privateKey.export({ format: 'jwk' }));
+  await pool.query('UPDATE merchant_cashier_stations SET offline_inventory_authority=FALSE WHERE merchant_id=$1 AND id=$2', [f.merchantId, device.stationId]);
+  const secondary = await me();
+  assert.equal(secondary.status, 200, 'secondary station retains legitimate online operations');
+  assert.equal(secondary.body.cashier_offline_entitlement, null);
+  await pool.query('UPDATE merchant_cashier_stations SET offline_inventory_authority=TRUE WHERE merchant_id=$1 AND id=$2', [f.merchantId, device.stationId]);
+
   // Use actual isolated SQL clock, after issuance and before revocation. This
   // proves a feasible history interval without future timestamps or production I/O.
   await pool.query('SELECT pg_sleep(0.02)');
