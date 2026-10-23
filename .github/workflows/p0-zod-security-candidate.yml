@@ -1,0 +1,95 @@
+name: P0 zod security upgrade candidate
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/p0-zod-security-candidate.yml'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: p0-zod-candidate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate-upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Prepare fixed-version catalog in disposable checkout only
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const file = 'pnpm-workspace.yaml';
+          const source = fs.readFileSync(file, 'utf8');
+          const matches = source.match(/^  zod: (3\.25\.76|4\.6\.7)$/gm) || [];
+          if (matches.length !== 1) throw Error('Unexpected zod catalog baseline');
+          fs.writeFileSync(file, source.replace(/^  zod: (3\.25\.76|4\.6\.7)$/m, '  zod: 4.6.7'));
+          NODE
+      - name: Resolve candidate lockfile with lifecycle scripts disabled
+        run: node scripts/ci-run-redacted.mjs --label zod-candidate-lock -- pnpm install --lockfile-only --ignore-scripts
+      - name: Prove candidate frozen graph install
+        run: node scripts/ci-run-redacted.mjs --label zod-candidate-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Require no High or Critical advisories in candidate
+        run: node scripts/security-final-audit.mjs dependency
+      - name: Build and typecheck candidate with offline signing regressions
+        run: node scripts/ci-run-redacted.mjs --label zod-candidate-build -- pnpm run build
+      - name: Run complete source and frontend authority contracts
+        run: node --test artifacts/fawri/tests/*.test.mjs
+      - name: Run API TypeScript unit tests
+        working-directory: artifacts/api-server
+        env:
+          NODE_ENV: test
+        shell: bash
+        run: |
+          mapfile -t tests < <(find tests -maxdepth 1 -name '*.test.ts' ! -name '*.integration.test.ts' | sort)
+          test "${#tests[@]}" -gt 0
+          pnpm exec tsx --test --test-concurrency=2 --test-timeout=60000 "${tests[@]}"
+      - name: Run frontend TypeScript unit tests
+        working-directory: artifacts/fawri
+        env:
+          NODE_ENV: test
+        run: pnpm exec tsx --test --test-concurrency=2 --test-timeout=60000 tests/*.test.ts
+      - name: Prove isolated HTTP runtime on candidate graph
+        run: bash scripts/run-isolated-postgres-audit.sh http
+      - name: Check candidate diff scope and tracked secret policy
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          const changed = execFileSync('git', ['diff', '--name-only'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+          if (changed.some(p => !['pnpm-workspace.yaml', 'pnpm-lock.yaml'].includes(p))) throw Error('Unexpected candidate source mutation');
+          NODE
+          node scripts/security-final-audit.mjs repository
+      - name: Upload reviewed dependency candidate files
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p0-zod-4.6.7-candidate-${{ github.sha }}
+          path: |
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Emit exact public candidate dependency text for GitHub-only recovery
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { createHash } from 'node:crypto';
+          for (const name of ['pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
+            const bytes = fs.readFileSync(name);
+            console.log('P0_ZOD_CANDIDATE_FILE ' + JSON.stringify({ name, sha256: createHash('sha256').update(bytes).digest('hex'), base64: bytes.toString('base64') }));
+          }
+          NODE
+      - name: Destroy owned isolated containers and volumes
+        if: always()
+        shell: bash
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi

@@ -1,3 +1,13 @@
+## P0 zod High remediation candidate prepared — 2026-10-24
+
+Offline runtime source57276df remains bounded verified (native8PASS/isolated89clean invocations700TAP;50/51CI with only zod security failure). Latest published guard source9c2b450be41ffb894a34f62903fb52624bd6dfe9 CI is pending; pre-bundle public/private key guard2local testsPASS.
+
+Next independent P0 batch prepares a read-only GitHub Actions zod4.6.7 candidate in a disposable checkout. Current authorized branch dependency catalog/lockfile remain unchanged until candidate security scan, full build/typecheck, source/API/frontend units and isolated HTTP runtime pass and exact generated diff is reviewed. Candidate has contents:read, no push/deploy/provider/database connection; uses existing safe CI dependency-install and network-none test facilities. It uploads only public catalog/lockfile and emits exact hashed recovery text after all checks. No unsupported manual integrity edits or advisory bypass.
+
+Candidate PREPARED/CI_PENDING. Known blocker GHSA-mrhx-c7xc-m3w5 remains OPEN until current branch graph is safely updated and verified. Next inspect candidate result, retrieve/hash-check/review only expected zod+peer lock changes, commit compatible catalog+lockfile to this same authorized branch, then verify normal CI. If candidate fails, classify/fix without muting security gates. Hosted gates BLOCKED_HOSTED_VERIFICATION; NO-GO, no merge/main/deploy/P1/P2.
+
+---
+
 ## P0 signed offline bounded source verification — 2026-10-24
 
 Verified executable `57276dfbe26e5f05743255c7727f3b3b0a9fed05`, tree6690ec3d1af42320d0b67445952f1d11a6f6f529. Actual checkout1b6bb62b66ec5f2d50fe844fbc8e6de4f166ecaa independently has the identical tree. Final CI50/51SUCCESS,1securityFAILURE,0pending/cancelled. This supersedes earlier pending observations for this exact source only; not whole-release acceptance.
