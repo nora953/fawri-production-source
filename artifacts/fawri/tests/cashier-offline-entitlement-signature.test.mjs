@@ -73,3 +73,9 @@ test("missing keyring, missing key and invalid base64url are rejected", async ()
   await assert.rejects(verifyOfflineEntitlementEnvelope({ ...envelope, payload: "A" }, keys));
   await assert.rejects(verifyOfflineEntitlementEnvelope({ ...envelope, signature: "A" }, keys));
 });
+
+test("noncanonical base64url encodings are rejected", async () => {
+  const { keys, envelope } = await fixture();
+  await assert.rejects(verifyOfflineEntitlementEnvelope({ ...envelope, payload: "Zh" }, keys));
+  await assert.rejects(verifyOfflineEntitlementEnvelope({ ...envelope, signature: "Zh" }, keys));
+});
