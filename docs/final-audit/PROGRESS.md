@@ -1,3 +1,13 @@
+## P0 offline signing issuer — 2026-10-24
+
+Recovered actual PR550 HEAD `fdcf9541bba12a15bffef5c9c4adde41f13e9c0b`; draft/base unchanged. CI observation: 47 SUCCESS, 1 FAILURE (security40028233610), 1 executing (isolated40028233764), total49. Security dependency-audit120669704535 reports zod HIGH GHSA-mrhx-c7xc-m3w5; this is an OPEN release blocker, not a signature-test failure. No retry/ignore/downgraded gate.
+
+Server now emits an optional ES256/P-256 offline envelope from authenticated station context and licensed subscription on station/me, operator/login and operator/me. It binds merchant/station/device/location/credential version/subscription version and main-station authority, with explicit signing key ID and expiry capped by credential, seven-day lease and billing+seven-day grace. Private JWK stays server-only; configuration/public-key mismatch returns null without breaking online authentication. Browser enforcement is the next batch; CASHIER-OFFLINE-001 stays OPEN.
+
+Local actual issuer/browser crypto interoperability tests4/4 PASS,0 skipped/failed; included in build. New-source CI PENDING until commit publication. Hosted configuration/identity/parity/revocation remains **BLOCKED_HOSTED_VERIFICATION**. NO-GO; GitHub-only, no deploy/main/merge/P1/P2. Exact next: connect envelope verification to persistence/restoration/every offline sale, reject legacy cache and preserve server-validated online sales/sync.
+
+---
+
 ## CURRENT P0 SOURCE ACCEPTANCE — 2026-10-23
 
 0048 candidate `655b7a37dddb987778cda7e589fbd3a438b7fc8d` passed 48/48 GitHub workflows and 89/89 native suite invocations (700 TAP passes). Its synthetic PR merge has zero changed files compared with the candidate. Documentation-only checkpoint `5aac594263a17707b4572f59f0b0a9e18f12869e` also finished 48/48 workflows successfully. Earlier 0048 PENDING statements below are retained historical observations, not the current source CI state. Evidence: [0048 CI verification](P0-0048-CI-VERIFICATION-20261023.md), [documentation CI observation](P0-0048-DOC-HEAD-CI-OBSERVATION-20261023.md).
