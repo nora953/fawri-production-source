@@ -1,3 +1,15 @@
+## P0 recovery: newly published body-parser High — 2026-10-24
+
+Recovered GitHub HEAD `6f79933e89aa9409083741f06cf2be15c7316ab2`; PR550 remains Draft with its existing base. Its final CI is **50/52 SUCCESS,2FAILURE,0pending**: security40033977706 and candidate40033977566 fail on **body-parser GHSA-27r3-jxmh-p828** (1High/0Critical/2Moderate), not zod. Security job120688828415 and candidate120688827737 both identify this advisory. Earlier 52/52 on2f782c8 is historical valid evidence; it is not the current security gate result.
+
+Primary GitHub advisory-database entry published2026-10-23T20:53:11Z identifies installed2.3.0 as affected and2.4.0 as fixed; upstream expressjs/body-parser v2.4.0 release confirms correction. Existing scoped override resolves Express's2.2.2 request to2.3.0. No advisory exception, compression-policy change or security threshold reduction.
+
+Prepared the existing read-only dependency-candidate workflow to resolve body-parser2.4.0 in its disposable checkout, validate frozen install/security/full build/typecheck/source/API/frontend/isolatedHTTP and upload bounded hashed catalog+lock artifacts. Branch catalog/lock remains unchanged until that candidate passes and generated diff is reviewed. Added loopback-only actual Express parser compatibility test for valid compressed JSON/raw verify bytes, malformed compression/unsupported charset rejection, URL-encoded/plain JSON and subsequent health. Syntax1PASS; existing HTTP security contract1PASS and workflow/lock policyPASS locally. New Express runtime test **NOT_RUN locally / CI_PENDING**; does not independently claim full upstream vulnerability reproduction or hosted application proof.
+
+Next: inspect candidate failures/results, retrieve exact artifact and hashes, review only intended parser/dependency changes, adopt corrected graph on authorized branch, verify normal security+regressions. Local package-manager command exited without generating a new lockfile; CI avoids repeating ineffective local resolution. No hosted services, main, merge, deploy or P1/P2. **NO-GO**; hosted gates BLOCKED_HOSTED_VERIFICATION, full requirement inventory/incident review OPEN.
+
+---
+
 ## CURRENT VERIFIED P0 CHECKPOINT — 2026-10-24
 
 Executable `2f782c850c50526e2fe977f026b6f07ff0d867b7`, tree `8b0f1905cceaad6e9e25a6f0efa7441bb896fb36`; actual CI checkout `310e19e98baf809e455f2a20045d46443a5063db` independently has the identical tree. **52/52 workflows SUCCESS;0pending/failed/cancelled.** This final source evidence supersedes pending observations above/below only within its tested scope. A containing documentation-only checkpoint does not imply a separate runtime execution.

@@ -1,4 +1,4 @@
-name: P0 zod security upgrade candidate
+name: P0 dependency security upgrade candidate
 on:
   pull_request:
     paths:
@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: p0-zod-candidate-${{ github.event.pull_request.number || github.ref }}
+  group: p0-dependency-candidate-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   validate-upgrade:
@@ -30,18 +30,17 @@ jobs:
           import fs from 'node:fs';
           const file = 'pnpm-workspace.yaml';
           const source = fs.readFileSync(file, 'utf8');
-          const matches = source.match(/^  zod: (3\.25\.76|4\.6\.7)$/gm) || [];
-          if (matches.length !== 1) throw Error('Unexpected zod catalog baseline');
-          fs.writeFileSync(file, source.replace(/^  zod: (3\.25\.76|4\.6\.7)$/m, '  zod: 4.6.7'));
+          if (!source.includes("'body-parser@2.2.2': 2.3.0") && !source.includes("'body-parser@2.2.2': 2.4.0")) throw Error('Unexpected body-parser override baseline');
+          fs.writeFileSync(file, source.replace("'body-parser@2.2.2': 2.3.0", "'body-parser@2.2.2': 2.4.0"));
           NODE
       - name: Resolve candidate lockfile with lifecycle scripts disabled
-        run: node scripts/ci-run-redacted.mjs --label zod-candidate-lock -- pnpm install --lockfile-only --ignore-scripts
+        run: node scripts/ci-run-redacted.mjs --label dependency-candidate-lock -- pnpm install --lockfile-only --ignore-scripts
       - name: Prove candidate frozen graph install
-        run: node scripts/ci-run-redacted.mjs --label zod-candidate-install -- pnpm install --frozen-lockfile --ignore-scripts
+        run: node scripts/ci-run-redacted.mjs --label dependency-candidate-install -- pnpm install --frozen-lockfile --ignore-scripts
       - name: Require no High or Critical advisories in candidate
         run: node scripts/security-final-audit.mjs dependency
       - name: Build and typecheck candidate with offline signing regressions
-        run: node scripts/ci-run-redacted.mjs --label zod-candidate-build -- pnpm run build
+        run: node scripts/ci-run-redacted.mjs --label dependency-candidate-build -- pnpm run build
       - name: Run complete source and frontend authority contracts
         run: node --test artifacts/fawri/tests/*.test.mjs
       - name: Run API TypeScript unit tests
@@ -71,7 +70,7 @@ jobs:
       - name: Upload reviewed dependency candidate files
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p0-zod-4.6.7-candidate-${{ github.sha }}
+          name: p0-body-parser-2.4.0-candidate-${{ github.sha }}
           path: |
             pnpm-lock.yaml
             pnpm-workspace.yaml
@@ -84,7 +83,7 @@ jobs:
           import { createHash } from 'node:crypto';
           for (const name of ['pnpm-workspace.yaml', 'pnpm-lock.yaml']) {
             const bytes = fs.readFileSync(name);
-            console.log('P0_ZOD_CANDIDATE_FILE ' + JSON.stringify({ name, sha256: createHash('sha256').update(bytes).digest('hex') }));
+            console.log('P0_DEPENDENCY_CANDIDATE_FILE ' + JSON.stringify({ name, sha256: createHash('sha256').update(bytes).digest('hex') }));
           }
           NODE
       - name: Destroy owned isolated containers and volumes

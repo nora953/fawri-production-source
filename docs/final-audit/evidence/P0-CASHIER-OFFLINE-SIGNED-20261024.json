@@ -1614,5 +1614,32 @@
     "Offline leases cannot learn new revocations until reconnect/expiry; no trusted hardware clock/full-profile-tampering guarantee.",
     "Seven-day licensing grace does not extend the existing operator-session lifetime."
   ],
-  "next": "Reconcile remaining P0 requirement/role/privacy inventory using current bounded proofs, without repeating completed signed-offline/0048 work. Hosted verification stays blocked; no deployment/main/merge/P1/P2."
+  "next": "Reconcile remaining P0 requirement/role/privacy inventory using current bounded proofs, without repeating completed signed-offline/0048 work. Hosted verification stays blocked; no deployment/main/merge/P1/P2.",
+  "latest_recovery": {
+    "date_baghdad": "2026-10-24",
+    "head": "6f79933e89aa9409083741f06cf2be15c7316ab2",
+    "ci": {
+      "success": 50,
+      "failure": 2,
+      "pending": 0,
+      "failed_runs": [
+        40033977706,
+        40033977566
+      ]
+    },
+    "security": {
+      "high": 1,
+      "critical": 0,
+      "moderate": 2,
+      "package": "body-parser",
+      "installed": "2.3.0",
+      "fixed": "2.4.0",
+      "advisory": "GHSA-27r3-jxmh-p828",
+      "published_at": "2026-10-23T20:53:11Z",
+      "job": 120688828415
+    },
+    "candidate": "PREPARED_CI_PENDING",
+    "runtime_compatibility_test": "PREPARED_NOT_RUN",
+    "release": "NO-GO"
+  }
 }
