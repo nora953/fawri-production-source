@@ -6,7 +6,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder("utf-8", { fatal: true });
 
 function bytesFromBase64Url(value) {
-  if (typeof value !== "string" || !/^[A-Za-z0-9_-]+$/.test(value) || value.length > 16384) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_-]+$/.test(value) || value.length > 16384 || value.length % 4 === 1) {
     throw new Error("Invalid entitlement encoding");
   }
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
@@ -40,11 +40,12 @@ export async function verifyOfflineEntitlementEnvelope(envelope, trustedPublicKe
   if (!envelope || typeof envelope !== "object" || Array.isArray(envelope) ||
       envelope.algorithm !== "ES256" ||
       typeof envelope.key_id !== "string" ||
+      !trustedPublicKeys || typeof trustedPublicKeys !== "object" ||
       !Object.hasOwn(trustedPublicKeys, envelope.key_id)) {
     throw new Error("Untrusted entitlement signing key or algorithm");
   }
   const keyJwk = trustedPublicKeys[envelope.key_id];
-  if (keyJwk.kty !== "EC" || keyJwk.crv !== "P-256" || keyJwk.d !== undefined ||
+  if (!keyJwk || typeof keyJwk !== "object" || keyJwk.kty !== "EC" || keyJwk.crv !== "P-256" || keyJwk.d !== undefined ||
       keyJwk.key_ops?.some((operation) => operation !== "verify")) {
     throw new Error("Invalid trusted entitlement public key");
   }
