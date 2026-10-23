@@ -1,3 +1,13 @@
+## CURRENT HANDOFF — 2026-10-23 (read first)
+
+- Branch: `fix/p0-provider-receipt-order-discovery-20261015`; Draft PR #550. Source candidate `655b7a37dddb987778cda7e589fbd3a438b7fc8d` accepted for **source CI only**: 48/48 green workflows, 89/89 native invocations, 700 TAP passes, 49 disposable migrations, strict emergency privacy regression passed. Synthetic PR merge has zero changed files versus candidate.
+- Documentation checkpoint `5aac594263a17707b4572f59f0b0a9e18f12869e` independently completed 48/48 green workflows. Subsequent commits update documentation only; check their own CI separately before claiming latest HEAD green.
+- The older `0048 PENDING` and `emergency four tables OPEN` entries below describe earlier baselines and **must not** be mistaken for the current source remediation status. See `P0-0048-CI-VERIFICATION-20261023.md` and `P0-0048-DOC-HEAD-CI-OBSERVATION-20261023.md`.
+- Release blockers still OPEN: deployed hosted schema/role/identity/pooling parity, security incident review and full P0 gate inventory. **NO-GO**. No overall P0 completion percentage without validated denominator.
+- Next: inspect exact remaining P0 release requirements and any GitHub-verifiable evidence. Do not rerun passing suites or duplicate remediation. Railway and Neon are prohibited; do not deploy, migrate hosted database, merge, change main or begin P1/P2.
+
+---
+
 ## Support privacy accepted; next emergency authority proof prepared — 2026-10-23
 
 ## Emergency baseline verified;0048 correction prepared — 2026-10-23
