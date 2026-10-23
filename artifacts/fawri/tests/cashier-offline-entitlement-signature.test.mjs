@@ -65,3 +65,11 @@ test("unsupported algorithms, invalid signatures and private JWKs fail closed", 
     "test-key": { ...keys["test-key"], d: "unexpected" },
   }));
 });
+
+test("missing keyring, missing key and invalid base64url are rejected", async () => {
+  const { keys, envelope } = await fixture();
+  await assert.rejects(verifyOfflineEntitlementEnvelope(envelope, null));
+  await assert.rejects(verifyOfflineEntitlementEnvelope(envelope, { "test-key": null }));
+  await assert.rejects(verifyOfflineEntitlementEnvelope({ ...envelope, payload: "A" }, keys));
+  await assert.rejects(verifyOfflineEntitlementEnvelope({ ...envelope, signature: "A" }, keys));
+});
