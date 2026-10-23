@@ -330,6 +330,13 @@
       "when": 1791936000018,
       "tag": "0046_cashier_settings_authentication_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791936000019,
+      "tag": "0047_support_privacy_tenant_authority",
+      "breakpoints": true
     }
   ]
 }

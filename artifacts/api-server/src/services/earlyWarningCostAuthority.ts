@@ -1,4 +1,5 @@
-import { withOperationalTransaction, type OperationalSqlClient } from "./operationalPostgresAuthority";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
+import { type OperationalSqlClient } from "./operationalPostgresAuthority";
 import { loadProviderCostSnapshot } from "./providerCostAuthority";
 
 const BYTES_PER_GB = 1024 ** 3;
@@ -282,7 +283,7 @@ export async function loadEarlyWarningCostReport(input?: {
   ]);
   const rates = providerPricing.rates;
 
-  const result = await withOperationalTransaction(async (client) => {
+  const result = await withAuthenticationTransaction(async (client) => {
     const merchants = await client.query<AggregateRow>(
       `WITH message_usage AS (
          SELECT merchant_id,

@@ -1,3 +1,15 @@
+## Baseline CI complete; scoped Support privacy correction prepared — 2026-10-23
+
+Recovered remote f6301e56/PR550 unchanged. Diagnostic d4ccf125 completed48/48 workflows SUCCESS,0 pending/failed/cancelled. Native39875671648/job120160553076:85 complete clean invocations/83 unique files,680 TAP passes including parents/repeated lanes,0 failed/skipped/cancelled. Schema39875671590/job120160553610 committed/historical reproduction PASS. Focused39875671803/job1201605536864PASS remains a diagnostic confirming the bounded finding, not remediation acceptance. [Final exact baseline evidence](evidence/P0-SUPPORT-PRIVACY-AUTHORITY-BASELINE-20261023.json).
+
+Prepared canonical0047 Support privacy controls for5 tables: scoped merchant access, explicit existing trusted authentication LOGIN for global Support/lifecycle/observability operations, parent-reference checks and historical-link preflight. Directory audit authority is not added to these policies. No new roles/credential/grant path. Primary readiness now requires all5 tables protected. Merchant image operations use scoped transactions; authorized admin/worker/image reads use existing identity-checked trusted transactions. Reminder resets move into message transactions, eliminating post-commit unscoped route updates. Existing route permission/session checks preserved.
+
+New owned native regression joins priority audit: effective RLS/readiness, missing-policy rejection, unscoped/foreign reads and writes, parent consistency, canonical historical preflight, authorized merchant/global operations, rollback/restoration and reminder semantics. Existing actual-HTTP Support5 and image-before-write tests retained; image fixture now uses restricted tenant/trusted auth LOGINs. Local10 contracts and MJS syntax/whitespace PASS. Native/typecheck/canonical/current-source acceptance PENDING. [Scope](P0-SUPPORT-PRIVACY-REMEDIATION-20261023.md).
+
+Next exact action: inspect containing source CI, particularly canonical0047 snapshot reproduction, new P0_SUPPORT_PRIVACY_REMEDIATION marker, all86 expected native summaries and existing Support/image/retention/observability regressions. Fix actual failures without weakening denial assertions. Emergency4-table privacy scope remains OPEN and unchanged. NO-GO; fullP0 denominator incomplete; no hosted action/change/deploy/ACL/secrets/main/merge/P1/P2.
+
+---
+
 ## Support privacy baseline completed; bounded SQL privacy blocker confirmed — 2026-10-23
 
 Diagnostic source d4ccf125b67d8cb05c61190fa71dd7c46b67da20, executed checkout834f94d6a259849c252c2fee1fa4be4c6a02363f, identical tree55cf7686fc45500015a16f2f630be21abca9de6a. Focused run39875671803/job120160553686 SUCCESS:4 TAP passes,0 failed/skipped/cancelled; owned cleanup SUCCESS. Whole-source CI last snapshot43/48 SUCCESS,5 executing,0 failures; this is not final global acceptance.

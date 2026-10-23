@@ -1,7 +1,7 @@
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   operationalPostgresAuthorityRequired,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { SupportPostgresError } from "./postgresSupportAuthority";
@@ -160,7 +160,7 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
   const nowIso = now.toISOString();
   const nowMs = now.getTime();
 
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const expiredPending = await client.query(
       `UPDATE support_inspection_requests
           SET status = 'expired', expired_at = $1::timestamptz,
