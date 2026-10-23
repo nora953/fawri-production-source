@@ -79,3 +79,12 @@ test("noncanonical base64url encodings are rejected", async () => {
   await assert.rejects(verifyOfflineEntitlementEnvelope({ ...envelope, payload: "Zh" }, keys));
   await assert.rejects(verifyOfflineEntitlementEnvelope({ ...envelope, signature: "Zh" }, keys));
 });
+
+test("valid signature remains bound to the exact original claim bytes", async () => {
+  const { keys, envelope } = await fixture();
+  const claims = await verifyOfflineEntitlementEnvelope(envelope, keys);
+  assert.equal(claims.merchant_id, "merchant-1");
+  assert.equal(claims.station_id, "station-1");
+  assert.equal(claims.subscription_id, "subscription-1");
+  assert.equal(claims.state, "active");
+});
