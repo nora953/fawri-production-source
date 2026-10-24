@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "OPEN_SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING",
+  "auditedSourceRevision": "64f61f44ac32738607f0bcc5d8fae0ff8072e295",
+  "lastAcceptedExecutable": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "applicationChanged": false,
+  "client": {
+    "source": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+    "recognizedTypeCount": 12,
+    "commonFields": [
+      "id",
+      "type",
+      "created_at"
+    ],
+    "optionalCommonFields": [
+      "read_at"
+    ],
+    "shapeValidation": true,
+    "unknownKeySanitization": false,
+    "returnsOriginalResponseRecords": true,
+    "safeActionUrlCheck": "relative path starting /, excludes // and backslash; this is not server field redaction."
+  },
+  "counts": {
+    "reviewedTypes": 12,
+    "sqlTemplateCandidates": 9,
+    "legacyDefinitionsOnly": 3
+  },
+  "records": [
+    {
+      "type": "subscription_expiry_reminder",
+      "source": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+      "anchor": "type: \"subscription_expiry_reminder\",",
+      "line": 151,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "plan_name",
+        "expires_at",
+        "days_remaining"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Canonical subscription row and service clock; literal key names.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "subscription_expired",
+      "source": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+      "anchor": "type: \"subscription_expired\",",
+      "line": 179,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "plan_name",
+        "expired_at",
+        "addon_replies_remaining"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Canonical subscription state/time and remaining count; literal key names.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "addon_expiry_reminder",
+      "source": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+      "anchor": "type: \"addon_expiry_reminder\",",
+      "line": 229,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "addon_batch_id",
+        "source",
+        "remaining_replies",
+        "expires_at",
+        "days_remaining"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Scoped reply batch row, source enum and service clock; literal key names.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "operational_new_order",
+      "source": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+      "anchor": "export async function notifyMerchantNewOrderPostgres",
+      "line": 90,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "order_id",
+        "action_url"
+      ],
+      "optionalVariableKeys": [
+        "conversation_id"
+      ],
+      "valueInputControl": "Internal call parameters normalized with text(); fixed relative action URL with encoded order ID. Caller identity/ownership chain still requires reconciliation.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "operational_payment_conflict",
+      "source": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+      "anchor": "export async function notifyMerchantPaymentConflictPostgres",
+      "line": 115,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "order_id",
+        "action_url"
+      ],
+      "optionalVariableKeys": [
+        "conversation_id",
+        "provider"
+      ],
+      "valueInputControl": "Internal normalized parameters; relative action URL with encoded IDs; variable keys fixed by producer. Caller/input provenance not accepted yet.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "operational_knowledge_gap",
+      "source": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+      "anchor": "export async function notifyMerchantKnowledgeGapPostgres",
+      "line": 145,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "training_request_id",
+        "action_url"
+      ],
+      "optionalVariableKeys": [
+        "conversation_id"
+      ],
+      "valueInputControl": "Internal training/conversation IDs; fixed keys and encoded relative action URL. Caller/input provenance not accepted yet.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "operational_customer_message",
+      "source": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+      "anchor": "export async function notifyMerchantNewCustomerMessagePostgres",
+      "line": 171,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "conversation_id",
+        "action_url"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Internal conversation/event IDs, fixed keys and encoded relative action URL. Caller/input provenance not accepted yet.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "inspection_session_request",
+      "source": "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts",
+      "anchor": "'notifications.inspection_session_request.title'",
+      "line": 140,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "ticket_id",
+        "inspection_request_id",
+        "ticket_subject",
+        "admin_name",
+        "mode",
+        "request_expires_at",
+        "action_url"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Ticket/request/admin rows; merchant-controlled ticket subject is a value, not a key; canonical mode independent_read_only. Lifecycle and tenant provenance still need runtime linkage.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "support_reply_reminder",
+      "source": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+      "anchor": "type: \"support_reply_reminder\",",
+      "line": 235,
+      "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+      "requiredVariableKeys": [
+        "ticket_id",
+        "ticket_subject",
+        "action_url"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Scoped support ticket/lifecycle clock; fixed keys and encoded local ticket URL.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "subscription_balance_purchase",
+      "source": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+      "anchor": "export function appendMerchantBalanceNotification",
+      "line": 581,
+      "state": "LEGACY_AUTHDB_DEFINITION_ONLY_IN_REVIEWED_SOURCE",
+      "requiredVariableKeys": [
+        "purchased_replies",
+        "emergency_debt_paid",
+        "addon_replies_added",
+        "emergency_debt_remaining",
+        "base_replies_remaining",
+        "emergency_replies_remaining",
+        "addon_replies_remaining",
+        "total_replies_available"
+      ],
+      "optionalVariableKeys": [
+        "addon_batch_id",
+        "addon_batch_expires_at"
+      ],
+      "valueInputControl": "AuthDb merchant_notifications array definition; not evidence of canonical SQL producer.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "subscription_plan_event",
+      "source": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+      "anchor": "export function appendMerchantSubscriptionPlanNotification",
+      "line": 628,
+      "state": "LEGACY_AUTHDB_DEFINITION_ONLY_IN_REVIEWED_SOURCE",
+      "requiredVariableKeys": [
+        "operation",
+        "plan_name",
+        "start_date",
+        "expires_at",
+        "emergency_debt_paid",
+        "emergency_debt_remaining",
+        "base_replies_remaining",
+        "addon_replies_remaining",
+        "total_replies_available"
+      ],
+      "optionalVariableKeys": [
+        "previous_plan_name"
+      ],
+      "valueInputControl": "AuthDb appendMerchantNotificationRecord; no canonical SQL type producer claimed.",
+      "runtimeProducerToHttpClientAccepted": false
+    },
+    {
+      "type": "subscription_emergency_activated",
+      "source": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+      "anchor": "export function appendMerchantEmergencyActivationNotification",
+      "line": 656,
+      "state": "LEGACY_AUTHDB_DEFINITION_ONLY_IN_REVIEWED_SOURCE",
+      "requiredVariableKeys": [
+        "addon_batch_id",
+        "emergency_replies_added",
+        "emergency_debt",
+        "expires_at"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "AuthDb appendMerchantNotificationRecord. Same string in PostgreSQL subscription audit action_type is not a notifications.type producer.",
+      "runtimeProducerToHttpClientAccepted": false
+    }
+  ],
+  "reservedKeyReview": {
+    "keys": [
+      "created_at",
+      "id",
+      "read_at",
+      "type"
+    ],
+    "collisionInReviewedLiteralKeySets": false,
+    "genericServerMapper": "id/type -> spread record(variables) -> timestamps",
+    "serverPerTypeAllowlist": false,
+    "untrustedControlOfVariableKeysProven": false,
+    "privacyAccepted": false,
+    "note": "A possible collision mechanism is not an observed unauthenticated exploit. Reconcile actual producer/caller inputs before changing the projection."
+  },
+  "alternateSqlHelpers": [
+    {
+      "source": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+      "anchors": [
+        "export async function createInspectionRequestPostgres",
+        "export async function refreshSupportLifecyclePostgres"
+      ],
+      "notes": "Older SQL helper has request_id instead of the reviewed client inspection_request_id/ticket_subject/admin_name shape; current reviewed route imports canonical createInspectionRequestCanonicalPostgres. Helper reachability and historical data are not certified."
+    }
+  ],
+  "evidenceLimits": [
+    "Existing synthetic-notification HTTP and bulk actor tests prove scoped transport/mutation, not all real producer/type/key round trips.",
+    "Mocked client tests do not establish SQL producer-to-HTTP provenance.",
+    "operational-notifications.test.ts seeds legacy merchants.json and runtime JSON; do not count it as canonical SQL producer coverage.",
+    "Nine SQL templates are reviewed candidates, not a complete dynamic call graph or all historical data.",
+    "No code fix or policy change is justified solely by a generic mapper accepting arbitrary stored JSON."
+  ],
+  "nextExactBatch": {
+    "types": [
+      "operational_new_order",
+      "operational_payment_conflict",
+      "operational_knowledge_gap",
+      "operational_customer_message"
+    ],
+    "acceptance": "Use actual notifyMerchant*Postgres functions with two owned merchants, inspect exact SQL variable keys, actual app list/single-read response and actual frontend isMerchantNotificationRecord validation; verify identity, safe action URLs, peer preservation and replay/deduplication. No network provider. Then remaining subscription/Support templates and alternate helper provenance.",
+    "gateRemainsOpen": true
+  },
+  "verification": {
+    "clientTypeSetMatchesSource": true,
+    "sourceAnchorsPresent": true,
+    "reviewedLiteralKeysAvoidReserved": true,
+    "runtimeRoundTripAccepted": false
+  },
+  "inputSha256": {
+    "artifacts/api-server/src/routes/auth-support-postgres-routes.ts": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62",
+    "artifacts/api-server/src/routes/authRuntimePart3.ts": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff",
+    "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts": "91a3111f26b6d4b9876451b09c3218126a901d79a37eef1e8aa584b2e9fe0ff8",
+    "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts": "fa40e8d728cf33796e565b00f58dd839c893dd539da9d9786fb0c2dc3d11a6f8",
+    "artifacts/api-server/src/services/postgresSupportAuthority.ts": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0",
+    "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts": "d77196c64fb39c782047ab7f17e0cd63cadc2475ebe74a9e9fd1e8d432f328f7",
+    "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts": "59ec43152b0ad63599cd91b2a1c4db23ab263c5f9ce2cd9c00138e20f6748008",
+    "artifacts/api-server/tests/operational-notifications.test.ts": "0b31ef9d0dd42f3e83e3603e990e02670f6c2d162e321dd9579cd81e2a2136e3",
+    "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6",
+    "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980",
+    "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts": "e1deebab5c2cf4e7db1892758345a56e160b4f3ff1bd6b92fe33a02deb8c3cfd"
+  },
+  "release": "NO-GO"
+}

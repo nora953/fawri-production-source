@@ -33,7 +33,7 @@
   "inputs": {
     "snapshot": "lib/db/drizzle/meta/0051_snapshot.json",
     "snapshotSha256": "68d12a4f1ccdd5d52978334c4eb194a367803ffc86cda30910adb66a2016f47d",
-    "curationSha256": "ff5f89d33c9fc5ddf98732246b2780d0fd16fd3fde2e7ebbf3350063d33c2712",
+    "curationSha256": "7a831712242c36b3827c0c0d855e302d14dff11e4892de523900802d179b0b42",
     "generatorSha256": "1017e5b0c989ae496b92d78ee7c7c23c3f4e082f6d3f495d5cee4b15dc37de29",
     "scannedRuntimeFileCount": 312,
     "scannedRuntimeTreeSha256": "9ad0295fef3d38b56eaa31ed990b3f34462161c1ba4d86c80c8ea1eb386b8e91"
@@ -2011,8 +2011,10 @@
       "table": "notifications",
       "status": "OPEN",
       "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
-      "next": "Enumerate canonical producer literal keys, actual input control and UI consumers before any projection change.",
-      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX"
+      "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+      "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
     },
     {
       "id": "RESIDUAL-FIELD-003",
@@ -2049,8 +2051,10 @@
       "table": "notifications",
       "status": "OPEN",
       "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
-      "next": "Enumerate canonical producer literal keys, actual input control and UI consumers before any projection change.",
-      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX"
+      "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+      "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
     },
     {
       "id": "RESIDUAL-FIELD-003",

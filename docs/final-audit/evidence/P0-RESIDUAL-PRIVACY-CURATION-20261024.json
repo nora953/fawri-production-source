@@ -545,8 +545,10 @@
       "table": "notifications",
       "status": "OPEN",
       "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
-      "next": "Enumerate canonical producer literal keys, actual input control and UI consumers before any projection change.",
-      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX"
+      "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+      "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
     },
     {
       "id": "RESIDUAL-FIELD-003",
