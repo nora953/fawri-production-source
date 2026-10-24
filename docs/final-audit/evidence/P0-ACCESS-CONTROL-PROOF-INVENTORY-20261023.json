@@ -6,7 +6,7 @@
   "denominatorFrozen": false,
   "overallP0Percentage": null,
   "newRuntimeTestsExecutedByInventory": 0,
-  "sourceAcceptance": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+  "sourceAcceptance": "62bed3cd19dfe6ec4273194cc1d0e5045b825752",
   "rows": [
     {
       "requirement_id": "P0-ACCESS-SCOPE-BOUNDARY",
@@ -3816,7 +3816,7 @@
     }
   },
   "next_privacy_authority_proof": {
-    "status": "PREPARED_CI_PENDING",
+    "status": "BASELINE_EXECUTED_VIOLATION_OBSERVED",
     "tables": [
       "public.audit_events",
       "public.manual_reply_requests",
@@ -3835,6 +3835,286 @@
       "unattested_refusal": "PASS",
       "existing_guard_controls": 15,
       "new_sql_assertions_executed": 0
-    }
-  }
+    },
+    "source_sha": "62bed3cd19dfe6ec4273194cc1d0e5045b825752",
+    "run": 40054814184,
+    "job": 120755341034,
+    "result": {
+      "diagnosticOnly": true,
+      "fixturePrimaryTableCrud": true,
+      "actualRestrictedPrimaryLogin": true,
+      "merchants": 2,
+      "tables": [
+        {
+          "table_name": "audit_events",
+          "rls": false,
+          "force_rls": false,
+          "can_select": true,
+          "can_update": true,
+          "policies": 0
+        },
+        {
+          "table_name": "manual_reply_requests",
+          "rls": false,
+          "force_rls": false,
+          "can_select": true,
+          "can_update": true,
+          "policies": 0
+        },
+        {
+          "table_name": "merchant_admin_notes",
+          "rls": false,
+          "force_rls": false,
+          "can_select": true,
+          "can_update": true,
+          "policies": 0
+        },
+        {
+          "table_name": "merchant_channel_overrides",
+          "rls": false,
+          "force_rls": false,
+          "can_select": true,
+          "can_update": true,
+          "policies": 0
+        },
+        {
+          "table_name": "merchant_deletion_requests",
+          "rls": false,
+          "force_rls": false,
+          "can_select": true,
+          "can_update": true,
+          "policies": 0
+        },
+        {
+          "table_name": "notifications",
+          "rls": false,
+          "force_rls": false,
+          "can_select": true,
+          "can_update": true,
+          "policies": 0
+        },
+        {
+          "table_name": "order_drafts",
+          "rls": false,
+          "force_rls": false,
+          "can_select": true,
+          "can_update": true,
+          "policies": 0
+        },
+        {
+          "table_name": "processed_channel_events",
+          "rls": false,
+          "force_rls": false,
+          "can_select": true,
+          "can_update": true,
+          "policies": 0
+        }
+      ],
+      "observations": [
+        {
+          "table": "audit_events",
+          "unscoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "tenantScoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "trustedGlobal": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "foreignUpdate": {
+            "denied": false,
+            "rows": 1
+          }
+        },
+        {
+          "table": "manual_reply_requests",
+          "unscoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "tenantScoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "trustedGlobal": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "foreignUpdate": {
+            "denied": false,
+            "rows": 1
+          }
+        },
+        {
+          "table": "merchant_admin_notes",
+          "unscoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "tenantScoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "trustedGlobal": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "foreignUpdate": {
+            "denied": false,
+            "rows": 1
+          }
+        },
+        {
+          "table": "merchant_channel_overrides",
+          "unscoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "tenantScoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "trustedGlobal": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "foreignUpdate": {
+            "denied": false,
+            "rows": 1
+          }
+        },
+        {
+          "table": "merchant_deletion_requests",
+          "unscoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "tenantScoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "trustedGlobal": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "foreignUpdate": {
+            "denied": false,
+            "rows": 1
+          }
+        },
+        {
+          "table": "notifications",
+          "unscoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "tenantScoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "trustedGlobal": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "foreignUpdate": {
+            "denied": false,
+            "rows": 1
+          }
+        },
+        {
+          "table": "order_drafts",
+          "unscoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "tenantScoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "trustedGlobal": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "foreignUpdate": {
+            "denied": false,
+            "rows": 1
+          }
+        },
+        {
+          "table": "processed_channel_events",
+          "unscoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "tenantScoped": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "trustedGlobal": {
+            "denied": false,
+            "ownRows": 1,
+            "foreignRows": 1
+          },
+          "foreignUpdate": {
+            "denied": false,
+            "rows": 1
+          }
+        }
+      ],
+      "exactRollbackRestoration": true,
+      "pooledScopeReset": true,
+      "httpAuthorizationTested": false,
+      "hostedPrivilegePlanCertified": false,
+      "privacyAccepted": false,
+      "releaseAccepted": false
+    },
+    "canonical_issue_id": "P0-RESIDUAL-MERCHANT-PRIVACY-001",
+    "severity": "HIGH",
+    "remediation": {
+      "tables": [
+        "merchant_admin_notes",
+        "merchant_channel_overrides",
+        "merchant_deletion_requests"
+      ],
+      "status": "PREPARED_CI_PENDING",
+      "test_path": "artifacts/api-server/tests/merchant-management-privacy-rls-postgres.integration.test.mjs",
+      "stage": 50,
+      "sql_sha256": "75ec211ebfec841219fd37b2c8f68324e8b10059cf81dd02c7c7f274cdef53f1"
+    },
+    "remaining_tables": [
+      "audit_events",
+      "manual_reply_requests",
+      "notifications",
+      "order_drafts",
+      "processed_channel_events"
+    ]
+  },
+  "acceptanceScope": "Bounded workflow execution completeness; residual privacy diagnostic observations are not accepted security boundaries."
 }
