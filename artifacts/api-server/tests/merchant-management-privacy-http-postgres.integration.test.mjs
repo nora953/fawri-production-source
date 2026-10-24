@@ -137,7 +137,7 @@ test('management HTTP privacy uses current SQL roles, permissions and session au
     assert.equal((await req(`/merchants/${a.id}/note`,owner)).status,200);
   });
   await t.test('revoked SQL session cannot reuse private routes while independent owner remains active',async()=>{
-    await admin.query("UPDATE account_sessions SET status='revoked',revoked_at=now() WHERE id=$1",[manager.session.session.id]);
+    assert.equal(await auth.revokeSession(manager.session.token,'admin','logout'),true);
     await expectDenied(manager,401);
     assert.equal((await req(`/merchants/${b.id}/note`,owner)).status,200);
   });
