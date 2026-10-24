@@ -5,6 +5,12 @@ on:
       - 'artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs'
       - 'artifacts/api-server/tests/merchant-owner-import-http-postgres.integration.test.mjs'
       - 'artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs'
+      - 'artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs'
+      - 'artifacts/api-server/src/app.ts'
+      - 'artifacts/api-server/src/routes/auth-security.ts'
+      - 'artifacts/api-server/src/middleware/authCutoverCompatibility.ts'
+      - 'artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts'
+      - 'artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts'
       - 'scripts/execute-disposable-postgres-audit.mjs'
       - 'scripts/run-isolated-postgres-audit.sh'
       - 'artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts'
@@ -38,6 +44,7 @@ jobs:
           node --check artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs
           node --check artifacts/api-server/tests/merchant-owner-import-http-postgres.integration.test.mjs
           node --check artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs
+          node --check artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs
           node --check scripts/execute-disposable-postgres-audit.mjs
           bash -n scripts/run-isolated-postgres-audit.sh
       - name: Execute actual management-http management and owner session boundaries assertions

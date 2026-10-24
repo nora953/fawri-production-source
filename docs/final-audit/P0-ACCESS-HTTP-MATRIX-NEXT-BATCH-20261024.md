@@ -1,3 +1,13 @@
+## Actual-app management privacy prepared — 2026-10-24
+
+Recovery HEAD76fbd10c, accepted executableb2470a3a retained; PR550Draft/current base/unmerged verified. Existing global-merchant-postgres-http journey imports app.ts for login/catalog/cashier/report/logout, meta-full-app imports real app in isolated child for signed ingress; neither is the current private management case/legacy-fallthrough matrix. auth-cutover-path-case independently tests guard middleware, while accepted management privacy suite mounts the router in synthetic Express. Reuse those proofs; do not count new test repetition as closure.
+
+Six new bounded cases import actual src/app.ts after restricted primary LOGIN/separate auth LOGIN setup: case-variant private reads with legitimate owner/assistant and merchant/anonymous/unprivileged denials; wrong-device/combined-role/forged-legacy denial with unchanged rows; authorized mixed-case note update binds path identity despite foreign body/query IDs and records real SQL actor; retired security and unknown legacy fallthrough denied while current route remains available; SQL permission revocation; revoked SQL session with independent owner positive and no root JSON stores. Own two-merchant fixtures and cleanup; stop actual Support startup sweep before assertions/disposal. Complete eight-table/field/browser/provider/hosted inventory remains OPEN.
+
+No application/schema/ACL/policy changes. Add suite to existing management privacy lane, syntax check and relevant app/middleware/coordinator path triggers. Local syntax/whitespace PASS; new actual runtime PREPARED/CI_PENDING. Next inspect per-file TAP and marker, classify fixture/product failures, verify exact source/checkout tree and broader CI. NO-GO; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## P0 owner deletion HTTP accepted — 2026-10-24
 
 Accepted executable `b2470a3a1e6f4a35a630e463752837771c74b96a`: **56/56 returned workflows completed SUCCESS**, 0 pending/failure/cancellation at acceptance. Seven new functional deletion cases run through actual management router, restricted primary LOGIN and separate authentication LOGIN on disposable PostgreSQL; no operator-pool execution claimed.
