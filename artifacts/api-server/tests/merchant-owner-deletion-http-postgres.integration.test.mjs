@@ -105,7 +105,7 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
     for (const table of ['products', 'saved_answers', 'catalog_image_references', 'merchant_admin_notes', 'merchant_channel_overrides']) assert.equal((await admin.query(`SELECT 1 FROM ${table} WHERE merchant_id=$1`, [a.id])).rowCount, 0);
     assert.equal(fs.existsSync(a.image), false); assert.deepEqual(await snapshot([b, blocked]), peer);
     const auditCount = (await admin.query("SELECT count(*)::int AS n FROM audit_events WHERE merchant_id=$1 AND action_type='merchant_deleted'", [a.id])).rows[0].n; assert.equal(auditCount, 1);
-    const after = await snapshot(); const repeat = await req(owner); assert.equal(repeat.status, 404); assert.deepEqual(await snapshot(), after);
+    const after = await snapshot(); const repeat = await req(owner); assert.equal(repeat.status, 404); assert.equal(repeat.body.code, 'MERCHANT_NOT_FOUND'); assert.deepEqual(await snapshot(), after);
     assert.equal((await runtime.runtimePool.query('SELECT id FROM products WHERE merchant_id=ANY($1::text[])', [merchants])).rowCount, 0);
   });
   await t.test('revoked owner session cannot delete intact peer with valid password', async () => {
