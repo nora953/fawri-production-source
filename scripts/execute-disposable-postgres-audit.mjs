@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.mjs';
 const suites = {
+  "management-privacy-http": ["merchant-management-privacy-http-postgres.integration.test.mjs"],
   "subscription-golden": ["subscription-entitlement-postgres.integration.test.ts", "subscription-http-postgres-golden-journey.integration.test.ts"],
   "online-routing": ["merchant-customer-payment-authority-postgres.integration.test.ts"],
   "cashier-operational": ["cashier-operational-cutoff-postgres.integration.test.ts", "catalog-cashier-compensation-history-postgres.integration.test.ts", "cashier-operator-logout-pin-postgres.integration.test.ts", "cashier-operator-own-history-scope-postgres.integration.test.ts"],
