@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+  "status": "OPEN",
+  "boundedStatus": "FIXTURE_CORRECTED_CI_PENDING",
+  "initialFailure": {
+    "source": "b4e8fffe83f44967efc3e57a5889260df4fb6c2a",
+    "run": 40080821537,
+    "job": 120833831203,
+    "classification": "FIXTURE_SETUP_AUTH_STATE",
+    "error": "AUTH_POSTGRES_ACCOUNT_UNAVAILABLE",
+    "functionalDeletionCasesExecuted": 0,
+    "summary": [
+      {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "correction": "Issue actual sessions while accounts active, then use actual updateMerchantStatusPostgres suspension service before deletion fixtures; retain active-only session issuance guard.",
+    "applicationChanged": false
+  },
+  "release": "NO-GO"
+}

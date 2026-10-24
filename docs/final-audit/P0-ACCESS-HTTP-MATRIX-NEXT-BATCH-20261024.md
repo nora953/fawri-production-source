@@ -1,3 +1,9 @@
+## Deletion fixture prerequisite correction
+
+Initial b4e8fffe run40080821537/job120833831203: management11TAP and import6TAP PASS; deletion setup0PASS/1parentFAIL,0functional deletion cases executed. AUTH_POSTGRES_ACCOUNT_UNAVAILABLE at session issuance correctly rejects suspended accounts. Correct fixture issues sessions on active approved accounts, then suspends through actual updateMerchantStatusPostgres before request creation. No app/guard/schema changes. Earlier failure retained; corrected runtimeCI_PENDING, full gateOPEN/NO-GO.
+
+---
+
 ## Restricted owner deletion HTTP prepared — 2026-10-24
 
 Recovery HEADad246884, accepted executablec0754a14 retained; PR550Draft/unmerged. Selected P0-RESIDUAL-MERCHANT-PRIVACY-001/http gate remains OPEN. Reuses SEQ306–311 root-owned HTTP proof and current merchant-deletion-tenant-rls service/SQL proof. New7functional actual-router cases connect current restricted primary LOGIN+separate authentication LOGIN to real owner password/session/device/origin checks, peer request-ID mismatch, queued-work quiescence, target tombstone/private-data/local-media deletion, repeat/no extra deletion audit and revoked-owner denial. Three owned synthetic merchants: target, intact peer and blocked active-job merchant. Bootstrap only seeds/inspects/cleans; application operations retain actual LOGIN pools. This observed path uses authentication deletion authority; no operator-pool execution claimed.

@@ -35,12 +35,12 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
   const ownerPassword = `Synthetic-${randomUUID()}-A1!`;
   async function actor(kind, role, permissions = []) {
     const id = `delete-http-${randomUUID()}`; ids.push(id);
-    await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,$2,$3,$4,$5,true)", [id, kind, `+198${randomInt(100000000,999999999)}`, kind === 'admin' && role === 'owner_admin' ? hashPassword(ownerPassword) : 'synthetic', kind === 'admin' ? 'active' : 'suspended']);
+    await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,$2,$3,$4,$5,true)", [id, kind, `+198${randomInt(100000000,999999999)}`, kind === 'admin' && role === 'owner_admin' ? hashPassword(ownerPassword) : 'synthetic', 'active']);
     if (kind === 'admin') {
       await admin.query("INSERT INTO admin_profiles(id,account_id,display_name,role,enabled,must_change_password) VALUES($1,$1,'Synthetic',$2,true,false)", [id, role]);
       for (const permission of permissions) await admin.query('INSERT INTO admin_permissions(admin_id,permission) VALUES($1,$2)', [id, permission]);
     } else {
-      merchants.push(id); await admin.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status) VALUES($1,$1,'Synthetic owner','Synthetic store','retail','suspended','suspended')", [id]);
+      merchants.push(id); await admin.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status) VALUES($1,$1,'Synthetic owner','Synthetic store','retail','approved','approved')", [id]);
     }
     const result = {id, kind, role, permissions, device: `device-${randomUUID()}`}; actors.push(result); return result;
   }
@@ -52,6 +52,7 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
     actor.cookie = `${actor.kind === 'admin' ? ADMIN_SESSION_COOKIE : MERCHANT_SESSION_COOKIE}=${actor.session.token}`;
   }
   for (const actor of [a, b, blocked]) {
+    await management.updateMerchantStatusPostgres({merchantId: actor.id, status: 'suspended', reason: 'Synthetic deletion prerequisite', actorAdminId: owner.id});
     await admin.query("INSERT INTO products(id,merchant_id,name) VALUES($1,$2,'Synthetic private product')", [`product-${actor.id}`, actor.id]);
     await admin.query("INSERT INTO saved_answers(id,merchant_id,category,question_pattern,normalized_question,answer_text,language) VALUES($1,$2,'custom','Synthetic?','synthetic','Synthetic private answer','en')", [`answer-${actor.id}`, actor.id]);
     await management.setMerchantAdminNotePostgres({merchantId: actor.id, note: `private-note-${actor.id}`, actorAdminId: owner.id});
