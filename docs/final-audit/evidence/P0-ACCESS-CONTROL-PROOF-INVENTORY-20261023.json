@@ -593,6 +593,20 @@
         "cancelled": 0
       },
       "limits": "Separate seed and verify phase each1PASS. Owned full dump/restore only, not hosted backup retention, PITR, RPO/RTO or real disaster recovery."
+    },
+    {
+      "requirement_id": "P0-ORDER-ITEMS-DECLARATIVE-RLS-ALIGNMENT",
+      "requirement": "Canonical generated order_items metadata preserves existing runtime read/write tenant policy",
+      "proof_layer": "canonical_generator_and_metadata_unit",
+      "status": "TRIAGE",
+      "source_sha": "0563880fa5961af544c39352b82a90e3498c89ae",
+      "run": 40053684154,
+      "job": 120751772077,
+      "artifact": 12544088050,
+      "test_path": "artifacts/api-server/tests/order-items-declarative-rls.test.ts",
+      "evidence_uri": "https://github.com/nora953/fawri-production-source/actions/runs/40053684154/job/120751772077",
+      "result": "GeneratorPASS,50entries,100existing files equal; snapshot-only policy/RLS addition reviewed; containing-source3unit/fullCI pending",
+      "limits": "Source drift subgate of prior order_items SQL remediation; no newly demonstrated hosted tenant leak or deployment acceptance."
     }
   ],
   "emergencyBaseline": {
@@ -615,13 +629,13 @@
   "next": "Adopt and verify body-parser security graph; continue table/field/actor inventory and retention/missing-order policy reconciliation without repeating indexed SQL proofs. Keep hosted gates blocked and whole-P0 completeness false.",
   "reconciliation_note": "Existing accepted executions indexed, not newly run tests; parent TAP totals are not unique requirement counts. Full role/privacy/retention policy inventory remains open.",
   "schema_table_inventory": {
-    "source_sha": "736e796b5fe25ceac9f1cfb128ba3f640ff6ebe5",
-    "source_snapshot": "lib/db/drizzle/meta/0048_snapshot.json",
-    "snapshot_sha256": "3569cc1411521d9e33170032e28081fb172b0f7f2568dad6322d7b57bddef167",
+    "source_sha": "0563880fa5961af544c39352b82a90e3498c89ae",
+    "source_snapshot": "lib/db/drizzle/meta/0049_snapshot.json",
+    "snapshot_sha256": "d2a0ba3596db2f9470d5bd8139cfda45befc24b5f03fb800fade9c692b8d6868",
     "proof_layer": "source_declarative_inventory",
     "table_count": 95,
     "column_count": 1245,
-    "declared_rls_enabled_count": 66,
+    "declared_rls_enabled_count": 67,
     "actors_requiring_reconciliation": [
       "owner_admin",
       "assistant_admin_by_permission",
@@ -2627,8 +2641,10 @@
           "line_total_iqd",
           "created_at"
         ],
-        "declared_rls_enabled": false,
-        "declared_policy_names": [],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "order_items_tenant_boundary"
+        ],
         "merchant_key_columns": [
           "merchant_id"
         ],
@@ -2638,7 +2654,9 @@
           "product_variants",
           "products"
         ],
-        "bounded_authority_proofs": [],
+        "bounded_authority_proofs": [
+          "P0-ORDER-ITEMS-DECLARATIVE-RLS-ALIGNMENT"
+        ],
         "complete_field_actor_read_write_export_matrix": "TRIAGE"
       },
       {
@@ -3636,12 +3654,17 @@
     ],
     "readiness_declaration_crosscheck": {
       "required_table_count": 67,
-      "declared_rls_table_count": 66,
-      "required_missing_rls": [
-        "order_items"
-      ],
+      "declared_rls_table_count": 67,
+      "required_missing_rls": [],
       "additional_declared_rls": [],
       "method": "Exact exported constant sections matched against snapshot table declarations; not database ACL execution"
+    },
+    "generation_evidence": {
+      "run": 40053684154,
+      "job": 120751772077,
+      "artifact": 12544088050,
+      "historical_files_verified_equal": 100,
+      "final_source_ci": "PENDING"
     }
   }
 }

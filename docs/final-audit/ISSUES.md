@@ -1,3 +1,13 @@
+## P0 0049 generated snapshot adopted — 2026-10-24
+
+Corrected source0563880 migration candidate40053684154/job120751772077 **SUCCESS**: committed_reproducible=true,historical_reproducible=true,50entries. Reviewed artifact12544088050 ZIP SHA256 `556a4c3d7f2995b87ce4d5f8f9faf77697c5b04ce0f6111f8e2780fd9638ed14`; all100existing files in archive match local canonical/historical SQL, snapshots and journal byte-for-byte. Only new0049snapshot adopted, SHA256 `d2a0ba3596db2f9470d5bd8139cfda45befc24b5f03fb800fade9c692b8d6868`,624113bytes. Snapshot semantic diff is only order_items policies+isRLSEnabled, plus snapshot id/prevId;95tables/1245fields retained. All67required RLS tables now declared; this is source metadata, not hosted ACL proof.
+
+Added a third regression comparing the latest committed snapshot's read/write tenant predicate to actual Drizzle policy metadata, in addition to the two table/policy runtime unit cases. Local syntax and journal/preflight2PASS; new3case execution **CI_PENDING**. Initial source29848c4 candidate missing pinnedSQL and corrected0563880 auth40053684269/location40053684367 smoke failures due missing0049snapshot remain historical. The required artifact is now committed; no smoke expectation/security gate weakened. Quality0563880 full build/typecheckSUCCESS; complete-schema source29848c4 candidate40053578420 SUCCESS is separate from complete historical migration acceptance.
+
+Existing order_items SQL/runtime isolation proof retained; this patch aligns source/metadata and reasserts same predicate without changing grants. **Containing exact-source canonical/full CI PENDING**. Previous complete executable736e79652/52 with body-parser0High/0Critical remains last full acceptance. Next inspect final3metadata units, canonical50entry reproduction, committed SQL application, native signed offline8 and full isolated/restore/security/quality; fix genuine failures before source closure. Keep hosted/incident/complete field-role-retention gates OPEN and release **NO-GO**. No hosted connector/mutation/deploy/main/merge/P1/P2.
+
+---
+
 ## P0 0049 candidate prerequisite correction — 2026-10-24
 
 Initial prepared source29848c4, migration candidate40053578399/job120751432186 failed before generation: reviewed_sql stage49 requires the pinned SQL file in committed drizzle history. No generated artifact or success was claimed. Added the exact72f41752… reviewedSQL to0049_order_items_declarative_rls_alignment.sql and the matching journal49 entry; no prior SQL/snapshot/journal entry changed. Canonical0049snapshot remains absent until generated/retrieved from CI. Local committed-journal/order/hash and read-only preflight controls **2PASS**. New actual Drizzle unit/canonical/migration/runtime CI pending.

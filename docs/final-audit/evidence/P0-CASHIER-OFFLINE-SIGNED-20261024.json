@@ -2231,7 +2231,7 @@
     "limits": "Candidate tests verify disposable dependency graph; normal exact-source CI and hosted release remain unaccepted."
   },
   "order_items_declarative_alignment": {
-    "status": "PREPARED_CI_PENDING",
+    "status": "SOURCE_AND_GENERATED_SNAPSHOT_CI_PENDING",
     "first_source": "29848c4e0a37f2cca8badc2f861406e9fbcbd597",
     "first_failure": {
       "run": 40053578399,
@@ -2242,6 +2242,40 @@
     "local": {
       "journal_controls_passed": 2
     },
-    "next": "Retrieve generated0049snapshot and verify full canonical history plus actual metadata/native/HTTP CI"
+    "next": "Retrieve generated0049snapshot and verify full canonical history plus actual metadata/native/HTTP CI",
+    "candidate_source": "0563880fa5961af544c39352b82a90e3498c89ae",
+    "generator": {
+      "run": 40053684154,
+      "job": 120751772077,
+      "result": "SUCCESS",
+      "entries": 50,
+      "committed_reproducible": true,
+      "historical_reproducible": true
+    },
+    "artifact": {
+      "id": 12544088050,
+      "zip_sha256": "556a4c3d7f2995b87ce4d5f8f9faf77697c5b04ce0f6111f8e2780fd9638ed14",
+      "snapshot_sha256": "d2a0ba3596db2f9470d5bd8139cfda45befc24b5f03fb800fade9c692b8d6868",
+      "snapshot_bytes": 624113,
+      "existing_files_unchanged": 100,
+      "semantic_diff": [
+        "order_items.isRLSEnabled",
+        "order_items.policies"
+      ]
+    },
+    "regression_cases": 3,
+    "normal_final_ci": "PENDING",
+    "intermediate_failures": [
+      {
+        "run": 40053684269,
+        "job": 120751772395,
+        "reason": "Expected snapshot0049 not yet present"
+      },
+      {
+        "run": 40053684367,
+        "job": 120751772635,
+        "reason": "Expected snapshot0049 not yet present"
+      }
+    ]
   }
 }
