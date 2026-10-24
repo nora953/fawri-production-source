@@ -212,12 +212,6 @@
       "conclusion": "success"
     },
     {
-      "id": 40074546714,
-      "name": "Meta webhook pipeline",
-      "status": "in_progress",
-      "conclusion": null
-    },
-    {
       "id": 40074546749,
       "name": "Merchant deletion promotions lifecycle",
       "status": "completed",
@@ -248,12 +242,6 @@
       "conclusion": "success"
     },
     {
-      "id": 40074546853,
-      "name": "P0 dependency security upgrade candidate",
-      "status": "in_progress",
-      "conclusion": null
-    },
-    {
       "id": 40074546755,
       "name": "PostgreSQL outage recovery proof",
       "status": "completed",
@@ -264,12 +252,6 @@
       "name": "Backup and restore drill",
       "status": "completed",
       "conclusion": "success"
-    },
-    {
-      "id": 40074546745,
-      "name": "Foundation integration final gate",
-      "status": "in_progress",
-      "conclusion": null
     },
     {
       "id": 40074546829,
@@ -294,12 +276,6 @@
       "name": "Merchant deletion physical media lifecycle",
       "status": "completed",
       "conclusion": "success"
-    },
-    {
-      "id": 40074546781,
-      "name": "Final security and supply chain",
-      "status": "in_progress",
-      "conclusion": null
     },
     {
       "id": 40074546857,
@@ -368,12 +344,6 @@
       "conclusion": "success"
     },
     {
-      "id": 40074546953,
-      "name": "PostgreSQL schema validation",
-      "status": "in_progress",
-      "conclusion": null
-    },
-    {
       "id": 40074546704,
       "name": "Subscription service guarantee validation",
       "status": "completed",
@@ -384,24 +354,6 @@
       "name": "Clean deployment golden gate",
       "status": "completed",
       "conclusion": "success"
-    },
-    {
-      "id": 40074546789,
-      "name": "Global admin golden journey",
-      "status": "completed",
-      "conclusion": "success"
-    },
-    {
-      "id": 40074546809,
-      "name": "Final quality gates",
-      "status": "in_progress",
-      "conclusion": null
-    },
-    {
-      "id": 40074546914,
-      "name": "Isolated PostgreSQL engineering audit",
-      "status": "in_progress",
-      "conclusion": null
     },
     {
       "id": 40074546933,
@@ -464,16 +416,82 @@
       "conclusion": "success"
     },
     {
+      "id": 40074546764,
+      "name": "Global merchant golden journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546789,
+      "name": "Global admin golden journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
       "id": 40074546931,
       "name": "Meta webhook PostgreSQL ingress cutover",
       "status": "completed",
       "conclusion": "success"
     },
     {
-      "id": 40074546764,
-      "name": "Global merchant golden journey",
+      "id": 40074546853,
+      "name": "P0 dependency security upgrade candidate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546714,
+      "name": "Meta webhook pipeline",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546809,
+      "name": "Final quality gates",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546745,
+      "name": "Foundation integration final gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546781,
+      "name": "Final security and supply chain",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546953,
+      "name": "PostgreSQL schema validation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546914,
+      "name": "Isolated PostgreSQL engineering audit",
       "status": "completed",
       "conclusion": "success"
     }
-  ]
+  ],
+  "broaderCi": {
+    "returnedWorkflows": 55,
+    "successful": 55,
+    "pending": 0,
+    "failedOrCancelled": 0
+  },
+  "broadIsolatedPostgres": {
+    "run": 40074546914,
+    "job": 120815258010,
+    "invocations": 92,
+    "uniqueFiles": 90,
+    "passed": 715,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "allClean": true
+  },
+  "sourceExecutableAccepted": true
 }
