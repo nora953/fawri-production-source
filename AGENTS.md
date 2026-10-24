@@ -1,0 +1,11 @@
+# FAWRI engineering agent instructions
+
+This repository is an existing audited SaaS project, NOT a new project. Read `docs/final-audit/FAWRI-ENGINEERING-EXECUTION-PLAN.md` before any engineering work, then read `docs/final-audit/P0-CLOSURE-REGISTER.md`, `docs/final-audit/evidence/P0-CLOSURE-REGISTER.json`, `docs/final-audit/PROGRESS.md`, `docs/final-audit/ISSUES.md` and `docs/final-audit/MASTER_PLAN.md`. Verify latest GitHub branch HEAD and Draft PR #550. Follow the current checkpoint; do not repeat closed work.
+
+Current active branch: `fix/p0-provider-receipt-order-discovery-20261015`. Default branch `main` must not be merged or deployed without explicit authorization. Work only on P0; P1 and P2 are future phases. Current release decision is NO-GO. The P0 closure register is authoritative; never invent an overall completion percentage.
+
+GitHub-only restriction: do not use Railway, Neon, hosted infrastructure, provider credentials or external-service connectors without new explicit user authorization. Mark unverifiable hosted requirements blocked. Inspect actual live code paths before fixes, preserve merchant isolation, stock, financial operations and legitimate access. Require negative/positive/runtime tests and exact-commit CI evidence before closing any gate. Save bounded progress and evidence in GitHub after each work batch; do not substitute chat memory for durable checkpoints.
+
+Communicate in Arabic. Clearly distinguish completed, tested, pending and blocked work. If a tool or session stalls, report the blocker and current checkpoint rather than silently looping.
+
+See the linked execution plan for complete P0/P1/P2, scale, recovery, pilot and commercial release criteria.
