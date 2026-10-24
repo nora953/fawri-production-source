@@ -1,3 +1,11 @@
+## Shared session-confusion guard corrected; exact-source CI pending — 2026-10-24
+
+Candidate `dd8bd690af323fd3ab65628c0fe441f5c09a566f` adds the existing compatibility layer's combined merchant/admin session rejection to common authenticate(), before token validation. Returns401 ROLE_SESSION_CONFUSION; no session clear/revoke, schema/grants/purge/transaction changes. This aligns early actual-router behavior with existing later bridge policy. Case/path classifier correction retained. Negative requests now have labels and unchanged snapshots after each request; independent owner positive retained.
+
+Source9bf269db/run40098659676/job120886229735 proved case routing, mixed-case IDs, authorized mutation, legacy guard and SQL revocation; only combined-session negative failed (5functionalPASS/1FAIL;5TAP PASS/2FAIL incl parent). Intermediate750dec08 showed same failure and was superseded; cancelled broader runs are not PASS. Earlierb16c2ea2 classifier failure retained separately. Local syntax/whitespace PASS; auth-cutover-contract10PASS/1existingSKIP locally (no DATABASE_URL); actual CI isolated runtime still pending. No privacy bypass claim: observed unexpected acceptance required valid owner session plus merchant cookie. FullHTTPgateOPEN/NO-GO.
+
+---
+
 ## Actual-app classifier corrected; mixed-case identity runtime pending — 2026-10-24
 
 Candidate `9bf269db125f071a5a2e6ae642fcbee7840a9f70` contains minimal correction750dec08: normalize a copy of req.path only for managed-surface classification to match Express case-insensitive/non-strict routes; original IDs/path stay unchanged. New fixture uses mixed-case Full-App-HTTP IDs and exact response/SQL actor assertions. No schema/grant/purge/transaction/product-policy change.

@@ -4,8 +4,8 @@
   "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
   "status": "OPEN",
   "boundedStatus": "APPLICATION_CORRECTED_CI_PENDING",
-  "source": "9bf269db125f071a5a2e6ae642fcbee7840a9f70",
-  "sourceTree": "9cf53614b6649de1c301bd60a8136eafb6b45672",
+  "source": "dd8bd690af323fd3ab65628c0fe441f5c09a566f",
+  "sourceTree": "8c1009e219dd1536a4d1b5df4437b240ac97dd82",
   "previousAcceptedSource": "b2470a3a1e6f4a35a630e463752837771c74b96a",
   "functionalCasesPrepared": 6,
   "applicationChanged": true,
@@ -89,5 +89,71 @@
     "cleanup": "SUCCESS"
   },
   "correctionCommit": "750dec086b27aa52b38c4f6a59a249d38d757c31",
-  "identityRegression": "Mixed-case Full-App-HTTP account/merchant IDs must remain exact in route parameters, returned merchant_id, SQL actor and peer preservation. Only classification copy is normalized."
+  "identityRegression": "Mixed-case Full-App-HTTP account/merchant IDs must remain exact in route parameters, returned merchant_id, SQL actor and peer preservation. Only classification copy is normalized.",
+  "additionalFailure": {
+    "source": "9bf269db125f071a5a2e6ae642fcbee7840a9f70",
+    "run": 40098659676,
+    "job": 120886229735,
+    "classification": "APPLICATION_EARLY_ROUTE_COMBINED_SESSION_POLICY",
+    "casesExecuted": 6,
+    "passedFunctional": 5,
+    "failedFunctional": 1,
+    "summary": [
+      {
+        "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 1,
+        "passed": 5,
+        "failed": 2,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "observation": "Case-variant reachability/path identity and permission revocation now passed with mixed-case IDs. Combined-session denial case returned200 instead of401; existing router/import/deletion25TAP still passed.",
+    "cause": "Actual management router authenticates before enforceAuthCutoverCompatibility, whose existing combined merchant/admin cookie rejection was not shared by authenticate().",
+    "correction": "Apply same ROLE_SESSION_CONFUSION rejection in common authenticate before token validation. Do not clear or revoke independent sessions. Name each negative assertion and verify unchanged snapshot after every request.",
+    "cleanup": "SUCCESS"
+  },
+  "intermediateAttempt": {
+    "source": "750dec086b27aa52b38c4f6a59a249d38d757c31",
+    "run": 40098622774,
+    "job": 120885997065,
+    "status": "NOT_ACCEPTED_SUPERSEDED",
+    "observation": "Same single denial-case failure TAP5PASS/2FAIL; broader superseded workflows cancelled, never counted as PASS."
+  }
 }
