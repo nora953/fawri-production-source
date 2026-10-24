@@ -1,3 +1,17 @@
+## P0 0049 exact-source accepted; residual privacy baseline prepared — 2026-10-24
+
+Verified executable `62d274f4f05a5332ed8bd62b733c20b3e1bf87b9`: **52/52 workflows SUCCESS**,0pending/failed/cancelled. Checkout `092ec1038b08c2e0d98b0d4f29ebe2c90f0a9445` independently matches tree `88f0095fbdb50fecb49d0e2749d2cc39e29aa757`. Three actual Drizzle table/policy/latest-snapshot regressions PASS in normal quality40054017738/job120752842495: API875PASS/1existing opt-in SKIP, frontend188PASS/0SKIP. Canonical40054017544 and complete-schema40054017389 SUCCESS; prior missingSQL/missingSnapshot failures retained, no rule weakened.
+
+Isolated40054017508/job120753095194 **89clean invocations/87unique files/700TAP passes,0fail/skip/cancel**. Full restore50migrations/95tables/66effective policies/17functions, seed/verify fingerprintf3fbabc87766315742be46f49c723f5a557493a60ef3fe8306883c39e111b8a7 identical; restricted tenant reads/private scope ACL preserved. Native40054017403 initial120752840020 timed out launching Chrome before0assertions; exactly one scoped failed-job retry120753320590 **8/8PASS** on same source. Native ACK remains synthetic; HTTP/SQL proof separate. Security40054017603 all4jobsSUCCESS; dependency120752841266 **0High/0Critical/4Moderate** at latest scan (earlier2Moderate was historical). No advisory exceptions.
+
+0049 source-generation drift subgate is SOURCE_RUNTIME_VERIFIED. Existing runtime0035 tenant policy is unchanged; no new tenant authority/grants or hosted acceptance. Previous snapshots/SQL immutable. Full field/actor/privacy/retention inventory still incomplete.
+
+Next authorized test-only batch adds residual-merchant-privacy-authority-postgres.integration.test.mjs first in existing owned audit-boundary/priority lane:8 previously unclassified merchant-key tables,2 synthetic merchants, actual restricted primary LOGIN plus distinct trusted auth, genuine scoped/unscoped/global reads, no-op foreign UPDATE with unconditional rollback, exact trusted snapshots and pooled authority reset. Observational diagnostic only: successful harness execution does NOT accept any observed foreign visibility or certify HTTP/hosted permissions. Existing broad fixture CRUD is explicit, not a production grant plan. New runtime assertions **PREPARED/CI_PENDING**, not counted executed; syntax, unattested refusal before DB setup and15existing guard controlsPASS locally. Current containing head is new test/evidence source and not the verified62d274f executable above.
+
+Exact next: inspect new suite's P0_RESIDUAL_MERCHANT_PRIVACY_BASELINE plus AUDIT_SUITE_RESULT/cleanup, distinguish fixture errors from authority observations; reconcile intended actor/privacy boundaries before focused remediation while preserving trusted legitimate operations. Expected new suite/invocation totals must be taken from logs, not inferred. Hosted key/schema/role/provider/device/rollout BLOCKED_HOSTED_VERIFICATION; incident review, complete P0 inventory and retention/ownership policy OPEN. **NO-GO**; no percentage/main/merge/deploy/P1/P2.
+
+---
+
 ## CURRENT VERIFIED P0 CHECKPOINT — 2026-10-24
 
 Executable `2f782c850c50526e2fe977f026b6f07ff0d867b7`, tree `8b0f1905cceaad6e9e25a6f0efa7441bb896fb36`; actual CI checkout `310e19e98baf809e455f2a20045d46443a5063db` independently has the identical tree. **52/52 workflows SUCCESS;0pending/failed/cancelled.** This final source evidence supersedes pending observations above/below only within its tested scope. A containing documentation-only checkpoint does not imply a separate runtime execution.

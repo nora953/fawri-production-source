@@ -2231,7 +2231,7 @@
     "limits": "Candidate tests verify disposable dependency graph; normal exact-source CI and hosted release remain unaccepted."
   },
   "order_items_declarative_alignment": {
-    "status": "SOURCE_AND_GENERATED_SNAPSHOT_CI_PENDING",
+    "status": "SOURCE_RUNTIME_VERIFIED_HOSTED_OPEN",
     "first_source": "29848c4e0a37f2cca8badc2f861406e9fbcbd597",
     "first_failure": {
       "run": 40053578399,
@@ -2242,7 +2242,7 @@
     "local": {
       "journal_controls_passed": 2
     },
-    "next": "Retrieve generated0049snapshot and verify full canonical history plus actual metadata/native/HTTP CI",
+    "next": "Execute and classify8table residual privacy diagnostic; no hosted acceptance.",
     "candidate_source": "0563880fa5961af544c39352b82a90e3498c89ae",
     "generator": {
       "run": 40053684154,
@@ -2264,7 +2264,568 @@
       ]
     },
     "regression_cases": 3,
-    "normal_final_ci": "PENDING",
+    "normal_final_ci": {
+      "source": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+      "actual_checkout": "092ec1038b08c2e0d98b0d4f29ebe2c90f0a9445",
+      "tree": "88f0095fbdb50fecb49d0e2749d2cc39e29aa757",
+      "checkout_tree_matches": true,
+      "workflow_runs": [
+        {
+          "id": 40054017635,
+          "name": "Isolated Neon preflight static safety",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 298,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017635/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017635/logs",
+          "workflow_id": 388207221
+        },
+        {
+          "id": 40054017502,
+          "name": "Catalog variant signature schema contract",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 991,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017502/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017502/logs",
+          "workflow_id": 346248042
+        },
+        {
+          "id": 40054017666,
+          "name": "Merchant deletion promotions lifecycle",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 216,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017666/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017666/logs",
+          "workflow_id": 346179210
+        },
+        {
+          "id": 40054017541,
+          "name": "Pre-release performance smoke gate",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 538,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017541/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017541/logs",
+          "workflow_id": 376791331
+        },
+        {
+          "id": 40054017668,
+          "name": "Bot logic adversarial matrix",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1019,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017668/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017668/logs",
+          "workflow_id": 366444022
+        },
+        {
+          "id": 40054017677,
+          "name": "Browser storage authority audit",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1086,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017677/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017677/logs",
+          "workflow_id": 328910625
+        },
+        {
+          "id": 40054017605,
+          "name": "PostgreSQL outage recovery proof",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 543,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017605/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017605/logs",
+          "workflow_id": 376795050
+        },
+        {
+          "id": 40054017389,
+          "name": "Complete schema candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1156,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017389/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017389/logs",
+          "workflow_id": 328963674
+        },
+        {
+          "id": 40054017601,
+          "name": "P0 Support privacy authority diagnostic",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 43,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017601/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017601/logs",
+          "workflow_id": 393487298
+        },
+        {
+          "id": 40054017648,
+          "name": "Merchant deletion cashier lifecycle",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1002,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017648/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017648/logs",
+          "workflow_id": 346176287
+        },
+        {
+          "id": 40054017511,
+          "name": "Merchant deletion audit PII",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 214,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017511/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017511/logs",
+          "workflow_id": 346176679
+        },
+        {
+          "id": 40054017506,
+          "name": "AWS KMS production adapter readiness",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 818,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017506/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017506/logs",
+          "workflow_id": 329971960
+        },
+        {
+          "id": 40054017447,
+          "name": "Merchant account security UI",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 503,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017447/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017447/logs",
+          "workflow_id": 330543842
+        },
+        {
+          "id": 40054017765,
+          "name": "Complete migration safety",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 548,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017765/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017765/logs",
+          "workflow_id": 328963673
+        },
+        {
+          "id": 40054017621,
+          "name": "Billing provider readiness",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 462,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017621/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017621/logs",
+          "workflow_id": 376672940
+        },
+        {
+          "id": 40054017544,
+          "name": "PostgreSQL migration candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1164,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017544/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017544/logs",
+          "workflow_id": 328893981
+        },
+        {
+          "id": 40054017735,
+          "name": "Merchant deletion provider identifiers",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 996,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017735/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017735/logs",
+          "workflow_id": 346178700
+        },
+        {
+          "id": 40054017716,
+          "name": "Cashier dashboard surface regression",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 384,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017716/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017716/logs",
+          "workflow_id": 344112862
+        },
+        {
+          "id": 40054017458,
+          "name": "Subscription service guarantee validation",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 242,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017458/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017458/logs",
+          "workflow_id": 330083772
+        },
+        {
+          "id": 40054017734,
+          "name": "Dashboard channel coherence",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 766,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017734/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017734/logs",
+          "workflow_id": 330130417
+        },
+        {
+          "id": 40054017603,
+          "name": "Final security and supply chain",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 2700,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017603/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017603/logs",
+          "workflow_id": 328957627
+        },
+        {
+          "id": 40054017403,
+          "name": "P0 signed cashier offline authority",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 11,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017403/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017403/logs",
+          "workflow_id": 394606805
+        },
+        {
+          "id": 40054017771,
+          "name": "Global admin golden journey",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 801,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017771/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017771/logs",
+          "workflow_id": 345916316
+        },
+        {
+          "id": 40054017738,
+          "name": "Final quality gates",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 2684,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017738/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017738/logs",
+          "workflow_id": 328957628
+        },
+        {
+          "id": 40054017587,
+          "name": "Cashier subscription lifecycle",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 778,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017587/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017587/logs",
+          "workflow_id": 375944272
+        },
+        {
+          "id": 40054017747,
+          "name": "Clean deployment golden gate",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 836,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017747/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017747/logs",
+          "workflow_id": 376713187
+        },
+        {
+          "id": 40054017693,
+          "name": "Merchant deletion physical media lifecycle",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1011,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017693/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017693/logs",
+          "workflow_id": 346173428
+        },
+        {
+          "id": 40054017751,
+          "name": "Merchant access security",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1301,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017751/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017751/logs",
+          "workflow_id": 328838421
+        },
+        {
+          "id": 40054017656,
+          "name": "Meta OAuth operational cutoff",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 976,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017656/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017656/logs",
+          "workflow_id": 346146589
+        },
+        {
+          "id": 40054017715,
+          "name": "Observability mounted routes",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 684,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017715/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017715/logs",
+          "workflow_id": 329721567
+        },
+        {
+          "id": 40054017579,
+          "name": "Cashier operational cutoff",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1027,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017579/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017579/logs",
+          "workflow_id": 346134239
+        },
+        {
+          "id": 40054017706,
+          "name": "Merchant regional PostgreSQL authority",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 630,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017706/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017706/logs",
+          "workflow_id": 345935170
+        },
+        {
+          "id": 40054017646,
+          "name": "Commerce cashier closeout",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 438,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017646/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017646/logs",
+          "workflow_id": 342042011
+        },
+        {
+          "id": 40054017598,
+          "name": "Staging container contract",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1225,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017598/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017598/logs",
+          "workflow_id": 365584145
+        },
+        {
+          "id": 40054017678,
+          "name": "Knowledge embedding readiness",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1091,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017678/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017678/logs",
+          "workflow_id": 329985262
+        },
+        {
+          "id": 40054017698,
+          "name": "Location inventory authority",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 653,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017698/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017698/logs",
+          "workflow_id": 361815074
+        },
+        {
+          "id": 40054017594,
+          "name": "Global subscription golden journey",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 671,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017594/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017594/logs",
+          "workflow_id": 345919391
+        },
+        {
+          "id": 40054017671,
+          "name": "Order operations",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 723,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017671/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017671/logs",
+          "workflow_id": 329332366
+        },
+        {
+          "id": 40054017424,
+          "name": "Meta webhook pipeline",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1380,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017424/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017424/logs",
+          "workflow_id": 328884617
+        },
+        {
+          "id": 40054017764,
+          "name": "Auth OTP contract continuity",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 718,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017764/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017764/logs",
+          "workflow_id": 330527307
+        },
+        {
+          "id": 40054017760,
+          "name": "Location routing engine",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 113,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017760/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017760/logs",
+          "workflow_id": 361863233
+        },
+        {
+          "id": 40054017773,
+          "name": "Product catalog UI cutover",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 993,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017773/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017773/logs",
+          "workflow_id": 330129965
+        },
+        {
+          "id": 40054017652,
+          "name": "Meta webhook PostgreSQL ingress cutover",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 965,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017652/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017652/logs",
+          "workflow_id": 346149648
+        },
+        {
+          "id": 40054017743,
+          "name": "Global merchant golden journey",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1434,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017743/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017743/logs",
+          "workflow_id": 345906471
+        },
+        {
+          "id": 40054017538,
+          "name": "Merchant settings",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 839,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017538/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017538/logs",
+          "workflow_id": 329325894
+        },
+        {
+          "id": 40054017736,
+          "name": "Global Merchant PostgreSQL HTTP Journey",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1208,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017736/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017736/logs",
+          "workflow_id": 346084926
+        },
+        {
+          "id": 40054017609,
+          "name": "Auth PostgreSQL concurrency proof",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 543,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017609/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017609/logs",
+          "workflow_id": 329948620
+        },
+        {
+          "id": 40054017593,
+          "name": "Backup and restore drill",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 659,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017593/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017593/logs",
+          "workflow_id": 328957626
+        },
+        {
+          "id": 40054017639,
+          "name": "P0 dependency security upgrade candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 8,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017639/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017639/logs",
+          "workflow_id": 394621214
+        },
+        {
+          "id": 40054017633,
+          "name": "Foundation integration final gate",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1677,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017633/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017633/logs",
+          "workflow_id": 346643335
+        },
+        {
+          "id": 40054017724,
+          "name": "PostgreSQL schema validation",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 1714,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017724/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017724/logs",
+          "workflow_id": 328606316
+        },
+        {
+          "id": 40054017508,
+          "name": "Isolated PostgreSQL engineering audit",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 766,
+          "jobs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017508/jobs",
+          "logs_url": "https://api.github.com/repos/nora953/fawri-production-source/actions/runs/40054017508/logs",
+          "workflow_id": 381533348
+        }
+      ],
+      "security": {
+        "run": 40054017603,
+        "job": 120752841266,
+        "high": 0,
+        "critical": 0,
+        "moderate": 4
+      },
+      "unit": {
+        "run": 40054017738,
+        "job": 120752842495,
+        "new_regressions_passed": 3,
+        "api_passed": 875,
+        "existing_opt_in_skip": 1
+      },
+      "native": {
+        "run": 40054017403,
+        "first_job": 120752840020,
+        "first_outcome": "Browser startup timeout before0assertions",
+        "scoped_retry_job": 120753320590,
+        "passed": 8,
+        "synthetic_ack": true
+      },
+      "isolated": {
+        "run": 40054017508,
+        "job": 120753095194,
+        "invocations": 89,
+        "unique_files": 87,
+        "tap_passed": 700,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "restore_migrations": 50,
+        "restore_fingerprint": "f3fbabc87766315742be46f49c723f5a557493a60ef3fe8306883c39e111b8a7"
+      }
+    },
     "intermediate_failures": [
       {
         "run": 40053684269,

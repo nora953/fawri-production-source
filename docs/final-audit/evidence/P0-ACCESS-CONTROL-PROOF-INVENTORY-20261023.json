@@ -6,7 +6,7 @@
   "denominatorFrozen": false,
   "overallP0Percentage": null,
   "newRuntimeTestsExecutedByInventory": 0,
-  "sourceAcceptance": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
+  "sourceAcceptance": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
   "rows": [
     {
       "requirement_id": "P0-ACCESS-SCOPE-BOUNDARY",
@@ -21,21 +21,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "tenant-transaction-scope-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 16,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "tenant-transaction-scope-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 16,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -51,21 +53,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "authentication-operator-pool-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 63,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "authentication-operator-pool-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 63,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -81,21 +85,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-credential-housekeeping-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 10,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-credential-housekeeping-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 10,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -111,21 +117,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-manager-pin-persistence-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 10,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-manager-pin-persistence-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 10,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -141,21 +149,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-permission-session-authority-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 8,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-permission-session-authority-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -171,21 +181,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-staff-lock-boundary-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 7,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-staff-lock-boundary-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -201,21 +213,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-identity-tenant-rls-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 8,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-identity-tenant-rls-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -231,21 +245,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 8,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -261,21 +277,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-discount-policy-integrity-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 5,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-discount-policy-integrity-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 5,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -291,21 +309,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-approval-provenance-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 8,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-approval-provenance-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -321,21 +341,23 @@
       "last_verified_at": "2026-10-22T23:30:04.895266+00:00",
       "limits": "Bounded source test only; TAP totals include parents; no hosted or complete-domain acceptance.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "admin-audit-boundary-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 9,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "admin-audit-boundary-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 9,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -351,21 +373,23 @@
       "last_verified_at": "2026-10-23",
       "limits": "Bounded source acceptance only; baseline6fe2d4a4 retained separately. No hosted/full-domain certification.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "cashier-discount-settings-authority-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 8,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-discount-settings-authority-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -439,21 +463,23 @@
       "last_verified_at": "2026-10-23",
       "limits": "Bounded5-table Support source acceptance only; native86 and image5 have0 skips, broader groups retain2 existing skips; emergency and hosted/fullP0 acceptance excluded.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "support-privacy-tenant-rls-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 8,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        },
-        "limits": "Same bounded source contract on current exact-source CI; no hosted/full-domain acceptance."
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "support-privacy-tenant-rls-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       }
     },
     {
@@ -469,20 +495,23 @@
       "last_verified_at": "2026-10-24",
       "limits": "Current emergency-remediation and actual HTTP contracts pass on this source; hosted/complete privacy matrix remain unaccepted. Earlier pending state preserved as historical_state.",
       "latest_regression": {
-        "source_sha": "2f782c850c50526e2fe977f026b6f07ff0d867b7",
-        "run": 40032569968,
-        "job": 120684424579,
-        "result": {
-          "suite": "emergency-privacy-remediation-postgres.integration.test.mjs",
-          "auditBatch": "priority",
-          "runtime": "v24.22.1",
-          "exit": 0,
-          "passed": 7,
-          "failed": 0,
-          "skipped": 0,
-          "cancelled": 0,
-          "summaryComplete": true
-        }
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "emergency-privacy-remediation-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
       },
       "historical_state": {
         "status": "TRIAGE",
@@ -508,7 +537,26 @@
       "last_verified_at": "2026-10-24",
       "hosted_status": "BLOCKED_HOSTED_VERIFICATION",
       "issue_release_status": "OPEN_HOSTED_ACCEPTANCE",
-      "limits": "Bounded source acceptance only. Native ACK synthetic, authenticated SQL recovery separately verified. No live key provisioning, release/identity/branch/device parity, complete physical-device/OS-clock/profile-tampering certification or immediate offline revocation."
+      "limits": "Bounded source acceptance only. Native ACK synthetic, authenticated SQL recovery separately verified. No live key provisioning, release/identity/branch/device parity, complete physical-device/OS-clock/profile-tampering certification or immediate offline revocation.",
+      "latest_regression": {
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "cashier-closed-shift-recovery-http-postgres.integration.test.mjs",
+            "auditBatch": "cashier",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
+      }
     },
     {
       "source_sha": "6f79933e89aa9409083741f06cf2be15c7316ab2",
@@ -529,7 +577,26 @@
         "skipped": 0,
         "cancelled": 0
       },
-      "limits": "Service/SQL with actual restricted primary LOGIN and separate auth/operator roles; owner directory and inactive identity denials. No owner/assistant HTTP deletion approval or full retention schedule/clock lifecycle acceptance."
+      "limits": "Service/SQL with actual restricted primary LOGIN and separate auth/operator roles; owner directory and inactive identity denials. No owner/assistant HTTP deletion approval or full retention schedule/clock lifecycle acceptance.",
+      "latest_regression": {
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "merchant-management-tenant-rls.integration.test.mjs",
+            "auditBatch": "tenant",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 6,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
+      }
     },
     {
       "source_sha": "6f79933e89aa9409083741f06cf2be15c7316ab2",
@@ -550,7 +617,26 @@
         "skipped": 0,
         "cancelled": 0
       },
-      "limits": "Actual restricted primary LOGIN/service/SQL/local filesystem proof. Not object-store deletion, full per-table PII inventory, retention-duration policy or assistant HTTP authority approval."
+      "limits": "Actual restricted primary LOGIN/service/SQL/local filesystem proof. Not object-store deletion, full per-table PII inventory, retention-duration policy or assistant HTTP authority approval.",
+      "latest_regression": {
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "merchant-deletion-tenant-rls.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
+      }
     },
     {
       "source_sha": "6f79933e89aa9409083741f06cf2be15c7316ab2",
@@ -571,7 +657,26 @@
         "skipped": 0,
         "cancelled": 0
       },
-      "limits": "Fake signed provider only; both SaaS/cashier orphan and identity mismatch cases. Test fixture mapping restoration is not an implemented administrative ownership-repair workflow; arbitrary missing order recovery policy remains TRIAGE."
+      "limits": "Fake signed provider only; both SaaS/cashier orphan and identity mismatch cases. Test fixture mapping restoration is not an implemented administrative ownership-repair workflow; arbitrary missing order recovery policy remains TRIAGE.",
+      "latest_regression": {
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "verified-provider-receipt-inbox-postgres.integration.test.mjs",
+            "auditBatch": "billing",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 18,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
+      }
     },
     {
       "source_sha": "6f79933e89aa9409083741f06cf2be15c7316ab2",
@@ -592,21 +697,62 @@
         "skipped": 0,
         "cancelled": 0
       },
-      "limits": "Separate seed and verify phase each1PASS. Owned full dump/restore only, not hosted backup retention, PITR, RPO/RTO or real disaster recovery."
+      "limits": "Separate seed and verify phase each1PASS. Owned full dump/restore only, not hosted backup retention, PITR, RPO/RTO or real disaster recovery.",
+      "latest_regression": {
+        "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
+        "run": 40054017508,
+        "job": 120753095194,
+        "results": [
+          {
+            "suite": "full-schema-restore-postgres.integration.test.mjs",
+            "auditBatch": "full-restore",
+            "runtime": "v24.22.1",
+            "phase": "seed",
+            "exit": 0,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          },
+          {
+            "suite": "full-schema-restore-postgres.integration.test.mjs",
+            "auditBatch": "full-restore",
+            "runtime": "v24.22.1",
+            "phase": "verify",
+            "exit": 0,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "limits": "Same bounded source contract; no new full-domain/hosted acceptance or unique case credit."
+      }
     },
     {
       "requirement_id": "P0-ORDER-ITEMS-DECLARATIVE-RLS-ALIGNMENT",
       "requirement": "Canonical generated order_items metadata preserves existing runtime read/write tenant policy",
       "proof_layer": "canonical_generator_and_metadata_unit",
-      "status": "TRIAGE",
-      "source_sha": "0563880fa5961af544c39352b82a90e3498c89ae",
+      "status": "PASS",
+      "source_sha": "62d274f4f05a5332ed8bd62b733c20b3e1bf87b9",
       "run": 40053684154,
       "job": 120751772077,
       "artifact": 12544088050,
       "test_path": "artifacts/api-server/tests/order-items-declarative-rls.test.ts",
       "evidence_uri": "https://github.com/nora953/fawri-production-source/actions/runs/40053684154/job/120751772077",
-      "result": "GeneratorPASS,50entries,100existing files equal; snapshot-only policy/RLS addition reviewed; containing-source3unit/fullCI pending",
-      "limits": "Source drift subgate of prior order_items SQL remediation; no newly demonstrated hosted tenant leak or deployment acceptance."
+      "result": "3/3actual Drizzle/snapshot unit regressions; canonical50entry reproduction; full isolated89invocations/700TAP and50migration restore PASS",
+      "limits": "Bounded declarative drift remediation; hosted identity/schema/ACL acceptance remains blocked.",
+      "unit": {
+        "run": 40054017738,
+        "job": 120752842495
+      },
+      "canonical_run": 40054017544,
+      "isolated": {
+        "run": 40054017508,
+        "job": 120753095194
+      }
     }
   ],
   "emergencyBaseline": {
@@ -1514,7 +1660,9 @@
         "parent_tables": [
           "admin_profiles"
         ],
-        "bounded_authority_proofs": [],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-ADMIN-AUDIT-BOUNDARY"
+        ],
         "complete_field_actor_read_write_export_matrix": "TRIAGE"
       },
       {
@@ -3665,6 +3813,28 @@
       "artifact": 12544088050,
       "historical_files_verified_equal": 100,
       "final_source_ci": "PENDING"
+    }
+  },
+  "next_privacy_authority_proof": {
+    "status": "PREPARED_CI_PENDING",
+    "tables": [
+      "public.audit_events",
+      "public.manual_reply_requests",
+      "public.merchant_admin_notes",
+      "public.merchant_channel_overrides",
+      "public.merchant_deletion_requests",
+      "public.notifications",
+      "public.order_drafts",
+      "public.processed_channel_events"
+    ],
+    "proof_required": "Actual restricted primary LOGIN/role ACL and two synthetic merchants: classify direct reads/mutations, trusted global operations, ordinary own-tenant behavior, reset and cleanup before any remediation. Reuse existing authentication/admin-audit/Support/emergency proofs.",
+    "limits": "No current hosted privilege exposure or cross-tenant HTTP breach inferred from absence of declarative RLS alone. These are explicit remaining classification rows, not new accepted failures or new executed cases.",
+    "test_path": "artifacts/api-server/tests/residual-merchant-privacy-authority-postgres.integration.test.mjs",
+    "local": {
+      "syntax": "PASS",
+      "unattested_refusal": "PASS",
+      "existing_guard_controls": 15,
+      "new_sql_assertions_executed": 0
     }
   }
 }
