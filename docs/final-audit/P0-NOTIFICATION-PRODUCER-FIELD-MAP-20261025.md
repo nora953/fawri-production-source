@@ -1,3 +1,9 @@
+## Optional branch runtime update — 2026-10-25
+
+Omitted/blank conversation/provider fields, default service clock and order/conversations fallback URLs for new-order/payment-conflict/knowledge-gap are now bounded-runtime accepted onb0417241. Two new functional cases; suite8TAP/lane28TAP,broader715TAP,56/56CI SUCCESS. [Evidence](evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json). Next: actual payment-conflict caller through app/frontend, reusing accepted payment and Meta identity regression evidence. FIELD002 remains OPEN; no caller-wide/concurrency/historical/other-template acceptance.
+
+---
+
 ## Bounded runtime update — 2026-10-25
 
 Four operational present-option producer round trips are now runtime accepted on04b7fa85: five new functional cases/sixTAP; notification lane26TAP, broader715TAP and56/56CI SUCCESS. See [runtime evidence](evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json). Exact SQL→actual app→actual frontend validator, two merchants and sequential read/producer replay passed. FIELD002 remains OPEN; upstream callers, optional-absent/fallback variants, concurrency, other templates and historical/legacy provenance remain pending. Static map below retains its original source-only provenance and limitations; it is not a current claim that no bounded runtime evidence exists.

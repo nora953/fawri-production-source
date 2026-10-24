@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
-  "lastFullyAcceptedSource": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
+  "sourceCandidate": "b0417241bd9b69dd8f460ce91e044004650266d9",
+  "lastFullyAcceptedSource": "b0417241bd9b69dd8f460ce91e044004650266d9",
   "release": "NO-GO",
   "rows": [
     {
@@ -114,7 +114,8 @@
       "evidence": "AUDIT_MANIFEST_SCHEMA_AND_DOMAIN_QUEUE_20261014.md",
       "blocker": "Eight-table/86-column source enumeration created; full P0 actor/field/producer/consumer acceptance still incomplete. Five selected work areas are linked to existing gates, not five new release requirements.",
       "boundedFieldInventory": "evidence/P0-RESIDUAL-FIELD-INVENTORY-20261024.json",
-      "notificationOperationalProducerEvidence": "evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
+      "notificationOperationalProducerEvidence": "evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "notificationOptionalProducerEvidence": "evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json"
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
@@ -371,6 +372,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "previousFullyAcceptedSource": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
   "lastUpdatedAt": "2026-10-25"
 }

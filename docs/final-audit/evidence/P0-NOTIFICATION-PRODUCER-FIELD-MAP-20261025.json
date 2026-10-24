@@ -4,7 +4,7 @@
   "fieldCell": "RESIDUAL-FIELD-002",
   "status": "OPEN_PARTIAL_OPERATIONAL_RUNTIME_ACCEPTED",
   "auditedSourceRevision": "64f61f44ac32738607f0bcc5d8fae0ff8072e295",
-  "lastAcceptedExecutable": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
+  "lastAcceptedExecutable": "b0417241bd9b69dd8f460ce91e044004650266d9",
   "applicationChanged": false,
   "client": {
     "source": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
@@ -91,7 +91,9 @@
       "valueInputControl": "Internal call parameters normalized with text(); fixed relative action URL with encoded order ID. Caller identity/ownership chain still requires reconciliation.",
       "runtimeProducerToHttpClientAccepted": true,
       "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
-      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "optionalAbsentAndBlankRuntimeAccepted": true,
+      "optionalRuntimeEvidence": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json"
     },
     {
       "type": "operational_payment_conflict",
@@ -110,7 +112,9 @@
       "valueInputControl": "Internal normalized parameters; relative action URL with encoded IDs; variable keys fixed by producer. Caller/input provenance not accepted yet.",
       "runtimeProducerToHttpClientAccepted": true,
       "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
-      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "optionalAbsentAndBlankRuntimeAccepted": true,
+      "optionalRuntimeEvidence": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json"
     },
     {
       "type": "operational_knowledge_gap",
@@ -128,7 +132,9 @@
       "valueInputControl": "Internal training/conversation IDs; fixed keys and encoded relative action URL. Caller/input provenance not accepted yet.",
       "runtimeProducerToHttpClientAccepted": true,
       "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
-      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "optionalAbsentAndBlankRuntimeAccepted": true,
+      "optionalRuntimeEvidence": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json"
     },
     {
       "type": "operational_customer_message",
@@ -276,12 +282,9 @@
   ],
   "nextExactBatch": {
     "types": [
-      "operational_new_order",
-      "operational_payment_conflict",
-      "operational_knowledge_gap",
-      "operational_customer_message"
+      "operational_payment_conflict"
     ],
-    "acceptance": "Test absent optional operational inputs/fallback URLs, then upstream caller-to-merchant ownership and remaining subscription/Support producer round trips. Do not rerun accepted present-option round trips merely for recovery.",
+    "acceptance": "Extend actual verified-provider-payment conflict authority into exact notification SQL fields, actual app list/read and frontend validator under two merchants/restricted primary+separate auth. Reuse existing 11TAP payment domain and 20TAP Meta job identity evidence; do not rerun them as new discovery. New-order caller and remaining subscription/Support templates stay pending.",
     "gateRemainsOpen": true
   },
   "verification": {
@@ -304,5 +307,37 @@
     "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980",
     "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts": "e1deebab5c2cf4e7db1892758345a56e160b4f3ff1bd6b92fe33a02deb8c3cfd"
   },
-  "release": "NO-GO"
+  "release": "NO-GO",
+  "callerSourceFollowup": {
+    "status": "SOURCE_ONLY_NOT_CALLER_RUNTIME_ACCEPTANCE",
+    "sourceRevision": "a2e74076c435de441377347a53c687cd8f24397a",
+    "observedCallSites": [
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "function": "notifyMerchantNewCustomerMessagePostgres",
+        "line": 507,
+        "inputs": "parsed merchant/event and committed inbound conversation"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "function": "notifyMerchantKnowledgeGapPostgres",
+        "line": 1603,
+        "inputs": "parsed merchant, decision training request, committed handoff conversation"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts",
+        "function": "notifyMerchantPaymentConflictPostgres",
+        "line": 705,
+        "inputs": "verified payment application conflict merchant/order/provider/event"
+      }
+    ],
+    "unresolved": "New-order SQL producer caller not reconciled in inspected subset; not proof it is unreachable or a missing feature.",
+    "next": "Bind candidate producer round trips to actual caller admission and tenant provenance; reuse existing Meta/payment restricted-runtime fixtures.",
+    "existingCallerRegressionEvidence": {
+      "runtime": "Executed in broader exact-source CI; bounded original assertions only",
+      "paymentAuthorityTap": 11,
+      "metaJobIdentityTap": 20,
+      "limits": "Payment suite checks conflict row/order ID; Meta identity suite snapshots notifications among nine surfaces. Neither establishes all caller-to-HTTP/frontend field round trips."
+    }
+  }
 }

@@ -1,3 +1,17 @@
+## RESIDUAL-FIELD-002 optional operational runtime accepted — 2026-10-25
+
+Source **b0417241bd9b69dd8f460ce91e044004650266d9**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/docs only; no application/schema/ACL/policy changes. Recovereda2e74076; prior04b7fa85 present-option evidence retained.
+
+[Notification40144065203/job121021573721](https://github.com/nora953/fawri-production-source/actions/runs/40144065203/job/121021573721): **24functional/28TAP across4files PASS**,0fail/skip/cancel. Producer suite7functional/8TAP includes **2new optional-omitted/blank cases**,12new rows/20total. Actual new-order/payment-conflict/knowledge-gap producers→exact SQL variables/source IDs→actual app list/read→actual frontend validator; default service clock, absent optional keys, safe encoded order/conversations fallback URLs, foreign denial, sequential producer/read replay and exact peer preservation PASS. Payment empty/blank sourceEventId exercises existing internal fallback, not an HTTP input contract.
+
+[Broader40144065200/job121021573877](https://github.com/nora953/fawri-production-source/actions/runs/40144065200/job/121021573877): **92clean invocations/90unique files/715TAP PASS**,0fail/skip/cancel; cleanupSUCCESS. Targeted lane counted separately. Both checkout8c38c070eadb6e30027dc7f591d960f86acdbe61,tree28feeaa5a81a0e2af8f3fb8ab86e478dc4cf7e77 equals source. No blanket zero-skip claim for unrelated optional quality tests.
+
+[Evidence](evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json). Existing payment11TAP and Meta-job-identity20TAP passed within broader lane; payment already checks a conflict notice/order ID, Meta denials snapshot notifications among nine surfaces. Reuse those accepted original assertions; they do not establish every caller-to-HTTP/frontend field round trip. Source-only callsites found in postgresMetaAutoReplyIntent (message/knowledge gap) and postgresOrderPaymentProviderAuthority (conflict); new-order SQL caller unreconciled in inspected subset, not proven unreachable.
+
+**Next exact batch:** actual verified-payment conflict authority→notification fields→app/frontend under two merchants/restricted runtime, extending only missing coverage; then Meta caller round trips/new-order reconciliation and remaining subscription/Support templates. Concurrent producer races/historical/legacy provenance remain unaccepted. FIELD002/full HTTP/role/field gatesOPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Last fully accepted executableb0417241; prior04b7fa85 retained. **NO-GO**; GitHub only,PR550Draft/base preserved; no main/merge/deploy/hosted/P1/P2. No tool/session stall.
+
+---
+
 ## RESIDUAL-FIELD-002 bounded operational producer runtime accepted — 2026-10-25
 
 Source **04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no application/schema/ACL/policy changes. Recovery started at verified5f0d5a8d; earlier FIELD001 acceptance preserved.
