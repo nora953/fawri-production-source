@@ -1,3 +1,9 @@
+## Owner import targeted acceptance
+
+Sourcec0754a14 targeted40079121403/job120828774803 SUCCESS: new5cases+parent=6TAP, retained management10+parent=11TAP; combined15functional/17TAP PASS,0fail/skip/cancel. Source/checkout tree equality,52migrations and owned cleanup verified. Owner positive, conflict replay/peer preservation, actual mid-transaction fault rollback and retry, role/origin/device/revocation denial PASS. BroaderCI pending. Evidence [P0-OWNER-IMPORT-HTTP-20261024.json](evidence/P0-OWNER-IMPORT-HTTP-20261024.json). Earlier approvalc8698263 is accepted56/56. Full gateOPEN/NO-GO. Next missing privileged deletion HTTP after reconciling prior evidence, then full-app alternatives.
+
+---
+
 ## Owner import batch prepared
 
 Next independent gate scope: actual restricted-LOGIN management router POST/admin/local-data-migration owner positive creates own logs/note/channel while pre-existing peer conflicts remain byte-identical. Five new cases require role/device/origin denials, exact/altered conflict replay with no overwrites, synthetic note-write fault rolling back earlier audit insert and convergent retry, revoked-owner denial and valid assistant read. Reuses current authentication pool/session/trusted-device authority. Owned disposable PostgreSQL only; no source/schema/ACL/provider changes. New runtimePREPARED/CI_PENDING. Approvalc8698263 acceptance above is retained. Full gateOPEN/NO-GO; no main/merge/deploy/hosted/P1/P2.
