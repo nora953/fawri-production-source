@@ -137,18 +137,18 @@ function groupPending(
         );
       }
       return {
-      operationId,
-      deviceSequence,
-      envelopes: items.sort((left, right) => {
-        if (left.entity_type === right.entity_type) {
-          return left.entity_id.localeCompare(right.entity_id);
-        }
-        if (left.entity_type === 'sale') return -1;
-        if (right.entity_type === 'sale') return 1;
-        if (left.entity_type === 'return') return -1;
-        if (right.entity_type === 'return') return 1;
-        return left.entity_type.localeCompare(right.entity_type);
-      }),
+        operationId,
+        deviceSequence,
+        envelopes: items.sort((left, right) => {
+          if (left.entity_type === right.entity_type) {
+            return left.entity_id.localeCompare(right.entity_id);
+          }
+          if (left.entity_type === 'sale') return -1;
+          if (right.entity_type === 'sale') return 1;
+          if (left.entity_type === 'return') return -1;
+          if (right.entity_type === 'return') return 1;
+          return left.entity_type.localeCompare(right.entity_type);
+        }),
       };
     })
     .sort(
