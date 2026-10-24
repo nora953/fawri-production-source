@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "sourceCandidate": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
   "lastFullyAcceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
   "release": "NO-GO",
   "rows": [
@@ -113,7 +113,8 @@
       "status": "OPEN",
       "evidence": "AUDIT_MANIFEST_SCHEMA_AND_DOMAIN_QUEUE_20261014.md",
       "blocker": "Eight-table/86-column source enumeration created; full P0 actor/field/producer/consumer acceptance still incomplete. Five selected work areas are linked to existing gates, not five new release requirements.",
-      "boundedFieldInventory": "evidence/P0-RESIDUAL-FIELD-INVENTORY-20261024.json"
+      "boundedFieldInventory": "evidence/P0-RESIDUAL-FIELD-INVENTORY-20261024.json",
+      "notificationOperationalProducerEvidence": "evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",

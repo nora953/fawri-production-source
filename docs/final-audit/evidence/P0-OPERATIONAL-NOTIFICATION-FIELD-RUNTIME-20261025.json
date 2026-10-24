@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "PREPARED_CI_PENDING",
+  "status": "TARGETED_RUNTIME_PASS_BROADER_CI_PENDING",
   "recoveredHead": "5f0d5a8d625c4cf64f286eebb2b8ab64d3703611",
   "lastAcceptedExecutable": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
   "test": "artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs",
@@ -18,7 +18,7 @@
   "actualFrontendValidator": true,
   "syntheticMerchants": 2,
   "expectedProducedRows": 8,
-  "runtimeVerification": "NOT_RUN",
+  "runtimeVerification": "TARGETED_PASS",
   "localSyntax": "PASS Node24.22.1",
   "workflow": ".github/workflows/p0-notification-privacy-http.yml",
   "suite": "notification-privacy-http",
@@ -27,10 +27,81 @@
   "aclChanged": false,
   "release": "NO-GO",
   "limits": [
-    "Prepared assertions are not executed evidence.",
+    "Five new functional cases/six TAP executed successfully; whole FIELD002 remains open.",
     "Direct internal producer calls do not accept upstream caller ownership.",
     "Optional-absent variants, concurrency races and remaining types pending.",
     "Disposable role has broad table grants mediated by RLS; no hosted least-privilege claim.",
     "No provider sending, hosted services, merge or deployment."
-  ]
+  ],
+  "sourceCandidate": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
+  "targeted": {
+    "runId": 40143199309,
+    "jobId": 121019046755,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40143199309/job/121019046755",
+    "conclusion": "success",
+    "functionalCases": 22,
+    "tapPass": 26,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "bfedcfafe95d888ee3c3e18195fefc101043ac8a",
+    "checkoutTree": "de45ce80192be1293147ff1e4d76aa4568baec5f",
+    "sourceTree": "de45ce80192be1293147ff1e4d76aa4568baec5f",
+    "treeMatches": true,
+    "networkMode": "none",
+    "publishedPorts": false,
+    "migrations": 52,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40143198816,
+    "jobId": 121019045204
+  }
 }
