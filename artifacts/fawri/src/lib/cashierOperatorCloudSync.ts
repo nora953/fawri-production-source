@@ -802,6 +802,19 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     let skipped = 0;
     let acknowledged = 0;
 
+    // Preflight the entire bounded window before uploading any operation.
+    // A later unsupported operation must not leave earlier sales partially
+    // synchronized while the outbox is blocked for manual reconciliation.
+    for (const [, envelopes] of groups) {
+      if (operationKind(envelopes) === 'skip') {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_UNSUPPORTED_OPERATION',
+          'Pending cashier operation requires reconciliation before the outbox can sync',
+          409,
+        );
+      }
+    }
+
     for (const [operationId, envelopes] of groups) {
       const kind = operationKind(envelopes);
       if (kind === 'skip') {
