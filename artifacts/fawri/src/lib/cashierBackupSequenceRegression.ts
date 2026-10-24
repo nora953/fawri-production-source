@@ -8,7 +8,10 @@ import { CashierBackupError, IndexedDbCashierBackupAuthority } from './cashierBa
  */
 export async function runCashierBackupSequenceRegression(): Promise<void> {
   if (typeof indexedDB === 'undefined') throw new Error('IndexedDB is required');
-  const databaseName = 'fawri-p0-sequence-regression-' + crypto.randomUUID();
+  const databaseName = 'fawri-p0-sequence-regression-' +
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const config = {
     localMerchantId: 'p0-sequence-regression-merchant',
     deviceId: 'p0-sequence-regression-device',
@@ -60,7 +63,12 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
       }
       rejected = true;
     }
-    if (rejected) return;
+    if (rejected) {
+      if (!(await cashier.getSale('sale:p0-seq-after-backup'))) {
+        throw new Error('P0 FAIL: rejected restore did not preserve the newer sale');
+      }
+      return;
+    }
 
     const after = await cashier.listPendingSync();
     const maximumAfter = Math.max(...after.map(item => item.device_sequence));
