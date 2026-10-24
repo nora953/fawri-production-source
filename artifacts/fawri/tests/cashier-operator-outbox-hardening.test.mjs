@@ -104,3 +104,14 @@ test('legacy cashier outbox rejects missing operation identity and invalid seque
   assert.match(grouping, /Number\.isSafeInteger\(deviceSequence\)/);
   assert.doesNotMatch(grouping, /if \(!operationId\) continue;/);
 });
+
+test('live operator outbox rejects envelopes without operation identity', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('function groupByOperation(');
+  const end = sync.indexOf('function completeOperationWindow(', start);
+  assert.ok(start >= 0 && end > start);
+  const grouping = sync.slice(start, end);
+  assert.match(grouping, /!envelope\.operation_id/);
+  assert.match(grouping, /!String\(envelope\.operation_id\)\.trim\(\)/);
+  assert.match(grouping, /CASHIER_OPERATOR_OUTBOX_CORRUPT/);
+});
