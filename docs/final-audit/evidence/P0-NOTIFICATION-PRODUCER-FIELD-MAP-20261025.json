@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "OPEN_SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING",
+  "status": "OPEN_PARTIAL_OPERATIONAL_RUNTIME_ACCEPTED",
   "auditedSourceRevision": "64f61f44ac32738607f0bcc5d8fae0ff8072e295",
-  "lastAcceptedExecutable": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "lastAcceptedExecutable": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
   "applicationChanged": false,
   "client": {
     "source": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
@@ -89,7 +89,9 @@
         "conversation_id"
       ],
       "valueInputControl": "Internal call parameters normalized with text(); fixed relative action URL with encoded order ID. Caller identity/ownership chain still requires reconciliation.",
-      "runtimeProducerToHttpClientAccepted": false
+      "runtimeProducerToHttpClientAccepted": true,
+      "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
     },
     {
       "type": "operational_payment_conflict",
@@ -106,7 +108,9 @@
         "provider"
       ],
       "valueInputControl": "Internal normalized parameters; relative action URL with encoded IDs; variable keys fixed by producer. Caller/input provenance not accepted yet.",
-      "runtimeProducerToHttpClientAccepted": false
+      "runtimeProducerToHttpClientAccepted": true,
+      "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
     },
     {
       "type": "operational_knowledge_gap",
@@ -122,7 +126,9 @@
         "conversation_id"
       ],
       "valueInputControl": "Internal training/conversation IDs; fixed keys and encoded relative action URL. Caller/input provenance not accepted yet.",
-      "runtimeProducerToHttpClientAccepted": false
+      "runtimeProducerToHttpClientAccepted": true,
+      "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
     },
     {
       "type": "operational_customer_message",
@@ -136,7 +142,9 @@
       ],
       "optionalVariableKeys": [],
       "valueInputControl": "Internal conversation/event IDs, fixed keys and encoded relative action URL. Caller/input provenance not accepted yet.",
-      "runtimeProducerToHttpClientAccepted": false
+      "runtimeProducerToHttpClientAccepted": true,
+      "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
     },
     {
       "type": "inspection_session_request",
@@ -273,14 +281,15 @@
       "operational_knowledge_gap",
       "operational_customer_message"
     ],
-    "acceptance": "Use actual notifyMerchant*Postgres functions with two owned merchants, inspect exact SQL variable keys, actual app list/single-read response and actual frontend isMerchantNotificationRecord validation; verify identity, safe action URLs, peer preservation and replay/deduplication. No network provider. Then remaining subscription/Support templates and alternate helper provenance.",
+    "acceptance": "Test absent optional operational inputs/fallback URLs, then upstream caller-to-merchant ownership and remaining subscription/Support producer round trips. Do not rerun accepted present-option round trips merely for recovery.",
     "gateRemainsOpen": true
   },
   "verification": {
     "clientTypeSetMatchesSource": true,
     "sourceAnchorsPresent": true,
     "reviewedLiteralKeysAvoidReserved": true,
-    "runtimeRoundTripAccepted": false
+    "runtimeRoundTripAccepted": false,
+    "partialOperationalRuntimeAccepted": true
   },
   "inputSha256": {
     "artifacts/api-server/src/routes/auth-support-postgres-routes.ts": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62",

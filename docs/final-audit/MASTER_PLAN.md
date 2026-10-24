@@ -1,3 +1,17 @@
+## RESIDUAL-FIELD-002 bounded operational producer runtime accepted — 2026-10-25
+
+Source **04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no application/schema/ACL/policy changes. Recovery started at verified5f0d5a8d; earlier FIELD001 acceptance preserved.
+
+[Notification40143199309/job121019046755](https://github.com/nora953/fawri-production-source/actions/runs/40143199309/job/121019046755): **22functional cases/26TAP PASS across4files**,0fail/skip/cancel. New suite5functional/6TAP: actual four SQL producers→eight rows/two merchants→actual app.ts list/single-read→actual frontend validator. Exact keys/values/identity/time, encoded local URLs, foreign-ID/invalid-session denial with unchanged SQL, read replay and producer dedup preserving original timestamps/peer SQL. Ten denied requests in new suite. No root legacy JSON or provider sends. Direct internal calls do not accept upstream caller ownership.
+
+[Broader isolated40143198816/job121019045204](https://github.com/nora953/fawri-production-source/actions/runs/40143198816/job/121019045204): **92clean invocations/90unique files/715TAP PASS**,0fail/skip/cancel; cleanupSUCCESS. Targeted lane counted separately. Both checkoutbfedcfafe95d888ee3c3e18195fefc101043ac8a; tree **de45ce80192be1293147ff1e4d76aa4568baec5f** equals source. No blanket zero-skip claim for unrelated optional quality tests. Runs originated2026-10-24UTC; local acceptance date2026-10-25.
+
+[Machine evidence](evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json); producer map updated with bounded four-type runtime evidence. FIELD002 remains **OPEN_PARTIAL_OPERATIONAL_RUNTIME_ACCEPTED**: absent optional branches, upstream caller ownership, concurrent producer races, remaining subscription/Support types and alternate/historical/legacy provenance are unaccepted. Broad RLS-mediated fixture grants do not prove hosted least privilege. Full HTTP/role/field gates OPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Last fully accepted executable now04b7fa85; priorbd3c518e retained.
+
+**Next exact batch:** optional-absent operational producer branches and fallback action URLs, preserving tenant/replay guarantees; then upstream caller-to-merchant provenance and remaining SQL templates. Do not repeat accepted present-option round trips for recovery alone. **NO-GO**; GitHub only,PR550Draft/current base preserved; no main/merge/deploy/hosted/P1/P2. No tool/session stall occurred.
+
+---
+
 ## RESIDUAL-FIELD-002 notification producer field map — 2026-10-25
 
 Created [producer-to-client source map](P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.md) and [machine evidence](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json): **12frontend types**,9reviewed canonical SQL template candidates and3legacy AuthDb definitions. All12source anchors/type-set equality/reserved-key disjointness and11input file SHA256 digests checked. Source64f61f44; last accepted executable **bd3c518eb784608a68539d6a8b9fb9050fff57e8 remains unchanged**. This is source provenance only; no new runtime/CI/per-field acceptance or application/schema/ACL/policy change.

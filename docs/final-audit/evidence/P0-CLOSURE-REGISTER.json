@@ -6,7 +6,7 @@
   "completeP0Inventory": false,
   "overallPercentage": null,
   "sourceCandidate": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
-  "lastFullyAcceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "lastFullyAcceptedSource": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
   "release": "NO-GO",
   "rows": [
     {
@@ -371,6 +371,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
+  "previousFullyAcceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
   "lastUpdatedAt": "2026-10-25"
 }
