@@ -78,6 +78,19 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
         item.entity_type === 'inventory_movement')) {
       throw new Error('P0 FAIL: non-sale adjustment has no inventory movement outbox envelope');
     }
+    // ACK is per operation: removing the middle non-sale operation must not
+    // remove either sale or reassign their durable device sequences.
+    await cashier.acknowledgeSynced(['p0-seq-after-backup-adjustment']);
+    const afterAck = await cashier.listPendingSync();
+    if (afterAck.some(item => item.operation_id === 'p0-seq-after-backup-adjustment')) {
+      throw new Error('P0 FAIL: acknowledged adjustment remains in the outbox');
+    }
+    for (const operationId of ['p0-seq-before-backup', 'p0-seq-after-backup']) {
+      const expected = sequenceByOperation.get(operationId);
+      if (!afterAck.some(item => item.operation_id === operationId && item.device_sequence === expected)) {
+        throw new Error('P0 FAIL: acknowledging adjustment altered an unrelated sale sequence');
+      }
+    }
     const before = await cashier.listPendingSync();
     const maximumBefore = Math.max(...before.map(item => item.device_sequence));
     if (maximumBefore < 3) throw new Error('Regression setup did not advance sequence for both sales and adjustment');
