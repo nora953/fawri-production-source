@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { probeIndexedDbCashierDurability } from '@/lib/cashierIndexedDbAuthority';
 import { runCashierIndexedDbSmoke } from '@/lib/cashierIndexedDbSmoke';
 import { runCashierPromotionSmoke } from '@/lib/cashierPromotionSmoke';
@@ -50,8 +50,15 @@ export default function CashierIndexedDbSmokePage() {
     }
   };
 
+  // Dedicated opt-in CI entry point; never enabled in normal builds.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('ci') === '1') {
+      void run();
+    }
+  }, []);
+
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <main data-cashier-smoke-status={state.status} className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-3xl space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">{copy.title}</h1>
