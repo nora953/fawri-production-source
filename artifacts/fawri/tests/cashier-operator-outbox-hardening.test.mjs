@@ -92,3 +92,15 @@ test('operator outbox rejects corrupt per-operation sequence groups before netwo
   assert.match(grouping, /sequence <= previousSequence/);
   assert.match(grouping, /CASHIER_OPERATOR_OUTBOX_CORRUPT/);
 });
+
+test('legacy cashier outbox rejects missing operation identity and invalid sequences', async () => {
+  const sync = await source('src/lib/cashierCloudOutboxSync.ts');
+  const start = sync.indexOf('function groupPending(');
+  const end = sync.indexOf('function classifyOperation(', start);
+  assert.ok(start >= 0 && end > start);
+  const grouping = sync.slice(start, end);
+  assert.match(grouping, /CASHIER_OUTBOX_CORRUPT/);
+  assert.match(grouping, /current\[0\]\.device_sequence !== envelope\.device_sequence/);
+  assert.match(grouping, /Number\.isSafeInteger\(deviceSequence\)/);
+  assert.doesNotMatch(grouping, /if \(!operationId\) continue;/);
+});
