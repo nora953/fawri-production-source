@@ -1,3 +1,13 @@
+## P0 manual conversation HTTP privacy/recovery prepared — 2026-10-24
+
+Recovery HEAD `b3be73ef94e0c576633f5d18679b23386a0da1ae`, Draft PR550 open/unmerged. Prior accepted executable745f74ef/55 successful workflows retained. Gate `P0-RESIDUAL-MERCHANT-PRIVACY-001/http` remains OPEN.
+
+New attested actual-router test uses two synthetic merchants, real SQL sessions, restricted primary LOGIN and separate authentication LOGIN. Nine functional cases cover list aliases/detail projection, owner/anonymous/role-cookie/device/session denial, foreign read/mutation/correction paths with unchanged SQL, own takeover, pending/uncertain return refusal, failed/delivered recovery, sent-message HTTP replay and changed-content rejection. Existing SQL services perform completion/failure; fixture SQL explicitly reconciles uncertain to failed. No provider send, credentials, production policy or application change. This is not an implemented operator reconciliation UI or whole-app/complete eight-table acceptance.
+
+Changed: manual-conversation-privacy-http-postgres.integration.test.mjs; targeted p0-conversation-privacy-http.yml; explicit owned-runner selector. Syntax/whitespace PASS locally; runtime PREPARED/CI_PENDING, no PASS counted. Required acceptance: all runtime cases zero fail/skip/cancel, owned cleanup succeeds, raw marker/TAP and exact-source CI reconciled. Next inspect targeted Actions results, classify fixture vs product failures, then continue alternate-route/field inventory. Hosted BLOCKED; NO-GO; no merge/deploy/P1/P2.
+
+---
+
 # Current bounded result — 2026-10-24
 
 Gate OPEN / PARTIAL_HTTP_VERIFIED. Executable745f74ef:55/55 workflows SUCCESS. Management10 functional cases+parent and notification6+parent PASS, no targeted fail/skip/cancel. Detailed evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Source map below is bounded; complete field/role/alternate-path inventory remains OPEN. Latest PROGRESS header governs current status; earlier recovery/PREPARED text below is historical. Next missing actual-SQL conversation HTTP contract is at the end. **NO-GO**.
