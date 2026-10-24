@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+  "status": "OPEN",
+  "boundedStatus": "PREPARED_CI_PENDING",
+  "source": "b16c2ea22af884edc0bceb47f0c02a8c50b2d915",
+  "sourceTree": "d3492445146e5dc2bafa1a64b62552d327072f9f",
+  "previousAcceptedSource": "b2470a3a1e6f4a35a630e463752837771c74b96a",
+  "functionalCasesPrepared": 6,
+  "applicationChanged": false,
+  "reconciliation": {
+    "reused": [
+      "global-merchant-postgres-http-journey.integration.test.ts actual app login/catalog/cashier/report/logout",
+      "meta-full-app-restricted-postgres.integration.test.mjs actual app signed ingress/worker",
+      "auth-cutover-path-case.test.ts independent guards and case handling",
+      "merchant-management-privacy-http-postgres.integration.test.mjs actual router isolated SQL role/permission matrix"
+    ],
+    "missing": "Current private management case/legacy-fallthrough matrix through app.ts middleware ordering"
+  },
+  "scope": "Actual app.ts with synthetic two-merchant/three-admin fixtures, restricted primary LOGIN and separate authentication LOGIN; case variants/path identity/combined roles/legacy fallthrough/current SQL authority. Not full eight-table/field/browser/provider/hosted certification.",
+  "cases": [
+    "authorized/unauthorized private reads through actual case-insensitive mounts",
+    "wrong device, combined roles and legacy credentials denied without business writes",
+    "authorized mixed-case mutation retains path identity and actual SQL actor",
+    "retired routes and unresolved auth fallthrough denied; live route remains reachable",
+    "SQL permission revocation enforced",
+    "SQL session revocation enforced; independent owner positive; no root JSON stores"
+  ],
+  "release": "NO-GO"
+}
