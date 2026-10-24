@@ -1,3 +1,23 @@
+## P0 corrected manual conversation source fully verified — 2026-10-24
+
+Accepted executable `e8bc8b060d7f4ead1f8b19c447ae17bead436a42`: **56/56 workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. Targeted [conversation HTTP40076278947/job120820201546](https://github.com/nora953/fawri-production-source/actions/runs/40076278947/job/120820201546): **10 functional cases+parent=11TAP PASS**,0fail/skip/cancel. Checkout124dbc3db19f3ead88235c71cea1512b0161bfb3 matches source treecca16927b147185a44f97a9fc3fc7b9161a1282c. [Full isolated40076279113/job120820201771](https://github.com/nora953/fawri-production-source/actions/runs/40076279113/job/120820201771): **92clean invocations/90unique files/715TAP PASS**,0fail/skip/cancel; owned container cleanup SUCCESS. Targeted conversation cases run separately from that92 total. Quality/security/schema/native/remaining workflows SUCCESS; no blanket zero-skip claim for unrelated optional quality tests.
+
+Minimal production-path correction compares the stored conversation_id and message hash before returning an existing manual reply request. Keeps merchant-wide idempotency uniqueness, error code and legitimate replay; no schema/grant/provider/credential change. New actual-SQL HTTP regression confirms rejection for a different own conversation with unchanged SQL; valid same-conversation replay and prior privacy/recovery cases still PASS. Standalone pre-fix regression793f264b had no observed run before correction: no pre-fix runtime failure claimed. Local TypeScript syntax/whitespace and operational-boundary contract1PASS. Earlier8c070aee nine-case/56CI evidence and745f74ef management/notification evidence retained separately.
+
+Evidence [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json) preserves original proof and corrected followup. Full HTTP and complete role/field gates remain **OPEN/PARTIAL_HTTP_VERIFIED**;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. This accepts only the tested conversation privacy/recovery and replay-binding contract, not provider sending, operator reconciliation UI, whole-app, hosted, device or whole-P0 release requirements.
+
+Next single actionable batch: populated correction/media/learning metadata HTTP fixtures against actual PostgreSQL, after reconciling producer fields and ConversationsPage correction_review.status consumer; prove own projection/foreign and stale-session denial before any projection change. Then privileged import/deletion and full-app/alternate consumers. Prior PREPARED/PENDING/next-test headers below are historical and superseded only for this verified scope. **NO-GO**; no main/merge/deploy/hosted/P1/P2.
+
+---
+
+## Populated metadata follow-up trace (source only)
+
+Current writers identified: postgresMetaAutoReplyIntent.ts adds knowledge stage/source/reason/confidence, grounding/matched/source-message/training IDs and handoff flag; inbound media shape includes content kind/attachment count/identity hash, with scoped image/audio provenance updates. metaVideoReplyGrounding.ts adds scoped video observation/hash/frame count/provider/model/alternatives. postgresManualConversationAuthority.ts writes correction_review and learning reason/request/answer IDs; merchantCorrectionReview.ts updates the scoped correction state. ConversationsPage.tsx currently consumes metadata.correction_review.status. This is a bounded source trace, not proof that every producer/field is inventoried or that arbitrary metadata is approved for disclosure.
+
+Next single actionable batch after candidate CI acceptance: add populated correction/media/learning metadata fixtures to the actual PostgreSQL conversation HTTP matrix; verify legitimate own projection and foreign-route/session denial without deleting required correction UI state. Reconcile actual producer fields first; do not introduce a blanket metadata redaction policy from an empty fixture. Then continue privileged import/deletion and full-app/alternate consumers. Complete actor/field gate remains OPEN.
+
+---
+
 ## P0 conversation-bound manual replay correction — 2026-10-24
 
 Candidate `e8bc8b060d7f4ead1f8b19c447ae17bead436a42` adds a minimal source guard: compare persisted conversation_id and text hash before returning an existing manual reply. Merchant-wide idempotency uniqueness/error code and authorized own replay preserved; no schema/grant/provider/credential change. Regression793f264b was saved but no standalone pre-fix run was observed; no red baseline claimed.
