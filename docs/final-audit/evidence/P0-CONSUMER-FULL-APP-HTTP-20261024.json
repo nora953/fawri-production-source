@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+  "status": "OPEN",
+  "boundedStatus": "PREPARED_CI_PENDING",
+  "source": "1425cedece71ced5d560fa0565dab6b3e415e5bd",
+  "sourceTree": "6c1c8db5c293a345ded8ec970b848f7633033e45",
+  "previousAcceptedSource": "dd8bd690af323fd3ab65628c0fe441f5c09a566f",
+  "applicationChanged": false,
+  "functionalCasesPrepared": 6,
+  "reuses": [
+    "notification6cases/7TAP actual auth-security parent router proof",
+    "conversation21cases/23TAP actual routers, metadata and approval proof",
+    "actual-app management6cases and broader merchant/Meta journeys"
+  ],
+  "missing": "Notification and conversation consumer alias/field/session/path behavior through complete app.ts middleware chain.",
+  "scope": "Synthetic two-merchant mixed-case IDs, trusted owner, actual app restricted primary LOGIN and separate authentication LOGIN; own/foreign notification audience, conversation projection and takeover/return, private request fields, session denial and revocation.",
+  "excludes": [
+    "Provider sending and live credentials",
+    "Complete arbitrary metadata/PII provenance policy",
+    "All eight tables' exhaustive HTTP actor/field inventory",
+    "Operator pool, browser/device, hosted ACL/storage/deployment"
+  ],
+  "cases": [
+    "own live notification case variants and read replay under foreign query/body hints",
+    "own conversation list/detail aliases with exact mixed-case IDs/message metadata/no request internals",
+    "anonymous/admin/wrong-device/combined-role denial in both families with unchanged SQL",
+    "foreign notification/admin-audience/conversation ID denial without SQL mutations",
+    "own takeover/return with exact path identity despite foreign hints and peer pending request unchanged",
+    "revoked session denied in both families; valid peer positive; no root JSON stores"
+  ],
+  "release": "NO-GO"
+}
