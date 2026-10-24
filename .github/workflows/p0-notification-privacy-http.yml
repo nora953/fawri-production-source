@@ -1,0 +1,44 @@
+name: P0 notification privacy HTTP matrix
+on:
+  pull_request:
+    paths:
+      - 'artifacts/api-server/tests/merchant-notification-privacy-http-postgres.integration.test.mjs'
+      - 'scripts/execute-disposable-postgres-audit.mjs'
+      - 'scripts/run-isolated-postgres-audit.sh'
+      - 'artifacts/api-server/src/routes/merchant-notifications-pg.ts'
+      - 'artifacts/api-server/src/middleware/authSession.ts'
+      - '.github/workflows/p0-notification-privacy-http.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: p0-notification-privacy-http-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  management-http-cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label residual-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Check audit execution syntax
+        run: |
+          node --check artifacts/api-server/tests/merchant-notification-privacy-http-postgres.integration.test.mjs
+          node --check scripts/execute-disposable-postgres-audit.mjs
+          bash -n scripts/run-isolated-postgres-audit.sh
+      - name: Execute notification tenant and audience HTTP assertions
+        run: bash scripts/run-isolated-postgres-audit.sh notification-privacy-http
+      - name: Destroy owned containers and anonymous volumes even on failure
+        if: always()
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi
