@@ -1,6 +1,6 @@
 # Bounded residual privacy field inventory — 2026-10-24
 
-Source revision `53f4f4b0ae3f0d5a62611d978771bba285b98653`; last accepted executable `fc00437ff93c1d055b2218aaa0e3b54fe8519383`.
+Source revision `53f4f4b0ae3f0d5a62611d978771bba285b98653`; last accepted executable `bd3c518eb784608a68539d6a8b9fb9050fff57e8`.
 
 **8 tables / 86 schema columns enumerated. This is source inventory, not field privacy or release acceptance.**
 
@@ -19,9 +19,12 @@ Reproduce: `python docs/final-audit/tools/build_residual_privacy_inventory.py --
 | order_drafts | 9 | 0 | 1 |
 | processed_channel_events | 10 | 0 | 1 |
 
+## Bounded accepted cells
+
+- **RESIDUAL-FIELD-001** (BOUNDED_HTTP_ACCEPTED): Actual-app bulk-read actor/tenant/audience/replay boundary accepted:5new functional cases,11denied requests, exact peer/admin preservation and existing expired-unread inclusion. Full field/producer policy not accepted. Evidence: [P0-NOTIFICATION-BULK-HTTP-20261024.json](evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json). This accepts only the named runtime contract, not every field or the whole HTTP gate.
+
 ## Selected open cells
 
-- **RESIDUAL-FIELD-001** (notifications, OPEN): POST read-all uses later Support route; no current named runtime proof located. Next: Actual-app anonymous/admin/wrong-device/revoked denial plus own bulk success/replay under foreign query/body hints and exact peer/admin-audience preservation; preserve existing expiry semantics. Existing gate: `P0-RESIDUAL-MERCHANT-PRIVACY-001/http`.
 - **RESIDUAL-FIELD-002** (notifications, OPEN): Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist. Next: Enumerate canonical producer literal keys, actual input control and UI consumers before any projection change. Existing gate: `P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX`.
 - **RESIDUAL-FIELD-003** (audit_events, OPEN): Management meta/details, emergency event metadata and incident history have different projections and scopes. Next: Reconcile each producer and current HTTP role/field mapping against existing emergency/management tests. Existing gate: `P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX`.
 - **RESIDUAL-FIELD-004** (order_drafts,processed_channel_events, OPEN): No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping. Next: Trace actual bot debug and order/ingress consumers with accepted-source restrictions; do not build new CRUD endpoints. Existing gate: `P0-RESIDUAL-MERCHANT-PRIVACY-001/http`.
@@ -321,13 +324,13 @@ SQL write producer candidates (lexical nearest-function heuristic, not complete 
 | --- | --- | --- | --- |
 | GET | /api/auth/notifications | secure merchant; audience=merchant + own merchant + expiry filter | ACTIVE / BOUNDED_RUNTIME_EVIDENCE |
 | PATCH | /api/auth/notifications/:id/read | secure merchant; own merchant/audience | ACTIVE / BOUNDED_RUNTIME_EVIDENCE |
-| POST | /api/auth/notifications/read-all | secure merchant; own merchant/audience | ACTIVE / NO_CURRENT_NAMED_RUNTIME_EVIDENCE_LOCATED |
+| POST | /api/auth/notifications/read-all | secure merchant; own merchant/audience | ACTIVE / BOUNDED_HTTP_ACCEPTED_RESIDUAL_FIELD_001 |
 | GET/PATCH | same list/individual paths in support router | secure merchant | SHADOWED_IN_CURRENT_REQUIRED_MODE / REACHABILITY_SOURCE_REVIEW |
 
-Existing evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json), [P0-CONSUMER-FULL-APP-HTTP-20261024.json](evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json).
+Existing evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json), [P0-CONSUMER-FULL-APP-HTTP-20261024.json](evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json), [P0-NOTIFICATION-BULK-HTTP-20261024.json](evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json).
 
 - Subscription, operational order/payment/knowledge/customer-message, Support lifecycle and inspection notification producers require explicit variable-key provenance reconciliation.
-- No named bulk-read runtime assertion located in current tests/evidence text search; this is the next selected cell, not proof of a defect.
+- Bulk-read route has bounded actual-app runtime acceptance on bd3c518e; notification JSON variable producer/key policy remains separately OPEN.
 
 ## order_drafts
 

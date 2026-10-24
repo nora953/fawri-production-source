@@ -6,7 +6,7 @@
   "completeP0Inventory": false,
   "overallPercentage": null,
   "sourceCandidate": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
-  "lastFullyAcceptedSource": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
+  "lastFullyAcceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
   "release": "NO-GO",
   "rows": [
     {
@@ -241,7 +241,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Verify bd3c518e RESIDUAL-FIELD-001 bulk-read actual-app cases, per-file TAP/marker/cleanup and exact checkout/source-tree then broader CI. Keep inventory cell OPEN until acceptance; then RESIDUAL-FIELD-002 producer variables/key provenance.",
+      "nextAction": "RESIDUAL-FIELD-002: reconcile canonical SQL notification producer type/key/input provenance with current frontend validator/consumer and existing tests. Distinguish legacy JSON producers; select only uncovered runtime/field cells before any projection change. Full HTTP gate stays OPEN.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -270,7 +270,18 @@
         "scannedRuntimeFiles": 312
       },
       "notificationBulkEvidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json",
-      "notificationBulkStatus": "PREPARED_CI_PENDING"
+      "notificationBulkStatus": "SOURCE_EXECUTABLE_ACCEPTED",
+      "fieldInventorySelectedCells": {
+        "accepted": [
+          "RESIDUAL-FIELD-001"
+        ],
+        "open": [
+          "RESIDUAL-FIELD-002",
+          "RESIDUAL-FIELD-003",
+          "RESIDUAL-FIELD-004",
+          "RESIDUAL-FIELD-005"
+        ]
+      }
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
@@ -357,5 +368,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "dd8bd690af323fd3ab65628c0fe441f5c09a566f"
+  "previousFullyAcceptedSource": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
+  "lastUpdatedAt": "2026-10-25"
 }

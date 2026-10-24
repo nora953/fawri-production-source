@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-24",
   "sourceRevision": "53f4f4b0ae3f0d5a62611d978771bba285b98653",
-  "lastAcceptedExecutable": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
+  "lastAcceptedExecutable": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
   "status": "BOUNDED_SOURCE_INVENTORY_NOT_PRIVACY_ACCEPTANCE",
   "release": "NO-GO",
   "boundedTableEnumerationComplete": true,
@@ -14,6 +14,8 @@
     "columns": 86,
     "reviewedRouteRows": 19,
     "literalSqlReferences": 61,
+    "selectedOpenCells": 4,
+    "selectedAcceptedCells": 1,
     "fieldObservationClasses": {
       "ADMIN_CHANNEL_KEYED_PROJECTION": 3,
       "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION": 13,
@@ -31,8 +33,8 @@
   "inputs": {
     "snapshot": "lib/db/drizzle/meta/0051_snapshot.json",
     "snapshotSha256": "68d12a4f1ccdd5d52978334c4eb194a367803ffc86cda30910adb66a2016f47d",
-    "curationSha256": "a4015efa7bf75a1e9965a83f0aae41e918c7cac187ebd8bdedf59f2c8685f271",
-    "generatorSha256": "4d4f2a39d85c3f6f7d4ad5aabdbeccec49f623d6bfc33f0a9b1bfa213f2f1acd",
+    "curationSha256": "ff5f89d33c9fc5ddf98732246b2780d0fd16fd3fde2e7ebbf3350063d33c2712",
+    "generatorSha256": "1017e5b0c989ae496b92d78ee7c7c23c3f4e082f6d3f495d5cee4b15dc37de29",
     "scannedRuntimeFileCount": 312,
     "scannedRuntimeTreeSha256": "9ad0295fef3d38b56eaa31ed990b3f34462161c1ba4d86c80c8ea1eb386b8e91"
   },
@@ -1700,7 +1702,7 @@
           "guard": "secure merchant; own merchant/audience",
           "source": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
           "reachability": "ACTIVE",
-          "evidenceStatus": "NO_CURRENT_NAMED_RUNTIME_EVIDENCE_LOCATED"
+          "evidenceStatus": "BOUNDED_HTTP_ACCEPTED_RESIDUAL_FIELD_001"
         },
         {
           "method": "GET/PATCH",
@@ -1719,11 +1721,12 @@
       },
       "boundedEvidence": [
         "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
-        "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json"
+        "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+        "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
       ],
       "notes": [
         "Subscription, operational order/payment/knowledge/customer-message, Support lifecycle and inspection notification producers require explicit variable-key provenance reconciliation.",
-        "No named bulk-read runtime assertion located in current tests/evidence text search; this is the next selected cell, not proof of a defect."
+        "Bulk-read route has bounded actual-app runtime acceptance on bd3c518e; notification JSON variable producer/key policy remains separately OPEN."
       ]
     },
     {
@@ -1988,15 +1991,19 @@
       ]
     }
   ],
-  "openCells": [
+  "reviewCells": [
     {
       "id": "RESIDUAL-FIELD-001",
       "priority": 1,
       "table": "notifications",
-      "status": "OPEN",
-      "gap": "POST read-all uses later Support route; no current named runtime proof located.",
-      "next": "Actual-app anonymous/admin/wrong-device/revoked denial plus own bulk success/replay under foreign query/body hints and exact peer/admin-audience preservation; preserve existing expiry semantics.",
-      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+      "status": "BOUNDED_HTTP_ACCEPTED",
+      "gap": "Actual-app bulk-read actor/tenant/audience/replay boundary accepted:5new functional cases,11denied requests, exact peer/admin preservation and existing expired-unread inclusion. Full field/producer policy not accepted.",
+      "next": "Continue RESIDUAL-FIELD-002 notification variable producer/key/input provenance; do not repeat accepted bulk scope absent source changes.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "originalGap": "POST read-all uses later Support route; no current named runtime proof located.",
+      "acceptedAt": "2026-10-25",
+      "acceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+      "evidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
     },
     {
       "id": "RESIDUAL-FIELD-002",
@@ -2033,6 +2040,59 @@
       "gap": "Phone/name snapshots, audit retention and complete PII schedule remain policy-sensitive despite tested tenant deletion.",
       "next": "Keep existing retention/privileged-deletion policy gate open; document exact field policy rather than invent duration.",
       "existingGate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+    }
+  ],
+  "openCells": [
+    {
+      "id": "RESIDUAL-FIELD-002",
+      "priority": 2,
+      "table": "notifications",
+      "status": "OPEN",
+      "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
+      "next": "Enumerate canonical producer literal keys, actual input control and UI consumers before any projection change.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX"
+    },
+    {
+      "id": "RESIDUAL-FIELD-003",
+      "priority": 3,
+      "table": "audit_events",
+      "status": "OPEN",
+      "gap": "Management meta/details, emergency event metadata and incident history have different projections and scopes.",
+      "next": "Reconcile each producer and current HTTP role/field mapping against existing emergency/management tests.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX"
+    },
+    {
+      "id": "RESIDUAL-FIELD-004",
+      "priority": 4,
+      "table": "order_drafts,processed_channel_events",
+      "status": "OPEN",
+      "gap": "No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping.",
+      "next": "Trace actual bot debug and order/ingress consumers with accepted-source restrictions; do not build new CRUD endpoints.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    },
+    {
+      "id": "RESIDUAL-FIELD-005",
+      "priority": 5,
+      "table": "merchant_deletion_requests",
+      "status": "OPEN_EXISTING_POLICY_GATE",
+      "gap": "Phone/name snapshots, audit retention and complete PII schedule remain policy-sensitive despite tested tenant deletion.",
+      "next": "Keep existing retention/privileged-deletion policy gate open; document exact field policy rather than invent duration.",
+      "existingGate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+    }
+  ],
+  "acceptedCells": [
+    {
+      "id": "RESIDUAL-FIELD-001",
+      "priority": 1,
+      "table": "notifications",
+      "status": "BOUNDED_HTTP_ACCEPTED",
+      "gap": "Actual-app bulk-read actor/tenant/audience/replay boundary accepted:5new functional cases,11denied requests, exact peer/admin preservation and existing expired-unread inclusion. Full field/producer policy not accepted.",
+      "next": "Continue RESIDUAL-FIELD-002 notification variable producer/key/input provenance; do not repeat accepted bulk scope absent source changes.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "originalGap": "POST read-all uses later Support route; no current named runtime proof located.",
+      "acceptedAt": "2026-10-25",
+      "acceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+      "evidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
     }
   ]
 }

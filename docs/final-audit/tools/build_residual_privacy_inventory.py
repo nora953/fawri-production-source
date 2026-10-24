@@ -99,6 +99,8 @@ def build():
                  'counts': {'tables': 8, 'columns': field_count,
                             'reviewedRouteRows': sum(len(t['routes']) for t in table_records),
                             'literalSqlReferences': sum(len(t['literalSqlReferences']) for t in table_records),
+                            'selectedOpenCells': sum(g['status'] != 'BOUNDED_HTTP_ACCEPTED' for g in curated['gaps']),
+                            'selectedAcceptedCells': sum(g['status'] == 'BOUNDED_HTTP_ACCEPTED' for g in curated['gaps']),
                             'fieldObservationClasses': dict(sorted(counts.items()))},
                  'inputs': {'snapshot': curated['snapshot'], 'snapshotSha256': digest(snapshot_path.read_bytes()),
                             'curationSha256': digest(CURATION.read_bytes()),
@@ -112,7 +114,9 @@ def build():
                                   'No same-name legacy JSON store is treated as the SQL table.',
                                   'Nested JSON keys and producer/input provenance remain explicit open work.',
                                   'Existing runtime acceptance is bounded by its original evidence; no new runtime PASS from this inventory.'],
-                 'tables': table_records, 'openCells': curated['gaps']}
+                 'tables': table_records, 'reviewCells': curated['gaps'],
+                 'openCells': [g for g in curated['gaps'] if g['status'] != 'BOUNDED_HTTP_ACCEPTED'],
+                 'acceptedCells': [g for g in curated['gaps'] if g['status'] == 'BOUNDED_HTTP_ACCEPTED']}
     markdown = render(inventory)
     return json.dumps(inventory, indent=2) + '\n', markdown
 
@@ -126,6 +130,10 @@ def render(data):
              '| Table | Columns | Reviewed route rows | Literal SQL references |', '| --- | ---: | ---: | ---: |']
     for table in data['tables']:
         lines.append(f"| {table['table']} | {table['columnCount']} | {len(table['routes'])} | {len(table['literalSqlReferences'])} |")
+    if data['acceptedCells']:
+        lines += ['', '## Bounded accepted cells', '']
+        for cell in data['acceptedCells']:
+            lines.append(f"- **{cell['id']}** ({cell['status']}): {cell['gap']} Evidence: [{Path(cell['evidence']).name}]({cell['evidence']}). This accepts only the named runtime contract, not every field or the whole HTTP gate.")
     lines += ['', '## Selected open cells', '']
     for gap in data['openCells']:
         lines += [f"- **{gap['id']}** ({gap['table']}, {gap['status']}): {gap['gap']} Next: {gap['next']} Existing gate: `{gap['existingGate']}`."]

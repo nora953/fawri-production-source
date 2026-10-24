@@ -1,3 +1,17 @@
+## RESIDUAL-FIELD-001 bulk notification read accepted — 2026-10-25
+
+Accepted executable `bd3c518eb784608a68539d6a8b9fb9050fff57e8`: **56/56 returned workflows completed SUCCESS**,0pending/failure/cancellation. No application/schema/ACL/policy change. [Bulk/consumer/notification40102702477/job120897947248](https://github.com/nora953/fawri-production-source/actions/runs/40102702477/job/120897947248): **17functional cases / 20TAP PASS across3files**,0fail/skip/cancel; new bulk5+parent=6, earlier consumer7/notification7. Includes11denied requests with unchanged SQL, valid owner/support-assistant admin positives, anonymous/admin/wrong-device/combined-role/forged-legacy/revoked-session denials, own bulk despite foreign body/query hints, unchanged peer/admin audience/already-read timestamps, mixed-case replay updated0, independent peer success and no root JSON stores. Existing bulk UPDATE includes expired own unread rows; no new retention policy inferred.
+
+[Full isolated40102702222/job120897947012](https://github.com/nora953/fawri-production-source/actions/runs/40102702222/job/120897947012): **92clean invocations / 90unique files / 715TAP PASS**,0fail/skip/cancel; owned cleanupSUCCESS. Targeted HTTP counted separately from92. Both lanes checkout78c7bb33de13c359af5e42cc49e80c016766736c matches source tree3b1fc195dcbab23676c18caf1e8a845b2b7e6c71. No blanket zero-skip claim for unrelated optional quality tests. Runs originated2026-10-24; acceptance reverified2026-10-25.
+
+Evidence: [P0-NOTIFICATION-BULK-HTTP-20261024.json](evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json). [Inventory](P0-RESIDUAL-FIELD-INVENTORY-20261024.md) now records1bounded accepted cell and4selected open work areas, preserving original FIELD001 gap and source evidence. Its86schema columns/19reviewed route rows/61literal SQL refs remain unchanged; no per-field/full-actor policy acceptance inferred. All fieldPrivacyAccepted flags remainfalse for full producer/actor signoff; prior bounded runtime proofs remain valid. Deterministic generator/check and whitespacePASS; documentation-only checkpoint adds no new runtime claim.
+
+**Next exact cell RESIDUAL-FIELD-002**: reconcile canonical SQL notification producer type/key/input provenance with current frontend validator/consumer and existing tests. Current client has type-specific validation and safe local action URL checks; mocked client tests and older operational-notifications JSON-store test are not proof of all canonical SQL producer fields. Determine actual input control/collision and supported keys before any projection change. Reuse accepted list/single/bulk/alias/session proofs.
+
+Full HTTP/role/field gates remain **OPEN**;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. One accepted mutation/actor cell does not close the entire notification or P0 domain. **NO-GO**; PR550Draft/unmerged/base preserved; no main/merge/deploy/hosted/P1/P2. Earlier prepared/pending/next-bulk notes below are historical for this accepted scope.
+
+---
+
 ## RESIDUAL-FIELD-001 actual-app bulk notification read prepared — 2026-10-24
 
 Recovery HEAD38525872/current PR550Draft/base/unmerged verified; accepted executablefc00437f retained. Selected inventory cell RESIDUAL-FIELD-001 maps app.ts→auth-security→early notification router (GET/PATCH only)→later auth-support-postgres POST /notifications/read-all→requireSecureMerchantSession→markAllMerchantNotificationsReadPostgresCanonical→withMerchantOperationalTransaction UPDATE own audience=merchant unread rows. No application/schema/ACL/policy changes.

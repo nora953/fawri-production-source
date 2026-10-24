@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-24",
   "sourceRevision": "53f4f4b0ae3f0d5a62611d978771bba285b98653",
-  "lastAcceptedExecutable": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
+  "lastAcceptedExecutable": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
   "snapshot": "lib/db/drizzle/meta/0051_snapshot.json",
   "expectedColumns": 86,
   "status": "BOUNDED_SOURCE_INVENTORY_NOT_PRIVACY_ACCEPTANCE",
@@ -419,7 +419,7 @@
           "guard": "secure merchant; own merchant/audience",
           "source": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
           "reachability": "ACTIVE",
-          "evidenceStatus": "NO_CURRENT_NAMED_RUNTIME_EVIDENCE_LOCATED"
+          "evidenceStatus": "BOUNDED_HTTP_ACCEPTED_RESIDUAL_FIELD_001"
         },
         {
           "method": "GET/PATCH",
@@ -432,11 +432,12 @@
       ],
       "boundedEvidence": [
         "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
-        "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json"
+        "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+        "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
       ],
       "notes": [
         "Subscription, operational order/payment/knowledge/customer-message, Support lifecycle and inspection notification producers require explicit variable-key provenance reconciliation.",
-        "No named bulk-read runtime assertion located in current tests/evidence text search; this is the next selected cell, not proof of a defect."
+        "Bulk-read route has bounded actual-app runtime acceptance on bd3c518e; notification JSON variable producer/key policy remains separately OPEN."
       ],
       "actorPolicyObserved": {
         "merchant": "own live merchant audience list; own read and bulk read",
@@ -529,10 +530,14 @@
       "id": "RESIDUAL-FIELD-001",
       "priority": 1,
       "table": "notifications",
-      "status": "OPEN",
-      "gap": "POST read-all uses later Support route; no current named runtime proof located.",
-      "next": "Actual-app anonymous/admin/wrong-device/revoked denial plus own bulk success/replay under foreign query/body hints and exact peer/admin-audience preservation; preserve existing expiry semantics.",
-      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+      "status": "BOUNDED_HTTP_ACCEPTED",
+      "gap": "Actual-app bulk-read actor/tenant/audience/replay boundary accepted:5new functional cases,11denied requests, exact peer/admin preservation and existing expired-unread inclusion. Full field/producer policy not accepted.",
+      "next": "Continue RESIDUAL-FIELD-002 notification variable producer/key/input provenance; do not repeat accepted bulk scope absent source changes.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "originalGap": "POST read-all uses later Support route; no current named runtime proof located.",
+      "acceptedAt": "2026-10-25",
+      "acceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+      "evidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
     },
     {
       "id": "RESIDUAL-FIELD-002",
