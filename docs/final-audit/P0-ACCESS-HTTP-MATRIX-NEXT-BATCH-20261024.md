@@ -1,3 +1,9 @@
+## Correction approval exact-source accepted
+
+Executablec8698263:56/56workflowsSUCCESS; isolated40078455748/job120826780627:92invocations/90files/715TAP PASS,0fail/skip/cancel. Targeted approval6+parent=7TAP and retained conversation15+parent=16TAP PASS; exact checkout/tree equality and cleanup verified. Evidence [P0-CORRECTION-APPROVAL-HTTP-20261024.json](evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json). Full HTTP gate remains OPEN/NO-GO. Next actual owner import positive/replay/rollback while peer conflicts remain unchanged. No source/policy/schema/provider changes.
+
+---
+
 ## Correction approval targeted acceptance
 
 Sourcec8698263 targeted40078455776/job120826780504 SUCCESS: new6cases+parent=7TAP, prior15+parent=16TAP; combined21functional/23TAP PASS,0fail/skip/cancel. Exact source/checkout tree verified;52migrations/owned cleanupSUCCESS. Own create/update, identical-question peer isolation, resolved replay/conflict, real review-write fault and sequential convergence, revoked session PASS. Separate knowledge/review commits remain explicit; concurrent approval and atomicity not certified. BroaderCI pending. Evidence [P0-CORRECTION-APPROVAL-HTTP-20261024.json](evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json). Full gateOPEN/NO-GO. Next owner import positive/replay/rollback, then deletion/full-app alternatives.
