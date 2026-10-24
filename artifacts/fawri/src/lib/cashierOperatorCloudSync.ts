@@ -528,6 +528,13 @@ function groupByOperation(
 ): Map<string, CashierSyncEnvelope[]> {
   const groups = new Map<string, CashierSyncEnvelope[]>();
   for (const envelope of envelopes) {
+    if (!envelope.operation_id || !String(envelope.operation_id).trim()) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+        'Pending cashier envelope has no operation identity',
+        409,
+      );
+    }
     const list = groups.get(envelope.operation_id) || [];
     if (list.length > 0 && list[0].device_sequence !== envelope.device_sequence) {
       throw new CashierOperatorCloudSyncError(
