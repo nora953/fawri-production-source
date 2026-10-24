@@ -3,12 +3,12 @@
   "date": "2026-10-24",
   "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
   "status": "OPEN",
-  "boundedStatus": "PREPARED_CI_PENDING",
-  "source": "b16c2ea22af884edc0bceb47f0c02a8c50b2d915",
-  "sourceTree": "d3492445146e5dc2bafa1a64b62552d327072f9f",
+  "boundedStatus": "APPLICATION_CORRECTED_CI_PENDING",
+  "source": "9bf269db125f071a5a2e6ae642fcbee7840a9f70",
+  "sourceTree": "9cf53614b6649de1c301bd60a8136eafb6b45672",
   "previousAcceptedSource": "b2470a3a1e6f4a35a630e463752837771c74b96a",
   "functionalCasesPrepared": 6,
-  "applicationChanged": false,
+  "applicationChanged": true,
   "reconciliation": {
     "reused": [
       "global-merchant-postgres-http-journey.integration.test.ts actual app login/catalog/cashier/report/logout",
@@ -27,5 +27,67 @@
     "SQL permission revocation enforced",
     "SQL session revocation enforced; independent owner positive; no root JSON stores"
   ],
-  "release": "NO-GO"
+  "release": "NO-GO",
+  "initialFailure": {
+    "source": "b16c2ea22af884edc0bceb47f0c02a8c50b2d915",
+    "run": 40098457152,
+    "job": 120885517895,
+    "classification": "APPLICATION_ROUTE_CLASSIFIER_CASE_AND_TRAILING_SLASH",
+    "casesExecuted": 6,
+    "passedFunctional": 3,
+    "failedFunctional": 3,
+    "summary": [
+      {
+        "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 1,
+        "passed": 3,
+        "failed": 4,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "observation": "Case-variant authorized read/mutation return410 rather than200; permission-revoked variant returns410 rather than403. Independent normal-route/legacy and session tests remain bounded; existing management/import/deletion25TAP PASS.",
+    "cause": "Case-sensitive isManagedSurface classification skips actual case-insensitive Express routes; final legacy cutover safely retires fallthrough.",
+    "impact": "Authorized route reachability and correct authority mapping; no observed unauthorized private disclosure.",
+    "correction": "Normalize a copy of req.path to lowercase and strip trailing slash only for managed-surface classification; preserve original route and resource IDs.",
+    "cleanup": "SUCCESS"
+  },
+  "correctionCommit": "750dec086b27aa52b38c4f6a59a249d38d757c31",
+  "identityRegression": "Mixed-case Full-App-HTTP account/merchant IDs must remain exact in route parameters, returned merchant_id, SQL actor and peer preservation. Only classification copy is normalized."
 }

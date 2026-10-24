@@ -1,3 +1,11 @@
+## Actual-app classifier corrected; mixed-case identity runtime pending — 2026-10-24
+
+Candidate `9bf269db125f071a5a2e6ae642fcbee7840a9f70` contains minimal correction750dec08: normalize a copy of req.path only for managed-surface classification to match Express case-insensitive/non-strict routes; original IDs/path stay unchanged. New fixture uses mixed-case Full-App-HTTP IDs and exact response/SQL actor assertions. No schema/grant/purge/transaction/product-policy change.
+
+Initial sourceb16c2ea2/run40098457152/job120885517895 executed6new functional cases:3PASS/3FAIL, TAP3PASS/4FAIL including parent. Authorized case-variant reads/mutation returned410 instead of200; revoked-permission path410 instead of403. Existing management/import/deletion25TAP PASS; no observed private disclosure. This is legitimate reachability/correct-authority mapping defect, not a claim of authorization bypass. Original failure retained in evidence; no assertions weakened. Corrected source CI_PENDING;750dec08 intermediate not accepted. Last fully accepted executableb2470a3a retained. FullHTTPgateOPEN/NO-GO; no hosted/main/merge/deploy/P1/P2.
+
+---
+
 ## Actual-app management privacy prepared — 2026-10-24
 
 Recovery HEAD76fbd10c, accepted executableb2470a3a retained; PR550Draft/current base/unmerged verified. Existing global-merchant-postgres-http journey imports app.ts for login/catalog/cashier/report/logout, meta-full-app imports real app in isolated child for signed ingress; neither is the current private management case/legacy-fallthrough matrix. auth-cutover-path-case independently tests guard middleware, while accepted management privacy suite mounts the router in synthetic Express. Reuse those proofs; do not count new test repetition as closure.
