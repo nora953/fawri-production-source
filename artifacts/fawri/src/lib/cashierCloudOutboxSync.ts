@@ -282,8 +282,14 @@ export async function syncCashierOutboxToCloud(): Promise<CashierCloudOutboxSync
     for (const operation of operations) {
       const kind = classifyOperation(operation.envelopes);
       if (!kind) {
-        skippedOperations += 1;
-        continue;
+        // Fail closed: silently skipping an earlier local sequence and sending
+        // a later sale can make the skipped operation permanently unuploadable.
+        // Preserve the unsupported operation and all subsequent outbox records
+        // until a server-authorized recovery contract is available.
+        throw new CashierCloudOutboxSyncError(
+          'CASHIER_OUTBOX_UNSUPPORTED_OPERATION',
+          'A pending cashier operation requires a supported sync contract before later operations can upload',
+        );
       }
       const result = await uploadOperation({
         kind,
