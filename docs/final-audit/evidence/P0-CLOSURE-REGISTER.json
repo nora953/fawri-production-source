@@ -112,7 +112,8 @@
       "requirement": "Complete actor, session, support, emergency, alternate-path and privacy proof reconciliation",
       "status": "OPEN",
       "evidence": "AUDIT_MANIFEST_SCHEMA_AND_DOMAIN_QUEUE_20261014.md",
-      "blocker": "This inventory covers bounded access proofs only; not the full P0 denominator."
+      "blocker": "Eight-table/86-column source enumeration created; full P0 actor/field/producer/consumer acceptance still incomplete. Five selected work areas are linked to existing gates, not five new release requirements.",
+      "boundedFieldInventory": "evidence/P0-RESIDUAL-FIELD-INVENTORY-20261024.json"
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
@@ -240,7 +241,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Build machine-readable eight-table field/actor/producer/consumer inventory from current schema/live routes; reconcile direct SQL versus retired/in-memory consumers and prior evidence before adding targeted tests. Include audit_events/manual_reply_requests/management private tables/notifications/order_drafts/processed_channel_events; full HTTP gate remains OPEN.",
+      "nextAction": "RESIDUAL-FIELD-001: actual-app POST /api/auth/notifications/read-all. Verify anonymous/admin/wrong-device/revoked denial; own bulk success and replay under foreign hints with exact peer/admin-audience preservation. Reuse prior single-read proofs; preserve existing expiry behavior. Then producer JSON and alternate audit/draft/event field cells from inventory.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -257,7 +258,17 @@
       "managementFullAppEvidence": "evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
       "managementFullAppStatus": "SOURCE_EXECUTABLE_ACCEPTED",
       "consumerFullAppEvidence": "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
-      "consumerFullAppStatus": "SOURCE_EXECUTABLE_ACCEPTED"
+      "consumerFullAppStatus": "SOURCE_EXECUTABLE_ACCEPTED",
+      "fieldInventoryEvidence": "evidence/P0-RESIDUAL-FIELD-INVENTORY-20261024.json",
+      "fieldInventoryReport": "P0-RESIDUAL-FIELD-INVENTORY-20261024.md",
+      "fieldInventoryStatus": "BOUNDED_SOURCE_ENUMERATION_CREATED_NOT_GATE_ACCEPTED",
+      "fieldInventoryCounts": {
+        "tables": 8,
+        "schemaColumns": 86,
+        "reviewedRouteRows": 19,
+        "literalSqlReferences": 61,
+        "scannedRuntimeFiles": 312
+      }
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",

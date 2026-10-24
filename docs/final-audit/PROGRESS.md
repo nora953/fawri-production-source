@@ -1,3 +1,17 @@
+## P0 bounded residual field inventory created — 2026-10-24
+
+[Machine-readable inventory](evidence/P0-RESIDUAL-FIELD-INVENTORY-20261024.json) and [field/role/route report](P0-RESIDUAL-FIELD-INVENTORY-20261024.md): **8 tables / 86 schema columns**,19 reviewed route rows,61 literal SQL references from312 runtime files. Source revision53f4f4b0; last accepted executable **fc00437ff93c1d055b2218aaa0e3b54fe8519383 remains unchanged** (56/56 CI SUCCESS and715 broaderTAP retained). This batch changes audit documentation/generator only; no new application runtime/CI acceptance claimed.
+
+Reproducible extraction uses0051 canonical snapshot, explicit reviewed column/role mappings, source function anchors and SHA256 inputs. `python docs/final-audit/tools/build_residual_privacy_inventory.py --check` PASS;86unique table/column keys exactly match snapshot; no missing/extra classification; source runtime/schema diff against53f4f4b0 empty; whitespacePASS. The generator fails on input drift or missing anchors. Literal SQL/function scan is not a complete dynamic dataflow proof;19 reviewed rows are not an exhaustive endpoint denominator. Every fieldPrivacyAccepted remainsfalse for full producer/actor policy signoff; earlier bounded runtime acceptance is not revoked.
+
+Five selected open work areas, linked to existing register gates: bulk notification read through later Support route; flattened notification-variable producer/key provenance; differing management/emergency/incident audit metadata; SQL versus legacy/in-memory draft/event consumer reachability; existing PII/retention snapshot policy. No current named test/evidence reference for `/notifications/read-all` was located; earlier single-read/list tests do not prove bulk mutation. Duplicate Support GET/PATCH routes are shadowed by earlier notification router in required mode, while POST bulk remains reachable. For19columns of order_drafts/processed_channel_events no direct SQL HTTP reader was identified in the scanned source; public APIs are not inferred; legacy `/bot/debug` reads a separate in-memory draft map and includesdb_path.
+
+**Next exact batch RESIDUAL-FIELD-001**: actual app POST `/api/auth/notifications/read-all` with anonymous/admin/wrong-device/revoked denials, own bulk success/replay under foreign body/query hints and exact peer/admin-audience preservation. Preserve current expiry semantics; no speculative projection or storage redesign. Then explicit producer/consumer cells002–005 in the inventory.
+
+Full HTTP and role/field gates remain **OPEN**;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Enumeration completion applies only to these8selected tables, not all95tables or wholeP0. **NO-GO**; PR550Draft/unmerged/current base preserved; no main/merge/deploy/hosted/P1/P2. Earlier next-inventory/PENDING headers below are historical for this bounded enumeration.
+
+---
+
 ## P0 actual-app notification/conversation consumers accepted — 2026-10-24
 
 Accepted executable `fc00437ff93c1d055b2218aaa0e3b54fe8519383`: **56/56 returned workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. **Six new functional cases**, no application/schema/ACL/policy/provider changes.
