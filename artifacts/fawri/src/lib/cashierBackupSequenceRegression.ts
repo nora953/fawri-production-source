@@ -53,6 +53,31 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
       delta: 1,
       reason: 'manual_adjustment',
     });
+    // The adjustment is a separate non-sale operation and must occupy its own
+    // sequence without a missing local outbox envelope.
+    const timeline = await cashier.listPendingSync();
+    const sequenceByOperation = new Map<string, number>();
+    for (const envelope of timeline) {
+      const previous = sequenceByOperation.get(envelope.operation_id);
+      if (previous !== undefined && previous !== envelope.device_sequence) {
+        throw new Error('P0 FAIL: one operation has inconsistent device sequences');
+      }
+      sequenceByOperation.set(envelope.operation_id, envelope.device_sequence);
+    }
+    const orderedSequences = [
+      sequenceByOperation.get('p0-seq-before-backup'),
+      sequenceByOperation.get('p0-seq-after-backup'),
+      sequenceByOperation.get('p0-seq-after-backup-adjustment'),
+    ];
+    if (orderedSequences.some(value => value === undefined) ||
+        orderedSequences[1] !== orderedSequences[0]! + 1 ||
+        orderedSequences[2] !== orderedSequences[1]! + 1) {
+      throw new Error('P0 FAIL: sale and non-sale adjustment did not produce a contiguous operation timeline');
+    }
+    if (!timeline.some(item => item.operation_id === 'p0-seq-after-backup-adjustment' &&
+        item.entity_type === 'inventory_movement')) {
+      throw new Error('P0 FAIL: non-sale adjustment has no inventory movement outbox envelope');
+    }
     const before = await cashier.listPendingSync();
     const maximumBefore = Math.max(...before.map(item => item.device_sequence));
     if (maximumBefore < 3) throw new Error('Regression setup did not advance sequence for both sales and adjustment');
