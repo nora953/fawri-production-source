@@ -613,5 +613,3035 @@
   "updated_at": "2026-10-24",
   "release": "NO-GO",
   "next": "Adopt and verify body-parser security graph; continue table/field/actor inventory and retention/missing-order policy reconciliation without repeating indexed SQL proofs. Keep hosted gates blocked and whole-P0 completeness false.",
-  "reconciliation_note": "Existing accepted executions indexed, not newly run tests; parent TAP totals are not unique requirement counts. Full role/privacy/retention policy inventory remains open."
+  "reconciliation_note": "Existing accepted executions indexed, not newly run tests; parent TAP totals are not unique requirement counts. Full role/privacy/retention policy inventory remains open.",
+  "schema_table_inventory": {
+    "source_sha": "736e796b5fe25ceac9f1cfb128ba3f640ff6ebe5",
+    "source_snapshot": "lib/db/drizzle/meta/0048_snapshot.json",
+    "snapshot_sha256": "3569cc1411521d9e33170032e28081fb172b0f7f2568dad6322d7b57bddef167",
+    "proof_layer": "source_declarative_inventory",
+    "table_count": 95,
+    "column_count": 1245,
+    "declared_rls_enabled_count": 66,
+    "actors_requiring_reconciliation": [
+      "owner_admin",
+      "assistant_admin_by_permission",
+      "merchant",
+      "cashier",
+      "anonymous"
+    ],
+    "complete_field_actor_matrix": false,
+    "retention_policy_complete": false,
+    "runtime_role_acl_acceptance": false,
+    "limits": "Names and declarations only. RLS flags alone neither prove nor disprove isolation; trusted-only tables also require ACL/capability boundaries. Existing bounded proofs are linked without reopening them or expanding their actor/field scope. No new SQL/HTTP execution or hosted catalog read. Field/actor/export/retention denominator remains TRIAGE.",
+    "rows": [
+      {
+        "table": "public.account_sessions",
+        "source_anchor": "lib/db/src/schema/sessions.ts",
+        "fields": [
+          "id",
+          "account_id",
+          "kind",
+          "status",
+          "token_hash",
+          "tenant_id",
+          "device_fingerprint_hash",
+          "device_label",
+          "session_version",
+          "security_version",
+          "role_snapshot",
+          "permission_snapshot",
+          "created_at",
+          "last_seen_at",
+          "last_activity_at",
+          "idle_expires_at",
+          "absolute_expires_at",
+          "rotate_after",
+          "revoked_at",
+          "revoked_by_account_id",
+          "revoke_reason",
+          "replaced_by_session_id",
+          "metadata"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "account_sessions",
+          "accounts"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.accounts",
+        "source_anchor": "lib/db/src/schema/accounts.ts",
+        "fields": [
+          "id",
+          "kind",
+          "phone",
+          "password_hash",
+          "password_version",
+          "security_version",
+          "state",
+          "language",
+          "phone_verified",
+          "phone_verified_at",
+          "password_changed_at",
+          "session_version",
+          "suspended_at",
+          "closed_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.admin_permissions",
+        "source_anchor": "lib/db/src/schema/merchants.ts",
+        "fields": [
+          "admin_id",
+          "permission",
+          "granted_at",
+          "granted_by_admin_id"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "admin_profiles"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.admin_profiles",
+        "source_anchor": "lib/db/src/schema/merchants.ts",
+        "fields": [
+          "id",
+          "account_id",
+          "profile_kind",
+          "display_name",
+          "role",
+          "enabled",
+          "must_change_password",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.audit_events",
+        "source_anchor": "lib/db/src/schema/audit.ts",
+        "fields": [
+          "id",
+          "actor_kind",
+          "actor_account_id",
+          "merchant_id",
+          "action_type",
+          "entity_type",
+          "entity_id",
+          "reason_code",
+          "details",
+          "metadata",
+          "ip_address",
+          "user_agent",
+          "request_id",
+          "previous_hash",
+          "event_hash",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.auth_audit_events",
+        "source_anchor": "lib/db/src/schema/auth-security.ts",
+        "fields": [
+          "id",
+          "event_type",
+          "actor_account_id",
+          "actor_kind",
+          "subject_hash",
+          "reason_code",
+          "decision_code",
+          "request_id_hash",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.auth_otp_challenges",
+        "source_anchor": "lib/db/src/schema/auth-security.ts",
+        "fields": [
+          "id",
+          "account_id",
+          "target_hash",
+          "code_hash",
+          "ip_hash",
+          "purpose",
+          "created_at",
+          "expires_at",
+          "resend_after",
+          "attempts",
+          "max_attempts",
+          "used_at",
+          "revoked_at",
+          "superseded_by_challenge_id"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts",
+          "auth_otp_challenges"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.background_job_payloads",
+        "source_anchor": "lib/db/src/schema/jobs.ts",
+        "fields": [
+          "job_id",
+          "merchant_id",
+          "ciphertext",
+          "key_id",
+          "payload_sha256",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "background_job_payloads_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "background_jobs"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.background_jobs",
+        "source_anchor": "lib/db/src/schema/jobs.ts",
+        "fields": [
+          "id",
+          "type",
+          "dedupe_key",
+          "merchant_id",
+          "payload_hash",
+          "priority",
+          "status",
+          "attempts",
+          "max_attempts",
+          "requeue_count",
+          "settings_version",
+          "available_at",
+          "locked_at",
+          "locked_by",
+          "lease_expires_at",
+          "lease_generation",
+          "last_error_code",
+          "result",
+          "completed_at",
+          "dead_lettered_at",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "background_jobs_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.cashier_billing_events",
+        "source_anchor": "lib/db/src/schema/cashier-subscription.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "order_id",
+          "provider",
+          "provider_event_id",
+          "event_type",
+          "payload_hash",
+          "status",
+          "occurred_at",
+          "applied_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "cashier_billing_orders",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.cashier_billing_orders",
+        "source_anchor": "lib/db/src/schema/cashier-subscription.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "operation",
+          "current_seats",
+          "requested_seats",
+          "resulting_seats",
+          "unit_price_iqd",
+          "amount_iqd",
+          "currency",
+          "billing_period_start",
+          "billing_period_end",
+          "grace_duration_seconds",
+          "status",
+          "idempotency_key",
+          "provider",
+          "provider_checkout_ref",
+          "provider_payment_ref",
+          "request_expires_at",
+          "paid_at",
+          "applied_at",
+          "failed_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_subscriptions",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.cashier_device_operation_timeline",
+        "source_anchor": "lib/db/src/schema/cashier-subscription.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "billing_order_id",
+          "station_id",
+          "device_id",
+          "device_sequence",
+          "operation_id",
+          "operation_kind",
+          "occurred_at",
+          "accepted_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "cashier_billing_orders",
+          "merchant_cashier_stations",
+          "merchant_cashier_subscriptions",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.cashier_entitlement_applications",
+        "source_anchor": "lib/db/src/schema/cashier-subscription.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "order_id",
+          "operation",
+          "previous_seats",
+          "resulting_seats",
+          "previous_version",
+          "resulting_version",
+          "amount_iqd",
+          "provider",
+          "provider_payment_ref",
+          "applied_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "cashier_billing_orders",
+          "merchant_cashier_subscriptions",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.cashier_entitlement_audit_events",
+        "source_anchor": "lib/db/src/schema/cashier-subscription.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "action",
+          "actor_type",
+          "actor_ref",
+          "from_seats",
+          "to_seats",
+          "from_version",
+          "to_version",
+          "metadata",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_subscriptions",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.cashier_operation_attribution",
+        "source_anchor": "lib/db/src/schema/cashier-operation-attribution.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "operation_id",
+          "sale_id",
+          "operation_kind",
+          "station_id",
+          "location_id",
+          "staff_id",
+          "shift_id",
+          "device_id",
+          "station_credential_id",
+          "operator_session_id",
+          "occurred_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "cashier_operation_attribution_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "cashier_shifts",
+          "merchant_locations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.cashier_operator_sessions",
+        "source_anchor": "lib/db/src/schema/cashier-staff.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "station_id",
+          "staff_id",
+          "shift_id",
+          "token_hash",
+          "staff_version",
+          "permission_snapshot",
+          "status",
+          "issued_at",
+          "last_seen_at",
+          "expires_at",
+          "revoked_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "cashier_operator_sessions_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "cashier_shifts",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.cashier_shifts",
+        "source_anchor": "lib/db/src/schema/cashier-staff.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "station_id",
+          "staff_id",
+          "status",
+          "started_at",
+          "ended_at",
+          "close_reason"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "cashier_shifts_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_staff",
+          "merchant_cashier_stations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.cashier_station_credentials",
+        "source_anchor": "lib/db/src/schema/cashier-staff.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "station_id",
+          "device_id",
+          "token_hash",
+          "version",
+          "status",
+          "issued_at",
+          "last_used_at",
+          "expires_at",
+          "revoked_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "cashier_station_credentials_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_stations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.cashier_station_pairing_challenges",
+        "source_anchor": "lib/db/src/schema/cashier-staff.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "station_id",
+          "code_hash",
+          "status",
+          "created_at",
+          "expires_at",
+          "used_at",
+          "used_by_device_id",
+          "revoked_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "cashier_station_pairing_challenges_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_stations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.cashier_station_seat_assignments",
+        "source_anchor": "lib/db/src/schema/cashier-subscription.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "station_id",
+          "status",
+          "assigned_at",
+          "release_effective_at",
+          "released_at",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_stations",
+          "merchant_cashier_subscriptions",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.catalog_idempotency_keys",
+        "source_anchor": "lib/db/src/schema/catalog.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "operation",
+          "key_hash",
+          "request_hash",
+          "result_product_id",
+          "result_version",
+          "result_code",
+          "created_at",
+          "expires_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "catalog_idempotency_keys_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "products"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.catalog_identifiers",
+        "source_anchor": "lib/db/src/schema/catalog.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "kind",
+          "normalized_value",
+          "display_value",
+          "owner_type",
+          "product_id",
+          "variant_id",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "catalog_identifiers_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "product_variants",
+          "products"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.catalog_image_references",
+        "source_anchor": "lib/db/src/schema/catalog.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "product_id",
+          "variant_id",
+          "url",
+          "storage_key",
+          "alt_text",
+          "ordinal",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "catalog_image_references_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "product_variants",
+          "products"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.catalog_variant_options",
+        "source_anchor": "lib/db/src/schema/catalog.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "product_id",
+          "variant_id",
+          "option_name",
+          "normalized_option_name",
+          "option_value",
+          "normalized_option_value",
+          "ordinal"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "catalog_variant_options_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "product_variants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.channel_inbound_events",
+        "source_anchor": "lib/db/src/schema/channel-messaging.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "channel_id",
+          "provider",
+          "external_event_id",
+          "payload_hash",
+          "enqueue_job_id",
+          "received_at",
+          "enqueue_committed_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "channel_inbound_events_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "background_jobs",
+          "merchant_channels",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.commerce_promotions",
+        "source_anchor": "lib/db/src/schema/commerce-promotions.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "name",
+          "scope",
+          "effect",
+          "product_id",
+          "variant_id",
+          "percentage_bps",
+          "amount_minor",
+          "currency_code",
+          "minimum_subtotal_minor",
+          "starts_at",
+          "ends_at",
+          "schedule_timezone",
+          "priority",
+          "enabled",
+          "version",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "commerce_promotions_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "product_variants",
+          "products"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.conversations",
+        "source_anchor": "lib/db/src/schema/conversations.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "channel_id",
+          "external_conversation_id",
+          "customer_external_id",
+          "customer_name",
+          "customer_handle",
+          "status",
+          "assigned_to_human",
+          "assigned_account_id",
+          "needs_training",
+          "last_message_at",
+          "closed_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "conversations_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchant_channels",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.database_admin_access_audits",
+        "source_anchor": "lib/db/src/schema/tenant-security.ts",
+        "fields": [
+          "id",
+          "admin_account_id",
+          "merchant_id",
+          "reason_code",
+          "request_hash",
+          "authority_transaction_id",
+          "started_at",
+          "expires_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "admin_profiles"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.emergency_access_requests",
+        "source_anchor": "lib/db/src/schema/emergency.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "requested_by_admin_account_id",
+          "incident_reference",
+          "severity",
+          "reason",
+          "duration_minutes",
+          "read_only",
+          "status",
+          "activation_mode",
+          "reviewed_by_owner_account_id",
+          "admin_session_id",
+          "request_expires_at",
+          "reviewed_at",
+          "started_at",
+          "expires_at",
+          "ended_at",
+          "end_reason",
+          "first_viewed_at",
+          "viewed_sections",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "emergency_access_requests_authentication_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "account_sessions",
+          "accounts",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.emergency_authorizations",
+        "source_anchor": "lib/db/src/schema/emergency.ts",
+        "fields": [
+          "admin_account_id",
+          "can_request",
+          "can_critical_self_activate",
+          "granted_by_owner_account_id",
+          "granted_at",
+          "updated_at",
+          "revoked_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "emergency_authorizations_authentication_boundary"
+        ],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.emergency_merchant_notices",
+        "source_anchor": "lib/db/src/schema/emergency.ts",
+        "fields": [
+          "id",
+          "request_id",
+          "merchant_id",
+          "accessed_by_admin_account_id",
+          "incident_reference",
+          "activation_mode",
+          "started_at",
+          "ended_at",
+          "read_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "emergency_merchant_notices_authentication_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "emergency_access_requests",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.emergency_owner_alerts",
+        "source_anchor": "lib/db/src/schema/emergency.ts",
+        "fields": [
+          "id",
+          "request_id",
+          "type",
+          "title_key",
+          "details",
+          "read_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "emergency_owner_alerts_authentication_boundary"
+        ],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "emergency_access_requests"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.inventory_mutations",
+        "source_anchor": "lib/db/src/schema/catalog.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "product_id",
+          "variant_id",
+          "location_id",
+          "mutation_type",
+          "before_quantity",
+          "after_quantity",
+          "expected_version",
+          "resulting_version",
+          "actor_type",
+          "actor_account_id",
+          "reason_code",
+          "idempotency_key_hash",
+          "request_hash",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "inventory_mutations_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchant_locations",
+          "merchants",
+          "product_variants",
+          "products"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.job_attempts",
+        "source_anchor": "lib/db/src/schema/jobs.ts",
+        "fields": [
+          "id",
+          "job_id",
+          "attempt_number",
+          "worker_id",
+          "lease_generation",
+          "status",
+          "error_code",
+          "metadata",
+          "started_at",
+          "finished_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "background_jobs"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.job_dead_letters",
+        "source_anchor": "lib/db/src/schema/jobs.ts",
+        "fields": [
+          "id",
+          "job_id",
+          "occurrence",
+          "reason_code",
+          "attempts",
+          "payload_sha256",
+          "metadata",
+          "created_at",
+          "requeued_at",
+          "requeued_by_account_id"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "background_jobs"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.knowledge_audit_events",
+        "source_anchor": "lib/db/src/schema/knowledge.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "action",
+          "entity_type",
+          "entity_id",
+          "actor_account_id",
+          "customer_text_hash",
+          "customer_text_length",
+          "signal_codes",
+          "decision_code",
+          "outcome_code",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "knowledge_audit_events_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.knowledge_embeddings",
+        "source_anchor": "lib/db/src/schema/knowledge.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "knowledge_kind",
+          "knowledge_id",
+          "saved_answer_id",
+          "learned_answer_id",
+          "language",
+          "embedding_model",
+          "content_hash",
+          "dimensions",
+          "embedding",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "knowledge_embeddings_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "learned_answers",
+          "merchants",
+          "saved_answers"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.learned_answers",
+        "source_anchor": "lib/db/src/schema/knowledge.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "training_request_id",
+          "intent",
+          "language",
+          "examples",
+          "keywords",
+          "answer_text",
+          "source",
+          "approval_status",
+          "confidence",
+          "safe_to_auto_reply",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "learned_answers_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "training_requests"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.location_inventory_levels",
+        "source_anchor": "lib/db/src/schema/location-inventory.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "location_id",
+          "product_id",
+          "variant_id",
+          "quantity",
+          "low_stock_threshold",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "location_inventory_levels_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_locations",
+          "merchants",
+          "product_variants",
+          "products"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.login_attempts",
+        "source_anchor": "lib/db/src/schema/sessions.ts",
+        "fields": [
+          "id",
+          "account_id",
+          "target_hash",
+          "kind",
+          "ip_hash",
+          "success",
+          "reason_code",
+          "created_at",
+          "expires_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.manual_reply_requests",
+        "source_anchor": "lib/db/src/schema/manual-conversations.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "conversation_id",
+          "idempotency_key",
+          "text_sha256",
+          "status",
+          "message_id",
+          "external_message_id",
+          "error_code",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "conversations",
+          "merchants",
+          "messages"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_admin_notes",
+        "source_anchor": "lib/db/src/schema/merchant-management.ts",
+        "fields": [
+          "merchant_id",
+          "note",
+          "updated_by_admin_id",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "admin_profiles",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_cashier_discount_override_approvals",
+        "source_anchor": "lib/db/src/schema/cashier-discount.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "station_id",
+          "operator_staff_id",
+          "approver_staff_id",
+          "operation_id",
+          "manual_discount_minor",
+          "manual_discount_reason",
+          "expires_at",
+          "consumed_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_cashier_discount_override_approvals_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_staff",
+          "merchant_cashier_stations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.merchant_cashier_discount_settings",
+        "source_anchor": "lib/db/src/schema/cashier-discount.ts",
+        "fields": [
+          "merchant_id",
+          "discount_kind",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_cashier_discount_settings_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.merchant_cashier_staff",
+        "source_anchor": "lib/db/src/schema/cashier-staff.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "display_name",
+          "role",
+          "status",
+          "pin_hash",
+          "pin_version",
+          "failed_pin_attempts",
+          "pin_locked_until",
+          "pin_changed_at",
+          "version",
+          "revoked_at",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_cashier_staff_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.merchant_cashier_staff_discount_policies",
+        "source_anchor": "lib/db/src/schema/cashier-discount.ts",
+        "fields": [
+          "merchant_id",
+          "staff_id",
+          "enabled",
+          "max_percentage_bps",
+          "max_amount_minor",
+          "can_approve_override",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_cashier_staff_discount_policies_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_staff",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.merchant_cashier_staff_permissions",
+        "source_anchor": "lib/db/src/schema/cashier-staff.ts",
+        "fields": [
+          "merchant_id",
+          "staff_id",
+          "permission",
+          "granted_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_cashier_staff_permissions_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_cashier_staff",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.merchant_cashier_stations",
+        "source_anchor": "lib/db/src/schema/cashier-staff.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "name",
+          "branch_key",
+          "branch_label",
+          "location_id",
+          "status",
+          "paired_device_id",
+          "offline_inventory_authority",
+          "credential_version",
+          "paired_at",
+          "last_seen_at",
+          "revoked_at",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_cashier_stations_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_locations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_cashier_subscriptions",
+        "source_anchor": "lib/db/src/schema/cashier-subscription.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "status",
+          "licensed_seats",
+          "price_per_seat_iqd",
+          "billing_period_start",
+          "billing_period_end",
+          "grace_duration_seconds",
+          "scheduled_licensed_seats",
+          "scheduled_change_at",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_channel_overrides",
+        "source_anchor": "lib/db/src/schema/merchant-management.ts",
+        "fields": [
+          "merchant_id",
+          "platform",
+          "status",
+          "updated_by_admin_id",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "admin_profiles",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_channels",
+        "source_anchor": "lib/db/src/schema/channels.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "platform",
+          "status",
+          "version",
+          "external_account_id",
+          "external_account_name",
+          "page_id",
+          "page_name",
+          "instagram_account_id",
+          "instagram_username",
+          "credential_ciphertext",
+          "credential_nonce",
+          "credential_auth_tag",
+          "credential_key_id",
+          "credential_algorithm",
+          "credential_expires_at",
+          "webhook_subscribed_at",
+          "last_webhook_at",
+          "last_error_code",
+          "last_error_at",
+          "connected_at",
+          "disconnected_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_channels_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_deletion_requests",
+        "source_anchor": "lib/db/src/schema/merchant-management.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "merchant_id_snapshot",
+          "merchant_name_snapshot",
+          "merchant_phone_snapshot",
+          "requested_by_admin_id",
+          "requested_by_admin_id_snapshot",
+          "requested_by_admin_name_snapshot",
+          "requested_by_admin_phone_snapshot",
+          "reason",
+          "details",
+          "status",
+          "reviewed_by_admin_id",
+          "reviewed_at",
+          "completed_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "admin_profiles",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_delivery_area_rates",
+        "source_anchor": "lib/db/src/schema/merchant-settings.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "area_name",
+          "normalized_area_name",
+          "fee_iqd",
+          "enabled",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_delivery_area_rates_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_settings"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_location_delivery_areas",
+        "source_anchor": "lib/db/src/schema/merchant-locations.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "location_id",
+          "delivery_area_rate_id",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_location_delivery_areas_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_delivery_area_rates",
+          "merchant_locations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_locations",
+        "source_anchor": "lib/db/src/schema/merchant-locations.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "name",
+          "legacy_branch_key",
+          "is_default",
+          "operational_status",
+          "online_fulfillment_enabled",
+          "accept_online_orders_while_closed",
+          "merchant_priority",
+          "city",
+          "area",
+          "address",
+          "latitude",
+          "longitude",
+          "inventory_fresh_at",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_locations_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchant_settings",
+        "source_anchor": "lib/db/src/schema/merchant-settings.ts",
+        "fields": [
+          "merchant_id",
+          "version",
+          "auto_reply_enabled",
+          "reply_language",
+          "delivery_enabled",
+          "delivery_pricing_mode",
+          "delivery_fee_iqd",
+          "free_delivery_threshold_iqd",
+          "delivery_estimated_days_min",
+          "delivery_estimated_days_max",
+          "delivery_areas",
+          "delivery_notes",
+          "cash_on_delivery_enabled",
+          "electronic_payment_enabled",
+          "payment_methods",
+          "payment_instructions",
+          "inventory_freshness_max_age_minutes",
+          "inventory_stale_policy",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_settings_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.merchants",
+        "source_anchor": "lib/db/src/schema/merchants.ts",
+        "fields": [
+          "id",
+          "account_id",
+          "profile_kind",
+          "owner_name",
+          "store_name",
+          "activity_type",
+          "country_code",
+          "timezone",
+          "currency_code",
+          "status",
+          "account_status",
+          "onboarding_status",
+          "trial_status",
+          "signup_source",
+          "requested_plan",
+          "approved_at",
+          "rejected_at",
+          "first_channel_connected_at",
+          "channel_activation_deadline",
+          "trial_started_at",
+          "trial_expires_at",
+          "last_subscription_ended_at",
+          "retention_status",
+          "warning_stage",
+          "products_read_only",
+          "retention_suspended_at",
+          "grace_period_ends_at",
+          "eligible_for_deletion_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.messages",
+        "source_anchor": "lib/db/src/schema/conversations.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "conversation_id",
+          "external_message_id",
+          "external_event_id",
+          "sender",
+          "text",
+          "status",
+          "reply_type",
+          "counted_as_auto_reply",
+          "failure_code",
+          "sent_at",
+          "failed_at",
+          "metadata",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "messages_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "conversations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.migration_reconciliation_results",
+        "source_anchor": "lib/db/src/schema/migrations.ts",
+        "fields": [
+          "id",
+          "migration_run_id",
+          "source_file_id",
+          "check_type",
+          "scope_type",
+          "scope_name",
+          "expected_count",
+          "actual_count",
+          "status",
+          "error_code",
+          "details",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "migration_runs",
+          "migration_source_files"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.migration_runs",
+        "source_anchor": "lib/db/src/schema/migrations.ts",
+        "fields": [
+          "id",
+          "mode",
+          "status",
+          "source_environment",
+          "source_root",
+          "target_database",
+          "schema_snapshot",
+          "schema_snapshot_sha256",
+          "source_manifest_sha256",
+          "tool_version",
+          "git_commit_sha",
+          "planned_row_count",
+          "inserted_row_count",
+          "reconciled_row_count",
+          "warning_count",
+          "error_count",
+          "initiated_by_account_id",
+          "metadata",
+          "created_at",
+          "started_at",
+          "finished_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.migration_source_files",
+        "source_anchor": "lib/db/src/schema/migrations.ts",
+        "fields": [
+          "id",
+          "migration_run_id",
+          "logical_name",
+          "relative_path",
+          "exists",
+          "status",
+          "size_bytes",
+          "record_count",
+          "sha256",
+          "error_code",
+          "metadata",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "migration_runs"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.migration_source_records",
+        "source_anchor": "lib/db/src/schema/migrations.ts",
+        "fields": [
+          "id",
+          "migration_run_id",
+          "source_file_id",
+          "source_collection",
+          "source_record_id",
+          "source_record_sha256",
+          "target_table",
+          "target_record_id",
+          "disposition",
+          "error_code",
+          "metadata",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "migration_runs",
+          "migration_source_files"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.notifications",
+        "source_anchor": "lib/db/src/schema/notifications.ts",
+        "fields": [
+          "id",
+          "audience",
+          "merchant_id",
+          "account_id",
+          "type",
+          "title_key",
+          "body_key",
+          "variables",
+          "source_entity_type",
+          "source_entity_id",
+          "read_at",
+          "expires_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.order_drafts",
+        "source_anchor": "lib/db/src/schema/orders.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "conversation_id",
+          "customer_external_id",
+          "awaiting_field",
+          "draft_data",
+          "expires_at",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "conversations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.order_items",
+        "source_anchor": "lib/db/src/schema/orders.ts",
+        "fields": [
+          "id",
+          "order_id",
+          "merchant_id",
+          "product_id",
+          "product_variant_id",
+          "product_name_snapshot",
+          "variant_snapshot",
+          "quantity",
+          "unit_price_iqd",
+          "line_total_iqd",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "orders",
+          "product_variants",
+          "products"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.order_payment_decisions",
+        "source_anchor": "lib/db/src/schema/orders.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "order_id",
+          "operation",
+          "payment_channel",
+          "outcome",
+          "confirmation_source",
+          "previous_order_status",
+          "resulting_order_status",
+          "previous_payment_status",
+          "resulting_payment_status",
+          "actor_type",
+          "actor_account_id",
+          "actor_session_fingerprint",
+          "request_id",
+          "reason",
+          "expected_version",
+          "resulting_version",
+          "source_file",
+          "source_sha256",
+          "migration_batch_id",
+          "decided_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "order_payment_decisions_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchants",
+          "orders"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.order_payment_provider_events",
+        "source_anchor": "lib/db/src/schema/orders.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "order_id",
+          "provider",
+          "provider_event_id",
+          "provider_transaction_ref",
+          "outcome",
+          "amount_iqd",
+          "currency",
+          "authenticity_verified",
+          "payload_sha256",
+          "sanitized_metadata",
+          "resulting_action",
+          "received_at",
+          "processed_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "order_payment_provider_events_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "orders"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.order_terminal_decision_links",
+        "source_anchor": "lib/db/src/schema/orders.ts",
+        "fields": [
+          "merchant_id",
+          "order_id",
+          "decision_id",
+          "linked_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "order_terminal_decision_links_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "order_payment_decisions",
+          "orders"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.orders",
+        "source_anchor": "lib/db/src/schema/orders.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "conversation_id",
+          "customer_external_id",
+          "customer_name",
+          "customer_phone",
+          "customer_address",
+          "customer_area",
+          "fulfillment_location_id",
+          "status",
+          "payment_method",
+          "payment_status",
+          "subtotal_iqd",
+          "delivery_fee_iqd",
+          "total_iqd",
+          "source_channel",
+          "version",
+          "notes",
+          "payment_verified_at",
+          "payment_verified_by_account_id",
+          "payment_rejection_reason",
+          "payment_confirmation_source",
+          "payment_provider",
+          "payment_provider_transaction_ref",
+          "payment_provider_last_event_id",
+          "payment_reconciliation_status",
+          "payment_conflict_code",
+          "payment_conflict_at",
+          "payment_conflict_resolved_at",
+          "payment_conflict_resolved_by_account_id",
+          "payment_conflict_resolution_note",
+          "confirmed_at",
+          "cancelled_at",
+          "delivered_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "orders_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "conversations",
+          "merchant_locations",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.outbound_deliveries",
+        "source_anchor": "lib/db/src/schema/channel-messaging.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "inbound_event_id",
+          "reservation_id",
+          "reply_intent_id",
+          "outcome",
+          "provider_message_id",
+          "failure_code",
+          "attempted_at",
+          "finalized_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "outbound_deliveries_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "channel_inbound_events",
+          "merchants",
+          "reply_reservations"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.processed_channel_events",
+        "source_anchor": "lib/db/src/schema/conversations.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "channel_id",
+          "external_event_id",
+          "event_type",
+          "payload_hash",
+          "processing_status",
+          "error_code",
+          "received_at",
+          "completed_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchant_channels",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.product_variants",
+        "source_anchor": "lib/db/src/schema/catalog.ts",
+        "fields": [
+          "id",
+          "product_id",
+          "merchant_id",
+          "external_ref",
+          "normalized_external_ref",
+          "name",
+          "color",
+          "size",
+          "sku",
+          "barcode",
+          "quantity",
+          "price_adjustment_iqd",
+          "price_override_iqd",
+          "weight_g",
+          "length_mm",
+          "width_mm",
+          "height_mm",
+          "option_signature",
+          "version",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "product_variants_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "products"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.products",
+        "source_anchor": "lib/db/src/schema/catalog.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "external_ref",
+          "normalized_external_ref",
+          "code",
+          "name",
+          "sku",
+          "barcode",
+          "category",
+          "description",
+          "original_price_iqd",
+          "current_price_iqd",
+          "compare_at_price_iqd",
+          "quantity",
+          "low_stock_threshold",
+          "weight_g",
+          "length_mm",
+          "width_mm",
+          "height_mm",
+          "variant_stock_mode",
+          "version",
+          "status",
+          "allow_fawri_reply",
+          "image_url",
+          "metadata",
+          "created_at",
+          "updated_at",
+          "deleted_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "products_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.provider_cost_audit_events",
+        "source_anchor": "lib/db/src/schema/provider-costs.ts",
+        "fields": [
+          "id",
+          "actor_account_id",
+          "action",
+          "meter_key",
+          "rate_id",
+          "previous_value",
+          "next_value",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.provider_cost_observations",
+        "source_anchor": "lib/db/src/schema/provider-costs.ts",
+        "fields": [
+          "id",
+          "provider_key",
+          "meter_key",
+          "amount_usd",
+          "currency",
+          "source_type",
+          "source_reference",
+          "dimension_key",
+          "dimension_value",
+          "period_start",
+          "period_end",
+          "observed_at",
+          "metadata",
+          "created_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.provider_cost_rates",
+        "source_anchor": "lib/db/src/schema/provider-costs.ts",
+        "fields": [
+          "id",
+          "meter_key",
+          "provider_key",
+          "unit_code",
+          "dimension_key",
+          "dimension_value",
+          "rate_usd",
+          "source_type",
+          "source_reference",
+          "effective_from",
+          "effective_to",
+          "notes",
+          "metadata",
+          "created_by_account_id",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.provider_cost_settings",
+        "source_anchor": "lib/db/src/schema/provider-costs.ts",
+        "fields": [
+          "id",
+          "monthly_budget_usd",
+          "metadata",
+          "updated_by_account_id",
+          "updated_at"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.reply_ledger",
+        "source_anchor": "lib/db/src/schema/subscriptions.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "reply_batch_id",
+          "direction",
+          "amount",
+          "reason_code",
+          "external_event_id",
+          "message_id",
+          "balance_after",
+          "metadata",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "reply_ledger_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "subscription_reply_batches",
+          "subscriptions"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.reply_refunds",
+        "source_anchor": "lib/db/src/schema/channel-messaging.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "reservation_id",
+          "confirmed_failure_code",
+          "state",
+          "credit_ledger_id",
+          "balance_after_refund",
+          "conflict_code",
+          "requested_at",
+          "refunded_at",
+          "conflict_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "reply_refunds_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "reply_ledger",
+          "reply_reservations"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.reply_reservations",
+        "source_anchor": "lib/db/src/schema/channel-messaging.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "inbound_event_id",
+          "external_event_id",
+          "subscription_id",
+          "reply_batch_id",
+          "debit_ledger_id",
+          "debit_source",
+          "amount",
+          "balance_before_debit",
+          "balance_after_debit",
+          "status",
+          "reserved_at",
+          "consumed_at",
+          "refunded_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "reply_reservations_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "channel_inbound_events",
+          "merchants",
+          "reply_ledger",
+          "subscription_reply_batches",
+          "subscriptions"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.saas_billing_events",
+        "source_anchor": "lib/db/src/schema/saas-billing.ts",
+        "fields": [
+          "id",
+          "order_id",
+          "merchant_id",
+          "provider",
+          "provider_event_id",
+          "event_type",
+          "signature_verified",
+          "payload_hash",
+          "status",
+          "occurred_at",
+          "applied_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "saas_billing_events_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "saas_billing_orders"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.saas_billing_orders",
+        "source_anchor": "lib/db/src/schema/saas-billing.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "operation",
+          "requested_plan",
+          "amount_iqd",
+          "currency",
+          "catalog_version",
+          "provider",
+          "status",
+          "idempotency_key",
+          "provider_checkout_ref",
+          "provider_payment_ref",
+          "request_expires_at",
+          "paid_at",
+          "failed_at",
+          "cancelled_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "saas_billing_orders_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.saas_billing_refunds",
+        "source_anchor": "lib/db/src/schema/saas-billing.ts",
+        "fields": [
+          "id",
+          "order_id",
+          "merchant_id",
+          "provider",
+          "provider_refund_ref",
+          "amount_iqd",
+          "status",
+          "reason_code",
+          "created_at",
+          "settled_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "saas_billing_refunds_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "saas_billing_orders"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.saas_entitlement_applications",
+        "source_anchor": "lib/db/src/schema/saas-billing.ts",
+        "fields": [
+          "id",
+          "order_id",
+          "merchant_id",
+          "subscription_id",
+          "operation",
+          "applied_plan",
+          "amount_iqd",
+          "catalog_version",
+          "provider",
+          "provider_payment_ref",
+          "applied_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "saas_entitlement_applications_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "saas_billing_orders",
+          "subscriptions"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.saved_answers",
+        "source_anchor": "lib/db/src/schema/knowledge.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "category",
+          "question_pattern",
+          "normalized_question",
+          "answer_text",
+          "language",
+          "source",
+          "active",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "saved_answers_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.subscription_reply_batches",
+        "source_anchor": "lib/db/src/schema/subscriptions.ts",
+        "fields": [
+          "id",
+          "subscription_id",
+          "merchant_id",
+          "source",
+          "amount",
+          "remaining",
+          "purchased_at",
+          "expires_at",
+          "expiry_reminder_sent_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "subscription_reply_batches_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "subscriptions"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.subscriptions",
+        "source_anchor": "lib/db/src/schema/subscriptions.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "plan_name",
+          "status",
+          "price_iqd",
+          "billing_anchor_day",
+          "base_reply_limit",
+          "base_replies_used",
+          "base_replies_remaining",
+          "addon_replies_remaining",
+          "emergency_credit_amount",
+          "emergency_credit_activated",
+          "emergency_debt",
+          "auto_reply_enabled",
+          "starts_at",
+          "expires_at",
+          "activated_at",
+          "suspended_at",
+          "expiry_reminder_sent_at",
+          "expired_notification_sent_at",
+          "version",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "subscriptions_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.support_attachments",
+        "source_anchor": "lib/db/src/schema/support.ts",
+        "fields": [
+          "id",
+          "message_id",
+          "ticket_id",
+          "merchant_id",
+          "kind",
+          "original_file_name",
+          "mime_type",
+          "size_bytes",
+          "sha256",
+          "storage_provider",
+          "storage_key",
+          "deleted_at",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "support_attachments_privacy_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "merchants",
+          "support_messages",
+          "support_tickets"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.support_inspection_requests",
+        "source_anchor": "lib/db/src/schema/support.ts",
+        "fields": [
+          "id",
+          "ticket_id",
+          "merchant_id",
+          "admin_account_id",
+          "mode",
+          "reason",
+          "status",
+          "consent_decision",
+          "read_only",
+          "session_duration_minutes",
+          "requested_at",
+          "request_expires_at",
+          "responded_at",
+          "approved_at",
+          "rejected_at",
+          "expired_at",
+          "ended_at",
+          "end_reason",
+          "metadata"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "support_inspection_requests_privacy_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchants",
+          "support_tickets"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.support_messages",
+        "source_anchor": "lib/db/src/schema/support.ts",
+        "fields": [
+          "id",
+          "ticket_id",
+          "merchant_id",
+          "sender_type",
+          "sender_account_id",
+          "sender_name_snapshot",
+          "body",
+          "created_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "support_messages_privacy_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchants",
+          "support_tickets"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.support_preview_sessions",
+        "source_anchor": "lib/db/src/schema/support.ts",
+        "fields": [
+          "id",
+          "request_id",
+          "ticket_id",
+          "merchant_id",
+          "admin_account_id",
+          "admin_session_id",
+          "status",
+          "started_at",
+          "expires_at",
+          "last_seen_at",
+          "ended_at",
+          "end_reason",
+          "viewed_sections"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "support_preview_sessions_privacy_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "account_sessions",
+          "accounts",
+          "merchants",
+          "support_inspection_requests",
+          "support_tickets"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.support_tickets",
+        "source_anchor": "lib/db/src/schema/support.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subject",
+          "category",
+          "status",
+          "assigned_admin_account_id",
+          "waiting_on",
+          "waiting_since",
+          "merchant_reminder_sent_at",
+          "assistant_reminder_sent_at",
+          "owner_escalated_at",
+          "resolved_at",
+          "closed_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "support_tickets_privacy_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.training_requests",
+        "source_anchor": "lib/db/src/schema/knowledge.ts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "customer_text_preview",
+          "customer_text_hash",
+          "customer_text_length",
+          "detected_intent",
+          "detected_language",
+          "reason",
+          "suggested_reply",
+          "suggested_reply_source",
+          "status",
+          "rejection_reason",
+          "reviewed_by_account_id",
+          "reviewed_at",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "training_requests_tenant_boundary"
+        ],
+        "merchant_key_columns": [
+          "merchant_id"
+        ],
+        "parent_tables": [
+          "accounts",
+          "merchants"
+        ],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      },
+      {
+        "table": "public.trusted_devices",
+        "source_anchor": "lib/db/src/schema/sessions.ts",
+        "fields": [
+          "id",
+          "account_id",
+          "kind",
+          "device_fingerprint_hash",
+          "label",
+          "status",
+          "trust_slot",
+          "first_seen_at",
+          "last_seen_at",
+          "trusted_at",
+          "trusted_by_account_id",
+          "revoked_at",
+          "revoked_by_account_id"
+        ],
+        "declared_rls_enabled": false,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [
+          "accounts"
+        ],
+        "bounded_authority_proofs": [
+          "P0-ACCESS-AUTHENTICATION-BOUNDARY"
+        ],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE",
+        "bounded_proof_limits": "Authentication integrity/sensitive columns only; not an accepted complete field/actor matrix"
+      },
+      {
+        "table": "public.verified_provider_payment_receipts",
+        "source_anchor": "lib/db/src/schema/verified-payment-receipts.ts",
+        "fields": [
+          "provider",
+          "provider_event_id",
+          "payment_ref",
+          "request_ref",
+          "event_type",
+          "amount_iqd",
+          "payload_hash",
+          "first_received_at"
+        ],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [],
+        "merchant_key_columns": [],
+        "parent_tables": [],
+        "bounded_authority_proofs": [],
+        "complete_field_actor_read_write_export_matrix": "TRIAGE"
+      }
+    ],
+    "readiness_declaration_crosscheck": {
+      "required_table_count": 67,
+      "declared_rls_table_count": 66,
+      "required_missing_rls": [
+        "order_items"
+      ],
+      "additional_declared_rls": [],
+      "method": "Exact exported constant sections matched against snapshot table declarations; not database ACL execution"
+    }
+  }
 }

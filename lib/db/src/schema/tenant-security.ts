@@ -12,6 +12,7 @@ import {
 } from "./merchant-settings";
 import {
   orders,
+  orderItems,
   orderPaymentDecisions,
   orderPaymentProviderEvents,
   orderTerminalDecisionLinks,
@@ -75,6 +76,7 @@ export const merchantLocationDeliveryAreasTenantPolicy = tenantPolicy(
   merchantLocationDeliveryAreas,
 );
 export const ordersTenantPolicy = tenantPolicy("orders_tenant_boundary", orders);
+export const orderItemsTenantPolicy = tenantPolicy("order_items_tenant_boundary", orderItems);
 export const orderPaymentDecisionsTenantPolicy = tenantPolicy("order_payment_decisions_tenant_boundary", orderPaymentDecisions);
 export const orderPaymentProviderEventsTenantPolicy = tenantPolicy(
   "order_payment_provider_events_tenant_boundary",

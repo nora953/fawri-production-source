@@ -1,3 +1,17 @@
+## P0 0049 declarative order-item RLS alignment prepared — 2026-10-24
+
+Previous executable `736e796b5fe25ceac9f1cfb128ba3f640ff6ebe5` is verified **52/52 workflows SUCCESS**. Actual checkout `a06b629ebc5b57fe0703d04d00ddd46885007af0` matches tree `d36329bc466ce748b2c2f3be4d196a957daea184`. Security40039180233 all4jobsSUCCESS; dependency job120706018042 **0High/0Critical/2Moderate** closes body-parser GHSA-27r3-jxmh-p828 source remediation. Native40039180440/job120705942879 Chrome155.0.8059.39 **8PASS**; isolated40039180582/job120706272417 **89clean invocations/87unique files/700TAP passes,0fail/skip/cancel**; full restore49migrations/95tables/66policies/17functions and equal fingerprints. Quality40039180575 build/typecheckSUCCESS. These are exact-source CI evidence, not hosted release acceptance.
+
+New source-only reconciliation found **67 required RLS tables vs66 declared** in0048 snapshot: order_items already has effective0035 SQL isolation but its Drizzle table lacks enableRLS and linked policy. No new runtime tenant leak is asserted; complete-schema generation/future schema diff could omit existing protection. This is a source drift subgate of the existing order_items issue, not reopening its accepted SQL denials.
+
+Prepared append-only reviewed stage0049 with orders/tenant-security preimages, pinned SQL SHA256 `72f41752819cbccc57a8857d0a4aceb84477a40cc3c0a816cae4be4154a32e19`. Adds enableRLS and the same tenant policy to declarative source; SQL reasserts existing0035 predicate without new grants/authority. Two actual Drizzle metadata/policy unit regressions prepared. Local TS syntax/whitespace PASS; runtime and canonical generation **CI_PENDING**. Historical0000–0048 SQL/snapshots remain unchanged. Do not invent0049 snapshot/integrity or mark stage accepted before retrieving generated candidate and checking reproducibility.
+
+Existing proof inventory now indexes95unique source tables/1245fields and source anchors. Full field/actor/export/retention matrix remainsTRIAGE; RLS flags are declarations, not hosted ACL certification. Bounded Support/emergency/auth proofs linked without expanding their acceptance.
+
+Exact next: inspect canonical migration candidate and new metadata unit results; retrieve/hash-check/review generated0049SQL/snapshot/journal, require only0049 additions+journal extension and unchanged historical artifacts, adopt on this branch, verify full canonical/migration/native/HTTP CI. **NO-GO**; hosted gates BLOCKED_HOSTED_VERIFICATION; no merge/main/deploy/P1/P2.
+
+---
+
 ## P0 body-parser fixed graph adopted from verified CI — 2026-10-24
 
 Candidate source `83e1aa5c9a0c7d2230a7bcb47be04e54e13a8dfc`, run40038895996/job120705010283 **SUCCESS**. Candidate0High/0Critical/2Moderate; frozen install, full build/typecheck, source contracts, API872PASS/1existing opt-in SKIP, frontend188PASS/0SKIP and isolated actual HTTP1PASS all passed. New loopback Express compressed JSON/raw verification/malformed-input recovery test PASS. Not a full hosted app or independent complete upstream vulnerability reproduction.

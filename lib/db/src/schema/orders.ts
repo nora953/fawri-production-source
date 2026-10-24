@@ -335,7 +335,7 @@ export const orderItems = pgTable(
     merchantProductIndex: index("order_items_merchant_product_idx").on(table.merchantId, table.productId),
     quantityPriceCheck: check("order_items_quantity_price_check", sql`${table.quantity} > 0 AND ${table.unitPriceIqd} >= 0 AND ${table.lineTotalIqd} = ${table.quantity} * ${table.unitPriceIqd}`),
   }),
-);
+).enableRLS();
 
 export const orderDrafts = pgTable(
   "order_drafts",
