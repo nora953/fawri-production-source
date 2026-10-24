@@ -1,8 +1,10 @@
 {
   "schemaVersion": 1,
+  "date": "2026-10-24",
   "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
   "status": "OPEN",
   "boundedStatus": "FIXTURE_CORRECTED_CI_PENDING",
+  "source": "3da2b78e7fc5fdd26b943bf7d4b254fe4d987116",
   "initialFailure": {
     "source": "b4e8fffe83f44967efc3e57a5889260df4fb6c2a",
     "run": 40080821537,
@@ -48,5 +50,8 @@
     "correction": "Issue actual sessions while accounts active, then use actual updateMerchantStatusPostgres suspension service before deletion fixtures; retain active-only session issuance guard.",
     "applicationChanged": false
   },
+  "functionalCasesPrepared": 7,
+  "previousAcceptedSource": "c0754a143dc8dcb6214c66ba94bb365bd4c353d0",
+  "scope": "Actual management router with restricted primary LOGIN and separate auth LOGIN, owner password/device/session, quiescence and peer/local media. No operator pool/financial-retention/hosted or whole-app acceptance.",
   "release": "NO-GO"
 }
