@@ -1,3 +1,19 @@
+## P0 actual-app notification/conversation consumers accepted — 2026-10-24
+
+Accepted executable `fc00437ff93c1d055b2218aaa0e3b54fe8519383`: **56/56 returned workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. **Six new functional cases**, no application/schema/ACL/policy/provider changes.
+
+[Actual-app consumers/notification40100232849/job120890696968](https://github.com/nora953/fawri-production-source/actions/runs/40100232849/job/120890696968): **12 functional cases / 14 TAP PASS across2files**,0fail/skip/cancel; new6+parent=7 and previous notification7. Actual app.ts with restricted primary LOGIN/separate authentication LOGIN verifies own live notification audience/read replay despite foreign hints; own conversation case/list/detail aliases with original mixed-case IDs/message metadata/no private reply-request fields; anonymous/admin/wrong-device/combined-role denial; foreign notification/admin-audience/conversation ID denial and exact no-change SQL; own takeover/return under foreign body/query hints with pending peer request preserved; revoked session denial/peer positive/no root JSON stores. No provider sending. Checkout `92e4e31e11b869c24ba36ca4194970916ccd21a4` matches tree `895ec4240490ac6e6f0a3fe8f9c7059b22c78303`.
+
+[Full isolated40100232828/job120890754511](https://github.com/nora953/fawri-production-source/actions/runs/40100232828/job/120890754511): **92 clean invocations/90 unique files/715 TAP PASS**,0fail/skip/cancel; owned cleanupSUCCESS, identical checkout/tree to targeted lane. Targeted consumers counted separately from92. Existing conversation/management/browser/security/build/schema workflows alsoSUCCESS; no blanket zero-skip claim for unrelated optional quality tests.
+
+Initial1425cede/run40100009223/job120890035410 failed before0new cases: fixture status=failed omitted required error_code. Corrected synthetic failure code only; check/guards/assertions retained. Prior notification7PASS and cleanupSUCCESS retained. Failure and exact-source evidence: [P0-CONSUMER-FULL-APP-HTTP-20261024.json](evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json). Local syntax/whitespacePASS. Prior dd8bd690 actual-app management fixes remain accepted separately.
+
+Full HTTP/role/field gate remains **OPEN/PARTIAL_HTTP_VERIFIED**;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Known synthetic metadata projection is not an arbitrary-field allowlist or certification of all producers. No operator pool/browser/device/provider/hosted acceptance. Static followup distinguishes SQL order_drafts/processed_channel_events references from legacy /bot/debug in-memory draft projection; schema columns recorded but neither consumer inventory accepted.
+
+Next exact batch: build a bounded machine-readable eight-table field/actor/producer/consumer map from current schema/live routes, including audit_events, manual_reply_requests, merchant_admin_notes, merchant_channel_overrides, merchant_deletion_requests, notifications, order_drafts, processed_channel_events. Reconcile existing evidence, direct SQL vs retired/in-memory consumers and unknown field policies; select tests only for explicit uncovered cells. Do not assume a schema table requires a new public CRUD route or claim privacy closure from unrelated legacy storage. **NO-GO**; PR550Draft/unmerged/base preserved; no main/merge/deploy/hosted/P1/P2. Earlier PREPARED/PENDING headers historical for this bounded scope.
+
+---
+
 ## P0 actual-app management privacy accepted — 2026-10-24
 
 Accepted executable `dd8bd690af323fd3ab65628c0fe441f5c09a566f`: **56/56 returned workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. Six new bounded functional cases run through actual src/app.ts, restricted primary LOGIN and separate authentication LOGIN with mixed-case merchant IDs.
@@ -84,7 +100,7 @@ Previous executable8c070aee completed56/56 workflows SUCCESS; isolated4007563208
 
 Release **NO-GO**. This file and its [machine-readable rows](evidence/P0-CLOSURE-REGISTER.json) are the single current P0 status authority; older matrices/headers remain historical evidence. A CLOSED_SOURCE row closes only its stated source contract, never a hosted or whole-domain release gate.
 
-Source candidate `dd8bd690af323fd3ab65628c0fe441f5c09a566f`; last fully accepted executable `dd8bd690af323fd3ab65628c0fe441f5c09a566f` (56/56 workflows SUCCESS). New bounded HTTP evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Previous accepted executable d8001a4163862198f035fb385bbe7738def7b288 and its completed-source evidence retained: [evidence/P0-0051-VERIFICATION-20261024.json](evidence/P0-0051-VERIFICATION-20261024.json).
+Source candidate `fc00437ff93c1d055b2218aaa0e3b54fe8519383`; last fully accepted executable `fc00437ff93c1d055b2218aaa0e3b54fe8519383` (56/56 workflows SUCCESS). New bounded HTTP evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Previous accepted executable d8001a4163862198f035fb385bbe7738def7b288 and its completed-source evidence retained: [evidence/P0-0051-VERIFICATION-20261024.json](evidence/P0-0051-VERIFICATION-20261024.json).
 
 Tracked rows: 45; CLOSED_SOURCE 29, BLOCKED 9, OPEN 7. No whole-P0 percentage: completeP0Inventory=false. New bounded conversation HTTP evidence: [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json):9 functional cases+parent=10TAP PASS,0fail/skip/cancel; complete HTTP gate remains OPEN. Counts describe this reconciled register, not an approved exhaustive release denominator. The explicit inventory/actor/field gate remains OPEN; no unknown requirement receives PASS.
 

@@ -6,7 +6,7 @@
   "completeP0Inventory": false,
   "overallPercentage": null,
   "sourceCandidate": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
-  "lastFullyAcceptedSource": "dd8bd690af323fd3ab65628c0fe441f5c09a566f",
+  "lastFullyAcceptedSource": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
   "release": "NO-GO",
   "rows": [
     {
@@ -240,7 +240,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Inspect correctedfc00437f actual-app consumer matrix per-file TAP, marker and cleanup. Initial1425cede failed before0cases on existing failure_code constraint; preserve fixture failure and require exact-source broader CI.",
+      "nextAction": "Build machine-readable eight-table field/actor/producer/consumer inventory from current schema/live routes; reconcile direct SQL versus retired/in-memory consumers and prior evidence before adding targeted tests. Include audit_events/manual_reply_requests/management private tables/notifications/order_drafts/processed_channel_events; full HTTP gate remains OPEN.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -257,7 +257,7 @@
       "managementFullAppEvidence": "evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
       "managementFullAppStatus": "SOURCE_EXECUTABLE_ACCEPTED",
       "consumerFullAppEvidence": "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
-      "consumerFullAppStatus": "FIXTURE_CORRECTED_CI_PENDING"
+      "consumerFullAppStatus": "SOURCE_EXECUTABLE_ACCEPTED"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
@@ -344,5 +344,5 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "b2470a3a1e6f4a35a630e463752837771c74b96a"
+  "previousFullyAcceptedSource": "dd8bd690af323fd3ab65628c0fe441f5c09a566f"
 }
