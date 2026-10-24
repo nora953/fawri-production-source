@@ -1,3 +1,9 @@
+## Populated metadata targeted acceptance
+
+Source2a0453ed: run40077528008/job120824032599 SUCCESS,15 functional cases+parent=16TAP PASS,0fail/skip/cancel; five newly added metadata cases PASS. Exact checkout/tree verified,52 migrations and owned cleanup SUCCESS. Evidence: [P0-CONVERSATION-METADATA-HTTP-20261024.json](evidence/P0-CONVERSATION-METADATA-HTTP-20261024.json). Broader CI pending. Initial signed-native job120824032355 failed browser prerequisite timeout before0browser assertions;24signing units PASS. One scoped failed-job retry requested; no assertions/timeouts changed. Preserve first failure. Full gate remains OPEN/NO-GO. No app/schema/ACL/provider change.
+
+---
+
 ## Populated conversation metadata HTTP batch prepared — 2026-10-24
 
 Recovered HEADcc621084; accepted executablee8bc8b06 retained. Gate P0-RESIDUAL-MERCHANT-PRIVACY-001/http remains OPEN. Five new actual-SQL/router cases add six synthetic messages with production-shaped correction/image/knowledge/learning metadata. Require exact own projection on list aliases/detail, real foreign/mismatched correction-ID denials and unchanged SQL, legitimate dismissal/replay/conflict behavior retaining UI correction_review.status and sibling metadata, malformed decision/context refusal, revoked-session read/review refusal and legitimate peer access.
