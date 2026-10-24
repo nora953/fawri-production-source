@@ -1,3 +1,9 @@
+# Current bounded result — 2026-10-24
+
+Gate OPEN / PARTIAL_HTTP_VERIFIED. Executable745f74ef:55/55 workflows SUCCESS. Management10 functional cases+parent and notification6+parent PASS, no targeted fail/skip/cancel. Detailed evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Source map below is bounded; complete field/role/alternate-path inventory remains OPEN. Latest PROGRESS header governs current status; earlier recovery/PREPARED text below is historical. Next missing actual-SQL conversation HTTP contract is at the end. **NO-GO**.
+
+---
+
 # P0 HTTP actor matrix — bounded next-batch checkpoint (2026-10-24)
 
 Status: OPEN / SOURCE INSPECTION ONLY. Release: NO-GO.
@@ -35,3 +41,8 @@ Recovered HEAD607e6b8e; executable management HTTP candidate52d09134 and fixture
 | processed_channel_events | No direct active SQL consumer found beyond purge; transitional migration mapping is separate from current durable Meta queue | Source absence only, not acceptance of every webhook/provider path. Retain signed ingress/queue/worker existing evidence; reconcile semantics with active durable job/Meta identity before defining missing HTTP cases. |
 
 All SQL source proofs remain bounded CLOSED_SOURCE; the eight-table HTTP row and complete role/privacy inventory remain OPEN. No new application policy, production SQL, credentials, hosted interaction, deployment, merge or P1/P2 work.
+
+
+## Exact next missing runtime contract
+
+The existing `manual-conversation-operations.integration.test.mjs` builds/starts the actual server but seeds legacy merchant/runtime JSON. Preserve its accepted evidence; do not count it as restricted PostgreSQL manual-reply HTTP proof. Next add an attested disposable actual-LOGIN test of mounted `conversation-operations.ts`: two merchants; own list/detail/takeover positive controls; foreign path/list/detail/takeover/return/messages deny without SQL changes; pending/uncertain request refuses return while a peer's request cannot block own recovery; failed/delivered reconciliation permits legitimate return; raw idempotency/hash fields stay private; revoked merchant session stops reads/writes. No actual provider send, transport, hosted services or speculative sequencing/policy repair. Whole-app middleware and complete subsystem audit projections remain explicit follow-ups.
