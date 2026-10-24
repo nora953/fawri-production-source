@@ -1,3 +1,11 @@
+## Actual-app consumer fixture corrected; runtime pending — 2026-10-24
+
+Candidate `fc00437ff93c1d055b2218aaa0e3b54fe8519383` seeds the failed own manual reply with SYNTHETIC_CONFIRMED_FAILURE while peer pending error_code remainsNULL, satisfying existing manual_reply_requests_failure_code_check. Initial1425cede/run40100009223/job120890035410 failed during setup before0new functional cases; new suite0PASS/1parentFAIL, earlier notification7TAP PASS. CleanupSUCCESS. This is fixture-only correction, no app/schema/grant/guard/assertion relaxation. Original failure retained in evidence.
+
+Corrected target/broader CI_PENDING; last fully accepted executabledd8bd690. Full HTTP gateOPEN/NO-GO. Preliminary static followup finds SQL order_drafts/processed_channel_events references in deletion/readiness and separate legacy /bot/debug in-memory draft projection; this is not full consumer/field certification. Trace actual order/ingress/debug paths before closure. No hosted/main/merge/deploy/P1/P2.
+
+---
+
 ## Actual-app notification/conversation consumers prepared — 2026-10-24
 
 Recovery HEAD6b7c5874 and accepted executabledd8bd690 verified; PR550Draft/current base/unmerged. Prior notification6cases run through auth-security parent; conversation21cases/23TAP through actual routers; actual-app management6cases separate. Reuse existing data/projection/replay/approval and management proofs. New6bounded cases connect notification and conversation aliases to actual app.ts ordering with restricted primary LOGIN and separate authentication LOGIN, two mixed-case merchant IDs, trusted owner, synthetic channel/message metadata and failed own/pending peer request states. No provider sends or application/schema/ACL/policy changes.

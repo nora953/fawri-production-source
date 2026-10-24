@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "1425cedece71ced5d560fa0565dab6b3e415e5bd",
+  "sourceCandidate": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
   "lastFullyAcceptedSource": "dd8bd690af323fd3ab65628c0fe441f5c09a566f",
   "release": "NO-GO",
   "rows": [
@@ -240,7 +240,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Inspect1425cede actual-app notification/conversation cases per-file TAP/marker/cleanup, verify checkout/source-tree and broader CI. Then exhaustive residual table/actor/field consumer mapping, especially order_drafts and processed_channel_events.",
+      "nextAction": "Inspect correctedfc00437f actual-app consumer matrix per-file TAP, marker and cleanup. Initial1425cede failed before0cases on existing failure_code constraint; preserve fixture failure and require exact-source broader CI.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -257,7 +257,7 @@
       "managementFullAppEvidence": "evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
       "managementFullAppStatus": "SOURCE_EXECUTABLE_ACCEPTED",
       "consumerFullAppEvidence": "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
-      "consumerFullAppStatus": "PREPARED_CI_PENDING"
+      "consumerFullAppStatus": "FIXTURE_CORRECTED_CI_PENDING"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
