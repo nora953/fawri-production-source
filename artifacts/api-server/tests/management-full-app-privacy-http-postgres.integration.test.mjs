@@ -34,7 +34,7 @@ test('full application management privacy preserves cutover ordering and current
   const security=await import('../src/services/postgresAdminSecurityAuthority.ts');
   const {ADMIN_SESSION_COOKIE,MERCHANT_SESSION_COOKIE}=await import('../src/middleware/authSession.ts');
   async function actor(kind,role,permissions=[]){
-    const id=`full-app-http-${randomUUID()}`;ids.push(id);
+    const id=`Full-App-HTTP-${randomUUID()}`;ids.push(id);
     await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,$2,$3,'synthetic','active',true)",[id,kind,`+198${randomInt(100000000,999999999)}`]);
     const a={id,kind,role,permissions,device:`synthetic-${randomUUID()}`};actors.push(a);
     if(kind==='admin'){
