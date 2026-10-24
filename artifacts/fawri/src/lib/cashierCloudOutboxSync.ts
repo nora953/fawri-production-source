@@ -128,9 +128,17 @@ function groupPending(
     grouped.set(operationId, current);
   }
   return [...grouped.entries()]
-    .map(([operationId, items]) => ({
+    .map(([operationId, items]) => {
+      const deviceSequence = items[0].device_sequence;
+      if (!Number.isSafeInteger(deviceSequence) || deviceSequence <= 0) {
+        throw new CashierCloudOutboxSyncError(
+          'CASHIER_OUTBOX_CORRUPT',
+          'Pending cashier operation has an invalid device sequence',
+        );
+      }
+      return {
       operationId,
-      deviceSequence: Math.min(...items.map(item => Number(item.device_sequence))),
+      deviceSequence,
       envelopes: items.sort((left, right) => {
         if (left.entity_type === right.entity_type) {
           return left.entity_id.localeCompare(right.entity_id);
@@ -141,7 +149,8 @@ function groupPending(
         if (right.entity_type === 'return') return 1;
         return left.entity_type.localeCompare(right.entity_type);
       }),
-    }))
+      };
+    })
     .sort(
       (left, right) =>
         left.deviceSequence - right.deviceSequence ||
