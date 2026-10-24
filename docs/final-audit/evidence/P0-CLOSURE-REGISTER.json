@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
+  "sourceCandidate": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
   "lastFullyAcceptedSource": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
   "release": "NO-GO",
   "rows": [
@@ -241,7 +241,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "RESIDUAL-FIELD-001: actual-app POST /api/auth/notifications/read-all. Verify anonymous/admin/wrong-device/revoked denial; own bulk success and replay under foreign hints with exact peer/admin-audience preservation. Reuse prior single-read proofs; preserve existing expiry behavior. Then producer JSON and alternate audit/draft/event field cells from inventory.",
+      "nextAction": "Verify bd3c518e RESIDUAL-FIELD-001 bulk-read actual-app cases, per-file TAP/marker/cleanup and exact checkout/source-tree then broader CI. Keep inventory cell OPEN until acceptance; then RESIDUAL-FIELD-002 producer variables/key provenance.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -268,7 +268,9 @@
         "reviewedRouteRows": 19,
         "literalSqlReferences": 61,
         "scannedRuntimeFiles": 312
-      }
+      },
+      "notificationBulkEvidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json",
+      "notificationBulkStatus": "PREPARED_CI_PENDING"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
