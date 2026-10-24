@@ -1,3 +1,9 @@
+# Current execution policy — 2026-10-24
+
+The governing workflow is [FAWRI-ENGINEERING-EXECUTION-PLAN.md](FAWRI-ENGINEERING-EXECUTION-PLAN.md), also referenced by repository-root [AGENTS.md](../../AGENTS.md). This section changes the execution method, **not** the historical audit results below. Continue P0 from the authoritative [P0-CLOSURE-REGISTER.md](P0-CLOSURE-REGISTER.md) and its JSON evidence; do not restart, duplicate accepted work, or begin P1/P2. Source, CI, hosted, load and commercial signoff are distinct gates. GitHub-only, no hosted service access or deployment; NO-GO until independent release acceptance.
+
+---
+
 ## P0 0050 source accepted;0051 remaining tenant boundaries prepared — 2026-10-24
 
 Verified executable `931acbfcfb0cbd2601eec053a7bd2e06aefb02cf` completed **52/52 workflows SUCCESS**. Checkout `c75d12964487717e6166101f82062fe8d65a996d` matches tree `1ca16a25ad732a1979bf6e3a842cd3ba9edd39bd`. Normal quality40056263139/job120759808005 **4new declarative/snapshot regressions PASS**, API879PASS/1existing opt-in SKIP. Native40056263207/job120759808022 SUCCESS (8cases). Isolated40056263189/job120759883715 **91clean invocations/89unique files/709TAP passes,0fail/skip/cancel**. Strict3-table marker confirms9read/18mutation denials,3readiness disable probes and actual note/override/request creation/review/rollback/peer preservation. Restore51migrations/95tables/69effective policies/17functions and equal seed/verify fingerprint7ffaa54596f36b785acf3d408f7d53d936e140bc46b814e8e216fc845bbc8564. Management3-table source subgate VERIFIED; HTTP/hosted acceptance still OPEN. Residual diagnostic separately confirms3protected/5remaining unprotected; green harness not privacy acceptance.
