@@ -111,8 +111,19 @@ function groupPending(
   const grouped = new Map<string, CashierSyncEnvelope[]>();
   for (const envelope of envelopes) {
     const operationId = String(envelope.operation_id || '').trim();
-    if (!operationId) continue;
+    if (!operationId) {
+      throw new CashierCloudOutboxSyncError(
+        'CASHIER_OUTBOX_CORRUPT',
+        'Pending cashier envelope has no operation identity',
+      );
+    }
     const current = grouped.get(operationId) || [];
+    if (current.length > 0 && current[0].device_sequence !== envelope.device_sequence) {
+      throw new CashierCloudOutboxSyncError(
+        'CASHIER_OUTBOX_CORRUPT',
+        'Pending cashier operation has inconsistent device sequences',
+      );
+    }
     current.push(envelope);
     grouped.set(operationId, current);
   }
