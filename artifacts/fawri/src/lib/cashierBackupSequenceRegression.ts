@@ -64,6 +64,12 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
       rejected = true;
     }
     if (rejected) {
+      const pendingAfterRejection = await cashier.listPendingSync();
+      const beforeIds = before.map(item => `${item.operation_id}:${item.entity_type}:${item.entity_id}`).sort();
+      const afterIds = pendingAfterRejection.map(item => `${item.operation_id}:${item.entity_type}:${item.entity_id}`).sort();
+      if (JSON.stringify(beforeIds) !== JSON.stringify(afterIds)) {
+        throw new Error('P0 FAIL: rejected restore modified pending operations');
+      }
       if (!(await cashier.getSale('sale:p0-seq-after-backup'))) {
         throw new Error('P0 FAIL: rejected restore did not preserve the newer sale');
       }
