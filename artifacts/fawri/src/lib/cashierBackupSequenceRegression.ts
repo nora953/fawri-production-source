@@ -46,6 +46,13 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
       payment_status: 'paid',
       lines: [{ product_id: 'p0-product', quantity: 1 }],
     });
+    // An independent stock adjustment must also survive a rejected stale restore.
+    await cashier.adjustInventory({
+      operation_id: 'p0-seq-after-backup-adjustment',
+      product_id: 'p0-product',
+      delta: 1,
+      reason: 'manual_adjustment',
+    });
     const before = await cashier.listPendingSync();
     const maximumBefore = Math.max(...before.map(item => item.device_sequence));
     if (maximumBefore < 2) throw new Error('Regression setup did not advance device sequence');
@@ -69,6 +76,10 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
       const afterIds = pendingAfterRejection.map(item => `${item.operation_id}:${item.entity_type}:${item.entity_id}`).sort();
       if (JSON.stringify(beforeIds) !== JSON.stringify(afterIds)) {
         throw new Error('P0 FAIL: rejected restore modified pending operations');
+      }
+      const itemAfterRejection = await cashier.getCatalogItem('p0-product');
+      if (itemAfterRejection?.stock_quantity !== 4) {
+        throw new Error('P0 FAIL: rejected restore changed adjusted stock');
       }
       if (!(await cashier.getSale(newerSale.sale.sale_id))) {
         throw new Error('P0 FAIL: rejected restore did not preserve the newer sale');
