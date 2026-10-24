@@ -529,8 +529,29 @@ function groupByOperation(
   const groups = new Map<string, CashierSyncEnvelope[]>();
   for (const envelope of envelopes) {
     const list = groups.get(envelope.operation_id) || [];
+    if (list.length > 0 && list[0].device_sequence !== envelope.device_sequence) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+        'Pending cashier operation has inconsistent device sequences',
+        409,
+      );
+    }
     list.push(envelope);
     groups.set(envelope.operation_id, list);
+  }
+  // IndexedDB orders pending envelopes by sequence, but an inconsistent
+  // operation identity must never let a later sequence overtake an earlier one.
+  let previousSequence = 0;
+  for (const [, operation] of groups) {
+    const sequence = operation[0].device_sequence;
+    if (!Number.isSafeInteger(sequence) || sequence <= previousSequence) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+        'Pending cashier operation sequence is not strictly increasing',
+        409,
+      );
+    }
+    previousSequence = sequence;
   }
   return groups;
 }
