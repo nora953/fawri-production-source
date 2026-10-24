@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "PREPARED_OPTIONAL_BRANCHES_CI_PENDING",
+  "recoveredHead": "a2e74076c435de441377347a53c687cd8f24397a",
+  "previousAcceptedExecutable": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
+  "test": "artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 2,
+  "expectedSuiteFunctionalCases": 7,
+  "expectedSuiteTap": 8,
+  "expectedLaneFunctionalCases": 24,
+  "expectedLaneTap": 28,
+  "newProducedRows": 12,
+  "totalSuiteProducedRows": 20,
+  "branches": [
+    "omitted conversationId/provider and createdAt",
+    "blank conversationId/provider",
+    "empty/blank payment sourceEventId uses orderId",
+    "order fallback URL and knowledge-gap conversations fallback",
+    "actual service clock when createdAt absent"
+  ],
+  "checks": [
+    "exact SQL variable and source identity",
+    "actual app response and frontend validator",
+    "foreign read denied without SQL mutation",
+    "sequential producer dedup and read replay",
+    "exact peer preservation"
+  ],
+  "localSyntax": "PASS",
+  "runtime": "NOT_RUN",
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "fieldCellClosed": false,
+  "release": "NO-GO",
+  "nextExactAction": "Inspect exact candidate targeted and broader CI; upstream caller-to-merchant ownership remains pending."
+}

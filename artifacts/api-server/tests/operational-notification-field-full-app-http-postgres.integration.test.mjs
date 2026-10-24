@@ -143,5 +143,53 @@ test('operational SQL producers round trip through actual app and frontend valid
     assert.deepEqual(await snapshot(),before);
     assert.deepEqual(fs.readdirSync(process.env.FAWRI_DATA_DIR).filter(n=>n.endsWith('.json')),[]);
   });
-  console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:8,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
+
+  for(const mode of ['omitted','blank']){
+    await t.test(mode+' optional fields keep fallback URLs and sequential tenant replay intact',async()=>{
+      const suffix=mode+' /?&=# mixed',orderId='Fallback-Order-'+suffix,trainingRequestId='Fallback-Training-'+suffix;
+      const optional=mode==='blank'?{conversationId:'   ',provider:'   ',sourceEventId:'   '}:{};
+      const variants=[
+        {type:'operational_new_order',fn:producer.notifyMerchantNewOrderPostgres,input:{orderId,...optional},variables:{order_id:orderId,action_url:'/dashboard/orders?order='+encodeURIComponent(orderId)}},
+        // sourceEventId is required by the TypeScript contract: empty exercises
+        // the producer's existing order-id fallback; it is not an HTTP input.
+        {type:'operational_payment_conflict',fn:producer.notifyMerchantPaymentConflictPostgres,input:{orderId,sourceEventId:'',...optional},variables:{order_id:orderId,action_url:'/dashboard/orders?order='+encodeURIComponent(orderId)}},
+        {type:'operational_knowledge_gap',fn:producer.notifyMerchantKnowledgeGapPostgres,input:{trainingRequestId,...optional},variables:{training_request_id:trainingRequestId,action_url:'/dashboard/conversations'}},
+      ];
+      const tenantIds=[];
+      for(const actor of [a,b]){
+        const peer=actor===a?b:a,peerBefore=await snapshot([peer.id]);
+        for(const entry of variants){
+          const started=Date.now();
+          // createdAt is omitted too: retain the actual service clock.
+          const first=await entry.fn({...entry.input,merchantId:actor.id});
+          assert.equal(first.deduplicated,false);tenantIds.push(first.notification_id);
+          const row=(await admin.query('SELECT * FROM notifications WHERE id=$1',[first.notification_id])).rows[0];
+          assert.equal(row.merchant_id,actor.id);assert.equal(row.account_id,actor.id);assert.equal(row.audience,'merchant');assert.equal(row.type,entry.type);
+          assert.deepEqual(row.variables,entry.variables);assert.equal(row.source_entity_id,entry.type==='operational_knowledge_gap'?trainingRequestId:orderId);assert.equal(row.read_at,null);
+          const actualTime=new Date(row.created_at).toISOString();
+          assert.ok(Date.parse(actualTime)>=started&&Date.parse(actualTime)<=Date.now());
+          const listing=await req('/api/auth/notifications?limit=50',actor);
+          assert.equal(listing.status,200);assert.equal(listing.cache,'no-store');
+          assert.ok(listing.body.notifications.every(isMerchantNotificationRecord));
+          const notice=listing.body.notifications.find(n=>n.id===row.id);
+          const expected={id:row.id,type:entry.type,...entry.variables,created_at:actualTime};
+          assert.deepEqual(notice,expected);assert.equal(isSafeMerchantNotificationActionUrl(notice.action_url),true);
+          assert.equal(Object.hasOwn(notice,'conversation_id'),false);assert.equal(Object.hasOwn(notice,'provider'),false);
+          const deniedBefore=await snapshot();
+          const denied=await req('/api/auth/notifications/'+row.id+'/read',peer,'PATCH');
+          assert.equal(denied.status,404);assert.equal(denied.body.notification,undefined);assert.deepEqual(await snapshot(),deniedBefore);
+          const path='/api/auth/notifications/'+row.id+'/read';
+          const read=await req(path,actor,'PATCH');assert.equal(read.status,200);assert.equal(isMerchantNotificationRecord(read.body.notification),true);
+          assert.deepEqual(read.body.notification,{...expected,read_at:read.body.notification.read_at});assert.ok(Number.isFinite(Date.parse(read.body.notification.read_at)));
+          const stable=await snapshot();
+          assert.deepEqual(await entry.fn({...entry.input,merchantId:actor.id,createdAt:'2026-10-26T00:00:00Z'}),{notification_id:row.id,deduplicated:true});
+          const reread=await req(path,actor,'PATCH');assert.equal(reread.status,200);assert.deepEqual(reread.body,read.body);assert.deepEqual(await snapshot(),stable);
+          assert.deepEqual(await snapshot([peer.id]),peerBefore);
+        }
+      }
+      assert.equal(new Set(tenantIds).size,6);
+    });
+  }
+
+  console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
 });

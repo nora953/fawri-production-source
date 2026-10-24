@@ -1,3 +1,11 @@
+## RESIDUAL-FIELD-002 optional operational branches prepared — 2026-10-25
+
+Recovered HEADa2e74076; previous accepted executable04b7fa85/56CI retained. Added two functional cases to the existing actual SQL→app→frontend-validator suite: omitted and whitespace-only optional conversation/provider fields, absent createdAt clock, payment empty-event/order fallback, exact variables/source identity/action URLs, foreign-ID denial, own read/producer replay and byte-exact peer preservation. Twelve new produced rows,20suite rows; expected7functional/8TAP in the suite and24functional/28TAP in the lane. Tests/docs only; no application/schema/ACL/policy edits.
+
+Local Node24 syntax/whitespacePASS. **Runtime NOT_RUN; CI_PENDING**. [Evidence](evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json). No gate closure or new runtime acceptance claimed. Next inspect exact candidate checkout/targeted logs and broader CI; then upstream caller-to-merchant provenance and remaining subscription/Support templates. Prior present-option cases run as relevant regressions, not repeated recovery investigation. FIELD002/full matrix OPEN; **NO-GO**; GitHub only,PR550Draft/current base preserved; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## RESIDUAL-FIELD-002 bounded operational producer runtime accepted — 2026-10-25
 
 Source **04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no application/schema/ACL/policy changes. Recovery started at verified5f0d5a8d; earlier FIELD001 acceptance preserved.
