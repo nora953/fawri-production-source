@@ -46,7 +46,7 @@ test('actual app isolates notification and conversation consumers across aliases
     await admin.query("INSERT INTO conversations(id,merchant_id,channel_id,customer_external_id,customer_name) VALUES($1,$2,$3,$4,$4)",[conversation,id,channel,`private-customer-${id}`]);
     const metadata={source_stage:'synthetic-owned',image_url:`https://example.invalid/owned/${id}.jpg`};
     await admin.query("INSERT INTO messages(id,merchant_id,conversation_id,sender,status,text,metadata) VALUES($1,$2,$3,'customer','received',$4,$5::jsonb)",[message,id,conversation,`private-message-${id}`,JSON.stringify(metadata)]);
-    await admin.query("INSERT INTO manual_reply_requests(id,merchant_id,conversation_id,idempotency_key,text_sha256,status) VALUES($1,$2,$3,$1,$4,$5)",[`private-request-${id}`,id,conversation,'a'.repeat(64),id===merchants[0]?'failed':'pending']);
+    await admin.query("INSERT INTO manual_reply_requests(id,merchant_id,conversation_id,idempotency_key,text_sha256,status,error_code) VALUES($1,$2,$3,$1,$4,$5,$6)",[`private-request-${id}`,id,conversation,'a'.repeat(64),id===merchants[0]?'failed':'pending',id===merchants[0]?'SYNTHETIC_CONFIRMED_FAILURE':null]);
     sessions.push({id,device,session,channel,conversation,message,metadata,cookie:`${MERCHANT_SESSION_COOKIE}=${session.token}`});
     for(const suffix of ['own','expired','admin'])await admin.query("INSERT INTO notifications(id,audience,merchant_id,account_id,type,title_key,body_key,variables,expires_at) VALUES($1,$2,$3,$4,'synthetic','synthetic','synthetic',$5::jsonb,$6)",[
       `${id}-${suffix}`,suffix==='admin'?'admin':'merchant',id,suffix==='admin'?owner:null,JSON.stringify({sentinel:`private-${id}-${suffix}`}),suffix==='expired'?new Date(Date.now()-1000):null,
