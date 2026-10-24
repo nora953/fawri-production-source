@@ -1,3 +1,11 @@
+## P0 0049 candidate prerequisite correction — 2026-10-24
+
+Initial prepared source29848c4, migration candidate40053578399/job120751432186 failed before generation: reviewed_sql stage49 requires the pinned SQL file in committed drizzle history. No generated artifact or success was claimed. Added the exact72f41752… reviewedSQL to0049_order_items_declarative_rls_alignment.sql and the matching journal49 entry; no prior SQL/snapshot/journal entry changed. Canonical0049snapshot remains absent until generated/retrieved from CI. Local committed-journal/order/hash and read-only preflight controls **2PASS**. New actual Drizzle unit/canonical/migration/runtime CI pending.
+
+Next inspect corrected migration candidate and metadata units, retrieve generated0049snapshot, compare reviewedSQL/journal/historical hashes, commit exact artifact, then exact-source full CI. Keep previous736e79652/52 source acceptance separate. **NO-GO**; no hosted/main/merge/deploy/P1/P2.
+
+---
+
 ## P0 0049 declarative order-item RLS alignment prepared — 2026-10-24
 
 Previous executable `736e796b5fe25ceac9f1cfb128ba3f640ff6ebe5` is verified **52/52 workflows SUCCESS**. Actual checkout `a06b629ebc5b57fe0703d04d00ddd46885007af0` matches tree `d36329bc466ce748b2c2f3be4d196a957daea184`. Security40039180233 all4jobsSUCCESS; dependency job120706018042 **0High/0Critical/2Moderate** closes body-parser GHSA-27r3-jxmh-p828 source remediation. Native40039180440/job120705942879 Chrome155.0.8059.39 **8PASS**; isolated40039180582/job120706272417 **89clean invocations/87unique files/700TAP passes,0fail/skip/cancel**; full restore49migrations/95tables/66policies/17functions and equal fingerprints. Quality40039180575 build/typecheckSUCCESS. These are exact-source CI evidence, not hosted release acceptance.

@@ -2229,5 +2229,19 @@
       }
     },
     "limits": "Candidate tests verify disposable dependency graph; normal exact-source CI and hosted release remain unaccepted."
+  },
+  "order_items_declarative_alignment": {
+    "status": "PREPARED_CI_PENDING",
+    "first_source": "29848c4e0a37f2cca8badc2f861406e9fbcbd597",
+    "first_failure": {
+      "run": 40053578399,
+      "job": 120751432186,
+      "reason": "Reviewed stage49 requires pinned committed SQL before generation; no artifact"
+    },
+    "correction": "Exact reviewed SQL and matching journal entry committed; no generator/security rule changed",
+    "local": {
+      "journal_controls_passed": 2
+    },
+    "next": "Retrieve generated0049snapshot and verify full canonical history plus actual metadata/native/HTTP CI"
   }
 }

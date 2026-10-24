@@ -344,6 +344,13 @@
       "when": 1791936000020,
       "tag": "0048_emergency_privacy_authentication_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1791936000021,
+      "tag": "0049_order_items_declarative_rls_alignment",
+      "breakpoints": true
     }
   ]
 }
