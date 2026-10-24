@@ -1,3 +1,13 @@
+## Actual-app notification/conversation consumers prepared — 2026-10-24
+
+Recovery HEAD6b7c5874 and accepted executabledd8bd690 verified; PR550Draft/current base/unmerged. Prior notification6cases run through auth-security parent; conversation21cases/23TAP through actual routers; actual-app management6cases separate. Reuse existing data/projection/replay/approval and management proofs. New6bounded cases connect notification and conversation aliases to actual app.ts ordering with restricted primary LOGIN and separate authentication LOGIN, two mixed-case merchant IDs, trusted owner, synthetic channel/message metadata and failed own/pending peer request states. No provider sends or application/schema/ACL/policy changes.
+
+Actual chain: app.ts authSecurityRouter owns notification routes before compatibility; conversation paths traverse compatibility→retention→operational access→conversation router. Cases: own live notification audience under foreign query hints and case variants/read replay; own conversation aliases/detail/message metadata and no reply-request internals; anonymous/admin/wrong-device/combined-role denial across both families; foreign IDs/admin audience denial with exact SQL snapshots; own takeover/return with foreign body/query hints while peer pending request unchanged; revoked merchant denial/peer positive/no root JSON stores. All IDs remain original mixed case. Support startup sweep awaited/stopped before assertions and disposal.
+
+Local syntax/whitespacePASS; runtimePREPARED/CI_PENDING. Next inspect per-file TAP/marker/cleanup and exact source/checkout tree, classify failures, then broader exact-source CI. Full eight-table/actor/field/alternate-consumer inventory remains OPEN, including order_drafts/processed_channel_events. No full browser/provider/operator/hosted certification. NO-GO; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## P0 actual-app management privacy accepted — 2026-10-24
 
 Accepted executable `dd8bd690af323fd3ab65628c0fe441f5c09a566f`: **56/56 returned workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. Six new bounded functional cases run through actual src/app.ts, restricted primary LOGIN and separate authentication LOGIN with mixed-case merchant IDs.

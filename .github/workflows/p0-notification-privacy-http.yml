@@ -3,6 +3,13 @@ on:
   pull_request:
     paths:
       - 'artifacts/api-server/tests/merchant-notification-privacy-http-postgres.integration.test.mjs'
+      - 'artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs'
+      - 'artifacts/api-server/src/app.ts'
+      - 'artifacts/api-server/src/routes/auth-security.ts'
+      - 'artifacts/api-server/src/routes/conversation-operations.ts'
+      - 'artifacts/api-server/src/middleware/authCutoverCompatibility.ts'
+      - 'artifacts/api-server/src/middleware/merchantRetentionAccess.ts'
+      - 'artifacts/api-server/src/middleware/merchantOperationalAccess.ts'
       - 'scripts/execute-disposable-postgres-audit.mjs'
       - 'scripts/run-isolated-postgres-audit.sh'
       - 'artifacts/api-server/src/routes/merchant-notifications-pg.ts'
@@ -33,6 +40,7 @@ jobs:
       - name: Check audit execution syntax
         run: |
           node --check artifacts/api-server/tests/merchant-notification-privacy-http-postgres.integration.test.mjs
+          node --check artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs
           node --check scripts/execute-disposable-postgres-audit.mjs
           bash -n scripts/run-isolated-postgres-audit.sh
       - name: Execute notification tenant and audience HTTP assertions
