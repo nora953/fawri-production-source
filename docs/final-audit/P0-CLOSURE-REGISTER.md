@@ -1,3 +1,15 @@
+## RESIDUAL-FIELD-002 operational runtime candidate prepared — 2026-10-25
+
+Recovery verified PR550 Draft/unmerged, original base preserved and HEAD5f0d5a8d625c4cf64f286eebb2b8ab64d3703611. Read AGENTS/execution plan/register/latest producer map; accepted FIELD001 and bd3c518e evidence reused without rerunning old work for recovery alone.
+
+Prepared five functional cases in `operational-notification-field-full-app-http-postgres.integration.test.mjs`: actual four notifyMerchant*Postgres producers, two merchants/eight produced SQL rows, exact variable/response field equality, separate deterministic identities for identical source IDs across tenants, actual app.ts list/PATCH and actual frontend validator, encoded local URLs, foreign-ID/anonymous/admin/wrong-device denial, read replay and producer dedup preserving original timestamps and peer SQL. No synthetic notification INSERT and no provider sends. Existing disposable restricted LOGIN/separate auth helper reused; broad RLS-mediated table grants are not production least-privilege acceptance.
+
+Wired into existing notification-privacy-http lane with trigger/syntax checks. Local Node24.22.1 `node --check` PASS. **Runtime NOT_RUN / CI_PENDING** at preparation; no new PASS or gate closure. No application/schema/ACL/policy changes. Caller-to-producer ownership, absent optional inputs, concurrent producer races, remaining subscription/Support templates, historical/legacy rows and hosted acceptance remain outside this candidate.
+
+Next: inspect exact candidate Actions notification lane logs and checkout tree, record five case outcomes (six TAP including parent), then relevant broader CI. Preserve any setup/runtime failure and fix only its proven cause. FIELD002/full matrix OPEN; last accepted executable bd3c518eb784608a68539d6a8b9fb9050fff57e8 unchanged. **NO-GO**; GitHub only, no merge/deploy/main/P1/P2.
+
+---
+
 ## RESIDUAL-FIELD-002 notification producer field map — 2026-10-25
 
 Created [producer-to-client source map](P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.md) and [machine evidence](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json): **12frontend types**,9reviewed canonical SQL template candidates and3legacy AuthDb definitions. All12source anchors/type-set equality/reserved-key disjointness and11input file SHA256 digests checked. Source64f61f44; last accepted executable **bd3c518eb784608a68539d6a8b9fb9050fff57e8 remains unchanged**. This is source provenance only; no new runtime/CI/per-field acceptance or application/schema/ACL/policy change.

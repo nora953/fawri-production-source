@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "PREPARED_CI_PENDING",
+  "recoveredHead": "5f0d5a8d625c4cf64f286eebb2b8ab64d3703611",
+  "lastAcceptedExecutable": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "test": "artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs",
+  "expectedFunctionalCases": 5,
+  "expectedTapIncludingParent": 6,
+  "producers": [
+    "operational_new_order",
+    "operational_payment_conflict",
+    "operational_knowledge_gap",
+    "operational_customer_message"
+  ],
+  "actualApp": true,
+  "actualFrontendValidator": true,
+  "syntheticMerchants": 2,
+  "expectedProducedRows": 8,
+  "runtimeVerification": "NOT_RUN",
+  "localSyntax": "PASS Node24.22.1",
+  "workflow": ".github/workflows/p0-notification-privacy-http.yml",
+  "suite": "notification-privacy-http",
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "release": "NO-GO",
+  "limits": [
+    "Prepared assertions are not executed evidence.",
+    "Direct internal producer calls do not accept upstream caller ownership.",
+    "Optional-absent variants, concurrency races and remaining types pending.",
+    "Disposable role has broad table grants mediated by RLS; no hosted least-privilege claim.",
+    "No provider sending, hosted services, merge or deployment."
+  ]
+}
