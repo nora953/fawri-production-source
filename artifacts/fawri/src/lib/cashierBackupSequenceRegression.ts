@@ -92,7 +92,7 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
       }
     }
     const before = await cashier.listPendingSync();
-    const maximumBefore = Math.max(...before.map(item => item.device_sequence));
+    const maximumBefore = Math.max(...timeline.map(item => item.device_sequence));
     if (maximumBefore < 3) throw new Error('Regression setup did not advance sequence for both sales and adjustment');
 
     // Restore must not silently roll back an active device. A safe implementation
@@ -127,8 +127,8 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
 
     const after = await cashier.listPendingSync();
     const maximumAfter = Math.max(...after.map(item => item.device_sequence));
-    if (maximumAfter < maximumBefore) {
-      throw new Error('P0 FAIL: stale backup rewound device sequence and outbox');
+    if (maximumAfter < Math.max(...before.map(item => item.device_sequence))) {
+      throw new Error('P0 FAIL: stale backup rewound the pending outbox sequence');
     }
     if (!(await cashier.getSale(newerSale.sale.sale_id))) {
       throw new Error('P0 FAIL: stale backup silently removed a newer local sale');
