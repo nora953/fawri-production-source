@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.mjs';
 const suites = {
   "conversation-privacy-http": ["manual-conversation-privacy-http-postgres.integration.test.mjs", "conversation-correction-approval-http-postgres.integration.test.mjs"],
-  "notification-privacy-http": ["consumer-full-app-privacy-http-postgres.integration.test.mjs", "merchant-notification-privacy-http-postgres.integration.test.mjs"],
+  "notification-privacy-http": ["notification-bulk-read-full-app-http-postgres.integration.test.mjs", "consumer-full-app-privacy-http-postgres.integration.test.mjs", "merchant-notification-privacy-http-postgres.integration.test.mjs"],
   "management-privacy-http": ["management-full-app-privacy-http-postgres.integration.test.mjs", "merchant-management-privacy-http-postgres.integration.test.mjs", "merchant-owner-import-http-postgres.integration.test.mjs", "merchant-owner-deletion-http-postgres.integration.test.mjs"],
   "subscription-golden": ["subscription-entitlement-postgres.integration.test.ts", "subscription-http-postgres-golden-journey.integration.test.ts"],
   "online-routing": ["merchant-customer-payment-authority-postgres.integration.test.ts"],

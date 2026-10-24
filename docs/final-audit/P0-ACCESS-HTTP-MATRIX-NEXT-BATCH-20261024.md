@@ -1,3 +1,13 @@
+## RESIDUAL-FIELD-001 actual-app bulk notification read prepared — 2026-10-24
+
+Recovery HEAD38525872/current PR550Draft/base/unmerged verified; accepted executablefc00437f retained. Selected inventory cell RESIDUAL-FIELD-001 maps app.ts→auth-security→early notification router (GET/PATCH only)→later auth-support-postgres POST /notifications/read-all→requireSecureMerchantSession→markAllMerchantNotificationsReadPostgresCanonical→withMerchantOperationalTransaction UPDATE own audience=merchant unread rows. No application/schema/ACL/policy changes.
+
+Five new functional actual-app cases use two mixed-case merchant identities, trusted owner and support assistant, eight notifications: live unread/expired unread/already-read/admin audience for each merchant. Valid admin /me positives precede merchant-route denials. Test anonymous/admin/wrong-device/combined-role/forged legacy/revoked-session rejection with exact unchanged snapshots, own bulk with foreign query/body hints, existing expired-unread inclusion (no expiry filter in current bulk authority), exact already-read timestamps, replay updated0, independent peer bulk success and unchanged other tenant/admin audience. No provider sends; no root legacy JSON. Current date-based retention policy is not changed or accepted by this test.
+
+Local syntax/whitespacePASS; runtimePREPARED/CI_PENDING. Existing consumer and notification suites retained separately in same lane; no new results counted before raw TAP. Next verify exact source/checkout tree, targeted per-file results/marker/cleanup and broader CI; only then mark this bounded inventory cell accepted. Whole HTTP/field gate remains OPEN; NO-GO; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## P0 bounded residual field inventory created — 2026-10-24
 
 [Machine-readable inventory](evidence/P0-RESIDUAL-FIELD-INVENTORY-20261024.json) and [field/role/route report](P0-RESIDUAL-FIELD-INVENTORY-20261024.md): **8 tables / 86 schema columns**,19 reviewed route rows,61 literal SQL references from312 runtime files. Source revision53f4f4b0; last accepted executable **fc00437ff93c1d055b2218aaa0e3b54fe8519383 remains unchanged** (56/56 CI SUCCESS and715 broaderTAP retained). This batch changes audit documentation/generator only; no new application runtime/CI acceptance claimed.
