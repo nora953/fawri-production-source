@@ -115,3 +115,13 @@ test('live operator outbox rejects envelopes without operation identity', async 
   assert.match(grouping, /!String\(envelope\.operation_id\)\.trim\(\)/);
   assert.match(grouping, /CASHIER_OPERATOR_OUTBOX_CORRUPT/);
 });
+
+test('operator outbox preflights unsupported operations before any network upload', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const preflight = sync.indexOf('for (const [, envelopes] of groups)');
+  const rejection = sync.indexOf('CASHIER_OPERATOR_UNSUPPORTED_OPERATION', preflight);
+  const uploadLoop = sync.indexOf('for (const [operationId, envelopes] of groups)', preflight);
+  const upload = sync.indexOf('const uploadedResult = await postOperation(', uploadLoop);
+  assert.ok(preflight >= 0 && rejection > preflight, 'unsupported operation preflight must reject');
+  assert.ok(uploadLoop > rejection && upload > uploadLoop, 'preflight must precede every network upload');
+});
