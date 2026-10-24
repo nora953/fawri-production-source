@@ -2,9 +2,9 @@
 
 Release **NO-GO**. This file and its [machine-readable rows](evidence/P0-CLOSURE-REGISTER.json) are the single current P0 status authority; older matrices/headers remain historical evidence. A CLOSED_SOURCE row closes only its stated source contract, never a hosted or whole-domain release gate.
 
-Source candidate `745f74ef29169f698219b51c8e852ce309d7e05a`; last fully accepted executable `745f74ef29169f698219b51c8e852ce309d7e05a` (55/55 workflows SUCCESS). New bounded HTTP evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Previous accepted executable d8001a4163862198f035fb385bbe7738def7b288 and its completed-source evidence retained: [evidence/P0-0051-VERIFICATION-20261024.json](evidence/P0-0051-VERIFICATION-20261024.json).
+Source candidate `8c070aee75f67f1d1efcad525a0467baf8b45954` (targeted conversation HTTP accepted; broader CI pending); last fully accepted executable `745f74ef29169f698219b51c8e852ce309d7e05a` (55/55 workflows SUCCESS). New bounded HTTP evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Previous accepted executable d8001a4163862198f035fb385bbe7738def7b288 and its completed-source evidence retained: [evidence/P0-0051-VERIFICATION-20261024.json](evidence/P0-0051-VERIFICATION-20261024.json).
 
-Tracked rows: 45; CLOSED_SOURCE 29, BLOCKED 9, OPEN 7. No whole-P0 percentage: completeP0Inventory=false. Counts describe this reconciled register, not an approved exhaustive release denominator. The explicit inventory/actor/field gate remains OPEN; no unknown requirement receives PASS.
+Tracked rows: 45; CLOSED_SOURCE 29, BLOCKED 9, OPEN 7. No whole-P0 percentage: completeP0Inventory=false. New bounded conversation HTTP evidence: [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json):9 functional cases+parent=10TAP PASS,0fail/skip/cancel; complete HTTP gate remains OPEN. Counts describe this reconciled register, not an approved exhaustive release denominator. The explicit inventory/actor/field gate remains OPEN; no unknown requirement receives PASS.
 
 ## Requirement, acceptance evidence and blocker
 

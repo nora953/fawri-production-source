@@ -1,3 +1,24 @@
+## P0 conversation HTTP bounded acceptance — 2026-10-24
+
+Executable `8c070aee75f67f1d1efcad525a0467baf8b45954`; run40075632155/job120818236959 SUCCESS,9 functional cases+parent=10TAP PASS,0fail/skip/cancel. All52 committed migrations and owned cleanup succeeded. PR checkout c998dc00293c3b2abb7adeb804e243340ae1c060 and source have identical tree20b4d647fa87d3142233c5f247aa01e273313377. Evidence: [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json). This supersedes the conversation PREPARED section below only within its tested scope. Broader exact-source CI still pending at this checkpoint.
+
+Two tenants/real SQL sessions/restricted LOGIN:12 foreign read/mutation/correction denials with unchanged SQL; anonymous/admin-cookie, wrong-device, role-confused cookie and revoked session denial; legitimate list aliases/detail/takeover; pending/uncertain return refusal; failed/sent return success; exact delivered HTTP replay and changed-content rejection. No provider send or credentials. Uncertain-to-failed reconciliation uses explicit fixture SQL; this is not implemented operator recovery. Whole HTTP gate remains OPEN.
+
+### Bounded field and alternate-path reconciliation
+
+| Surface | Source projection/authority | Evidence and remaining condition |
+| --- | --- | --- |
+| Conversation list + merchant-ID alias + detail | postgresManualConversationAuthority mapConversation: id,merchant_id,platform,page_id when present,customer_name,customer_handle,status,assigned_to_human,needs_training,updated_at,messages. Read via merchant-scoped transaction joined to own channel. | New own/foreign HTTP tests verify both aliases/detail and ignore foreign query hints. Raw manual request rows/hashes/keys are not part of mapConversation. Not every field has a populated fixture assertion. |
+| Conversation messages | mapMessage: id,external_message_id when present,conversation_id,sender,text,created_at,counted_as_auto_reply,reply_type/status when supported,metadata object when present. | Delivered replay/own detail positive proof; raw request key/hash absent. Arbitrary message.metadata privacy allowlist is NOT certified by a fixture containing empty metadata. Keep field inventory OPEN. |
+| Manual request state | status/idempotency/hash used internally by return guard and prepare/complete/fail SQL services; no direct request-row HTTP endpoint in conversation-operations.ts. | pending/uncertain block return; confirmed failed/sent permit return. Recovery transitions are service/fixture level, not provider or operator workflow acceptance. |
+| Correction review | POST /conversations/:conversationId/messages/:messageId/correction-review; actual review service scopes merchant+conversation+sent merchant-message. | Foreign request404 included; complete authorized approve/dismiss/training/metadata matrix not newly accepted. |
+| Parent middleware | app.ts mounts retention access, OAuth callback access, operational access, catalog session before /api conversation router. Router uses requireMerchantSession itself. | Source ordering inspected; new harness executes router+real session middleware, not those parent guards. No whole-app acceptance claimed. |
+| SQL order_drafts/processed_channel_events | Current API TypeScript search finds tenant purge in postgresMerchantManagementAuthority plus readiness declaration; no direct active SQL HTTP reader/writer found. | Preserve existing SQL isolation/lifecycle evidence. Source absence is not runtime/provider-pipeline acceptance; legacy memory draft map and durable Meta queue are separate representations. |
+
+Exact next: reconcile populated message.metadata/audit field projections, successful privileged import/deletion and full-app/alternate consumers against accepted tests. Add missing positive/negative runtime proof only where a live path and acceptance condition are identified. Do not repeat these nine cases merely for counts; do not close the full eight-table or complete P0 role/field gate. **NO-GO**.
+
+---
+
 ## P0 manual conversation HTTP privacy/recovery prepared — 2026-10-24
 
 Recovery HEAD `b3be73ef94e0c576633f5d18679b23386a0da1ae`, Draft PR550 open/unmerged. Prior accepted executable745f74ef/55 successful workflows retained. Gate `P0-RESIDUAL-MERCHANT-PRIVACY-001/http` remains OPEN.

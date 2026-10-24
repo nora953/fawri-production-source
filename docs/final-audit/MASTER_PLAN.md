@@ -1,3 +1,13 @@
+## P0 conversation HTTP privacy/recovery accepted within bounded scope — 2026-10-24
+
+Source8c070aee75f67f1d1efcad525a0467baf8b45954; targeted run40075632155/job120818236959 SUCCESS:9 functional cases+parent=10TAP PASS,0fail/skip/cancel;52migrations and owned cleanup SUCCESS. Source and PR checkout c998dc00293c3b2abb7adeb804e243340ae1c060 share tree20b4d647fa87d3142233c5f247aa01e273313377. Broader exact-source CI PENDING; last fully accepted executable remains745f74ef. New tests/CI/docs only; no application policy/schema/provider changes.
+
+Two tenants/actual SQL sessions/restricted LOGIN: own aliases/detail/takeover,12foreign denials with unchanged SQL, anonymous/admin/role/device/revoked-session denials, pending/uncertain return refusal, confirmed failure/sent recovery, delivered HTTP replay and changed-content rejection PASS. Completion/failure use real SQL services; uncertain-to-failed reconciliation is explicit fixture SQL, not implemented operator repair. No provider sends, hosted checks, whole-app or complete metadata/field acceptance. Evidence [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json); bounded field/route map in [P0-ACCESS-HTTP-MATRIX-NEXT-BATCH-20261024.md](P0-ACCESS-HTTP-MATRIX-NEXT-BATCH-20261024.md).
+
+Gate P0-RESIDUAL-MERCHANT-PRIVACY-001/http remains OPEN/PARTIAL_HTTP_VERIFIED; counts29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Next inspect broader CI once complete; then reconcile populated metadata/audit projections, privileged import/deletion and whole-app/alternate-path proof before choosing missing runtime assertions. Earlier conversation PREPARED/next-test headers are historical. NO-GO; no merge/deploy/main/secrets/hosted/P1/P2.
+
+---
+
 ## P0 bounded management and notification HTTP acceptance — 2026-10-24
 
 Verified executable [`745f74ef29169f698219b51c8e852ce309d7e05a`](https://github.com/nora953/fawri-production-source/commit/745f74ef29169f698219b51c8e852ce309d7e05a): **55/55 returned workflows completed SUCCESS**, zero pending/failure/cancellation at acceptance. Actual PR checkout `2e95b96f161b16b567c15d95688bb34a1db22bea` independently matches source tree `f18efc60933aa4601be26b712fe0cc171f98d718`. Changes are tests/CI/docs only; no application or policy repair was needed in these tested paths.
