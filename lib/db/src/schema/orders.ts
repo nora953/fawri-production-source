@@ -356,7 +356,7 @@ export const orderDrafts = pgTable(
     expiryIndex: index("order_drafts_expiry_idx").on(table.expiresAt),
     timeCheck: check("order_drafts_time_check", sql`${table.updatedAt} >= ${table.createdAt} AND ${table.expiresAt} > ${table.createdAt}`),
   }),
-);
+).enableRLS();
 
 export type Order = typeof orders.$inferSelect;
 export type OrderPaymentDecision = typeof orderPaymentDecisions.$inferSelect;
