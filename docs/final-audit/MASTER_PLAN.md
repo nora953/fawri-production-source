@@ -1,3 +1,15 @@
+## P0 management HTTP privacy matrix prepared — 2026-10-24
+
+Recovery HEAD `607e6b8efa33c0b7e633e70f4efceda1aa4a1971`, Draft PR #550 open/unmerged. Accepted executable remains `d8001a4163862198f035fb385bbe7738def7b288`; live GitHub API independently returned 52 completed/success workflows. This supersedes the historical 0051 PREPARED headers below; no accepted SQL suite was manually rerun.
+
+Gate `P0-RESIDUAL-MERCHANT-PRIVACY-001/http` remains OPEN. New targeted actual-HTTP/SQL fixture covers administrative note, channel override, deletion-review and audit routes with two merchants; owner, granted/ungranted assistants, unauthenticated and merchant callers; peer preservation, device/origin denial, current permission removal and session revocation. Uses actual restricted primary LOGIN plus separate authentication LOGIN, not mocked auth or bootstrap application access. The production `auth-security.ts` mounts this management router before legacy admin routes; targeted harness mounts that actual router with the actual origin middleware. It does not certify full-app middleware ordering or the complete eight-table matrix.
+
+Changed: new `merchant-management-privacy-http-postgres.integration.test.mjs`, targeted `p0-management-privacy-http.yml`, explicit `management-privacy-http` owned-runner selector. No application, policy, schema, grants or production changes. Static syntax/whitespace PASS locally; new runtime assertions PREPARED/CI_PENDING. Workflow uses existing disposable PostgreSQL16 network-none containers and refusal/cleanup controls. Acceptance requires all runtime cases pass with zero skip/cancel, fresh denial responses with no private-row mutation, and authorized positive controls.
+
+Next exact action: inspect targeted exact-source workflow and raw TAP/`P0_MANAGEMENT_PRIVACY_HTTP` marker; distinguish fixture error from authority behavior. Then reconcile remaining notifications/manual conversation/draft/processed-event entrypoints, alternate routes and field projections against existing evidence. Owner import success and complete deletion/retention policy are outside this bounded batch. Counts remain 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; completeP0Inventory=false. Hosted/incident/product-policy limitations unchanged. NO-GO; no merge/deploy/P1/P2.
+
+---
+
 # Current execution policy — 2026-10-24
 
 The governing workflow is [FAWRI-ENGINEERING-EXECUTION-PLAN.md](FAWRI-ENGINEERING-EXECUTION-PLAN.md), also referenced by repository-root [AGENTS.md](../../AGENTS.md). This section changes the execution method, **not** the historical audit results below. Continue P0 from the authoritative [P0-CLOSURE-REGISTER.md](P0-CLOSURE-REGISTER.md) and its JSON evidence; do not restart, duplicate accepted work, or begin P1/P2. Source, CI, hosted, load and commercial signoff are distinct gates. GitHub-only, no hosted service access or deployment; NO-GO until independent release acceptance.
