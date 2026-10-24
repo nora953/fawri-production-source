@@ -1,0 +1,273 @@
+{
+  "status": "PASS",
+  "source": "92ad7bbef94bda674194205220975d0220190856",
+  "pr": 550,
+  "branch": "fix/p0-provider-receipt-order-discovery-20261015",
+  "run": 38723072880,
+  "job": 116382166372,
+  "mergeCheckout": "8b9eaca442f46c605aabb85fee59d25a32707f18",
+  "summary": {
+    "passed": 329,
+    "failed": 0,
+    "skipped": 0,
+    "uniqueFiles": 55,
+    "invocations": 57,
+    "countsIncludeParentsAndRepeatedRuntimes": true
+  },
+  "relevantSuites": [
+    {
+      "suite": "merchant-deletion-tenant-rls.integration.test.mjs",
+      "auditBatch": "priority",
+      "runtime": "v24.22.0",
+      "exit": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "summaryComplete": true
+    },
+    {
+      "suite": "production-postgres-rls-security.integration.test.ts",
+      "auditBatch": "tenant",
+      "runtime": "v24.22.0",
+      "exit": 0,
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0,
+      "summaryComplete": true
+    },
+    {
+      "suite": "knowledge-tenant-rls.integration.test.mjs",
+      "auditBatch": "tenant",
+      "runtime": "v24.22.0",
+      "exit": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "summaryComplete": true
+    }
+  ],
+  "foundation": {
+    "run": 38723072874,
+    "job": 116382166720,
+    "status": "SUCCESS"
+  },
+  "localUnit": {
+    "baseline": {
+      "passed": 7,
+      "failed": 1
+    },
+    "repaired": {
+      "passed": 8,
+      "failed": 0
+    }
+  },
+  "workflows": [
+    {
+      "id": 38723073106,
+      "name": "Cashier subscription lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723073122,
+      "name": "Merchant deletion physical media lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723073142,
+      "name": "Meta webhook PostgreSQL ingress cutover",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072999,
+      "name": "Product catalog UI cutover",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072874,
+      "name": "Foundation integration final gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072973,
+      "name": "Final security and supply chain",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072966,
+      "name": "Merchant deletion provider identifiers",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072868,
+      "name": "Location inventory authority",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072679,
+      "name": "Staging container contract",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072781,
+      "name": "Meta OAuth operational cutoff",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072767,
+      "name": "Final quality gates",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072855,
+      "name": "Global Merchant PostgreSQL HTTP Journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072908,
+      "name": "Pre-release performance smoke gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072788,
+      "name": "Billing provider readiness",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072808,
+      "name": "Catalog variant signature schema contract",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072850,
+      "name": "Complete schema candidate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072931,
+      "name": "Clean deployment golden gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072834,
+      "name": "Bot logic adversarial matrix",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072938,
+      "name": "PostgreSQL outage recovery proof",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072869,
+      "name": "PostgreSQL migration candidate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072984,
+      "name": "Merchant deletion cashier lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072985,
+      "name": "Global merchant golden journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072712,
+      "name": "Cashier operational cutoff",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072885,
+      "name": "PostgreSQL schema validation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 38723072880,
+      "name": "Isolated PostgreSQL engineering audit",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "restore": [
+    {
+      "phase": "seed",
+      "migrationCount": 34,
+      "tableCount": 95,
+      "policyCount": 45,
+      "functionCount": 9,
+      "fixtureChannels": 2,
+      "restrictedTenantReads": true,
+      "fingerprint": "388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035"
+    },
+    {
+      "phase": "verify",
+      "migrationCount": 34,
+      "tableCount": 95,
+      "policyCount": 45,
+      "functionCount": 9,
+      "fixtureChannels": 2,
+      "restrictedTenantReads": true,
+      "fingerprint": "388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035"
+    }
+  ],
+  "priorFailure": {
+    "source": "9f5442740b5bf373e368311556ccfe3f04de3509",
+    "run": 38685444022,
+    "job": 116259113377,
+    "passed": 327,
+    "failed": 2,
+    "skipped": 0,
+    "rlsPassed": 25,
+    "failedSuites": [
+      "knowledge-tenant-rls.integration.test.mjs",
+      "merchant-deletion-tenant-rls.integration.test.mjs"
+    ],
+    "reason": "Administrative session_user with restricted current_user; fixtures now use direct restricted LOGIN connections",
+    "foundationRun": 38685443941,
+    "foundationJob": 116259113025
+  },
+  "publishingIncident": {
+    "erroneousCommit": "feeb37f232fa65404aab9feb5ab194c261767983",
+    "fileCount": 3,
+    "ciStatus": "NOT RUN; workflows absent from erroneous tree",
+    "cause": "Missing base_tree_sha after ephemeral orchestration state was lost",
+    "restoredCommit": "92ad7bbef94bda674194205220975d0220190856",
+    "restoredTree": "9d92e19f03892e865dcc75fab0060604059ed6c8",
+    "restoredFiles": 2213,
+    "treeMatchedCompleteLocalIntendedTree": true,
+    "mainOrHostingChanged": false,
+    "prevention": "Require explicit existing base-tree SHA and match created tree SHA against local intended tree before updating ref"
+  },
+  "limits": [
+    "No hosted session/credential/capability certification",
+    "Additional provider mapping concurrency NOT RUN",
+    "Every reachable privileged-role configuration not certified",
+    "Ownership/retention/storage/deployment gates OPEN",
+    "Historical 85% unmeasured; release NO-GO"
+  ]
+}

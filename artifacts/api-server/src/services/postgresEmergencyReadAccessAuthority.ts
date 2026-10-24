@@ -1,10 +1,9 @@
 import crypto from "node:crypto";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   type OperationalQueryTarget,
-  withOperationalTransaction,
 } from "./operationalPostgresAuthority";
+import { authenticationDatabasePool, withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import { buildEmergencyReadOnlySnapshotPostgres } from "./postgresEmergencySnapshot";
 
 export type EmergencySeverity = "high" | "critical";
@@ -389,7 +388,7 @@ async function createMerchantNotice(
 
 export async function refreshEmergencyAccessPostgres(now = new Date()) {
   assertRequired();
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const pending = await client.query<RequestRow>(
       `UPDATE emergency_access_requests
           SET status = 'expired', ended_at = $1::timestamptz,
@@ -493,7 +492,7 @@ export async function getEmergencyDirectoryPostgres(input: {
 }) {
   assertRequired();
   await refreshEmergencyAccessPostgres();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   if (!input.isOwner) {
     const authorization = await activeAuthorization(pool, input.adminId);
     if (!authorization) {
@@ -615,7 +614,7 @@ export async function getEmergencyOverviewPostgres(input: {
 }) {
   assertRequired();
   await refreshEmergencyAccessPostgres();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const authorizations = await authorizationRows(pool);
   const authorization = authorizations.find(
     (item) => item.admin_account_id === input.adminId && item.can_request && !item.revoked_at,
@@ -655,7 +654,7 @@ export async function upsertEmergencyAuthorizationPostgres(input: {
   canCriticalSelfActivate: boolean;
 }) {
   assertRequired();
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const assistant = await client.query<{
       id: string;
       display_name: string;
@@ -785,7 +784,7 @@ export async function createEmergencyRequestPostgres(input: {
 }) {
   assertRequired();
   validateCreateInput(input);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     await refreshEmergencyAccessPostgres();
     let authorization: AuthorizationRow | null = null;
     if (!input.isOwner) {
@@ -965,7 +964,7 @@ export async function decideEmergencyRequestPostgres(input: {
       400,
     );
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const row = await requestForUpdate(client, input.requestId);
     if (!row) {
       throw new EmergencyPostgresError(
@@ -1115,7 +1114,7 @@ export async function getEmergencySnapshotPostgres(input: {
 }) {
   assertRequired();
   await refreshEmergencyAccessPostgres();
-  const request = await withOperationalTransaction(async (client) => {
+  const request = await withAuthenticationTransaction(async (client) => {
     const row = await assertActiveRequestAccess(client, input);
     const marker = input.isOwner ? `owner_snapshot:${input.adminId}` : "snapshot";
     const viewed = new Set(stringArray(row.viewed_sections));
@@ -1169,7 +1168,7 @@ export async function endEmergencyRequestPostgres(input: {
   isOwner: boolean;
 }) {
   assertRequired();
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const row = await requestForUpdate(client, input.requestId);
     if (!row) {
       throw new EmergencyPostgresError(
@@ -1265,7 +1264,7 @@ async function auditRows(target: OperationalQueryTarget): Promise<AuditRow[]> {
 
 export async function verifyEmergencyAuditChainPostgres() {
   assertRequired();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await auditRows(pool);
   let previousHash = "GENESIS";
   let expectedSequence = 1;
@@ -1311,7 +1310,7 @@ export async function getEmergencyAuditPostgres() {
       { invalid_sequence: verification.invalid_sequence },
     );
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await auditRows(pool);
   return {
     verification: {
@@ -1330,7 +1329,7 @@ export async function listEmergencyMerchantNoticesPostgres(input: {
 }) {
   assertRequired();
   await refreshEmergencyAccessPostgres();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const all = await merchantNotices(pool, input.merchantId);
   const filtered = input.unreadOnly ? all.filter((item) => !("read_at" in item)) : all;
   const limit = Number.isInteger(input.limit)
@@ -1347,7 +1346,7 @@ export async function markEmergencyMerchantNoticeReadPostgres(input: {
   noticeId: string;
 }) {
   assertRequired();
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const result = await client.query<{
       request_id: string;
       incident_reference: string;

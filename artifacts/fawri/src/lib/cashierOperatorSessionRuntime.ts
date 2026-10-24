@@ -1,7 +1,10 @@
 import {
   persistCashierEntitlementAuthority,
+  assertCashierSaleEntitlementFromCache,
+  clearCashierEntitlementAuthority,
   type CashierServerEntitlementSnapshot,
 } from './cashierOfflineEntitlementAuthority';
+import type { CashierOfflineEnvelope } from './cashierOfflineEntitlementSignature.mjs';
 import {
   bindCashierOperation,
   getCashierPendingEnvelopeCountForIdentity,
@@ -281,9 +284,10 @@ async function responsePayload(
     : {};
 }
 
-async function persistEntitlementFromPayload(
+export async function persistEntitlementFromPayload(
   payload: Record<string, unknown>,
   stationId: string,
+  context: CashierOperatorContext,
 ): Promise<void> {
   const raw = payload.cashier_entitlement;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -298,17 +302,16 @@ async function persistEntitlementFromPayload(
     await persistCashierEntitlementAuthority({
       snapshot,
       stationId,
+      deviceId: context.device_id,
+      locationId: context.location_id,
+      credentialVersion: context.credential_version,
+      envelope: payload.cashier_offline_entitlement as CashierOfflineEnvelope | null,
     });
-  } catch (error) {
-    throw new CashierOperatorSessionClientError(
-      error instanceof Error && 'code' in error
-        ? String((error as { code?: unknown }).code || 'CASHIER_ENTITLEMENT_CACHE_FAILED')
-        : 'CASHIER_ENTITLEMENT_CACHE_FAILED',
-      error instanceof Error
-        ? error.message
-        : 'Cashier subscription authority could not be cached safely',
-      503,
-    );
+  } catch {
+    // Online authentication was established by the server response. A client
+    // awaiting public-key rollout must remain online-capable, with no offline
+    // privilege retained from an old or unverifiable envelope.
+    await clearCashierEntitlementAuthority();
   }
 }
 
@@ -559,7 +562,7 @@ export async function loginCashierOperator(
     operator_token: operatorToken,
     context,
   };
-  await persistEntitlementFromPayload(payload, context.station_id);
+  await persistEntitlementFromPayload(payload, context.station_id, context);
   if (typeof sessionStorage === 'undefined') {
     throw new CashierOperatorSessionClientError(
       'CASHIER_OPERATOR_STORAGE_UNAVAILABLE',
@@ -571,10 +574,12 @@ export async function loginCashierOperator(
   return session;
 }
 
-export async function validateCashierOperatorSession(): Promise<CashierOperatorSession | null> {
+export async function validateCashierOperatorSession(options: { requireOnline?: boolean } = {}): Promise<CashierOperatorSession | null> {
   const session = await getCashierOperatorSession();
   if (!session) return null;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    if (options.requireOnline) throw new TypeError('Cashier is offline');
+    await assertSignedCashierOfflineSession(session);
     return session;
   }
 
@@ -584,13 +589,14 @@ export async function validateCashierOperatorSession(): Promise<CashierOperatorS
       headers: cashierOperatorHeaders(session),
     });
   } catch (cause) {
-    if (!(cause instanceof TypeError)) throw cause;
+    if (!(cause instanceof TypeError) || options.requireOnline) throw cause;
     const fallback = await getCashierOperatorSession();
     if (
       fallback &&
       fallback.operator_token === session.operator_token &&
       fallback.context.operator_session_id === session.context.operator_session_id
     ) {
+      await assertSignedCashierOfflineSession(fallback);
       return fallback;
     }
     return null;
@@ -609,8 +615,37 @@ export async function validateCashierOperatorSession(): Promise<CashierOperatorS
       'Could not validate cashier operator session',
     );
   }
-  await persistEntitlementFromPayload(payload, session.context.station_id);
-  return session;
+  const { applyCashierOperatorPolicyFromPayload } = await import('./cashierOperatorPolicyRefresh');
+  return applyCashierOperatorPolicyFromPayload(session, payload);
+}
+
+async function assertSignedCashierOfflineSession(session: CashierOperatorSession): Promise<void> {
+  await assertCashierSaleEntitlementFromCache({
+    merchantId: session.context.merchant_id,
+    stationId: session.context.station_id,
+    deviceId: session.context.device_id,
+    locationId: session.context.location_id,
+    credentialVersion: session.context.credential_version,
+  });
+}
+
+export async function assertCashierOperatorSaleAuthorization(
+  session: CashierOperatorSession,
+): Promise<void> {
+  try {
+    const current = await validateCashierOperatorSession({ requireOnline: true });
+    if (!current || current.operator_token !== session.operator_token ||
+        current.context.operator_session_id !== session.context.operator_session_id ||
+        !current.context.permissions.includes('sale.create')) {
+      throw new CashierOperatorSessionClientError('CASHIER_OPERATOR_LOGIN_REQUIRED',
+        'Current online sale authorization is required', 401);
+    }
+    // A successful authenticated online response authorizes this online sale even
+    // when optional offline signing is not configured. HTTP denials never fallback.
+  } catch (cause) {
+    if (!(cause instanceof TypeError)) throw cause;
+    await assertSignedCashierOfflineSession(session);
+  }
 }
 
 export function cashierOperatorCan(

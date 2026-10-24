@@ -455,6 +455,26 @@ function scanOutput(inputs) {
   return findings.length === 0 ? 0 : 1;
 }
 
+export function summarizeBlockingAdvisories(payload) {
+  const advisories = payload?.advisories;
+  if (!advisories || typeof advisories !== "object" || Array.isArray(advisories)) return [];
+  const rows = [];
+  for (const advisory of Object.values(advisories)) {
+    if (!advisory || !["high", "critical"].includes(advisory.severity)) continue;
+    const name = advisory.module_name;
+    const ghsa = advisory.github_advisory_id;
+    // Only bounded public identifiers, never advisory text, URLs, findings,
+    // dependency paths, request headers or raw registry error payloads.
+    const row = { severity: advisory.severity };
+    if (typeof name === "string" && name.length <= 128 &&
+        /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(name)) row.package = name;
+    if (typeof ghsa === "string" && /^GHSA-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}$/.test(ghsa)) row.ghsa = ghsa;
+    rows.push(row);
+    if (rows.length === 50) break;
+  }
+  return rows;
+}
+
 function dependencyAudit() {
   const result = spawnSync("pnpm", ["audit", "--json", "--audit-level=high"], {
     cwd: process.cwd(),
@@ -478,6 +498,7 @@ function dependencyAudit() {
     status: evaluation.status,
     vulnerabilities: counts,
     blocking_severities: ["high", "critical"],
+    blocking_advisories: summarizeBlockingAdvisories(payload),
   };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 

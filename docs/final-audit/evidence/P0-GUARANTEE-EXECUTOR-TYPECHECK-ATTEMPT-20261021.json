@@ -1,0 +1,27 @@
+{
+  "timestampUtc": "2026-10-21T03:38:13.099Z",
+  "commit": "bf3c2bf03dd3afcbd3bc5d58ce193e8c9c14bd56",
+  "releaseDecision": "NO-GO",
+  "representativeFailure": {
+    "runId": 39539488626,
+    "jobId": 119023707087,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/39539488626",
+    "diagnostics": [
+      "2026-10-21T03:36:37.4617462Z ##[error]src/services/subscriptionServiceGuarantee.ts(899,61): error TS2304: Cannot find name 'merchantId'.",
+      "2026-10-21T03:36:37.4626277Z ##[error]src/services/subscriptionServiceGuarantee.ts(907,30): error TS2304: Cannot find name 'pool'."
+    ]
+  },
+  "cause": "Overbroad edit unintentionally modified general DefaultSubscriptionGuaranteeSqlClient query and removed its transaction pool import.",
+  "correction": "Restore that entire general client to parent implementation; keep merchant transaction only in PostgresSubscriptionGuaranteeSubscriptionAuthority default read executor.",
+  "localVerification": {
+    "guaranteeAndKnowledgeTests": {
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "sourceSyntax": true,
+    "diffReviewed": true
+  },
+  "fullTypecheckAndPostgres": "PENDING next-source CI"
+}

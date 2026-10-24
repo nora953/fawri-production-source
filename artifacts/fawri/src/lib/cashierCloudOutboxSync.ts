@@ -111,26 +111,46 @@ function groupPending(
   const grouped = new Map<string, CashierSyncEnvelope[]>();
   for (const envelope of envelopes) {
     const operationId = String(envelope.operation_id || '').trim();
-    if (!operationId) continue;
+    if (!operationId) {
+      throw new CashierCloudOutboxSyncError(
+        'CASHIER_OUTBOX_CORRUPT',
+        'Pending cashier envelope has no operation identity',
+      );
+    }
     const current = grouped.get(operationId) || [];
+    if (current.length > 0 && current[0].device_sequence !== envelope.device_sequence) {
+      throw new CashierCloudOutboxSyncError(
+        'CASHIER_OUTBOX_CORRUPT',
+        'Pending cashier operation has inconsistent device sequences',
+      );
+    }
     current.push(envelope);
     grouped.set(operationId, current);
   }
   return [...grouped.entries()]
-    .map(([operationId, items]) => ({
-      operationId,
-      deviceSequence: Math.min(...items.map(item => Number(item.device_sequence))),
-      envelopes: items.sort((left, right) => {
-        if (left.entity_type === right.entity_type) {
-          return left.entity_id.localeCompare(right.entity_id);
-        }
-        if (left.entity_type === 'sale') return -1;
-        if (right.entity_type === 'sale') return 1;
-        if (left.entity_type === 'return') return -1;
-        if (right.entity_type === 'return') return 1;
-        return left.entity_type.localeCompare(right.entity_type);
-      }),
-    }))
+    .map(([operationId, items]) => {
+      const deviceSequence = items[0].device_sequence;
+      if (!Number.isSafeInteger(deviceSequence) || deviceSequence <= 0) {
+        throw new CashierCloudOutboxSyncError(
+          'CASHIER_OUTBOX_CORRUPT',
+          'Pending cashier operation has an invalid device sequence',
+        );
+      }
+      return {
+        operationId,
+        deviceSequence,
+        envelopes: items.sort((left, right) => {
+          if (left.entity_type === right.entity_type) {
+            return left.entity_id.localeCompare(right.entity_id);
+          }
+          if (left.entity_type === 'sale') return -1;
+          if (right.entity_type === 'sale') return 1;
+          if (left.entity_type === 'return') return -1;
+          if (right.entity_type === 'return') return 1;
+          return left.entity_type.localeCompare(right.entity_type);
+        }),
+      };
+    })
     .sort(
       (left, right) =>
         left.deviceSequence - right.deviceSequence ||
@@ -282,8 +302,14 @@ export async function syncCashierOutboxToCloud(): Promise<CashierCloudOutboxSync
     for (const operation of operations) {
       const kind = classifyOperation(operation.envelopes);
       if (!kind) {
-        skippedOperations += 1;
-        continue;
+        // Fail closed: silently skipping an earlier local sequence and sending
+        // a later sale can make the skipped operation permanently unuploadable.
+        // Preserve the unsupported operation and all subsequent outbox records
+        // until a server-authorized recovery contract is available.
+        throw new CashierCloudOutboxSyncError(
+          'CASHIER_OUTBOX_UNSUPPORTED_OPERATION',
+          'A pending cashier operation requires a supported sync contract before later operations can upload',
+        );
       }
       const result = await uploadOperation({
         kind,

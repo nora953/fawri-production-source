@@ -47,7 +47,9 @@ function isManagedSurface(path: string): boolean {
 }
 
 router.use((req: Request, res: Response, next: NextFunction) => {
-  if (!isManagedSurface(String(req.path || ""))) {
+  // Match Express's case-insensitive, non-strict routes without rewriting IDs.
+  const surfacePath = String(req.path || "").toLowerCase().replace(/\/+$/, "");
+  if (!isManagedSurface(surfacePath)) {
     next("router");
     return;
   }

@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { withMerchantAuthenticationTransaction } from './authenticationPostgresAuthority';
 import { verifyPassword } from './authPasswordService';
 import {
   cashierManualDiscountLimitMinor,
@@ -33,10 +34,13 @@ type ApproverRow = {
   display_name: string;
   role: string;
   status: string;
+  revoked_at: DbInstant | null;
+};
+
+type ApproverPinRow = ApproverRow & {
   pin_hash: string;
   failed_pin_attempts: number | string;
   pin_locked_until: DbInstant | null;
-  revoked_at: DbInstant | null;
 };
 
 type ApprovalRow = {
@@ -165,15 +169,28 @@ async function loadApprover(
   target: OperationalQueryTarget,
   merchantId: string,
   staffId: string,
-  forUpdate = false,
 ): Promise<ApproverRow | null> {
   const rows = await operationalQueryRows<ApproverRow>(
+    target,
+    `SELECT id, display_name, role, status, revoked_at
+       FROM public.fawri_lock_cashier_approver($1::text, $2::text)`,
+    [merchantId, staffId],
+  );
+  return rows[0] || null;
+}
+
+async function loadApproverForPin(
+  target: OperationalQueryTarget,
+  merchantId: string,
+  staffId: string,
+): Promise<ApproverPinRow | null> {
+  const rows = await operationalQueryRows<ApproverPinRow>(
     target,
     `SELECT id, display_name, role, status, pin_hash, failed_pin_attempts,
             pin_locked_until, revoked_at
        FROM merchant_cashier_staff
       WHERE merchant_id = $1 AND id = $2
-      LIMIT 1${forUpdate ? ' FOR UPDATE' : ''}`,
+      LIMIT 1 FOR UPDATE`,
     [merchantId, staffId],
   );
   return rows[0] || null;
@@ -221,13 +238,13 @@ async function assertApproverAuthority(
 async function verifyApproverPin(
   target: OperationalQueryTarget,
   merchantId: string,
-  approver: ApproverRow,
+  approver: ApproverPinRow,
   pinValue: unknown,
-): Promise<void> {
+): Promise<CashierStaffAuthorityError | null> {
   const enteredPin = pin(pinValue);
   const lockedUntil = approver.pin_locked_until ? toMillis(approver.pin_locked_until) : 0;
   if (lockedUntil > Date.now()) {
-    throw new CashierStaffAuthorityError(
+    return new CashierStaffAuthorityError(
       'CASHIER_PIN_LOCKED',
       'cashier PIN is temporarily locked',
       429,
@@ -246,7 +263,7 @@ async function verifyApproverPin(
         WHERE merchant_id = $1 AND id = $2`,
       [merchantId, approver.id, locksNow ? 0 : failed, lockUntil],
     );
-    throw new CashierStaffAuthorityError(
+    return new CashierStaffAuthorityError(
       locksNow ? 'CASHIER_PIN_LOCKED' : 'CASHIER_OPERATOR_INVALID',
       locksNow ? 'cashier PIN is temporarily locked' : 'cashier operator credentials are invalid',
       locksNow ? 429 : 401,
@@ -259,6 +276,7 @@ async function verifyApproverPin(
       WHERE merchant_id = $1 AND id = $2`,
     [merchantId, approver.id],
   );
+  return null;
 }
 
 export async function listCashierDiscountOverrideApproversAuthoritative(
@@ -334,7 +352,7 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
     );
   }
 
-  return withMerchantOperationalTransaction(input.context.merchant_id, async (client) => {
+  const decision = await withMerchantAuthenticationTransaction(input.context.merchant_id, async (client) => {
     await lockMerchantCashierDiscountKindMutation(client, input.context.merchant_id);
     const discountSetting = await loadMerchantCashierDiscountSetting(
       client,
@@ -374,11 +392,10 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
       );
     }
 
-    const approver = await loadApprover(
+    const approver = await loadApproverForPin(
       client,
       input.context.merchant_id,
       approverStaffId,
-      true,
     );
     if (!approver) {
       throw new CashierStaffAuthorityError(
@@ -392,7 +409,10 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
       input.context.merchant_id,
       approver,
     );
-    await verifyApproverPin(client, input.context.merchant_id, approver, input.pin);
+    const pinError = await verifyApproverPin(client, input.context.merchant_id, approver, input.pin);
+    // Refusals carrying PIN state must COMMIT before the API throws the error.
+    // SQL/approval/business failures still throw within the transaction and roll back.
+    if (pinError) return { ok: false as const, error: pinError };
 
     const managerLimitMinor = cashierManualDiscountLimitMinor({
       postPromotionTotalMinor: discountBaseMinor,
@@ -460,12 +480,14 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
         500,
       );
     }
-    return {
+    return { ok: true as const, approval: {
       approval_id: row.id,
       approver_staff_id: row.approver_staff_id,
       expires_at: toIso(row.expires_at),
-    };
+    } };
   });
+  if (!decision.ok) throw decision.error;
+  return decision.approval;
 }
 
 export async function consumeCashierDiscountOverrideApproval(
@@ -494,10 +516,7 @@ export async function consumeCashierDiscountOverrideApproval(
       `SELECT id, merchant_id, station_id, operator_staff_id, approver_staff_id,
               operation_id, manual_discount_minor, manual_discount_reason,
               expires_at, consumed_at, created_at
-         FROM merchant_cashier_discount_override_approvals
-        WHERE merchant_id = $1 AND id = $2 AND operation_id = $3
-        LIMIT 1
-        FOR UPDATE`,
+         FROM public.fawri_lock_cashier_discount_approval($1::text,$2::text,$3::text)`,
       [input.merchantId, input.approvalId, input.operationId],
     );
   } catch (error) {
@@ -541,7 +560,7 @@ export async function consumeCashierDiscountOverrideApproval(
 
   if (approval.consumed_at) return;
 
-  const approver = await loadApprover(target, input.merchantId, approval.approver_staff_id, true);
+  const approver = await loadApprover(target, input.merchantId, approval.approver_staff_id);
   if (!approver) {
     throw new CashierStaffAuthorityError(
       'CASHIER_DISCOUNT_OVERRIDE_APPROVER_REQUIRED',
@@ -567,10 +586,25 @@ export async function consumeCashierDiscountOverrideApproval(
     );
   }
 
-  await target.query(
-    `UPDATE merchant_cashier_discount_override_approvals
-        SET consumed_at = now()
-      WHERE merchant_id = $1 AND id = $2 AND operation_id = $3 AND consumed_at IS NULL`,
-    [input.merchantId, approval.id, input.operationId],
+  // The capability independently validates binding/window/current manager policy.
+  // It runs on target, retaining this commerce transaction and its row locks.
+  const decisions = await operationalQueryRows<{ decision_code: string; manager_limit_minor: string | number | null }>(
+    target,
+    `SELECT * FROM public.fawri_consume_cashier_discount_approval(
+      $1::text,$2::text,$3::text,$4::text,$5::text,$6::bigint,$7::text,$8::timestamptz,$9::bigint,$10::text)`,
+    [input.merchantId, approval.id, input.operationId, input.stationId, input.operatorStaffId,
+      input.manualDiscountMinor, input.reason, input.saleOccurredAt, discountBaseMinor, kind],
   );
+  const decision = decisions[0];
+  if (!decision || decision.decision_code !== 'OK') {
+    throw new CashierStaffAuthorityError(
+      decision?.decision_code || 'CASHIER_DISCOUNT_OVERRIDE_STATE_INVALID',
+      'manager discount override consumption was rejected',
+      decision?.decision_code === 'CASHIER_DISCOUNT_KIND_MISMATCH' ? 409 : decision ? 403 : 500,
+      decision?.manager_limit_minor == null ? undefined : {
+        requested_discount_minor: input.manualDiscountMinor,
+        manager_limit_minor: Number(decision.manager_limit_minor),
+      },
+    );
+  }
 }

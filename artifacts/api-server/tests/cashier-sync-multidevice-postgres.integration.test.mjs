@@ -9,7 +9,10 @@ await assertDisposablePostgres();
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
 process.env.FAWRI_SAAS_BILLING_PROVIDERS = 'test_fake';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+// Root SQL is limited to owned setup, barriers, assertions and cleanup.
+const pool=runtimeFixture.admin;
 const billing = await import('../src/services/cashierBillingAuthority.ts');
 const catalog = await import('../src/services/postgresCatalogAuthority.ts');
 const sync = await import('../src/services/postgresCashierSyncAuthority.ts');
@@ -21,7 +24,7 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
   // Register before the first mutation; cleanup failures must remain visible.
   t.after(async () => cleanupResources([
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [owned])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
 
   async function fixture() {
@@ -33,7 +36,7 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
     await pool.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status,onboarding_status) VALUES($1,$1,'Synthetic','Sync race fixture','retail','approved','approved','channel_connected')", [merchantId]);
     const activation = await billing.createCashierBillingCheckout({ merchantId, operation: 'activate',
       requestedSeats: 2, idempotencyKey: randomUUID(), provider: 'test_fake' });
-    await billing.applyVerifiedCashierBillingProviderEvent({ provider: 'test_fake', providerEventId: randomUUID(),
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: activation.order.merchant_id, provider: 'test_fake', providerEventId: randomUUID(),
       orderId: activation.order.id, eventType: 'payment_succeeded', signatureVerified: true,
       payloadHash: createHash('sha256').update(suffix).digest('hex'), occurredAt: new Date(),
       amountIqd: activation.order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID() });

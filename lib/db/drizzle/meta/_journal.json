@@ -232,6 +232,139 @@
       "when": 1791936000004,
       "tag": "0032_authorized_receipt_replay_execution",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791936000005,
+      "tag": "0033_confirmed_provider_order_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791936000006,
+      "tag": "0034_cross_authority_payment_identity_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791936000007,
+      "tag": "0035_order_items_tenant_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791936000008,
+      "tag": "0036_audited_admin_active_state_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791936000009,
+      "tag": "0037_audited_admin_transaction_binding",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791936000010,
+      "tag": "0038_role_bound_admin_directory_issuer",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791936000011,
+      "tag": "0039_role_bound_authentication_runtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791936000012,
+      "tag": "0040_transaction_scoped_tenant_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791936000013,
+      "tag": "0041_private_tenant_predicate_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791936000014,
+      "tag": "0042_scoped_cashier_approver_lock",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791936000015,
+      "tag": "0043_cashier_identity_tenant_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791936000016,
+      "tag": "0044_cashier_discount_attribution_tenant_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1791936000017,
+      "tag": "0045_scoped_cashier_approval_mutations",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1791936000018,
+      "tag": "0046_cashier_settings_authentication_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791936000019,
+      "tag": "0047_support_privacy_tenant_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791936000020,
+      "tag": "0048_emergency_privacy_authentication_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1791936000021,
+      "tag": "0049_order_items_declarative_rls_alignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1791936000022,
+      "tag": "0050_merchant_management_privacy_authentication_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791936000023,
+      "tag": "0051_residual_merchant_privacy_scoped_authority",
+      "breakpoints": true
     }
   ]
 }

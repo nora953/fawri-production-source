@@ -93,7 +93,7 @@ jobs:
       - name: Install frozen dependency graph without lifecycle scripts
         run: node scripts/ci-run-redacted.mjs --label dependency-install -- pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Audit dependencies and report severity counts only
+      - name: Audit dependencies and report bounded public advisory identifiers
         run: node scripts/security-final-audit.mjs dependency
 
   dependency-review:

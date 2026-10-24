@@ -1,3 +1,4 @@
+import {createDisposableAuthenticationRole} from './helpers/disposable-authentication-role.mjs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
@@ -17,7 +18,8 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
   const merchants = [`meta-a-${suffix}`, `meta-b-${suffix}`];
   const pages = merchants.map(id => `page-${id}`);
   let runtimePool;
-  let roleCreated = false;
+  let roleCreated = false,authFixture;
+  const password=randomUUID().replaceAll('-',''),originalAuthUrl=process.env.FAWRI_AUTH_DATABASE_URL;
   t.after(async () => cleanupResources([
     ['runtime pool', () => runtimePool?.end()],
     ['environment', async () => {
@@ -26,11 +28,14 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
       else process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = originalAuthority;
     }],
     ['fixture accounts', () => admin.query('DELETE FROM accounts WHERE id = ANY($1::text[])', [merchants])],
+    ['authentication pool',async()=>{await (await import('../src/services/authenticationPostgresAuthority.ts')).closeAuthenticationPool();}],
+    ['authentication role',()=>authFixture?.dispose()],
+    ['authentication environment',()=>{if(originalAuthUrl===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=originalAuthUrl;}],
     ['role grants', async () => { if (roleCreated) await admin.query(`DROP OWNED BY ${role}`); }],
     ['role', async () => { if (roleCreated) await admin.query(`DROP ROLE ${role}`); }],
     ['admin pool', () => admin.end()],
   ]));
-  await admin.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+  await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
   roleCreated = true;
   await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
   await admin.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${role}`);
@@ -42,13 +47,15 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
   const policy = await admin.query("SELECT relrowsecurity FROM pg_class WHERE oid = 'public.merchant_channels'::regclass");
   assert.equal(policy.rows[0].relrowsecurity, true, 'fixture must test actual committed RLS policies');
   const target = new URL(originalUrl);
-  target.searchParams.set('options', `-c role=${role}`);
+  target.username=role;target.password=password;target.search='';
+  authFixture=await createDisposableAuthenticationRole(admin,originalUrl);
+  process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
   process.env.DATABASE_URL = target.toString();
   process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
   runtimePool = (await import('@workspace/db')).pool;
   runtimePool.options.max = 1;
-  const flags = (await runtimePool.query('SELECT current_user AS role, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user')).rows[0];
-  assert.deepEqual(flags, { role, rolsuper: false, rolbypassrls: false });
+  const flags = (await runtimePool.query('SELECT current_user AS role,session_user AS login, rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user')).rows[0];
+  assert.deepEqual(flags, { role,login:role, rolsuper: false, rolbypassrls: false });
   const authority = await import('../src/services/operationalPostgresAuthority.ts');
   const channels = await import('../src/services/postgresMetaChannelAuthority.ts');
   const middleware = await import('../src/middleware/merchantWebhookAccess.ts');
@@ -78,6 +85,36 @@ test('Meta ingress resolves connected pages under restricted RLS without leaking
     await assert.rejects(() => runtimePool.query("SELECT * FROM public.fawri_resolve_meta_page_merchants($1::text[])", [Array.from({length:101},(_,i)=>'page-'+i)]), error => error.code === '22023');
     assert.equal((await runtimePool.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count, 0);
   });
+  for (const forced of [false, true]) {
+    await t.test(`restricted capability owner with forced RLS=${forced} fails closed when required`, async () => {
+      const client = await admin.connect();
+      const owner = `meta_owner_${suffix}`;
+      try {
+        await client.query('BEGIN');
+        await client.query(`CREATE ROLE ${owner} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+        await client.query(`GRANT USAGE ON SCHEMA public TO ${owner}`);
+        await client.query(`ALTER TABLE public.merchant_channels OWNER TO ${owner}`);
+        await client.query(`ALTER FUNCTION public.fawri_resolve_meta_page_merchants(text[]) OWNER TO ${owner}`);
+        await client.query(`ALTER TABLE public.merchant_channels ${forced ? 'FORCE' : 'NO FORCE'} ROW LEVEL SECURITY`);
+        await client.query(`SET LOCAL ROLE ${role}`);
+        const metadata = (await client.query("SELECT r.rolsuper,r.rolbypassrls,c.relforcerowsecurity,p.proowner=c.relowner AS matching_owner FROM pg_proc p JOIN pg_class c ON c.oid='public.merchant_channels'::regclass JOIN pg_roles r ON r.oid=p.proowner WHERE p.oid='public.fawri_resolve_meta_page_merchants(text[])'::regprocedure")).rows[0];
+        assert.deepEqual(metadata, {rolsuper:false,rolbypassrls:false,relforcerowsecurity:forced,matching_owner:true});
+        const resolve = () => client.query('SELECT * FROM public.fawri_resolve_meta_page_merchants($1::text[]) ORDER BY page_id', [pages]);
+        if (forced) {
+          await assert.rejects(resolve, error => error.code === '42501');
+        } else {
+          assert.deepEqual((await resolve()).rows, pages.map((page_id,index)=>({page_id,merchant_id:merchants[index]})));
+          assert.equal((await client.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count, 0);
+        }
+      } finally {
+        // ROLLBACK also restores function/table ownership and FORCE RLS after
+        // PostgreSQL aborts the transaction on the expected privilege error.
+        await client.query('ROLLBACK');
+        client.release();
+      }
+      assert.deepEqual(await channels.listActiveMetaPageMappingsAuthoritative(pages), pages.map((pageId,index)=>({pageId,merchantId:merchants[index]})));
+    });
+  }
   async function ingress(pageId) {
     const req = { method: 'POST', path: '/api/meta/webhook', body: { object: 'page', entry: [{ id: pageId, messaging: [] }] } };
     let status = null, body = null, next = false;

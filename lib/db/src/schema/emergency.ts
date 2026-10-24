@@ -44,7 +44,7 @@ export const emergencyAuthorizations = pgTable(
       table.revokedAt,
     ),
   }),
-);
+).enableRLS();
 
 export const emergencyAccessRequests = pgTable(
   "emergency_access_requests",
@@ -97,7 +97,7 @@ export const emergencyAccessRequests = pgTable(
       table.createdAt,
     ),
   }),
-);
+).enableRLS();
 
 export const emergencyOwnerAlerts = pgTable(
   "emergency_owner_alerts",
@@ -127,7 +127,7 @@ export const emergencyOwnerAlerts = pgTable(
       table.createdAt,
     ),
   }),
-);
+).enableRLS();
 
 export const emergencyMerchantNotices = pgTable(
   "emergency_merchant_notices",
@@ -162,7 +162,7 @@ export const emergencyMerchantNotices = pgTable(
       table.createdAt,
     ),
   }),
-);
+).enableRLS();
 
 export type EmergencyAuthorization = typeof emergencyAuthorizations.$inferSelect;
 export type EmergencyAccessRequest = typeof emergencyAccessRequests.$inferSelect;

@@ -56,12 +56,16 @@ test('merchant-wide discount kind is versioned and invalidates pending approvals
   assert.match(route, /'\/cashier\/management\/discount-kind'/);
   assert.match(route, /expectedVersion: req\.body\?\.expected_version/);
   assert.match(route, /discountKind: req\.body\?\.discount_kind/);
+  assert.match(route, /const discountSetting = await withMerchantAuthenticationTransaction/);
   assert.match(route, /discount_setting: discountSetting/);
 
   assert.match(authority, /DEFAULT_MERCHANT_CASHIER_DISCOUNT_KIND[^\n]*'amount'/);
   assert.match(authority, /CASHIER_DISCOUNT_KIND_VERSION_CONFLICT/);
   assert.match(authority, /pg_advisory_xact_lock/);
-  assert.match(authority, /DELETE FROM merchant_cashier_discount_override_approvals/);
+  assert.match(authority, /public\.fawri_invalidate_pending_cashier_discount_approvals/);
+  const sql = await api('../../lib/db/migration-stages/0045/manual.sql');
+  assert.match(sql, /DELETE FROM public\.merchant_cashier_discount_override_approvals/);
+  assert.match(sql, /a\.merchant_id=p_merchant AND a\.consumed_at IS NULL/);
   assert.match(authority, /current\.discount_kind !== discountKind/);
 });
 

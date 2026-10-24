@@ -36,6 +36,9 @@ test(
         "cashier-end-shift-pin-test-password-salt-over-thirty-two-characters",
     });
 
+    const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    // Application imports below use the actual tenant LOGIN, never this root inspector.
     const [
       { pool },
       { hashPassword },
@@ -43,7 +46,7 @@ test(
       cashier,
       shiftClose,
     ] = await Promise.all([
-      import("@workspace/db"),
+      Promise.resolve({pool:runtimeFixture.admin}),
       import("../src/services/authPasswordService.js"),
       import("../src/services/postgresMerchantAccountAuthority.js"),
       import("../src/services/postgresCashierStaffAuthority.js"),
@@ -64,7 +67,7 @@ test(
           .query("DELETE FROM accounts WHERE id = $1", [merchantId])
           .catch(() => undefined);
       }
-      await pool.end();
+      await runtimeFixture.dispose();
     });
 
     const merchant = await merchantAccounts.upsertPendingMerchantAuthoritative({

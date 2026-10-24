@@ -26,9 +26,9 @@ catalog:
   tailwind-merge: ^3.3.1
   tailwindcss: ^4.1.14
   tsx: 4.22.0
-  vite: ^7.3.5
+  vite: ^7.3.7
   wouter: ^3.3.5
-  zod: 3.25.76
+  zod: 4.6.7
 
 minimumReleaseAge: 1440
 
@@ -45,14 +45,14 @@ allowBuilds:
 overrides:
   '@babel/core@7.29.0': 7.29.6
   'baseline-browser-mapping@2.10.28': 2.11.24
-  'body-parser@2.2.2': 2.3.0
+  'body-parser@2.2.2': 2.4.0
   'brace-expansion@5.0.6': 5.0.12
   'browserslist@4.28.2': 4.28.7
   'fast-uri@3.1.2': 3.1.8
   'js-yaml@4.1.1': 4.3.2
   'js-yaml@4.2.0': 4.3.2
   'linkify-it@5.0.0': 5.0.2
-  'markdown-it@14.1.1': 14.3.1
+  'markdown-it@14.1.1': 14.3.3
   'nanoid@3.3.12': 3.3.18
   'postcss@8.5.14': 8.5.23
   'proxy-addr@2.0.7': 2.0.8

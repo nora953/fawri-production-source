@@ -1,3 +1,4 @@
+import { withMerchantOperationalTransaction } from "./operationalPostgresAuthority";
 import crypto from "node:crypto";
 import { getSaasPlan, type SaasPaidPlan } from "./saasPlanCatalog";
 
@@ -349,13 +350,7 @@ export async function applySubscriptionPlanCyclePostgres(input: {
   if (!process.env.DATABASE_URL) {
     throw new Error("subscription plan cycle authority requires DATABASE_URL");
   }
-  const module = await import("@workspace/db");
-  const pool = module.pool as unknown as {
-    connect(): Promise<SubscriptionPlanCycleTransaction & { release(): void }>;
-  };
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
+  return withMerchantOperationalTransaction(input.merchantId, async client => {
     const result = await applySubscriptionPlanCycleInTransaction(client, {
       merchantId: input.merchantId,
       operation: input.operation,
@@ -364,12 +359,6 @@ export async function applySubscriptionPlanCyclePostgres(input: {
       actorAccountId: input.actorAccountId,
       now: input.now,
     });
-    await client.query("COMMIT");
     return { subscriptionId: result.subscriptionId };
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+  });
 }

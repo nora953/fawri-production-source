@@ -51,6 +51,6 @@ export const notifications = pgTable(
       table.sourceEntityId,
     ),
   }),
-);
+).enableRLS();
 
 export type Notification = typeof notifications.$inferSelect;

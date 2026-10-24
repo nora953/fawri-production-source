@@ -1,8 +1,8 @@
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   operationalPostgresAuthorityRequired,
   withMerchantOperationalTransaction,
-  withOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import {
   getMerchantSupportTicketPostgres,
@@ -44,7 +44,7 @@ export async function createInspectionRequestCanonicalPostgres(input: {
   const requestId = `inspection-request-${crypto.randomUUID()}`;
   const notificationId = `notification-inspection-${requestId}`;
 
-  await withOperationalTransaction(async (client) => {
+  await withAuthenticationTransaction(async (client) => {
     const ticketResult = await client.query<{
       merchant_id: string;
       subject: string;

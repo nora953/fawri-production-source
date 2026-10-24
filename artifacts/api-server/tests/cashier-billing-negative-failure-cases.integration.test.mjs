@@ -7,7 +7,10 @@ await assertDisposablePostgres();
 process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = 'required';
 process.env.FAWRI_SAAS_BILLING_PROVIDER = 'test_fake';
 process.env.FAWRI_SAAS_BILLING_PROVIDERS = 'test_fake';
-const { pool } = await import('@workspace/db');
+const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+// Root SQL is limited to owned setup, barriers, assertions and cleanup.
+const pool=runtimeFixture.admin;
 const billing = await import('../src/services/cashierBillingAuthority.ts');
 
 test('cashier negative payment contracts: replay, expiry, concurrency and SQL recovery', async t => {
@@ -21,7 +24,7 @@ test('cashier negative payment contracts: replay, expiry, concurrency and SQL re
     ['fault trigger', () => pool.query(`DROP TRIGGER IF EXISTS ${fault} ON cashier_entitlement_applications`)],
     ['fault function', () => pool.query(`DROP FUNCTION IF EXISTS ${fault}()`)],
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [merchants])],
-    ['pool', () => pool.end()],
+    ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
   async function merchant() {
     const id = `negative-cashier-${randomUUID()}`;
@@ -36,7 +39,7 @@ test('cashier negative payment contracts: replay, expiry, concurrency and SQL re
     return result.order;
   }
   function event(order, overrides = {}) {
-    return { provider: 'test_fake', providerEventId: randomUUID(), orderId: order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'c'.repeat(64), occurredAt: new Date(), amountIqd: order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID(), ...overrides };
+    return { merchantId: order.merchant_id, provider: 'test_fake', providerEventId: randomUUID(), orderId: order.id, eventType: 'payment_succeeded', signatureVerified: true, payloadHash: 'c'.repeat(64), occurredAt: new Date(), amountIqd: order.amount_iqd, currency: 'IQD', providerPaymentRef: randomUUID(), ...overrides };
   }
   await t.test('matching payment after proactive expiry has durable reconciliation', async () => {
     const order = await checkout(new Date(Date.now() - 3600000));

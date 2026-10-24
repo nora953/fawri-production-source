@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+  "fieldCell": "RESIDUAL-FIELD-001",
+  "status": "OPEN",
+  "boundedStatus": "PREPARED_CI_PENDING",
+  "source": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "sourceTree": "3b1fc195dcbab23676c18caf1e8a845b2b7e6c71",
+  "previousAcceptedSource": "fc00437ff93c1d055b2218aaa0e3b54fe8519383",
+  "applicationChanged": false,
+  "functionalCasesPrepared": 5,
+  "scope": "Actual app.ts -> auth-security -> later auth-support-postgres POST /notifications/read-all -> secure merchant -> canonical scoped SQL bulk update. Restricted primary LOGIN, separate auth LOGIN, two merchant and two valid admin actors.",
+  "fixtures": {
+    "merchants": 2,
+    "admins": 2,
+    "notifications": 8,
+    "perMerchant": [
+      "live unread merchant",
+      "expired unread merchant",
+      "already read merchant",
+      "unread admin audience"
+    ]
+  },
+  "expectedSemantics": {
+    "ownUnreadUpdated": 2,
+    "includesExpiredOwnUnread": true,
+    "replayUpdated": 0,
+    "alreadyReadTimestampUnchanged": true,
+    "foreignAndAdminRowsUnchanged": true
+  },
+  "cases": [
+    "anonymous/valid owner/valid support assistant denied with valid admin/me positives",
+    "wrong-device/combined-role/forged legacy denied without SQL changes",
+    "own bulk ignores foreign hints and changes only own unread merchant rows including expired",
+    "mixed-case replay returns0 and preserves exact timestamps/all records",
+    "revoked merchant denied; independent peer own bulk succeeds; other tenant/admin audience preserved/no root JSON"
+  ],
+  "limits": [
+    "Does not certify arbitrary notification variable keys/producers or all PII fields.",
+    "No operator pool/browser/device/provider/hosted acceptance.",
+    "Existing bulk expiry semantics are preserved, not a new retention-policy decision.",
+    "Whole HTTP/actor/field inventory gate remains OPEN."
+  ],
+  "release": "NO-GO"
+}

@@ -82,7 +82,9 @@ test(
   "merchant signup, OTP verification and login keep credentials PostgreSQL-backed and hashed",
   { skip: !process.env.DATABASE_URL },
   async (t) => {
-    const { pool } = await import("@workspace/db");
+    const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    const pool=runtimeFixture.admin;
     const id = suffix();
     const phone = `+9665${String(crypto.randomInt(0, 100_000_000)).padStart(8, "0")}`;
     const password = "GoldenAuth1!";
@@ -98,7 +100,7 @@ test(
       ["fixture accounts", async () => {
         if (phoneOwned) await pool.query("DELETE FROM accounts WHERE phone = $1 AND kind = 'merchant'", [phone]);
       }],
-      ["pool", () => pool.end()],
+      ["actual runtime fixture", () => runtimeFixture.dispose()],
       ["temporary directory", () => rm(dataDirectory, { recursive: true, force: true })],
     ]));
 
