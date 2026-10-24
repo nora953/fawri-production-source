@@ -1,3 +1,13 @@
+## P0 conversation-bound manual replay correction — 2026-10-24
+
+Candidate `e8bc8b060d7f4ead1f8b19c447ae17bead436a42` adds a minimal source guard: compare persisted conversation_id and text hash before returning an existing manual reply. Merchant-wide idempotency uniqueness/error code and authorized own replay preserved; no schema/grant/provider/credential change. Regression793f264b was saved but no standalone pre-fix run was observed; no red baseline claimed.
+
+Targeted [run40076278947/job120820201546](https://github.com/nora953/fawri-production-source/actions/runs/40076278947/job/120820201546) SUCCESS:10 functional cases+parent=11TAP PASS,0fail/skip/cancel;52migrations and owned cleanup SUCCESS. Includes cross-conversation key rejection, unchanged SQL, valid replay/return and all nine prior privacy/recovery cases. Checkout124dbc3db19f3ead88235c71cea1512b0161bfb3 matches source treecca16927b147185a44f97a9fc3fc7b9161a1282c. Local TypeScript syntax/whitespace and operational-boundary contract1PASS. Broader exact-source CI PENDING; do not yet mark the whole corrected executable accepted.
+
+Previous executable8c070aee completed56/56 workflows SUCCESS; isolated40075632085/job120818236391:92invocations/90unique/715TAP PASS,0fail/skip/cancel. Prior745f74ef evidence retained. [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json) preserves baseline and corrected targeted proof separately. Full HTTP/role/field gate remains OPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Next verify broader candidate CI; then populated message.metadata/audit field matrix, successful privileged import/deletion and full-app/alternate-path proofs. Existing UI reads correction_review.status; source media/learning provenance fields require explicit reconciliation before any projection change. NO-GO; no hosted/main/merge/deploy/P1/P2.
+
+---
+
 ## P0 conversation HTTP privacy/recovery accepted within bounded scope — 2026-10-24
 
 Source8c070aee75f67f1d1efcad525a0467baf8b45954; targeted run40075632155/job120818236959 SUCCESS:9 functional cases+parent=10TAP PASS,0fail/skip/cancel;52migrations and owned cleanup SUCCESS. Source and PR checkout c998dc00293c3b2abb7adeb804e243340ae1c060 share tree20b4d647fa87d3142233c5f247aa01e273313377. Broader exact-source CI PENDING; last fully accepted executable remains745f74ef. New tests/CI/docs only; no application policy/schema/provider changes.

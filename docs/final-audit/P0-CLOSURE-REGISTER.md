@@ -1,8 +1,18 @@
+## P0 conversation-bound manual replay correction — 2026-10-24
+
+Candidate `e8bc8b060d7f4ead1f8b19c447ae17bead436a42` adds a minimal source guard: compare persisted conversation_id and text hash before returning an existing manual reply. Merchant-wide idempotency uniqueness/error code and authorized own replay preserved; no schema/grant/provider/credential change. Regression793f264b was saved but no standalone pre-fix run was observed; no red baseline claimed.
+
+Targeted [run40076278947/job120820201546](https://github.com/nora953/fawri-production-source/actions/runs/40076278947/job/120820201546) SUCCESS:10 functional cases+parent=11TAP PASS,0fail/skip/cancel;52migrations and owned cleanup SUCCESS. Includes cross-conversation key rejection, unchanged SQL, valid replay/return and all nine prior privacy/recovery cases. Checkout124dbc3db19f3ead88235c71cea1512b0161bfb3 matches source treecca16927b147185a44f97a9fc3fc7b9161a1282c. Local TypeScript syntax/whitespace and operational-boundary contract1PASS. Broader exact-source CI PENDING; do not yet mark the whole corrected executable accepted.
+
+Previous executable8c070aee completed56/56 workflows SUCCESS; isolated40075632085/job120818236391:92invocations/90unique/715TAP PASS,0fail/skip/cancel. Prior745f74ef evidence retained. [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json) preserves baseline and corrected targeted proof separately. Full HTTP/role/field gate remains OPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Next verify broader candidate CI; then populated message.metadata/audit field matrix, successful privileged import/deletion and full-app/alternate-path proofs. Existing UI reads correction_review.status; source media/learning provenance fields require explicit reconciliation before any projection change. NO-GO; no hosted/main/merge/deploy/P1/P2.
+
+---
+
 # Authoritative P0 closure register — 2026-10-24
 
 Release **NO-GO**. This file and its [machine-readable rows](evidence/P0-CLOSURE-REGISTER.json) are the single current P0 status authority; older matrices/headers remain historical evidence. A CLOSED_SOURCE row closes only its stated source contract, never a hosted or whole-domain release gate.
 
-Source candidate `8c070aee75f67f1d1efcad525a0467baf8b45954` (targeted conversation HTTP accepted; broader CI pending); last fully accepted executable `745f74ef29169f698219b51c8e852ce309d7e05a` (55/55 workflows SUCCESS). New bounded HTTP evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Previous accepted executable d8001a4163862198f035fb385bbe7738def7b288 and its completed-source evidence retained: [evidence/P0-0051-VERIFICATION-20261024.json](evidence/P0-0051-VERIFICATION-20261024.json).
+Source candidate `e8bc8b060d7f4ead1f8b19c447ae17bead436a42` (targeted10-case HTTP accepted; broader CI pending); last fully accepted executable `8c070aee75f67f1d1efcad525a0467baf8b45954` (56/56 workflows SUCCESS). New bounded HTTP evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Previous accepted executable d8001a4163862198f035fb385bbe7738def7b288 and its completed-source evidence retained: [evidence/P0-0051-VERIFICATION-20261024.json](evidence/P0-0051-VERIFICATION-20261024.json).
 
 Tracked rows: 45; CLOSED_SOURCE 29, BLOCKED 9, OPEN 7. No whole-P0 percentage: completeP0Inventory=false. New bounded conversation HTTP evidence: [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json):9 functional cases+parent=10TAP PASS,0fail/skip/cancel; complete HTTP gate remains OPEN. Counts describe this reconciled register, not an approved exhaustive release denominator. The explicit inventory/actor/field gate remains OPEN; no unknown requirement receives PASS.
 
