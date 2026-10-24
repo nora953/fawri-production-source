@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+  "status": "OPEN",
+  "boundedHttpStatus": "VERIFIED",
+  "release": "NO-GO",
+  "source": "745f74ef29169f698219b51c8e852ce309d7e05a",
+  "sourceTree": "f18efc60933aa4601be26b712fe0cc171f98d718",
+  "baselineAcceptedSource": "d8001a4163862198f035fb385bbe7738def7b288",
+  "applicationChanges": [],
+  "changedTests": [
+    "artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs",
+    "artifacts/api-server/tests/merchant-notification-privacy-http-postgres.integration.test.mjs"
+  ],
+  "limitations": [
+    "Management mounts actual management router and origin middleware; notification mounts actual auth-security parent router. Neither exercises the entire production app middleware chain.",
+    "Management uses suspended synthetic merchant profiles to satisfy deletion-review setup; this is not normal active merchant journey acceptance.",
+    "Audit HTTP evidence covers management log projection only, not every auth/Knowledge/Support/emergency/billing field or route.",
+    "Full eight-table actor/field/alternate-path inventory remains incomplete.",
+    "No actual Meta/payment provider, browser/physical-device, hosted infrastructure, load or operational signoff evidence."
+  ],
+  "historicalFailures": [
+    {
+      "source": "52d0913466c3253246de9be5a056f937b9718d0f",
+      "run": 40074216677,
+      "job": 120814022497,
+      "passed": 0,
+      "failed": 1,
+      "classification": "TEST_FIXTURE_PRECONDITION",
+      "error": "MERCHANT_MUST_BE_SUSPENDED",
+      "productFinding": false
+    },
+    {
+      "source": "7c2f5ccd9bb081734fdc443a41e373dae205af15",
+      "run": 40074399886,
+      "job": 120814561857,
+      "passed": 9,
+      "failed": 2,
+      "countsIncludeParent": true,
+      "classification": "TEST_FIXTURE_REVOCATION_CONSTRAINT",
+      "error": "account_sessions_revocation_check",
+      "correction": "Use actual auth.revokeSession(token,kind,logout); no assertion/schema weakening.",
+      "productFinding": false
+    }
+  ],
+  "local": {
+    "syntax": "PASS",
+    "whitespace": "PASS",
+    "disposableAcceptance": "ENVIRONMENT_BLOCKED",
+    "reason": "No local pg dependency installed; no local SQL runtime PASS claimed."
+  },
+  "targeted": [
+    {
+      "kind": "management",
+      "run": 40074546840,
+      "job": 120814999684,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/40074546840/job/120814999684",
+      "conclusion": "success",
+      "summary": {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      "marker": {
+        "tables": [
+          "merchant_admin_notes",
+          "merchant_channel_overrides",
+          "merchant_deletion_requests",
+          "audit_events"
+        ],
+        "syntheticMerchants": 2,
+        "restrictedPrimaryLogin": "knowledge_app_a201797bf64842c99165214c0f8317f2",
+        "deniedRequests": 50,
+        "actualHttp": true,
+        "actualSqlSessions": true,
+        "permissionRevocation": true,
+        "peerPreservation": true,
+        "fullEightTableMatrix": false,
+        "hostedAccepted": false
+      },
+      "isolation": {
+        "suite": "management-privacy-http",
+        "nodeImage": "node:24-bookworm-slim",
+        "containerId": "74beebec94695c8ad5ff8f16667785ffd85ad0e603bcafebc87d69dfba7648bc",
+        "networkNamespace": "net:[4026532310]",
+        "networkMode": "none",
+        "publishedPorts": false,
+        "database": "fawri_ci",
+        "role": "fawri_ci",
+        "localPort": 5432
+      },
+      "cleanupJobStep": "success",
+      "migrations": 52
+    },
+    {
+      "kind": "notification",
+      "run": 40074546889,
+      "job": 120814999619,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/40074546889/job/120814999619",
+      "conclusion": "success",
+      "summary": {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      "marker": {
+        "syntheticMerchants": 2,
+        "actualParentAuthRouter": true,
+        "actualSqlSessions": true,
+        "foreignAndAdminDenials": 6,
+        "exactReadReplay": true,
+        "revokedSessionDenied": true,
+        "fullEightTableMatrix": false,
+        "hostedAccepted": false
+      },
+      "isolation": {
+        "suite": "notification-privacy-http",
+        "nodeImage": "node:24-bookworm-slim",
+        "containerId": "2091fd103de795d76fbc370205bb82f88878a9273d571a5a74cd639d202a9139",
+        "networkNamespace": "net:[4026532265]",
+        "networkMode": "none",
+        "publishedPorts": false,
+        "database": "fawri_ci",
+        "role": "fawri_ci",
+        "localPort": 5432
+      },
+      "cleanupJobStep": "success",
+      "migrations": 52
+    }
+  ],
+  "actualCheckout": "2e95b96f161b16b567c15d95688bb34a1db22bea",
+  "checkoutTree": "f18efc60933aa4601be26b712fe0cc171f98d718",
+  "checkoutTreeEqualsCandidate": true,
+  "workflows": [
+    {
+      "id": 40074546652,
+      "name": "Isolated Neon preflight static safety",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546667,
+      "name": "Bot logic adversarial matrix",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074547061,
+      "name": "Complete migration safety",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546782,
+      "name": "Browser storage authority audit",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546884,
+      "name": "Billing provider readiness",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546593,
+      "name": "Merchant deletion audit PII",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546811,
+      "name": "Cashier dashboard surface regression",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546949,
+      "name": "AWS KMS production adapter readiness",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546879,
+      "name": "Product catalog UI cutover",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546736,
+      "name": "Merchant account security UI",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546775,
+      "name": "Catalog variant signature schema contract",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546714,
+      "name": "Meta webhook pipeline",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 40074546749,
+      "name": "Merchant deletion promotions lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546767,
+      "name": "Global subscription golden journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546840,
+      "name": "P0 management privacy HTTP matrix",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546850,
+      "name": "P0 signed cashier offline authority",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546666,
+      "name": "Pre-release performance smoke gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546853,
+      "name": "P0 dependency security upgrade candidate",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 40074546755,
+      "name": "PostgreSQL outage recovery proof",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546858,
+      "name": "Backup and restore drill",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546745,
+      "name": "Foundation integration final gate",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 40074546829,
+      "name": "Knowledge embedding readiness",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546786,
+      "name": "Merchant settings",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546955,
+      "name": "P0 cashier IndexedDB browser regression",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546819,
+      "name": "Merchant deletion physical media lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546781,
+      "name": "Final security and supply chain",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 40074546857,
+      "name": "Observability mounted routes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546915,
+      "name": "P0 Support privacy authority diagnostic",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546826,
+      "name": "Location inventory authority",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546893,
+      "name": "Location routing engine",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546810,
+      "name": "Order operations",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546956,
+      "name": "Commerce cashier closeout",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546927,
+      "name": "Merchant regional PostgreSQL authority",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546649,
+      "name": "Merchant access security",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546665,
+      "name": "Auth OTP contract continuity",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546813,
+      "name": "PostgreSQL migration candidate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546889,
+      "name": "P0 notification privacy HTTP matrix",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546953,
+      "name": "PostgreSQL schema validation",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 40074546704,
+      "name": "Subscription service guarantee validation",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546862,
+      "name": "Clean deployment golden gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546789,
+      "name": "Global admin golden journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546809,
+      "name": "Final quality gates",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 40074546914,
+      "name": "Isolated PostgreSQL engineering audit",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 40074546933,
+      "name": "Auth PostgreSQL concurrency proof",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546801,
+      "name": "Complete schema candidate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074547067,
+      "name": "Global Merchant PostgreSQL HTTP Journey",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546722,
+      "name": "Meta OAuth operational cutoff",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546948,
+      "name": "Cashier operational cutoff",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546675,
+      "name": "Staging container contract",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546896,
+      "name": "Dashboard channel coherence",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546747,
+      "name": "Cashier subscription lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546973,
+      "name": "Merchant deletion cashier lifecycle",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546863,
+      "name": "Merchant deletion provider identifiers",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546931,
+      "name": "Meta webhook PostgreSQL ingress cutover",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 40074546764,
+      "name": "Global merchant golden journey",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}
