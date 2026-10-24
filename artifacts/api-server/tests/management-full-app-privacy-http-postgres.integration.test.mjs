@@ -92,11 +92,15 @@ test('full application management privacy preserves cutover ordering and current
   });
   await t.test('app denies wrong device combined roles and forged legacy credentials without business changes',async()=>{
     const before=await snapshot();
-    for(const headers of [
-      {'X-Fawri-Device-Id':'wrong'},
-      {Cookie:`${owner.cookie}; ${a.cookie}`},
-      {Cookie:'fawri_merchant_session=synthetic-invalid',Authorization:'Bearer synthetic-invalid'},
-    ])assert.equal((await req(variant,owner,'PUT',{note:'denied-change'},headers)).status,401);
+    for(const [label,headers] of [
+      ['wrong-device',{'X-Fawri-Device-Id':'wrong'}],
+      ['combined-roles',{Cookie:`${owner.cookie}; ${a.cookie}`}],
+      ['forged-legacy',{Cookie:'fawri_merchant_session=synthetic-invalid',Authorization:'Bearer synthetic-invalid'}],
+    ]){
+      const r=await req(variant,owner,'PUT',{note:'denied-change'},headers);assert.equal(r.status,401,label);
+      if(label==='combined-roles')assert.equal(r.body.code,'ROLE_SESSION_CONFUSION');
+      assert.deepEqual(await snapshot(),before,label);
+    }
     assert.deepEqual(await snapshot(),before);
     assert.equal((await req(canonical,owner)).status,200);
   });
