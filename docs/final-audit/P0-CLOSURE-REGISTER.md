@@ -69,3 +69,7 @@ CASHIER-SYNC-SEQUENCE-001 remains a real unresolved recovery contract, despite a
 No deployment, hosted migration, live Railway/Neon access or change, key/secret/privilege change, main push or merge occurred. PR550 remains Draft on its existing base. Stop after final CI observation and publication; pending work is recorded without indefinite waiting.
 
 Planning effort (engineering hours, not elapsed service availability): 1–2h to review a pending completed-source CI result if no new defect; 4–8h for full actor/field/requirement reconciliation; 4–12h for known sync/device/HTTP proof gaps and any demonstrated fixes; 2–6h for ownership/retention/incident policy work with decision makers; 4–8h for hosted/provider/storage/recovery acceptance once separately authorized. Remaining known work approximately 14–34h plus policy/incident decisions and external access; not a completion promise or authorization for that work.
+
+## Active bounded HTTP batch — 2026-10-24
+
+`P0-RESIDUAL-MERCHANT-PRIVACY-001/http` remains OPEN. Four-table management HTTP regression prepared in `artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs`; targeted workflow `p0-management-privacy-http.yml`. Syntax/whitespace PASS; runtime CI_PENDING. See current PROGRESS header. No accepted-source or row-status change.
