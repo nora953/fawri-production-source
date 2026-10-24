@@ -91,6 +91,17 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
         throw new Error('P0 FAIL: acknowledging adjustment altered an unrelated sale sequence');
       }
     }
+    // Repeated acknowledgements and unknown IDs must not alter pending sales.
+    await cashier.acknowledgeSynced([
+      'p0-seq-after-backup-adjustment',
+      'p0-seq-after-backup-adjustment',
+      'p0-seq-never-created',
+    ]);
+    const afterRepeat = await cashier.listPendingSync();
+    const remaining = afterAck.map(item => JSON.stringify(item)).sort();
+    if (JSON.stringify(remaining) !== JSON.stringify(afterRepeat.map(item => JSON.stringify(item)).sort())) {
+      throw new Error('P0 FAIL: repeated acknowledgement changed pending sales');
+    }
     const before = await cashier.listPendingSync();
     const maximumBefore = Math.max(...timeline.map(item => item.device_sequence));
     if (maximumBefore < 3) throw new Error('Regression setup did not advance sequence for both sales and adjustment');
