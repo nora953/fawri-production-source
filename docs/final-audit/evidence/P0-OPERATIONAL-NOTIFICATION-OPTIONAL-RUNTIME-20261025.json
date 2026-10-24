@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "PREPARED_OPTIONAL_BRANCHES_CI_PENDING",
+  "status": "TARGETED_OPTIONAL_RUNTIME_PASS_BROADER_CI_PENDING",
   "recoveredHead": "a2e74076c435de441377347a53c687cd8f24397a",
   "previousAcceptedExecutable": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
   "test": "artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs",
@@ -28,11 +28,96 @@
     "exact peer preservation"
   ],
   "localSyntax": "PASS",
-  "runtime": "NOT_RUN",
+  "runtime": "TARGETED_PASS",
   "applicationChanged": false,
   "schemaChanged": false,
   "aclChanged": false,
   "fieldCellClosed": false,
   "release": "NO-GO",
-  "nextExactAction": "Inspect exact candidate targeted and broader CI; upstream caller-to-merchant ownership remains pending."
+  "nextExactAction": "Inspect exact candidate targeted and broader CI; upstream caller-to-merchant ownership remains pending.",
+  "sourceCandidate": "b0417241bd9b69dd8f460ce91e044004650266d9",
+  "targeted": {
+    "runId": 40144065203,
+    "jobId": 121021573721,
+    "functionalCases": 24,
+    "tapPass": 28,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "checkout": "8c38c070eadb6e30027dc7f591d960f86acdbe61",
+    "tree": "28feeaa5a81a0e2af8f3fb8ab86e478dc4cf7e77",
+    "sourceTreeMatches": true,
+    "suites": [
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ]
+  },
+  "sourceFollowup": {
+    "status": "SOURCE_ONLY_NOT_CALLER_RUNTIME_ACCEPTANCE",
+    "sourceRevision": "a2e74076c435de441377347a53c687cd8f24397a",
+    "observedCallSites": [
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "function": "notifyMerchantNewCustomerMessagePostgres",
+        "line": 507,
+        "inputs": "parsed merchant/event and committed inbound conversation"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "function": "notifyMerchantKnowledgeGapPostgres",
+        "line": 1603,
+        "inputs": "parsed merchant, decision training request, committed handoff conversation"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts",
+        "function": "notifyMerchantPaymentConflictPostgres",
+        "line": 705,
+        "inputs": "verified payment application conflict merchant/order/provider/event"
+      }
+    ],
+    "unresolved": "New-order SQL producer caller not reconciled in inspected subset; not proof it is unreachable or a missing feature.",
+    "next": "Bind candidate producer round trips to actual caller admission and tenant provenance; reuse existing Meta/payment restricted-runtime fixtures."
+  }
 }
