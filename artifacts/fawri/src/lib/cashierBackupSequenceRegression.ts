@@ -1,5 +1,5 @@
 import { IndexedDbCashierAuthority } from './cashierIndexedDbAuthority';
-import { IndexedDbCashierBackupAuthority } from './cashierBackupAuthority';
+import { CashierBackupError, IndexedDbCashierBackupAuthority } from './cashierBackupAuthority';
 
 /**
  * P0 regression diagnostic. Run manually in a browser with IndexedDB.
@@ -52,7 +52,12 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
     let rejected = false;
     try {
       await backupAuthority.restoreBackup(olderBackup);
-    } catch {
+    } catch (error) {
+      // An unrelated I/O or validation failure is not proof of rollback protection.
+      if (!(error instanceof CashierBackupError)) throw error;
+      if (!['CASHIER_BACKUP_SEQUENCE_ROLLBACK', 'CASHIER_BACKUP_STALE_RESTORE'].includes(error.code)) {
+        throw new Error('P0 FAIL: restore rejected for an unrelated reason: ' + error.code);
+      }
       rejected = true;
     }
     if (rejected) return;
