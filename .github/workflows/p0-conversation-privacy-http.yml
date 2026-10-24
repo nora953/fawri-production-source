@@ -3,10 +3,13 @@ on:
   pull_request:
     paths:
       - 'artifacts/api-server/tests/manual-conversation-privacy-http-postgres.integration.test.mjs'
+      - 'artifacts/api-server/tests/conversation-correction-approval-http-postgres.integration.test.mjs'
       - 'scripts/execute-disposable-postgres-audit.mjs'
       - 'scripts/run-isolated-postgres-audit.sh'
       - 'artifacts/api-server/src/routes/conversation-operations.ts'
       - 'artifacts/api-server/src/services/postgresManualConversationAuthority.ts'
+      - 'artifacts/api-server/src/services/merchantCorrectionReview.ts'
+      - 'artifacts/api-server/src/services/knowledge/postgresKnowledgeManagementRuntime.ts'
       - 'artifacts/api-server/src/middleware/authSession.ts'
       - '.github/workflows/p0-conversation-privacy-http.yml'
   workflow_dispatch:
@@ -34,6 +37,7 @@ jobs:
       - name: Check audit execution syntax
         run: |
           node --check artifacts/api-server/tests/manual-conversation-privacy-http-postgres.integration.test.mjs
+          node --check artifacts/api-server/tests/conversation-correction-approval-http-postgres.integration.test.mjs
           node --check scripts/execute-disposable-postgres-audit.mjs
           bash -n scripts/run-isolated-postgres-audit.sh
       - name: Execute conversation tenant and recovery HTTP assertions

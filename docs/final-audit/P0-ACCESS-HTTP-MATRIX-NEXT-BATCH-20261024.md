@@ -1,3 +1,13 @@
+## Correction approval/knowledge isolation prepared — 2026-10-24
+
+Recovery HEADce3d73dd, accepted executable2a0453ed retained; PR550Draft/unmerged. Gate P0-RESIDUAL-MERCHANT-PRIVACY-001/http remains OPEN. New independent attested restricted-LOGIN HTTP suite has6functional cases:4foreign/mixed review-ID denials with unchanged business/knowledge snapshots; own creation despite identical peer normalized question; own update/version increment and peer preservation; approved replay/conflicting dismissal without extra knowledge/audit/version changes; actual post-knowledge/pre-review SQL fault and convergent retry; revoked-session denial with valid peer replay. Existing15conversation cases run separately in same targeted lane.
+
+Trace: /api conversation-operations.ts → requireMerchantSession → reviewMerchantCorrectionAuthoritative → scoped message context → applyMerchantCorrection scoped knowledge transaction → separate resolveReviewMetadata transaction. Fault injection is an owned disposable trigger rejecting only the synthetic review update after knowledge commit. The expected intermediate pending review+one durable saved answer is explicit; no atomic-single-transaction claim. Retry must reuse saved answer/version then resolve review. Embeddings/provider transport disabled; synthetic HTTP/SQL only. No app/schema/ACL/product-policy changes.
+
+New runtime PREPARED/CI_PENDING. Local syntax/whitespace PASS. Next inspect targeted raw per-file TAP and fault-recovery marker/cleanup on containing commit; distinguish fixture vs product failure, then verify broader exact-source CI and reconcile register. Whole-role/full-app/concurrent approval/provider/hosted acceptance excluded; NO-GO; no main/merge/deploy/P1/P2.
+
+---
+
 ## P0 populated conversation metadata accepted — 2026-10-24
 
 Accepted executable `2a0453ed276a0b85a6e24467faf2498692ff445e`: **56/56 returned workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. [Conversation HTTP40077528008/job120824032599](https://github.com/nora953/fawri-production-source/actions/runs/40077528008/job/120824032599): **15 functional cases+parent=16TAP PASS**,0fail/skip/cancel; **5 new populated-metadata cases** and6synthetic messages. Checkout4410cc8015e9825e39f0e84f5ef46b233dc8ef79 matches tree06b6b7b2b2c33886c3eea34c9a59b1b1e729ec45. New tests verify exact own correction/image/knowledge/learning projection through list aliases/detail, real foreign/mismatched correction IDs denied without SQL changes, authorized dismissal/replay with UI review status/peer metadata retained, malformed decision/context denial, and revoked-session denial. No application/schema/ACL/product-policy/provider changes.
