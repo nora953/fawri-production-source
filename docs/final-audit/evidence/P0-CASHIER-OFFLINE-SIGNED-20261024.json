@@ -3629,7 +3629,32 @@
     },
     "finding": "P0-RESIDUAL-MERCHANT-PRIVACY-001",
     "status": "OPEN",
-    "management_remediation": "0050_PREPARED_CI_PENDING",
+    "management_remediation": {
+      "status": "SOURCE_AND_GENERATED_SNAPSHOT_CI_PENDING",
+      "tables": 3,
+      "stage": 50,
+      "pinned_sql_sha256": "75ec211ebfec841219fd37b2c8f68324e8b10059cf81dd02c7c7f274cdef53f1",
+      "candidate": {
+        "source": "9b767e5bd7f63dacecc67768e9bb73f62b1e4af3",
+        "run": 40055851337,
+        "job": 120758548939,
+        "status": "SUCCESS",
+        "entries": 51,
+        "artifact": 12544339907,
+        "zip_sha256": "9ecdc4ee9757065c9dc76a7b6a896a8ab68f627eb8744de1d698f4ef46e17c42",
+        "snapshot_sha256": "e74addb89781fdb3b0577ea6aabfb0bc2b950b8f7915941434b971bf92b2a305",
+        "snapshot_bytes": 626498,
+        "existing_files_unchanged": 102,
+        "changed_tables": [
+          "merchant_admin_notes",
+          "merchant_channel_overrides",
+          "merchant_deletion_requests"
+        ]
+      },
+      "new_declarative_regressions": 4,
+      "normal_ci": "PENDING",
+      "remaining_residual_tables": 5
+    },
     "limits": "Actual isolated broad-grant primary role; not HTTP or hosted privilege exposure. Diagnostic green does not mean security acceptance."
   }
 }

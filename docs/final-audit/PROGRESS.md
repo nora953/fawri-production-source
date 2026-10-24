@@ -1,3 +1,15 @@
+## P0 0050 generated management snapshot adopted — 2026-10-24
+
+Source9b767e5 canonical candidate40055851337/job120758548939 **SUCCESS**: committed_reproducible=true,historical_reproducible=true,51entries. Artifact12544339907 ZIP SHA256 `9ecdc4ee9757065c9dc76a7b6a896a8ab68f627eb8744de1d698f4ef46e17c42` verified; all102existing canonical/historical files byte-identical. Adopted only generated0050snapshot,626498bytes,SHA256 `e74addb89781fdb3b0577ea6aabfb0bc2b950b8f7915941434b971bf92b2a305`. Semantic changes limited to policies+isRLSEnabled for merchant_admin_notes,merchant_channel_overrides,merchant_deletion_requests plus snapshot identifiers.95tables/1245fields retained; all70required RLS declarations present.
+
+Four actual Drizzle/latest-snapshot unit regressions now join the strict3-table SQL/service proof. Current containing source is complete for0050 metadata but **normal exact-source CI PENDING**. Prior missing0050snapshot smoke failures are intermediate artifact-completion failures, not accepted final source. No prior snapshots/SQL, tenant predicate, source service routing, fixture grants, smoke expectations or security thresholds changed.
+
+Keep P0-RESIDUAL-MERCHANT-PRIVACY-001 OPEN pending strict9read/18mutation denial targets and actual trusted note/override/request creation/review/rollback/peer results; these counters are targets until raw proof is read. Retained8-table diagnostic must separately show3protected and5remaining unresolved tables. No inference from a green diagnostic or synthetic grant plan to hosted/HTTP acceptance. Last fully executed source62bed3c remains52/52 with90invocations/704TAP but observed privacy gap.
+
+Next inspect completed-source4units, strict management marker, residual observations, canonical51entry reproduction, owned full migration/restore/SQL/native/security/quality CI; fix real failures, preserve baseline evidence and trusted operations. Remaining5tables, full field-role/privacy/retention inventory and hosted/incident/ownership gates stay OPEN/BLOCKED_HOSTED_VERIFICATION. **NO-GO**; no percentage/main/merge/deploy/P1/P2.
+
+---
+
 ## P0 residual privacy baseline verified;0050 management remediation prepared — 2026-10-24
 
 Executed source `62bed3cd19dfe6ec4273194cc1d0e5045b825752` finished **52/52 workflows SUCCESS**. Isolated40054814184/job120755341034: **90clean invocations/88unique files/704TAP passes,0fail/skip/cancel**, including new residual suite4PASS. Its diagnostic success explicitly does NOT accept foreign visibility. Two synthetic merchants/actual restricted primary LOGIN with documented broad fixture CRUD: all8tables lacked RLS, unscoped/scoped queries each exposed own+foreign synthetic records, foreign no-op UPDATE affected1row per table then forcibly rolled back; trusted global reads/exact rollback/pooled scope reset PASS. No HTTP breach or hosted privilege exposure inferred. Canonical finding **P0-RESIDUAL-MERCHANT-PRIVACY-001 HIGH/OPEN** is bounded to that verified authority/privilege configuration; no complete P0 privacy acceptance.

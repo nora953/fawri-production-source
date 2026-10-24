@@ -753,6 +753,18 @@
         "run": 40054017508,
         "job": 120753095194
       }
+    },
+    {
+      "requirement_id": "P0-MERCHANT-MANAGEMENT-PRIVACY-AUTHORITY",
+      "requirement": "Private administrative notes/channel overrides/deletion reviews deny primary SQL while trusted actual management operations continue",
+      "status": "TRIAGE",
+      "proof_layer": "actual_restricted_login_sql_and_trusted_services",
+      "canonical_issue_id": "P0-RESIDUAL-MERCHANT-PRIVACY-001",
+      "test_path": "artifacts/api-server/tests/merchant-management-privacy-rls-postgres.integration.test.mjs",
+      "generator_run": 40055851337,
+      "generator_job": 120758548939,
+      "source_sha": "9b767e5bd7f63dacecc67768e9bb73f62b1e4af3",
+      "limits": "Generated metadata verified; containing-source actual SQL/unit/full CI pending. Remaining5residual tables and HTTP/hosted actor matrices stay open."
     }
   ],
   "emergencyBaseline": {
@@ -776,12 +788,12 @@
   "reconciliation_note": "Existing accepted executions indexed, not newly run tests; parent TAP totals are not unique requirement counts. Full role/privacy/retention policy inventory remains open.",
   "schema_table_inventory": {
     "source_sha": "0563880fa5961af544c39352b82a90e3498c89ae",
-    "source_snapshot": "lib/db/drizzle/meta/0049_snapshot.json",
-    "snapshot_sha256": "d2a0ba3596db2f9470d5bd8139cfda45befc24b5f03fb800fade9c692b8d6868",
+    "source_snapshot": "lib/db/drizzle/meta/0050_snapshot.json",
+    "snapshot_sha256": "e74addb89781fdb3b0577ea6aabfb0bc2b950b8f7915941434b971bf92b2a305",
     "proof_layer": "source_declarative_inventory",
     "table_count": 95,
     "column_count": 1245,
-    "declared_rls_enabled_count": 67,
+    "declared_rls_enabled_count": 70,
     "actors_requiring_reconciliation": [
       "owner_admin",
       "assistant_admin_by_permission",
@@ -2071,8 +2083,10 @@
           "created_at",
           "updated_at"
         ],
-        "declared_rls_enabled": false,
-        "declared_policy_names": [],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_admin_notes_authentication_boundary"
+        ],
         "merchant_key_columns": [
           "merchant_id"
         ],
@@ -2080,7 +2094,9 @@
           "admin_profiles",
           "merchants"
         ],
-        "bounded_authority_proofs": [],
+        "bounded_authority_proofs": [
+          "P0-MERCHANT-MANAGEMENT-PRIVACY-AUTHORITY"
+        ],
         "complete_field_actor_read_write_export_matrix": "TRIAGE"
       },
       {
@@ -2309,8 +2325,10 @@
           "created_at",
           "updated_at"
         ],
-        "declared_rls_enabled": false,
-        "declared_policy_names": [],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_channel_overrides_authentication_boundary"
+        ],
         "merchant_key_columns": [
           "merchant_id"
         ],
@@ -2318,7 +2336,9 @@
           "admin_profiles",
           "merchants"
         ],
-        "bounded_authority_proofs": [],
+        "bounded_authority_proofs": [
+          "P0-MERCHANT-MANAGEMENT-PRIVACY-AUTHORITY"
+        ],
         "complete_field_actor_read_write_export_matrix": "TRIAGE"
       },
       {
@@ -2386,8 +2406,10 @@
           "completed_at",
           "created_at"
         ],
-        "declared_rls_enabled": false,
-        "declared_policy_names": [],
+        "declared_rls_enabled": true,
+        "declared_policy_names": [
+          "merchant_deletion_requests_authentication_boundary"
+        ],
         "merchant_key_columns": [
           "merchant_id"
         ],
@@ -2395,7 +2417,9 @@
           "admin_profiles",
           "merchants"
         ],
-        "bounded_authority_proofs": [],
+        "bounded_authority_proofs": [
+          "P0-MERCHANT-MANAGEMENT-PRIVACY-AUTHORITY"
+        ],
         "complete_field_actor_read_write_export_matrix": "TRIAGE"
       },
       {
@@ -3801,17 +3825,18 @@
       }
     ],
     "readiness_declaration_crosscheck": {
-      "required_table_count": 67,
-      "declared_rls_table_count": 67,
+      "required_table_count": 70,
+      "declared_rls_table_count": 70,
       "required_missing_rls": [],
       "additional_declared_rls": [],
       "method": "Exact exported constant sections matched against snapshot table declarations; not database ACL execution"
     },
     "generation_evidence": {
-      "run": 40053684154,
-      "job": 120751772077,
-      "artifact": 12544088050,
-      "historical_files_verified_equal": 100,
+      "source_sha": "9b767e5bd7f63dacecc67768e9bb73f62b1e4af3",
+      "run": 40055851337,
+      "job": 120758548939,
+      "artifact": 12544339907,
+      "historical_files_verified_equal": 102,
       "final_source_ci": "PENDING"
     }
   },
@@ -4103,7 +4128,7 @@
         "merchant_channel_overrides",
         "merchant_deletion_requests"
       ],
-      "status": "PREPARED_CI_PENDING",
+      "status": "SOURCE_AND_GENERATED_SNAPSHOT_CI_PENDING",
       "test_path": "artifacts/api-server/tests/merchant-management-privacy-rls-postgres.integration.test.mjs",
       "stage": 50,
       "sql_sha256": "75ec211ebfec841219fd37b2c8f68324e8b10059cf81dd02c7c7f274cdef53f1"
