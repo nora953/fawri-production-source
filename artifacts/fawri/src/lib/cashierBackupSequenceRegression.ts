@@ -40,7 +40,7 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
       lines: [{ product_id: 'p0-product', quantity: 1 }],
     });
     const olderBackup = await backupAuthority.exportBackup();
-    await cashier.commitSale({
+    const newerSale = await cashier.commitSale({
       operation_id: 'p0-seq-after-backup',
       payment_method: 'cash',
       payment_status: 'paid',
@@ -70,7 +70,7 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
       if (JSON.stringify(beforeIds) !== JSON.stringify(afterIds)) {
         throw new Error('P0 FAIL: rejected restore modified pending operations');
       }
-      if (!(await cashier.getSale('sale:p0-seq-after-backup'))) {
+      if (!(await cashier.getSale(newerSale.sale.sale_id))) {
         throw new Error('P0 FAIL: rejected restore did not preserve the newer sale');
       }
       return;
@@ -81,7 +81,7 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
     if (maximumAfter < maximumBefore) {
       throw new Error('P0 FAIL: stale backup rewound device sequence and outbox');
     }
-    if (!(await cashier.getSale('sale:p0-seq-after-backup'))) {
+    if (!(await cashier.getSale(newerSale.sale.sale_id))) {
       throw new Error('P0 FAIL: stale backup silently removed a newer local sale');
     }
   } finally {
