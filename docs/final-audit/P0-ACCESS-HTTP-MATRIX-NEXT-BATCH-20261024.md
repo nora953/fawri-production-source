@@ -1,3 +1,13 @@
+## Populated conversation metadata HTTP batch prepared — 2026-10-24
+
+Recovered HEADcc621084; accepted executablee8bc8b06 retained. Gate P0-RESIDUAL-MERCHANT-PRIVACY-001/http remains OPEN. Five new actual-SQL/router cases add six synthetic messages with production-shaped correction/image/knowledge/learning metadata. Require exact own projection on list aliases/detail, real foreign/mismatched correction-ID denials and unchanged SQL, legitimate dismissal/replay/conflict behavior retaining UI correction_review.status and sibling metadata, malformed decision/context refusal, revoked-session read/review refusal and legitimate peer access.
+
+Trace: conversation-operations.ts uses requireMerchantSession; postgresManualConversationAuthority mapMessage projects scoped metadata; merchantCorrectionReview loads merchant+conversation+message context and updates correction state in merchant-scoped transactions. Current UI reads correction_review.status. Fixture setup/bootstrap only; actual operations use restricted primary LOGIN/separate authentication LOGIN. No application, schema, ACL, redaction/product-policy or provider changes. Media fixture covers image provenance only, not live media/provider processing or every possible metadata field. Authorized approve/knowledge creation, full-app/alternate paths and whole-role privacy remain unaccepted.
+
+Local syntax/whitespace PASS; new runtime PREPARED/CI_PENDING, not accepted. Exact next: inspect targeted P0 conversation privacy HTTP matrix raw TAP/cleanup on containing commit, classify fixture vs product failures, verify relevant broader CI and update register. No hosted/main/merge/deploy/P1/P2; NO-GO.
+
+---
+
 ## P0 corrected manual conversation source fully verified — 2026-10-24
 
 Accepted executable `e8bc8b060d7f4ead1f8b19c447ae17bead436a42`: **56/56 workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. Targeted [conversation HTTP40076278947/job120820201546](https://github.com/nora953/fawri-production-source/actions/runs/40076278947/job/120820201546): **10 functional cases+parent=11TAP PASS**,0fail/skip/cancel. Checkout124dbc3db19f3ead88235c71cea1512b0161bfb3 matches source treecca16927b147185a44f97a9fc3fc7b9161a1282c. [Full isolated40076279113/job120820201771](https://github.com/nora953/fawri-production-source/actions/runs/40076279113/job/120820201771): **92clean invocations/90unique files/715TAP PASS**,0fail/skip/cancel; owned container cleanup SUCCESS. Targeted conversation cases run separately from that92 total. Quality/security/schema/native/remaining workflows SUCCESS; no blanket zero-skip claim for unrelated optional quality tests.

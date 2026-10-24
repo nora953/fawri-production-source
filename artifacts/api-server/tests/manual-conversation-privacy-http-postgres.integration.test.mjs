@@ -160,6 +160,73 @@ test('manual conversation HTTP privacy and recovery use restricted SQL sessions'
     assert.equal(r.status, 409); assert.equal(r.body.code, 'IDEMPOTENCY_KEY_REUSED');
     assert.deepEqual(await snapshot(), before); privateFieldsAbsent(r.body);
   });
+  const populated = new Map();
+  await t.test('populated correction media and learning metadata survive own list aliases and detail', async () => {
+    for (const actor of actors) {
+      const customer = `metadata-customer-${randomUUID()}`, fawri = `metadata-fawri-${randomUUID()}`, manual = `metadata-manual-${randomUUID()}`;
+      const customerMetadata = {media: {content_kind: 'image', attachment_count: 1, has_attachment: true, content_identity_hash: 'b'.repeat(64), image_sha256: 'c'.repeat(64), vision_provider_id: 'synthetic-vision', vision_model: 'synthetic-model', visual_alternatives: [{product_id: `product-${actor.id}`, confidence: 0.8}]}, reply_to_external_message_id: `synthetic-parent-${actor.id}`};
+      const fawriMetadata = {knowledge_stage: 'ai_fallback', knowledge_source: 'synthetic', reason_code: 'SYNTHETIC_CONTEXT', confidence: 0.8, matched_record_id: null, grounding_record_ids: [`ground-${actor.id}`], source_customer_message_id: customer, training_request_id: null, handoff_after_reply: false};
+      const manualMetadata = {correction_review: {status: 'pending', customer_message_id: customer, fawri_message_id: fawri, source_stage: 'ai_fallback', matched_record_id: null, created_at: new Date().toISOString(), knowledge_id: null, apply_mode: null}, manual_reply_learning: 'synthetic-retained', learned_training_request_id: `training-${actor.id}`, learned_answer_id: `answer-${actor.id}`};
+      const fixtures = [
+        {id: customer, sender: 'customer', status: 'received', text: `synthetic-question-${actor.id}`, metadata: customerMetadata},
+        {id: fawri, sender: 'fawri', status: 'sent', text: `synthetic-answer-${actor.id}`, metadata: fawriMetadata},
+        {id: manual, sender: 'merchant', status: 'sent', text: `synthetic-correction-${actor.id}`, metadata: manualMetadata},
+      ];
+      for (const row of fixtures) await admin.query('INSERT INTO messages(id,merchant_id,conversation_id,sender,status,text,metadata) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)', [row.id, actor.id, actor.conversation, row.sender, row.status, row.text, JSON.stringify(row.metadata)]);
+      populated.set(actor.id, {customer, fawri, manual, fixtures, manualMetadata});
+    }
+    const before = await snapshot();
+    for (const actor of actors) {
+      const foreign = actor === a ? b : a;
+      for (const path of ['/conversations', `/conversations/${actor.id}`, `/conversation/${actor.conversation}`]) {
+        const r = await req(path, actor); assert.equal(r.status, 200); assert.equal(r.cache, 'no-store');
+        const conversation = r.body.conversation || r.body.conversations.find(c => c.id === actor.conversation);
+        for (const fixture of populated.get(actor.id).fixtures) assert.deepEqual(conversation.messages.find(m => m.id === fixture.id).metadata, fixture.metadata);
+        assert.doesNotMatch(JSON.stringify(r.body), new RegExp(foreign.id)); privateFieldsAbsent(r.body);
+      }
+    }
+    assert.deepEqual(await snapshot(), before);
+  });
+  await t.test('real populated correction IDs reject foreign and mismatched conversation access', async () => {
+    const before = await snapshot();
+    for (const actor of actors) {
+      const foreign = actor === a ? b : a, foreignMessage = populated.get(foreign.id).manual;
+      for (const conversation of [foreign.conversation, actor.conversation]) {
+        const r = await req(`/conversations/${conversation}/messages/${foreignMessage}/correction-review`, actor, 'POST', {decision: 'dismiss', merchant_id: foreign.id});
+        assert.equal(r.status, 404); assert.equal(r.body.code, 'CORRECTION_REVIEW_NOT_FOUND');
+        assert.doesNotMatch(JSON.stringify(r.body), /synthetic-question|synthetic-correction|manual_reply_learning|grounding_record_ids/);
+      }
+      const detail = await req(`/conversation/${foreign.conversation}`, actor); assert.equal(detail.status, 404); privateFieldsAbsent(detail.body);
+    }
+    assert.deepEqual(await snapshot(), before);
+  });
+  await t.test('authorized dismissal and exact replay retain UI review state and sibling metadata', async () => {
+    const fixture = populated.get(a.id), peer = await snapshot([b.id]);
+    const path = `/conversations/${a.conversation}/messages/${fixture.manual}/correction-review`;
+    const r = await req(path, a, 'POST', {decision: 'dismiss', merchant_id: b.id});
+    assert.equal(r.status, 200); assert.equal(r.body.result.status, 'dismissed'); assert.equal(r.cache, 'no-store');
+    const metadata = r.body.conversation.messages.find(m => m.id === fixture.manual).metadata;
+    assert.equal(metadata.correction_review.status, 'dismissed'); assert.ok(metadata.correction_review.reviewed_at);
+    for (const field of ['customer_message_id', 'fawri_message_id', 'source_stage']) assert.equal(metadata.correction_review[field], fixture.manualMetadata.correction_review[field]);
+    for (const field of ['manual_reply_learning', 'learned_training_request_id', 'learned_answer_id']) assert.equal(metadata[field], fixture.manualMetadata[field]);
+    for (const row of fixture.fixtures.filter(m => m.id !== fixture.manual)) assert.deepEqual(r.body.conversation.messages.find(m => m.id === row.id).metadata, row.metadata);
+    const after = await snapshot();
+    const replay = await req(path, a, 'POST', {decision: 'dismiss'}); assert.equal(replay.status, 200); assert.equal(replay.body.result.status, 'dismissed'); assert.deepEqual(await snapshot(), after);
+    const conflict = await req(path, a, 'POST', {decision: 'approve'}); assert.equal(conflict.status, 409); assert.equal(conflict.body.code, 'CORRECTION_REVIEW_CONFLICT'); assert.deepEqual(await snapshot(), after);
+    assert.deepEqual(await snapshot([b.id]), peer); privateFieldsAbsent(r.body);
+  });
+  await t.test('invalid review decision and foreign context reference cannot mutate populated records', async () => {
+    const fixture = populated.get(b.id), path = `/conversations/${b.conversation}/messages/${fixture.manual}/correction-review`;
+    const before = await snapshot(); const invalid = await req(path, b, 'POST', {decision: 'invalid'}); assert.equal(invalid.status, 400); assert.deepEqual(await snapshot(), before);
+    const poisoned = structuredClone(fixture.manualMetadata); poisoned.correction_review.customer_message_id = populated.get(a.id).customer;
+    await admin.query('UPDATE messages SET metadata=$2::jsonb WHERE id=$1', [fixture.manual, JSON.stringify(poisoned)]);
+    try {
+      const state = await snapshot(), r = await req(path, b, 'POST', {decision: 'dismiss'});
+      assert.equal(r.status, 409); assert.equal(r.body.code, 'CORRECTION_REVIEW_CONTEXT_INVALID'); assert.deepEqual(await snapshot(), state); privateFieldsAbsent(r.body);
+    } finally {
+      await admin.query('UPDATE messages SET metadata=$2::jsonb WHERE id=$1', [fixture.manual, JSON.stringify(fixture.manualMetadata)]);
+    }
+  });
   await t.test('wrong device and administrative token in merchant cookie deny without changes', async () => {
     const before = await snapshot();
     for (const headers of [{'X-Fawri-Device-Id': 'wrong'}, {Cookie: `${MERCHANT_SESSION_COOKIE}=${ownerSession.token}`}]) for (const [path, method, body] of operations(a)) assert.equal((await req(path, a, method, body, headers)).status, 401);
@@ -171,5 +238,13 @@ test('manual conversation HTTP privacy and recovery use restricted SQL sessions'
     for (const [path, method, body] of operations(a)) assert.equal((await req(path, a, method, body)).status, 401);
     assert.deepEqual(await snapshot(), before); assert.equal((await req('/conversations', b)).status, 200);
   });
-  console.log('P0_CONVERSATION_PRIVACY_HTTP ' + JSON.stringify({syntheticMerchants: 2, actualRouter: true, restrictedSqlSessions: true, foreignDenials: 12, pendingAndUncertainReturnDenied: true, failedAndSentReturnAccepted: true, deliveredHttpReplay: true, privateRequestProjectionAbsent: true, revokedSessionDenied: true, providerSendExecuted: false, wholeAppAccepted: false, fullEightTableMatrix: false, hostedAccepted: false}));
+  await t.test('revoked session cannot read populated metadata or review a real correction', async () => {
+    const before = await snapshot(), own = populated.get(a.id);
+    assert.equal((await req(`/conversation/${a.conversation}`, a)).status, 401);
+    assert.equal((await req(`/conversations/${a.conversation}/messages/${own.manual}/correction-review`, a, 'POST', {decision: 'dismiss'})).status, 401);
+    assert.deepEqual(await snapshot(), before);
+    const peer = await req(`/conversation/${b.conversation}`, b); assert.equal(peer.status, 200);
+    assert.equal(peer.body.conversation.messages.find(m => m.id === populated.get(b.id).manual).metadata.correction_review.status, 'pending');
+  });
+  console.log('P0_CONVERSATION_PRIVACY_HTTP ' + JSON.stringify({syntheticMerchants: 2, actualRouter: true, restrictedSqlSessions: true, foreignDenials: 12, populatedMetadataFixtures: 6, populatedMetadataCases: 5, authorizedCorrectionDismissReplay: true, foreignCorrectionDenials: 4, pendingAndUncertainReturnDenied: true, failedAndSentReturnAccepted: true, deliveredHttpReplay: true, privateRequestProjectionAbsent: true, revokedSessionDenied: true, providerSendExecuted: false, wholeAppAccepted: false, fullEightTableMatrix: false, hostedAccepted: false}));
 });
