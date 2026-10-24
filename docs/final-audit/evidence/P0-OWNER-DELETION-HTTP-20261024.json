@@ -3,8 +3,8 @@
   "date": "2026-10-24",
   "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
   "status": "OPEN",
-  "boundedStatus": "FIXTURE_CORRECTED_CI_PENDING",
-  "source": "3da2b78e7fc5fdd26b943bf7d4b254fe4d987116",
+  "boundedStatus": "APPLICATION_CORRECTED_CI_PENDING",
+  "source": "b2470a3a1e6f4a35a630e463752837771c74b96a",
   "initialFailure": {
     "source": "b4e8fffe83f44967efc3e57a5889260df4fb6c2a",
     "run": 40080821537,
@@ -53,5 +53,60 @@
   "functionalCasesPrepared": 7,
   "previousAcceptedSource": "c0754a143dc8dcb6214c66ba94bb365bd4c353d0",
   "scope": "Actual management router with restricted primary LOGIN and separate auth LOGIN, owner password/device/session, quiescence and peer/local media. No operator pool/financial-retention/hosted or whole-app acceptance.",
-  "release": "NO-GO"
+  "release": "NO-GO",
+  "observedRuntimeFailure": {
+    "source": "3da2b78e7fc5fdd26b943bf7d4b254fe4d987116",
+    "run": 40081015574,
+    "job": 120834410716,
+    "classification": "APPLICATION_EXPECTED_STATE_ERROR_MAPPING",
+    "summary": [
+      {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 1,
+        "passed": 6,
+        "failed": 2,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "functionalDeletionCasesExecuted": 7,
+    "functionalDeletionPassed": 6,
+    "failedCase": "authorized owner HTTP purges only target private data and local media then rejects repeat",
+    "actual": "Initial authorized deletion and data/media/peer assertions passed; repeat returned 500 MERCHANT_MANAGEMENT_FAILURE instead of 404 MERCHANT_NOT_FOUND.",
+    "cause": "captureCleanupManifest throws an untyped suspension error for a closed account before completeMerchantDeletionPostgres can return its typed 404.",
+    "correction": "Use MerchantManagementError 404 for missing/closed merchant, 409 for non-suspended state before manifest creation. Preserve guards and business snapshots; additionally assert repeat error code.",
+    "cleanup": "SUCCESS",
+    "broaderWorkflowSummary": {
+      "returned": 56,
+      "success": 55,
+      "failure": 1,
+      "pending": 0
+    }
+  },
+  "sourceTree": "bebcb78b13e5c7bdb9bbd9429d51c86dcddc2faa"
 }

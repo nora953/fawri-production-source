@@ -1,3 +1,11 @@
+## Owner deletion repeat error corrected; exact-source CI pending — 2026-10-24
+
+Candidate `b2470a3a1e6f4a35a630e463752837771c74b96a` minimally returns existing typed404 MERCHANT_NOT_FOUND for missing/closed merchants and typed409 MERCHANT_MUST_BE_SUSPENDED for non-suspended capture, before manifest creation. Actual router already handles MerchantManagementError; no grant/schema/purge/transaction changes. Repeat regression still requires404, additionally exact code and unchanged SQL/media snapshots.
+
+Prior source3da2b78e/run40081015574/job120834410716 executed7 deletion cases:6 passed; authorized initial purge, local-media removal, peer protection and single audit assertions passed, but repeat returned500 instead of404. TAP6PASS/2FAIL includes failed parent; not8 independent cases. Its55/56 broader workflow successes do not accept this source. Original b4e8fffe session-state fixture failure retained separately. Local syntax, whitespace and physical-media contract1PASS. New targeted/broader CI PENDING; last fully accepted executable remainsc0754a14. Full HTTP gateOPEN; NO-GO; no hosted/main/merge/deploy/P1/P2.
+
+---
+
 ## Deletion fixture prerequisite correction
 
 Initial b4e8fffe run40080821537/job120833831203: management11TAP and import6TAP PASS; deletion setup0PASS/1parentFAIL,0functional deletion cases executed. AUTH_POSTGRES_ACCOUNT_UNAVAILABLE at session issuance correctly rejects suspended accounts. Correct fixture issues sessions on active approved accounts, then suspends through actual updateMerchantStatusPostgres before request creation. No app/guard/schema changes. Earlier failure retained; corrected runtimeCI_PENDING, full gateOPEN/NO-GO.
