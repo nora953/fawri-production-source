@@ -6,7 +6,7 @@
   "completeP0Inventory": false,
   "overallPercentage": null,
   "sourceCandidate": "b2470a3a1e6f4a35a630e463752837771c74b96a",
-  "lastFullyAcceptedSource": "c0754a143dc8dcb6214c66ba94bb365bd4c353d0",
+  "lastFullyAcceptedSource": "b2470a3a1e6f4a35a630e463752837771c74b96a",
   "release": "NO-GO",
   "rows": [
     {
@@ -147,7 +147,8 @@
       "requirement": "Deletion checks active work, purges target tenant and local physical media while preserving another tenant",
       "status": "CLOSED_SOURCE",
       "evidence": "https://github.com/nora953/fawri-production-source/actions/runs/40033977598/job/120688827685",
-      "blocker": "None within this bounded source contract. Actual restricted primary LOGIN/service/SQL/local filesystem proof. Not object-store deletion, full per-table PII inventory, retention-duration policy or assistant HTTP authority approval."
+      "blocker": "None within this bounded source contract. Actual restricted primary LOGIN/service/SQL/local filesystem proof. Not object-store deletion, full per-table PII inventory, retention-duration policy or assistant HTTP authority approval.",
+      "boundedHttpEvidence": "evidence/P0-OWNER-DELETION-HTTP-20261024.json"
     },
     {
       "id": "P0-BILLING-ORPHAN-RECEIPT",
@@ -239,7 +240,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Verify b2470a3a typed pre-capture deletion error correction in targeted HTTP and all exact-source CI. Preserve both fixture failure and real repeat-500 regression; then full-app alternate paths and field inventory.",
+      "nextAction": "Reconcile existing whole-app proofs, then add only missing app.ts middleware/legacy-fallthrough/alternate-route actor and private-field tests with legitimate positive controls. Whole eight-table role/field gate remains OPEN.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -252,7 +253,7 @@
       "ownerImportEvidence": "evidence/P0-OWNER-IMPORT-HTTP-20261024.json",
       "ownerImportStatus": "SOURCE_EXECUTABLE_ACCEPTED",
       "ownerDeletionEvidence": "evidence/P0-OWNER-DELETION-HTTP-20261024.json",
-      "ownerDeletionStatus": "APPLICATION_CORRECTED_CI_PENDING"
+      "ownerDeletionStatus": "SOURCE_EXECUTABLE_ACCEPTED"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
@@ -339,5 +340,5 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "c86982633af05b7c6f9d2d932a237396bec5c443"
+  "previousFullyAcceptedSource": "c0754a143dc8dcb6214c66ba94bb365bd4c353d0"
 }

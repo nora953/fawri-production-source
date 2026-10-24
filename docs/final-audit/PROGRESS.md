@@ -1,3 +1,19 @@
+## P0 owner deletion HTTP accepted — 2026-10-24
+
+Accepted executable `b2470a3a1e6f4a35a630e463752837771c74b96a`: **56/56 returned workflows completed SUCCESS**, 0 pending/failure/cancellation at acceptance. Seven new functional deletion cases run through actual management router, restricted primary LOGIN and separate authentication LOGIN on disposable PostgreSQL; no operator-pool execution claimed.
+
+[Management/import/deletion run40097378176/job120882349884](https://github.com/nora953/fawri-production-source/actions/runs/40097378176/job/120882349884): **22 functional cases / 25 TAP PASS across3files**, 0 fail/skip/cancel; deletion7+parent=8, existing management11 and owner import6. Verifies owner password/session/device/origin, foreign deletion request, queued-work denial, actual target private-data purge/account tombstone/local-media removal, intact peer/blocked tenant, repeat404/no extra audit and revoked-owner denial. Checkout `825339493b8d470f92797d760694432f29e30cd8` matches source tree `bebcb78b13e5c7bdb9bbd9429d51c86dcddc2faa`.
+
+Actual failure discovered before correction: source3da2b78e initial authorized deletion and peer/media assertions passed, but repeat returned500 instead of404. Minimal application correction uses existing MerchantManagementError for pre-capture missing/closed404 and non-suspended409; no schema/grant/purge/transaction/product-policy changes. Repeat assertion retained and exact error code added. Initial b4e8fffe active-session fixture failure and the real3da2b78e regression are both preserved in [P0-OWNER-DELETION-HTTP-20261024.json](evidence/P0-OWNER-DELETION-HTTP-20261024.json); failed parents are not independent functional cases. Local syntax/whitespace and physical-media contract1PASS.
+
+[Full isolated run40097378250/job120882350309](https://github.com/nora953/fawri-production-source/actions/runs/40097378250/job/120882350309): **92 clean invocations / 90 unique files / 715 TAP PASS**, 0 fail/skip/cancel and owned cleanup SUCCESS, same checkout/tree as targeted lane. Targeted HTTP cases are separate from this92total. All56 workflows SUCCESS; no blanket zero-skip claim for unrelated optional quality tests.
+
+Full eight-table HTTP and role/field inventory gates remain **OPEN/PARTIAL_HTTP_VERIFIED**; 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, completeP0Inventory=false. This accepts actual-router synthetic HTTP/current52-migration SQL/local-media behavior only. Financial retention duration, complete per-table PII policy, hosted object storage/ACL rollout, operator pool, whole-app middleware/browser/provider acceptance excluded.
+
+Next exact batch: reconcile existing whole-app proofs before adding missing production-app middleware/alternate-path actor and private-field tests. Inspect app.ts authSecurityRouter ordering, enforceAuthCutoverCompatibility and enforceLegacyAuthProductionCutoverGate; verify no legacy fallthrough or foreign-field exposure with authorized positive controls. Earlier PREPARED/PENDING headers remain historical for this bounded accepted scope. **NO-GO**; PR550 Draft/unmerged, current base preserved; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## P0 correction approval and owner import accepted — 2026-10-24
 
 Accepted executable `c0754a143dc8dcb6214c66ba94bb365bd4c353d0`: **56/56 returned workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. **11 newly added functional cases across two bounded batches**, with no application/schema/ACL/product-policy/provider changes. Earlier approval executablec8698263 independently completed56/56 before owner-import batch began; its evidence is retained.
