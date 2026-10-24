@@ -1,3 +1,9 @@
+## Next bounded regression — manual reply conversation binding (2026-10-24)
+
+Source trace: prepareManualReplyAuthoritative selects an existing request by merchant+idempotency key, compares text hash and may return its sent message without comparing the requested conversation. Prepare one actual-SQL HTTP regression requiring409 IDEMPOTENCY_KEY_REUSED for another conversation owned by the same merchant; unchanged SQL and no provider send. This is an unverified source concern until runtime executes; do not count it as a new tenant breach or accepted fix. Prior nine conversation cases remain accepted separately. Keep the full HTTP gate OPEN and NO-GO. Next inspect targeted regression result, then make only an evidenced minimal binding correction if needed.
+
+---
+
 ## P0 conversation HTTP bounded acceptance — 2026-10-24
 
 Executable `8c070aee75f67f1d1efcad525a0467baf8b45954`; run40075632155/job120818236959 SUCCESS,9 functional cases+parent=10TAP PASS,0fail/skip/cancel. All52 committed migrations and owned cleanup succeeded. PR checkout c998dc00293c3b2abb7adeb804e243340ae1c060 and source have identical tree20b4d647fa87d3142233c5f247aa01e273313377. Evidence: [P0-CONVERSATION-HTTP-PRIVACY-20261024.json](evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json). This supersedes the conversation PREPARED section below only within its tested scope. Broader exact-source CI still pending at this checkpoint.

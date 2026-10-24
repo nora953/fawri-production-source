@@ -148,6 +148,18 @@ test('manual conversation HTTP privacy and recovery use restricted SQL sessions'
     assert.equal(changed.status, 409); assert.equal(changed.body.code, 'IDEMPOTENCY_KEY_REUSED'); assert.deepEqual(await snapshot(), before);
     const r = await req(`/conversations/${a.conversation}/return-to-fawri`, a, 'POST'); assert.equal(r.status, 200); assert.equal(r.body.conversation.status, 'auto_replying');
   });
+  await t.test('delivered idempotency key cannot be reassigned to another own conversation', async () => {
+    assert.equal((await req(`/conversations/${a.conversation}/takeover`, a, 'POST')).status, 200);
+    const key = await seedRequest(a);
+    await complete({merchantId: a.id, conversationId: a.conversation, idempotencyKey: key, messageText, externalMessageId: `synthetic-bound-delivery-${randomUUID()}`});
+    const sibling = `sibling-${randomUUID()}`;
+    await admin.query("INSERT INTO conversations(id,merchant_id,channel_id,customer_external_id) VALUES($1,$2,$3,$1)", [sibling, a.id, a.channel]);
+    assert.equal((await req(`/conversations/${sibling}/takeover`, a, 'POST')).status, 200);
+    const before = await snapshot();
+    const r = await req(`/conversations/${sibling}/messages`, a, 'POST', {text: messageText}, {'Idempotency-Key': key});
+    assert.equal(r.status, 409); assert.equal(r.body.code, 'IDEMPOTENCY_KEY_REUSED');
+    assert.deepEqual(await snapshot(), before); privateFieldsAbsent(r.body);
+  });
   await t.test('wrong device and administrative token in merchant cookie deny without changes', async () => {
     const before = await snapshot();
     for (const headers of [{'X-Fawri-Device-Id': 'wrong'}, {Cookie: `${MERCHANT_SESSION_COOKIE}=${ownerSession.token}`}]) for (const [path, method, body] of operations(a)) assert.equal((await req(path, a, method, body, headers)).status, 401);
