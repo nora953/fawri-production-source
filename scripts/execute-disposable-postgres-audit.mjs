@@ -7,7 +7,7 @@ import { assertDisposablePostgres } from './lib/disposable-postgres-test-guard.m
 const suites = {
   "conversation-privacy-http": ["manual-conversation-privacy-http-postgres.integration.test.mjs", "conversation-correction-approval-http-postgres.integration.test.mjs"],
   "notification-privacy-http": ["merchant-notification-privacy-http-postgres.integration.test.mjs"],
-  "management-privacy-http": ["merchant-management-privacy-http-postgres.integration.test.mjs"],
+  "management-privacy-http": ["merchant-management-privacy-http-postgres.integration.test.mjs", "merchant-owner-import-http-postgres.integration.test.mjs"],
   "subscription-golden": ["subscription-entitlement-postgres.integration.test.ts", "subscription-http-postgres-golden-journey.integration.test.ts"],
   "online-routing": ["merchant-customer-payment-authority-postgres.integration.test.ts"],
   "cashier-operational": ["cashier-operational-cutoff-postgres.integration.test.ts", "catalog-cashier-compensation-history-postgres.integration.test.ts", "cashier-operator-logout-pin-postgres.integration.test.ts", "cashier-operator-own-history-scope-postgres.integration.test.ts"],

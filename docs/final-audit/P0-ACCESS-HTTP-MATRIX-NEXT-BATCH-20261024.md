@@ -1,3 +1,9 @@
+## Owner import batch prepared
+
+Next independent gate scope: actual restricted-LOGIN management router POST/admin/local-data-migration owner positive creates own logs/note/channel while pre-existing peer conflicts remain byte-identical. Five new cases require role/device/origin denials, exact/altered conflict replay with no overwrites, synthetic note-write fault rolling back earlier audit insert and convergent retry, revoked-owner denial and valid assistant read. Reuses current authentication pool/session/trusted-device authority. Owned disposable PostgreSQL only; no source/schema/ACL/provider changes. New runtimePREPARED/CI_PENDING. Approvalc8698263 acceptance above is retained. Full gateOPEN/NO-GO; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## Correction approval exact-source accepted
 
 Executablec8698263:56/56workflowsSUCCESS; isolated40078455748/job120826780627:92invocations/90files/715TAP PASS,0fail/skip/cancel. Targeted approval6+parent=7TAP and retained conversation15+parent=16TAP PASS; exact checkout/tree equality and cleanup verified. Evidence [P0-CORRECTION-APPROVAL-HTTP-20261024.json](evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json). Full HTTP gate remains OPEN/NO-GO. Next actual owner import positive/replay/rollback while peer conflicts remain unchanged. No source/policy/schema/provider changes.
