@@ -80,3 +80,15 @@ test('operator outbox fails closed before uploading past an unsupported local se
   assert.ok(failure > guard && failure < upload, 'unsupported sequence must fail before subsequent upload');
   assert.doesNotMatch(sync.slice(guard, upload), /skipped\s*\+=\s*1;\s*continue;/);
 });
+
+test('operator outbox rejects corrupt per-operation sequence groups before network upload', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('function groupByOperation(');
+  const end = sync.indexOf('function completeOperationWindow(', start);
+  assert.ok(start >= 0 && end > start);
+  const grouping = sync.slice(start, end);
+  assert.match(grouping, /list\[0\]\.device_sequence !== envelope\.device_sequence/);
+  assert.match(grouping, /Number\.isSafeInteger\(sequence\)/);
+  assert.match(grouping, /sequence <= previousSequence/);
+  assert.match(grouping, /CASHIER_OPERATOR_OUTBOX_CORRUPT/);
+});
