@@ -4,6 +4,7 @@ on:
     paths:
       - 'artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs'
       - 'artifacts/api-server/tests/merchant-owner-import-http-postgres.integration.test.mjs'
+      - 'artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs'
       - 'scripts/execute-disposable-postgres-audit.mjs'
       - 'scripts/run-isolated-postgres-audit.sh'
       - 'artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts'
@@ -36,6 +37,7 @@ jobs:
         run: |
           node --check artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs
           node --check artifacts/api-server/tests/merchant-owner-import-http-postgres.integration.test.mjs
+          node --check artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs
           node --check scripts/execute-disposable-postgres-audit.mjs
           bash -n scripts/run-isolated-postgres-audit.sh
       - name: Execute actual management-http management and owner session boundaries assertions

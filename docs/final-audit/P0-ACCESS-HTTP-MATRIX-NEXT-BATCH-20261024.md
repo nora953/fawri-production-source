@@ -1,3 +1,13 @@
+## Restricted owner deletion HTTP prepared — 2026-10-24
+
+Recovery HEADad246884, accepted executablec0754a14 retained; PR550Draft/unmerged. Selected P0-RESIDUAL-MERCHANT-PRIVACY-001/http gate remains OPEN. Reuses SEQ306–311 root-owned HTTP proof and current merchant-deletion-tenant-rls service/SQL proof. New7functional actual-router cases connect current restricted primary LOGIN+separate authentication LOGIN to real owner password/session/device/origin checks, peer request-ID mismatch, queued-work quiescence, target tombstone/private-data/local-media deletion, repeat/no extra deletion audit and revoked-owner denial. Three owned synthetic merchants: target, intact peer and blocked active-job merchant. Bootstrap only seeds/inspects/cleans; application operations retain actual LOGIN pools. This observed path uses authentication deletion authority; no operator-pool execution claimed.
+
+Entrypoint app.ts/api/auth→auth-security→auth-merchant-management-postgres-routes POST/merchants/:id/delete→requireOwner/ownerPasswordValid→completeMerchantDeletionWithPhysicalMediaCleanup→scoped primary manifest capture→withMerchantAuthenticationTransaction quiescence/purge/tombstone/audit→post-commit local cleanup. No app/schema/ACL/provider/product-policy change. Existing old valid-password HTTP behavior is reused; new proof targets current LOGIN/grants, peer/private/media preservation and current52-migration schema. Financial-retention policy, full per-table PII inventory, object storage, whole-app/browser and hosted acceptance excluded.
+
+Local syntax/whitespace PASS. New runtimePREPARED/CI_PENDING; do not count expected results as PASS. Next inspect targeted management lane per-file TAP/owner-deletion marker/cleanup on exact source; classify fixture vs product failures and verify broader CI before acceptance. NO-GO; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## P0 correction approval and owner import accepted — 2026-10-24
 
 Accepted executable `c0754a143dc8dcb6214c66ba94bb365bd4c353d0`: **56/56 returned workflows completed SUCCESS**,0pending/failure/cancellation at acceptance. **11 newly added functional cases across two bounded batches**, with no application/schema/ACL/product-policy/provider changes. Earlier approval executablec8698263 independently completed56/56 before owner-import batch began; its evidence is retained.
