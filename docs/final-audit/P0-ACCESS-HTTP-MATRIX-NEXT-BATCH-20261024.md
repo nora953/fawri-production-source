@@ -1,3 +1,9 @@
+## Correction approval targeted acceptance
+
+Sourcec8698263 targeted40078455776/job120826780504 SUCCESS: new6cases+parent=7TAP, prior15+parent=16TAP; combined21functional/23TAP PASS,0fail/skip/cancel. Exact source/checkout tree verified;52migrations/owned cleanupSUCCESS. Own create/update, identical-question peer isolation, resolved replay/conflict, real review-write fault and sequential convergence, revoked session PASS. Separate knowledge/review commits remain explicit; concurrent approval and atomicity not certified. BroaderCI pending. Evidence [P0-CORRECTION-APPROVAL-HTTP-20261024.json](evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json). Full gateOPEN/NO-GO. Next owner import positive/replay/rollback, then deletion/full-app alternatives.
+
+---
+
 ## Correction approval/knowledge isolation prepared — 2026-10-24
 
 Recovery HEADce3d73dd, accepted executable2a0453ed retained; PR550Draft/unmerged. Gate P0-RESIDUAL-MERCHANT-PRIVACY-001/http remains OPEN. New independent attested restricted-LOGIN HTTP suite has6functional cases:4foreign/mixed review-ID denials with unchanged business/knowledge snapshots; own creation despite identical peer normalized question; own update/version increment and peer preservation; approved replay/conflicting dismissal without extra knowledge/audit/version changes; actual post-knowledge/pre-review SQL fault and convergent retry; revoked-session denial with valid peer replay. Existing15conversation cases run separately in same targeted lane.
