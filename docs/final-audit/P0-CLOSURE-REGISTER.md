@@ -2,7 +2,7 @@
 
 Release **NO-GO**. This file and its [machine-readable rows](evidence/P0-CLOSURE-REGISTER.json) are the single current P0 status authority; older matrices/headers remain historical evidence. A CLOSED_SOURCE row closes only its stated source contract, never a hosted or whole-domain release gate.
 
-Source candidate `d8001a4163862198f035fb385bbe7738def7b288`; last fully accepted executable `d8001a4163862198f035fb385bbe7738def7b288`. Completed-source evidence: [evidence/P0-0051-VERIFICATION-20261024.json](evidence/P0-0051-VERIFICATION-20261024.json).
+Source candidate `745f74ef29169f698219b51c8e852ce309d7e05a`; last fully accepted executable `745f74ef29169f698219b51c8e852ce309d7e05a` (55/55 workflows SUCCESS). New bounded HTTP evidence: [P0-RESIDUAL-HTTP-PRIVACY-20261024.json](evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json). Previous accepted executable d8001a4163862198f035fb385bbe7738def7b288 and its completed-source evidence retained: [evidence/P0-0051-VERIFICATION-20261024.json](evidence/P0-0051-VERIFICATION-20261024.json).
 
 Tracked rows: 45; CLOSED_SOURCE 29, BLOCKED 9, OPEN 7. No whole-P0 percentage: completeP0Inventory=false. Counts describe this reconciled register, not an approved exhaustive release denominator. The explicit inventory/actor/field gate remains OPEN; no unknown requirement receives PASS.
 
@@ -72,4 +72,4 @@ Planning effort (engineering hours, not elapsed service availability): 1–2h to
 
 ## Active bounded HTTP batch — 2026-10-24
 
-`P0-RESIDUAL-MERCHANT-PRIVACY-001/http` remains OPEN. Four-table management HTTP regression prepared in `artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs`; targeted workflow `p0-management-privacy-http.yml`. Syntax/whitespace PASS; runtime CI_PENDING. See current PROGRESS header. No accepted-source or row-status change.
+`P0-RESIDUAL-MERCHANT-PRIVACY-001/http` remains OPEN. Four-table management HTTP regression prepared in `artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs`; targeted workflow `p0-management-privacy-http.yml`. Targeted runtime verified on745f74ef: management11TAP (10functional+parent), notification7TAP (6functional+parent), both zero fail/skip/cancel; exact-source55/55 workflows SUCCESS. Evidence in P0-RESIDUAL-HTTP-PRIVACY-20261024.json. Full gate remains OPEN; no row-status/count change. See current PROGRESS header.
