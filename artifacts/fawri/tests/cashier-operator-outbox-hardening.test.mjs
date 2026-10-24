@@ -70,3 +70,13 @@ test('operator outbox keeps a full boundary operation intact instead of uploadin
   assert.match(sync, /CASHIER_OPERATOR_OPERATION_TOO_LARGE/);
   assert.match(sync, /return pending\.slice\(0, firstBoundaryIndex\)/);
 });
+
+test('operator outbox fails closed before uploading past an unsupported local sequence', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const guard = sync.indexOf("if (kind === 'skip')");
+  const failure = sync.indexOf('CASHIER_OPERATOR_UNSUPPORTED_OPERATION', guard);
+  const upload = sync.indexOf('const uploadedResult = await postOperation(', guard);
+  assert.ok(guard >= 0, 'unsupported operation branch must exist');
+  assert.ok(failure > guard && failure < upload, 'unsupported sequence must fail before subsequent upload');
+  assert.doesNotMatch(sync.slice(guard, upload), /skipped\s*\+=\s*1;\s*continue;/);
+});
