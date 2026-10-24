@@ -777,8 +777,15 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     for (const [operationId, envelopes] of groups) {
       const kind = operationKind(envelopes);
       if (kind === 'skip') {
-        skipped += 1;
-        continue;
+        // Do not advance the server timeline past a locally pending sequence
+        // that has no supported upload contract. Preserve every envelope for
+        // explicit reconciliation instead of making a later operation appear
+        // to be the next durable sequence.
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_UNSUPPORTED_OPERATION',
+          'Pending cashier operation requires reconciliation before later operations can sync',
+          409,
+        );
       }
       const binding = await getCashierOperationBinding(operationId);
       if (!binding) {
