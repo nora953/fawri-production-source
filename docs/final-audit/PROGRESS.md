@@ -1,3 +1,13 @@
+## FIELD005 retention field mapping and emergency ledger interaction — 2026-10-25
+
+Recovered ef7c4e79/PR550Draft. Source-only mapping: merchant deletion scrubs merchant name/phone/details snapshots; requesting-admin identity snapshots remain. audit_events details/metadata/IP/user-agent are scrubbed for the merchant, while hash columns remain. Emergency verifier separately requires metadata.chain_payload/sequence: this is an **unconfirmed interaction requiring runtime proof**, not a confirmed defect or permission to retain PII.
+
+[Evidence](evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json). Existing owner deletion test covers authorization/password/foreign request/pending operations/tombstone/replay and selected peers, but not this global emergency ledger interaction. No existing accepted test rerun, code/schema/grant change or new retention duration. FIELD005 and existing P0-RETENTION-PRIVILEGED-DELETION-POLICY remainOPEN; register statuses unchanged; inventory incomplete/percentage null; NO-GO/GitHub-only/no merge/deploy/hosted change.
+
+**Next exact action:** Add a bounded actual-app owner deletion regression with genuine emergency audit events for two owned merchants: verify whether deleting one merchant preserves the global emergency audit verification/authorized owner reader and peer chain, or produces a reproducible failure. Preserve privacy scrubbing, owner/password/pending-operation guards and prior deletion positive; do not change retention durations or weaken hash verification. Treat source metadata dependency as hypothesis until actual runtime proof.
+
+---
+
 ## FIELD004 finite closure reconciliation — 2026-10-25
 
 Recovered8eb803e6/PR550Draft/base preserved. [Finite checklist](evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json): four bounded source/runtime or reused-evidence items separated from two unresolved requirements. Debug retirement HTTP accepted; SQL/RLS evidence reused within original limits; Meta durable pipeline is a separate authority, not residual processed_channel_events coverage. No new runtime/CI execution or source changes.

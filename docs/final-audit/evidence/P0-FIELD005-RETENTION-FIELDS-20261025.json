@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-005",
+  "status": "SOURCE_FIELD_RETENTION_RECONCILED_RUNTIME_INTERACTION_PENDING",
+  "sourceRevision": "ef7c4e7928ff081c106cfb69c76be865ef7d48a2",
+  "applicationChanged": false,
+  "newRuntimeExecuted": false,
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "observations": [
+    {
+      "source": "postgresMerchantManagementAuthority.ts:completeMerchantDeletionPostgres",
+      "fields": [
+        "merchant_name_snapshot",
+        "merchant_phone_snapshot",
+        "details"
+      ],
+      "handling": "Redact merchant name/phone and details for matching merchant_id_snapshot; preserve request completion/reviewer/timestamps. Requesting-admin ID/name/phone snapshots are not changed by this statement."
+    },
+    {
+      "source": "postgresMerchantManagementAuthority.ts:purgeMerchantOperationalData",
+      "fields": [
+        "audit_events.details",
+        "audit_events.metadata",
+        "audit_events.ip_address",
+        "audit_events.user_agent"
+      ],
+      "handling": "Null details/ip/user-agent and empty metadata for matching merchant. Audit row identity/action/hash fields remain."
+    },
+    {
+      "source": "postgresEmergencyReadAccessAuthority.ts:appendAuditEvent/verifyEmergencyAuditChainPostgres",
+      "fields": [
+        "metadata.chain_payload",
+        "metadata.sequence",
+        "previous_hash",
+        "event_hash"
+      ],
+      "handling": "Verifier consumes chain_payload and sequence from metadata. Broad merchant audit metadata scrubbing intersects this dependency; interaction not runtime verified in this batch."
+    }
+  ],
+  "existingEvidence": "P0-OWNER-DELETION-HTTP-20261024.json",
+  "existingTest": "artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs",
+  "existingScope": "Owner/password/foreign request/pending operations/tombstone/selected peer preservation and replay; existing fixture does not establish emergency ledger interaction.",
+  "policyRemainder": [
+    "Duration and purpose for requesting-admin identity snapshots",
+    "Financial/receipt and audit retention schedule with privileged access",
+    "Backups/media/deployed historical data disposition under authorized hosted scope"
+  ],
+  "hypothesis": {
+    "status": "UNCONFIRMED_SOURCE_INTERACTION",
+    "question": "Does merchant-specific audit metadata scrubbing invalidate the global emergency hash ledger and owner audit read?",
+    "notClaimed": "No hosted incident or reproduced integrity defect; no automatic exemption of PII from deletion."
+  },
+  "nextExactAction": "Add a bounded actual-app owner deletion regression with genuine emergency audit events for two owned merchants: verify whether deleting one merchant preserves the global emergency audit verification/authorized owner reader and peer chain, or produces a reproducible failure. Preserve privacy scrubbing, owner/password/pending-operation guards and prior deletion positive; do not change retention durations or weaken hash verification. Treat source metadata dependency as hypothesis until actual runtime proof."
+}
