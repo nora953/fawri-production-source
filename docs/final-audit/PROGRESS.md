@@ -1,3 +1,9 @@
+## RESIDUAL-FIELD-002 Support callers — prepared 2026-10-25
+
+Recovered c4541295,PR550Draft/base preserved. Five new cases extend existing notification HTTP fixture: actual assigned assistant inspection HTTP creation and permission denials; notification INSERT failure rollback/retry; canonical pending inspection→app/frontend; actual admin lifecycle list→reply reminder with fault rollback/marker/replay; peer read denial and own read replay; current approve/reject projection. Syntax/diff PASS; runtime NOT_RUN. Source inspection flags required frontend request_status not stored by canonical producer; runtime must decide before a fix. No application/schema/ACL changes yet. Older createInspectionRequestPostgres and refreshSupportLifecyclePostgres appear only at their declarations in runtime source; canonical callers use separate modules; this is source provenance, not runtime unreachability. FIELD002OPEN/NO-GO; GitHub only. Next inspect exact-source target CI; do not weaken frontend validator or fabricate stored status.
+
+---
+
 ## RESIDUAL-FIELD-002 subscription list caller bounded runtime accepted — 2026-10-25
 
 Source **ac1cd586a51dea417ace5b1e3ff818c8ec58f4ce**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/docs only; no application/schema/ACL/policy change. Recovered e81c2cd8; targeted checkpoint c1703299 preserved results during CI; prior d86d7c11 acceptance retained.

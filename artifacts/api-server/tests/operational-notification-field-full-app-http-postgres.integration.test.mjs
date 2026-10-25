@@ -23,6 +23,7 @@ test('operational SQL producers round trip through actual app and frontend valid
     ['support lifecycle',()=>stopSupport?.()],
     ['HTTP',async()=>{if(server){server.closeAllConnections();await new Promise((ok,no)=>server.close(e=>e?no(e):ok()));}}],
     ['notifications',()=>admin.query('DELETE FROM notifications WHERE merchant_id=ANY($1::text[]) OR account_id=ANY($2::text[])',[merchants,admins])],
+    ['support tickets',()=>admin.query('DELETE FROM support_tickets WHERE merchant_id=ANY($1::text[])',[merchants])],
     ['directory audits',()=>admin.query('DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])',[admins])],
     ['devices',()=>admin.query('DELETE FROM trusted_devices WHERE account_id=ANY($1::text[])',[admins])],
     ['accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
@@ -44,6 +45,7 @@ test('operational SQL producers round trip through actual app and frontend valid
   }
   const owner=await actor('admin','owner_admin');
   const assistant=await actor('admin','assistant_admin',['manage_support']);
+  const inspector=await actor('admin','assistant_admin',['manage_support','inspect_merchant_sessions']);
   const a=await actor('merchant'),b=await actor('merchant');
   for(const actor of actors){
     if(actor.kind==='admin'){
@@ -264,6 +266,83 @@ test('operational SQL producers round trip through actual app and frontend valid
       const stable=await subscriptionRows(),replay=await req(path,actor,'PATCH');assert.deepEqual(replay.body,read.body);assert.deepEqual(await subscriptionRows(),stable);assert.deepEqual(await subscriptionRows([peer.id]),peerBefore);
     }
     console.log('P0_SUBSCRIPTION_NOTIFICATION_CALLER '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualListRefresher:true,sqlTemplates:3,newFunctionalCases:4,merchants:2,exactFields:true,excludedBatches:true,faultRollbackAndRetry:true,peerPreserved:true,readReplay:true,actualFrontendValidator:true,externalProvider:false,browserRendering:false,hostedAccepted:false,wholeFieldCellAccepted:false}));
+  });
+
+
+  async function supportReq(path,actor,method='GET',body){
+    const r=await fetch(origin+path,{method,headers:{Cookie:actor.cookie,'X-Fawri-Device-Id':actor.device,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,body:await r.json()};
+  }
+  const supportTypes=['inspection_session_request','support_reply_reminder'];
+  async function supportState(actorIds=merchants){const result={};for(const table of ['support_tickets','support_messages','support_inspection_requests','notifications'])result[table]=(await admin.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY id`,[actorIds])).rows;return result;}
+  const supportNotices=async actor=>(await admin.query('SELECT * FROM notifications WHERE merchant_id=$1 AND type=ANY($2::text[]) ORDER BY id',[actor.id,supportTypes])).rows;
+  async function noticeFault(actor,type,run){
+    const name='support_notice_fault_'+randomUUID().replaceAll('-','');
+    await admin.query(`CREATE FUNCTION ${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.merchant_id=TG_ARGV[0] AND NEW.type=TG_ARGV[1] THEN RAISE EXCEPTION 'synthetic support notice fault'; END IF; RETURN NEW; END $$`);
+    try{await admin.query(`CREATE TRIGGER ${name} BEFORE INSERT ON notifications FOR EACH ROW EXECUTE FUNCTION ${name}('${actor.id}','${type}')`);await run();}
+    finally{await admin.query(`DROP TRIGGER IF EXISTS ${name} ON notifications`);await admin.query(`DROP FUNCTION ${name}()`);}
+  }
+  for(const actor of [a,b]){
+    actor.supportSubject='Synthetic subject /?&=# " private-value '+actor.id;
+    const created=await supportReq('/api/auth/support/tickets',actor,'POST',{subject:actor.supportSubject,category:'technical',message:'Synthetic merchant request'});assert.equal(created.status,201);actor.ticketId=created.body.ticket.id;
+    assert.equal((await supportReq('/api/auth/admin/support/tickets/'+actor.ticketId+'/claim',inspector,'POST',{})).status,200);
+  }
+  await t.test('actual inspection HTTP caller denies improper admins and rolls back request plus notice on injected failure',async()=>{
+    const path='/api/auth/admin/support/tickets/'+a.ticketId+'/inspection-requests',body={reason:'Synthetic private inspection reason',mode:'independent_read_only'},before=await supportState();
+    for(const actor of [owner,assistant]){const denied=await supportReq(path,actor,'POST',body);assert.equal(denied.status,403);assert.deepEqual(await supportState(),before);}
+    await noticeFault(a,'inspection_session_request',async()=>{const failed=await supportReq(path,inspector,'POST',body);assert.equal(failed.status,500);assert.equal(failed.body.code,'SUPPORT_POSTGRES_FAILURE');assert.deepEqual(await supportState(),before);});
+    for(const actor of [a,b]){
+      const peer=actor===a?b:a,peerBefore=await supportState([peer.id]),path='/api/auth/admin/support/tickets/'+actor.ticketId+'/inspection-requests';
+      const result=await supportReq(path,inspector,'POST',body);assert.equal(result.status,201);
+      const requests=(await admin.query('SELECT * FROM support_inspection_requests WHERE merchant_id=$1',[actor.id])).rows;assert.equal(requests.length,1);actor.inspection=requests[0];
+      const rows=await supportNotices(actor);assert.equal(rows.length,1);const row=rows[0];actor.inspectionNotice=row.id;
+      assert.equal(row.account_id,actor.id);assert.equal(row.audience,'merchant');assert.equal(row.source_entity_type,'support_inspection_request');assert.equal(row.source_entity_id,actor.inspection.id);
+      assert.deepEqual(row.variables,{ticket_id:actor.ticketId,inspection_request_id:actor.inspection.id,ticket_subject:actor.supportSubject,admin_name:'Synthetic',mode:'independent_read_only',request_expires_at:new Date(actor.inspection.request_expires_at).toISOString(),action_url:'/dashboard/support?ticket='+encodeURIComponent(actor.ticketId)});
+      assert.equal(new Date(row.created_at).toISOString(),new Date(actor.inspection.requested_at).toISOString());
+      assert.deepEqual(await supportState([peer.id]),peerBefore);const stable=await supportState();assert.equal((await supportReq(path,inspector,'POST',body)).status,409);assert.deepEqual(await supportState(),stable);
+    }
+  });
+  function mappedSupport(row,request){return {id:row.id,type:row.type,...row.variables,...(request?{request_status:request.status,...(request.consent_decision?{consent_decision:request.consent_decision}:{}),...(request.responded_at?{responded_at:new Date(request.responded_at).toISOString()}:{}),...(request.approved_at?{session_expires_at:new Date(new Date(request.approved_at).getTime()+request.session_duration_minutes*60000).toISOString()}:{}),...(request.ended_at?{ended_at:new Date(request.ended_at).toISOString()}:{}),...(request.end_reason?{end_reason:request.end_reason}:{})}:{}),created_at:new Date(row.created_at).toISOString(),...(row.read_at?{read_at:new Date(row.read_at).toISOString()}:{})};}
+  await t.test('actual app lists frontend-valid pending inspection records from canonical request state only',async()=>{
+    for(const actor of [a,b]){
+      const before=await supportState(),result=await req('/api/auth/notifications?limit=50',actor);assert.equal(result.status,200);assert.equal(result.cache,'no-store');
+      const row=(await supportNotices(actor)).find(n=>n.id===actor.inspectionNotice),notice=result.body.notifications.find(n=>n.id===row.id);
+      assert.deepEqual(notice,mappedSupport(row,actor.inspection));assert.equal(isMerchantNotificationRecord(notice),true);assert.equal(isSafeMerchantNotificationActionUrl(notice.action_url),true);assert.doesNotMatch(JSON.stringify(notice),/Synthetic private inspection reason/);assert.deepEqual(await supportState(),before);
+    }
+  });
+  await t.test('actual admin lifecycle list emits exact reminder fields and atomically rolls back marker on notice failure',async()=>{
+    for(const actor of [a,b])assert.equal((await supportReq('/api/auth/admin/support/tickets/'+actor.ticketId+'/messages',inspector,'POST',{message:'Synthetic reply for merchant'})).status,201);
+    await admin.query("UPDATE support_tickets SET waiting_since=now()-interval '25 hours' WHERE id=$1",[a.ticketId]);
+    const before=await supportState();
+    await noticeFault(a,'support_reply_reminder',async()=>{const failed=await supportReq('/api/auth/admin/support/tickets',owner);assert.equal(failed.status,500);assert.deepEqual(await supportState(),before);});
+    for(const actor of [a,b]){
+      if(actor===b)await admin.query("UPDATE support_tickets SET waiting_since=now()-interval '25 hours' WHERE id=$1",[b.ticketId]);
+      const peer=actor===a?b:a,peerBefore=await supportState([peer.id]),result=await supportReq('/api/auth/admin/support/tickets',owner);assert.equal(result.status,200);
+      const rows=await supportNotices(actor);assert.equal(rows.length,2);const row=rows.find(n=>n.type==='support_reply_reminder');actor.reminderNotice=row.id;
+      assert.equal(row.merchant_id,actor.id);assert.equal(row.account_id,actor.id);assert.equal(row.source_entity_type,'support_ticket');assert.equal(row.source_entity_id,actor.ticketId);
+      assert.deepEqual(row.variables,{ticket_id:actor.ticketId,ticket_subject:actor.supportSubject,action_url:'/dashboard/support?ticket='+encodeURIComponent(actor.ticketId)});
+      const marker=(await admin.query('SELECT merchant_reminder_sent_at FROM support_tickets WHERE id=$1',[actor.ticketId])).rows[0].merchant_reminder_sent_at;assert.equal(new Date(row.created_at).toISOString(),new Date(marker).toISOString());
+      const listing=await req('/api/auth/notifications?limit=50',actor);const notice=listing.body.notifications.find(n=>n.id===row.id);assert.deepEqual(notice,mappedSupport(row));assert.equal(isMerchantNotificationRecord(notice),true);assert.deepEqual(await supportState([peer.id]),peerBefore);
+      const stable=await supportState();assert.equal((await supportReq('/api/auth/admin/support/tickets',owner)).status,200);assert.deepEqual(await supportState(),stable);
+    }
+  });
+  await t.test('both Support notice types deny foreign read and preserve peer and exact own replay',async()=>{
+    for(const actor of [a,b])for(const row of await supportNotices(actor)){
+      const peer=actor===a?b:a,path='/api/auth/notifications/'+row.id+'/read',before=await supportState();
+      assert.equal((await req(path,peer,'PATCH')).status,404);assert.deepEqual(await supportState(),before);
+      const peerBefore=await supportState([peer.id]),result=await req(path,actor,'PATCH');assert.equal(result.status,200);
+      const stored=(await admin.query('SELECT * FROM notifications WHERE id=$1',[row.id])).rows[0];assert.ok(stored.read_at);assert.deepEqual(result.body,{ok:true,notification:mappedSupport(stored,row.type==='inspection_session_request'?actor.inspection:undefined)});assert.equal(isMerchantNotificationRecord(result.body.notification),true);
+      const stable=await supportState(),again=await req(path,actor,'PATCH');assert.deepEqual(again.body,result.body);assert.deepEqual(await supportState(),stable);assert.deepEqual(await supportState([peer.id]),peerBefore);
+    }
+  });
+  await t.test('inspection list and read reflect actual merchant approval or rejection without stale pending status',async()=>{
+    for(const [actor,decision] of [[a,'approve'],[b,'reject']]){
+      const peer=actor===a?b:a,peerBefore=await supportState([peer.id]),path='/api/auth/support/tickets/'+actor.ticketId+'/inspection-requests/'+actor.inspection.id+'/decision';
+      const before=await supportState();assert.equal((await supportReq(path,peer,'POST',{decision})).status,404);assert.deepEqual(await supportState(),before);
+      assert.equal((await supportReq(path,actor,'POST',{decision})).status,200);const request=(await admin.query('SELECT * FROM support_inspection_requests WHERE id=$1',[actor.inspection.id])).rows[0];assert.equal(request.status,decision==='approve'?'approved':'rejected');
+      const row=(await supportNotices(actor)).find(n=>n.id===actor.inspectionNotice),expected=mappedSupport(row,request),list=await req('/api/auth/notifications?limit=50',actor);assert.deepEqual(list.body.notifications.find(n=>n.id===row.id),expected);assert.equal(isMerchantNotificationRecord(expected),true);
+      const read=await req('/api/auth/notifications/'+row.id+'/read',actor,'PATCH');assert.equal(read.status,200);assert.deepEqual(read.body.notification,expected);assert.deepEqual(await supportState([peer.id]),peerBefore);
+    }
+    console.log('P0_SUPPORT_NOTIFICATION_CALLER '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',newFunctionalCases:5,actualApp:true,actualFrontendValidator:true,canonicalInspectionHttp:true,canonicalLifecycleHttp:true,merchants:2,exactFields:true,peerPreserved:true,faultRollbackRetry:true,currentDecisionProjection:true,externalProvider:false,hostedAccepted:false,wholeCellAccepted:false}));
   });
 
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
