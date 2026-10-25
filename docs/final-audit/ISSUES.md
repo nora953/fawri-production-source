@@ -1,3 +1,17 @@
+## RESIDUAL-FIELD-002 canonical reserved notification fields fixed — 2026-10-25
+
+Source **4e36d59149f1ac3b7b1cad91c93a09aff9146612**: **56/56 CI workflows SUCCESS**, zero pending/failure/cancellation. Recovered0b9b90df; initial failure13a11406 and targeted checkpoint c8f45035 preserved. Previous accepted executable31912d9f retained as history.
+
+**NOTIFICATION-RESERVED-FIELD-PROJECTION-001 — FIXED_SOURCE within the tested canonical contract.** Synthetic conflicts in privileged-bootstrap owned rows replaced projected id/type and forged read_at on SQL-unread rows; created_at was already canonical. This is correctness/defense-in-depth evidence, not proof of public attacker input, unauthorized access, hosted incident or malformed historical rows. Minimal projection fix copies variables and removes id/type/created_at/read_at before canonical SQL fields are mapped. Stored JSON and other business/extra keys stay unchanged; no schema/grant/frontend-validator change or general per-type extra-key allowlist.
+
+Actual app and restricted SQL proof: list/unread retain canonical id/type/created_at and omit read_at for unread rows; own read/replay use canonical path identity and timestamps; peer read404 and peer state preserved; null/number/object reserved values cannot corrupt canonical records; actual frontend validator accepts output. Three new functional cases; extended fixture27TAP (26functional+parent). Dedicated notification lane **78TAP PASS** (72functional+6parents), run40188627730/job121154645813. Broader isolated PostgreSQL **721TAP PASS**,92invocations/90unique files, run40188627644/job121154872673. Both zero failed/skipped/cancelled; teardown SUCCESS. Three new cases run only in the dedicated lane. Both checkout384c568a have source-identical tree af9ada1b7c012d220917d3b340b8af6e159f1e99.
+
+[Evidence](evidence/P0-NOTIFICATION-RESERVED-FIELDS-20261025.json). **FIELD002 remains OPEN; release NO-GO.** Register unchanged45rows=29CLOSED_SOURCE/7OPEN/9BLOCKED; complete inventory false; overall percentage null. GitHub-only; no merge/deploy/hosted/provider proof.
+
+**Next exact action:** Reconcile a finite RESIDUAL-FIELD-002 closure checklist across the 12 notification types and linked evidence: live canonical producers/callers, inactive JSON/legacy shapes, reserved canonical fields, non-reserved extra-key policy and unlinked historical/hosted rows. Identify precise remaining source acceptance versus blocked policy/hosted proof before closing; do not infer attacker key control or repeat accepted scenarios.
+
+---
+
 ## RESIDUAL-FIELD-002 canonical inspection creation race fixed — 2026-10-25
 
 Source **31912d9fd33c9e12311351c189b937652496c6fb**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered a0d014a0; targeted checkpoint e85c2465 preserved proof; prior57b554a0 acceptance retained. Application change:18lines in canonical inspection authority only; no schema/grant/role/consent-policy change.
