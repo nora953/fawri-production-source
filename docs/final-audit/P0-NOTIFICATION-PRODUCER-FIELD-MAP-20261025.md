@@ -1,3 +1,9 @@
+## Meta customer-message caller runtime update — 2026-10-25
+
+Original restricted Meta worker→inbound SQL message→customer-message notice→authenticated app→actual frontend validator is bounded-runtime accepted one08e554f. Three new functional cases; original Meta suite23TAP,notification lane56TAP,broader718TAP,56/56CI SUCCESS. [Evidence](evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json). Two merchants,exact fields,peer denial,own read replay,signed redelivery/queue dedup pass with loopback fake Graph; no external Meta/browser/forced reprocessing/crash/hosted proof. FIELD002 remains OPEN; next knowledge-gap actual Meta handoff caller, preserving direct-engine learning proof separately.
+
+---
+
 ## Payment-conflict caller runtime update — 2026-10-25
 
 Internal verified-payment conflict authority now has bounded caller→SQL notice→authenticated actual app→actual frontend validator acceptance on92507e7a:4newfunctional/5TAP,notification lane33TAP,broader715TAP,56/56CI SUCCESS. [Evidence](evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json). Includes two merchants, denied invalid inputs, exact fields, replay and recovery after scoped notice-write failure following payment commit. Seeded paid state/synthetic authenticity flag do not accept cryptographic ingress, merchant-confirmation, crash or browser rendering. FIELD002 remains OPEN; next actual Meta customer-message caller round trip, reusing existing identity-denial proof.

@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
-  "lastFullyAcceptedSource": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
+  "sourceCandidate": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
+  "lastFullyAcceptedSource": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
   "release": "NO-GO",
   "rows": [
     {
@@ -116,7 +116,8 @@
       "boundedFieldInventory": "evidence/P0-RESIDUAL-FIELD-INVENTORY-20261024.json",
       "notificationOperationalProducerEvidence": "evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
       "notificationOptionalProducerEvidence": "evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
-      "notificationPaymentCallerEvidence": "evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json"
+      "notificationPaymentCallerEvidence": "evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
+      "notificationMetaCustomerCallerEvidence": "evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json"
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
@@ -373,6 +374,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "b0417241bd9b69dd8f460ce91e044004650266d9",
+  "previousFullyAcceptedSource": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
   "lastUpdatedAt": "2026-10-25"
 }

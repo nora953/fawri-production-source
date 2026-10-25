@@ -1,3 +1,17 @@
+## RESIDUAL-FIELD-002 Meta customer-message caller bounded runtime accepted — 2026-10-25
+
+Source **e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no child/worker/app/schema/ACL/policy changes. Recovered17242509; previous92507e7a acceptance retained.
+
+[Notification40152165456/job121045777664](https://github.com/nora953/fawri-production-source/actions/runs/40152165456/job/121045777664): **50functional/56TAP across6files PASS**,0fail/skip/cancel. Meta suite22functional/23TAP includes **3new cases** plus original19functional/20TAP identity regressions, including16old denial scenarios. Those are reused regressions, not new findings.
+
+Original restricted worker/encrypted queue produces2customer notices tied to actual inbound SQL message/conversation/source event and exact merchant/account/variables/time. Authenticated actual app list/read and actual frontend validator PASS; peer notice read404 leaves nine-domain snapshot unchanged; own read replay retains fields/timestamps/peer notices. Original signed-webhook redelivery plus exact durable enqueue replay leaves jobs/notices/send count/reply debit unchanged and worker.runOnce finds no ready work. One original event uses signed HTTP ingress; the other original durable enqueue omits recipient. Loopback fake Graph/synthetic credentials only; no external Meta/browser/hosted acceptance. Normal dedup is not crash/forced reprocessing/notice-write-failure recovery acceptance.
+
+[Broader40152165630/job121045778830](https://github.com/nora953/fawri-production-source/actions/runs/40152165630/job/121045778830): **92clean invocations/90unique files/718TAP PASS**,0fail/skip/cancel; cleanupSUCCESS. Increase from715 is exactly3new cases. Targeted lane counted separately, not added to718 as unique tests. Both checkout4e86d649511080db8a6e431d8398aca83c86ec9e/tree0e4034beb11145bb9de1253b15a4bc5346adf8d5 equal source. No blanket zero-skip claim for unrelated optional quality tests. [Evidence](evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json).
+
+**Next exact batch:** knowledge-gap actual Meta caller/handoff→training request→notification SQL→authenticated app/frontend. Existing knowledge-learning-cycle test is direct-engine domain proof and must not be presented as this caller round trip; preserve its accepted evidence. New-order caller, subscription/Support templates, concurrent/failure/historical/legacy provenance remain pending. FIELD002/full HTTP/role/field gatesOPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Last fully accepted executablee08e554f. **NO-GO**; GitHub only,PR550Draft/base preserved; no main/merge/deploy/hosted/P1/P2. No tool/session stall.
+
+---
+
 ## RESIDUAL-FIELD-002 payment-conflict caller bounded runtime accepted — 2026-10-25
 
 Source **92507e7ab7e55f792c238df65ca8ec8ea5a37403**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no application/schema/ACL/policy changes. Recovered6be84a36; previousb0417241 retained separately.

@@ -4,7 +4,7 @@
   "fieldCell": "RESIDUAL-FIELD-002",
   "status": "OPEN_PARTIAL_OPERATIONAL_RUNTIME_ACCEPTED",
   "auditedSourceRevision": "64f61f44ac32738607f0bcc5d8fae0ff8072e295",
-  "lastAcceptedExecutable": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
+  "lastAcceptedExecutable": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
   "applicationChanged": false,
   "client": {
     "source": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
@@ -153,7 +153,10 @@
       "valueInputControl": "Internal conversation/event IDs, fixed keys and encoded relative action URL. Caller/input provenance not accepted yet.",
       "runtimeProducerToHttpClientAccepted": true,
       "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
-      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json"
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Original restricted Meta worker/encrypted jobs, two merchants, actual inbound SQL fields, authenticated app/frontend validator, peer read denial, own read replay and signed redelivery/queue dedup. Fake loopback Graph only; no forced reprocessing/crash/browser/hosted proof."
     },
     {
       "type": "inspection_session_request",
@@ -285,9 +288,9 @@
   ],
   "nextExactBatch": {
     "types": [
-      "operational_customer_message"
+      "operational_knowledge_gap"
     ],
-    "acceptance": "Link actual Meta customer-message caller through SQL notification fields, authenticated actual app list/read and frontend validator using existing restricted-worker fixture. Reuse accepted Meta job-identity 20TAP denial evidence. Knowledge-gap/new-order caller reconciliation and remaining subscription/Support templates stay pending.",
+    "acceptance": "Exercise actual Meta knowledge-gap/handoff caller through training request, notification SQL fields, authenticated actual app and frontend validator. Reuse existing knowledge-learning-cycle engine-domain and Meta identity evidence; a direct engine decision is not the Meta caller round trip.",
     "gateRemainsOpen": true
   },
   "verification": {
@@ -342,5 +345,11 @@
       "metaJobIdentityTap": 20,
       "limits": "Payment suite checks conflict row/order ID; Meta identity suite snapshots notifications among nine surfaces. Neither establishes all caller-to-HTTP/frontend field round trips."
     }
+  },
+  "knowledgeGapSourceFollowup": {
+    "sourceRevision": "17242509f6fff4952949dca77acc1c557aa37a93",
+    "existingLearningTest": "artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+    "observation": "Existing learning test exercises KnowledgeDecisionEngine/PostgresKnowledgeRuntime directly; it is engine-domain evidence, not preparePostgresMetaAutoReply caller-to-notification evidence.",
+    "nextCaller": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts: committed handoff + decision.trainingRequestId -> notifyMerchantKnowledgeGapPostgres"
   }
 }
