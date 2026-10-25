@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "CORRECTED_FIXTURE_RUNTIME_PENDING",
+  "recoveredHead": "e81c2cd8eafb5412018435400c37e65a7d92e6c8",
+  "previousAcceptedExecutable": "d86d7c11a9634f870acda08f863d2237dbbe5bbc",
+  "failedAttempts": [
+    {
+      "source": "c2b1b1e8c3fbdf5055de807c519cb904b22d7b55",
+      "runId": 40154927102,
+      "jobId": 121054154944,
+      "status": "FAILED_NOT_ACCEPTED",
+      "newSuite": {
+        "passed": 9,
+        "failed": 3,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "functionalFailures": 2,
+      "parentFailures": 1,
+      "cause": "Test-only Date.parse(pg Date object) coerces through Date.toString and drops milliseconds, so same-request service-clock lower-bound assertion fails. Replace with new Date(value).getTime(), retaining the same exact started<=created_at<=Date.now bounds.",
+      "applicationChanged": false,
+      "testsWeakened": false
+    }
+  ],
+  "localSyntax": "PASS",
+  "release": "NO-GO",
+  "fieldCellClosed": false
+}

@@ -221,7 +221,7 @@ test('operational SQL producers round trip through actual app and frontend valid
     }finally{await admin.query(`DROP TRIGGER IF EXISTS ${fn} ON notifications`);await admin.query(`DROP FUNCTION ${fn}()`);}
     const peer=await subscriptionRows([b.id]),started=Date.now(),result=await req('/api/auth/notifications?limit=50',a);assert.equal(result.status,200);assert.equal(result.cache,'no-store');
     const rows=await subscriptionNotices(a);assert.equal(rows.length,2);
-    for(const row of rows){assert.ok(Date.parse(row.created_at)>=started&&Date.parse(row.created_at)<=Date.now());assert.deepEqual(result.body.notifications.find(n=>n.id===row.id),mappedSubscription(row));assert.equal(isMerchantNotificationRecord(mappedSubscription(row)),true);}
+    for(const row of rows){assert.ok(new Date(row.created_at).getTime()>=started&&new Date(row.created_at).getTime()<=Date.now());assert.deepEqual(result.body.notifications.find(n=>n.id===row.id),mappedSubscription(row));assert.equal(isMerchantNotificationRecord(mappedSubscription(row)),true);}
     assert.deepEqual(await subscriptionRows([b.id]),peer);
   });
   await t.test('actual list refresher emits exact expiry and eligible-addon fields for two isolated merchants',async()=>{
@@ -250,7 +250,7 @@ test('operational SQL producers round trip through actual app and frontend valid
       const result=await req('/api/auth/notifications?limit=50',actor);assert.equal(result.status,200);
       const rows=await subscriptionNotices(actor);assert.equal(rows.length,3);const row=rows.find(n=>n.type==='subscription_expired');assert.ok(row);
       assert.deepEqual(row.variables,{plan_name:'silver',expired_at:expiredAt,addon_replies_remaining:7});assert.equal(row.source_entity_type,'subscription');assert.equal(row.source_entity_id,actor.subscriptionId);assert.equal(row.account_id,actor.id);assert.equal(row.merchant_id,actor.id);assert.equal(row.audience,'merchant');
-      assert.ok(Date.parse(row.created_at)>=started&&Date.parse(row.created_at)<=Date.now());const notice=result.body.notifications.find(n=>n.id===row.id);assert.deepEqual(notice,mappedSubscription(row));assert.equal(isMerchantNotificationRecord(notice),true);
+      assert.ok(new Date(row.created_at).getTime()>=started&&new Date(row.created_at).getTime()<=Date.now());const notice=result.body.notifications.find(n=>n.id===row.id);assert.deepEqual(notice,mappedSubscription(row));assert.equal(isMerchantNotificationRecord(notice),true);
       assert.ok((await admin.query('SELECT expired_notification_sent_at FROM subscriptions WHERE id=$1',[actor.subscriptionId])).rows[0].expired_notification_sent_at);
       const stable=await subscriptionRows();assert.equal((await req('/api/auth/notifications?limit=50',actor)).status,200);assert.deepEqual(await subscriptionRows(),stable);assert.deepEqual(await subscriptionRows([peer.id]),peerBefore);
     }
