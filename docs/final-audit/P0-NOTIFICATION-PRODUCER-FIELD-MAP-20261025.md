@@ -1,3 +1,9 @@
+## Meta knowledge-gap caller runtime update — 2026-10-25
+
+Actual restricted Meta worker→knowledge engine→committed handoff/training request→knowledge-gap SQL notice→authenticated app/actual frontend validator bounded-runtime accepted on d86d7c11. Three new functional cases; Meta suite26TAP,notification lane59TAP,broader721TAP,56/56CI SUCCESS. Two merchants, exact fields, peer notice denial, read/event replay PASS. [Evidence](evidence/P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json). Loopback fake Graph/synthetic embedding; no external provider/browser/crash/notice-write-failure/hosted acceptance. FIELD002 remains OPEN; next reconcile actual new-order SQL caller/reachability before missing runtime coverage, then remaining templates. Four inspected order modules alone do not establish unreachability.
+
+---
+
 ## Meta customer-message caller runtime update — 2026-10-25
 
 Original restricted Meta worker→inbound SQL message→customer-message notice→authenticated app→actual frontend validator is bounded-runtime accepted one08e554f. Three new functional cases; original Meta suite23TAP,notification lane56TAP,broader718TAP,56/56CI SUCCESS. [Evidence](evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json). Two merchants,exact fields,peer denial,own read replay,signed redelivery/queue dedup pass with loopback fake Graph; no external Meta/browser/forced reprocessing/crash/hosted proof. FIELD002 remains OPEN; next knowledge-gap actual Meta handoff caller, preserving direct-engine learning proof separately.

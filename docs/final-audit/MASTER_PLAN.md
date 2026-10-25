@@ -1,3 +1,15 @@
+## RESIDUAL-FIELD-002 Meta knowledge-gap caller bounded runtime accepted — 2026-10-25
+
+Source **d86d7c11a9634f870acda08f863d2237dbbe5bbc**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/docs only; no application/worker/schema/ACL/policy changes. Recovered d6377cbb; prior e08e554f customer-message acceptance retained separately.
+
+[Notification40153840340/job121050814318](https://github.com/nora953/fawri-production-source/actions/runs/40153840340/job/121050814318): **53functional/59TAP across6files PASS**,0fail/skip/cancel. Meta suite25functional/26TAP includes **3new cases**, with22prior functional cases retained as regression. Actual restricted worker/encrypted queue/knowledge engine handles2unknown questions: pending_merchant_reply training requests, committed manual handoff, exact merchant/account/source/variable fields in knowledge-gap notices, authenticated app list/read and actual frontend validator. Peer notice excluded from list; peer read404 leaves domain/training/audit snapshot unchanged. Own read replay stable. Signed webhook redelivery/exact queue dedup preserve notices, training/audit/domain/jobs, debit and send count. Loopback fake Graph/synthetic embedding only; no external Meta/browser/crash/forced-reprocessing/notification-write-failure/hosted acceptance. Own successful read does not independently certify every peer table; avoid broader inference.
+
+[Broader40153840344/job121050814314](https://github.com/nora953/fawri-production-source/actions/runs/40153840344/job/121050814314): **92clean invocations/90unique files/721TAP PASS**,0fail/skip/cancel; cleanupSUCCESS. Increase from718 is exactly3new cases. Targeted lane is separate, not added as unique tests. Both checkout e5f117bde705ece7e80b85cf033ca9341e8c7018/tree a667b847de9554366cd05853102f8bd650d4dfd7 equal source. No blanket zero-skip claim for unrelated optional quality tests. [Evidence](evidence/P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json).
+
+**Next exact batch:** Reconcile actual operational_new_order production caller and SQL reachability against legacy JSON path, then prepare only missing caller-to-app/frontend runtime coverage. Do not infer unreachability from the four inspected order modules; subscription/Support and historical/legacy provenance remain pending. Four inspected order modules lack a new-order notification call; this subset is not proof of unreachability. Direct-engine knowledge-learning-cycle proof stays separate and unchanged. FIELD002/full HTTP/role/field gatesOPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Last fully accepted executable d86d7c11. **NO-GO**; GitHub only,PR550Draft/base preserved; no main/merge/deploy/hosted/P1/P2. Targeted checkpoint9de792e2 preserved results during CI; no tool/session stall.
+
+---
+
 ## RESIDUAL-FIELD-002 Meta customer-message caller bounded runtime accepted — 2026-10-25
 
 Source **e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no child/worker/app/schema/ACL/policy changes. Recovered17242509; previous92507e7a acceptance retained.

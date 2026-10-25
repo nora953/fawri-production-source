@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
-  "lastFullyAcceptedSource": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
+  "sourceCandidate": "d86d7c11a9634f870acda08f863d2237dbbe5bbc",
+  "lastFullyAcceptedSource": "d86d7c11a9634f870acda08f863d2237dbbe5bbc",
   "release": "NO-GO",
   "rows": [
     {
@@ -117,7 +117,8 @@
       "notificationOperationalProducerEvidence": "evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
       "notificationOptionalProducerEvidence": "evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
       "notificationPaymentCallerEvidence": "evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
-      "notificationMetaCustomerCallerEvidence": "evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json"
+      "notificationMetaCustomerCallerEvidence": "evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+      "notificationMetaKnowledgeGapCallerEvidence": "evidence/P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json"
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
@@ -245,7 +246,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "RESIDUAL-FIELD-002: actual operational notification producer4types -> SQL exact keys -> actual-app list/single-read -> frontend isMerchantNotificationRecord, with two merchants, peer protection and dedup/replay. Then remaining subscription/Support templates and alternate helper provenance; do not change projection before actual input control is established.",
+      "nextAction": "Reconcile actual operational_new_order production caller and SQL reachability against legacy JSON path, then prepare only missing caller-to-app/frontend runtime coverage. Do not infer unreachability from the four inspected order modules; subscription/Support and historical/legacy provenance remain pending.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -287,7 +288,8 @@
         ]
       },
       "notificationProducerFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
-      "notificationProducerFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
+      "notificationProducerFieldMapStatus": "PARTIAL_OPERATIONAL_RUNTIME_ACCEPTED_FIELD002_OPEN",
+      "notificationMetaKnowledgeGapCallerEvidence": "evidence/P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
@@ -374,6 +376,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
+  "previousFullyAcceptedSource": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
   "lastUpdatedAt": "2026-10-25"
 }
