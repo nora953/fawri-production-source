@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "FIX_PREPARED_RUNTIME_PENDING",
+  "status": "TARGETED_FIX_PASS_BROADER_PENDING",
   "finding": "NOTIFICATION-RESERVED-FIELD-PROJECTION-001",
-  "findingState": "SYNTHETIC_ROW_CORRECTNESS_FAILURE_CONFIRMED_FIX_PENDING",
+  "findingState": "FIXED_TARGETED_CANONICAL_FIELD_CONTRACT_NO_ATTACKER_PATH_PROOF",
   "recoveredHead": "0b9b90dfc1da7270b087e914516fe96eab96cba5",
   "previousAcceptedExecutable": "31912d9fd33c9e12311351c189b937652496c6fb",
   "failedAttempts": [
@@ -41,5 +41,147 @@
     "No frontend weakening, schema/grant change, migration or general per-type extra-key/privacy allowlist",
     "No provider/browser/hosted/load/capacity proof"
   ],
-  "nextExactAction": "Read corrected exact-source targeted and broader CI; verify canonical list/unread/read/replay, malformed reserved values, peer denial/preservation and unchanged stored JSON. Keep arbitrary extra-key/historical policy unresolved."
+  "nextExactAction": "Read corrected exact-source targeted and broader CI; verify canonical list/unread/read/replay, malformed reserved values, peer denial/preservation and unchanged stored JSON. Keep arbitrary extra-key/historical policy unresolved.",
+  "sourceCandidate": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+  "scope": [
+    "Actual SQL operational producer outputs then bootstrap-only synthetic reserved-key conflicts under two merchants",
+    "Actual app canonical list and unread list retain SQL id/type/created_at and omit read_at for SQL-unread rows",
+    "Actual single-read and replay retain SQL path identity/time, foreign read denied, exact peer preserved",
+    "Null/number/object reserved values ignored by projection; actual frontend validator accepts canonical records",
+    "Stored JSON and non-reserved fields preserved; no arbitrary-key allowlist introduced"
+  ],
+  "targeted": {
+    "runId": 40188627730,
+    "jobId": 121154645813,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40188627730/job/121154645813",
+    "functionalCases": 72,
+    "tapPass": 78,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "meta-job-identity-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 27,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "384c568a6be8c6b7312b128e1dfba8851e2428ba",
+    "tree": "af9ada1b7c012d220917d3b340b8af6e159f1e99",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40188627644
+  },
+  "observations": [
+    {
+      "canonicalIdMatches": true,
+      "canonicalTypeMatches": true,
+      "canonicalCreatedAtMatches": true,
+      "sqlUnread": true,
+      "hasProjectedReadAt": false
+    },
+    {
+      "canonicalIdMatches": true,
+      "canonicalTypeMatches": true,
+      "canonicalCreatedAtMatches": true,
+      "sqlUnread": true,
+      "hasProjectedReadAt": false
+    },
+    {
+      "canonicalIdMatches": true,
+      "canonicalTypeMatches": true,
+      "canonicalCreatedAtMatches": true,
+      "sqlUnread": true,
+      "hasProjectedReadAt": false
+    },
+    {
+      "canonicalIdMatches": true,
+      "canonicalTypeMatches": true,
+      "canonicalCreatedAtMatches": true,
+      "sqlUnread": true,
+      "hasProjectedReadAt": false
+    },
+    {
+      "newFunctionalCases": 3,
+      "actualApp": true,
+      "actualFrontendValidator": true,
+      "merchants": 2,
+      "canonicalSqlIdentity": true,
+      "canonicalSqlTimestamps": true,
+      "unreadOmitsStoredReadAt": true,
+      "peerDenied": true,
+      "readReplay": true,
+      "storedJsonUnchanged": true,
+      "nonReservedProjectionPreserved": true,
+      "syntheticBootstrapRowsOnly": true,
+      "attackerControlledInputProven": false,
+      "historicalRowsInspected": false,
+      "hostedAccepted": false,
+      "wholeCellAccepted": false
+    }
+  ]
 }
