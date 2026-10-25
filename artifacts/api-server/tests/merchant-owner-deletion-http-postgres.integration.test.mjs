@@ -16,7 +16,7 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
   let server;
   t.after(() => cleanupResources([
     ['HTTP', async () => {if (server) {server.closeAllConnections(); await new Promise((ok, no) => server.close(e => e ? no(e) : ok()));}}],
-    ...['background_jobs', 'catalog_image_references', 'saved_answers', 'products', 'merchant_admin_notes', 'merchant_channel_overrides', 'audit_events'].map(table => [table, () => admin.query(`DELETE FROM ${table} WHERE merchant_id=ANY($1::text[])`, [merchants])]),
+    ...['background_jobs', 'catalog_image_references', 'saved_answers', 'products', 'merchant_admin_notes', 'merchant_channel_overrides', 'audit_events','emergency_access_requests'].map(table => [table, () => admin.query(`DELETE FROM ${table} WHERE merchant_id=ANY($1::text[])`, [merchants])]),
     ['requests', () => admin.query('DELETE FROM merchant_deletion_requests WHERE merchant_id_snapshot=ANY($1::text[])', [merchants])],
     ['notices', () => admin.query('DELETE FROM notifications WHERE merchant_id=ANY($1::text[]) OR account_id=ANY($2::text[])', [merchants, ids])],
     ['directory audits', () => admin.query('DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])', [ids])],
@@ -64,7 +64,8 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
   }
   const jobId = `queued-${randomUUID()}`;
   await admin.query("INSERT INTO background_jobs(id,type,dedupe_key,merchant_id,status) VALUES($1,'audit.test',$1,$2,'queued')", [jobId, blocked.id]);
-  const app = express(); app.use(cookieParser()); app.use(express.json()); app.use('/api/auth', enforceAuthOrigin, router);
+  const {default: emergencyRouter}=await import('../src/routes/auth-emergency-postgres-routes.ts');
+  const app = express(); app.use(cookieParser()); app.use(express.json()); app.use('/api/auth', enforceAuthOrigin, router, emergencyRouter);
   server = await new Promise((ok, no) => {const s = app.listen(0, '127.0.0.1', () => ok(s)); s.once('error', no);});
   const origin = `http://127.0.0.1:${server.address().port}`;
   async function req(actor, target = a, overrides = {}, headers = {}) {
@@ -98,6 +99,14 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
   await t.test('queued operational work blocks actual HTTP purge despite restricted primary visibility', async () => {
     const before = await snapshot(), r = await req(owner, blocked); assert.equal(r.status, 409); assert.equal(r.body.code, 'MERCHANT_DELETION_OPERATIONS_PENDING'); assert.deepEqual(await snapshot(), before);
   });
+  let peerEmergencyRows;
+  async function auditRead(){const response=await fetch(origin+'/api/auth/admin/emergency-read-access/audit',{headers:{Cookie:owner.cookie,'X-Fawri-Device-Id':owner.device}});return {status:response.status,body:await response.json()};}
+  await t.test('real emergency ledger is valid before deletion of one audited merchant',async()=>{
+    const {createEmergencyRequestPostgres}=await import('../src/services/postgresEmergencyReadAccessAuthority.ts');
+    for(const merchant of [a,b])await createEmergencyRequestPostgres({adminId:owner.id,adminName:'Synthetic owner',adminSessionId:owner.session.id,isOwner:true,merchantId:merchant.id,incidentReference:'synthetic-chain-'+merchant.id,severity:'high',reason:'Synthetic deletion chain interaction',durationMinutes:15,criticalSelfActivate:false});
+    const first=await auditRead();assert.equal(first.status,200);assert.equal(first.body.verification.valid,true);
+    peerEmergencyRows=(await admin.query("SELECT to_jsonb(t) AS row FROM audit_events t WHERE merchant_id=$1 AND entity_type='emergency_read_access' ORDER BY id",[b.id])).rows;assert.equal(peerEmergencyRows.length,2);
+  });
   await t.test('authorized owner HTTP purges only target private data and local media then rejects repeat', async () => {
     const peer = await snapshot([b, blocked]), r = await req(owner); assert.equal(r.status, 200, JSON.stringify(r)); assert.equal(r.body.deletedMerchantId, a.id); assert.equal(r.body.deletion_request.status, 'completed');
     const account = (await admin.query('SELECT state,phone,phone_verified,password_hash FROM accounts WHERE id=$1', [a.id])).rows[0]; assert.equal(account.state, 'closed'); assert.equal(account.phone, null); assert.equal(account.phone_verified, false); assert.match(account.password_hash, /^deleted\$/);
@@ -107,6 +116,11 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
     const auditCount = (await admin.query("SELECT count(*)::int AS n FROM audit_events WHERE merchant_id=$1 AND action_type='merchant_deleted'", [a.id])).rows[0].n; assert.equal(auditCount, 1);
     const after = await snapshot(); const repeat = await req(owner); assert.equal(repeat.status, 404); assert.equal(repeat.body.code, 'MERCHANT_NOT_FOUND'); assert.deepEqual(await snapshot(), after);
     assert.equal((await runtime.runtimePool.query('SELECT id FROM products WHERE merchant_id=ANY($1::text[])', [merchants])).rowCount, 0);
+  });
+  await t.test('deleting an audited merchant preserves global emergency verification and exact peer ledger',async()=>{
+    const audit=await auditRead();console.log('P0_DELETION_CHAIN_OBSERVATION '+JSON.stringify({status:audit.status,valid:audit.body.verification?.valid??false,code:audit.body.code??null}));
+    assert.equal(audit.status,200,'completed merchant deletion must not invalidate global owner audit');assert.equal(audit.body.verification.valid,true);
+    assert.deepEqual((await admin.query("SELECT to_jsonb(t) AS row FROM audit_events t WHERE merchant_id=$1 AND entity_type='emergency_read_access' ORDER BY id",[b.id])).rows,peerEmergencyRows);
   });
   await t.test('revoked owner session cannot delete intact peer with valid password', async () => {
     assert.equal(await auth.revokeSession(owner.session.token, 'admin', 'logout'), true); const before = await snapshot([b, blocked]); assert.equal((await req(owner, b)).status, 401); assert.deepEqual(await snapshot([b, blocked]), before);
