@@ -116,8 +116,10 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
     try{
       await gate.query('BEGIN');await gate.query('SELECT id FROM merchants WHERE id=$1 FOR UPDATE',[race.id]);held=true;
       tasks=[req(owner,race),fetch(origin+'/api/auth/admin/emergency-read-access/requests',{method:'POST',headers:{'Content-Type':'application/json',Cookie:owner.cookie,'X-Fawri-Device-Id':owner.device},body:JSON.stringify({merchant_id:race.id,incident_reference:'synthetic-concurrent-'+race.id,severity:'high',reason:'Synthetic concurrent deletion boundary',duration_minutes:15}),signal:AbortSignal.timeout(15000)}).then(async response=>({status:response.status,body:await response.json()}))];
-      const deadline=Date.now()+5000;let waiters=0;
-      while(Date.now()<deadline){const r=await admin.query("SELECT count(*)::int AS n FROM pg_stat_activity WHERE pid<>pg_backend_pid() AND wait_event_type='Lock' AND (query LIKE '%'||$1||'%' OR query LIKE '%emergency_access_requests%')",['merchants']);waiters=r.rows[0].n;if(waiters>=2)break;await new Promise(ok=>setTimeout(ok,25));}
+      const outcomes=[];tasks=tasks.map((task,index)=>task.then(value=>{outcomes.push({index,status:value.status,code:value.body?.code??null});return value;}));
+      const deadline=Date.now()+5000;let waiters=0,activity=[];
+      while(Date.now()<deadline){const r=await admin.query("SELECT pid,state,wait_event_type,wait_event,left(query,240) AS query,pg_blocking_pids(pid) AS blockers FROM pg_stat_activity WHERE usename=$1 ORDER BY pid",[runtime.authRole]);activity=r.rows;waiters=activity.filter(row=>row.wait_event_type==='Lock' && /merchants|emergency_access_requests/.test(row.query)).length;if(waiters>=2)break;await new Promise(ok=>setTimeout(ok,25));}
+      console.log('P0_DELETION_EMERGENCY_GATE '+JSON.stringify({waiters,activity,outcomes}));
       assert.ok(waiters>=2,'two actual SQL lock waiters required');
       await gate.query('COMMIT');held=false;
       const results=await Promise.all(tasks);const deleted=(await admin.query('SELECT retention_status FROM merchants WHERE id=$1',[race.id])).rows[0].retention_status==='deleted';
