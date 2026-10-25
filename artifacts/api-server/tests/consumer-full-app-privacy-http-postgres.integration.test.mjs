@@ -108,6 +108,30 @@ test('actual app isolates notification and conversation consumers across aliases
       const r=await req(`${base}/${suffix}/?merchant_id=${b.id}&conversation_id=${b.conversation}`,a,'POST',{merchant_id:b.id,conversation_id:b.conversation});assert.equal(r.status,200);assert.equal(r.body.conversation.id,a.conversation);assert.equal(r.body.conversation.status,status);assert.equal(r.body.conversation.assigned_to_human,human);noRequestInternals(r.body);assert.deepEqual(await snapshot([b.id]),peer);
     }
   });
+  await t.test('retired bot debug aliases never expose draft page catalog or filesystem fields through actual app',async()=>{
+    const before=await snapshot();
+    for(const actor of sessions){
+      const peer=actor===a?b:a;
+      for(const path of ['/api/bot/debug','/API/BoT/DeBuG/']){
+        const r=await req(`${path}?merchant_id=${peer.id}&text=synthetic-private-probe`,actor);
+        assert.equal(r.status,410,JSON.stringify(r));
+        if(r.status===410)assert.equal(r.body.code,'LEGACY_RUNTIME_AUTHORITY_DISABLED');
+        assert.doesNotMatch(JSON.stringify(r.body),/db_path|drafts_for_merchant|drafts_count|meta_pages_for_merchant|product_names|private-page-/);
+        assert.equal(JSON.stringify(r.body).includes(peer.id),false);
+      }
+    }
+    assert.deepEqual(await snapshot(),before);
+    assert.deepEqual(fs.readdirSync(process.env.FAWRI_DATA_DIR).filter(n=>n.endsWith('.json')),[]);
+    assert.equal((await req('/api/auth/notifications',b)).status,200);
+  });
+  await t.test('retired bot debug rejects non-merchant and invalid session actors without SQL changes',async()=>{
+    const before=await snapshot();
+    for(const path of ['/api/bot/debug','/API/BoT/DeBuG/'])for(const [actor,headers] of [[undefined,{}],[ownerActor,{}],[a,{'X-Fawri-Device-Id':'wrong'}],[a,{Cookie:`${a.cookie}; ${ownerActor.cookie}`} ]]){
+      const r=await req(path,actor,'GET',undefined,headers);assert.equal(r.status,401);
+      assert.doesNotMatch(JSON.stringify(r.body),/db_path|drafts_for_merchant|meta_pages_for_merchant|private-page-/);
+    }
+    assert.deepEqual(await snapshot(),before);
+  });
   await t.test('revoked merchant loses both actual-app consumers while peer succeeds and root JSON stores stay absent',async()=>{
     assert.equal(await auth.revokeSession(a.session.token,'merchant','logout'),true);const before=await snapshot();
     for(const [path,method] of [['/API/AUTH/Notifications/','GET'],[`/api/auth/notifications/${a.id}-own/read`,'PATCH'],['/API/Conversations/','GET'],[`/api/conversations/${a.conversation}/takeover`,'POST']])assert.equal((await req(path,a,method)).status,401);
