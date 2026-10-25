@@ -1,3 +1,17 @@
+## RESIDUAL-FIELD-002 payment-conflict caller bounded runtime accepted — 2026-10-25
+
+Source **92507e7ab7e55f792c238df65ca8ec8ea5a37403**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no application/schema/ACL/policy changes. Recovered6be84a36; previousb0417241 retained separately.
+
+[Notification40148637030/job121035284959](https://github.com/nora953/fawri-production-source/actions/runs/40148637030/job/121035284959): **28functional/33TAP across5files PASS**,0fail/skip/cancel. **New4functional/5TAP** exercise actual recordVerifiedProviderPaymentEvidenceAuthoritative→notification SQL→authenticated actual app list/read→actual frontend validator under2merchants/restricted primaryLOGIN+separate auth. Four invalid caller inputs reject without domain writes; exact variables/account/source identity/local URLs, own legitimate conflict, foreign notice read denial, peer preservation and sequential caller/read replay PASS. Same provider/event IDs remain tenant-separated.
+
+Scoped disposable notification INSERT failure occurs **after payment evidence commits**. One evidence event and paid/reconciliation-required order persist with no notice; exact caller replay deduplicates payment and creates the notice, retaining original order/event rows; subsequent replay stable. This accepts bounded recovery, not atomic payment+notice, real provider retry delivery, crash recovery or cryptographic ingress. Paid state is seeded; prior confirmation/fulfillment proof reused. Frontend validator is actual; no browser rendering/click proof. Fixture grants are broad and RLS-mediated, not hosted least privilege.
+
+[Broader40148637034/job121035284918](https://github.com/nora953/fawri-production-source/actions/runs/40148637034/job/121035284918): **92clean invocations/90unique files/715TAP PASS**,0fail/skip/cancel; cleanupSUCCESS. Targeted lane counted separately. Both checkout17bd9c59a3c1cbc65234f0a34550dbc12dc97490/tree9cb368361532e68118c5b8f9acee191f02306ec0 equal source. No blanket zero-skip claim for unrelated optional quality tests. [Machine evidence](evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json).
+
+**Next exact batch:** actual Meta customer-message caller→SQL fields→authenticated app/frontend using existing restricted-worker fixture; reuse accepted20TAP Meta job-identity denials. Knowledge-gap/new-order callers, remaining subscription/Support templates, concurrent/historical/legacy provenance and provider/hosted acceptance remain pending. FIELD002/full HTTP/role/field gatesOPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Last fully accepted executable92507e7a. **NO-GO**; GitHub only,PR550Draft/base preserved; no main/merge/deploy/hosted/P1/P2. No tool/session stall.
+
+---
+
 ## RESIDUAL-FIELD-002 optional operational runtime accepted — 2026-10-25
 
 Source **b0417241bd9b69dd8f460ce91e044004650266d9**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/docs only; no application/schema/ACL/policy changes. Recovereda2e74076; prior04b7fa85 present-option evidence retained.

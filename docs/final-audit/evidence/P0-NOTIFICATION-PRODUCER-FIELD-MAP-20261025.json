@@ -4,7 +4,7 @@
   "fieldCell": "RESIDUAL-FIELD-002",
   "status": "OPEN_PARTIAL_OPERATIONAL_RUNTIME_ACCEPTED",
   "auditedSourceRevision": "64f61f44ac32738607f0bcc5d8fae0ff8072e295",
-  "lastAcceptedExecutable": "b0417241bd9b69dd8f460ce91e044004650266d9",
+  "lastAcceptedExecutable": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
   "applicationChanged": false,
   "client": {
     "source": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
@@ -114,7 +114,10 @@
       "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
       "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
       "optionalAbsentAndBlankRuntimeAccepted": true,
-      "optionalRuntimeEvidence": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json"
+      "optionalRuntimeEvidence": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Internal verified-payment conflict authority from seeded paid state, two merchants, exact SQL/app/frontend-validator fields, negative caller inputs, sequential caller/read replay and post-commit notice-failure recovery. Not cryptographic provider callback/merchant-confirmation/browser/crash/hosted acceptance."
     },
     {
       "type": "operational_knowledge_gap",
@@ -282,9 +285,9 @@
   ],
   "nextExactBatch": {
     "types": [
-      "operational_payment_conflict"
+      "operational_customer_message"
     ],
-    "acceptance": "Extend actual verified-provider-payment conflict authority into exact notification SQL fields, actual app list/read and frontend validator under two merchants/restricted primary+separate auth. Reuse existing 11TAP payment domain and 20TAP Meta job identity evidence; do not rerun them as new discovery. New-order caller and remaining subscription/Support templates stay pending.",
+    "acceptance": "Link actual Meta customer-message caller through SQL notification fields, authenticated actual app list/read and frontend validator using existing restricted-worker fixture. Reuse accepted Meta job-identity 20TAP denial evidence. Knowledge-gap/new-order caller reconciliation and remaining subscription/Support templates stay pending.",
     "gateRemainsOpen": true
   },
   "verification": {

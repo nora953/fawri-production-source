@@ -1,3 +1,9 @@
+## Payment-conflict caller runtime update — 2026-10-25
+
+Internal verified-payment conflict authority now has bounded caller→SQL notice→authenticated actual app→actual frontend validator acceptance on92507e7a:4newfunctional/5TAP,notification lane33TAP,broader715TAP,56/56CI SUCCESS. [Evidence](evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json). Includes two merchants, denied invalid inputs, exact fields, replay and recovery after scoped notice-write failure following payment commit. Seeded paid state/synthetic authenticity flag do not accept cryptographic ingress, merchant-confirmation, crash or browser rendering. FIELD002 remains OPEN; next actual Meta customer-message caller round trip, reusing existing identity-denial proof.
+
+---
+
 ## Optional branch runtime update — 2026-10-25
 
 Omitted/blank conversation/provider fields, default service clock and order/conversations fallback URLs for new-order/payment-conflict/knowledge-gap are now bounded-runtime accepted onb0417241. Two new functional cases; suite8TAP/lane28TAP,broader715TAP,56/56CI SUCCESS. [Evidence](evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json). Next: actual payment-conflict caller through app/frontend, reusing accepted payment and Meta identity regression evidence. FIELD002 remains OPEN; no caller-wide/concurrency/historical/other-template acceptance.
