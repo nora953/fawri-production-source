@@ -1,3 +1,21 @@
+## RESIDUAL-FIELD-003 owner-only emergency audit alternate projection fixed — 2026-10-25
+
+Source **37f97e75b17e1131ab364a218dfbc3eb34c4e5e1**: **56/56 CI workflows SUCCESS**, zero pending/failure/cancellation. Recovered a363d0d8; failed3e631f0a and targeted checkpoint fa3d2ad8 preserved; previous accepted4e36d591 retained as history.
+
+**EMERGENCY-AUDIT-ALTERNATE-PROJECTION-001 — FIXED_SOURCE within tested HTTP/SQL boundary.** Actual owner-created requests under2merchants generated4canonical SQL emergency events. A view_logs-only assistant received403 from the dedicated owner-only audit but4events including chain metadata from general admin logs. Initial run40193604397/job121169614760:fixture8PASS/2FAIL (1functional+parent). This is an observed alternate read-projection authorization defect in an isolated owned fixture, not a hosted incident or credential compromise.
+
+Minimal correction: current SQL-backed admin profile supplies an explicit owner flag; SQL excludes emergency_read_access rows for other log readers before ordering/limit, preserving NULL entity ordinary rows. Helper defaults to excluding owner-only events. No user query/body hint controls the flag. Owner keeps existing general/dedicated audit visibility; ordinary log fields/meta, chain/storage, transaction/ACL/schema remain unchanged.
+
+Corrected actual app proof: owner positive and assistant dedicated denial; view_logs-only/manager generic canonical+mixed-case/trailing-slash/forged-owner-hint requests return0emergency rows; owner retains all4. Ordinary log exact actor/details/reason/string+number meta, filtered nested/bool meta, anonymous/merchant/no-permission/current-SQL-permission-revocation negatives and complete selected SQL read snapshots PASS. Dedicated management lane **35TAP PASS** (31functional+4parents), fixture10TAP(9functional+parent);3newfunctional. Run40193882711/job121170462946. Broader **721TAP PASS**,92invocations/90unique files, run40193883147/job121170697031; fixture is not selected by broader lane. Both zero failed/skipped/cancelled and teardownSUCCESS. Both checkout40205fad have source-identical tree e1731ae10436c5023e7d8743cd5ae28dae371022.
+
+[Evidence](evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json). Bounded literal source map:17exact-table SQL references,11INSERT sites across9producer files,5read sites across3consumer files in839tracked source files. Emergency, general logs and normalized incident history have different field/role contracts; no formal whole-program/historical/hosted proof or generic meta allowlist acceptance. Existing direct incident opened/dedup/resolved proof is not HTTP field coverage.
+
+**FIELD003 remains OPEN; FIELD002 candidate remains unenforced; release NO-GO.** Register45=29CLOSED_SOURCE/7OPEN/9BLOCKED; completeP0Inventoryfalse; overallPercentagenull. GitHub-only/no merge/deploy/provider/hosted change.
+
+**Next exact action:** Exercise actual /api/auth/admin/early-warning incident_history projection with view_logs-only versus view_logs+view_merchants and owner actors, current system/merchant incident producers, selected normalized metadata, denial/permission revocation and stable SQL lifecycle snapshots. Reuse existing direct sync opened/dedup/resolved proof; do not count it as HTTP field acceptance or repeat the accepted emergency generic-log boundary. FIELD002 candidate remains unenforced and its historical/scope items stay open.
+
+---
+
 ## RESIDUAL-FIELD-003 emergency audit alternate projection — prepared 2026-10-25
 
 Recovered a363d0d8/PR550Draft. Three new actual app/restricted SQL cases: real owner-created emergency requests under two merchants produce audit rows; dedicated audit denies view_logs assistants; generic admin logs must retain that owner-only boundary while ordinary audit details/meta, owner visibility, aliases, forged hints, permissions and exact read-only snapshots remain valid. Tests only; source unchanged; runtime NOT_RUN. This is a candidate boundary test, not a confirmed finding. FIELD003OPEN/NO-GO/GitHub only. Next inspect exact-source management lane.
