@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "TARGETED_PASS_BROADER_PENDING",
+  "recoveredHead": "92f8c296f5e2326b7f2c6c086e2adc79b7bfcee7",
+  "sourceCandidate": "57b554a0ea1c2caf7fa258145a9ec38c19b68b8e",
+  "previousAcceptedExecutable": "6182678d76e97e315df428bd2739af284afea420",
+  "test": "artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 2,
+  "existingFunctionalCases": 20,
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "localSyntax": "PASS",
+  "scope": [
+    "Actual authenticated app list→subscription refresher→SQL→actual frontend validator under two merchants",
+    "Owned bootstrap FOR UPDATE gates real app requests; distinct restricted pg_stat_activity SQL waiters prove overlap, not Promise.all alone",
+    "Three same-tenant refresh requests; peer finishes while own subscription remains locked; new two-template notices deduplicated",
+    "Gated two-waiter repeat and independent peer request preserve exact existing notice/sent-marker state",
+    "Six blocked requests across both tenant subscriptions produce one expired notice per source",
+    "All subscription/batch fields except intended sent markers/updated_at preserved; existing notices untouched; post-cohort replay stable"
+  ],
+  "observations": [
+    {
+      "restrictedSqlWaiters": 2,
+      "replayWaiters": 2,
+      "peerCompletedWhileOwnLocked": true,
+      "newNotices": 4,
+      "stableReplay": true
+    },
+    {
+      "restrictedSqlWaiters": 6,
+      "merchants": 2,
+      "httpRequests": 6,
+      "newNotices": 2,
+      "stableSentMarkers": true,
+      "stableReplay": true,
+      "actualApp": true,
+      "actualFrontendValidator": true,
+      "hostedAccepted": false,
+      "loadCapacityAccepted": false,
+      "wholeCellAccepted": false
+    }
+  ],
+  "targeted": {
+    "runId": 40186343958,
+    "jobId": 121147829330,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40186343958/job/121147829330",
+    "functionalCases": 68,
+    "tapPass": 74,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "meta-job-identity-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 23,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "beefaa1992732689234a534f8f99297dcfa59472",
+    "tree": "f40d40aabf16f12e3064e1d9c8e66487d18938be",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40186343833
+  },
+  "limits": [
+    "Fixture-only primary pool max8 and owned row locks; no product configuration change",
+    "Bounded 5s SQL-wait observation and10s HTTP abort; locks released and HTTP tasks drained in finally",
+    "Seeded eligible subscription/add-on states; not purchase/settlement or complete accounting acceptance",
+    "No load/capacity/p95/p99 claim, hosted verification, browser rendering, crash/failure/concurrent billing-cycle change or provider proof",
+    "Operational-notice/inspection creation races, extra/reserved-key policy and historical repair remain unaccepted",
+    "Two new cases run only in dedicated notification lane; broader total separate",
+    "Prior local legacy-client4PASS remains independent, not added to this TAP total"
+  ],
+  "nextExactAction": "Inspect broader exact-source CI, then test the next unproved canonical notification producer race with actual tenant ownership and SQL overlap. Keep historical/extra-reserved-key policy explicit; do not invent cleanup or a missing production caller."
+}
