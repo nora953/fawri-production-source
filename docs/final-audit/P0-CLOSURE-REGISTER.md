@@ -1,3 +1,17 @@
+## RESIDUAL-FIELD-002 response-field contract candidate assessed — 2026-10-25
+
+Recovered **f0bd2b06**, Draft PR550/base preserved. Prepared an explicit per-type response-field candidate for12client shapes, canonical common fields and current inspection lifecycle enrichment. Candidate permits **no extra keys** beyond each type's enumerated required/optional fields. Unknown/malformed records are retained as failures under the existing strict client contract; no silent row filtering, defaulted lifecycle, historical relinking or SQL rewrite.
+
+**Local candidate/client assessment:6PASS/0FAIL/0SKIP/0CANCEL**, Node v24.22.1. Actual frontend validator/read client imported; source-derived synthetic objects and in-process fetch adapter only. All12valid full shapes remain identical; optional absence, missing required fields, invalid URL/value, unlinked inspection, unknown mixed list, read path identity/timestamp negatives checked. Literal current page accesses and all12validator key sets fit the candidate. No SQL/application HTTP/browser/hosted execution; no new CI run.
+
+**Compatibility change is explicit:** actual current client accepts and returns extra fields; candidate removes them (including synthetic customer-message order_id retained by the previous reserved-key regression). Candidate is **NOT_ENFORCED / NOT_POLICY_ADOPTED**. It establishes known-shape compatibility, not historical/custom-consumer compatibility or an attacker-controlled leak. The current unread-count hook counts array rows without per-record validation; no unknown-row filtering proposed. Read HTTP may commit before frontend validation; client rejection is not SQL rollback.
+
+[Candidate field table and limits](P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.md), [machine contract](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json), [local assessment](evidence/p0-notification-response-field-contract.test.mjs). FIELD002-R1 stays OPEN with a concrete tested candidate; R2 historical disposition BLOCKED_HOSTED_VERIFICATION; R3 intended producer scope OPEN. No product code/schema/grant/retention change. Executable4e36d591 retains inherited56/56CI,78notificationTAP,721broaderTAP; local6 are separate. Register45=29CLOSED_SOURCE/7OPEN/9BLOCKED, inventory incomplete, overallPercentage null, **NO-GO**. GitHub-only/no merge/deploy.
+
+**Next exact action:** Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.
+
+---
+
 ## RESIDUAL-FIELD-002 finite acceptance reconciliation — 2026-10-25
 
 Recovered **04552d16** / Draft PR550, base unchanged. Documentation-only reconciliation: corrected stale pending markers across12client types and linked11accepted executable evidence records after ancestry verification; current source anchors12/12 and client type set match. **8types** have bounded canonical caller→SQL→actual app→actual frontend-validator evidence; **1new-order type** has direct SQL producer proof with no identified application caller; **3legacy JSON types** have source/synthetic-client compatibility only. These categories are not a P0 completion percentage.

@@ -139,7 +139,11 @@
         "FIELD002-R1",
         "FIELD002-R2",
         "FIELD002-R3"
-      ]
+      ],
+      "notificationResponseFieldContractEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+      "notificationResponseFieldContractStatus": "CANDIDATE_PREPARED_LOCAL_CLIENT_6PASS_NOT_ENFORCED",
+      "notificationResponseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs",
+      "notificationResponseFieldContractPointer": "responseFieldContract"
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
@@ -267,7 +271,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.",
+      "nextAction": "Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -331,7 +335,11 @@
         "FIELD002-R1",
         "FIELD002-R2",
         "FIELD002-R3"
-      ]
+      ],
+      "notificationResponseFieldContractEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+      "notificationResponseFieldContractStatus": "CANDIDATE_PREPARED_LOCAL_CLIENT_6PASS_NOT_ENFORCED",
+      "notificationResponseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs",
+      "notificationResponseFieldContractPointer": "responseFieldContract"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",

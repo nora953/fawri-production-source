@@ -1,3 +1,52 @@
+## RESIDUAL-FIELD-002 response-field contract candidate assessed — 2026-10-25
+
+Recovered **f0bd2b06**, Draft PR550/base preserved. Prepared an explicit per-type response-field candidate for12client shapes, canonical common fields and current inspection lifecycle enrichment. Candidate permits **no extra keys** beyond each type's enumerated required/optional fields. Unknown/malformed records are retained as failures under the existing strict client contract; no silent row filtering, defaulted lifecycle, historical relinking or SQL rewrite.
+
+**Local candidate/client assessment:6PASS/0FAIL/0SKIP/0CANCEL**, Node v24.22.1. Actual frontend validator/read client imported; source-derived synthetic objects and in-process fetch adapter only. All12valid full shapes remain identical; optional absence, missing required fields, invalid URL/value, unlinked inspection, unknown mixed list, read path identity/timestamp negatives checked. Literal current page accesses and all12validator key sets fit the candidate. No SQL/application HTTP/browser/hosted execution; no new CI run.
+
+**Compatibility change is explicit:** actual current client accepts and returns extra fields; candidate removes them (including synthetic customer-message order_id retained by the previous reserved-key regression). Candidate is **NOT_ENFORCED / NOT_POLICY_ADOPTED**. It establishes known-shape compatibility, not historical/custom-consumer compatibility or an attacker-controlled leak. The current unread-count hook counts array rows without per-record validation; no unknown-row filtering proposed. Read HTTP may commit before frontend validation; client rejection is not SQL rollback.
+
+[Candidate field table and limits](P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.md), [machine contract](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json), [local assessment](evidence/p0-notification-response-field-contract.test.mjs). FIELD002-R1 stays OPEN with a concrete tested candidate; R2 historical disposition BLOCKED_HOSTED_VERIFICATION; R3 intended producer scope OPEN. No product code/schema/grant/retention change. Executable4e36d591 retains inherited56/56CI,78notificationTAP,721broaderTAP; local6 are separate. Register45=29CLOSED_SOURCE/7OPEN/9BLOCKED, inventory incomplete, overallPercentage null, **NO-GO**. GitHub-only/no merge/deploy.
+
+**Next exact action:** Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.
+
+---
+
+### Candidate fields (not enforced)
+
+Every row also carries canonical `id`, `type`, `created_at`, and optional `read_at`. Values retain the existing validator's string/date/number/enum/local-URL checks; the candidate neither coerces nor repairs them. No additional key is permitted in this candidate.
+
+| Type | Required type fields | Optional type fields |
+|---|---|---|
+| `subscription_expiry_reminder` | `plan_name`, `expires_at`, `days_remaining` | None |
+| `subscription_expired` | `plan_name`, `expired_at`, `addon_replies_remaining` | None |
+| `addon_expiry_reminder` | `addon_batch_id`, `source`, `remaining_replies`, `expires_at`, `days_remaining` | None |
+| `operational_new_order` | `order_id`, `action_url` | `conversation_id` |
+| `operational_payment_conflict` | `order_id`, `action_url` | `conversation_id`, `provider` |
+| `operational_knowledge_gap` | `training_request_id`, `action_url` | `conversation_id` |
+| `operational_customer_message` | `conversation_id`, `action_url` | None |
+| `inspection_session_request` | `ticket_id`, `inspection_request_id`, `ticket_subject`, `admin_name`, `mode`, `request_expires_at`, `action_url`, `request_status` | `consent_decision`, `responded_at`, `session_expires_at`, `ended_at`, `end_reason` |
+| `support_reply_reminder` | `ticket_id`, `ticket_subject`, `action_url` | None |
+| `subscription_balance_purchase` | `purchased_replies`, `emergency_debt_paid`, `addon_replies_added`, `emergency_debt_remaining`, `base_replies_remaining`, `emergency_replies_remaining`, `addon_replies_remaining`, `total_replies_available` | `addon_batch_id`, `addon_batch_expires_at` |
+| `subscription_plan_event` | `operation`, `plan_name`, `start_date`, `expires_at`, `emergency_debt_paid`, `emergency_debt_remaining`, `base_replies_remaining`, `addon_replies_remaining`, `total_replies_available` | `previous_plan_name` |
+| `subscription_emergency_activated` | `addon_batch_id`, `emergency_replies_added`, `emergency_debt`, `expires_at` | None |
+
+### Behavior and compatibility
+
+| Situation | Current behavior | Candidate behavior |
+|---|---|---|
+| Valid known type | Required/optional fields and arbitrary non-reserved variables reach the client | Retain enumerated fields, with exact values and absence; remove other keys |
+| Unknown type | Server returns row; actual client rejects entire list | Keep canonical common row; actual client still rejects entire list; retain count/order/limit semantics |
+| Known type with missing/invalid required field | Actual client rejects entire list | Keep failure; no defaults, coercion or partial display |
+| Matching owned inspection request | Canonical lifecycle overrides stale stored lifecycle | Enrich first with existing source/request/ticket binding, then minimize fields |
+| Missing/unlinked inspection request | No fabricated lifecycle; incompatible shape fails client | Keep missing state and failure; do not rename/relink legacy request_id |
+| Owned read mutation with incompatible response | SQL may commit before strict client rejects returned shape | Preserve transaction/idempotency; no claim of client-validation rollback |
+| Stored variables / history | Stored as currently implemented | No storage, retention, cleanup or migration change |
+
+The strict candidate is a recommendation with a local compatibility assessment, not a deployed policy. The reserved-key proof intentionally preserved a synthetic business extra; adoption would supersede that one extension-preservation expectation explicitly while retaining canonical identity, tenant, replay and unchanged-storage assertions. No actual historical rows or custom dynamic consumers were inventoried. Any implementation requires the source/runtime acceptance listed in `responseFieldContract.implementationAcceptance`; the candidate6PASS is not SQL/app/hosted acceptance. Work can proceed on the next independent P0 field boundary while these decisions remain open.
+
+---
+
 ## RESIDUAL-FIELD-002 finite acceptance reconciliation — 2026-10-25
 
 Recovered **04552d16** / Draft PR550, base unchanged. Documentation-only reconciliation: corrected stale pending markers across12client types and linked11accepted executable evidence records after ancestry verification; current source anchors12/12 and client type set match. **8types** have bounded canonical caller→SQL→actual app→actual frontend-validator evidence; **1new-order type** has direct SQL producer proof with no identified application caller; **3legacy JSON types** have source/synthetic-client compatibility only. These categories are not a P0 completion percentage.

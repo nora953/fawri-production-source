@@ -2011,7 +2011,7 @@
       "table": "notifications",
       "status": "OPEN",
       "gap": "Canonical field projection and eight identified caller type contracts bounded accepted. Non-reserved/unknown-record field policy, hosted historical-row disposition and intended producer scope remain unresolved; no whole field privacy acceptance.",
-      "next": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.",
+      "next": "Candidate responseFieldContract and local actual-client6PASS prepared. Product enforcement/extension compatibility and hosted disposition remain unresolved. Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
       "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
       "sourceFieldMapStatus": "FINITE_CHECKLIST_RECONCILED_EIGHT_CALLER_TYPES_ACCEPTED_FIELD002_OPEN",
@@ -2024,7 +2024,9 @@
         "FIELD002-R1",
         "FIELD002-R2",
         "FIELD002-R3"
-      ]
+      ],
+      "responseFieldContractStatus": "CANDIDATE_LOCAL_CLIENT_TESTED_NOT_ENFORCED",
+      "responseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs"
     },
     {
       "id": "RESIDUAL-FIELD-003",
@@ -2061,7 +2063,7 @@
       "table": "notifications",
       "status": "OPEN",
       "gap": "Canonical field projection and eight identified caller type contracts bounded accepted. Non-reserved/unknown-record field policy, hosted historical-row disposition and intended producer scope remain unresolved; no whole field privacy acceptance.",
-      "next": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.",
+      "next": "Candidate responseFieldContract and local actual-client6PASS prepared. Product enforcement/extension compatibility and hosted disposition remain unresolved. Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
       "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
       "sourceFieldMapStatus": "FINITE_CHECKLIST_RECONCILED_EIGHT_CALLER_TYPES_ACCEPTED_FIELD002_OPEN",
@@ -2074,7 +2076,9 @@
         "FIELD002-R1",
         "FIELD002-R2",
         "FIELD002-R3"
-      ]
+      ],
+      "responseFieldContractStatus": "CANDIDATE_LOCAL_CLIENT_TESTED_NOT_ENFORCED",
+      "responseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs"
     },
     {
       "id": "RESIDUAL-FIELD-003",

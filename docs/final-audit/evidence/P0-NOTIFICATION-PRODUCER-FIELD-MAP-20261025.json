@@ -415,7 +415,7 @@
   ],
   "nextExactBatch": {
     "types": [],
-    "acceptance": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.",
+    "acceptance": "Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
     "gateRemainsOpen": true
   },
   "verification": {
@@ -681,12 +681,14 @@
       },
       {
         "id": "FIELD002-R1",
-        "status": "OPEN_SOURCE_FIELD_CONTRACT",
+        "status": "OPEN_CANDIDATE_PREPARED_LOCAL_CLIENT_TESTED_NOT_ENFORCED",
         "requirement": "Decide and enforce complete response policy for non-reserved extra keys and unknown/malformed types",
-        "current": "Server retains non-reserved variables; client validates shape but returns original records. Current literal key outputs are bounded accepted; arbitrary stored fields have no general privacy certification.",
+        "current": "Server retains non-reserved variables; client validates shape but returns original records. Current literal key outputs are bounded accepted; arbitrary stored fields have no general privacy certification. Candidate per-type projection prepared and locally compared with actual client (6PASS); existing extension behavior would change. No product projection or policy adoption.",
         "acceptance": "Prepare explicit compatibility-preserving projection contract for current 12 shapes, canonical inspection enrichment and unknown/malformed records; identify permitted extra keys and migration impact before changing output. Verify positive and negative actual app/client behavior if implemented.",
         "requiresHosted": false,
-        "requiresNewPublicFeature": false
+        "requiresNewPublicFeature": false,
+        "candidateContract": "responseFieldContract",
+        "candidateTest": "p0-notification-response-field-contract.test.mjs"
       },
       {
         "id": "FIELD002-R2",
@@ -786,7 +788,468 @@
       "clientTypeSetMatchesSource": true,
       "count": 12
     },
-    "nextExactAction": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.",
-    "scope": "Reconciliation of this bounded notification field cell only; not a complete P0 inventory or whole-application privacy denominator"
+    "nextExactAction": "Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
+    "scope": "Reconciliation of this bounded notification field cell only; not a complete P0 inventory or whole-application privacy denominator",
+    "historicalNextExactAction": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation."
+  },
+  "responseFieldContract": {
+    "version": 1,
+    "date": "2026-10-25",
+    "status": "CANDIDATE_SOURCE_CONTRACT_NOT_ENFORCED",
+    "recoveredHead": "f0bd2b0639f80da5c4dc98c75909d51c93e533df",
+    "applicationChanged": false,
+    "privacyAccepted": false,
+    "scope": "Response-field minimization candidate for merchant notification list/unread/single-read; not a storage schema, SQL row repair, new producer or billing contract.",
+    "common": {
+      "required": [
+        "id",
+        "type",
+        "created_at"
+      ],
+      "optional": [
+        "read_at"
+      ],
+      "authority": "Canonical SQL notification fields; variables never override them."
+    },
+    "types": [
+      {
+        "type": "subscription_expiry_reminder",
+        "required": [
+          "plan_name",
+          "expires_at",
+          "days_remaining"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "subscription_expired",
+        "required": [
+          "plan_name",
+          "expired_at",
+          "addon_replies_remaining"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "addon_expiry_reminder",
+        "required": [
+          "addon_batch_id",
+          "source",
+          "remaining_replies",
+          "expires_at",
+          "days_remaining"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "operational_new_order",
+        "required": [
+          "order_id",
+          "action_url"
+        ],
+        "optional": [
+          "conversation_id"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "DIRECT_SQL_PRODUCER_ACCEPTED_NO_APPLICATION_CALLER_IDENTIFIED"
+      },
+      {
+        "type": "operational_payment_conflict",
+        "required": [
+          "order_id",
+          "action_url"
+        ],
+        "optional": [
+          "conversation_id",
+          "provider"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "operational_knowledge_gap",
+        "required": [
+          "training_request_id",
+          "action_url"
+        ],
+        "optional": [
+          "conversation_id"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "operational_customer_message",
+        "required": [
+          "conversation_id",
+          "action_url"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "inspection_session_request",
+        "required": [
+          "ticket_id",
+          "inspection_request_id",
+          "ticket_subject",
+          "admin_name",
+          "mode",
+          "request_expires_at",
+          "action_url",
+          "request_status"
+        ],
+        "optional": [
+          "consent_decision",
+          "responded_at",
+          "session_expires_at",
+          "ended_at",
+          "end_reason"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "support_reply_reminder",
+        "required": [
+          "ticket_id",
+          "ticket_subject",
+          "action_url"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "subscription_balance_purchase",
+        "required": [
+          "purchased_replies",
+          "emergency_debt_paid",
+          "addon_replies_added",
+          "emergency_debt_remaining",
+          "base_replies_remaining",
+          "emergency_replies_remaining",
+          "addon_replies_remaining",
+          "total_replies_available"
+        ],
+        "optional": [
+          "addon_batch_id",
+          "addon_batch_expires_at"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY"
+      },
+      {
+        "type": "subscription_plan_event",
+        "required": [
+          "operation",
+          "plan_name",
+          "start_date",
+          "expires_at",
+          "emergency_debt_paid",
+          "emergency_debt_remaining",
+          "base_replies_remaining",
+          "addon_replies_remaining",
+          "total_replies_available"
+        ],
+        "optional": [
+          "previous_plan_name"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY"
+      },
+      {
+        "type": "subscription_emergency_activated",
+        "required": [
+          "addon_batch_id",
+          "emergency_replies_added",
+          "emergency_debt",
+          "expires_at"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY"
+      }
+    ],
+    "currentBehavior": {
+      "knownTypes": "Canonical common fields plus every non-reserved stored variable; matching inspection lifecycle overrides stale lifecycle keys.",
+      "unknownTypes": "Server projects row; actual frontend rejects unknown record and rejects the whole list.",
+      "malformedKnownTypes": "Actual frontend rejects the whole list, even if other records are valid.",
+      "unreadBadge": "Count hook verifies ok and array only, then uses array length; it does not validate each record.",
+      "readMutation": "Server commits owned read update; client separately validates response shape, path id and read_at. Do not claim client failure rolls back the committed read."
+    },
+    "candidateRules": {
+      "knownTypes": "Copy common fields and the type required/optional fields only, preserving exact values and absent fields. No extra key is allowed beyond those enumerated.",
+      "unknownTypes": "Retain row and canonical common fields only. Preserve current frontend rejection; do not silently filter rows or change count/limit/order semantics.",
+      "malformedKnownTypes": "Do not coerce, default, rename, fabricate or repair values. Preserve existing actual frontend validation/failure semantics.",
+      "inspection": "Apply existing owned source/request/ticket lifecycle enrichment before key minimization. Missing/unlinked lifecycle stays missing; no fabricated status or request relinking.",
+      "readMutation": "Do not alter SQL update, transaction, tenant predicates, error statuses or idempotency. Frontend validation remains post-response.",
+      "storage": "No stored variables, source references, read state, historic rows, retention or grants are changed by a projection-only candidate."
+    },
+    "compatibilityDecision": {
+      "status": "CANDIDATE_LOCAL_CLIENT_COMPATIBLE_CURRENT_EXTENSION_BEHAVIOR_CHANGED_NOT_ENFORCED",
+      "recommendedCandidate": "Per-type field minimization with unchanged whole-response validation and no silent record filtering.",
+      "notYetAdopted": "Removing non-reserved keys changes an explicitly retained current extension behavior; synthetic client compatibility does not prove hosted/custom-consumer compatibility.",
+      "priorEvidenceImpacted": "P0-NOTIFICATION-RESERVED-FIELDS-20261025.json includes synthetic order_id preservation on customer_message. Keep the old proof dated; any adoption must explicitly supersede only extension preservation with positive/negative actual app tests, without weakening canonical/tenant/storage assertions.",
+      "unresolved": [
+        "Actual historical/alternate-writer key inventory unavailable under GitHub-only restriction",
+        "No declared existing extension-consumer or migration/disposition policy found in reviewed source; no absence theorem",
+        "No new-order application caller or canonical SQL producer for three legacy subscription types established"
+      ],
+      "observedChange": {
+        "example": "Synthetic operational_customer_message with extra order_id",
+        "current": "Actual frontend accepts and returns order_id",
+        "candidate": "Per-type field set removes order_id and remains frontend-valid",
+        "meaning": "Known-shape compatibility only; not proof the extra field can be removed from all historical/custom consumers."
+      }
+    },
+    "sourceAssessment": {
+      "actualClientValidatorTypeKeySetsMatch": true,
+      "typeCount": 12,
+      "notificationPageKeysOutsideContract": [],
+      "scope": "Literal property reads in reviewed page and validator; bounded static review, not browser execution or a formal dynamic consumer graph.",
+      "inputs": {
+        "artifacts/api-server/src/routes/auth-support-postgres-routes.ts": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62",
+        "artifacts/api-server/src/routes/authRuntimePart3.ts": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff",
+        "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts": "9f432edc4161645e7d452f999c5bfd8f21f406b31f19c51679843881d17f09f5",
+        "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts": "fa40e8d728cf33796e565b00f58dd839c893dd539da9d9786fb0c2dc3d11a6f8",
+        "artifacts/api-server/src/services/postgresSupportAuthority.ts": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0",
+        "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts": "af2012d752ffb85a1c02dba8a761066c8170c491b042606136152d5c14460c7f",
+        "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts": "59ec43152b0ad63599cd91b2a1c4db23ab263c5f9ce2cd9c00138e20f6748008",
+        "artifacts/api-server/tests/operational-notifications.test.ts": "0b31ef9d0dd42f3e83e3603e990e02670f6c2d162e321dd9579cd81e2a2136e3",
+        "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6",
+        "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980",
+        "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts": "e1deebab5c2cf4e7db1892758345a56e160b4f3ff1bd6b92fe33a02deb8c3cfd",
+        "artifacts/fawri/src/hooks/useMerchantNotifications.ts": "972619c786d717afd385cba527da0974b3cc9e6e740eb0feaab35fb465c8730d"
+      },
+      "typeValidatorKeySets": [
+        {
+          "type": "subscription_balance_purchase",
+          "validator": "isBalance",
+          "keys": [
+            "addon_batch_expires_at",
+            "addon_batch_id",
+            "addon_replies_added",
+            "addon_replies_remaining",
+            "base_replies_remaining",
+            "emergency_debt_paid",
+            "emergency_debt_remaining",
+            "emergency_replies_remaining",
+            "purchased_replies",
+            "total_replies_available",
+            "type"
+          ]
+        },
+        {
+          "type": "subscription_plan_event",
+          "validator": "isSubscriptionPlan",
+          "keys": [
+            "addon_replies_remaining",
+            "base_replies_remaining",
+            "emergency_debt_paid",
+            "emergency_debt_remaining",
+            "expires_at",
+            "operation",
+            "plan_name",
+            "previous_plan_name",
+            "start_date",
+            "total_replies_available",
+            "type"
+          ]
+        },
+        {
+          "type": "subscription_emergency_activated",
+          "validator": "isEmergency",
+          "keys": [
+            "addon_batch_id",
+            "emergency_debt",
+            "emergency_replies_added",
+            "expires_at",
+            "type"
+          ]
+        },
+        {
+          "type": "subscription_expiry_reminder",
+          "validator": "isSubscriptionExpiryReminder",
+          "keys": [
+            "days_remaining",
+            "expires_at",
+            "plan_name",
+            "type"
+          ]
+        },
+        {
+          "type": "subscription_expired",
+          "validator": "isSubscriptionExpired",
+          "keys": [
+            "addon_replies_remaining",
+            "expired_at",
+            "plan_name",
+            "type"
+          ]
+        },
+        {
+          "type": "addon_expiry_reminder",
+          "validator": "isAddonExpiryReminder",
+          "keys": [
+            "addon_batch_id",
+            "days_remaining",
+            "expires_at",
+            "remaining_replies",
+            "source",
+            "type"
+          ]
+        },
+        {
+          "type": "inspection_session_request",
+          "validator": "isInspection",
+          "keys": [
+            "action_url",
+            "admin_name",
+            "consent_decision",
+            "end_reason",
+            "ended_at",
+            "inspection_request_id",
+            "mode",
+            "request_expires_at",
+            "request_status",
+            "responded_at",
+            "session_expires_at",
+            "ticket_id",
+            "ticket_subject",
+            "type"
+          ]
+        },
+        {
+          "type": "support_reply_reminder",
+          "validator": "isSupportReminder",
+          "keys": [
+            "action_url",
+            "ticket_id",
+            "ticket_subject",
+            "type"
+          ]
+        },
+        {
+          "type": "operational_new_order",
+          "validator": "isNewOrder",
+          "keys": [
+            "action_url",
+            "conversation_id",
+            "order_id",
+            "type"
+          ]
+        },
+        {
+          "type": "operational_customer_message",
+          "validator": "isCustomerMessage",
+          "keys": [
+            "action_url",
+            "conversation_id",
+            "type"
+          ]
+        },
+        {
+          "type": "operational_payment_conflict",
+          "validator": "isPaymentConflict",
+          "keys": [
+            "action_url",
+            "conversation_id",
+            "order_id",
+            "provider",
+            "type"
+          ]
+        },
+        {
+          "type": "operational_knowledge_gap",
+          "validator": "isKnowledgeGap",
+          "keys": [
+            "action_url",
+            "conversation_id",
+            "training_request_id",
+            "type"
+          ]
+        }
+      ],
+      "notificationPageLiteralAccessKeys": [
+        "action_url",
+        "addon_batch_expires_at",
+        "addon_replies_added",
+        "addon_replies_remaining",
+        "admin_name",
+        "base_replies_remaining",
+        "created_at",
+        "days_remaining",
+        "emergency_debt",
+        "emergency_debt_paid",
+        "emergency_debt_remaining",
+        "emergency_replies_added",
+        "ended_at",
+        "expired_at",
+        "expires_at",
+        "id",
+        "mode",
+        "operation",
+        "order_id",
+        "plan_name",
+        "previous_plan_name",
+        "purchased_replies",
+        "read_at",
+        "remaining_replies",
+        "request_expires_at",
+        "request_status",
+        "responded_at",
+        "session_expires_at",
+        "source",
+        "start_date",
+        "ticket_subject",
+        "total_replies_available",
+        "type"
+      ]
+    },
+    "validation": {
+      "status": "LOCAL_CANDIDATE_CLIENT_CONTRACT_PASS",
+      "command": "node --test --test-reporter=tap docs/final-audit/evidence/p0-notification-response-field-contract.test.mjs",
+      "test": "p0-notification-response-field-contract.test.mjs",
+      "runtime": "v24.22.1",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "exitCode": 0,
+      "actualFrontendModule": true,
+      "syntheticObjects": true,
+      "fetchAdapterInProcess": true,
+      "candidateEnforcedInProduct": false,
+      "sqlExecuted": false,
+      "applicationHttpExecuted": false,
+      "browserExecuted": false,
+      "hostedAccepted": false,
+      "testSha256": "af0d5ec9ab48abd6ab045119097de20967eaaa1a5280abe0c6dcc3cd285540aa",
+      "cases": [
+        "All12 complete valid shapes remain field-identical and accepted",
+        "Current extra-key acceptance versus candidate removal; original synthetic objects preserved",
+        "Optional absence and missing-required negatives across12types",
+        "Unlinked inspection, unsafe URL and null typed field remain invalid",
+        "Unknown type preserves row count and actual mixed-response rejection",
+        "Actual read-client path identity and required read timestamp preserved"
+      ]
+    },
+    "implementationAcceptance": [
+      "Contract choice and extension/historical disposition explicit; no silent policy change",
+      "Actual two-merchant app list/unread/read/replay retain required/optional fields, safe URLs and canonical identity/time",
+      "Unknown/malformed rows remain visible as failure according to declared semantics; no hidden drop or count mismatch",
+      "Unlinked inspection references do not fabricate lifecycle or expose peer state",
+      "SQL JSON and peer snapshots unchanged; actual frontend validator remains strict",
+      "Exact-source targeted and broader CI before any source acceptance"
+    ],
+    "nextExactAction": "Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope."
   }
 }
