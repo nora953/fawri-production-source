@@ -2010,11 +2010,21 @@
       "priority": 2,
       "table": "notifications",
       "status": "OPEN",
-      "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
-      "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+      "gap": "Canonical field projection and eight identified caller type contracts bounded accepted. Non-reserved/unknown-record field policy, hosted historical-row disposition and intended producer scope remain unresolved; no whole field privacy acceptance.",
+      "next": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.",
       "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
-      "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
+      "sourceFieldMapStatus": "FINITE_CHECKLIST_RECONCILED_EIGHT_CALLER_TYPES_ACCEPTED_FIELD002_OPEN",
+      "initialReview": {
+        "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
+        "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+        "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
+      },
+      "unresolvedChecklistItems": [
+        "FIELD002-R1",
+        "FIELD002-R2",
+        "FIELD002-R3"
+      ]
     },
     {
       "id": "RESIDUAL-FIELD-003",
@@ -2050,11 +2060,21 @@
       "priority": 2,
       "table": "notifications",
       "status": "OPEN",
-      "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
-      "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+      "gap": "Canonical field projection and eight identified caller type contracts bounded accepted. Non-reserved/unknown-record field policy, hosted historical-row disposition and intended producer scope remain unresolved; no whole field privacy acceptance.",
+      "next": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.",
       "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
-      "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
+      "sourceFieldMapStatus": "FINITE_CHECKLIST_RECONCILED_EIGHT_CALLER_TYPES_ACCEPTED_FIELD002_OPEN",
+      "initialReview": {
+        "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
+        "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+        "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
+      },
+      "unresolvedChecklistItems": [
+        "FIELD002-R1",
+        "FIELD002-R2",
+        "FIELD002-R3"
+      ]
     },
     {
       "id": "RESIDUAL-FIELD-003",
@@ -2098,5 +2118,13 @@
       "acceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
       "evidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
     }
-  ]
+  ],
+  "notificationFieldReconciliation": {
+    "date": "2026-10-25",
+    "source": "04552d16ab432fcf90eec3d0e40d218c42ae4403",
+    "evidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+    "status": "OPEN_FINITE_CHECKLIST_RECONCILED",
+    "newSchemaEnumeration": false,
+    "originalInventoryScopePreserved": true
+  }
 }

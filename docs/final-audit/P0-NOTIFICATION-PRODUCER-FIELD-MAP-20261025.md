@@ -1,3 +1,45 @@
+## RESIDUAL-FIELD-002 finite acceptance reconciliation — 2026-10-25
+
+Recovered **04552d16** / Draft PR550, base unchanged. Documentation-only reconciliation: corrected stale pending markers across12client types and linked11accepted executable evidence records after ancestry verification; current source anchors12/12 and client type set match. **8types** have bounded canonical caller→SQL→actual app→actual frontend-validator evidence; **1new-order type** has direct SQL producer proof with no identified application caller; **3legacy JSON types** have source/synthetic-client compatibility only. These categories are not a P0 completion percentage.
+
+Current acceptance matrix and finite checklist: [field map](P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.md) / [machine evidence](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json). Five checklist items record bounded runtime/source acceptance; three unresolved items: **FIELD002-R1** non-reserved response-field/unknown-record policy, **FIELD002-R2** hosted historical inventory and incompatible/unlinked-row disposition (BLOCKED under GitHub-only restriction), **FIELD002-R3** intended producer scope for new-order and legacy types. No new defect, cleanup policy, product caller, code change, runtime execution or CI rerun claimed.
+
+Retain executable **4e36d59149f1ac3b7b1cad91c93a09aff9146612** and its verified56/56CI,78notificationTAP,721broaderTAP as inherited evidence. **FIELD002 OPEN; release NO-GO;45register rows=29CLOSED_SOURCE/7OPEN/9BLOCKED; inventory incomplete; overallPercentage null.** No merge/deploy/hosted/provider interaction.
+
+**Next exact action:** Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.
+
+---
+
+| Notification type | Current evidence boundary | Evidence |
+|---|---|---|
+| `subscription_expiry_reminder` | Bounded canonical caller / SQL / actual app / client | [Record](evidence/P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json) |
+| `subscription_expired` | Bounded canonical caller / SQL / actual app / client | [Record](evidence/P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json) |
+| `addon_expiry_reminder` | Bounded canonical caller / SQL / actual app / client | [Record](evidence/P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json) |
+| `operational_new_order` | Direct SQL producer only; application caller not identified | [Record](evidence/P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json) |
+| `operational_payment_conflict` | Bounded canonical caller / SQL / actual app / client | [Record](evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json) |
+| `operational_knowledge_gap` | Bounded canonical caller / SQL / actual app / client | [Record](evidence/P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json) |
+| `operational_customer_message` | Bounded canonical caller / SQL / actual app / client | [Record](evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json) |
+| `inspection_session_request` | Bounded canonical caller / SQL / actual app / client | [Record](evidence/P0-SUPPORT-NOTIFICATION-CALLER-20261025.json) |
+| `support_reply_reminder` | Bounded canonical caller / SQL / actual app / client | [Record](evidence/P0-SUPPORT-NOTIFICATION-CALLER-20261025.json) |
+| `subscription_balance_purchase` | Legacy JSON source + synthetic client only | [Record](evidence/P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json) |
+| `subscription_plan_event` | Legacy JSON source + synthetic client only | [Record](evidence/P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json) |
+| `subscription_emergency_activated` | Legacy JSON source + synthetic client only | [Record](evidence/P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json) |
+
+| Item | Current state | Requirement |
+|---|---|---|
+| FIELD002-C1 | BOUNDED_ACCEPTED | Exact variables and owned transport for the eight identified canonical caller types |
+| FIELD002-C2 | BOUNDED_ACCEPTED | Direct operational producer optional/absent/blank field contracts including new-order helper |
+| FIELD002-C3 | BOUNDED_ACCEPTED | Canonical identity/time and inspection lifecycle projection |
+| FIELD002-C4 | BOUNDED_ACCEPTED | Observed SQL overlap for subscription refresh and canonical inspection creation |
+| FIELD002-C5 | SOURCE_AND_LOCAL_CLIENT_RECONCILED | Legacy JSON types, older SQL inspection shapes and new-order helper reachability |
+| FIELD002-R1 | OPEN_SOURCE_FIELD_CONTRACT | Decide and enforce complete response policy for non-reserved extra keys and unknown/malformed types |
+| FIELD002-R2 | BLOCKED_HOSTED_VERIFICATION_AND_DISPOSITION | Establish actual historical/alternate-writer row inventory and approved handling of incompatible/unlinked records |
+| FIELD002-R3 | OPEN_PRODUCER_SCOPE_CONTRACT | Confirm intended canonical role of new-order and three legacy-only notification types |
+
+The checklist is scoped to FIELD002. Accepted bounded cases retain their original limitations; no all-writer race/clock/crash proof or complete product acceptance follows. Historical sections below preserve the execution record and are superseded by this current matrix.
+
+---
+
 ## RESIDUAL-FIELD-002 canonical reserved notification fields fixed — 2026-10-25
 
 Source **4e36d59149f1ac3b7b1cad91c93a09aff9146612**: **56/56 CI workflows SUCCESS**, zero pending/failure/cancellation. Recovered0b9b90df; initial failure13a11406 and targeted checkpoint c8f45035 preserved. Previous accepted executable31912d9f retained as history.

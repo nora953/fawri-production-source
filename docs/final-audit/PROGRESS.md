@@ -1,3 +1,15 @@
+## RESIDUAL-FIELD-002 finite acceptance reconciliation — 2026-10-25
+
+Recovered **04552d16** / Draft PR550, base unchanged. Documentation-only reconciliation: corrected stale pending markers across12client types and linked11accepted executable evidence records after ancestry verification; current source anchors12/12 and client type set match. **8types** have bounded canonical caller→SQL→actual app→actual frontend-validator evidence; **1new-order type** has direct SQL producer proof with no identified application caller; **3legacy JSON types** have source/synthetic-client compatibility only. These categories are not a P0 completion percentage.
+
+Current acceptance matrix and finite checklist: [field map](P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.md) / [machine evidence](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json). Five checklist items record bounded runtime/source acceptance; three unresolved items: **FIELD002-R1** non-reserved response-field/unknown-record policy, **FIELD002-R2** hosted historical inventory and incompatible/unlinked-row disposition (BLOCKED under GitHub-only restriction), **FIELD002-R3** intended producer scope for new-order and legacy types. No new defect, cleanup policy, product caller, code change, runtime execution or CI rerun claimed.
+
+Retain executable **4e36d59149f1ac3b7b1cad91c93a09aff9146612** and its verified56/56CI,78notificationTAP,721broaderTAP as inherited evidence. **FIELD002 OPEN; release NO-GO;45register rows=29CLOSED_SOURCE/7OPEN/9BLOCKED; inventory incomplete; overallPercentage null.** No merge/deploy/hosted/provider interaction.
+
+**Next exact action:** Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.
+
+---
+
 ## RESIDUAL-FIELD-002 canonical reserved notification fields fixed — 2026-10-25
 
 Source **4e36d59149f1ac3b7b1cad91c93a09aff9146612**: **56/56 CI workflows SUCCESS**, zero pending/failure/cancellation. Recovered0b9b90df; initial failure13a11406 and targeted checkpoint c8f45035 preserved. Previous accepted executable31912d9f retained as history.
