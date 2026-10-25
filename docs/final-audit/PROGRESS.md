@@ -1,3 +1,9 @@
+## RESIDUAL-FIELD-003 early-warning field/permission boundary — prepared 2026-10-25
+
+Recovered8986ecfc/PR550Draft/base preserved. Three new actual-app/restricted SQL cases cover canonical system+merchant incident history, normalized stored metadata, view_logs-only versus view_merchants nested projections, actual in-process telemetry input, aliases/forged hints, current SQL permission revocation despite shared cache and denied actor/read snapshot preservation. Workflow watches early-warning/incident/telemetry sources. Tests/workflow only; application unchanged; runtime NOT_RUN. No defect inferred from source. Prior37f97e75/56CI/35managementTAP/721broaderTAP retained. FIELD003OPEN/NO-GO/GitHub only. Next inspect exact-source management lane.
+
+---
+
 ## RESIDUAL-FIELD-003 owner-only emergency audit alternate projection fixed — 2026-10-25
 
 Source **37f97e75b17e1131ab364a218dfbc3eb34c4e5e1**: **56/56 CI workflows SUCCESS**, zero pending/failure/cancellation. Recovered a363d0d8; failed3e631f0a and targeted checkpoint fa3d2ad8 preserved; previous accepted4e36d591 retained as history.
