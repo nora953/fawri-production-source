@@ -466,7 +466,8 @@
         "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
         "evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
         "evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json",
-        "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json"
+        "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+        "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json"
       ],
       "notes": [
         "Same-name legacy auth-security/emergency JSON audit_events are different authorities; literal table-name matches are not automatically SQL consumers.",
@@ -2034,15 +2035,17 @@
       "priority": 3,
       "table": "audit_events",
       "status": "OPEN",
-      "gap": "Owner-only emergency audit alternate general-log projection repaired and bounded actual HTTP/SQL accepted. Generic arbitrary metadata/details, other producers and incident-history field/role reconciliation remain incomplete.",
-      "next": "Exercise actual /api/auth/admin/early-warning incident_history projection with view_logs-only versus view_logs+view_merchants and owner actors, current system/merchant incident producers, selected normalized metadata, denial/permission revocation and stable SQL lifecycle snapshots. Reuse existing direct sync opened/dedup/resolved proof; do not count it as HTTP field acceptance or repeat the accepted emergency generic-log boundary. FIELD002 candidate remains unenforced and its historical/scope items stay open.",
+      "gap": "Emergency alternate-log projection and early-warning nested telemetry permission defects fixed with bounded actual HTTP/SQL evidence. Generic audit metadata/details and merchant incident cross-consumer field policy remain incomplete.",
+      "next": "Reconcile merchant-scoped early_warning_incident metadata in the generic /api/auth/admin/logs projection against the declared view_logs versus view_merchants policies. Preserve the established ordinary global-admin-log contract; distinguish an intentional audit reference from restricted merchant health/usage details before asserting a new defect. Use only missing actual-app positive/negative field proof justified by source policy; do not repeat accepted early-warning or emergency cases. FIELD002 candidate/history/scope items remain open.",
       "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "initialReview": {
         "gap": "Management meta/details, emergency event metadata and incident history have different projections and scopes.",
         "next": "Reconcile each producer and current HTTP role/field mapping against existing emergency/management tests."
       },
       "boundedAuditEvidence": "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
-      "boundedAuditStatus": "FIXED_SOURCE_BOUNDED_ALTERNATE_EMERGENCY_PROJECTION_FIELD003_OPEN"
+      "boundedAuditStatus": "FIXED_SOURCE_BOUNDED_ALTERNATE_EMERGENCY_PROJECTION_FIELD003_OPEN",
+      "earlyWarningEvidence": "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+      "earlyWarningStatus": "BOUNDED_ACTUAL_HTTP_NORMALIZED_HISTORY_AND_TELEMETRY_PERMISSION_ACCEPTED"
     },
     {
       "id": "RESIDUAL-FIELD-004",
@@ -2092,15 +2095,17 @@
       "priority": 3,
       "table": "audit_events",
       "status": "OPEN",
-      "gap": "Owner-only emergency audit alternate general-log projection repaired and bounded actual HTTP/SQL accepted. Generic arbitrary metadata/details, other producers and incident-history field/role reconciliation remain incomplete.",
-      "next": "Exercise actual /api/auth/admin/early-warning incident_history projection with view_logs-only versus view_logs+view_merchants and owner actors, current system/merchant incident producers, selected normalized metadata, denial/permission revocation and stable SQL lifecycle snapshots. Reuse existing direct sync opened/dedup/resolved proof; do not count it as HTTP field acceptance or repeat the accepted emergency generic-log boundary. FIELD002 candidate remains unenforced and its historical/scope items stay open.",
+      "gap": "Emergency alternate-log projection and early-warning nested telemetry permission defects fixed with bounded actual HTTP/SQL evidence. Generic audit metadata/details and merchant incident cross-consumer field policy remain incomplete.",
+      "next": "Reconcile merchant-scoped early_warning_incident metadata in the generic /api/auth/admin/logs projection against the declared view_logs versus view_merchants policies. Preserve the established ordinary global-admin-log contract; distinguish an intentional audit reference from restricted merchant health/usage details before asserting a new defect. Use only missing actual-app positive/negative field proof justified by source policy; do not repeat accepted early-warning or emergency cases. FIELD002 candidate/history/scope items remain open.",
       "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "initialReview": {
         "gap": "Management meta/details, emergency event metadata and incident history have different projections and scopes.",
         "next": "Reconcile each producer and current HTTP role/field mapping against existing emergency/management tests."
       },
       "boundedAuditEvidence": "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
-      "boundedAuditStatus": "FIXED_SOURCE_BOUNDED_ALTERNATE_EMERGENCY_PROJECTION_FIELD003_OPEN"
+      "boundedAuditStatus": "FIXED_SOURCE_BOUNDED_ALTERNATE_EMERGENCY_PROJECTION_FIELD003_OPEN",
+      "earlyWarningEvidence": "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+      "earlyWarningStatus": "BOUNDED_ACTUAL_HTTP_NORMALIZED_HISTORY_AND_TELEMETRY_PERMISSION_ACCEPTED"
     },
     {
       "id": "RESIDUAL-FIELD-004",

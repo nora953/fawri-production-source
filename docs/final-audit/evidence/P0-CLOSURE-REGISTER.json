@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
-  "lastFullyAcceptedSource": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+  "sourceCandidate": "7a5a532727ab8759ef672e9b0748f74717d8b499",
+  "lastFullyAcceptedSource": "7a5a532727ab8759ef672e9b0748f74717d8b499",
   "release": "NO-GO",
   "rows": [
     {
@@ -145,7 +145,9 @@
       "notificationResponseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs",
       "notificationResponseFieldContractPointer": "responseFieldContract",
       "auditFieldBoundaryEvidence": "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
-      "auditEmergencyAlternateProjectionStatus": "FIXED_SOURCE_BOUNDED_OWNER_ONLY_HTTP_SQL_ACCEPTED_FIELD003_OPEN"
+      "auditEmergencyAlternateProjectionStatus": "FIXED_SOURCE_BOUNDED_OWNER_ONLY_HTTP_SQL_ACCEPTED_FIELD003_OPEN",
+      "earlyWarningFieldHttpEvidence": "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+      "earlyWarningFieldHttpStatus": "FIXED_SOURCE_BOUNDED_MERCHANT_TELEMETRY_AND_INCIDENT_HISTORY_HTTP_ACCEPTED_FIELD003_OPEN"
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
@@ -273,7 +275,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Exercise actual /api/auth/admin/early-warning incident_history projection with view_logs-only versus view_logs+view_merchants and owner actors, current system/merchant incident producers, selected normalized metadata, denial/permission revocation and stable SQL lifecycle snapshots. Reuse existing direct sync opened/dedup/resolved proof; do not count it as HTTP field acceptance or repeat the accepted emergency generic-log boundary. FIELD002 candidate remains unenforced and its historical/scope items stay open.",
+      "nextAction": "Reconcile merchant-scoped early_warning_incident metadata in the generic /api/auth/admin/logs projection against the declared view_logs versus view_merchants policies. Preserve the established ordinary global-admin-log contract; distinguish an intentional audit reference from restricted merchant health/usage details before asserting a new defect. Use only missing actual-app positive/negative field proof justified by source policy; do not repeat accepted early-warning or emergency cases. FIELD002 candidate/history/scope items remain open.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -343,7 +345,9 @@
       "notificationResponseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs",
       "notificationResponseFieldContractPointer": "responseFieldContract",
       "auditFieldBoundaryEvidence": "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
-      "auditEmergencyAlternateProjectionStatus": "FIXED_SOURCE_BOUNDED_OWNER_ONLY_HTTP_SQL_ACCEPTED_FIELD003_OPEN"
+      "auditEmergencyAlternateProjectionStatus": "FIXED_SOURCE_BOUNDED_OWNER_ONLY_HTTP_SQL_ACCEPTED_FIELD003_OPEN",
+      "earlyWarningFieldHttpEvidence": "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+      "earlyWarningFieldHttpStatus": "FIXED_SOURCE_BOUNDED_MERCHANT_TELEMETRY_AND_INCIDENT_HISTORY_HTTP_ACCEPTED_FIELD003_OPEN"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
@@ -430,6 +434,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+  "previousFullyAcceptedSource": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
   "lastUpdatedAt": "2026-10-25"
 }

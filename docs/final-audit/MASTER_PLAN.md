@@ -1,3 +1,21 @@
+## RESIDUAL-FIELD-003 early-warning merchant telemetry boundary fixed — 2026-10-25
+
+Source **7a5a532727ab8759ef672e9b0748f74717d8b499**: **56/56 CI workflows SUCCESS**, zero pending/failure/cancellation. Recovered8986ecfc; initial failure a8c3d87f and targeted checkpoint9d45716d preserved; previous accepted37f97e75 retained as history.
+
+**EARLY-WARNING-MERCHANT-TELEMETRY-PROJECTION-001 — FIXED_SOURCE within tested actual-app response boundary.** Initial run40204683245/job121203000080:fixture10PASS/3FAIL (2functional+parent). Actual view_logs-only assistant and assistant after SQL view_merchants removal received2per-merchant AI telemetry rows while merchant_health_visible=false and merchant incident history was correctly filtered. Isolated owned fixture evidence, not a hosted incident or actual provider call.
+
+Minimal route correction copies ai_runtime and gates its merchants array using the existing current SQL-backed merchantHealthVisible result at response time. Global aggregate/provider statistics and authorized merchant detail remain unchanged. No SQL history/telemetry storage/schema/grant/entitlement or field-policy change. Existing management workflow now watches early-warning route, history service and telemetry source.
+
+Actual owner/view_logs+view_merchants route creates system+merchant history from two approved/error-channel merchants; real in-process telemetry API receives synthetic usage. Exact15normalized history keys, current SQL-derived incident state and bootstrap-only extra/stale metadata omission PASS. view_logs-only canonical/alias/forged-hint responses omit every owned merchant ID and nested usage row while retaining system history and exact AI aggregates. SQL permission removal overrides original session claims; anonymous/merchant/no-permission/wrong-device/combined-role negatives and owner positive PASS. Selected incident/business SQL snapshots stable. Repeated same-window requests use existing cache code; cache hits not independently instrumented. No provider/browser/hosted acceptance or whole-audit immutability inferred.
+
+Dedicated management lane **38TAP PASS** (34functional+4parents), fixture13TAP(12functional+parent),3newfunctional:run40204790621/job121203336143. Broader **721TAP PASS**,92invocations/90unique files:run40204790680/job121203645959; this fixture is not selected by broader lane. Both zero failed/skipped/cancelled, teardownSUCCESS; both checkout62121e6a have source-identical tree0c63114b8135aca2d0e5ad862cbfc60cd8680c17.
+
+[Evidence](evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json). **FIELD003 remains OPEN** for remaining generic audit metadata/details and cross-consumer field policy. FIELD002 candidate remains unenforced, historical/scope items open. Register45=29CLOSED_SOURCE/7OPEN/9BLOCKED; completeP0Inventoryfalse; overallPercentagenull; **release NO-GO**. GitHub-only/no merge/deploy/hosted/provider interaction.
+
+**Next exact action:** Reconcile merchant-scoped early_warning_incident metadata in the generic /api/auth/admin/logs projection against the declared view_logs versus view_merchants policies. Preserve the established ordinary global-admin-log contract; distinguish an intentional audit reference from restricted merchant health/usage details before asserting a new defect. Use only missing actual-app positive/negative field proof justified by source policy; do not repeat accepted early-warning or emergency cases. FIELD002 candidate/history/scope items remain open.
+
+---
+
 ## RESIDUAL-FIELD-003 owner-only emergency audit alternate projection fixed — 2026-10-25
 
 Source **37f97e75b17e1131ab364a218dfbc3eb34c4e5e1**: **56/56 CI workflows SUCCESS**, zero pending/failure/cancellation. Recovered a363d0d8; failed3e631f0a and targeted checkpoint fa3d2ad8 preserved; previous accepted4e36d591 retained as history.
