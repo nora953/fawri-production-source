@@ -1,3 +1,11 @@
+## Support caller runtime and inspection lifecycle projection update — 2026-10-25
+
+Canonical inspection HTTP and admin lifecycle reminder callers→SQL→actual app list/read→actual frontend validator bounded-runtime accepted on06c04523. Six new functional cases; lane69TAP,broader721TAP,56/56CI SUCCESS. Initial741c371a runtime exposed missing request_status/current decision fields. List/read now batch-project matching merchant/source/request/ticket lifecycle fields from canonical SQL; stored stale lifecycle keys cannot override them. Pending/approved/rejected, peer/reference denials, notice-write rollback/retry and replay PASS. [Evidence](evidence/P0-SUPPORT-NOTIFICATION-CALLER-20261025.json).
+
+Stored producer variables remain fixed; request_status/consent_decision/responded_at/session_expires_at/ended_at/end_reason are authoritative read-time fields. Older Support helper declarations are separate source provenance; no historical auto-repair or runtime absence accepted. FIELD002 remains OPEN for expiry/termination, historical/legacy and other remaining boundaries; no browser/provider/hosted acceptance.
+
+---
+
 ## Subscription list caller runtime and new-order reachability update — 2026-10-25
 
 Actual authenticated list→subscription refresher→3SQL templates→app→actual frontend validator bounded-runtime accepted on ac1cd586:4new functional cases, dedicated lane63TAP,broader721TAP,56/56CI SUCCESS. Two merchants, eligible-batch filters, exact fields/markers, peer preservation/read denial/replay and injected INSERT rollback/retry PASS. Seeded balances; no purchase/scheduler/concurrent/crash/browser/provider/hosted acceptance. [Runtime evidence](evidence/P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json).
