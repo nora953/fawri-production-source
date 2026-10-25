@@ -1,3 +1,9 @@
+## RESIDUAL-FIELD-002 inspection ending lifecycle — prepared 2026-10-25
+
+Recovered6fe8bb50;PR550Draft/base preserved. Three new cases extend accepted fixture: actual merchant termination of a real HTTP-created preview; canonical admin-list sweep expires owned pending request; approved-window expiry ends real preview and retains approved consent/current notice fields. Actual merchant list/read→frontend validator, foreign denial, repeat denial/refresh/read stability and exact peer Support/preview state. Only owned fixture timestamps aged; actual service clock/lifecycle run normally. Syntax/diff PASS; new runtime NOT_RUN pending exact-source CI. Tests/docs only; no application/schema/ACL change. Prior06c04523 fix and69TAP/721TAP retained. FIELD002OPEN/NO-GO; no hosted/browser/timer cadence/concurrency/history acceptance. Next inspect targeted then broader CI; historical/legacy provenance remains separate.
+
+---
+
 ## RESIDUAL-FIELD-002 Support callers and inspection projection bounded runtime accepted — 2026-10-25
 
 Source **06c045233853ad897b99ae2cd72582274e69e65c**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered c4541295; targeted checkpoint5e90aa16 preserved evidence during CI; prior ac1cd586 acceptance retained. Application change confined to canonical notification list/read projection; no schema/ACL/frontend-validator/consent-authority changes.

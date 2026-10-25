@@ -363,5 +363,46 @@ test('operational SQL producers round trip through actual app and frontend valid
     }finally{await admin.query('UPDATE notifications SET variables=$2::jsonb,source_entity_id=$3 WHERE id=$1',[original.id,JSON.stringify(original.variables),original.source_entity_id]);}
   });
 
+
+  async function inspectionState(){return {...await supportState(),previews:(await admin.query('SELECT to_jsonb(p) AS row FROM support_preview_sessions p WHERE merchant_id=ANY($1::text[]) ORDER BY id',[merchants])).rows};}
+  async function ownInspectionState(actor){return {...await supportState([actor.id]),previews:(await admin.query('SELECT to_jsonb(p) AS row FROM support_preview_sessions p WHERE merchant_id=$1 ORDER BY id',[actor.id])).rows};}
+  async function assertCurrentInspection(actor,requestId){
+    const request=(await admin.query('SELECT * FROM support_inspection_requests WHERE id=$1',[requestId])).rows[0],row=(await supportNotices(actor)).find(n=>n.source_entity_id===requestId);assert.ok(row);
+    const before=await inspectionState(),list=await req('/api/auth/notifications?limit=50',actor);assert.equal(list.status,200);const expected=mappedSupport(row,request),notice=list.body.notifications.find(n=>n.id===row.id);assert.deepEqual(notice,expected);assert.equal(isMerchantNotificationRecord(notice),true);assert.deepEqual(await inspectionState(),before);
+    const peer=actor===a?b:a;assert.equal((await req('/api/auth/notifications/'+row.id+'/read',peer,'PATCH')).status,404);assert.deepEqual(await inspectionState(),before);
+    const read=await req('/api/auth/notifications/'+row.id+'/read',actor,'PATCH');assert.equal(read.status,200);const stored=(await admin.query('SELECT * FROM notifications WHERE id=$1',[row.id])).rows[0];assert.deepEqual(read.body,{ok:true,notification:mappedSupport(stored,request)});assert.equal(isMerchantNotificationRecord(read.body.notification),true);
+    const stable=await inspectionState(),again=await req('/api/auth/notifications/'+row.id+'/read',actor,'PATCH');assert.deepEqual(again.body,read.body);assert.deepEqual(await inspectionState(),stable);
+    return request;
+  }
+  async function createNextInspection(actor){
+    const created=await supportReq('/api/auth/admin/support/tickets/'+actor.ticketId+'/inspection-requests',inspector,'POST',{reason:'Synthetic next lifecycle request',mode:'independent_read_only'});assert.equal(created.status,201);
+    const rows=(await admin.query("SELECT * FROM support_inspection_requests WHERE merchant_id=$1 AND status='pending' ORDER BY requested_at DESC",[actor.id])).rows;assert.equal(rows.length,1);return rows[0];
+  }
+  await t.test('merchant termination ends actual preview and projects ended notice while preserving peer and refusing repeat',async()=>{
+    const peerBefore=await ownInspectionState(b),started=await supportReq('/api/auth/admin/support-preview/start',inspector,'POST',{ticket_id:a.ticketId,request_id:a.inspection.id});assert.equal(started.status,201);const previewId=started.body.session.id;
+    const path='/api/auth/support/tickets/'+a.ticketId+'/inspection-requests/'+a.inspection.id+'/terminate',before=await inspectionState();assert.equal((await supportReq(path,b,'POST',{})).status,404);assert.deepEqual(await inspectionState(),before);
+    assert.equal((await supportReq(path,a,'POST',{})).status,200);const request=await assertCurrentInspection(a,a.inspection.id);assert.equal(request.status,'approved');assert.equal(request.consent_decision,'approved');assert.equal(request.end_reason,'merchant_terminated');assert.ok(request.ended_at);
+    const preview=(await admin.query('SELECT * FROM support_preview_sessions WHERE id=$1',[previewId])).rows[0];assert.equal(preview.status,'ended');assert.equal(preview.end_reason,'merchant_terminated');assert.ok(preview.ended_at);
+    const stable=await inspectionState();assert.equal((await supportReq(path,a,'POST',{})).status,409);assert.equal((await supportReq('/api/auth/admin/support-preview/'+previewId+'/snapshot',inspector)).status,409);assert.deepEqual(await inspectionState(),stable);assert.deepEqual(await ownInspectionState(b),peerBefore);
+  });
+  await t.test('actual admin lifecycle expires pending request and exposes current expired notice with stable replay',async()=>{
+    const peerBefore=await ownInspectionState(a),request=await createNextInspection(b);
+    // Age only owned fixture rows. The real lifecycle and HTTP clock run normally.
+    await admin.query("UPDATE support_inspection_requests SET requested_at=now()-interval '11 minutes',request_expires_at=now()-interval '1 minute' WHERE id=$1",[request.id]);
+    assert.equal((await supportReq('/api/auth/admin/support/tickets',owner)).status,200);const expired=await assertCurrentInspection(b,request.id);assert.equal(expired.status,'expired');assert.equal(expired.consent_decision,null);assert.equal(expired.end_reason,'request_timeout');assert.ok(expired.expired_at);assert.ok(expired.ended_at);
+    const stable=await inspectionState();assert.equal((await supportReq('/api/auth/support/tickets/'+b.ticketId+'/inspection-requests/'+request.id+'/decision',b,'POST',{decision:'approve'})).status,409);assert.equal((await supportReq('/api/auth/admin/support/tickets',owner)).status,200);assert.deepEqual(await inspectionState(),stable);assert.deepEqual(await ownInspectionState(a),peerBefore);
+  });
+  await t.test('actual lifecycle closes approved window and preview while retaining authoritative approved consent fields',async()=>{
+    const peerBefore=await ownInspectionState(a),request=await createNextInspection(b);
+    assert.equal((await supportReq('/api/auth/support/tickets/'+b.ticketId+'/inspection-requests/'+request.id+'/decision',b,'POST',{decision:'approve'})).status,200);
+    const started=await supportReq('/api/auth/admin/support-preview/start',inspector,'POST',{ticket_id:b.ticketId,request_id:request.id});assert.equal(started.status,201);const previewId=started.body.session.id;
+    await admin.query("UPDATE support_inspection_requests SET approved_at=now()-interval '31 minutes',responded_at=now()-interval '31 minutes' WHERE id=$1",[request.id]);
+    await admin.query("UPDATE support_preview_sessions SET started_at=now()-interval '31 minutes',expires_at=now()-interval '1 minute' WHERE id=$1",[previewId]);
+    assert.equal((await supportReq('/api/auth/admin/support/tickets',owner)).status,200);const ended=await assertCurrentInspection(b,request.id);assert.equal(ended.status,'approved');assert.equal(ended.consent_decision,'approved');assert.equal(ended.end_reason,'approval_window_expired');assert.ok(ended.ended_at);
+    const preview=(await admin.query('SELECT * FROM support_preview_sessions WHERE id=$1',[previewId])).rows[0];assert.equal(preview.status,'ended');assert.equal(preview.end_reason,'approval_window_expired');assert.ok(preview.ended_at);
+    const stable=await inspectionState();assert.equal((await supportReq('/api/auth/admin/support-preview/'+previewId+'/snapshot',inspector)).status,409);assert.equal((await supportReq('/api/auth/admin/support/tickets',owner)).status,200);assert.deepEqual(await inspectionState(),stable);assert.deepEqual(await ownInspectionState(a),peerBefore);
+    console.log('P0_SUPPORT_NOTIFICATION_ENDING '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',newFunctionalCases:3,merchantTermination:true,pendingExpiry:true,approvedWindowExpiry:true,actualPreviewCreation:true,endedPreviewDenied:true,actualHttpLifecycle:true,actualFrontendValidator:true,peerPreserved:true,readReplay:true,fixtureTimestampAging:true,timerCadenceAccepted:false,browserAccepted:false,hostedAccepted:false,wholeCellAccepted:false}));
+  });
+
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
 });
