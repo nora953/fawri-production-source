@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "TARGETED_PASS_BROADER_PENDING",
+  "recoveredHead": "6fe8bb5024b0a4c92b6aaa788e26136bbc86f660",
+  "sourceCandidate": "6182678d76e97e315df428bd2739af284afea420",
+  "previousAcceptedExecutable": "06c045233853ad897b99ae2cd72582274e69e65c",
+  "test": "artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 3,
+  "existingFunctionalCases": 17,
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "localSyntax": "PASS",
+  "scope": [
+    "Actual merchant HTTP termination ends real HTTP-created preview and projects current ended notice fields",
+    "Actual admin lifecycle HTTP list expires pending request and current notification uses expired status/request_timeout",
+    "Actual approved-window lifecycle expiration ends real preview while preserving approved consent and exposing deadline/ended fields",
+    "Actual app list/read→actual frontend validator, foreign notice/termination denial, expired/ended preview access denial, stable repeated read/refresh/mutation denial",
+    "Exact peer Support tickets/messages/requests/notifications/preview state preserved"
+  ],
+  "limits": [
+    "Only owned fixture timestamps are aged; no fake global clock, background timer cadence or elapsed real-time wait acceptance",
+    "No browser rendering, real external provider, physical device, hosted verification or production historical data inspection",
+    "Approved request remains status approved after its window ends; ended_at/end_reason and session deadline carry current end state",
+    "Concurrent decisions/sweeps, other ticket lifecycle transitions and historical/legacy row repair remain outside this batch",
+    "Three new cases run only in dedicated notification lane; broader totals are separate, never added as unique tests"
+  ],
+  "targeted": {
+    "runId": 40183582956,
+    "jobId": 121139560915,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40183582956/job/121139560915",
+    "functionalCases": 66,
+    "tapPass": 72,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "meta-job-identity-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 21,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "3ddc074ed07f7a991b1a06a202fdfb6551a48201",
+    "tree": "8c21cb0b71b729a5e8d84111c6322f5ef9281b96",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40183582871,
+    "jobId": 121139560368
+  },
+  "nextExactAction": "Read broader exact-source CI; then reconcile historical/legacy inspection notification shapes and legacy type/helper reachability. Keep unsupported data-repair/retention policy and hosted rows outside acceptance."
+}
