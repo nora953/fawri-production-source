@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "FIX_PREPARED_RUNTIME_PENDING",
+  "finding": "NOTIFICATION-RESERVED-FIELD-PROJECTION-001",
+  "findingState": "SYNTHETIC_ROW_CORRECTNESS_FAILURE_CONFIRMED_FIX_PENDING",
+  "recoveredHead": "0b9b90dfc1da7270b087e914516fe96eab96cba5",
+  "previousAcceptedExecutable": "31912d9fd33c9e12311351c189b937652496c6fb",
+  "failedAttempts": [
+    {
+      "source": "13a11406ba252bf7a442ae64e6b7a898a54a15d7",
+      "runId": 40188507004,
+      "jobId": 121154292390,
+      "passed": 23,
+      "failed": 4,
+      "functionalFailures": 3,
+      "parentFailures": 1,
+      "status": "FAILED_NOT_ACCEPTED",
+      "observation": {
+        "canonicalIdMatches": false,
+        "canonicalTypeMatches": false,
+        "canonicalCreatedAtMatches": true,
+        "sqlUnread": true,
+        "hasProjectedReadAt": true
+      },
+      "meaning": "Privileged bootstrap synthetic JSON conflicts replace projected id/type and forge unread row read_at. Created_at was already canonical. Correctness/defense-in-depth evidence; no attacker-controlled public input, hosted historical row or unauthorized access proven."
+    }
+  ],
+  "newFunctionalCases": 3,
+  "existingFunctionalCases": 23,
+  "applicationChanged": true,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "localSyntax": "PASS",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "fix": "Clone stored variables and remove id/type/created_at/read_at before the existing canonical row fields are mapped. Do not mutate stored JSON or strip other business/extra keys.",
+  "limits": [
+    "Synthetic owned rows only; public producer key control and actual historical contents not established",
+    "No frontend weakening, schema/grant change, migration or general per-type extra-key/privacy allowlist",
+    "No provider/browser/hosted/load/capacity proof"
+  ],
+  "nextExactAction": "Read corrected exact-source targeted and broader CI; verify canonical list/unread/read/replay, malformed reserved values, peer denial/preservation and unchanged stored JSON. Keep arbitrary extra-key/historical policy unresolved."
+}

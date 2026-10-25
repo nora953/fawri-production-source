@@ -258,10 +258,14 @@ function mapNotification(row: {
   read_at: Date | string | null;
   created_at: Date | string;
 }) {
+  // Stored template data must not replace canonical record identity or read
+  // state. Copy first so projection never edits the persisted variables.
+  const variables = { ...record(row.variables) };
+  for (const key of ["id", "type", "created_at", "read_at"]) delete variables[key];
   return {
     id: row.id,
     type: row.type,
-    ...record(row.variables),
+    ...variables,
     created_at: iso(row.created_at) || new Date().toISOString(),
     ...(row.read_at ? { read_at: iso(row.read_at) } : {}),
   };
