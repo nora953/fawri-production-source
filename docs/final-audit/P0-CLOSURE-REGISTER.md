@@ -1,3 +1,13 @@
+## FIELD003 cross-consumer policy reconciliation — 2026-10-25
+
+Recovered5c7604b5/Draft PR550/base preserved. Source-only review: operations-observability.md explicitly scopes view_merchants health visibility to the early-warning endpoint; auth hardening lists view_logs/view_merchants separately. Generic admin logs intentionally project merchant-linked audit references and whole metadata in current source; this includes merchant incident rows by predicate. This observation is not new HTTP proof or sufficient evidence of intended cross-consumer health-field policy.
+
+[Decision evidence](evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json) records concrete alternatives: gate merchant early-warning incident rows/details additionally, or explicitly permit their audit representation under view_logs. No policy silently adopted, source fix, runtime test or CI rerun. FIELD003 remains OPEN; established ordinary log access preserved. Inherited executable7a5a5327/56CI/38managementTAP/721broaderTAP retained. Register45=29CLOSED_SOURCE/7OPEN/9BLOCKED; complete inventoryfalse; percentage null; releaseNO-GO. GitHub-only/no merge/deploy/hosted interaction.
+
+**Next independent action:** Continue RESIDUAL-FIELD-004: trace current order_drafts and processed_channel_events SQL writers/readers versus legacy debug/in-memory order and durable ingress consumers, reusing accepted Meta/new-order reachability evidence. Identify one missing live authority/field boundary; do not add CRUD routes or repeat accepted notification/early-warning proofs.
+
+---
+
 ## RESIDUAL-FIELD-003 early-warning merchant telemetry boundary fixed — 2026-10-25
 
 Source **7a5a532727ab8759ef672e9b0748f74717d8b499**: **56/56 CI workflows SUCCESS**, zero pending/failure/cancellation. Recovered8986ecfc; initial failure a8c3d87f and targeted checkpoint9d45716d preserved; previous accepted37f97e75 retained as history.

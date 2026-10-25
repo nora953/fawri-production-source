@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-003",
+  "status": "SOURCE_POLICY_RECONCILED_CROSS_CONSUMER_DECISION_OPEN",
+  "sourceRevision": "5c7604b5a07274ab9c38a370576bf6e6c65ba2dd",
+  "applicationChanged": false,
+  "newRuntimeExecuted": false,
+  "fieldCellClosed": false,
+  "release": "NO-GO",
+  "observations": [
+    {
+      "source": "docs/operations-observability.md:14",
+      "contract": "Early-warning endpoint requires view_logs; merchant-identifying health rows additionally require view_merchants. This text names the endpoint, not all administrative audit references."
+    },
+    {
+      "source": "docs/security-auth-session-hardening.md:123",
+      "contract": "view_logs and view_merchants are independent explicit assistant permissions; no detailed generic incident metadata redaction policy is specified here."
+    },
+    {
+      "source": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts:listAdminLogsPostgres",
+      "contract": "Generic view_logs projection selects merchant-linked audit events, joined merchant names and whole metadata; emergency audit is separately owner-gated. Merchant early-warning events meet merchant_id predicate. Source observation, no new HTTP execution."
+    }
+  ],
+  "decision": {
+    "state": "OPEN_EXPLICIT_CROSS_CONSUMER_FIELD_POLICY",
+    "question": "May view_logs-only readers see merchant-scoped early-warning health/value metadata through general audit history, or should these rows/details also require view_merchants?",
+    "reason": "Endpoint-specific health visibility and established global audit references do not alone establish one uniform cross-consumer policy.",
+    "options": [
+      "Retain ordinary merchant audit references but additionally gate merchant early-warning incident rows by view_merchants",
+      "Explicitly allow incident audit metadata under view_logs while documenting the endpoint-specific distinction"
+    ],
+    "notInferred": "No new confirmed vulnerability, intentionality theorem or authorization-policy adoption from source alone."
+  },
+  "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
+  "inheritedCi": {
+    "success": 56,
+    "managementTap": 38,
+    "broaderTap": 721,
+    "newRun": false
+  },
+  "nextExactAction": "Continue RESIDUAL-FIELD-004: trace current order_drafts and processed_channel_events SQL writers/readers versus legacy debug/in-memory order and durable ingress consumers, reusing accepted Meta/new-order reachability evidence. Identify one missing live authority/field boundary; do not add CRUD routes or repeat accepted notification/early-warning proofs."
+}
