@@ -1,3 +1,11 @@
+## FIELD004 actual-app retired debug tests committed — 2026-10-25
+
+Source **b146efa4b0157a5e0d6896cff3efeeb44b749973** adds2functional cases to the existing consumer full-app fixture. Syntax/diff checks PASS; application unchanged. Actual notification-privacy lane run40210760045/job121221275209 is still in progress at this checkpoint; **runtime PENDING, not accepted**. [Evidence](evidence/P0-FIELD004-DEBUG-HTTP-20261025.json). Prior7a5a5327 acceptance retained; FIELD004OPEN/releaseNO-GO. No merge/deploy/hosted interaction.
+
+**Next exact action:** Read run40210760045/job121221275209 for b146efa4, preserve any failure, verify checkout tree and remaining exact-source CI before acceptance. Keep prior7a5a5327 accepted source until checks finish.
+
+---
+
 ## FIELD004 authority separation mapped — 2026-10-25
 
 Recovered236f3620/PR550Draft/base preserved. [Bounded source evidence](evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json) separates residual SQL order_drafts/processed_channel_events from legacy Map/runtime JSON and current durable Meta jobs/channel_inbound_events. Reviewed server references for the two residual SQL tables are scoped purge/readiness/schema boundaries, not identified public row readers/producers. No formal absence theorem or table retirement inferred.

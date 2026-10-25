@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-004",
+  "status": "ACTUAL_APP_TESTS_COMMITTED_CI_PENDING",
+  "sourceCandidate": "b146efa4b0157a5e0d6896cff3efeeb44b749973",
+  "applicationChanged": false,
+  "newFunctionalCases": 2,
+  "test": "artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs",
+  "localSyntax": "PASS",
+  "runtime": "PENDING_NOT_ACCEPTED",
+  "targeted": {
+    "runId": 40210760045,
+    "jobId": 121221275209,
+    "status": "in_progress"
+  },
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "scope": [
+    "Two existing approved merchant actors must receive410 from canonical/mixed-case/trailing-slash debug routes, including foreign merchant hints",
+    "Anonymous/admin/wrong-device/combined-role requests must receive401",
+    "No db_path/draft/page/product-name fields, peer identity, selected SQL changes or legacy JSON creation; normal notification positive retained"
+  ],
+  "limits": [
+    "No new runtime PASS yet",
+    "No assertion of complete table writer absence or full FIELD004 acceptance",
+    "Existing fixture snapshots cover notifications/conversations/messages/manual requests, not direct rows of both residual SQL tables"
+  ],
+  "nextExactAction": "Read run40210760045/job121221275209 for b146efa4, preserve any failure, verify checkout tree and remaining exact-source CI before acceptance. Keep prior7a5a5327 accepted source until checks finish."
+}
