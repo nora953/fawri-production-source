@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-003",
+  "status": "TARGETED_FIX_PASS_BROADER_PENDING",
+  "finding": "EARLY-WARNING-MERCHANT-TELEMETRY-PROJECTION-001",
+  "findingState": "FIXED_TARGETED_ACTUAL_HTTP_SQL_BROADER_PENDING",
+  "recoveredHead": "8986ecfc4b2fc62b4027510fb0a08b06bfb2ddae",
+  "sourceCandidate": "7a5a532727ab8759ef672e9b0748f74717d8b499",
+  "previousAcceptedExecutable": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+  "applicationChanged": true,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 3,
+  "existingFunctionalCases": 9,
+  "localSyntax": "PASS",
+  "failedAttempts": [
+    {
+      "source": "a8c3d87fe6999902ac7a6af933a81c4cf156fa6d",
+      "runId": 40204683245,
+      "jobId": 121203000080,
+      "status": "FAILED_NOT_ACCEPTED",
+      "fixturePassed": 10,
+      "fixtureFailed": 3,
+      "functionalFailures": 2,
+      "parentFailures": 1,
+      "observation": {
+        "merchantHealthVisible": false,
+        "merchantHistoryRows": 0,
+        "aiRuntimeMerchantRows": 2
+      },
+      "meaning": "Actual app view_logs-only assistant and assistant after SQL view_merchants removal receive per-merchant telemetry rows despite current merchant visibility false. Existing SQL incident_history filter already removes merchant-scoped history."
+    }
+  ],
+  "fix": "Response-time copy of aiRuntime with merchants gated by the existing merchantHealthVisible permission result. Keep aggregates/provider totals and authorized merchant rows unchanged; no telemetry storage, SQL history, scope filtering, policy, grant or schema change.",
+  "scope": [
+    "Actual owner and view_logs+view_merchants assistant see real route-generated merchant/system incident history and owned telemetry rows",
+    "Two synthetic merchants approved with pending/error channels trigger real SQL snapshot/evaluation/history inserts; actual in-process telemetry API receives synthetic token events",
+    "Exact15normalized history keys; bootstrap-only extra metadata/status/episode_id ignored by current projector; selected SQL rows and business snapshots unchanged on subsequent reads",
+    "view_logs-only canonical and alias/forged-hint responses retain system history and aggregates while omitting all nested merchant IDs",
+    "Current SQL permission revocation despite original session claims, anonymous/merchant/no-permission/wrong-device/combined-role denial; owner positive retained"
+  ],
+  "limits": [
+    "Owned disposable fixture only, no hosted incident, actual provider AI call, browser rendering or capacity acceptance",
+    "Telemetry input is recorded through real in-process API with synthetic token counts; not provider execution/cost billing proof",
+    "Fixture primary grants broad and RLS-mediated plus separate authentication LOGIN; no hosted least-privilege proof",
+    "Repeated same-window requests exercise existing shared-cache code; cache hit is not independently instrumented",
+    "Selected incident key and merchant-table snapshots only; not global audit immutability across unrelated runtime telemetry thresholds",
+    "Exclusive disposable zero-history precondition owns fixture ledger; cleanup is test-only, not production deletion policy",
+    "No incident-resolution/time-travel/concurrent-sync, historical malformed scope/identity inventory or full arbitrary metadata privacy acceptance"
+  ],
+  "workflowChange": "Add existing management workflow path filters for early-warning route, incident history service and AI telemetry source.",
+  "targeted": {
+    "status": "PASS",
+    "runId": 40204790621,
+    "jobId": 121203336143,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40204790621/job/121203336143",
+    "tapPass": 38,
+    "functionalCases": 34,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "62121e6a1fcb39c240677fadf6893cbb22691efc",
+    "tree": "0c63114b8135aca2d0e5ad862cbfc60cd8680c17",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING"
+  },
+  "nextExactAction": "Inspect corrected exact-source management and broader CI before accepting; preserve original failure. Then reconcile remaining FIELD003 producer/details/meta field contracts and alternate reads against existing proof rather than repeating notification or emergency log cases.",
+  "observations": [
+    {
+      "merchantHealthVisible": false,
+      "merchantHistoryRows": 0,
+      "aiRuntimeMerchantRows": 0
+    },
+    {
+      "merchantHealthVisible": false,
+      "merchantHistoryRows": 0,
+      "aiRuntimeMerchantRows": 0
+    }
+  ]
+}
