@@ -2,11 +2,18 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "FIX_PREPARED_RUNTIME_PENDING",
+  "status": "TARGETED_PASS_BROADER_PENDING",
   "recoveredHead": "c4541295f101d3d6b93336e3b665ca2edeb60a65",
   "finding": "SUPPORT-INSPECTION-NOTIFICATION-PROJECTION-001",
-  "findingState": "RUNTIME_CONFIRMED_FIX_PENDING",
-  "scope": "Canonical Support caller to SQL notice to app/frontend",
+  "findingState": "RUNTIME_CONFIRMED_FIX_TARGETED_PASS",
+  "scope": [
+    "Actual assistant inspection HTTP caller creates committed request and exact SQL notice; improper admin roles denied",
+    "Actual admin lifecycle HTTP list emits exact reply-reminder fields, idempotent markers and peer preservation",
+    "Inspection/reminder notice INSERT fault triggers prove transaction rollback and subsequent real HTTP retry",
+    "Actual app list/read and actual frontend validator; foreign notice read denied, own read/replay preserved",
+    "Actual merchant approve/reject reflected in authoritative current notification lifecycle projection",
+    "Synthetic mismatched source/ticket references do not project peer state; stale stored lifecycle keys cannot override current owned request"
+  ],
   "failedAttempts": [
     {
       "source": "741c371a36c631c9c57d06898fc1ff432523a86d",
@@ -32,7 +39,101 @@
     "Synthetic tickets/clocks/fault triggers; no browser/provider/hosted acceptance",
     "Older helper provenance source-only; no arbitrary historical repair",
     "Consent decisions and source/tenant checks remain authoritative; projection grants no access",
-    "Other notification variables remain current generic projection; no full per-type allowlist acceptance"
+    "Other notification variables remain current generic projection; no full per-type allowlist acceptance",
+    "Pending/approved/rejected current projection tested; expiry/termination, missing historical request repair and concurrent lifecycle transitions remain separate.",
+    "Mismatched synthetic historical-style inspection rows retain no fabricated status and fail frontend validation; automatic cleanup/repair is not implemented or accepted.",
+    "The marker for the original five-case Support group precedes the sixth synthetic reference-integrity case; TAP summaries, not marker claims, determine acceptance."
   ],
-  "nextExactAction": "Read exact corrected source targeted and broader CI; preserve failed run and validate current pending/approved/rejected fields, peer mismatch and replay."
+  "nextExactAction": "Read exact corrected source targeted and broader CI; preserve failed run and validate current pending/approved/rejected fields, peer mismatch and replay.",
+  "sourceCandidate": "06c045233853ad897b99ae2cd72582274e69e65c",
+  "targeted": {
+    "runId": 40170910749,
+    "jobId": 121101365168,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40170910749/job/121101365168",
+    "functionalCases": 63,
+    "tapPass": 69,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "meta-job-identity-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 18,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "59db804d754c7977517a2af3da8ab4b78b8e89d4",
+    "tree": "ebcbd617d2b8d7b987192875cf26866322256d4e",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40170910900
+  },
+  "sourceFollowup": {
+    "olderHelpers": "createInspectionRequestPostgres and refreshSupportLifecyclePostgres in postgresSupportAuthority.ts",
+    "observation": "Only declarations found by literal runtime source identifier scan; canonical routes/runtime use postgresSupportInspectionAuthority and postgresSupportLifecycleAuthority. Not a formal call graph, runtime absence or historical-row acceptance."
+  }
 }
