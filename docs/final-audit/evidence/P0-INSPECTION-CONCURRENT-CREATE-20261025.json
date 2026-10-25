@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "FIX_PREPARED_RUNTIME_PENDING",
+  "status": "TARGETED_FIX_PASS_BROADER_PENDING",
   "finding": "SUPPORT-INSPECTION-CONCURRENT-CREATE-001",
-  "findingState": "RUNTIME_CONFIRMED_FIX_PENDING",
+  "findingState": "RUNTIME_CONFIRMED_FIX_TARGETED_PASS",
   "recoveredHead": "a0d014a0d81b9ab47a05d76808115319a3019499",
   "previousAcceptedExecutable": "57b554a0ea1c2caf7fa258145a9ec38c19b68b8e",
   "failedAttempts": [
@@ -47,5 +47,127 @@
     "Canonical current creator only; unused older helper and direct external SQL writers not certified",
     "No concurrency/load capacity claim, simultaneous ticket reassignment/deletion/lifecycle signoff, or historical repair"
   ],
-  "nextExactAction": "Read corrected exact-source targeted and broader CI. Require201+409,one request/notice,observed SQL overlap,peer progress and unchanged peer state,rejection releasing next creation,notification-write rollback/retry."
+  "nextExactAction": "Read corrected exact-source targeted and broader CI. Require201+409,one request/notice,observed SQL overlap,peer progress and unchanged peer state,rejection releasing next creation,notification-write rollback/retry.",
+  "sourceCandidate": "31912d9fd33c9e12311351c189b937652496c6fb",
+  "targeted": {
+    "runId": 40187591978,
+    "jobId": 121151571011,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40187591978/job/121151571011",
+    "functionalCases": 69,
+    "tapPass": 75,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "meta-job-identity-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 24,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "cd3a07dc2052c2f451461dc67eeeb9360944046d",
+    "tree": "6dd65e1ad85d64b6ba7c5640769a8187b4290dd2",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40187592067
+  },
+  "scope": [
+    "Actual canonical authenticated creation across two assigned tickets for one merchant; owned SQL advisory gate proves two overlapping trusted restricted SQL transactions",
+    "Corrected observation insert_gate+merchant_serialization; statuses201+409, exactly one request/notice; explicit SUPPORT_INSPECTION_ALREADY_ACTIVE loser",
+    "Peer merchant creates while own transactions gated; exact peer state preserved afterward",
+    "Actual notification list/read→frontend validation and sequential loser rejection without writes",
+    "Actual merchant rejection releases eligibility; synthetic notification INSERT fault rolls back request and serialization; actual retry succeeds"
+  ],
+  "observations": [
+    {
+      "stages": [
+        "insert_gate",
+        "merchant_serialization"
+      ],
+      "statuses": [
+        201,
+        409
+      ],
+      "ownedRequests": 1,
+      "ownedNotices": 1,
+      "peerCompletedWhileOwnGated": true
+    },
+    {
+      "actualApp": true,
+      "overlappingSqlTransactions": 2,
+      "ownedTickets": 2,
+      "oneActiveRequest": true,
+      "loser409": true,
+      "peerPreserved": true,
+      "releasedAfterRejection": true,
+      "noticeFaultRollbackRetry": true,
+      "actualFrontendValidator": true,
+      "hostedAccepted": false,
+      "wholeCellAccepted": false
+    }
+  ]
 }
