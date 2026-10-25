@@ -1,3 +1,9 @@
+## RESIDUAL-FIELD-003 emergency audit alternate projection — prepared 2026-10-25
+
+Recovered a363d0d8/PR550Draft. Three new actual app/restricted SQL cases: real owner-created emergency requests under two merchants produce audit rows; dedicated audit denies view_logs assistants; generic admin logs must retain that owner-only boundary while ordinary audit details/meta, owner visibility, aliases, forged hints, permissions and exact read-only snapshots remain valid. Tests only; source unchanged; runtime NOT_RUN. This is a candidate boundary test, not a confirmed finding. FIELD003OPEN/NO-GO/GitHub only. Next inspect exact-source management lane.
+
+---
+
 ## RESIDUAL-FIELD-002 response-field contract candidate assessed — 2026-10-25
 
 Recovered **f0bd2b06**, Draft PR550/base preserved. Prepared an explicit per-type response-field candidate for12client shapes, canonical common fields and current inspection lifecycle enrichment. Candidate permits **no extra keys** beyond each type's enumerated required/optional fields. Unknown/malformed records are retained as failures under the existing strict client contract; no silent row filtering, defaulted lifecycle, historical relinking or SQL rewrite.

@@ -18,7 +18,7 @@ Object.assign(process.env,{
 test('full application management privacy preserves cutover ordering and current SQL authority',{timeout:120000},async t=>{
   const runtime=await createDisposableKnowledgeRuntime(),admin=runtime.admin;
   const ids=[],merchants=[],actors=[];
-  const tables=['merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests','audit_events'];
+  const tables=['merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests','audit_events','emergency_access_requests'];
   let server;
   t.after(()=>cleanupResources([
     ['HTTP',async()=>{if(server){server.closeAllConnections();await new Promise((ok,no)=>server.close(e=>e?no(e):ok()));}}],
@@ -49,6 +49,7 @@ test('full application management privacy preserves cutover ordering and current
   const owner=await actor('admin','owner_admin');
   const manager=await actor('admin','assistant_admin',['manage_merchant_status','manage_channels','view_logs','manage_subscriptions']);
   const denied=await actor('admin','assistant_admin',[]);
+  const viewer=await actor('admin','assistant_admin',['view_logs']);
   const a=await actor('merchant'),b=await actor('merchant');
   for(const actor of actors){
     if(actor.kind==='admin'){
@@ -122,6 +123,57 @@ test('full application management privacy preserves cutover ordering and current
       const r=await req(path,owner);assert.equal(r.status,410);assert.equal(r.body.code,'LEGACY_AUTH_ROUTE_RETIRED');assert.match(r.cache,/no-store/);assert.doesNotMatch(JSON.stringify(r.body),/private-note-|private-deletion-/);
     }
     assert.deepEqual(await snapshot(),before);assert.equal((await req(canonical,owner)).status,200);
+  });
+  const incidentReference=`synthetic-owner-only-${randomUUID()}`;
+  let emergencyAuditRows=[],ordinaryLog;
+  await t.test('owner-only emergency audit remains accessible to owner and denied to log-viewing assistants',async()=>{
+    for(const merchant of [a,b]){
+      const r=await req('/api/auth/admin/emergency-read-access/requests',owner,'POST',{merchant_id:merchant.id,incident_reference:incidentReference,reason:'Owned defensive fixture only',severity:'high',duration_minutes:15});
+      assert.equal(r.status,201);assert.equal(r.body.request.merchant_id,merchant.id);
+    }
+    emergencyAuditRows=(await admin.query("SELECT * FROM audit_events WHERE merchant_id=ANY($1::text[]) AND entity_type='emergency_read_access' ORDER BY id",[merchants])).rows;
+    assert.equal(emergencyAuditRows.length,4);assert.ok(emergencyAuditRows.every(row=>row.metadata.chain_payload && row.metadata.event_metadata));
+    const before=await snapshot();
+    const own=await req('/api/auth/admin/emergency-read-access/audit',owner);assert.equal(own.status,200);assert.equal(own.body.verification.valid,true);
+    for(const row of emergencyAuditRows)assert.ok(own.body.events.some(event=>event.id===row.id));
+    for(const actor of [viewer,manager,denied]){
+      const r=await req('/API/Auth/Admin/Emergency-Read-Access/Audit/',actor);assert.equal(r.status,403);assert.equal(r.body.code,'OWNER_ADMIN_REQUIRED');
+    }
+    assert.deepEqual(await snapshot(),before);
+    ordinaryLog=await req('/api/auth/admin/logs',manager,'POST',{merchant_id:a.id,action_type:'replies_added',details:'synthetic-ordinary-audit',reason:'synthetic-reason',meta:{numeric:7,label:'synthetic-business',nested:{must:'be-filtered'},flag:true}});
+    assert.equal(ordinaryLog.status,201);assert.deepEqual(ordinaryLog.body.log.meta,{numeric:7,label:'synthetic-business'});
+  });
+  await t.test('general log endpoint cannot bypass owner-only emergency audit through alternate projection',async()=>{
+    assert.equal(emergencyAuditRows.length,4);
+    const before=await snapshot(),ids=new Set(emergencyAuditRows.map(row=>row.id));
+    for(const path of ['/api/auth/admin/logs','/API/AuTh/AdMiN/LoGs/?includeEmergencyAudit=true&owner=true']){
+      for(const actor of [viewer,manager]){
+        const r=await req(path,actor);assert.equal(r.status,200);
+        const exposed=r.body.logs.filter(row=>ids.has(row.id));
+        console.log('P0_AUDIT_EMERGENCY_PROJECTION_OBSERVATION '+JSON.stringify({role:actor===viewer?'view_logs_only':'manager',dedicatedAuditDenied:true,emergencyRowsInGeneralLog:exposed.length,chainPayloadInResponse:JSON.stringify(exposed).includes('chain_payload')}));
+        assert.equal(exposed.length,0,'general log assistant response must preserve owner-only emergency audit boundary');
+        assert.doesNotMatch(JSON.stringify(r.body),new RegExp(incidentReference));
+        assert.ok(r.body.logs.some(row=>row.id===ordinaryLog.body.log.id));
+      }
+      const own=await req(path,owner);assert.equal(own.status,200);
+      for(const id of ids)assert.ok(own.body.logs.some(row=>row.id===id),'owner keeps existing authorized general log history');
+    }
+    assert.deepEqual(await snapshot(),before);
+  });
+  await t.test('ordinary log metadata actor identity and current SQL permission checks survive emergency filtering',async()=>{
+    const before=await snapshot();
+    const r=await req('/api/auth/admin/logs',viewer);assert.equal(r.status,200);
+    const row=r.body.logs.find(row=>row.id===ordinaryLog.body.log.id);assert.ok(row);
+    assert.equal(row.admin_id,manager.id);assert.equal(row.admin_role,'assistant_admin');assert.equal(row.merchant_id,a.id);
+    assert.equal(row.details,'synthetic-ordinary-audit');assert.equal(row.reason,'synthetic-reason');assert.deepEqual(row.meta,{numeric:7,label:'synthetic-business'});
+    assert.equal(Object.hasOwn(row,'ip_address'),false);assert.equal(Object.hasOwn(row,'user_agent'),false);assert.equal(Object.hasOwn(row,'request_id'),false);
+    for(const [actor,status] of [[undefined,401],[a,401],[b,401],[denied,403]])assert.equal((await req('/api/auth/admin/logs',actor)).status,status);
+    assert.deepEqual(await snapshot(),before);
+    await admin.query('DELETE FROM admin_permissions WHERE admin_id=$1',[viewer.id]);
+    assert.equal((await req('/api/auth/admin/logs',viewer)).status,403);
+    assert.equal((await req('/api/auth/admin/emergency-read-access/audit',viewer)).status,403);
+    assert.deepEqual(await snapshot(),before);
+    assert.equal((await req('/api/auth/admin/logs',owner)).status,200);
   });
   await t.test('full app re-reads SQL permissions after revocation despite original assistant session claims',async()=>{
     await admin.query('DELETE FROM admin_permissions WHERE admin_id=$1',[manager.id]);const before=await snapshot();
