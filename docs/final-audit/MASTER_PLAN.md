@@ -1,3 +1,15 @@
+## FIELD004 retired debug HTTP boundary accepted — 2026-10-25
+
+Source **86ac8610591659cee4a0e92d3386ba1e51736d41**:56/56CI SUCCESS. Corrected notification lane40211082822/job121222247568:80TAP PASS,consumer fixture9TAP(8functional+parent),2newfunctional. Broader40211083053/job121222367476:721TAP PASS/92invocations/90files. Both zero failed/skipped/cancelled; checkout64271ced has source-identical tree. Broader excludes this fixture; totals separate. No application/schema/grant change.
+
+Actual-app own merchants/case+slash aliases/foreign hints receive410 LEGACY_BOT_DEBUG_DISABLED without db_path/drafts/pages/product names or peer identity. Invalid actors receive authentication401 or exact unconditional retirement410 before auth; no200 accepted. Selected SQL snapshots stable; no root legacy JSON created; normal notification positive retained. Initial b146efa4 failure preserved as expectation mismatch with earlier legacyBotDebugRouteGuard, not product vulnerability. [Evidence](evidence/P0-FIELD004-DEBUG-HTTP-20261025.json).
+
+FIELD004 remainsOPEN: this is retired-route proof, not complete residual-table writer or hosted inventory acceptance. Register45rows/statuses unchanged; incomplete inventory/percentage null; releaseNO-GO. GitHub-only/no merge/deploy/hosted change.
+
+**Next:** Reconcile FIELD004 finite closure criteria: dormant residual SQL table writer/reader inventory versus accepted durable Meta ingress/worker evidence and verified retired debug route. Keep dynamic/external/historical writer inventory blocked without hosted authorization; do not invent new public readers or repeat accepted debug cases.
+
+---
+
 ## FIELD004 debug guard expectation correction — 2026-10-25
 
 Initial b146efa4/run40210760045 failed because tests expected the later helper code and mandatory401. Source inspection located earlier legacyBotDebugRouteGuard: fixed410 LEGACY_BOT_DEBUG_DISABLED can precede session checks. Tests now require exact retirement payload for410 or authentication401 for invalid actors, while preserving no-data/SQL/JSON assertions. No application change or confirmed product finding. Corrected runtime PENDING; prior7a5a5327 acceptance retained; FIELD004OPEN/NO-GO. Next read corrected notification lane and exact-source CI.
