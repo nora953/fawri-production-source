@@ -1,3 +1,15 @@
+## FIELD005 emergency ledger corruption reproduced; bounded deletion mitigation accepted — 2026-10-25
+
+Source **72f01da4fb6a2df23108a2bd2e9d805addac3fae**:56/56CI SUCCESS. Initial d97b183b/run40215641483/job121236061026 reproduces completed merchant deletion followed by owner emergency audit503 EMERGENCY_AUDIT_CHAIN_INVALID;fixture8PASS/2FAIL(1functional+parent). Scrubbing audit metadata removes chain_payload/sequence required by global verifier. No hosted incident asserted.
+
+Mitigation blocks purge with409 MERCHANT_DELETION_AUDIT_POLICY_REQUIRED when pre-existing merchant emergency audit rows exist. No implicit PII retention exemption, peer hash rewrite or weakened verifier. Actual mounted management+emergency HTTP/password/session/SQL proof:audited target denial preserves selected snapshots and valid chain; ordinary unaudited merchant still deletes; exact peer emergency ledger remains. Three newfunctional,owner fixture11TAP(10functional+parent);management lane41TAP PASS,run40215851931/job121236694172. Broader721TAP PASS/92invocations/90files,run40215851893/job121236947033;this fixture not selected in broader lane. Both zero failed/skipped/cancelled;checkoutc1c17f75 source tree matched targeted. [Evidence](evidence/P0-DELETION-EMERGENCY-CHAIN-20261025.json).
+
+**Mitigation only, not full resolution:** concurrent emergency insert/deletion not proven; previously damaged chains not repaired; audited-merchant deletion stays blocked pending approved privacy/retention handling. No schema/grant/retention-duration or hosted change. FIELD005 and retention policy gateOPEN;register statuses remain29CLOSED_SOURCE/7OPEN/9BLOCKED;inventory incomplete/percentage null;NO-GO. No merge/deploy.
+
+**Next exact action:** Test concurrent canonical emergency event creation versus owner merchant deletion with observed SQL overlap and strict time bounds. Require no successful deletion that corrupts the global ledger, legitimate denial/retry semantics and peer preservation. No claim of race safety from the current SELECT guard. Retention policy and historical chain repair remain OPEN.
+
+---
+
 ## FIELD005 retention field mapping and emergency ledger interaction — 2026-10-25
 
 Recovered ef7c4e79/PR550Draft. Source-only mapping: merchant deletion scrubs merchant name/phone/details snapshots; requesting-admin identity snapshots remain. audit_events details/metadata/IP/user-agent are scrubbed for the merchant, while hash columns remain. Emergency verifier separately requires metadata.chain_payload/sequence: this is an **unconfirmed interaction requiring runtime proof**, not a confirmed defect or permission to retain PII.

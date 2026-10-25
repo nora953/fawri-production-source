@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "86ac8610591659cee4a0e92d3386ba1e51736d41",
-  "lastFullyAcceptedSource": "86ac8610591659cee4a0e92d3386ba1e51736d41",
+  "sourceCandidate": "72f01da4fb6a2df23108a2bd2e9d805addac3fae",
+  "lastFullyAcceptedSource": "72f01da4fb6a2df23108a2bd2e9d805addac3fae",
   "release": "NO-GO",
   "rows": [
     {
@@ -285,7 +285,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Add a bounded actual-app owner deletion regression with genuine emergency audit events for two owned merchants: verify whether deleting one merchant preserves the global emergency audit verification/authorized owner reader and peer chain, or produces a reproducible failure. Preserve privacy scrubbing, owner/password/pending-operation guards and prior deletion positive; do not change retention durations or weaken hash verification. Treat source metadata dependency as hypothesis until actual runtime proof.",
+      "nextAction": "Test concurrent canonical emergency event creation versus owner merchant deletion with observed SQL overlap and strict time bounds. Require no successful deletion that corrupts the global ledger, legitimate denial/retry semantics and peer preservation. No claim of race safety from the current SELECT guard. Retention policy and historical chain repair remain OPEN.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -369,7 +369,9 @@
         "F004-R2"
       ],
       "retentionFieldEvidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json",
-      "retentionAuditInteractionStatus": "UNCONFIRMED_SOURCE_INTERACTION_RUNTIME_PENDING"
+      "retentionAuditInteractionStatus": "UNCONFIRMED_SOURCE_INTERACTION_RUNTIME_PENDING",
+      "deletionEmergencyChainEvidence": "evidence/P0-DELETION-EMERGENCY-CHAIN-20261025.json",
+      "deletionEmergencyChainStatus": "PREEXISTING_LEDGER_MITIGATION_ACCEPTED_CONCURRENCY_POLICY_HISTORY_OPEN"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
@@ -399,8 +401,10 @@
       "evidence": "https://github.com/nora953/fawri-production-source/issues/523",
       "blocker": "Existing retention/deletion service proofs do not approve duration, privileged access or every field.",
       "retentionFieldEvidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json",
-      "nextAction": "Add a bounded actual-app owner deletion regression with genuine emergency audit events for two owned merchants: verify whether deleting one merchant preserves the global emergency audit verification/authorized owner reader and peer chain, or produces a reproducible failure. Preserve privacy scrubbing, owner/password/pending-operation guards and prior deletion positive; do not change retention durations or weaken hash verification. Treat source metadata dependency as hypothesis until actual runtime proof.",
-      "retentionAuditInteractionStatus": "UNCONFIRMED_SOURCE_INTERACTION_RUNTIME_PENDING"
+      "nextAction": "Test concurrent canonical emergency event creation versus owner merchant deletion with observed SQL overlap and strict time bounds. Require no successful deletion that corrupts the global ledger, legitimate denial/retry semantics and peer preservation. No claim of race safety from the current SELECT guard. Retention policy and historical chain repair remain OPEN.",
+      "retentionAuditInteractionStatus": "UNCONFIRMED_SOURCE_INTERACTION_RUNTIME_PENDING",
+      "deletionEmergencyChainEvidence": "evidence/P0-DELETION-EMERGENCY-CHAIN-20261025.json",
+      "deletionEmergencyChainStatus": "PREEXISTING_LEDGER_MITIGATION_ACCEPTED_CONCURRENCY_POLICY_HISTORY_OPEN"
     },
     {
       "id": "P0-HOSTED-PROVIDER-PAYMENT",
@@ -459,6 +463,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "7a5a532727ab8759ef672e9b0748f74717d8b499",
+  "previousFullyAcceptedSource": "86ac8610591659cee4a0e92d3386ba1e51736d41",
   "lastUpdatedAt": "2026-10-25"
 }
