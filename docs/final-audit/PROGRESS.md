@@ -1,3 +1,15 @@
+## RESIDUAL-FIELD-002 legacy provenance and local client compatibility reconciled — 2026-10-25
+
+Recovered exact HEAD7be0c3ff; PR550Draft/base preserved. [Report](P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.md) and [machine evidence](evidence/P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json) record807tracked runtime files text-scanned including embedded NUL,18matching-file digests and exact identifier/mount/guard anchors. Three legacy subscription types originate in AuthDb JSON append helpers/legacy handlers, not accepted canonical SQL producers. Earlier PostgreSQL subscription/notification routes and final legacy guard separate required-mode HTTP paths. Older SQL inspection helper has request_id/minimal shape and only declaration found; canonical caller is separate. Raw JSON inspection shape also lacks authoritative lifecycle enrichment. Source trace is not formal whole-program or hosted runtime proof.
+
+Actual frontend validator/client on source-derived synthetic shapes: **4local cases PASS**,0fail/skip/cancel via Node24.22.1. Three JSON subscription shapes structurally valid; older SQL inspection shape invalid; key rename alone insufficient; mixed response with incompatible row rejected by actual client. Fetch adapter only, no SQL/application HTTP/network. First local attempt3P/1F was invalid synthetic previous_plan_name bronze, corrected to valid gold without changing assertions/production code. [Local TAP](evidence/p0-notification-legacy-shapes.tap). This is local client-contract evidence, not actual legacy producer/SQL/HTTP or data migration acceptance.
+
+No product/schema/ACL/frontend behavior changes, hosted data inspection, import/cleanup/relink/deletion or retention-policy decision. No new CI claimed/rerun required for this docs/evidence-only batch. Last fully accepted executable **6182678d**,56/56CI,notification72TAP,broader721TAP unchanged. No historical rows inferred from source or synthetic examples.
+
+**Next exact batch:** Test concurrent actual authenticated notification-list refreshes for the same merchant and a peer with eligible subscription/add-on states; require one notice per source, stable sent markers, no duplicate side effects and tenant separation. Keep historical/extra-reserved-key policy unresolved; do not invent data repair or cleanup. FIELD002/full HTTP/role/field gatesOPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. **NO-GO**; GitHub only,PR550Draft/no main/merge/deploy/hosted/P1/P2. Do not repeat accepted sequential/lifecycle proofs as new concurrent acceptance.
+
+---
+
 ## RESIDUAL-FIELD-002 inspection ending lifecycle bounded runtime accepted — 2026-10-25
 
 Source **6182678d76e97e315df428bd2739af284afea420**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered6fe8bb50; targeted checkpoint36af6980 preserved results during CI; previous06c04523 projection fix accepted separately. Tests/docs only; no application/schema/ACL change.

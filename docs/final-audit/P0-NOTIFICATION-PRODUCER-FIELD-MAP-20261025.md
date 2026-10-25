@@ -1,3 +1,9 @@
+## Legacy compatibility source/local-client reconciliation — 2026-10-25
+
+[Legacy report](P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.md)/[evidence](evidence/P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json):807runtime source files scanned;3JSON subscription templates are locally structure-compatible, older SQL inspection request_id template is incompatible, raw current inspection template requires authoritative lifecycle enrichment. Actual frontend validator/client4localPASS with synthetic shapes/in-process fetch. No SQL/application HTTP/legacy producer or hosted historical execution; no newCI. Last accepted6182678d and56/56,72notificationTAP,721broaderTAP unchanged. FIELD002 remains OPEN. No guessed migration/repair/cleanup; next concurrent canonical list refresher acceptance beyond accepted sequential replay.
+
+---
+
 ## Inspection ending lifecycle runtime update — 2026-10-25
 
 Actual merchant termination, pending timeout and approved-window/preview expiration are bounded-runtime accepted on6182678d:3newfunctional,fixture21TAP,lane72TAP,broader721TAP,56/56CI SUCCESS. Canonical HTTP lifecycle→request/preview SQL→actual app list/read→actual frontend validator; ended preview access denied, peer state and repeated reads/refresh preserved. Owned fixture timestamps aged; real service clocks used. [Evidence](evidence/P0-SUPPORT-NOTIFICATION-ENDING-20261025.json). No app/schema/grant changes, timer cadence/browser/concurrency/hosted/historical acceptance. FIELD002 remains OPEN; next historical/legacy shape and helper reachability reconciliation before any repair policy.
