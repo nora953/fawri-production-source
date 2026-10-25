@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-003",
+  "status": "TARGETED_SOURCE_FIX_PASS_BROADER_PENDING",
+  "finding": "EMERGENCY-AUDIT-ALTERNATE-PROJECTION-001",
+  "findingState": "FIXED_TARGETED_ACTUAL_HTTP_SQL_BROADER_PENDING",
+  "recoveredHead": "a363d0d89cfc3bab0d7068552b232861931a0866",
+  "sourceCandidate": "37f97e75b17e1131ab364a218dfbc3eb34c4e5e1",
+  "previousAcceptedExecutable": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "applicationChanged": true,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 3,
+  "existingFunctionalCases": 6,
+  "localSyntax": "PASS",
+  "failedAttempts": [
+    {
+      "source": "3e631f0a356a3a3aaea200ad6454ed388c7e6038",
+      "runId": 40193604397,
+      "jobId": 121169614760,
+      "status": "FAILED_NOT_ACCEPTED",
+      "fixturePassed": 8,
+      "fixtureFailed": 2,
+      "functionalFailures": 1,
+      "parentFailures": 1,
+      "observation": {
+        "role": "view_logs_only",
+        "dedicatedAuditDenied": true,
+        "emergencyRowsInGeneralLog": 4,
+        "chainPayloadInResponse": true
+      },
+      "meaning": "Two actual owner-created emergency requests emitted four genuine SQL emergency events. Assistant with only view_logs was denied owner-only audit but received those events and chain metadata through general management logs."
+    }
+  ],
+  "fix": "Current SQL-backed admin profile determines explicit includeEmergencyAudit option. Generic SQL query excludes emergency_read_access rows unless owner option true; predicate applied before ordering/limit. Default helper invocation excludes emergency audit. No metadata mutation/redaction, grants, chain rewrite or ordinary-log schema change.",
+  "sourceInventory": {
+    "method": "Literal INSERT INTO/FROM/UPDATE exact audit_events table matches in839tracked ts/tsx/js/mjs under artifacts/api-server/src,artifacts/fawri/src,src,lib; embedded NUL read as text; not formal call graph or hosted inventory",
+    "exactTableReferences": 17,
+    "insertSites": 11,
+    "producerFiles": 9,
+    "readSites": 5,
+    "readerFiles": 3,
+    "consumerBoundaries": [
+      {
+        "source": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "function": "listAdminLogsPostgres",
+        "projection": "Selected row/join fields; details plus whole metadata as meta; generic selected merchant-linked events",
+        "route": "GET /api/auth/admin/logs",
+        "guard": "secure admin + view_logs; owner-only emergency rows now additionally filtered",
+        "scope": "Current selected runtime target, not all metadata privacy accepted"
+      },
+      {
+        "source": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+        "function": "auditRows/mapAudit/getEmergencyAuditPostgres",
+        "projection": "Emergency-only event/hash rows; metadata.event_metadata parsed; chain verification before returning owner audit",
+        "route": "GET /api/auth/admin/emergency-read-access/audit",
+        "guard": "secure admin + owner",
+        "scope": "Direct owner denial/positive reused and extended through actual app; no all-emergency-domain acceptance"
+      },
+      {
+        "source": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+        "function": "syncEarlyWarningIncidentHistory/normalizedMetadata/buildHistory",
+        "projection": "Exact severity,area,code,value,runbook,scope,merchant_id,merchant_name plus derived episode fields; no wholesale metadata spread",
+        "route": "GET /api/auth/admin/early-warning",
+        "guard": "secure admin + view_logs; merchant incidents/history additionally view_merchants",
+        "scope": "Source-only field reconciliation; normalized historical metadata and permission partition runtime remains separate"
+      }
+    ],
+    "otherProducerFiles": [
+      "earlyWarningIncidentHistory.ts",
+      "postgresEmergencyReadAccessAuthority.ts",
+      "postgresMerchantAdminLogAuthority.ts",
+      "postgresMerchantManagementAuthority.ts",
+      "postgresOrderPaymentProviderAuthority.ts",
+      "postgresSubscriptionEntitlement.ts",
+      "postgresSupportLifecycleAuthority.ts",
+      "subscriptionPlanCycleAuthority.ts",
+      "subscriptionServiceGuarantee.ts"
+    ],
+    "notes": [
+      "auth_audit_events,knowledge_audit_events,cashier_entitlement_audit_events and legacy JSON arrays are separate authorities.",
+      "Owner-only legacy import stores source_admin_* and nested source_meta in metadata; no new generic meta allowlist accepted.",
+      "Management audit metadata, subscription/payment/support details and incident-history normalization have different source/control contracts; one fixed alternate path does not close FIELD003."
+    ]
+  },
+  "scope": [
+    "Actual app/restricted primary/separate authentication LOGIN, real trusted owner/view_logs-only/manager/denied actors and two merchants",
+    "Actual owner-created emergency requests and SQL chain events, no bootstrap fake audit rows",
+    "Dedicated owner route positive and assistant denial; assistant generic canonical/alias/hint requests cannot return owner-only events",
+    "Owner retains general and dedicated emergency event history; ordinary log exact actor/details/reason/filtered primitive meta remains available",
+    "Anonymous/merchant/no-permission/revoked-permission negative responses and complete selected audit/management/request snapshots unchanged by reads"
+  ],
+  "limits": [
+    "Disposable synthetic credentials/merchants only; no hosted incident or credential compromise claimed",
+    "Fixture primary grants broad and RLS-mediated, separate auth role; not deployed least-privilege proof",
+    "No arbitrary audit meta allowlist, whole actor/privacy matrix, incident normalization runtime or historical cleanup acceptance",
+    "No emergency hash/ledger change, migration, ACL or provider/browser/capacity acceptance",
+    "Three new cases in dedicated management lane; broader selection excludes this fixture; totals separate"
+  ],
+  "targeted": {
+    "status": "PASS",
+    "runId": 40193882711,
+    "jobId": 121170462946,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40193882711/job/121170462946",
+    "tapPass": 35,
+    "functionalCases": 31,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "40205fad31738a54b42cc9cd01c2c587b28e41d2",
+    "tree": "e1731ae10436c5023e7d8743cd5ae28dae371022",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING"
+  },
+  "nextExactAction": "Read exact-source corrected management lane and broader CI, verify owner positive/assistant alternate-projection denial, ordinary field compatibility, preserved SQL snapshots and source/checkout tree. Then continue bounded early-warning incident-history field/permission mapping without repeating accepted generic-log cases.",
+  "observations": [
+    {
+      "role": "view_logs_only",
+      "dedicatedAuditDenied": true,
+      "emergencyRowsInGeneralLog": 0,
+      "chainPayloadInResponse": false
+    },
+    {
+      "role": "manager",
+      "dedicatedAuditDenied": true,
+      "emergencyRowsInGeneralLog": 0,
+      "chainPayloadInResponse": false
+    },
+    {
+      "role": "view_logs_only",
+      "dedicatedAuditDenied": true,
+      "emergencyRowsInGeneralLog": 0,
+      "chainPayloadInResponse": false
+    },
+    {
+      "role": "manager",
+      "dedicatedAuditDenied": true,
+      "emergencyRowsInGeneralLog": 0,
+      "chainPayloadInResponse": false
+    }
+  ]
+}
