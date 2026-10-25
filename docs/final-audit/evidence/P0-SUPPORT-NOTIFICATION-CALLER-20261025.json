@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "FIX_PREPARED_RUNTIME_PENDING",
+  "recoveredHead": "c4541295f101d3d6b93336e3b665ca2edeb60a65",
+  "finding": "SUPPORT-INSPECTION-NOTIFICATION-PROJECTION-001",
+  "findingState": "RUNTIME_CONFIRMED_FIX_PENDING",
+  "scope": "Canonical Support caller to SQL notice to app/frontend",
+  "failedAttempts": [
+    {
+      "source": "741c371a36c631c9c57d06898fc1ff432523a86d",
+      "runId": 40170722701,
+      "jobId": 121100822960,
+      "functionalFailures": 3,
+      "parentFailures": 1,
+      "passed": 13,
+      "failed": 4,
+      "cause": "Actual list/read omit mandatory request_status and current decision/timing fields. Pending and approved actual caller responses fail acceptance. Inspection/reminder fault rollback and reminder fields pass.",
+      "status": "FAILED_NOT_ACCEPTED"
+    }
+  ],
+  "newFunctionalCases": 6,
+  "applicationChanged": true,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "localSyntax": "PASS",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "fix": "Hydrate only inspection lifecycle fields from matching merchant-owned request/source/ticket inside existing list/read transaction; batch lookup; no pending status snapshot. Strip stale lifecycle keys for inspection rows, do not fabricate status for unlinked or mismatched rows.",
+  "limits": [
+    "Synthetic tickets/clocks/fault triggers; no browser/provider/hosted acceptance",
+    "Older helper provenance source-only; no arbitrary historical repair",
+    "Consent decisions and source/tenant checks remain authoritative; projection grants no access",
+    "Other notification variables remain current generic projection; no full per-type allowlist acceptance"
+  ],
+  "nextExactAction": "Read exact corrected source targeted and broader CI; preserve failed run and validate current pending/approved/rejected fields, peer mismatch and replay."
+}

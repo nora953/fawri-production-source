@@ -345,5 +345,23 @@ test('operational SQL producers round trip through actual app and frontend valid
     console.log('P0_SUPPORT_NOTIFICATION_CALLER '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',newFunctionalCases:5,actualApp:true,actualFrontendValidator:true,canonicalInspectionHttp:true,canonicalLifecycleHttp:true,merchants:2,exactFields:true,peerPreserved:true,faultRollbackRetry:true,currentDecisionProjection:true,externalProvider:false,hostedAccepted:false,wholeCellAccepted:false}));
   });
 
+
+  await t.test('inspection projection never borrows peer request state or trusts stored lifecycle keys',async()=>{
+    const original=(await admin.query('SELECT * FROM notifications WHERE id=$1',[a.inspectionNotice])).rows[0];
+    try{
+      for(const mismatch of ['foreign-request','wrong-ticket']){
+        const variables={...original.variables,request_status:'pending',consent_decision:'rejected',ended_at:'2020-01-01T00:00:00.000Z',...(mismatch==='foreign-request'?{inspection_request_id:b.inspection.id}:{ticket_id:b.ticketId})};
+        await admin.query('UPDATE notifications SET variables=$2::jsonb,source_entity_id=$3 WHERE id=$1',[original.id,JSON.stringify(variables),mismatch==='foreign-request'?b.inspection.id:a.inspection.id]);
+        const before=await supportState(),result=await req('/api/auth/notifications?limit=50',a);assert.equal(result.status,200);const notice=result.body.notifications.find(n=>n.id===original.id);
+        for(const key of ['request_status','consent_decision','responded_at','session_expires_at','ended_at','end_reason'])assert.equal(Object.hasOwn(notice,key),false);
+        assert.equal(isMerchantNotificationRecord(notice),false);assert.deepEqual(await supportState(),before);
+      }
+      await admin.query('UPDATE notifications SET variables=$2::jsonb,source_entity_id=$3 WHERE id=$1',[original.id,JSON.stringify({...original.variables,request_status:'pending',consent_decision:'rejected'}),original.source_entity_id]);
+      const result=await req('/api/auth/notifications?limit=50',a),request=(await admin.query('SELECT * FROM support_inspection_requests WHERE id=$1',[a.inspection.id])).rows[0];
+      const notice=result.body.notifications.find(n=>n.id===original.id);assert.equal(notice.request_status,'approved');assert.equal(notice.consent_decision,'approved');assert.equal(isMerchantNotificationRecord(notice),true);
+      assert.equal(notice.session_expires_at,mappedSupport(original,request).session_expires_at);
+    }finally{await admin.query('UPDATE notifications SET variables=$2::jsonb,source_entity_id=$3 WHERE id=$1',[original.id,JSON.stringify(original.variables),original.source_entity_id]);}
+  });
+
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
 });
