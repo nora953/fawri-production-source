@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "PREPARED_META_CUSTOMER_CALLER_CI_PENDING",
+  "recoveredHead": "17242509f6fff4952949dca77acc1c557aa37a93",
+  "previousAcceptedExecutable": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
+  "test": "artifacts/api-server/tests/meta-job-identity-postgres.integration.test.mjs",
+  "newFunctionalCases": 3,
+  "existingFunctionalCases": 19,
+  "expectedSuiteTap": 23,
+  "expectedLaneFunctionalCases": 50,
+  "expectedLaneTap": 56,
+  "expectedBroaderTap": 718,
+  "localSyntax": "PASS",
+  "runtime": "NOT_RUN",
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "fieldCellClosed": false,
+  "release": "NO-GO",
+  "scope": [
+    "Reuse original restricted worker, encrypted jobs, fake loopback Graph transport and identity denials",
+    "Two real worker-produced customer notifications matched to inbound SQL messages and source events",
+    "Actual app authenticated merchant list/read and actual frontend validator",
+    "Peer read denial with unchanged nine-surface snapshot, own read replay",
+    "Signed webhook redelivery and exact durable queue dedup without notice/send/debit/job changes"
+  ],
+  "limits": [
+    "Prepared tests are not runtime evidence.",
+    "Sixteen prior identity denial cases plus original positives/isolation are regressions; not new findings.",
+    "One original event is signed HTTP ingress; the other uses original durable enqueue with omitted recipient.",
+    "No external Meta provider, browser rendering/click, concurrent fault/crash or hosted acceptance.",
+    "Knowledge-gap/new-order and other SQL templates remain pending."
+  ]
+}

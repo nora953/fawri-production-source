@@ -8,7 +8,7 @@ import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import {cleanupResources,stopTestChild} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
-Object.assign(process.env,{FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_DISABLE_JOB_WORKERS:'1',FAWRI_JOB_POLL_INTERVAL_MS:'60000',FAWRI_META_TOKEN_KEY_ID:'synthetic-meta-restart-key',FAWRI_META_TOKEN_KEY_BASE64:Buffer.alloc(32,31).toString('base64'),FAWRI_AUTH_SECURITY_SECRET:'synthetic-meta-restart-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-meta-restart-password-salt'});
+Object.assign(process.env,{FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',FAWRI_DISABLE_JOB_WORKERS:'1',FAWRI_JOB_POLL_INTERVAL_MS:'60000',FAWRI_META_TOKEN_KEY_ID:'synthetic-meta-restart-key',FAWRI_META_TOKEN_KEY_BASE64:Buffer.alloc(32,31).toString('base64'),FAWRI_AUTH_SECURITY_SECRET:'synthetic-meta-restart-security-secret-at-least-32-characters',FAWRI_PASSWORD_SALT:'synthetic-meta-restart-password-salt'});
 const bootstrapUrl=process.env.DATABASE_URL;
 const parentRuntime=await createDisposableKnowledgeRuntime();
 const pool=parentRuntime.admin;
@@ -71,20 +71,21 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     const webhook={object:'page',entry:[{id:target,messaging:[{sender:{id:sender},recipient:{id:target},timestamp:Date.now(),message:{mid:messageId,text:'كم سعر التوصيل؟'}}]}]};
     return {event:`meta:${target}:${messageId}`,payload:{event_id:`meta:${target}:${messageId}`,page_id:target,merchant_id:merchants[i],external_message_id:messageId,sender_id:sender,webhook_body:webhook}};
   }
+  const notificationInputs=[],notificationActors=[];
   let worker,positivePassed=false,omittedRecipientPassed=false;const deniedKinds=new Set();
   await t.test('signed legitimate foreign channel is connected and original worker sends/debits once',async()=>{
     worker=await start();const valid=bodyFor(1,'positive'),body=JSON.stringify(valid.payload.webhook_body);
     const response=await fetch(`http://127.0.0.1:${worker.info.port}/api/meta/webhook`,{method:'POST',headers:{'Content-Type':'application/json','Connection':'close','X-Hub-Signature-256':`sha256=${createHmac('sha256',secret).update(body).digest('hex')}`},body});assert.equal(response.status,200);
     assert.equal((await worker.command('run')).ran,true);assert.equal(providerCalls,1);
     const b=await balances();assert.equal(b.find(x=>x.merchant_id===merchants[1]).base_replies_used,1);
-    assert.equal((await pool.query("SELECT count(*)::int AS n FROM messages WHERE merchant_id=$1 AND sender='fawri' AND status='sent'",[merchants[1]])).rows[0].n,1);positivePassed=true;
+    assert.equal((await pool.query("SELECT count(*)::int AS n FROM messages WHERE merchant_id=$1 AND sender='fawri' AND status='sent'",[merchants[1]])).rows[0].n,1);positivePassed=true;notificationInputs.push({index:1,valid});
   });
   await t.test('omitted optional recipient remains compatible with original worker',async()=>{
     const valid=bodyFor(0,'recipient-omitted');delete valid.payload.webhook_body.entry[0].messaging[0].recipient;
     const enqueued=await queue.enqueueDurableJobAuthoritative({type:'meta.webhook.reply',merchantId:merchants[0],dedupeKey:valid.event,maxAttempts:1,payload:valid.payload});
     assert.equal((await worker.command('run')).ran,true);
     assert.equal((await pool.query('SELECT status FROM background_jobs WHERE id=$1',[enqueued.job.id])).rows[0].status,'completed');
-    assert.equal(providerCalls,2);assert.equal((await balances()).find(x=>x.merchant_id===merchants[0]).base_replies_used,1);omittedRecipientPassed=true;
+    assert.equal(providerCalls,2);assert.equal((await balances()).find(x=>x.merchant_id===merchants[0]).base_replies_used,1);omittedRecipientPassed=true;notificationInputs.push({index:0,valid});
   });
   const cases=['merchant','event','missing_event','body_page_conflict','body_sender_conflict','body_message_conflict','body_page_missing','body_sender_missing','body_message_missing','body_object_conflict','body_echo','body_extra_entry','body_extra_message','body_recipient_conflict','body_recipient_empty','body_recipient_malformed'];
   for(const kind of cases)await t.test(`${kind} identity conflict is rejected before all nine domain surfaces`,async()=>{
@@ -121,4 +122,66 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     const proof=await worker.command('isolation');assert.equal(proof.isolated,true);assert.equal(proof.contextReset,true);
     if(positivePassed&&omittedRecipientPassed&&deniedKinds.size===cases.length)console.log('META_JOB_IDENTITY_PROOF '+JSON.stringify({originalLiveWorker:true,restrictedRole:true,originalEncryptedQueue:true,validForeignChannelPositive:true,tenantMismatchDenied:true,eventMismatchDenied:true,missingEventDenied:true,webhookBodyConflictAndMissingDenied:true,normalizedEnvelopeDenied:true,presentRecipientValidated:true,omittedRecipientCompatible:true,deniedCaseCount:deniedKinds.size,domainSurfacesUnchanged:9,providerCalls,contextReset:true}));
   });
+  const {authPostgresSessionAuthority:auth}=await import('../src/services/authPostgresSessionAuthority.ts');
+  const {MERCHANT_SESSION_COOKIE}=await import('../src/middleware/authSession.ts');
+  const {isMerchantNotificationRecord,isSafeMerchantNotificationActionUrl}=await import('../../fawri/src/lib/merchantNotificationsAuthority.ts');
+  async function notificationRequest(actor,path,method='GET'){
+    const response=await fetch('http://127.0.0.1:'+worker.info.port+path,{method,headers:{Cookie:actor.cookie,'X-Fawri-Device-Id':actor.device}});
+    return {status:response.status,body:await response.json(),cache:response.headers.get('cache-control')};
+  }
+  async function notificationRows(id){
+    return (await pool.query("SELECT * FROM notifications WHERE merchant_id=$1 AND type='operational_customer_message' ORDER BY id",[id])).rows;
+  }
+  function notificationRecord(actor,row){
+    const common={id:row.id,type:'operational_customer_message',conversation_id:actor.conversation,action_url:'/dashboard/conversations?conversation='+encodeURIComponent(actor.conversation),created_at:new Date(row.created_at).toISOString()};
+    return {...common,...(row.read_at?{read_at:new Date(row.read_at).toISOString()}:{})};
+  }
+  await t.test('actual Meta caller emits exact customer-message SQL fields and authenticated app frontend-valid records',async()=>{
+    assert.equal(notificationInputs.length,2);
+    for(const {index,valid} of notificationInputs){
+      const merchantId=merchants[index],sender=valid.payload.sender_id,conversation='messenger-'+sender;
+      const device='notice-device-'+randomUUID(),session=await auth.issueSession({accountId:merchantId,accountKind:'merchant',tenantId:merchantId,deviceId:device});
+      const actor={id:merchantId,index,valid,device,conversation,cookie:MERCHANT_SESSION_COOKIE+'='+session.token};notificationActors.push(actor);
+      const messages=(await pool.query("SELECT conversation_id,external_event_id FROM messages WHERE merchant_id=$1 AND sender='customer' AND external_event_id=$2",[merchantId,valid.event])).rows;
+      assert.deepEqual(messages,[{conversation_id:conversation,external_event_id:valid.event}]);
+      const rows=await notificationRows(merchantId);assert.equal(rows.length,1);const row=rows[0];
+      actor.noticeId=row.id;
+      assert.equal(row.audience,'merchant');assert.equal(row.account_id,merchantId);assert.equal(row.source_entity_type,'conversation_event');assert.equal(row.source_entity_id,valid.event);
+      assert.deepEqual(row.variables,{conversation_id:conversation,action_url:'/dashboard/conversations?conversation='+encodeURIComponent(conversation)});
+      assert.equal(new Date(row.created_at).toISOString(),new Date(valid.payload.webhook_body.entry[0].messaging[0].timestamp).toISOString());
+      const before=await domainSnapshot(),result=await notificationRequest(actor,'/api/auth/notifications?limit=50');
+      assert.equal(result.status,200);assert.equal(result.cache,'no-store');assert.deepEqual(result.body,{ok:true,notifications:[notificationRecord(actor,row)]});
+      assert.equal(isMerchantNotificationRecord(result.body.notifications[0]),true);assert.equal(isSafeMerchantNotificationActionUrl(result.body.notifications[0].action_url),true);
+      assert.deepEqual(await domainSnapshot(),before);
+    }
+    assert.notEqual(notificationActors[0].noticeId,notificationActors[1].noticeId);
+  });
+  await t.test('Meta-produced notices deny peer mutation and own read replay preserves exact fields and peer state',async()=>{
+    assert.equal(notificationActors.length,2);
+    for(const actor of notificationActors){
+      const peer=notificationActors.find(value=>value.id!==actor.id),path='/api/auth/notifications/'+actor.noticeId+'/read';
+      const before=await domainSnapshot(),denied=await notificationRequest(peer,path,'PATCH');
+      assert.equal(denied.status,404);assert.equal(denied.body.notification,undefined);assert.deepEqual(await domainSnapshot(),before);
+      const peerBefore=(await pool.query('SELECT to_jsonb(n) AS row FROM notifications n WHERE merchant_id=$1 ORDER BY id',[peer.id])).rows;
+      const read=await notificationRequest(actor,path,'PATCH');assert.equal(read.status,200);assert.equal(read.cache,'no-store');
+      const row=(await notificationRows(actor.id))[0];assert.ok(row.read_at);assert.deepEqual(read.body,{ok:true,notification:notificationRecord(actor,row)});assert.equal(isMerchantNotificationRecord(read.body.notification),true);
+      assert.deepEqual((await pool.query('SELECT to_jsonb(n) AS row FROM notifications n WHERE merchant_id=$1 ORDER BY id',[peer.id])).rows,peerBefore);
+      const stable=await domainSnapshot(),again=await notificationRequest(actor,path,'PATCH');assert.equal(again.status,200);assert.deepEqual(again.body,read.body);assert.deepEqual(await domainSnapshot(),stable);
+    }
+  });
+  await t.test('signed redelivery and original durable-job replay preserve notices reply debit and provider call count',async()=>{
+    const before=await domainSnapshot(),calls=providerCalls;
+    const jobsBefore=(await pool.query('SELECT to_jsonb(j) AS row FROM background_jobs j WHERE merchant_id=ANY($1::text[]) ORDER BY id',[merchants])).rows;
+    const signed=notificationInputs.find(value=>value.index===1).valid,body=JSON.stringify(signed.payload.webhook_body);
+    const response=await fetch('http://127.0.0.1:'+worker.info.port+'/api/meta/webhook',{method:'POST',headers:{'Content-Type':'application/json','Connection':'close','X-Hub-Signature-256':'sha256='+createHmac('sha256',secret).update(body).digest('hex')},body});assert.equal(response.status,200);
+    for(const {index,valid} of notificationInputs){
+      const replay=await queue.enqueueDurableJobAuthoritative({type:'meta.webhook.reply',merchantId:merchants[index],dedupeKey:valid.event,maxAttempts:1,payload:valid.payload});
+      assert.equal(replay.deduplicated,true);
+    }
+    assert.equal((await worker.command('run')).ran,false);
+    assert.equal(providerCalls,calls);assert.deepEqual(await domainSnapshot(),before);
+    assert.deepEqual((await pool.query('SELECT to_jsonb(j) AS row FROM background_jobs j WHERE merchant_id=ANY($1::text[]) ORDER BY id',[merchants])).rows,jobsBefore);
+    console.log('P0_META_CUSTOMER_NOTIFICATION_CALLER '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualRestrictedWorker:true,actualEncryptedJobs:true,actualApp:true,actualFrontendValidator:true,merchants:2,exactSqlFields:true,authenticatedMerchantLists:true,peerReadDenied:true,ownReadReplay:true,signedRedeliveryAndQueueDedup:true,providerCallsUnchanged:true,replyDebitUnchanged:true,existingIdentityDenialsReused:cases.length,externalProvider:false,browserRendering:false,hostedAccepted:false,wholeFieldCellAccepted:false}));
+  });
+
 });

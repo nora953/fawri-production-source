@@ -1,3 +1,11 @@
+## RESIDUAL-FIELD-002 Meta customer-message caller candidate prepared — 2026-10-25
+
+Recovered17242509/accepted92507e7a. Extended existing meta-job-identity fixture with3functional field/consumer cases: original restricted worker+encrypted jobs→actual customer-message notice SQL→authenticated actual app list/read→actual frontend validator;2merchants,peer denial/exact no-change snapshots,own read replay,signed HTTP redelivery+queue dedup with no extra notice/provider call/reply debit/job mutation. Original19functional/20TAP identity assertions retained as regressions, not new discovery. No child/worker/app/schema/ACL/policy change; required session mode is explicit only in fixture.
+
+Local Node24 syntax/whitespacePASS. **Runtime NOT_RUN / CI_PENDING**. Expected suite22functional/23TAP; notification lane50functional/56TAP across6files; broader expected718TAP after3new cases, not yet verified. [Evidence](evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json). Next inspect exact-candidate targeted/broader CI and preserve any failures before correction. FIELD002/full matrix OPEN; **NO-GO**; GitHub only,PR550Draft/base preserved; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## RESIDUAL-FIELD-002 payment-conflict caller bounded runtime accepted — 2026-10-25
 
 Source **92507e7ab7e55f792c238df65ca8ec8ea5a37403**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no application/schema/ACL/policy changes. Recovered6be84a36; previousb0417241 retained separately.
