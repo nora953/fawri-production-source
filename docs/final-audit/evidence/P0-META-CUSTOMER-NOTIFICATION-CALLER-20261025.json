@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "PREPARED_META_CUSTOMER_CALLER_CI_PENDING",
+  "status": "TARGETED_META_CUSTOMER_CALLER_PASS_BROADER_PENDING",
   "recoveredHead": "17242509f6fff4952949dca77acc1c557aa37a93",
   "previousAcceptedExecutable": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
   "test": "artifacts/api-server/tests/meta-job-identity-postgres.integration.test.mjs",
@@ -13,7 +13,7 @@
   "expectedLaneTap": 56,
   "expectedBroaderTap": 718,
   "localSyntax": "PASS",
-  "runtime": "NOT_RUN",
+  "runtime": "TARGETED_PASS",
   "applicationChanged": false,
   "schemaChanged": false,
   "aclChanged": false,
@@ -27,10 +27,97 @@
     "Signed webhook redelivery and exact durable queue dedup without notice/send/debit/job changes"
   ],
   "limits": [
-    "Prepared tests are not runtime evidence.",
+    "Three new functional cases executed; broader exact-source acceptance pending.",
     "Sixteen prior identity denial cases plus original positives/isolation are regressions; not new findings.",
     "One original event is signed HTTP ingress; the other uses original durable enqueue with omitted recipient.",
     "No external Meta provider, browser rendering/click, concurrent fault/crash or hosted acceptance.",
     "Knowledge-gap/new-order and other SQL templates remain pending."
-  ]
+  ],
+  "sourceCandidate": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
+  "targeted": {
+    "runId": 40152165456,
+    "jobId": 121045777664,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40152165456/job/121045777664",
+    "functionalCases": 50,
+    "tapPass": 56,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "meta-job-identity-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 23,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "4e86d649511080db8a6e431d8398aca83c86ec9e",
+    "tree": "0e4034beb11145bb9de1253b15a4bc5346adf8d5",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40152165630
+  }
 }
