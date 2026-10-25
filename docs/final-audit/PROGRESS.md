@@ -1,3 +1,9 @@
+## RESIDUAL-FIELD-002 concurrent subscription list refresh — prepared 2026-10-25
+
+Recovered92f8c296;PR550Draft/base preserved. Two new runtime cases extend existing app fixture: owned bootstrap subscription row lock gates real authenticated list requests; pg_stat_activity must show distinct restricted runtime backends waiting in actual refresh SQL. Three same-tenant requests with peer progress; gated repeat; six requests across both tenants for expired notices. Check one notice per source/marker, exact SQL→app→frontend fields, preserved original notices and all subscription/batch business fields except intended sent markers/updated_at, stable replay. Pool8 is fixture-only; bounded 5s observation/10s HTTP abort and finally rollback/drain; no service override. Syntax/diff PASS; runtime NOT_RUN pending exact-source CI. Tests/docs only. FIELD002OPEN/NO-GO; no load-capacity or hosted acceptance. Prior6182678d/56CI/72notificationTAP/721broaderTAP retained; local legacy-client4PASS separate.
+
+---
+
 ## RESIDUAL-FIELD-002 legacy provenance and local client compatibility reconciled — 2026-10-25
 
 Recovered exact HEAD7be0c3ff; PR550Draft/base preserved. [Report](P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.md) and [machine evidence](evidence/P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json) record807tracked runtime files text-scanned including embedded NUL,18matching-file digests and exact identifier/mount/guard anchors. Three legacy subscription types originate in AuthDb JSON append helpers/legacy handlers, not accepted canonical SQL producers. Earlier PostgreSQL subscription/notification routes and final legacy guard separate required-mode HTTP paths. Older SQL inspection helper has request_id/minimal shape and only declaration found; canonical caller is separate. Raw JSON inspection shape also lacks authoritative lifecycle enrichment. Source trace is not formal whole-program or hosted runtime proof.

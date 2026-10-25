@@ -404,5 +404,86 @@ test('operational SQL producers round trip through actual app and frontend valid
     console.log('P0_SUPPORT_NOTIFICATION_ENDING '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',newFunctionalCases:3,merchantTermination:true,pendingExpiry:true,approvedWindowExpiry:true,actualPreviewCreation:true,endedPreviewDenied:true,actualHttpLifecycle:true,actualFrontendValidator:true,peerPreserved:true,readReplay:true,fixtureTimestampAging:true,timerCadenceAccepted:false,browserAccepted:false,hostedAccepted:false,wholeCellAccepted:false}));
   });
 
+
+  async function concurrentList(actor){
+    const r=await fetch(origin+'/api/auth/notifications?limit=50',{headers:{Cookie:actor.cookie,'X-Fawri-Device-Id':actor.device},signal:AbortSignal.timeout(10000)});
+    return {status:r.status,cache:r.headers.get('cache-control'),body:await r.json()};
+  }
+  async function waitForRefreshLocks(minimum){
+    const deadline=Date.now()+5000;let observed=0;
+    while(Date.now()<deadline){
+      const result=await admin.query("SELECT count(DISTINCT pid)::int AS n FROM pg_stat_activity WHERE usename=$1 AND state='active' AND wait_event_type='Lock' AND query LIKE '%FROM subscriptions%' AND query LIKE '%FOR UPDATE%'",[runtime.role]);
+      observed=result.rows[0].n;if(observed>=minimum)return observed;
+      await new Promise(resolve=>setTimeout(resolve,20));
+    }
+    assert.fail('expected overlapping restricted refresher SQL sessions; observed '+observed+' of '+minimum);
+  }
+  async function withRefreshGate(actorIds,launch,minimum,whileBlocked){
+    const gate=await admin.connect();let tasks=[],results,observed;
+    try{
+      await gate.query('BEGIN');await gate.query('SELECT id FROM subscriptions WHERE merchant_id=ANY($1::text[]) ORDER BY id FOR UPDATE',[actorIds]);
+      // HTTP handlers and service SQL run unchanged. Only bootstrap holds the
+      // owned rows until distinct restricted SQL backends prove real overlap.
+      tasks=launch().map(promise=>promise.then(value=>({value}),error=>({error:String(error.message)})));
+      observed=await waitForRefreshLocks(minimum);if(whileBlocked)await whileBlocked();
+    }finally{
+      try{await gate.query('ROLLBACK');}finally{gate.release();results=await Promise.all(tasks);}
+    }
+    for(const result of results)assert.equal(result.error,undefined);
+    return {observed,responses:results.map(result=>result.value)};
+  }
+  const concurrencyExpiry=new Date(Date.now()+4*day).toISOString(),concurrencyBatchExpiry=new Date(Date.now()+6*day).toISOString();
+  for(const actor of [a,b]){
+    await admin.query('UPDATE subscriptions SET expires_at=$2,expiry_reminder_sent_at=NULL,expired_notification_sent_at=NULL WHERE id=$1',[actor.subscriptionId,concurrencyExpiry]);
+    await admin.query('UPDATE subscription_reply_batches SET expires_at=$2,expiry_reminder_sent_at=NULL WHERE id=$1',[actor.batchId,concurrencyBatchExpiry]);
+  }
+  function assertConcurrentResponse(result,actor,rows){
+    assert.equal(result.status,200);assert.equal(result.cache,'no-store');assert.ok(result.body.notifications.every(isMerchantNotificationRecord));
+    for(const row of rows)assert.deepEqual(result.body.notifications.find(n=>n.id===row.id),mappedSubscription(row));
+    const peer=actor===a?b:a;assert.equal(result.body.notifications.some(n=>(n.addon_batch_id||'')===peer.batchId),false);
+  }
+  function subscriptionBusinessState(snapshot){
+    return {subscriptions:snapshot.subscriptions.map(({row})=>{const copy={...row};delete copy.expiry_reminder_sent_at;delete copy.expired_notification_sent_at;delete copy.updated_at;return copy;}),batches:snapshot.subscription_reply_batches.map(({row})=>{const copy={...row};delete copy.expiry_reminder_sent_at;return copy;})};
+  }
+  const matchingConcurrentReminders=async actor=>(await subscriptionNotices(actor)).filter(row=>(row.type==='subscription_expiry_reminder'&&row.variables.expires_at===concurrencyExpiry)||(row.type==='addon_expiry_reminder'&&row.variables.expires_at===concurrencyBatchExpiry));
+  await t.test('overlapping authenticated list refreshes deduplicate subscription and addon while peer progresses independently',async()=>{
+    runtime.runtimePool.options.max=8;
+    const before=await subscriptionRows(),ownBefore=await subscriptionRows([a.id]);let peerResult;
+    const cohort=await withRefreshGate([a.id],()=>Array.from({length:3},()=>concurrentList(a)),2,async()=>{
+      peerResult=await concurrentList(b);assert.equal(peerResult.status,200);assert.deepEqual(await subscriptionRows([a.id]),ownBefore);
+      assert.equal((await matchingConcurrentReminders(a)).length,0);assert.equal((await matchingConcurrentReminders(b)).length,2);
+    });
+    assert.ok(cohort.observed>=2);
+    const allNew=[];
+    for(const actor of [a,b]){
+      const rows=await matchingConcurrentReminders(actor);assert.equal(rows.length,2);allNew.push(...rows);
+      for(const row of rows){assert.equal(row.merchant_id,actor.id);assert.equal(row.account_id,actor.id);assert.equal(row.audience,'merchant');assert.equal(row.read_at,null);}
+      assert.deepEqual(rows.find(row=>row.type==='subscription_expiry_reminder').variables,{plan_name:'silver',expires_at:concurrencyExpiry,days_remaining:4});
+      assert.deepEqual(rows.find(row=>row.type==='addon_expiry_reminder').variables,{addon_batch_id:actor.batchId,source:'purchase',remaining_replies:7,expires_at:concurrencyBatchExpiry,days_remaining:6});
+      const subscription=(await admin.query('SELECT * FROM subscriptions WHERE id=$1',[actor.subscriptionId])).rows[0],batch=(await admin.query('SELECT * FROM subscription_reply_batches WHERE id=$1',[actor.batchId])).rows[0];
+      assert.equal(new Date(subscription.expiry_reminder_sent_at).toISOString(),new Date(rows.find(r=>r.type==='subscription_expiry_reminder').created_at).toISOString());assert.equal(new Date(batch.expiry_reminder_sent_at).toISOString(),new Date(rows.find(r=>r.type==='addon_expiry_reminder').created_at).toISOString());
+      for(const response of actor===a?cohort.responses:[peerResult])assertConcurrentResponse(response,actor,rows);
+    }
+    assert.equal(new Set(allNew.map(row=>row.id)).size,4);const newIds=new Set(allNew.map(row=>row.id)),after=await subscriptionRows();assert.deepEqual(after.notifications.filter(row=>!newIds.has(row.row.id)),before.notifications);assert.deepEqual(subscriptionBusinessState(after),subscriptionBusinessState(before));
+    const stable=await subscriptionRows();const replay=await withRefreshGate([a.id],()=>[concurrentList(a),concurrentList(a)],2,async()=>{assert.equal((await concurrentList(b)).status,200);});
+    for(const result of replay.responses)assertConcurrentResponse(result,a,await matchingConcurrentReminders(a));assert.deepEqual(await subscriptionRows(),stable);
+    console.log('P0_SUBSCRIPTION_REMINDER_OVERLAP '+JSON.stringify({restrictedSqlWaiters:cohort.observed,replayWaiters:replay.observed,peerCompletedWhileOwnLocked:true,newNotices:4,stableReplay:true}));
+  });
+  await t.test('six blocked real list requests across two tenants create one expired notice each with stable markers and replay',async()=>{
+    const expiredAt=new Date(Date.now()-day).toISOString();
+    for(const actor of [a,b])await admin.query('UPDATE subscriptions SET expires_at=$2,expired_notification_sent_at=NULL WHERE id=$1',[actor.subscriptionId,expiredAt]);
+    const before=await subscriptionRows(),ordered=[a,a,a,b,b,b];
+    const cohort=await withRefreshGate(merchants,()=>ordered.map(concurrentList),6);assert.equal(cohort.observed,6);const newIds=new Set();
+    for(const actor of [a,b]){
+      const rows=(await subscriptionNotices(actor)).filter(row=>row.type==='subscription_expired'&&row.variables.expired_at===expiredAt);assert.equal(rows.length,1);const row=rows[0];newIds.add(row.id);
+      assert.equal(row.merchant_id,actor.id);assert.equal(row.account_id,actor.id);assert.equal(row.source_entity_id,actor.subscriptionId);assert.deepEqual(row.variables,{plan_name:'silver',expired_at:expiredAt,addon_replies_remaining:7});
+      const marker=(await admin.query('SELECT expired_notification_sent_at FROM subscriptions WHERE id=$1',[actor.subscriptionId])).rows[0].expired_notification_sent_at;assert.equal(new Date(marker).toISOString(),new Date(row.created_at).toISOString());
+      for(const [i,result] of cohort.responses.entries())if(ordered[i]===actor)assertConcurrentResponse(result,actor,rows);
+    }
+    assert.equal(newIds.size,2);const after=await subscriptionRows();assert.deepEqual(after.notifications.filter(row=>!newIds.has(row.row.id)),before.notifications);assert.deepEqual(subscriptionBusinessState(after),subscriptionBusinessState(before));
+    const stable=await subscriptionRows(),replay=await Promise.all(ordered.map(concurrentList));for(const result of replay)assert.equal(result.status,200);assert.deepEqual(await subscriptionRows(),stable);
+    console.log('P0_SUBSCRIPTION_EXPIRED_OVERLAP '+JSON.stringify({restrictedSqlWaiters:cohort.observed,merchants:2,httpRequests:6,newNotices:2,stableSentMarkers:true,stableReplay:true,actualApp:true,actualFrontendValidator:true,hostedAccepted:false,loadCapacityAccepted:false,wholeCellAccepted:false}));
+  });
+
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
 });
