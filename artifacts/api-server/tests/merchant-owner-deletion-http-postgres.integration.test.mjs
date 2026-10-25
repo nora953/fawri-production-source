@@ -117,7 +117,7 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
       await gate.query('BEGIN');await gate.query('SELECT id FROM merchants WHERE id=$1 FOR UPDATE',[race.id]);held=true;
       tasks=[req(owner,race),fetch(origin+'/api/auth/admin/emergency-read-access/requests',{method:'POST',headers:{'Content-Type':'application/json',Cookie:owner.cookie,'X-Fawri-Device-Id':owner.device},body:JSON.stringify({merchant_id:race.id,incident_reference:'synthetic-concurrent-'+race.id,severity:'high',reason:'Synthetic concurrent deletion boundary',duration_minutes:15}),signal:AbortSignal.timeout(15000)}).then(async response=>({status:response.status,body:await response.json()}))];
       const deadline=Date.now()+5000;let waiters=0;
-      while(Date.now()<deadline){const r=await admin.query("SELECT count(*)::int AS n FROM pg_stat_activity WHERE pid<>pg_backend_pid() AND wait_event_type='Lock' AND query LIKE '%'||$1||'%'",['merchants']);waiters=r.rows[0].n;if(waiters>=2)break;await new Promise(ok=>setTimeout(ok,25));}
+      while(Date.now()<deadline){const r=await admin.query("SELECT count(*)::int AS n FROM pg_stat_activity WHERE pid<>pg_backend_pid() AND wait_event_type='Lock' AND (query LIKE '%'||$1||'%' OR query LIKE '%emergency_access_requests%')",['merchants']);waiters=r.rows[0].n;if(waiters>=2)break;await new Promise(ok=>setTimeout(ok,25));}
       assert.ok(waiters>=2,'two actual SQL lock waiters required');
       await gate.query('COMMIT');held=false;
       const results=await Promise.all(tasks);const deleted=(await admin.query('SELECT retention_status FROM merchants WHERE id=$1',[race.id])).rows[0].retention_status==='deleted';
