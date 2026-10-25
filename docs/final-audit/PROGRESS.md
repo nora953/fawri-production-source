@@ -1,3 +1,15 @@
+## FIELD004 authority separation mapped — 2026-10-25
+
+Recovered236f3620/PR550Draft/base preserved. [Bounded source evidence](evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json) separates residual SQL order_drafts/processed_channel_events from legacy Map/runtime JSON and current durable Meta jobs/channel_inbound_events. Reviewed server references for the two residual SQL tables are scoped purge/readiness/schema boundaries, not identified public row readers/producers. No formal absence theorem or table retirement inferred.
+
+Legacy /bot/debug calls readBotProductsForHttp before returning db_path/drafts/pages; helper returns410/null in required-PostgreSQL mode. Legacy Meta webhook also returns410; current queued worker uses separate inbound ledger. These are source findings, not new runtime PASS. Reuse accepted Meta/new-order provenance; no duplicate runtime execution, code/schema/grant change, new CRUD or CI rerun.
+
+FIELD004 OPEN; latest accepted executable7a5a5327 and56CI/38managementTAP/721broaderTAP inherited only. Register45=29CLOSED_SOURCE/7OPEN/9BLOCKED; inventory incomplete, percentage null, releaseNO-GO. GitHub-only/no merge/deploy/hosted interaction.
+
+**Next exact action:** Add a bounded actual-app required-PostgreSQL test for /api/bot/debug (canonical and case/trailing-slash aliases), own/foreign merchant hints, anonymous/admin/wrong-device/session confusion, and proof no draft/page/db_path projection or legacy JSON writes. Reuse current Meta signed-ingress/worker dedup evidence instead of rerunning it or inventing CRUD for the two residual SQL tables.
+
+---
+
 ## FIELD003 cross-consumer policy reconciliation — 2026-10-25
 
 Recovered5c7604b5/Draft PR550/base preserved. Source-only review: operations-observability.md explicitly scopes view_merchants health visibility to the early-warning endpoint; auth hardening lists view_logs/view_merchants separately. Generic admin logs intentionally project merchant-linked audit references and whole metadata in current source; this includes merchant incident rows by predicate. This observation is not new HTTP proof or sufficient evidence of intended cross-consumer health-field policy.

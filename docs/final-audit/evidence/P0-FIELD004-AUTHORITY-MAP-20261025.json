@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-004",
+  "status": "BOUNDED_SOURCE_AUTHORITIES_MAPPED_HTTP_PROOF_PENDING",
+  "sourceRevision": "236f36204e5df8abd717acee393293969659b7bd",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "applicationChanged": false,
+  "newRuntimeExecuted": false,
+  "observations": [
+    {
+      "authority": "order_drafts SQL",
+      "sources": [
+        "lib/db/src/schema/orders.ts",
+        "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts:purgeMerchantOperationalData"
+      ],
+      "result": "Schema/RLS and tenant-scoped DELETE found; no direct SQL row HTTP reader or INSERT identified in reviewed server source. Not a whole-program absence theorem."
+    },
+    {
+      "authority": "Legacy orderDraftsByConversation",
+      "sources": [
+        "artifacts/api-server/src/routes/indexModulePart1.ts",
+        "artifacts/api-server/src/routes/indexModulePart3.ts"
+      ],
+      "result": "Separate Map/runtime JSON authority. /bot/debug would return db_path, product/draft/page fields only after readBotProductsForHttp. That helper returns410 and null in required PostgreSQL mode before this projection."
+    },
+    {
+      "authority": "processed_channel_events SQL",
+      "sources": [
+        "lib/db/src/schema/conversations.ts",
+        "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts:purgeMerchantOperationalData"
+      ],
+      "result": "Schema/RLS and tenant-scoped DELETE found; not evidence of the current durable Meta identity ledger."
+    },
+    {
+      "authority": "Current Meta durable pipeline",
+      "sources": [
+        "artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts",
+        "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "artifacts/api-server/src/services/postgresMetaWebhookReplyTransport.ts"
+      ],
+      "result": "Ingress enqueues durable jobs; current worker writes/reconciles channel_inbound_events. Legacy indexModulePart4 webhook returns410 in required mode. Ingress processed Set is per-request memory, not processed_channel_events SQL."
+    }
+  ],
+  "reusedEvidence": [
+    "P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json",
+    "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+    "P0-RESIDUAL-FIELD-INVENTORY-20261024.json"
+  ],
+  "limits": [
+    "Literal source/call-chain review only, not new HTTP/SQL execution or complete dynamic writer inventory",
+    "No hosted historical data inspected, no migration or dormant table deletion justified",
+    "Current debug authentication/mount/alias behavior still requires exact-source actual-app proof",
+    "No online conversational order creation or whole commercial journey acceptance"
+  ],
+  "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
+  "nextExactAction": "Add a bounded actual-app required-PostgreSQL test for /api/bot/debug (canonical and case/trailing-slash aliases), own/foreign merchant hints, anonymous/admin/wrong-device/session confusion, and proof no draft/page/db_path projection or legacy JSON writes. Reuse current Meta signed-ingress/worker dedup evidence instead of rerunning it or inventing CRUD for the two residual SQL tables."
+}
