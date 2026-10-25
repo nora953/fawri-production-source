@@ -2,6 +2,8 @@ name: P0 notification privacy HTTP matrix
 on:
   pull_request:
     paths:
+      - 'artifacts/api-server/tests/payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs'
+      - 'artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts'
       - 'artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs'
       - 'artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts'
       - 'artifacts/fawri/src/lib/merchantNotificationsAuthority.ts'
@@ -49,6 +51,7 @@ jobs:
           node --check artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs
           node --check artifacts/api-server/tests/notification-bulk-read-full-app-http-postgres.integration.test.mjs
           node --check artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs
+          node --check artifacts/api-server/tests/payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs
           node --check scripts/execute-disposable-postgres-audit.mjs
           bash -n scripts/run-isolated-postgres-audit.sh
       - name: Execute notification tenant and audience HTTP assertions

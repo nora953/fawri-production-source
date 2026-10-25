@@ -1,3 +1,11 @@
+## RESIDUAL-FIELD-002 payment-conflict caller candidate prepared — 2026-10-25
+
+Recovered6be84a36/acceptedb0417241. Four new functional cases connect actual verified-payment conflict authority to notification SQL, actual app list/read and actual frontend validator under two merchants/restricted primary+separate auth. Covers four invalid caller inputs without mutation, exact notice fields/tenant ownership, foreign read denial, sequential caller/read replay, and scoped disposable INSERT failure after payment commit followed by replay repair. Paid fixture starts at previously accepted merchant-confirmation state; this does not rerun or accept confirmation/fulfillment/provider cryptography.
+
+Test/CI/docs only; no application/schema/ACL/policy edits. Local Node24 syntaxPASS; runtime **NOT_RUN / CI_PENDING**. Expected5TAP in new suite,33TAP across5lane files; prior28TAP retained as regressions. [Evidence](evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json). Next exact action: inspect targeted and broader exact-candidate CI; preserve failure before any correction. FIELD002/full matrix OPEN; **NO-GO**; GitHub only,PR550Draft/base preserved; no main/merge/deploy/hosted/P1/P2.
+
+---
+
 ## RESIDUAL-FIELD-002 optional operational runtime accepted — 2026-10-25
 
 Source **b0417241bd9b69dd8f460ce91e044004650266d9**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/docs only; no application/schema/ACL/policy changes. Recovereda2e74076; prior04b7fa85 present-option evidence retained.

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "PREPARED_PAYMENT_CALLER_CI_PENDING",
+  "recoveredHead": "6be84a3630ecdb6c2493d49855ad11b6a20ec750",
+  "previousAcceptedExecutable": "b0417241bd9b69dd8f460ce91e044004650266d9",
+  "test": "artifacts/api-server/tests/payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 4,
+  "expectedSuiteTap": 5,
+  "expectedLaneFunctionalCases": 28,
+  "expectedLaneTap": 33,
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "localSyntax": "PASS",
+  "runtime": "NOT_RUN",
+  "scope": [
+    "Internal recordVerifiedProviderPaymentEvidenceAuthoritative→actual notification SQL→actual app→actual frontend validator",
+    "Two merchants, separate auth/restricted primary LOGIN",
+    "Unverified flag, foreign-order, amount and unsafe metadata denials without domain mutation",
+    "Caller/read sequential replay and peer preservation",
+    "Disposable scoped notification INSERT fault after committed payment evidence, then replay repair"
+  ],
+  "limits": [
+    "Seeded already-paid state; prior merchant-confirmation/fulfillment acceptance reused.",
+    "Synthetic authenticityVerified flag is not cryptographic provider-ingress acceptance.",
+    "Direct internal service admission is not a provider callback HTTP proof.",
+    "No concurrent crash/worker-redelivery/hosted proof.",
+    "Runtime assertions prepared, not yet executed."
+  ]
+}
