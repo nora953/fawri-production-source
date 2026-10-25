@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "CORRECTED_FIXTURE_RUNTIME_PENDING",
+  "status": "TARGETED_PASS_BROADER_PENDING",
   "recoveredHead": "e81c2cd8eafb5412018435400c37e65a7d92e6c8",
   "previousAcceptedExecutable": "d86d7c11a9634f870acda08f863d2237dbbe5bbc",
   "failedAttempts": [
@@ -26,5 +26,115 @@
   ],
   "localSyntax": "PASS",
   "release": "NO-GO",
-  "fieldCellClosed": false
+  "fieldCellClosed": false,
+  "sourceCandidate": "ac1cd586a51dea417ace5b1e3ff818c8ec58f4ce",
+  "test": "artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 4,
+  "existingFunctionalCases": 7,
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "scope": [
+    "Actual authenticated list→canonical subscription refresher→three SQL templates→actual app→actual frontend validator",
+    "Two owned merchants; exact fields/source identity; eligible and zero-remaining/expired/distant batch filtering",
+    "Scoped disposable addon-notice INSERT failure after subscription reminder insertion/marker update: HTTP503, all three-table snapshots unchanged; real HTTP retry succeeds",
+    "Actual foreign notice read denial, own read/replay and successful list/read peer snapshots preserved"
+  ],
+  "limits": [
+    "Seeded subscription/batch states; no purchase/provider/settlement or full entitlement/balance-accounting acceptance",
+    "Service clock round trips are bounded wall-clock observations; no simulated time travel/clock-tampering acceptance",
+    "No background scheduler cadence, concurrent refresh/failure, process crash, browser rendering or hosted acceptance",
+    "Fixture grants broad RLS-mediated primary plus separate auth; not hosted least-privilege proof",
+    "Existing background refresh RLS proof is reused regression, not claimed as new caller coverage",
+    "New-order source scan is source-only; canonical application caller not identified, no runtime absence/commercial-order journey acceptance"
+  ],
+  "targeted": {
+    "runId": 40155088840,
+    "jobId": 121054660846,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40155088840/job/121054660846",
+    "functionalCases": 57,
+    "tapPass": 63,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "meta-job-identity-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "67a51c9ec80fc602bb43306d0eea8f4b2ec4587c",
+    "tree": "f79713ab99719508b0ee95f2ba33aa4b56542c00",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40155088913,
+    "jobId": 121054721070
+  },
+  "sourceReachabilityEvidence": "evidence/P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json",
+  "nextExactAction": "Read broader CI on exact corrected source; then reconcile canonical Support reply-reminder and inspection producers/callers to app/frontend and distinguish the older Support helper."
 }
