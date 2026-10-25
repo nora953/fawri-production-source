@@ -529,5 +529,56 @@ test('operational SQL producers round trip through actual app and frontend valid
     console.log('P0_INSPECTION_CREATE_ACCEPTANCE '+JSON.stringify({actualApp:true,overlappingSqlTransactions:2,ownedTickets:2,oneActiveRequest:true,loser409:true,peerPreserved:true,releasedAfterRejection:true,noticeFaultRollbackRetry:true,actualFrontendValidator:true,hostedAccepted:false,wholeCellAccepted:false}));
   });
 
+
+  const reservedActors=[];
+  for(const actor of [a,b]){
+    const conversationId='Synthetic reserved-key conversation '+actor.id;
+    const result=await producer.notifyMerchantNewCustomerMessagePostgres({merchantId:actor.id,conversationId,sourceEventId:'reserved-contract-'+actor.id,createdAt:'2026-10-25T00:00:01.000Z'});
+    reservedActors.push({actor,id:result.notification_id,conversationId});
+  }
+  function canonicalReservedRecord(row){
+    const business={...row.variables};for(const key of ['id','type','created_at','read_at'])delete business[key];
+    return {id:row.id,type:row.type,...business,created_at:new Date(row.created_at).toISOString(),...(row.read_at?{read_at:new Date(row.read_at).toISOString()}:{})};
+  }
+  for(const entry of reservedActors){
+    const peer=reservedActors.find(value=>value.actor.id!==entry.actor.id);
+    entry.variables={conversation_id:entry.conversationId,action_url:'/dashboard/conversations?conversation='+encodeURIComponent(entry.conversationId),order_id:'synthetic-nonreserved-business-field',id:peer.id,type:'operational_new_order',created_at:'1990-01-01T00:00:00.000Z',read_at:'1990-01-01T00:00:00.000Z'};
+    // Bootstrap-owned synthetic corruption only. No public caller control over
+    // variable key names or actual historical row existence is inferred.
+    await admin.query('UPDATE notifications SET variables=$2::jsonb WHERE id=$1',[entry.id,JSON.stringify(entry.variables)]);
+  }
+  await t.test('actual list binds reserved identity and unread timestamps to SQL despite conflicting stored variable strings',async()=>{
+    const before=await snapshot();
+    for(const {actor,id} of reservedActors){
+      const row=(await admin.query('SELECT * FROM notifications WHERE id=$1',[id])).rows[0];assert.equal(row.read_at,null);
+      for(const query of ['?limit=50','?limit=50&unread=1']){
+        const result=await req('/api/auth/notifications'+query,actor);assert.equal(result.status,200);assert.equal(result.cache,'no-store');
+        const notice=result.body.notifications.find(n=>n.conversation_id===row.variables.conversation_id);assert.ok(notice);
+        console.log('P0_NOTIFICATION_RESERVED_OBSERVATION '+JSON.stringify({canonicalIdMatches:notice.id===row.id,canonicalTypeMatches:notice.type===row.type,canonicalCreatedAtMatches:notice.created_at===new Date(row.created_at).toISOString(),sqlUnread:row.read_at===null,hasProjectedReadAt:Object.hasOwn(notice,'read_at')}));
+        assert.deepEqual(notice,canonicalReservedRecord(row));assert.equal(isMerchantNotificationRecord(notice),true);assert.equal(Object.hasOwn(notice,'read_at'),false);
+        assert.equal(notice.order_id,'synthetic-nonreserved-business-field');
+      }
+    }
+    assert.deepEqual(await snapshot(),before);
+  });
+  await t.test('actual reserved-key single read retains SQL path identity timestamp replay and peer isolation without rewriting JSON',async()=>{
+    for(const {actor,id,variables} of reservedActors){
+      const peer=actor===a?b:a,before=await snapshot(),path='/api/auth/notifications/'+id+'/read';assert.equal((await req(path,peer,'PATCH')).status,404);assert.deepEqual(await snapshot(),before);
+      const peerBefore=await snapshot([peer.id]),read=await req(path,actor,'PATCH');assert.equal(read.status,200);const row=(await admin.query('SELECT * FROM notifications WHERE id=$1',[id])).rows[0];assert.ok(row.read_at);assert.deepEqual(row.variables,variables);
+      assert.deepEqual(read.body,{ok:true,notification:canonicalReservedRecord(row)});assert.equal(isMerchantNotificationRecord(read.body.notification),true);
+      const stable=await snapshot(),again=await req(path,actor,'PATCH');assert.deepEqual(again.body,read.body);assert.deepEqual(await snapshot(),stable);assert.deepEqual(await snapshot([peer.id]),peerBefore);
+    }
+  });
+  await t.test('nonstring reserved variable values cannot corrupt canonical actual-app records and stored payloads remain unchanged',async()=>{
+    for(const {actor,id,variables} of reservedActors){
+      for(const value of [null,17,{synthetic:'reserved collision'}]){
+        const payload={...variables,id:value,type:value,created_at:value,read_at:value};await admin.query('UPDATE notifications SET variables=$2::jsonb WHERE id=$1',[id,JSON.stringify(payload)]);
+        const before=await snapshot(),row=(await admin.query('SELECT * FROM notifications WHERE id=$1',[id])).rows[0],result=await req('/api/auth/notifications?limit=50',actor);assert.equal(result.status,200);
+        const notice=result.body.notifications.find(n=>n.conversation_id===variables.conversation_id);assert.deepEqual(notice,canonicalReservedRecord(row));assert.equal(isMerchantNotificationRecord(notice),true);assert.deepEqual(await snapshot(),before);
+      }
+    }
+    console.log('P0_NOTIFICATION_RESERVED_ACCEPTANCE '+JSON.stringify({newFunctionalCases:3,actualApp:true,actualFrontendValidator:true,merchants:2,canonicalSqlIdentity:true,canonicalSqlTimestamps:true,unreadOmitsStoredReadAt:true,peerDenied:true,readReplay:true,storedJsonUnchanged:true,nonReservedProjectionPreserved:true,syntheticBootstrapRowsOnly:true,attackerControlledInputProven:false,historicalRowsInspected:false,hostedAccepted:false,wholeCellAccepted:false}));
+  });
+
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
 });

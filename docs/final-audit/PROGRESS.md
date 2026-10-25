@@ -1,3 +1,9 @@
+## RESIDUAL-FIELD-002 canonical reserved notification keys — prepared 2026-10-25
+
+Recovered0b9b90df;PR550Draft/base preserved. Three new cases use actual SQL operational producers then owned bootstrap-only synthetic variable conflicts: id/type/created_at/read_at strings and nonstring values. Actual app list/unread/single-read→actual frontend validator must retain canonical SQL identity/time, omit read_at for SQL-unread row, preserve other variables, foreign denial/peer state/read replay and stored JSON. Syntax/diff PASS; runtime NOT_RUN. No claim that a public caller controls these keys or that historical rows exist; correctness/defense-in-depth contract, not an inferred exploit. Tests/docs only at this checkpoint. Prior31912d9f/56CI/75notificationTAP/721broaderTAP retained. FIELD002OPEN/NO-GO/GitHub only. Next read exact-source target CI before deciding remediation.
+
+---
+
 ## RESIDUAL-FIELD-002 canonical inspection creation race fixed — 2026-10-25
 
 Source **31912d9fd33c9e12311351c189b937652496c6fb**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered a0d014a0; targeted checkpoint e85c2465 preserved proof; prior57b554a0 acceptance retained. Application change:18lines in canonical inspection authority only; no schema/grant/role/consent-policy change.
