@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "FIX_PREPARED_RUNTIME_PENDING",
+  "finding": "SUPPORT-INSPECTION-CONCURRENT-CREATE-001",
+  "findingState": "RUNTIME_CONFIRMED_FIX_PENDING",
+  "recoveredHead": "a0d014a0d81b9ab47a05d76808115319a3019499",
+  "previousAcceptedExecutable": "57b554a0ea1c2caf7fa258145a9ec38c19b68b8e",
+  "failedAttempts": [
+    {
+      "source": "e9c257260339783716f6c733bb08b7a1da4ab889",
+      "runId": 40187310176,
+      "jobId": 121150735692,
+      "passed": 22,
+      "failed": 2,
+      "functionalFailures": 1,
+      "parentFailures": 1,
+      "status": "FAILED_NOT_ACCEPTED",
+      "observation": {
+        "stages": [
+          "insert_gate",
+          "insert_gate"
+        ],
+        "statuses": [
+          201,
+          201
+        ],
+        "ownedRequests": 2,
+        "ownedNotices": 2,
+        "peerCompletedWhileOwnGated": true
+      },
+      "meaning": "Two legitimate assigned-ticket requests for one merchant both pass empty active check and commit; violates existing one-active-inspection contract. Not an unauthorized-access or provider/hosted incident claim."
+    }
+  ],
+  "fix": "Transaction locks merchant row before ticket/request checks, revalidates ticket merchant identity, retains assigned-admin/active-ticket/consent checks; serializes canonical creation across distinct tickets without schema/grant changes.",
+  "newFunctionalCases": 1,
+  "existingFunctionalCases": 22,
+  "applicationChanged": true,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "localSyntax": "PASS",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "limits": [
+    "Owned disposable trigger/advisory gate and two legitimate authenticated HTTP calls; no external services/browser/hosted acceptance",
+    "Canonical current creator only; unused older helper and direct external SQL writers not certified",
+    "No concurrency/load capacity claim, simultaneous ticket reassignment/deletion/lifecycle signoff, or historical repair"
+  ],
+  "nextExactAction": "Read corrected exact-source targeted and broader CI. Require201+409,one request/notice,observed SQL overlap,peer progress and unchanged peer state,rejection releasing next creation,notification-write rollback/retry."
+}

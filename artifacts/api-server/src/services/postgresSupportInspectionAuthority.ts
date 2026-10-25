@@ -45,6 +45,17 @@ export async function createInspectionRequestCanonicalPostgres(input: {
   const notificationId = `notification-inspection-${requestId}`;
 
   await withAuthenticationTransaction(async (client) => {
+    // Different tickets can belong to the same merchant. Serialize creation
+    // on that merchant before ticket/request locks, including when no active
+    // request exists yet. Keep the existing assignment and consent checks.
+    const merchantLock = await client.query<{ id: string }>(
+      `SELECT m.id
+         FROM merchants m
+         JOIN support_tickets t ON t.merchant_id = m.id
+        WHERE t.id = $1
+        FOR UPDATE OF m`,
+      [ticketId],
+    );
     const ticketResult = await client.query<{
       merchant_id: string;
       subject: string;
@@ -59,6 +70,13 @@ export async function createInspectionRequestCanonicalPostgres(input: {
     );
     const ticket = ticketResult.rows[0];
     if (!ticket) {
+      throw new SupportPostgresError(
+        "SUPPORT_TICKET_NOT_FOUND",
+        "support ticket not found",
+        404,
+      );
+    }
+    if (merchantLock.rows[0]?.id !== ticket.merchant_id) {
       throw new SupportPostgresError(
         "SUPPORT_TICKET_NOT_FOUND",
         "support ticket not found",
