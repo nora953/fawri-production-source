@@ -103,9 +103,13 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
   async function auditRead(){const response=await fetch(origin+'/api/auth/admin/emergency-read-access/audit',{headers:{Cookie:owner.cookie,'X-Fawri-Device-Id':owner.device}});return {status:response.status,body:await response.json()};}
   await t.test('real emergency ledger is valid before deletion of one audited merchant',async()=>{
     const {createEmergencyRequestPostgres}=await import('../src/services/postgresEmergencyReadAccessAuthority.ts');
-    for(const merchant of [a,b])await createEmergencyRequestPostgres({adminId:owner.id,adminName:'Synthetic owner',adminSessionId:owner.session.id,isOwner:true,merchantId:merchant.id,incidentReference:'synthetic-chain-'+merchant.id,severity:'high',reason:'Synthetic deletion chain interaction',durationMinutes:15,criticalSelfActivate:false});
+    for(const merchant of [b,blocked])await createEmergencyRequestPostgres({adminId:owner.id,adminName:'Synthetic owner',adminSessionId:owner.session.id,isOwner:true,merchantId:merchant.id,incidentReference:'synthetic-chain-'+merchant.id,severity:'high',reason:'Synthetic deletion chain interaction',durationMinutes:15,criticalSelfActivate:false});
     const first=await auditRead();assert.equal(first.status,200);assert.equal(first.body.verification.valid,true);
     peerEmergencyRows=(await admin.query("SELECT to_jsonb(t) AS row FROM audit_events t WHERE merchant_id=$1 AND entity_type='emergency_read_access' ORDER BY id",[b.id])).rows;assert.equal(peerEmergencyRows.length,2);
+  });
+  await t.test('audited merchant deletion fails closed without scrubbing PII or changing the global ledger',async()=>{
+    const before=await snapshot();const result=await req(owner,b);assert.equal(result.status,409);assert.equal(result.body.code,'MERCHANT_DELETION_AUDIT_POLICY_REQUIRED');assert.deepEqual(await snapshot(),before);
+    const audit=await auditRead();assert.equal(audit.status,200);assert.equal(audit.body.verification.valid,true);
   });
   await t.test('authorized owner HTTP purges only target private data and local media then rejects repeat', async () => {
     const peer = await snapshot([b, blocked]), r = await req(owner); assert.equal(r.status, 200, JSON.stringify(r)); assert.equal(r.body.deletedMerchantId, a.id); assert.equal(r.body.deletion_request.status, 'completed');

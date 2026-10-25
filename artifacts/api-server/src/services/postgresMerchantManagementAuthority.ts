@@ -1230,6 +1230,22 @@ export async function completeMerchantDeletionPostgres(input: {
     }
 
     await assertDeletionQuiescent(client, input.merchantId);
+    // Merchant metadata scrubbing would erase the payload used by the global
+    // emergency hash chain. Fail closed until a privacy-preserving retention
+    // contract exists; never silently retain PII or rewrite peer audit hashes.
+    const emergencyAudit = await client.query(
+      `SELECT id FROM audit_events
+        WHERE merchant_id = $1 AND entity_type = 'emergency_read_access'
+        LIMIT 1 FOR UPDATE`,
+      [input.merchantId],
+    );
+    if (emergencyAudit.rows.length > 0) {
+      throw new MerchantManagementError(
+        409,
+        "MERCHANT_DELETION_AUDIT_POLICY_REQUIRED",
+        "emergency audit retention must be resolved before merchant deletion",
+      );
+    }
     await purgeMerchantOperationalData(client, input.merchantId);
 
     await client.query(
