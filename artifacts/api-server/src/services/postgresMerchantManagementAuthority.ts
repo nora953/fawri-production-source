@@ -1442,7 +1442,10 @@ export async function importLegacyAdminDataPostgres(input: {
   });
 }
 
-export async function listAdminLogsPostgres(limit = 1000): Promise<unknown[]> {
+export async function listAdminLogsPostgres(
+  limit = 1000,
+  options: { includeEmergencyAudit?: boolean } = {},
+): Promise<unknown[]> {
   requirePostgres();
   const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<{
@@ -1471,10 +1474,11 @@ export async function listAdminLogsPostgres(limit = 1000): Promise<unknown[]> {
        LEFT JOIN accounts a ON a.id = e.actor_account_id
        LEFT JOIN admin_profiles p ON p.id = e.actor_account_id
        LEFT JOIN merchants m ON m.id = e.merchant_id
-      WHERE e.entity_type = 'merchant' OR e.merchant_id IS NOT NULL
+      WHERE (e.entity_type = 'merchant' OR e.merchant_id IS NOT NULL)
+        AND ($2::boolean OR e.entity_type IS DISTINCT FROM 'emergency_read_access')
       ORDER BY e.created_at DESC, e.id DESC
       LIMIT $1`,
-    [Math.max(1, Math.min(5000, limit))],
+    [Math.max(1, Math.min(5000, limit)), options.includeEmergencyAudit === true],
   );
   return rows.map((row) => ({
     id: row.id,
