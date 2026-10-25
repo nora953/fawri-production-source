@@ -485,5 +485,49 @@ test('operational SQL producers round trip through actual app and frontend valid
     console.log('P0_SUBSCRIPTION_EXPIRED_OVERLAP '+JSON.stringify({restrictedSqlWaiters:cohort.observed,merchants:2,httpRequests:6,newNotices:2,stableSentMarkers:true,stableReplay:true,actualApp:true,actualFrontendValidator:true,hostedAccepted:false,loadCapacityAccepted:false,wholeCellAccepted:false}));
   });
 
+
+  await t.test('two assigned tickets cannot concurrently create multiple active inspection requests for one merchant',async()=>{
+    const tickets=[];
+    for(const label of ['one','two']){
+      const created=await supportReq('/api/auth/support/tickets',a,'POST',{subject:'Synthetic concurrent inspection '+label,category:'technical',message:'Synthetic concurrent request'});assert.equal(created.status,201);tickets.push(created.body.ticket.id);
+      assert.equal((await supportReq('/api/auth/admin/support/tickets/'+created.body.ticket.id+'/claim',inspector,'POST',{})).status,200);
+    }
+    const name='inspection_overlap_'+randomUUID().replaceAll('-',''),key=randomInt(1,2147483647),gate=await admin.connect();let tasks=[],responses=[],observed=[],peerResult,peerAfter;
+    const create=async ticket=>{
+      const response=await fetch(origin+'/api/auth/admin/support/tickets/'+ticket+'/inspection-requests',{method:'POST',headers:{Cookie:inspector.cookie,'X-Fawri-Device-Id':inspector.device,'Content-Type':'application/json'},body:JSON.stringify({reason:'Synthetic concurrent inspection',mode:'independent_read_only'}),signal:AbortSignal.timeout(10000)});
+      return {ticket,status:response.status,body:await response.json()};
+    };
+    await admin.query(`CREATE FUNCTION ${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.merchant_id=TG_ARGV[0] THEN PERFORM pg_advisory_xact_lock(TG_ARGV[1]::bigint); END IF; RETURN NEW; END $$`);
+    try{
+      await admin.query(`CREATE TRIGGER ${name} BEFORE INSERT ON support_inspection_requests FOR EACH ROW EXECUTE FUNCTION ${name}('${a.id}','${key}')`);
+      await gate.query('SELECT pg_advisory_lock($1::bigint)',[key]);
+      tasks=tickets.map(ticket=>create(ticket).then(value=>({value}),error=>({error:String(error.message)})));
+      const deadline=Date.now()+5000;
+      while(Date.now()<deadline){
+        observed=(await admin.query("SELECT pid,CASE WHEN query LIKE '%INSERT INTO support_inspection_requests%' THEN 'insert_gate' ELSE 'merchant_serialization' END AS stage FROM pg_stat_activity WHERE usename=$1 AND state='active' AND wait_event_type='Lock' AND (query LIKE '%INSERT INTO support_inspection_requests%' OR (query LIKE '%FROM merchants%' AND query LIKE '%FOR UPDATE%'))",[runtime.authRole])).rows;
+        if(observed.length>=2)break;await new Promise(resolve=>setTimeout(resolve,20));
+      }
+      assert.equal(observed.length,2,'both actual authenticated transactions must overlap in SQL');
+      assert.equal((await admin.query('SELECT count(*)::int AS n FROM support_inspection_requests WHERE ticket_id=ANY($1::text[])',[tickets])).rows[0].n,0);
+      peerResult=await create(b.ticketId);assert.equal(peerResult.status,201);peerAfter=await ownInspectionState(b);
+    }finally{
+      try{await gate.query('SELECT pg_advisory_unlock($1::bigint)',[key]);}finally{gate.release();responses=await Promise.all(tasks);await admin.query(`DROP TRIGGER IF EXISTS ${name} ON support_inspection_requests`);await admin.query(`DROP FUNCTION ${name}()`);}
+    }
+    for(const response of responses)assert.equal(response.error,undefined);const actual=responses.map(result=>result.value);
+    const requests=(await admin.query('SELECT * FROM support_inspection_requests WHERE ticket_id=ANY($1::text[]) ORDER BY id',[tickets])).rows;
+    const notices=(await admin.query("SELECT * FROM notifications WHERE merchant_id=$1 AND type='inspection_session_request' AND variables->>'ticket_id'=ANY($2::text[]) ORDER BY id",[a.id,tickets])).rows;
+    console.log('P0_INSPECTION_CREATE_OVERLAP '+JSON.stringify({stages:observed.map(row=>row.stage),statuses:actual.map(row=>row.status),ownedRequests:requests.length,ownedNotices:notices.length,peerCompletedWhileOwnGated:peerResult?.status===201}));
+    assert.deepEqual(actual.map(row=>row.status).sort(),[201,409]);assert.equal(requests.length,1);assert.equal(notices.length,1);
+    const winner=actual.find(row=>row.status===201),loser=actual.find(row=>row.status===409);assert.equal(loser.body.code,'SUPPORT_INSPECTION_ALREADY_ACTIVE');assert.equal(requests[0].ticket_id,winner.ticket);assert.equal(requests[0].status,'pending');assert.equal(notices[0].source_entity_id,requests[0].id);
+    await assertCurrentInspection(a,requests[0].id);assert.deepEqual(await ownInspectionState(b),peerAfter);
+    const before=await inspectionState();assert.equal((await create(loser.ticket)).status,409);assert.deepEqual(await inspectionState(),before);
+    assert.equal((await supportReq('/api/auth/support/tickets/'+winner.ticket+'/inspection-requests/'+requests[0].id+'/decision',a,'POST',{decision:'reject'})).status,200);
+    const retryBefore=await inspectionState();
+    await noticeFault(a,'inspection_session_request',async()=>{const failed=await create(loser.ticket);assert.equal(failed.status,500);assert.deepEqual(await inspectionState(),retryBefore);});
+    assert.equal((await create(loser.ticket)).status,201);
+    const current=(await admin.query("SELECT * FROM support_inspection_requests WHERE merchant_id=$1 AND status='pending' AND request_expires_at>now()",[a.id])).rows;assert.equal(current.length,1);assert.equal(current[0].ticket_id,loser.ticket);await assertCurrentInspection(a,current[0].id);assert.deepEqual(await ownInspectionState(b),peerAfter);
+    console.log('P0_INSPECTION_CREATE_ACCEPTANCE '+JSON.stringify({actualApp:true,overlappingSqlTransactions:2,ownedTickets:2,oneActiveRequest:true,loser409:true,peerPreserved:true,releasedAfterRejection:true,noticeFaultRollbackRetry:true,actualFrontendValidator:true,hostedAccepted:false,wholeCellAccepted:false}));
+  });
+
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
 });

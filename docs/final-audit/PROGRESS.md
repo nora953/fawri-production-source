@@ -1,3 +1,9 @@
+## RESIDUAL-FIELD-002 concurrent inspection creation — prepared 2026-10-25
+
+Recovered a0d014a0;PR550Draft/base preserved. One new bounded functional case: actual authenticated canonical inspection creation for two independently assigned tickets of one merchant; owned disposable BEFORE INSERT advisory gate forces SQL overlap. Observe two trusted restricted authentication SQL sessions waiting at insert gate or merchant serialization point; peer HTTP creation must progress. Acceptance requires201+409,one request/notice,no loser writes,actual app/frontend fields,peer preservation,rejection permits next request,notice-write fault rollback/retry releases serialization. Syntax/diff PASS; runtime NOT_RUN. Tests/docs only at this checkpoint; no defect inferred solely from source. Previous57b554a0/56CI/74notificationTAP/721broaderTAP retained. FIELD002OPEN/NO-GO/GitHub only; no load/provider/hosted acceptance. Next inspect exact-source targeted CI before remediation.
+
+---
+
 ## RESIDUAL-FIELD-002 concurrent subscription notification refresh accepted — 2026-10-25
 
 Source **57b554a0ea1c2caf7fa258145a9ec38c19b68b8e**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered92f8c296; targeted checkpoint14a9c95d preserved proof; previous6182678d acceptance retained. Tests/docs only; no application/schema/ACL change.
