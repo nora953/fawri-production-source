@@ -115,7 +115,7 @@ test('actual app isolates notification and conversation consumers across aliases
       for(const path of ['/api/bot/debug','/API/BoT/DeBuG/']){
         const r=await req(`${path}?merchant_id=${peer.id}&text=synthetic-private-probe`,actor);
         assert.equal(r.status,410,JSON.stringify(r));
-        if(r.status===410)assert.equal(r.body.code,'LEGACY_RUNTIME_AUTHORITY_DISABLED');
+        if(r.status===410)assert.equal(r.body.code,'LEGACY_BOT_DEBUG_DISABLED');
         assert.doesNotMatch(JSON.stringify(r.body),/db_path|drafts_for_merchant|drafts_count|meta_pages_for_merchant|product_names|private-page-/);
         assert.equal(JSON.stringify(r.body).includes(peer.id),false);
       }
@@ -127,7 +127,9 @@ test('actual app isolates notification and conversation consumers across aliases
   await t.test('retired bot debug rejects non-merchant and invalid session actors without SQL changes',async()=>{
     const before=await snapshot();
     for(const path of ['/api/bot/debug','/API/BoT/DeBuG/'])for(const [actor,headers] of [[undefined,{}],[ownerActor,{}],[a,{'X-Fawri-Device-Id':'wrong'}],[a,{Cookie:`${a.cookie}; ${ownerActor.cookie}`} ]]){
-      const r=await req(path,actor,'GET',undefined,headers);assert.equal(r.status,401);
+      const r=await req(path,actor,'GET',undefined,headers);
+      assert.ok([401,410].includes(r.status),'only authenticated denial or unconditional retirement is allowed');
+      if(r.status===410)assert.deepEqual(r.body,{ok:false,code:'LEGACY_BOT_DEBUG_DISABLED',error:'legacy bot debug route is disabled'});
       assert.doesNotMatch(JSON.stringify(r.body),/db_path|drafts_for_merchant|meta_pages_for_merchant|private-page-/);
     }
     assert.deepEqual(await snapshot(),before);

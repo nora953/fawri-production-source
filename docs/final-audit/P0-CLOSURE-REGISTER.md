@@ -1,3 +1,9 @@
+## FIELD004 debug guard expectation correction — 2026-10-25
+
+Initial b146efa4/run40210760045 failed because tests expected the later helper code and mandatory401. Source inspection located earlier legacyBotDebugRouteGuard: fixed410 LEGACY_BOT_DEBUG_DISABLED can precede session checks. Tests now require exact retirement payload for410 or authentication401 for invalid actors, while preserving no-data/SQL/JSON assertions. No application change or confirmed product finding. Corrected runtime PENDING; prior7a5a5327 acceptance retained; FIELD004OPEN/NO-GO. Next read corrected notification lane and exact-source CI.
+
+---
+
 ## FIELD004 actual-app retired debug tests committed — 2026-10-25
 
 Source **b146efa4b0157a5e0d6896cff3efeeb44b749973** adds2functional cases to the existing consumer full-app fixture. Syntax/diff checks PASS; application unchanged. Actual notification-privacy lane run40210760045/job121221275209 is still in progress at this checkpoint; **runtime PENDING, not accepted**. [Evidence](evidence/P0-FIELD004-DEBUG-HTTP-20261025.json). Prior7a5a5327 acceptance retained; FIELD004OPEN/releaseNO-GO. No merge/deploy/hosted interaction.
