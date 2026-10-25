@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-004",
-  "status": "BOUNDED_SOURCE_AUTHORITIES_MAPPED_HTTP_PROOF_PENDING",
+  "status": "SOURCE_AND_BOUNDED_HTTP_RECONCILED_FINITE_REMAINDER_OPEN",
   "sourceRevision": "236f36204e5df8abd717acee393293969659b7bd",
   "release": "NO-GO",
   "fieldCellClosed": false,
@@ -55,5 +55,49 @@
     "No online conversational order creation or whole commercial journey acceptance"
   ],
   "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
-  "nextExactAction": "Add a bounded actual-app required-PostgreSQL test for /api/bot/debug (canonical and case/trailing-slash aliases), own/foreign merchant hints, anonymous/admin/wrong-device/session confusion, and proof no draft/page/db_path projection or legacy JSON writes. Reuse current Meta signed-ingress/worker dedup evidence instead of rerunning it or inventing CRUD for the two residual SQL tables."
+  "nextExactAction": "Continue FIELD005 source reconciliation of merchant_deletion_requests identity snapshots and audit-retention handling against the existing privileged-deletion/retention gate. Reuse accepted deletion execution tests; identify exact unresolved field/duration policy without inventing retention periods or changing hosted data. FIELD004 unresolved scope and hosted inventory stay explicit.",
+  "previousStatus": "BOUNDED_SOURCE_AUTHORITIES_MAPPED_HTTP_PROOF_PENDING",
+  "reconciledAtSource": "8eb803e68dc8457a2914ecdf5072f00994e8f639",
+  "checklist": [
+    {
+      "id": "F004-C1",
+      "status": "BOUNDED_SOURCE_MAPPED",
+      "requirement": "Separate residual SQL tables, legacy Map/JSON and current durable Meta inbound authorities",
+      "evidence": "P0-FIELD004-AUTHORITY-MAP-20261025.json"
+    },
+    {
+      "id": "F004-C2",
+      "status": "BOUNDED_HTTP_ACCEPTED",
+      "requirement": "Required-mode retired debug aliases, invalid actors, no private projection/selected SQL mutations/root JSON creation",
+      "evidence": "P0-FIELD004-DEBUG-HTTP-20261025.json",
+      "limit": "Selected fixture snapshots do not directly certify rows in both residual SQL tables"
+    },
+    {
+      "id": "F004-C3",
+      "status": "REUSED_SQL_BOUNDARY_EVIDENCE",
+      "requirement": "Residual table scoped SQL/RLS proof remains separate from public route acceptance",
+      "evidence": "P0-0051-VERIFICATION-20261024.json",
+      "limit": "Original acceptance scope only; no fresh SQL execution in this batch"
+    },
+    {
+      "id": "F004-C4",
+      "status": "REUSED_SEPARATE_DURABLE_CALLER_EVIDENCE",
+      "requirement": "Current Meta inbound/worker proof is not processed_channel_events table coverage",
+      "evidence": "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json"
+    },
+    {
+      "id": "F004-R1",
+      "status": "OPEN_INTENDED_AUTHORITY_CONTRACT",
+      "requirement": "Confirm whether residual tables are supported dormant storage, migration compatibility or candidates for retirement",
+      "acceptance": "Document intended lifecycle and any supported writer/reader. Do not infer retirement, new CRUD requirement or online-order completeness from literal scan absence."
+    },
+    {
+      "id": "F004-R2",
+      "status": "BLOCKED_HOSTED_VERIFICATION",
+      "requirement": "Actual row contents, external/dynamic writers and migration/deployed consistency",
+      "acceptance": "Authorized read-only inventory tied to deployed revision and declared storage lifecycle; preserve rows without deletion/import/repair policy.",
+      "authorization": "Unavailable under current GitHub-only restriction"
+    }
+  ],
+  "currentAcceptedExecutable": "86ac8610591659cee4a0e92d3386ba1e51736d41"
 }

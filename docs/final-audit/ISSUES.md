@@ -1,3 +1,13 @@
+## FIELD004 finite closure reconciliation — 2026-10-25
+
+Recovered8eb803e6/PR550Draft/base preserved. [Finite checklist](evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json): four bounded source/runtime or reused-evidence items separated from two unresolved requirements. Debug retirement HTTP accepted; SQL/RLS evidence reused within original limits; Meta durable pipeline is a separate authority, not residual processed_channel_events coverage. No new runtime/CI execution or source changes.
+
+Remaining **F004-R1 OPEN**: intended lifecycle/support/retirement contract for residual tables; **F004-R2 BLOCKED_HOSTED_VERIFICATION**: actual contents, external/dynamic writers and deployed/migration consistency under GitHub-only restriction. No absence theorem, table deletion, new CRUD, historical cleanup or full FIELD004 closure inferred. Current register45/statuses29CLOSED_SOURCE/7OPEN/9BLOCKED unchanged; inventory incomplete/overallPercentage null; releaseNO-GO. Accepted executable86ac8610/56CI/80notificationTAP/721broaderTAP inherited only.
+
+**Next independent action:** Continue FIELD005 source reconciliation of merchant_deletion_requests identity snapshots and audit-retention handling against the existing privileged-deletion/retention gate. Reuse accepted deletion execution tests; identify exact unresolved field/duration policy without inventing retention periods or changing hosted data. FIELD004 unresolved scope and hosted inventory stay explicit.
+
+---
+
 ## FIELD004 retired debug HTTP boundary accepted — 2026-10-25
 
 Source **86ac8610591659cee4a0e92d3386ba1e51736d41**:56/56CI SUCCESS. Corrected notification lane40211082822/job121222247568:80TAP PASS,consumer fixture9TAP(8functional+parent),2newfunctional. Broader40211083053/job121222367476:721TAP PASS/92invocations/90files. Both zero failed/skipped/cancelled; checkout64271ced has source-identical tree. Broader excludes this fixture; totals separate. No application/schema/grant change.

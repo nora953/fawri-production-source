@@ -2052,9 +2052,15 @@
       "priority": 4,
       "table": "order_drafts,processed_channel_events",
       "status": "OPEN",
-      "gap": "No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping.",
-      "next": "Trace actual bot debug and order/ingress consumers with accepted-source restrictions; do not build new CRUD endpoints.",
-      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+      "gap": "Bounded source authority separation and retired debug HTTP accepted. Intended residual storage lifecycle and actual hosted/external writer inventory remain unresolved.",
+      "next": "Continue FIELD005 source reconciliation of merchant_deletion_requests identity snapshots and audit-retention handling against the existing privileged-deletion/retention gate. Reuse accepted deletion execution tests; identify exact unresolved field/duration policy without inventing retention periods or changing hosted data. FIELD004 unresolved scope and hosted inventory stay explicit.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "previousGap": "No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping.",
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json",
+      "checklistRemaining": [
+        "F004-R1",
+        "F004-R2"
+      ]
     },
     {
       "id": "RESIDUAL-FIELD-005",
@@ -2112,9 +2118,15 @@
       "priority": 4,
       "table": "order_drafts,processed_channel_events",
       "status": "OPEN",
-      "gap": "No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping.",
-      "next": "Trace actual bot debug and order/ingress consumers with accepted-source restrictions; do not build new CRUD endpoints.",
-      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+      "gap": "Bounded source authority separation and retired debug HTTP accepted. Intended residual storage lifecycle and actual hosted/external writer inventory remain unresolved.",
+      "next": "Continue FIELD005 source reconciliation of merchant_deletion_requests identity snapshots and audit-retention handling against the existing privileged-deletion/retention gate. Reuse accepted deletion execution tests; identify exact unresolved field/duration policy without inventing retention periods or changing hosted data. FIELD004 unresolved scope and hosted inventory stay explicit.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "previousGap": "No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping.",
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json",
+      "checklistRemaining": [
+        "F004-R1",
+        "F004-R2"
+      ]
     },
     {
       "id": "RESIDUAL-FIELD-005",
