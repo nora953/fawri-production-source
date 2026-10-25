@@ -191,5 +191,80 @@ test('operational SQL producers round trip through actual app and frontend valid
     });
   }
 
+
+  // These templates are produced by the authenticated list's real refresher,
+  // not by calling the notification insert helper or seeding notification rows.
+  const subscriptionTypes=new Set(['subscription_expiry_reminder','subscription_expired','addon_expiry_reminder']);
+  const subscriptionClock=Date.now(),day=86400000,expiry=new Date(subscriptionClock+3*day).toISOString(),batchExpiry=new Date(subscriptionClock+5*day).toISOString();
+  const subscriptionRows=async(actorIds=merchants)=>{
+    const value={};for(const table of ['subscriptions','subscription_reply_batches','notifications'])value[table]=(await admin.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY id`,[actorIds])).rows;
+    return value;
+  };
+  const subscriptionNotices=async actor=>(await admin.query('SELECT * FROM notifications WHERE merchant_id=$1 AND type=ANY($2::text[]) ORDER BY id',[actor.id,[...subscriptionTypes]])).rows;
+  const mappedSubscription=row=>({id:row.id,type:row.type,...row.variables,created_at:new Date(row.created_at).toISOString(),...(row.read_at?{read_at:new Date(row.read_at).toISOString()}:{})});
+  for(const actor of [a,b]){
+    actor.subscriptionId='notice-sub-'+actor.id;actor.batchId='notice-batch-'+actor.id;
+    await admin.query("INSERT INTO subscriptions(id,merchant_id,plan_name,status,billing_anchor_day,starts_at,expires_at,addon_replies_remaining) VALUES($1,$2,'silver','active',1,$3,$4,7)",[actor.subscriptionId,actor.id,new Date(subscriptionClock-30*day).toISOString(),expiry]);
+    for(const [label,remaining,expiresAt] of [['eligible',7,batchExpiry],['empty',0,batchExpiry],['expired',7,new Date(subscriptionClock-day).toISOString()],['distant',7,new Date(subscriptionClock+20*day).toISOString()]]){
+      await admin.query("INSERT INTO subscription_reply_batches(id,subscription_id,merchant_id,source,amount,remaining,purchased_at,expires_at) VALUES($1,$2,$3,'purchase',7,$4,$5,$6)",[label==='eligible'?actor.batchId:actor.batchId+'-'+label,actor.subscriptionId,actor.id,remaining,new Date(subscriptionClock-30*day).toISOString(),expiresAt]);
+    }
+  }
+  await t.test('subscription refresher list fault rolls back notice and sent markers then real HTTP retry recovers',async()=>{
+    const fn='notice_fault_'+randomUUID().replaceAll('-','');
+    // Owned disposable trigger scoped to one tenant/type; no product SQL changes.
+    await admin.query(`CREATE FUNCTION ${fn}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.merchant_id=TG_ARGV[0] AND NEW.type='addon_expiry_reminder' THEN RAISE EXCEPTION 'synthetic subscription notice fault'; END IF; RETURN NEW; END $$`);
+    try{
+      await admin.query(`CREATE TRIGGER ${fn} BEFORE INSERT ON notifications FOR EACH ROW EXECUTE FUNCTION ${fn}('${a.id}')`);
+      const before=await subscriptionRows(),failed=await req('/api/auth/notifications?limit=50',a);
+      assert.equal(failed.status,503);assert.equal(failed.body.code,'MERCHANT_NOTIFICATION_AUTHORITY_UNAVAILABLE');assert.equal(failed.body.notifications,undefined);
+      assert.deepEqual(await subscriptionRows(),before);
+    }finally{await admin.query(`DROP TRIGGER IF EXISTS ${fn} ON notifications`);await admin.query(`DROP FUNCTION ${fn}()`);}
+    const peer=await subscriptionRows([b.id]),started=Date.now(),result=await req('/api/auth/notifications?limit=50',a);assert.equal(result.status,200);assert.equal(result.cache,'no-store');
+    const rows=await subscriptionNotices(a);assert.equal(rows.length,2);
+    for(const row of rows){assert.ok(Date.parse(row.created_at)>=started&&Date.parse(row.created_at)<=Date.now());assert.deepEqual(result.body.notifications.find(n=>n.id===row.id),mappedSubscription(row));assert.equal(isMerchantNotificationRecord(mappedSubscription(row)),true);}
+    assert.deepEqual(await subscriptionRows([b.id]),peer);
+  });
+  await t.test('actual list refresher emits exact expiry and eligible-addon fields for two isolated merchants',async()=>{
+    for(const actor of [a,b]){
+      const peer=actor===a?b:a,peerBefore=await subscriptionRows([peer.id]);
+      const result=await req('/api/auth/notifications?limit=50&merchant_id='+peer.id,actor);assert.equal(result.status,200);assert.equal(result.cache,'no-store');
+      const rows=await subscriptionNotices(actor);assert.equal(rows.length,2);
+      const expected={subscription_expiry_reminder:{plan_name:'silver',expires_at:expiry,days_remaining:3},addon_expiry_reminder:{addon_batch_id:actor.batchId,source:'purchase',remaining_replies:7,expires_at:batchExpiry,days_remaining:5}};
+      for(const row of rows){
+        assert.equal(row.merchant_id,actor.id);assert.equal(row.account_id,actor.id);assert.equal(row.audience,'merchant');assert.equal(row.read_at,null);
+        assert.deepEqual(row.variables,expected[row.type]);assert.equal(row.source_entity_type,row.type==='addon_expiry_reminder'?'subscription_reply_batch':'subscription');assert.equal(row.source_entity_id,row.type==='addon_expiry_reminder'?actor.batchId:actor.subscriptionId);
+        const notice=result.body.notifications.find(n=>n.id===row.id);assert.deepEqual(notice,mappedSubscription(row));assert.equal(isMerchantNotificationRecord(notice),true);
+        assert.equal(result.body.notifications.some(n=>(n.addon_batch_id||'').startsWith(peer.batchId)),false);
+      }
+      const sub=(await admin.query('SELECT expiry_reminder_sent_at,expired_notification_sent_at FROM subscriptions WHERE id=$1',[actor.subscriptionId])).rows[0];assert.ok(sub.expiry_reminder_sent_at);assert.equal(sub.expired_notification_sent_at,null);
+      const batches=(await admin.query('SELECT id,expiry_reminder_sent_at FROM subscription_reply_batches WHERE merchant_id=$1',[actor.id])).rows;
+      for(const batch of batches)assert.equal(Boolean(batch.expiry_reminder_sent_at),batch.id===actor.batchId);
+      const before=await subscriptionRows();assert.equal((await req('/api/auth/notifications?limit=50',actor)).status,200);assert.deepEqual(await subscriptionRows(),before);assert.deepEqual(await subscriptionRows([peer.id]),peerBefore);
+    }
+  });
+  await t.test('actual expired-subscription list preserves balance fields and peer data with stable repeated refresh',async()=>{
+    const expiredAt=new Date(subscriptionClock-day).toISOString();
+    for(const actor of [a,b]){
+      await admin.query('UPDATE subscriptions SET expires_at=$2 WHERE id=$1',[actor.subscriptionId,expiredAt]);
+      const peer=actor===a?b:a,peerBefore=await subscriptionRows([peer.id]),started=Date.now();
+      const result=await req('/api/auth/notifications?limit=50',actor);assert.equal(result.status,200);
+      const rows=await subscriptionNotices(actor);assert.equal(rows.length,3);const row=rows.find(n=>n.type==='subscription_expired');assert.ok(row);
+      assert.deepEqual(row.variables,{plan_name:'silver',expired_at:expiredAt,addon_replies_remaining:7});assert.equal(row.source_entity_type,'subscription');assert.equal(row.source_entity_id,actor.subscriptionId);assert.equal(row.account_id,actor.id);assert.equal(row.merchant_id,actor.id);assert.equal(row.audience,'merchant');
+      assert.ok(Date.parse(row.created_at)>=started&&Date.parse(row.created_at)<=Date.now());const notice=result.body.notifications.find(n=>n.id===row.id);assert.deepEqual(notice,mappedSubscription(row));assert.equal(isMerchantNotificationRecord(notice),true);
+      assert.ok((await admin.query('SELECT expired_notification_sent_at FROM subscriptions WHERE id=$1',[actor.subscriptionId])).rows[0].expired_notification_sent_at);
+      const stable=await subscriptionRows();assert.equal((await req('/api/auth/notifications?limit=50',actor)).status,200);assert.deepEqual(await subscriptionRows(),stable);assert.deepEqual(await subscriptionRows([peer.id]),peerBefore);
+    }
+  });
+  await t.test('subscription-produced notices deny peer reads and retain exact own fields on read replay',async()=>{
+    for(const actor of [a,b])for(const row of await subscriptionNotices(actor)){
+      const peer=actor===a?b:a,before=await subscriptionRows(),path='/api/auth/notifications/'+row.id+'/read';
+      const denied=await req(path,peer,'PATCH');assert.equal(denied.status,404);assert.deepEqual(await subscriptionRows(),before);
+      const peerBefore=await subscriptionRows([peer.id]),read=await req(path,actor,'PATCH');assert.equal(read.status,200);assert.equal(read.cache,'no-store');
+      const stored=(await admin.query('SELECT * FROM notifications WHERE id=$1',[row.id])).rows[0];assert.ok(stored.read_at);assert.deepEqual(read.body,{ok:true,notification:mappedSubscription(stored)});assert.equal(isMerchantNotificationRecord(read.body.notification),true);
+      const stable=await subscriptionRows(),replay=await req(path,actor,'PATCH');assert.deepEqual(replay.body,read.body);assert.deepEqual(await subscriptionRows(),stable);assert.deepEqual(await subscriptionRows([peer.id]),peerBefore);
+    }
+    console.log('P0_SUBSCRIPTION_NOTIFICATION_CALLER '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualListRefresher:true,sqlTemplates:3,newFunctionalCases:4,merchants:2,exactFields:true,excludedBatches:true,faultRollbackAndRetry:true,peerPreserved:true,readReplay:true,actualFrontendValidator:true,externalProvider:false,browserRendering:false,hostedAccepted:false,wholeFieldCellAccepted:false}));
+  });
+
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
 });

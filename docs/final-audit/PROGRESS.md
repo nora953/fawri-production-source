@@ -1,3 +1,11 @@
+## RESIDUAL-FIELD-002 new-order reachability reconciled; subscription runtime prepared — 2026-10-25
+
+Recovered HEAD e81c2cd8; PR550 Draft/base preserved. Source-only tracked-runtime scan of807 files (UTF-8 including NUL) finds canonical notifyMerchantNewOrderPostgres only at its declaration. Legacy createOrder→AuthDb new-order notice is in retired JSON Meta flow; required-mode guard returns410 and canonical ingress/worker uses its SQL knowledge path. Literal backend orders INSERT is cashier sync/source_channel cashier. This is source reconciliation, not a runtime absence proof, complete commercial order journey or permission to wire a new feature. Existing direct SQL producer evidence remains bounded. [Source evidence](evidence/P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json).
+
+Prepared4new functional cases extending existing operational HTTP fixture: actual authenticated list refresher for3subscription templates→SQL→app→actual frontend validator; eligible/empty/expired/distant batches; peer preservation/read denial/replay; scoped addon-notice write failure rolls back subscription sent marker and notice before real HTTP retry. Syntax/diff check PASS. New runtime NOT_RUN pending exact-source CI; no application/schema/ACL change. Last accepted executable d86d7c11,broader721TAP retained separately. FIELD002 OPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED;NO-GO. Next read targeted logs then relevant broader CI; preserve existing background-refresher RLS proof as regression, not new work.
+
+---
+
 ## RESIDUAL-FIELD-002 Meta knowledge-gap caller bounded runtime accepted — 2026-10-25
 
 Source **d86d7c11a9634f870acda08f863d2237dbbe5bbc**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/docs only; no application/worker/schema/ACL/policy changes. Recovered d6377cbb; prior e08e554f customer-message acceptance retained separately.
