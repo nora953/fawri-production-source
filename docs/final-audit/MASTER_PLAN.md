@@ -1,3 +1,11 @@
+## FIELD005 concurrency attempt: overlap not proven — 2026-10-25
+
+Source20703a6b/run40218027798/job121243499529 executed actual deletion/emergency requests behind a merchant row gate. Required2SQLwaiters were not observed within5s;fixture10PASS/2FAIL(1functional+parent). **Harness failure, not product race evidence or PASS.** No application changes. Prior72f01da4 bounded pre-existing-ledger mitigation remains accepted; concurrency/policy/history OPEN. [Evidence](evidence/P0-DELETION-EMERGENCY-CONCURRENCY-20261025.json). No merge/deploy/hosted change; releaseNO-GO.
+
+**Next exact action:** Instrument owned authentication-role pg_stat_activity/pg_locks and both request outcomes before gate release; distinguish pool admission, nested refresh and FK/merchant waits. Build deterministic observed business-stage overlap, retain strict negative/peer/chain assertions, rerun exact-source lane. Do not change production locking solely on this harness failure.
+
+---
+
 ## FIELD005 emergency ledger corruption reproduced; bounded deletion mitigation accepted — 2026-10-25
 
 Source **72f01da4fb6a2df23108a2bd2e9d805addac3fae**:56/56CI SUCCESS. Initial d97b183b/run40215641483/job121236061026 reproduces completed merchant deletion followed by owner emergency audit503 EMERGENCY_AUDIT_CHAIN_INVALID;fixture8PASS/2FAIL(1functional+parent). Scrubbing audit metadata removes chain_payload/sequence required by global verifier. No hosted incident asserted.

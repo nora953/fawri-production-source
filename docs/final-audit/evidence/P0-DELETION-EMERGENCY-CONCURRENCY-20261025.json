@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-005",
+  "status": "CONCURRENCY_HARNESS_FAILED_OVERLAP_NOT_PROVEN",
+  "sourceCandidate": "20703a6b0d92f9e32038cc0d75db77b7603d8000",
+  "applicationChanged": false,
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "runId": 40218027798,
+  "jobId": 121243499529,
+  "fixturePassed": 10,
+  "fixtureFailed": 2,
+  "failure": "two actual SQL lock waiters required",
+  "classification": "INSUFFICIENT_OVERLAP_OBSERVATION_NOT_PRODUCT_RACE_FINDING",
+  "method": "Bootstrap merchant row gate, two real HTTP requests,5s SQL-wait observation,15s emergency HTTP abort, finally release and drain. Query-specific waiter predicate did not prove2waiters.",
+  "retainedMitigation": "72f01da4fb6a2df23108a2bd2e9d805addac3fae",
+  "limits": [
+    "No successful race proof and no product defect inferred from failed harness",
+    "Authentication authority pool max3 and nested refresh transactions require precise stage/pool diagnostics",
+    "Current row-query predicate may miss waits outside merchant/FK queries; do not simply lower required overlap"
+  ],
+  "nextExactAction": "Instrument owned authentication-role pg_stat_activity/pg_locks and both request outcomes before gate release; distinguish pool admission, nested refresh and FK/merchant waits. Build deterministic observed business-stage overlap, retain strict negative/peer/chain assertions, rerun exact-source lane. Do not change production locking solely on this harness failure."
+}
