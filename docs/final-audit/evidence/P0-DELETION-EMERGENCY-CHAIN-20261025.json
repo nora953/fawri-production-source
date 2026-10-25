@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-005",
+  "status": "TARGETED_FAIL_CLOSED_MITIGATION_PASS_BROADER_PENDING",
+  "finding": "MERCHANT-DELETION-EMERGENCY-CHAIN-001",
+  "sourceCandidate": "72f01da4fb6a2df23108a2bd2e9d805addac3fae",
+  "previousAcceptedExecutable": "86ac8610591659cee4a0e92d3386ba1e51736d41",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "applicationChanged": true,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "failedAttempt": {
+    "source": "d97b183bc92942b53f6d44f28d527ae2287ccb3b",
+    "runId": 40215641483,
+    "jobId": 121236061026,
+    "fixturePassed": 8,
+    "fixtureFailed": 2,
+    "observation": {
+      "deletionCompleted": true,
+      "auditStatus": 503,
+      "code": "EMERGENCY_AUDIT_CHAIN_INVALID"
+    },
+    "classification": "CONFIRMED_RUNTIME_INTEGRITY_DEFECT"
+  },
+  "mitigation": "Before purge, refuse deletion with409 MERCHANT_DELETION_AUDIT_POLICY_REQUIRED if merchant has emergency_read_access audit rows. Do not preserve PII by exception, erase ledger payload, weaken verification or rewrite peer hashes. Non-emergency merchant deletion remains available.",
+  "targeted": {
+    "runId": 40215851931,
+    "jobId": 121236694172,
+    "tapPass": 41,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "auditBatch": "management-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "c1c17f75dc8d3db7bcb3bfaacac00785a5c1c7a5",
+    "tree": "abaf36ebb46a1d89ba28539e42f9099ff349af61",
+    "sourceTreeMatches": true
+  },
+  "newFunctionalCases": 3,
+  "existingFunctionalCases": 7,
+  "limits": [
+    "Mitigation blocks audited-merchant deletion pending approved privacy/retention contract; it does not implement completed deletion for such merchants",
+    "Concurrent new emergency event versus deletion not tested or certified; guard is bounded pre-existing-ledger mitigation",
+    "Previously corrupted historical chains not repaired",
+    "Mounted actual Express management+emergency routers with real SQL session/password, not full app mount",
+    "Fixture broad RLS-mediated primary and separate auth login; no hosted/provider proof"
+  ],
+  "nextExactAction": "Complete exact-source CI; then test concurrent emergency event creation versus deletion with observed SQL overlap before claiming race safety. Keep retention policy and historical repair OPEN."
+}
