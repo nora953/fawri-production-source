@@ -1,3 +1,19 @@
+## RESIDUAL-FIELD-002 canonical inspection creation race fixed — 2026-10-25
+
+Source **31912d9fd33c9e12311351c189b937652496c6fb**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered a0d014a0; targeted checkpoint e85c2465 preserved proof; prior57b554a0 acceptance retained. Application change:18lines in canonical inspection authority only; no schema/grant/role/consent-policy change.
+
+**SUPPORT-INSPECTION-CONCURRENT-CREATE-001 — FIXED_SOURCE within tested canonical path.** Initial e9c25726 run40187310176/job121150735692 observed2trusted SQL transactions at INSERT gate,HTTP201+201,2requests+2notices for one merchant across two assigned tickets; peer progressed. Fixture22PASS/2FAIL includes1functional failure+parent. This violates the existing one-active-inspection rule, not evidence of unauthorized access or a hosted incident. Correction locks merchant before ticket/request checks and revalidates ticket merchant identity; preserves assignment/status/consent checks and merchant→ticket lock order. Old/unused creator and privileged raw SQL are not globally constrained by a new DB uniqueness policy.
+
+[Notification40187591978/job121151571011](https://github.com/nora953/fawri-production-source/actions/runs/40187591978/job/121151571011): **69functional/75TAP across6files PASS**,0fail/skip/cancel. Fixture23functional/24TAP includes **1new bounded concurrency case**,22prior cases reused. Actual authenticated canonical HTTP requests overlap in SQL at insert_gate+merchant_serialization, return201+409 with SUPPORT_INSPECTION_ALREADY_ACTIVE, exactly1request/notice and no loser writes. Peer creates while own gated and retains exact state afterward. Actual app list/read and actual frontend validator PASS. Merchant rejection releases eligibility; scoped notice INSERT failure rolls back request/lock, subsequent real retry succeeds. [Evidence](evidence/P0-INSPECTION-CONCURRENT-CREATE-20261025.json) retains original failed run and corrected observations.
+
+[Broader40187592067/job121151701144](https://github.com/nora953/fawri-production-source/actions/runs/40187592067/job/121151701144): **92clean invocations/90unique files/721TAP PASS**,0fail/skip/cancel; cleanupSUCCESS. Dedicated case not selected there, so broader count unchanged; do not add totals as unique tests. Both checkoutcd3a07dc2052c2f451461dc67eeeb9360944046d/tree 6dd65e1ad85d64b6ba7c5640769a8187b4290dd2 equal source. No blanket zero-skip claim for unrelated optional quality tests.
+
+Owned disposable trigger/advisory gate and legitimate actors only. No application handler override or provider sends. No load-capacity/browser/hosted or simultaneous lifecycle/reassignment/deletion proof. No historical duplicate cleanup or unused-helper repair. Finding tracked within existing FIELD002, not a new P0 denominator.
+
+**Next exact batch:** Verify canonical SQL notification identity/timestamps cannot be replaced by conflicting reserved keys in stored variables through actual app list/read and frontend validation. Use synthetic owned rows only and distinguish correctness/defense-in-depth evidence from proof of attacker-controlled input. Retain extra-key/historical policy and unproved producer races explicitly. FIELD002/full HTTP/role/field gatesOPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Last fully accepted executable31912d9f. **NO-GO**; GitHub only,PR550Draft/base preserved; no main/merge/deploy/hosted/P1/P2. Earlier PREPARED/PENDING headers historical for this bounded accepted scope.
+
+---
+
 ## RESIDUAL-FIELD-002 concurrent subscription notification refresh accepted — 2026-10-25
 
 Source **57b554a0ea1c2caf7fa258145a9ec38c19b68b8e**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered92f8c296; targeted checkpoint14a9c95d preserved proof; previous6182678d acceptance retained. Tests/docs only; no application/schema/ACL change.

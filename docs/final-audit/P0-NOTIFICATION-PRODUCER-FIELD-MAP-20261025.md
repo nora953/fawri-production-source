@@ -1,3 +1,9 @@
+## Concurrent canonical inspection creation repair — 2026-10-25
+
+Actual two-ticket/same-merchant race confirmed on e9c25726:201+201/2requests/2notices after observed SQL overlap. Repaired on31912d9f by merchant-before-ticket serialization; unchanged test now observes insert_gate+merchant_serialization,201+409/1request/1notice,peer progress/preservation,rejection release and notice-fault rollback/retry. Actual frontend fields PASS. One newfunctional,fixture24TAP,lane75TAP,broader721TAP,56/56CI SUCCESS. [Evidence](evidence/P0-INSPECTION-CONCURRENT-CREATE-20261025.json). No schema/grant/consent change, global raw-SQL uniqueness, historical cleanup, load/browser/hosted acceptance. FIELD002 remains OPEN. Next canonical reserved-key identity/timestamp contract; synthetic conflicts are correctness tests, not automatic attacker-input proof.
+
+---
+
 ## Concurrent subscription list refresher runtime update — 2026-10-25
 
 Bounded actual HTTP/SQL overlap accepted on57b554a0:2newfunctional,fixture23TAP,lane74TAP,broader721TAP,56/56CI SUCCESS. Restricted SQL waiters observed2/reminder,2/replay,6/two-tenant expiry; peer progressed while own row locked. Exactly one notice per source, stable markers/old notices, preserved subscription/batch business fields and actual frontend fields PASS. [Evidence](evidence/P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json). Owned fixture gates/pool8 only; not load-capacity/crash/hosted or all producer race acceptance. FIELD002 remains OPEN. Next actual canonical inspection creation race across two assigned tickets for one merchant; retain sequential proof and historical/extra-key policy separately.
