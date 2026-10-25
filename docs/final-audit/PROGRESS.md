@@ -1,3 +1,9 @@
+## RESIDUAL-FIELD-002 knowledge-gap Meta caller — prepared 2026-10-25
+
+Recovered exact HEAD d6377cbb; PR550 remains Draft/base preserved. Three new cases extend original restricted worker fixture: actual unknown-question handoff→training request→SQL notice→authenticated app/actual frontend validator; peer notice denial/read replay; signed redelivery/queue dedup preserving training/domain/jobs/debit/send count. Original identity and customer-message cases retained. Loopback fake Graph and synthetic embedding only. Syntax `node --check` PASS; runtime NOT_RUN pending exact-source GitHub Actions. No product/schema/grant changes. FIELD002 remains OPEN; release NO-GO. Next inspect targeted and broader CI; do not close on preparation/source inspection.
+
+---
+
 ## RESIDUAL-FIELD-002 Meta customer-message caller bounded runtime accepted — 2026-10-25
 
 Source **e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Tests/CI/docs only; no child/worker/app/schema/ACL/policy changes. Recovered17242509; previous92507e7a acceptance retained.
