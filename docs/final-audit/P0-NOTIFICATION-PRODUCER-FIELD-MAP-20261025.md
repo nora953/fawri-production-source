@@ -1,3 +1,9 @@
+## Concurrent subscription list refresher runtime update — 2026-10-25
+
+Bounded actual HTTP/SQL overlap accepted on57b554a0:2newfunctional,fixture23TAP,lane74TAP,broader721TAP,56/56CI SUCCESS. Restricted SQL waiters observed2/reminder,2/replay,6/two-tenant expiry; peer progressed while own row locked. Exactly one notice per source, stable markers/old notices, preserved subscription/batch business fields and actual frontend fields PASS. [Evidence](evidence/P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json). Owned fixture gates/pool8 only; not load-capacity/crash/hosted or all producer race acceptance. FIELD002 remains OPEN. Next actual canonical inspection creation race across two assigned tickets for one merchant; retain sequential proof and historical/extra-key policy separately.
+
+---
+
 ## Legacy compatibility source/local-client reconciliation — 2026-10-25
 
 [Legacy report](P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.md)/[evidence](evidence/P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json):807runtime source files scanned;3JSON subscription templates are locally structure-compatible, older SQL inspection request_id template is incompatible, raw current inspection template requires authoritative lifecycle enrichment. Actual frontend validator/client4localPASS with synthetic shapes/in-process fetch. No SQL/application HTTP/legacy producer or hosted historical execution; no newCI. Last accepted6182678d and56/56,72notificationTAP,721broaderTAP unchanged. FIELD002 remains OPEN. No guessed migration/repair/cleanup; next concurrent canonical list refresher acceptance beyond accepted sequential replay.
