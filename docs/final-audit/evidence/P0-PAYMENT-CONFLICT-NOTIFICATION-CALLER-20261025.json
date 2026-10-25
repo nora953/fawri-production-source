@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-25",
   "fieldCell": "RESIDUAL-FIELD-002",
-  "status": "PREPARED_PAYMENT_CALLER_CI_PENDING",
+  "status": "TARGETED_PAYMENT_CALLER_PASS_BROADER_CI_PENDING",
   "recoveredHead": "6be84a3630ecdb6c2493d49855ad11b6a20ec750",
   "previousAcceptedExecutable": "b0417241bd9b69dd8f460ce91e044004650266d9",
   "test": "artifacts/api-server/tests/payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
@@ -16,7 +16,7 @@
   "release": "NO-GO",
   "fieldCellClosed": false,
   "localSyntax": "PASS",
-  "runtime": "NOT_RUN",
+  "runtime": "TARGETED_PASS",
   "scope": [
     "Internal recordVerifiedProviderPaymentEvidenceAuthoritative→actual notification SQL→actual app→actual frontend validator",
     "Two merchants, separate auth/restricted primary LOGIN",
@@ -29,6 +29,82 @@
     "Synthetic authenticityVerified flag is not cryptographic provider-ingress acceptance.",
     "Direct internal service admission is not a provider callback HTTP proof.",
     "No concurrent crash/worker-redelivery/hosted proof.",
-    "Runtime assertions prepared, not yet executed."
-  ]
+    "Four new functional cases/five TAP executed; whole FIELD002 remains open."
+  ],
+  "sourceCandidate": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
+  "targeted": {
+    "runId": 40148637030,
+    "jobId": 121035284959,
+    "url": "https://github.com/nora953/fawri-production-source/actions/runs/40148637030/job/121035284959",
+    "functionalCases": 28,
+    "tapPass": 33,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "suites": [
+      {
+        "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+        "auditBatch": "notification-privacy-http",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "checkout": "17bd9c59a3c1cbc65234f0a34550dbc12dc97490",
+    "tree": "9cb368361532e68118c5b8f9acee191f02306ec0",
+    "sourceTreeMatches": true,
+    "cleanup": "success"
+  },
+  "broader": {
+    "status": "PENDING",
+    "runId": 40148637034
+  }
 }
