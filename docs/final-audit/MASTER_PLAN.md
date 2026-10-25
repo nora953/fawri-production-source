@@ -1,3 +1,17 @@
+## RESIDUAL-FIELD-002 inspection ending lifecycle bounded runtime accepted — 2026-10-25
+
+Source **6182678d76e97e315df428bd2739af284afea420**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered6fe8bb50; targeted checkpoint36af6980 preserved results during CI; previous06c04523 projection fix accepted separately. Tests/docs only; no application/schema/ACL change.
+
+[Notification40183582956/job121139560915](https://github.com/nora953/fawri-production-source/actions/runs/40183582956/job/121139560915): **66functional/72TAP across6files PASS**,0fail/skip/cancel. Extended fixture20functional/21TAP includes **3new cases**,17prior cases retained as regression. Actual merchant HTTP termination ends real HTTP-created preview; canonical admin-list lifecycle expires owned pending request and approved window/preview. Current SQL→actual app list/read→actual frontend validator matches request status/consent/deadline/end fields. Foreign notice/termination denied; ended preview snapshot409; repeated read/refresh and inactive/expired action denial preserve state. Exact peer tickets/messages/requests/notices/preview rows preserved.
+
+Only owned fixture timestamps are aged; actual service clocks and lifecycle execute normally. No timer cadence, real-time waiting, browser/physical-device/provider/hosted proof. Approved consent remains approved after window end, with session_expires_at/ended_at/end_reason exposing end state; not a new consent policy. No historical data inspected or repaired, no concurrent lifecycle or other ticket transition acceptance.
+
+[Broader40183582871/job121139560368](https://github.com/nora953/fawri-production-source/actions/runs/40183582871/job/121139560368): **92clean invocations/90unique files/721TAP PASS**,0fail/skip/cancel; cleanupSUCCESS. Broader count unchanged: three new cases run in dedicated notification lane only; totals not added as unique tests. Both checkout3ddc074ed07f7a991b1a06a202fdfb6551a48201/tree 8c21cb0b71b729a5e8d84111c6322f5ef9281b96 equal source. No blanket zero-skip claim for unrelated optional quality tests. [Evidence](evidence/P0-SUPPORT-NOTIFICATION-ENDING-20261025.json).
+
+**Next exact batch:** Reconcile historical/legacy inspection notification shapes and legacy subscription/notification helper reachability using current source and owned fixtures. Identify exact compatible/unlinked forms before any repair; do not infer hosted historical contents or invent data-retention/cleanup policy. FIELD002/full HTTP/role/field gatesOPEN;29CLOSED_SOURCE/7OPEN/9BLOCKED,completeP0Inventory=false. Last fully accepted executable6182678d. **NO-GO**; GitHub only,PR550Draft/base preserved; no main/merge/deploy/hosted/P1/P2. Earlier PREPARED/PENDING headers historical for this bounded accepted scope.
+
+---
+
 ## RESIDUAL-FIELD-002 Support callers and inspection projection bounded runtime accepted — 2026-10-25
 
 Source **06c045233853ad897b99ae2cd72582274e69e65c**: **56/56 CI workflows SUCCESS**,0pending/failure/cancellation. Recovered c4541295; targeted checkpoint5e90aa16 preserved evidence during CI; prior ac1cd586 acceptance retained. Application change confined to canonical notification list/read projection; no schema/ACL/frontend-validator/consent-authority changes.

@@ -1,3 +1,9 @@
+## Inspection ending lifecycle runtime update — 2026-10-25
+
+Actual merchant termination, pending timeout and approved-window/preview expiration are bounded-runtime accepted on6182678d:3newfunctional,fixture21TAP,lane72TAP,broader721TAP,56/56CI SUCCESS. Canonical HTTP lifecycle→request/preview SQL→actual app list/read→actual frontend validator; ended preview access denied, peer state and repeated reads/refresh preserved. Owned fixture timestamps aged; real service clocks used. [Evidence](evidence/P0-SUPPORT-NOTIFICATION-ENDING-20261025.json). No app/schema/grant changes, timer cadence/browser/concurrency/hosted/historical acceptance. FIELD002 remains OPEN; next historical/legacy shape and helper reachability reconciliation before any repair policy.
+
+---
+
 ## Support caller runtime and inspection lifecycle projection update — 2026-10-25
 
 Canonical inspection HTTP and admin lifecycle reminder callers→SQL→actual app list/read→actual frontend validator bounded-runtime accepted on06c04523. Six new functional cases; lane69TAP,broader721TAP,56/56CI SUCCESS. Initial741c371a runtime exposed missing request_status/current decision fields. List/read now batch-project matching merchant/source/request/ticket lifecycle fields from canonical SQL; stored stale lifecycle keys cannot override them. Pending/approved/rejected, peer/reference denials, notice-write rollback/retry and replay PASS. [Evidence](evidence/P0-SUPPORT-NOTIFICATION-CALLER-20261025.json).
