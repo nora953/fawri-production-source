@@ -1,3 +1,11 @@
+## Subscription list caller runtime and new-order reachability update — 2026-10-25
+
+Actual authenticated list→subscription refresher→3SQL templates→app→actual frontend validator bounded-runtime accepted on ac1cd586:4new functional cases, dedicated lane63TAP,broader721TAP,56/56CI SUCCESS. Two merchants, eligible-batch filters, exact fields/markers, peer preservation/read denial/replay and injected INSERT rollback/retry PASS. Seeded balances; no purchase/scheduler/concurrent/crash/browser/provider/hosted acceptance. [Runtime evidence](evidence/P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json).
+
+[807-file new-order source scan](evidence/P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json) finds SQL helper declaration only; JSON order/notice flow is distinct and required-mode disabled. No invented canonical application caller or runtime absence/commercial-order acceptance. FIELD002 remains OPEN. Next canonical Support inspection/reply-reminder caller-to-client coverage plus alternate helper provenance; keep existing evidence separate.
+
+---
+
 ## Meta knowledge-gap caller runtime update — 2026-10-25
 
 Actual restricted Meta worker→knowledge engine→committed handoff/training request→knowledge-gap SQL notice→authenticated app/actual frontend validator bounded-runtime accepted on d86d7c11. Three new functional cases; Meta suite26TAP,notification lane59TAP,broader721TAP,56/56CI SUCCESS. Two merchants, exact fields, peer notice denial, read/event replay PASS. [Evidence](evidence/P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json). Loopback fake Graph/synthetic embedding; no external provider/browser/crash/notice-write-failure/hosted acceptance. FIELD002 remains OPEN; next reconcile actual new-order SQL caller/reachability before missing runtime coverage, then remaining templates. Four inspected order modules alone do not establish unreachability.
