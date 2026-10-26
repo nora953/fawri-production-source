@@ -798,10 +798,13 @@ export async function createEmergencyRequestPostgres(input: {
       }
     }
 
+    // Serialize eligibility with owner deletion until the request and audit
+    // commit. A plain read followed by an INSERT foreign-key check can admit
+    // emergency access after a concurrent deletion has tombstoned the merchant.
     const merchantResult = await client.query<{ id: string }>(
       `SELECT id FROM merchants
         WHERE id = $1 AND retention_status IS DISTINCT FROM 'deleted'
-        LIMIT 1`,
+        LIMIT 1 FOR UPDATE`,
       [input.merchantId],
     );
     if (!merchantResult.rows[0]) {

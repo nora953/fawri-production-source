@@ -173,6 +173,13 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
     const after = await snapshot(); const repeat = await req(owner); assert.equal(repeat.status, 404); assert.equal(repeat.body.code, 'MERCHANT_NOT_FOUND'); assert.deepEqual(await snapshot(), after);
     assert.equal((await runtime.runtimePool.query('SELECT id FROM products WHERE merchant_id=ANY($1::text[])', [merchants])).rowCount, 0);
   });
+  await t.test('completed deletion rejects a later emergency request without business mutation',async()=>{
+    const before=await snapshot([a,b,blocked]);
+    const response=await fetch(origin+'/api/auth/admin/emergency-read-access/requests',{method:'POST',headers:{'Content-Type':'application/json',Cookie:owner.cookie,'X-Fawri-Device-Id':owner.device},body:JSON.stringify({merchant_id:a.id,incident_reference:'synthetic-after-delete-'+a.id,severity:'high',reason:'Synthetic completed deletion boundary',duration_minutes:15}),signal:AbortSignal.timeout(15000)});
+    const body=await response.json();assert.equal(response.status,404);assert.equal(body.code,'EMERGENCY_MERCHANT_NOT_FOUND');assert.deepEqual(await snapshot([a,b,blocked]),before);
+    assert.equal((await admin.query('SELECT id FROM emergency_access_requests WHERE merchant_id=$1',[a.id])).rowCount,0);
+    const audit=await auditRead();assert.equal(audit.status,200);assert.equal(audit.body.verification.valid,true);
+  });
   await t.test('deleting an audited merchant preserves global emergency verification and exact peer ledger',async()=>{
     const audit=await auditRead();console.log('P0_DELETION_CHAIN_OBSERVATION '+JSON.stringify({status:audit.status,valid:audit.body.verification?.valid??false,code:audit.body.code??null}));
     assert.equal(audit.status,200,'completed merchant deletion must not invalidate global owner audit');assert.equal(audit.body.verification.valid,true);
@@ -181,5 +188,5 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
   await t.test('revoked owner session cannot delete intact peer with valid password', async () => {
     assert.equal(await auth.revokeSession(owner.session.token, 'admin', 'logout'), true); const before = await snapshot([b, blocked]); assert.equal((await req(owner, b)).status, 401); assert.deepEqual(await snapshot([b, blocked]), before);
   });
-  console.log('P0_OWNER_DELETION_HTTP ' + JSON.stringify({syntheticMerchants: 3, actualRouter: true, restrictedPrimaryLogin: true, separateAuthenticationLogin: true, realOwnerPassword: true, foreignRequestDenied: true, queuedWorkDenied: true, peerAndBlockedTenantPreserved: true, localPhysicalMedia: true, repeatNoMutation: true, operatorPoolClaimed: false, financialRetentionPolicyAccepted: false, hostedAccepted: false, fullRoleMatrix: false}));
+  console.log('P0_OWNER_DELETION_HTTP ' + JSON.stringify({syntheticMerchants: 5, actualRouter: true, restrictedPrimaryLogin: true, separateAuthenticationLogin: true, realOwnerPassword: true, foreignRequestDenied: true, queuedWorkDenied: true, peerAndBlockedTenantPreserved: true, localPhysicalMedia: true, repeatNoMutation: true, operatorPoolClaimed: false, financialRetentionPolicyAccepted: false, hostedAccepted: false, fullRoleMatrix: false}));
 });
