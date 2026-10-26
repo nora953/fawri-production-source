@@ -39,7 +39,7 @@ CREATE TABLE public.cashier_operation_receipts (
  FOREIGN KEY(station_id,merchant_id) REFERENCES public.merchant_cashier_stations(id,merchant_id) ON DELETE RESTRICT,
  FOREIGN KEY(location_id,merchant_id) REFERENCES public.merchant_locations(id,merchant_id) ON DELETE RESTRICT,
  FOREIGN KEY(shift_id,merchant_id,station_id,staff_id) REFERENCES public.cashier_shifts(id,merchant_id,station_id,staff_id) ON DELETE RESTRICT,
- UNIQUE(stream_id,device_sequence), UNIQUE(stream_id,operation_id),
+ UNIQUE(stream_id,device_sequence), UNIQUE(stream_id,operation_id), UNIQUE(merchant_id,operation_id),
  CHECK (char_length(id) BETWEEN 1 AND 200 AND char_length(operation_id) BETWEEN 1 AND 200 AND char_length(result_id) BETWEEN 1 AND 200)
 );
 ALTER TABLE public.cashier_device_streams ENABLE ROW LEVEL SECURITY;

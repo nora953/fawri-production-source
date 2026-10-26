@@ -54,7 +54,10 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   assert.deepEqual(await snapshot(),before);await append(a,2);assert.equal((await admin.query('SELECT last_sequence FROM cashier_device_streams WHERE id=$1',[a.stream])).rows[0].last_sequence,'2');
  });
  await t.test('proposal preserves tenant identity, unique operation receipts and shift/location foreign keys',async()=>{
+  const replacement={...a,stream:'replacement-'+randomUUID(),device:'replacement-device-'+randomUUID()};
+  await admin.query("INSERT INTO cashier_device_streams(id,merchant_id,device_id,state,enrollment_evidence_hash,enrolled_at) VALUES($1,$2,$3,'active',repeat('b',64),now())",[replacement.stream,replacement.id,replacement.device]);
   const before=await snapshot();
+  await assert.rejects(append(replacement,1,{operation:first.operation}),e=>e.code==='23505');
   for(const overrides of [{merchant:b.id},{device:b.device},{station:b.station},{location:b.location},{staff:b.staff},{shift:b.shift}])await assert.rejects(append(a,3,overrides),e=>e.code==='23503');
   await assert.rejects(append(a,3,{operation:first.operation}),e=>e.code==='23505');
   await assert.rejects(append(a,3,{hash:'invalid'}),e=>e.code==='23514');
