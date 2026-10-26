@@ -168,6 +168,22 @@
       "Independent evidence truth and operator review workflow are assumed in synthetic tests, not verified external provenance",
       "No client migration, active production registration, v2 financial receipt writer or hosted changes",
       "New review reference retention/privacy/readiness/restore/role bootstrap require acceptance before canonical promotion"
+    ],
+    "priorAttempts": [
+      {
+        "source": "42be85fbad9c3b3d48bb74887500b84eb54f21d5",
+        "run": 40367700699,
+        "job": 121729772726,
+        "newSuite": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "cancelled": 0
+        },
+        "classification": "FIXTURE_SETUP_FAILURE_BEFORE_ENROLLMENT_ASSERTIONS",
+        "cause": "Synthetic paired station omitted paired_at; canonical pairing_state_check rejected actor setup23514. SQL proposal installed and removed, existing other cashier suites passed; no enrollment runtime PASS inferred.",
+        "correction": "Set paired_at=now() in synthetic station fixture; no runtime service/SQL/assertion change."
+      }
     ]
   }
 }

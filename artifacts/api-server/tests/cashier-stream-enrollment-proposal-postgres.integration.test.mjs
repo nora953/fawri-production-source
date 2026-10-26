@@ -48,7 +48,7 @@ test('reviewed empty-device enrollment proposal has isolated authority and atomi
   await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state) VALUES($1,'merchant',$2,'synthetic','active')",[id,'+199'+randomInt(100000000,999999999)]);
   await admin.query("INSERT INTO merchants(id,account_id,owner_name,store_name,activity_type,status,account_status) VALUES($1,$1,'Synthetic','Enrollment','retail','approved','approved')",[id]);
   await admin.query("INSERT INTO merchant_locations(id,merchant_id,name) VALUES($1,$2,'Synthetic')",[f.location,id]);
-  await admin.query("INSERT INTO merchant_cashier_stations(id,merchant_id,name,location_id,paired_device_id,status) VALUES($1,$2,'Synthetic',$3,$4,'active')",[f.station,id,f.location,f.device]);return f;}
+  await admin.query("INSERT INTO merchant_cashier_stations(id,merchant_id,name,location_id,paired_device_id,status,paired_at) VALUES($1,$2,'Synthetic',$3,$4,'active',now())",[f.station,id,f.location,f.device]);return f;}
  function proof(f,overrides={}){return {merchantId:f.id,stationId:f.station,deviceId:f.device,reviewReference:'review-'+randomUUID(),reviewerReference:'independent-synthetic-reviewer',evidenceSha256:'b'.repeat(64),reviewedAt:new Date().toISOString(),reviewedLocalCounter:0,reviewedPendingOperations:0,...overrides};}
  async function tx(pool,work){const c=await pool.connect();try{await c.query('BEGIN');const result=await work(c);await c.query('COMMIT');return result;}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}}
  const apply=p=>tx(reviewer,c=>enroll(c,p));
