@@ -54,7 +54,7 @@ BEGIN
  IF TG_OP='INSERT' THEN
   -- Serialize enrollment against the merchant deletion row lock. This is not
   -- sufficient enrollment provenance; it only rejects already deleted targets.
-  PERFORM 1 FROM public.merchants WHERE id=NEW.merchant_id AND retention_status<>'deleted' FOR KEY SHARE;
+  PERFORM 1 FROM public.merchants WHERE id=NEW.merchant_id AND retention_status IS DISTINCT FROM 'deleted' FOR KEY SHARE;
   IF NOT FOUND THEN RAISE EXCEPTION 'stream target is absent or deleted' USING ERRCODE='23514'; END IF;
   IF NEW.last_sequence<>0 OR NEW.version<>1 THEN RAISE EXCEPTION 'stream must begin without a guessed checkpoint' USING ERRCODE='23514'; END IF;
   RETURN NEW;
