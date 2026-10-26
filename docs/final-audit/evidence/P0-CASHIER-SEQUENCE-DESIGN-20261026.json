@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Implement the actual trusted enrollment mutation with reviewed independent provenance, least-privilege writer authority and shared merchant/device serialization, then atomic receipt/checkpoint financial admission and exact attribution repair. Reuse accepted internal history review; do not expand numeric/empty-history diagnostics or infer authorization from pairing, empty flags, MAX or browser baseline.",
+  "nextExactAction": "Verify actual enrollment mutation proposal: independent privileged reviewer LOGIN, immutable evidence/stream atomicity, exact retry, histories/unknown origins/retirement holds and observed shared-device races. Do not promote until separate capability/readiness/restore/retention and actual client/receipt rollout contracts are accepted.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -147,6 +147,27 @@
       "Real HTTP sale/return/void server history remains SERVER_HISTORY_PRESENT after root fixture temporarily removes timeline; original rows restored exactly",
       "Synthetic metadata alias demonstrates compensation-only device evidence independently of original sale device/timeline/attribution",
       "Foreign-tenant same-device stream does not contaminate own evidence flags"
+    ]
+  },
+  "reviewedEnrollmentProposal": {
+    "status": "PREPARED_DISPOSABLE_ONLY_CI_PENDING",
+    "source": null,
+    "service": "artifacts/api-server/src/services/cashierStreamEnrollmentAuthority.ts",
+    "sql": "evidence/seq-d3-reviewed-empty-enrollment-proposal.sql",
+    "test": "artifacts/api-server/tests/cashier-stream-enrollment-proposal-postgres.integration.test.mjs",
+    "authority": "Separate restricted reviewer LOGIN with marker/function EXECUTE only; NOLOGIN definer owns no table and has column-limited stream INSERT. Ordinary primary/auth cannot execute or assume owner. No public endpoint, application credential or production provisioning.",
+    "reviewModel": "Explicit independent operator attestation with immutable review reference, reviewer reference, external evidence SHA256 and recent review time. Empty local counter/pending only; not a browser assertion, automatic pairing/empty-history enrollment or certification that the external review actually occurred.",
+    "mutation": "Server-derived stable stream ID; device advisory lock identical to canonical sale/compensation, merchant row against deletion and station binding lock; recheck server histories; active zero stream and immutable evidence hash row commit together; exact same review retries preserve identity/checkpoint; conflicting/retired reviews held.",
+    "historyHolds": "Known device timeline, sale/compensation/attribution, existing bound stream, any retired erased binding or unknown-origin cashier metadata causes hold. No legacy checkpoint import or backfill.",
+    "localChecks": {
+      "nodeSyntax": "PASS_INITIAL; final source recheck before publication",
+      "sqlRuntime": "NOT_RUN_AWAITING_GITHUB_ACTIONS"
+    },
+    "limits": [
+      "Proposal SQL installed/removed only in owned offline CI; canonical53 migrations/97 tables unchanged after cleanup",
+      "Independent evidence truth and operator review workflow are assumed in synthetic tests, not verified external provenance",
+      "No client migration, active production registration, v2 financial receipt writer or hosted changes",
+      "New review reference retention/privacy/readiness/restore/role bootstrap require acceptance before canonical promotion"
     ]
   }
 }
