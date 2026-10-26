@@ -1,3 +1,11 @@
+## SEQ-D2 disposable SQL proposal accepted; canonical promotion pending — 2026-10-26
+
+Accepted source **0edf291bb5d172a76ff6f840af70db710d3f6503**, **56/56 CI SUCCESS**. [Cashier run40261736753](https://github.com/nora953/fawri-production-source/actions/runs/40261736753):32 TAP/14 invocations; new proposal fixture4 TAP(parent+3 subtests). [Broader run40261736766](https://github.com/nora953/fawri-production-source/actions/runs/40261736766):728 TAP/93 invocations/91 files, zero failed/skipped/cancelled. Synthetic checkout tree matches source. [Evidence](evidence/P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json).
+
+Draft stream/immutable receipt SQL is outside the canonical migration journal. Owned disposable SQL tests verify restricted tenant reads, denied runtime writes, atomic receipt/checkpoint constraints, contiguous sequence and merchant-wide operation identity, and station/location/staff/shift foreign keys. Fixture tables are removed after tests. Canonical schema/journal and live admission are unchanged. Synthetic root-created receipts are not financial effect or trusted enrollment proof; no concurrency/restore/hosted acceptance is claimed.
+
+Next: reconcile through canonical Drizzle generation and verify RLS/privacy/readiness/restore and deletion constraints before canonical promotion. SEQ-D2 is partially verified, not complete; D3/D4 remain open. **CASHIER-SYNC-SEQUENCE-001 OPEN; NO-GO.** Register remains45 rows=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED, incomplete inventory, no overall percentage.
+
 ## SEQ-D1 bounded read-only history component accepted — 2026-10-26
 
 Accepted executable **df273707c000588e9b4e0fe772ef05f4a132d579**: **56/56CI SUCCESS**. [Cashier40257982261/job121363860931](https://github.com/nora953/fawri-production-source/actions/runs/40257982261):28TAP PASS/13invocations; multi-device fixture5TAP(parent+4functional),one new read-only assessment subtest. [Broader40257982407/job121363861470](https://github.com/nora953/fawri-production-source/actions/runs/40257982407):**724TAP PASS/92invocations/90files**,0failed/skipped/cancelled. Exact checkout tree matched. [Evidence](evidence/P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json).

@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "date": "2026-10-26",
   "gate": "CASHIER-SYNC-SEQUENCE-001",
-  "status": "DESIGN_REVISION_1_WITH_SEQ_D1_BOUNDED_SOURCE_ACCEPTANCE_REMAINING_PROTOCOL_NOT_IMPLEMENTED",
+  "status": "SEQ_D1_ACCEPTED_D2_SQL_PROPOSAL_VERIFIED_CANONICAL_PROMOTION_PENDING",
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "df273707c000588e9b4e0fe772ef05f4a132d579",
+  "acceptedExecutable": "0edf291bb5d172a76ff6f840af70db710d3f6503",
   "applicationChanged": true,
   "schemaChanged": false,
   "aclChanged": false,
@@ -27,8 +27,9 @@
     },
     {
       "id": "SEQ-D2",
-      "status": "NOT_IMPLEMENTED",
-      "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance"
+      "status": "PROPOSAL_SQL_CONSTRAINTS_AND_RLS_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+      "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance",
+      "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json"
     },
     {
       "id": "SEQ-D3",
@@ -56,10 +57,11 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Prepare and verify SEQ-D2 additive stream/receipt schema and migration proposal against existing canonical schema/RLS/privacy/readiness/restore conventions. Preserve legacy rows and current admission; use server-owned identity/versioned immutable receipt constraints,not MAX/client counters. Do not apply hosted migrations or claim recovery before later admission/client/adoption slices pass.",
+  "nextExactAction": "Reconcile proposal through canonical Drizzle schema and migration generation, then verify RLS/privacy/readiness/restore and deletion constraints before canonical acceptance; preserve legacy admission and no hosted rollout.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
   "applicationComponentAdded": true,
-  "liveAdmissionChanged": false
+  "liveAdmissionChanged": false,
+  "storageProposalEvidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json"
 }
