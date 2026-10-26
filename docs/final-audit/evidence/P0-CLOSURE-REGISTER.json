@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "b7b73221ddeb92af05b9b63f32d4c48fe19f3ea6",
-  "lastFullyAcceptedSource": "b7b73221ddeb92af05b9b63f32d4c48fe19f3ea6",
+  "sourceCandidate": "0c98d71f6ced72f6cc1d506050b63319afc15b06",
+  "lastFullyAcceptedSource": "0c98d71f6ced72f6cc1d506050b63319afc15b06",
   "release": "NO-GO",
   "rows": [
     {
@@ -277,14 +277,21 @@
       "requirement": "Define and accept gap/tombstone/late missing-operation recovery contract",
       "status": "OPEN",
       "evidence": "P0-GITHUB-ONLY-GAP-RECONCILIATION-20261022.md",
-      "blocker": "Canonical restricted-role sale-service diagnostic confirms accept1/accept3/reject2: two durable orders/inventory mutations and stock1(from3), with late-rejection/replay rollback and selected peer preservation. This does not approve missing-sale rejection or define gap/non-commerce/tombstone recovery.",
+      "blocker": "Real operator HTTP and restricted SQL confirm accept1/3 then late2 rejection409 without financial mutation. Native hold/reload and actual post-commit attribution repair/replay are bounded accepted layers, not an adopted all-operation recovery/checkpoint/history contract. SEQ-R1/R2/R3 remain open.",
       "saleServiceDiagnosticEvidence": "evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json",
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "CANDIDATE_NOT_ADOPTED_NOT_ENFORCED",
-      "nextAction": "Inspect existing canonical cashier operator HTTP fixture coverage for /api/cashier/operator/sync/sale with real station/operator session binding, then add a missing bounded ordered/gap/late-retry case only if not already covered. Preserve the native browser and canonical SQL evidence as separate layers; adopt a reviewed all-operation gap/non-commerce recovery contract before changing admission or authorizing tombstones.",
+      "nextAction": "Prepare one concrete, reviewable recovery design in the existing candidate for authenticated existing-device checkpoints, future gaps and late financial operations, with an explicit disposition for the reviewed local manual-adjustment API and retained outboxes. Reuse the accepted SQL/native/HTTP/fault layers; do not add another identical1/3/2 diagnostic, guess a device baseline, drop an operation or alter financial history. Select a bounded implementation only after checking all affected callers and schema constraints.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
-      "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY"
+      "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
+      "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+      "operatorHttpStatus": "BOUNDED_REAL_HTTP_AUTH_GAP_DIAGNOSTIC_AND_POSTCOMMIT_RETRY_ACCEPTED_NOT_RECOVERY",
+      "recoveryRemaining": [
+        "SEQ-R1",
+        "SEQ-R2",
+        "SEQ-R3"
+      ]
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -494,6 +501,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "e14ca5301d6b4da8a93c93b19cf9c58302d51a41",
+  "previousFullyAcceptedSource": "b7b73221ddeb92af05b9b63f32d4c48fe19f3ea6",
   "lastUpdatedAt": "2026-10-26"
 }

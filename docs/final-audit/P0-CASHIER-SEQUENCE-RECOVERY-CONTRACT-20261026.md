@@ -46,3 +46,26 @@ Acceptance requires native IndexedDB/browser fault tests, canonical HTTP with re
 Accepted diagnostic execution: [exact-source service/SQL evidence](evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json), source `e14ca5301d6b4da8a93c93b19cf9c58302d51a41`,56/56CI and722TAP. Canonical service observation confirms accept1/accept3/reject2; recovery remains OPEN. No new browser/HTTP/hosted proof is supplied by this document.
 
 Native client layer now has bounded [Chromium outbox hold/lost-ACK/reload evidence](evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json) at `b7b73221ddeb92af05b9b63f32d4c48fe19f3ea6`: real IndexedDB and drain clients, synthetic fetch ledger/operator context. This covers native persistence/replay/unsupported-operation hold within the recorded limits; it is not a real server transaction, canonical HTTP authorization or an adopted recovery contract. Gate remainsOPEN.
+
+## Bounded producer and reachability reconciliation
+
+This is source reconciliation of the reviewed `artifacts/fawri/src` TypeScript tree, not a theorem about dynamic, external or historical writers. Both counter helpers read/write `meta.device_sequence`; the reviewed calls are:
+
+| Local method | Payload/outbox | Current server/drain support | Caller evidence boundary |
+|---|---|---|---|
+| `cashierIndexedDbAuthority.commitSale` | Sale plus stock movement, one shared sequence | Sale route/timeline kind supported | Real client and service/HTTP proof layers recorded separately |
+| `cashierCompensationAuthority.returnSale` | Return plus stock movement | Return compensation route/timeline kind supported | Existing compensation proofs retained within their original scope |
+| `cashierCompensationAuthority.voidSale` | Voided sale plus stock movement | Void compensation route/timeline kind supported | Existing compensation proofs retained within their original scope |
+| `cashierIndexedDbAuthority.adjustInventory` | Nonzero stock delta plus movement-only envelope | Unsupported by reviewed commerce drain/timeline kind | Direct caller identified in backup-sequence regression and native-browser fixture; no production UI caller established by this bounded review |
+
+The dashboard functions also named `adjustInventory` use remote catalog/inventory HTTP APIs (`adjustCatalogInventory` or `/api/inventory/products/:id/adjust`). Name matching does not establish use of the local IndexedDB sequence method. Historical/imported/dynamic outboxes are not inventoried here. The current SQL timeline CHECK and TypeScript operation kind accept sale/return/void only. Do not add an unused manual-adjustment sync product feature merely to satisfy a synthetic diagnostic; first settle the intended local API and existing-data contract. Do not discard a real queued movement on the assumption that no UI caller was identified.
+
+Remaining adoption decisions are finite:
+
+- **SEQ-R1 OPEN_DESIGN:** choose explicit future-gap and late financial-operation semantics, including sale/return/void dependencies and idempotent rejection/retry/hold behavior. Existing observed rejection is not recovery approval.
+- **SEQ-R2 OPEN_PRODUCT_CONTRACT:** decide intended lifecycle of the local manual-adjustment API and retained movement-only outboxes. A nonzero stock delta cannot be converted to a harmless numeric tombstone. Any supported upload requires authorized merchant/device/station/branch, inventory permission, immutable operation identity and exactly-once stock handling.
+- **SEQ-R3 OPEN_DESIGN_AND_HISTORICAL_SCOPE:** define first-device/checkpoint/restore semantics and authorized reconciliation of existing gaps. No reset, guessed baseline, automatic historical backfill or hosted-data repair is accepted by source tests.
+
+The HTTP diagnostic and fault results must be read from their exact-source evidence after execution; this source table itself makes no runtime/CI claim and adopts none of these decisions.
+
+Accepted operator HTTP layer: [exact-source gap and post-commit attribution fault/retry evidence](evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json), source `0c98d71f6ced72f6cc1d506050b63319afc15b06`,56CI/27targeted/723broader TAP. Real login/station credentials and SQL financial snapshots are verified through mounted actual routers. This strengthens the HTTP/retry layer without adopting recovery, proving full-app/browser integration or repairing historical gaps.
