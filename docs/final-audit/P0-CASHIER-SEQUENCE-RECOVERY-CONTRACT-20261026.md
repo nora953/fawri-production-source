@@ -169,3 +169,11 @@ The verified proposal remains outside the migration journal. Do not copy it into
 | Admission | Existing device timeline accepts gaps | D3 must change admission only after explicit opt-in/version/replay/enrollment contract; no enrollment from MAX or client assertions |
 
 Current concurrency regression uses root setup SQL for two proposal receipt writers; it tests database row-lock constraints, not the canonical financial writer or operator HTTP. No production migration, privacy decision or retention policy is adopted by this review.
+
+## SEQ-D2 device identity revision2 — 2026-10-26
+
+This revision supersedes the raw device column design of revision1; earlier evidence remains historical. Revision2 removes `device_id` from immutable proposal receipts. The receipt FK uses the stable `(stream_id,merchant_id)` identity. A stream keeps its active raw device binding as a separate nullable attribute; retirement must atomically set state=retired and device_id=NULL. The opaque stream ID, merchant, protocol, committed checkpoint and existing receipts remain unchanged. Rebinding an active stream, silently nulling its binding, retiring without erasing it, and reopening/rebinding a retired stream are rejected. No enrollment/reset authority is introduced; any later new stream requires the independently verified enrollment contract.
+
+The regression runs real PostgreSQL with synthetic root setup/writers. A waiting receipt writer is observed blocked on retirement via pg_blocking_pids, then rejects after retirement commits. Runtime scoped DML cannot retire the stream. Existing receipt rows and another merchant's selected stream remain exact. This proves only the proposal's raw device binding erasure mechanism. It does not implement owner deletion, approve a retention duration, anonymize all operation/request/result/staff identifiers or hashes, erase backups, or prove receipt financial provenance. No hosted/canonical migration/admission changes occur.
+
+Before canonical promotion: wire an authorized lifecycle retirement operation into the merchant deletion transaction and test rollback/whole merchant/peer behavior; reconcile all retained fields with FIELD005 policy; generate additive canonical schema and verify readiness/restore. D3/D4 remain pending.

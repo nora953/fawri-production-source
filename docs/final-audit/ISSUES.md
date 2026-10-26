@@ -1,3 +1,11 @@
+## SEQ-D2 proposal revision2 device binding erasure accepted — 2026-10-26
+
+Accepted source **5a9489f6d5cde233fcb54cb690cef15ceab0d7e3**,56/56 CI SUCCESS. [Cashier40265005413/job121385370597](https://github.com/nora953/fawri-production-source/actions/runs/40265005413):34 TAP/14 invocations; proposal fixture6 TAP(parent+5 subtests). [Broader40265005072/job121385369306](https://github.com/nora953/fawri-production-source/actions/runs/40265005072):730 TAP/93 invocations/91 files,0 failed/skipped/cancelled; exact checkout tree matched. [Evidence](evidence/P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json).
+
+Revision2 removes raw device_id from immutable receipts; stable stream/merchant FK remains. Stream retirement requires binding NULL; active clearing/rebinding, retained raw binding on retirement, and retired reactivation/rebinding are rejected. Actual receipt writer waits on retirement lock then rejects after retirement commit. Selected receipts and peer stream remain exact; scoped runtime cannot retire. Prior receipt/checkpoint commit/rollback contention and tenant constraints still pass. Revision1 evidence remains historical.
+
+Boundary: owned disposable proposal/root SQL only. No canonical schema/journal, owner deletion route, live admission or hosted change. This is not complete PII erasure/retention policy, financial provenance or backups proof. Next: trusted lifecycle retirement primitive with transaction rollback/peer proof; FIELD005 retained-field reconciliation; then canonical generation/readiness/restore. **CASHIER-SYNC-SEQUENCE-001 OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED, incomplete inventory, no percentage.
+
 ## SEQ-D2 proposal SQL contention accepted; canonical promotion pending — 2026-10-26
 
 Accepted source **4b9f9dc638e95b8b053189edf3cb6e93b48b384e**,56/56 CI SUCCESS. [Cashier40264134265/job121382683025](https://github.com/nora953/fawri-production-source/actions/runs/40264134265):33 TAP/14 invocations; proposal fixture5 TAP(parent+4 subtests). [Broader40264134048/job121382681239](https://github.com/nora953/fawri-production-source/actions/runs/40264134048):729 TAP/93 invocations/91 files,0 failed/skipped; exact checkout tree matched. [Evidence](evidence/P0-CASHIER-STREAM-CONCURRENCY-20261026.json).

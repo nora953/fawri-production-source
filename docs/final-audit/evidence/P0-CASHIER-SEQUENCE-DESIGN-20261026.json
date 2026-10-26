@@ -6,7 +6,7 @@
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "4b9f9dc638e95b8b053189edf3cb6e93b48b384e",
+  "acceptedExecutable": "5a9489f6d5cde233fcb54cb690cef15ceab0d7e3",
   "applicationChanged": true,
   "schemaChanged": false,
   "aclChanged": false,
@@ -27,10 +27,11 @@
     },
     {
       "id": "SEQ-D2",
-      "status": "PROPOSAL_SQL_CONSTRAINTS_RLS_CONCURRENCY_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+      "status": "REVISION2_PROPOSAL_CONSTRAINTS_RLS_CONCURRENCY_DEVICE_ERASURE_ACCEPTED_CANONICAL_LIFECYCLE_PENDING",
       "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance",
       "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
-      "concurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json"
+      "concurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
+      "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json"
     },
     {
       "id": "SEQ-D3",
@@ -58,7 +59,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Resolve proposal raw-device identity retention against current deletion anonymization before canonical schema generation; then verify readiness, restore and trusted financial writer integration.",
+  "nextExactAction": "Implement and verify an internal trusted lifecycle retirement primitive for the revised schema proposal, including merchant transaction rollback/peer preservation; reconcile retained fields with FIELD005 before canonical schema/readiness/restore promotion.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -66,5 +67,6 @@
   "liveAdmissionChanged": false,
   "storageProposalEvidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
   "storageConcurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
-  "canonicalPromotionPrivacyPrerequisite": "Immutable proposal raw device IDs must be reconciled with existing merchant deletion anonymization; no policy adopted"
+  "canonicalPromotionPrivacyPrerequisite": "Revision2 raw device binding erasure accepted only in disposable SQL; trusted merchant lifecycle integration and complete retained-field/retention policy remain pending",
+  "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json"
 }
