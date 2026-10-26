@@ -62,7 +62,7 @@
     "retry": "one failed-jobs-only retry; later success",
     "countedAsApplicationFailure": false
   },
-  "nextAction": "Verify new protocol-marker guard candidate; then trusted enrollment provenance and canonical receipt/checkpoint admission atomic with real sale/return/void effects and exact replay/attribution repair. No enrollment from MAX, empty history or client baseline.",
+  "nextAction": "Trusted enrollment provenance and canonical v2 receipt/checkpoint admission atomic with real sale/return/void financial effects and exact replay/attribution repair. Reuse accepted guard/runtime tests; do not derive checkpoint from pairing alone, MAX, empty timeline or client baseline.",
   "followup": {
     "source": "9d516a5bb004db07be9730dd2f2f68bc6bfd4a32",
     "sourceTree": "1db544511d8391a08acbe3f70c89945300a2ccd9",
@@ -124,7 +124,7 @@
     }
   },
   "protocolNegotiationCandidate": {
-    "status": "PREPARED_CI_PENDING",
+    "status": "BOUNDED_SOURCE_ACCEPTED_57_OF_57_CI_NOT_V2_ENROLLMENT_OR_ADMISSION",
     "fields": [
       "protocol_version",
       "stream_id"
@@ -141,6 +141,51 @@
       "No v2 enrollment or financial writer implemented",
       "No schema/grant/hosted changes",
       "New candidate assertions are not yet runtime accepted"
-    ]
+    ],
+    "source": "cc16a975e98ab13988089c6cb62848f3abca998a",
+    "sourceTree": "714c4cfe97a3a0cee06ffa86bbfec918bb39cd47",
+    "checkout": "15f39df59d05f18ff2a594fee6a86b7e959bf3ff",
+    "checkoutTreeMatched": true,
+    "ci": {
+      "total": 57,
+      "success": 57,
+      "cashier": {
+        "run": 40357915238,
+        "job": 121695233590,
+        "passed": 64,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "invocations": 15,
+        "files": 15
+      },
+      "changedSuite": {
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "broader": {
+        "run": 40357915488,
+        "job": 121695233362,
+        "passed": 762,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "invocations": 94,
+        "files": 92
+      },
+      "quality": {
+        "run": 40357916201,
+        "apiTypecheck": "PASS",
+        "repositoryTypecheck": "PASS",
+        "repositoryBuild": "PASS"
+      }
+    },
+    "enrollmentTrace": {
+      "path": "postgresCashierStaffAuthority.ts:redeemCashierStationPairingAuthoritative",
+      "observation": "Current authenticated pairing accepts client-provided deviceId; locks station then challenge, revokes old runtime and issues a credential. Pairing success alone does not establish fresh device financial/queue history or a zero checkpoint. Future stream enrollment must preserve lock ordering and existing device advisory serialization.",
+      "status": "SOURCE_REVIEW_ONLY_NO_ENROLLMENT_IMPLEMENTED"
+    }
   }
 }
