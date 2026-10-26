@@ -125,7 +125,8 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     for(const sequence of [1,2,3])ack(await request(peer,other.token,ordered.get(sequence)),ordered.get(sequence),false);
     const peerBefore=await snapshot(peer);assert.equal(peerBefore.orders.length,3);assert.deepEqual(peerBefore.cashier_device_operation_timeline.map(x=>Number(x.row.device_sequence)).sort((a,b)=>a-b),[1,2,3]);
     const before=await snapshot(target);
-    assert.equal((await request(target,null,bodies.get(1))).status,401);
+    const missing=await request(target,null,bodies.get(1));assert.equal(missing.status,400);assert.equal(missing.body.code,'CASHIER_STAFF_INPUT_INVALID');
+    assert.equal((await request(target,'synthetic-invalid-operator-token',bodies.get(1))).status,401);
     assert.equal((await request(target,own.token,bodies.get(1),{'x-fawri-cashier-device-id':'synthetic-wrong-device'})).status,401);
     assert.equal((await request(target,own.token,bodies.get(1),{'x-fawri-cashier-station-token':'synthetic-wrong-token'})).status,401);
     assert.equal((await request(peer,other.token,bodies.get(1))).status,403);
@@ -159,8 +160,8 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     const repaired=await snapshot(fault);assert.equal(repaired.cashier_operation_attribution.length,1);assert.equal(repaired.cashier_operation_attribution[0].row.staff_id,faultLogin.member.id);
     for(const table of Object.keys(partial).filter(x=>x!=='cashier_operation_attribution'))assert.deepEqual(repaired[table],partial[table],'repair must preserve committed '+table);
     ack(await request(fault,faultLogin.token,faultBody),faultBody,true);assert.deepEqual(await snapshot(fault),repaired);assert.deepEqual(await snapshot(peer),peerBefore);
-    console.log('P0_OPERATOR_POSTCOMMIT_ATTRIBUTION_FAULT '+JSON.stringify({actualHttp:true,injectedBoundary:'attribution_insert_after_sale_commit',failedResponses:2,status:500,durableOrdersBeforeRetry:1,durableInventoryMutationsBeforeRetry:1,missingAttributionBeforeRetry:0,repairedAttributions:1,retryReplayed:true,retryInventoryMutations:0,peerPreserved:true,hostedAccepted:false}));
-    console.log('P0_SEQUENCE_OPERATOR_HTTP_DIAGNOSTIC '+JSON.stringify({actualMountedRouters:true,realOperatorLogin:true,realStationCredential:true,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,orderedAccepted:[1,2,3],gapAccepted:[1,3],lateSequence:2,lateStatus:409,lateAttempts:2,orders:2,inventoryMutations:2,attributions:2,remainingStock:1,exactAckIdentity:true,replayNoMutation:true,peerPreserved:true,anonymousDenied:401,wrongDeviceDenied:401,wrongStationDenied:401,foreignTenantDenied:403,disabledSessionDenied:401,recoveryContractAccepted:false,fullApp:false,hostedAccepted:false}));
+    console.log('P0_OPERATOR_POSTCOMMIT_ATTRIBUTION_FAULT '+JSON.stringify({actualHttp:true,injectedBoundary:'attribution_insert_after_sale_commit',failedResponses:2,status:500,durableOrdersBeforeRetry:1,durableInventoryMutationsBeforeRetry:1,attributionsBeforeRetry:0,repairedAttributions:1,retryReplayed:true,retryInventoryMutations:0,peerPreserved:true,hostedAccepted:false}));
+    console.log('P0_SEQUENCE_OPERATOR_HTTP_DIAGNOSTIC '+JSON.stringify({actualMountedRouters:true,realOperatorLogin:true,realStationCredential:true,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,orderedAccepted:[1,2,3],gapAccepted:[1,3],lateSequence:2,lateStatus:409,lateAttempts:2,orders:2,inventoryMutations:2,attributions:2,remainingStock:1,exactAckIdentity:true,replayNoMutation:true,peerPreserved:true,missingOperatorTokenDenied:400,invalidOperatorTokenDenied:401,wrongDeviceDenied:401,wrongStationDenied:401,foreignTenantDenied:403,disabledSessionDenied:401,recoveryContractAccepted:false,fullApp:false,hostedAccepted:false}));
     // This passing diagnostic documents unresolved gap recovery. It does not
     // authorize dropping a real late sale or synthesizing a tombstone.
   });
