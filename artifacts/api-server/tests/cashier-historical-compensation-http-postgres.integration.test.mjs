@@ -139,6 +139,126 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       assert.deepEqual(await snapshot(),before,'unsupported protocol cannot write or receive legacy replay ACK');
     }
   }
+
+  await t.test('internal v2 canonical financial receipt and checkpoint transactions', {timeout:120000}, async v2t=>{
+    const {readFile}=await import('node:fs/promises');
+    const commerce=await import('../src/services/cashierOperatorCommerceAuthority.ts');
+    const v2Ids=[];
+    let installed=false;
+    v2t.after(()=>cleanupResources([
+      ['v2 data',async()=>{
+        const c=await pool.connect();
+        try{await c.query('BEGIN');await c.query('ALTER TABLE cashier_operation_receipts DISABLE TRIGGER cashier_operation_receipts_guard');
+          await c.query('DELETE FROM cashier_operation_receipts WHERE merchant_id=ANY($1::text[])',[v2Ids]);
+          await c.query('ALTER TABLE cashier_operation_receipts ENABLE TRIGGER cashier_operation_receipts_guard');
+          await c.query('DELETE FROM cashier_device_streams WHERE merchant_id=ANY($1::text[])',[v2Ids]);await c.query('COMMIT');
+        }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+      }],
+      ['v2 proposal',async()=>{
+        if(!installed)return;
+        await pool.query('DROP FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb)');
+        await pool.query('DROP FUNCTION public.fawri_lock_cashier_financial_stream(text,text,text)');
+        await pool.query('DROP FUNCTION public.fawri_cashier_stream_financial_runtime()');
+        for(const [name,table]of [['receipt_owner_stream_read','cashier_device_streams'],['receipt_owner_stream_update','cashier_device_streams'],['receipt_owner_receipt_read','cashier_operation_receipts'],['receipt_owner_receipt_insert','cashier_operation_receipts'],['receipt_owner_order_read','orders'],['receipt_owner_session_read','cashier_operator_sessions'],['receipt_owner_shift_read','cashier_shifts'],['receipt_owner_station_read','merchant_cashier_stations'],['receipt_owner_credential_read','cashier_station_credentials']])await pool.query('DROP POLICY '+name+' ON public.'+table);
+        await pool.query('DROP OWNED BY fawri_cashier_receipt_owner');await pool.query('DROP ROLE fawri_cashier_receipt_owner');
+      }],
+    ]));
+    const ddl=await readFile(new URL('../../../docs/final-audit/evidence/seq-d3-financial-receipt-proposal.sql',import.meta.url),'utf8');
+    const setup=await pool.connect();try{await setup.query('BEGIN');await setup.query(ddl);await setup.query('COMMIT');installed=true;}catch(e){await setup.query('ROLLBACK');throw e;}finally{setup.release();}
+    async function create(withStream=true){
+      const f=await fixture(3);v2Ids.push(f.merchantId);
+      const member=await staff.createCashierStaffAuthoritative({merchantId:f.merchantId,displayName:'Synthetic v2 manager',role:'manager',pin:'2468',permissions:['sale.create','sale.return','sale.void','sale.view_all']});
+      const d=f.stations[0],r=await fetch(base+'/api/cashier/operator/login',{method:'POST',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json','x-fawri-cashier-station-token':d.stationToken,'x-fawri-cashier-device-id':d.deviceId},body:JSON.stringify({staff_id:member.id,pin:'2468'})});
+      const login=await r.json();assert.equal(r.status,200,JSON.stringify(login));
+      const streamId='receipt-stream-'+randomUUID(),at=(await pool.query('SELECT clock_timestamp() AS instant')).rows[0].instant.toISOString();
+      const body=saleBody(f,d,at);
+      if(withStream)await activate(f,streamId);
+      return {f,body,streamId,context:login.context,token:login.operator_token};
+    }
+    async function activate(f,streamId){await pool.query("INSERT INTO cashier_device_streams(id,merchant_id,device_id,state,enrollment_evidence_hash,enrolled_at) VALUES($1,$2,$3,'active',repeat('d',64),now())",[streamId,f.merchantId,f.stations[0].deviceId]);}
+    function versioned(x,body){return {...body,protocol_version:2,stream_id:x.streamId};}
+    const sell=(x,body=x.body)=>commerce.syncCashierOperatorSaleAuthoritative({context:x.context,body:versioned(x,body),versionedStreamId:x.streamId});
+    const compensate=(x,body,kind)=>commerce.syncCashierOperatorCompensationAuthoritative({context:x.context,body:versioned(x,body),kind,versionedStreamId:x.streamId});
+    async function snapshot(){const state={};for(const table of ['orders','order_items','inventory_mutations','location_inventory_levels','cashier_device_operation_timeline','cashier_operation_attribution','cashier_device_streams','cashier_operation_receipts'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[v2Ids])).rows;return state;}
+    function compensation(x,body,kind,sequence){
+      const sale=body.envelopes[0].payload,op='v2-comp-'+randomUUID(),at=new Date(Date.parse(body.envelopes[0].occurred_at)+sequence).toISOString(),returnId='v2-return-'+randomUUID();
+      const identity={local_merchant_id:body.local_merchant_id,cloud_merchant_id:body.cloud_merchant_id,device_id:body.device_id,operation_id:op,device_sequence:sequence};
+      const payload=kind==='return'?{...identity,refund_pricing_version:2,return_id:returnId,sale_id:sale.sale_id,lines:[{original_line_id:sale.lines[0].line_id,product_id:x.f.productId,quantity:1,effective_unit_price_minor:1000,refund_minor:1000}],refund_total_minor:1000,currency_code:'IQD',currency_fraction_digits:0,occurred_at:at}:{...sale,status:'voided',void:{operation_id:op,sale_id:sale.sale_id,device_id:body.device_id,device_sequence:sequence,refund_total_minor:1000,currency_code:'IQD',currency_fraction_digits:0,occurred_at:at}};
+      const movement={...identity,movement_id:'v2-movement-'+randomUUID(),product_id:x.f.productId,delta:1,reason:kind==='return'?'return':'sale_void',related_sale_id:sale.sale_id,occurred_at:at};
+      const envelope=(entity_type,entity_id,operation,payload)=>({schema_version:1,operation_id:op,device_id:body.device_id,device_sequence:sequence,occurred_at:at,entity_type,entity_id,operation,payload});
+      return {...identity,envelopes:[envelope(kind==='return'?'return':'sale',kind==='return'?returnId:sale.sale_id,kind==='return'?'append':'void',payload),envelope('inventory_movement',movement.movement_id,'append',movement)]};
+    }
+    const first=await create();
+    await v2t.test('unprovisioned capability and public HTTP do not enable internal v2',async()=>{
+      const before=await snapshot();await assert.rejects(sell(first),e=>e.code==='42501');
+      await assert.rejects(sync.syncCashierSaleAuthoritative({merchantId:first.f.merchantId,body:versioned(first,first.body)}),e=>e.code==='CASHIER_SYNC_PROTOCOL_UNSUPPORTED');
+      const d=first.f.stations[0],r=await fetch(base+'/api/cashier/operator/sync/sale',{method:'POST',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json','x-fawri-cashier-station-token':d.stationToken,'x-fawri-cashier-device-id':d.deviceId,'x-fawri-cashier-operator-token':first.token},body:JSON.stringify(versioned(first,first.body))});
+      const result=await r.json();assert.equal(r.status,409);assert.equal(result.code,'CASHIER_SYNC_PROTOCOL_UNSUPPORTED');assert.equal(result.accepted_entity_ids,undefined);assert.deepEqual(await snapshot(),before);
+    });
+    await pool.query(`GRANT EXECUTE ON FUNCTION public.fawri_cashier_stream_financial_runtime(),public.fawri_lock_cashier_financial_stream(text,text,text),public.fawri_commit_cashier_financial_receipt(jsonb) TO ${runtimeFixture.role}`);
+    for(const name of [runtimeFixture.role,runtimeFixture.authRole])assert.equal((await pool.query("SELECT pg_has_role($1,'fawri_cashier_receipt_owner','USAGE') OR pg_has_role($1,'fawri_cashier_receipt_owner','SET') AS member",[name])).rows[0].member,false);
+    assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_commit_cashier_financial_receipt(jsonb)','EXECUTE') AS allowed",[runtimeFixture.authRole])).rows[0].allowed,false);
+    await v2t.test('ordered sales then return and void have immutable receipts, contiguous checkpoint and exact replay',async()=>{
+      const peer=await create(),peerBefore=await snapshot(),r1=await sell(first);
+      assert.equal(r1.replayed,false);assert.equal(r1.protocol_version,2);assert.equal(r1.stream_id,first.streamId);
+      const afterOne=await snapshot(),changed=structuredClone(first.body);changed.envelopes[0].payload.note='different request';
+      await assert.rejects(sell(first,changed),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT');assert.deepEqual(await snapshot(),afterOne);
+      const third=saleBody(first.f,first.f.stations[0],first.body.envelopes[0].occurred_at,3);
+      await assert.rejects(sell(first,third),e=>e.code==='CASHIER_STREAM_SEQUENCE_GAP');assert.deepEqual(await snapshot(),afterOne);
+      const second=saleBody(first.f,first.f.stations[0],first.body.envelopes[0].occurred_at,2);
+      await sell(first,second);await sell(first,third);
+      for(const body of [first.body,second,third]){const before=await snapshot(),r=await sell(first,body);assert.equal(r.replayed,true);assert.equal(r.inventory_mutation_count,0);assert.deepEqual(await snapshot(),before);}
+      for(const [kind,body,seq]of [['return',first.body,4],['void',second,5]]){
+        const comp=compensation(first,body,kind,seq),before=await snapshot(),name='receipt_fault_'+randomUUID().replaceAll('-','');
+        await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $ BEGIN IF NEW.merchant_id='${first.f.merchantId}' THEN RAISE EXCEPTION 'synthetic receipt insertion fault'; END IF; RETURN NEW; END $`);
+        await pool.query(`CREATE TRIGGER ${name} BEFORE INSERT ON cashier_operation_receipts FOR EACH ROW EXECUTE FUNCTION public.${name}()`);
+        try{await assert.rejects(compensate(first,comp,kind),e=>e.code==='P0001'&&e.message.includes('synthetic receipt insertion fault'));assert.deepEqual(await snapshot(),before);}
+        finally{await pool.query(`DROP TRIGGER ${name} ON cashier_operation_receipts`);await pool.query(`DROP FUNCTION public.${name}()`);}
+        const r=await compensate(first,comp,kind);assert.equal(r.replayed,false);assert.equal(r.stream_id,first.streamId);
+        const after=await snapshot(),replay=await compensate(first,comp,kind);assert.equal(replay.replayed,true);assert.equal(replay.inventory_mutation_count,0);assert.deepEqual(await snapshot(),after);
+      }
+      const receipts=(await pool.query('SELECT device_sequence::text,operation_kind FROM cashier_operation_receipts WHERE merchant_id=$1 ORDER BY device_sequence',[first.f.merchantId])).rows;
+      assert.deepEqual(receipts.map(x=>x.device_sequence),['1','2','3','4','5']);assert.deepEqual(receipts.map(x=>x.operation_kind),['sale','sale','sale','return','void']);
+      assert.deepEqual((await pool.query('SELECT last_sequence::text,version FROM cashier_device_streams WHERE id=$1',[first.streamId])).rows[0],{last_sequence:'5',version:6});
+      assert.equal((await pool.query('SELECT count(*)::int AS n FROM cashier_device_operation_timeline WHERE merchant_id=$1',[first.f.merchantId])).rows[0].n,0,'v2 uses immutable receipts, not legacy timeline writes');
+      const before=await snapshot();
+      await assert.rejects(commerce.syncCashierOperatorSaleAuthoritative({context:first.context,body:{...versioned(first,first.body),stream_id:peer.streamId},versionedStreamId:peer.streamId}),e=>e.code==='23514');
+      assert.deepEqual(await snapshot(),before);
+      for(const table of Object.keys(peerBefore)){const filter=rows=>rows.filter(x=>x.row.merchant_id===peer.f.merchantId);assert.deepEqual(filter((await snapshot())[table]),filter(peerBefore[table]));}
+    });
+    await v2t.test('checkpoint failure rolls back sale, stock and receipt; retry commits once',async()=>{
+      const x=await create(),before=await snapshot(),name='checkpoint_fault_'+randomUUID().replaceAll('-','');
+      await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $ BEGIN IF NEW.merchant_id='${x.f.merchantId}' AND NEW.last_sequence>OLD.last_sequence THEN RAISE EXCEPTION 'synthetic checkpoint fault'; END IF; RETURN NEW; END $`);
+      await pool.query(`CREATE TRIGGER ${name} BEFORE UPDATE ON cashier_device_streams FOR EACH ROW EXECUTE FUNCTION public.${name}()`);
+      try{await assert.rejects(sell(x),e=>e.code==='P0001'&&e.message.includes('synthetic checkpoint fault'));assert.deepEqual(await snapshot(),before);}
+      finally{await pool.query(`DROP TRIGGER ${name} ON cashier_device_streams`);await pool.query(`DROP FUNCTION public.${name}()`);}
+      assert.equal((await sell(x)).replayed,false);const committed=await snapshot();assert.equal((await sell(x)).replayed,true);assert.deepEqual(await snapshot(),committed);
+    });
+    await v2t.test('post-commit attribution failure retains exact receipt and replay repairs original identity',async()=>{
+      const x=await create(),name='v2_attribution_fault_'+randomUUID().replaceAll('-','');let partial;
+      await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $ BEGIN IF NEW.merchant_id='${x.f.merchantId}' THEN RAISE EXCEPTION 'synthetic v2 attribution fault'; END IF; RETURN NEW; END $`);
+      await pool.query(`CREATE TRIGGER ${name} BEFORE INSERT ON cashier_operation_attribution FOR EACH ROW EXECUTE FUNCTION public.${name}()`);
+      try{await assert.rejects(sell(x),e=>e.code==='P0001'&&e.message.includes('synthetic v2 attribution fault'));partial=await snapshot();
+        const own=table=>partial[table].filter(y=>y.row.merchant_id===x.f.merchantId);
+        assert.equal(own('orders').length,1);assert.equal(own('inventory_mutations').length,1);assert.equal(own('cashier_operation_receipts').length,1);assert.equal(own('cashier_operation_attribution').length,0);assert.equal(own('cashier_device_streams')[0].row.last_sequence,1);
+        await assert.rejects(sell(x),e=>e.code==='P0001');assert.deepEqual(await snapshot(),partial);
+      }finally{await pool.query(`DROP TRIGGER ${name} ON cashier_operation_attribution`);await pool.query(`DROP FUNCTION public.${name}()`);}
+      const replay=await sell(x);assert.equal(replay.replayed,true);assert.equal(replay.inventory_mutation_count,0);
+      const repaired=await snapshot();for(const table of Object.keys(partial).filter(x=>x!=='cashier_operation_attribution'))assert.deepEqual(repaired[table],partial[table]);
+      const row=repaired.cashier_operation_attribution.find(y=>y.row.merchant_id===x.f.merchantId).row;assert.equal(row.staff_id,x.context.staff_id);assert.equal(row.shift_id,x.context.shift_id);
+      const before=await snapshot();await sell(x);assert.deepEqual(await snapshot(),before);
+    });
+    await v2t.test('legacy financial effect cannot be silently adopted or directly minted into a receipt',async()=>{
+      const x=await create(false);const old=await sync.syncCashierSaleAuthoritative({merchantId:x.f.merchantId,body:x.body});assert.equal(old.replayed,false);await activate(x.f,x.streamId);
+      const before=await snapshot();await assert.rejects(sell(x),e=>e.code==='CASHIER_STREAM_RECONCILIATION_REQUIRED');assert.deepEqual(await snapshot(),before);
+      const order=(await pool.query('SELECT metadata FROM orders WHERE id=$1',[old.order_id])).rows[0];
+      const a=await commerce.resolveHistoricalOperatorAttributionContext({merchantId:x.f.merchantId,deviceId:x.f.stations[0].deviceId,occurredAt:x.body.envelopes[0].occurred_at});
+      const r={stream_id:x.streamId,merchant_id:x.f.merchantId,device_id:x.f.stations[0].deviceId,device_sequence:1,operation_id:x.body.operation_id,operation_kind:'sale',request_hash:order.metadata.cashier_sync.request_hash,result_id:old.order_id,station_id:a.station_id,location_id:a.location_id,staff_id:a.staff_id,shift_id:a.shift_id,occurred_at:x.body.envelopes[0].occurred_at,operator_session_id:a.operator_session_id,credential_id:a.credential_id};
+      await assert.rejects(operational.withMerchantOperationalTransaction(x.f.merchantId,c=>c.query('SELECT public.fawri_commit_cashier_financial_receipt($1::jsonb)',[JSON.stringify(r)])),e=>e.code==='23514');assert.deepEqual(await snapshot(),before);
+    });
+    console.log('P0_INTERNAL_V2_FINANCIAL_RECEIPTS '+JSON.stringify({actualCanonicalSaleReturnVoid:true,actualOperatorAttributionWrapper:true,restrictedPrimaryLogin:true,receiptAndCheckpointSameFinancialTransaction:true,postCommitAttributionRepair:true,publicHttpV2Held:true,streamEnrollmentSyntheticRootFixture:true,proposalCanonical:false,fullClientOrHosted:false}));
+  });
+
   await t.test('versioned stream fences legacy sale admission and replay without changing peer financial state',async streamTest=>{
     const target=await fixture(2),peer=await fixture(1);
     async function login(f){

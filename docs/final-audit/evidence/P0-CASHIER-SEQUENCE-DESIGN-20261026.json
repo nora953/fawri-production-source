@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Implement opt-in v2 financial receipt/checkpoint admission in the actual canonical sale/return/void transaction against reviewed enrollment, including exact replay and attribution repair. Keep enrollment proposal isolated until coordinated canonical authority/readiness/restore/privacy/issuer/client adoption is accepted; do not deploy or enroll real devices.",
+  "nextExactAction": "Verify opt-in internal canonical sale/return/void receipt/checkpoint transaction and exact replay/attribution repair. Keep HTTP v2 held, enrollment/receipt SQL proposals isolated, and require coordinated canonical readiness/restore/authority/issuer/client adoption.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -250,5 +250,33 @@
     "canonicalSchemaAdopted": false,
     "publicEndpointWired": false,
     "financialReceiptWriterImplemented": false
+  },
+  "financialReceiptProposal": {
+    "status": "PREPARED_INTERNAL_CANONICAL_TRANSACTION_CI_PENDING",
+    "source": null,
+    "sql": "evidence/seq-d3-financial-receipt-proposal.sql",
+    "service": "artifacts/api-server/src/services/cashierStreamAdmissionAuthority.ts",
+    "productionPathsModified": [
+      "postgresCashierSyncAuthority.ts",
+      "postgresCashierCompensationSyncAuthority.ts",
+      "cashierOperatorCommerceAuthority.ts"
+    ],
+    "activation": "Explicit internal server argument only. Existing routes never populate it and still reject public v2 body markers. SQL capabilities only installed/granted/removed in owned fixture.",
+    "semantics": "Normalized business digest, historical operator context, locked active stream, exact immutable replay first, next-sequence only, clock checks, no legacy financial adoption. Receipt and checkpoint persist after core financial mutation inside same transaction; attribution remains repairable after commit.",
+    "dbBoundary": "Separate NOLOGIN receipt owner, scoped real primary LOGIN/function marker, column-limited stream checkpoint UPDATE and receipt INSERT, canonical constraints; writer verifies historical identity and matching order/compensation with same-transaction tuple XID. No enrollment/state change or public writer grants.",
+    "preparedTests": [
+      "Unprovisioned capability and public HTTP v2 remain denied",
+      "Canonical internal operator sale1/late3 hold/2/3 then return4/void5; receipt identity and exact replay/no duplicate effects",
+      "Receipt insertion faults for return/void and checkpoint update fault for sale roll finance/stock/receipt/checkpoint back together",
+      "Post-commit attribution failures retain durable receipt/checkpoint, exact retry repairs original attribution without stock replay",
+      "Legacy committed financial effect cannot be retrospectively adopted or directly minted by receipt function",
+      "Own/peer snapshots and owner-role/auth-role boundaries preserved"
+    ],
+    "limits": [
+      "New source not runtime accepted until exact-source CI",
+      "Active stream fixtures created by root; independent enrollment mutation proof is separate, not end-to-end operational approval",
+      "No native client v2 or public HTTP success path enabled",
+      "No canonical migration, hosted role/provisioning, deployment or release approval"
+    ]
   }
 }

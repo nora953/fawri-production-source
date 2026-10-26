@@ -1,3 +1,11 @@
+## SEQ-D3 internal canonical financial receipt/checkpoint candidate prepared — 2026-10-26
+
+Last accepted executable remains **6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3**,57/57 CI and772 TAP. New candidate connects an explicit internal v2 context to actual canonical sale/return/void transactions and existing operator attribution wrapper. Ordinary callers/routes keep legacy behavior and public v2 rejection; no client flag or environment switch enables it.
+
+Scoped stream lock and normalized immutable digest enforce exact replay before new next-sequence admission. New receipt/checkpoint write runs after actual order/compensation/inventory mutation in the same transaction; SQL proposal validates the historical identity and matching financial row in that transaction. No legacy financial receipt adoption. Original post-commit attribution repair remains after core commit.
+
+Prepared tests execute actual core/operator services with real operator login/restricted primary, using synthetic root-enrolled streams and disposable-only receipt owner/functions. Cases cover1/3 hold/2/3, return/void, changed replay, financial rollback at receipt/checkpoint failures, post-commit attribution retry/repair and forbidden legacy minting. Source/SQL syntax and runtime status in [existing design evidence](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json). Runtime/CI PENDING; no PASS inferred. No canonical schema/grant/credential/HTTP v2/native/hosted change. **CASHIER-SYNC-SEQUENCE-001 OPEN; NO-GO.**
+
 ## SEQ-D3 reviewed zero-stream enrollment mutation proposal bounded accepted — 2026-10-26
 
 Accepted source **6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3**, **57/57 CI SUCCESS**. [Cashier40368555476/job121732768396](https://github.com/nora953/fawri-production-source/actions/runs/40368555476):74 TAP/16 files; new enrollment suite7 TAP. [Broader40368555704/job121732777765](https://github.com/nora953/fawri-production-source/actions/runs/40368555704):**772 TAP/95 invocations/93 files,0 failed/skipped/cancelled**. Checkout f1d5226a7d9a52a3ab093d9cd43f8d7c3ce54b60 tree256ccda31a5a1ccad19157cd5e73506a7fe9110d equals source. Full quality/typecheck/build, browser/security/schema/restore source workflows SUCCESS. [Existing design/proposal evidence](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json).
