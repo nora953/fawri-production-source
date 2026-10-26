@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "BOUNDED_BACKUP_CLI_V2_OWNER_ACL_AND_TWO_ROLE_BOOTSTRAP_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+  "source": "926fac511bc507b37475f00e574e3468cfec73a8",
+  "sourceTree": "feac4816b2d52486de5c4d815f296404a4d95d21",
+  "checkout": "de352657f994a7aa218aa6f4277c48f0f79782a4",
+  "checkoutTreeMatched": true,
+  "release": "NO-GO",
+  "gateClosed": false,
+  "localCliTests": {
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0
+  },
+  "target": {
+    "run": 40311588593,
+    "job": 121533837949,
+    "conclusion": "success",
+    "contractTests": {
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "observed": [
+    "New backups v2 preserve ownership and ACL; restore requires matching security metadata and checksum/size",
+    "v1 data-only manifest rejected before external restore; no existing dump rewritten",
+    "Existing guard, loopback/database allowlist, URL-option and routing environment denials retained",
+    "Workflow-owned fresh source dumped using real CLI; source database and both fixture roles removed",
+    "Explicit two NOLOGIN/nonprivileged role definitions bootstrap before restoring archive",
+    "Restored data hash equal before mutation; function owner and column ACL restored",
+    "Reader scoped positive/cross-row negative via SET ROLE; no reader function execute privilege",
+    "Valid security definer mutation succeeds with column-limited owner"
+  ],
+  "limits": [
+    "Two generic non-login fixture roles, not full FAWRI role/login/credential bootstrap or a new cluster disaster recovery",
+    "SET ROLE reader in this generic drill, not new real LOGIN proof; earlier proposal restore separately covers real restricted LOGIN",
+    "Canonical schema/journal/admission unchanged; no hosted environment or provider actions",
+    "FIELD005 policy, complete role plan, canonical generation/readiness and live financial receipt writer remain pending"
+  ],
+  "nextAction": "Prepare additive canonical Drizzle/schema/readiness proposal with explicit non-login owner provisioning; validate generated history and committed migration restore without changing legacy admission. Keep full FAWRI role/credential bootstrap and hosted recovery separately open.",
+  "ci": {
+    "total": 56,
+    "success": 56,
+    "broader": {
+      "run": 40311588482,
+      "job": 121533847068,
+      "invocations": 93,
+      "files": 91,
+      "passed": 734,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "de352657f994a7aa218aa6f4277c48f0f79782a4"
+    }
+  },
+  "futureRunbookTemplatesAligned": true
+}

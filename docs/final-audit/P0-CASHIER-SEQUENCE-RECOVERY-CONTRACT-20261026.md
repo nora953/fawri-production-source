@@ -230,3 +230,20 @@ Owned cluster97 public tables include2 noncanonical proposal tables; canonical95
 
 Next: reconcile separate backup/restore ownership/ACL paths and role bootstrap, then canonical Drizzle/readiness promotion; FIELD005 policy, legacy adoption and live admission remain pending. **Sequence gate OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED, incomplete inventory, no percentage.
 
+
+## Disposable backup CLI security contract v2 — 2026-10-26
+
+`backup-postgresql.mjs` now emits v2 metadata declaring preserve-owners-acls and explicit preprovision-global-roles-before-restore. It no longer asks pg_dump to omit owners/privileges. `restore-postgresql.mjs` requires that v2 security contract, checks size/hash, retains pg_restore ownership/ACL statements and keeps existing loopback/database-name/env/verification-SQL restrictions. Old v1 data-only manifests are rejected before invoking restore; no old dump is rewritten, promoted by metadata editing or certified for owner/ACL restoration.
+
+The existing workflow-owned backup CLI drill seeds a table with a non-login function owner, column UPDATE(value) authority, reader role and RLS. After creating the archive it removes the source database and both named fixture roles. Explicit static NOLOGIN/non-privileged role definitions recreate them with no inherited object grants; restoring the archive must reconstruct function owner, column ACLs and policies. Data hash must match before the positive retirement mutation. Reader scope/cross-row negative, denied execute metadata and valid definer write are checked after restore.
+
+This is a bounded generic two-role bootstrap contract using owned synthetic data, not a full FAWRI global-role disaster-recovery plan, secrets/login provisioning or hosted acceptance. The separately accepted full-schema proposal drill retains preprovisioned roles; these proofs are complementary and do not assert a combined fresh-cluster full-FAWRI recovery. Canonical migration/readiness, complete role bootstrap and FIELD005 policy remain pending.
+
+## SEQ-D2 backup CLI v2 owner/ACL and explicit two-role bootstrap accepted — 2026-10-26
+
+Accepted source **926fac511bc507b37475f00e574e3468cfec73a8**,56/56 CI SUCCESS. [Backup drill40311588593/job121533837949](https://github.com/nora953/fawri-production-source/actions/runs/40311588593):22 contract tests PASS/0 FAIL/0 skipped plus real workflow-owned PostgreSQL archive/restore/bootstrap proof. Local CLI19 PASS. [Broader40311588482/job121533847068](https://github.com/nora953/fawri-production-source/actions/runs/40311588482):734 TAP/93 invocations/91 files,0 failed/skipped/cancelled; source/checkout tree matched. [Evidence](evidence/P0-BACKUP-CLI-OWNER-ACL-20261026.json).
+
+Backup v2 preserves owners/ACL and declares required global-role preprovisioning. Restore requires v2 security metadata/size/hash and no longer omits ownership/privileges. Legacy v1 data-only descriptions rejected before tool invocation; old archives untouched. Existing guards/loopback/database/URL-option/routing-env/verification-SQL restrictions preserved. Real CLI drill drops source DB and both fixture roles, recreates explicit non-login restricted definitions, restores data hash/function owner/column ACL/RLS, tests reader scoped positive/cross-row negative and valid definer mutation. Future-only cutover templates aligned; no production command executed.
+
+Boundary: generic two-role bootstrap, not complete FAWRI global/login/credential recovery or hosted disaster recovery. Reader uses SET ROLE in this generic drill; separate full proposal restore already supplies real restricted LOGIN proof. Canonical95 tables/52 migrations and current admission unchanged. Next: additive canonical Drizzle/schema/readiness preparation with explicit non-login owner provisioning; preserve history and keep full role bootstrap, FIELD005 policy, live financial receipts and hosted requirements open. **Sequence gate OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED; incomplete inventory, no percentage.
+
