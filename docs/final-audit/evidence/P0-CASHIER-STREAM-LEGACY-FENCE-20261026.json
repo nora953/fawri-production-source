@@ -62,13 +62,13 @@
     "retry": "one failed-jobs-only retry; later success",
     "countedAsApplicationFailure": false
   },
-  "nextAction": "Verify remaining exact-source CI for9d516a5b (browser prerequisite installation and broader PostgreSQL), then implement trusted enrollment provenance and canonical v2 receipt/admission atomic with real sale/return/void financial effects and exact replay/attribution repair. Existing stream fence is a prerequisite only; do not infer enrollment from MAX, empty timeline or client baseline.",
+  "nextAction": "Verify new protocol-marker guard candidate; then trusted enrollment provenance and canonical receipt/checkpoint admission atomic with real sale/return/void effects and exact replay/attribution repair. No enrollment from MAX, empty history or client baseline.",
   "followup": {
     "source": "9d516a5bb004db07be9730dd2f2f68bc6bfd4a32",
     "sourceTree": "1db544511d8391a08acbe3f70c89945300a2ccd9",
     "checkout": "cf3a4e6ff8a21a65a9413d91c95923c35678f902",
     "checkoutTreeMatched": true,
-    "status": "TARGETED_METADATA_FAULT_AND_COLLIDING_FOREIGN_DEVICE_PASS_FULL_CI_PENDING",
+    "status": "EXACT_SOURCE_57_OF_57_CI_ACCEPTED_BOUNDED_METADATA_FAULT_AND_FOREIGN_DEVICE",
     "runtimeCodeUnchangedFromFullyAcceptedSource": "f5ab4ae7aea6679fee856f6cd8b66da4fab61460",
     "changes": [
       "Revoked SELECT on stream storage: direct core rejects42501; mounted HTTP500 has no ACK or selected financial/state mutation; grant restored in finally",
@@ -99,15 +99,8 @@
     },
     "ci": {
       "total": 57,
-      "success": 56,
-      "pending": [
-        {
-          "run": 40354911173,
-          "job": 121684645657,
-          "phase": "Install isolated Playwright runner and Chromium",
-          "applicationTestStarted": false
-        }
-      ]
+      "success": 57,
+      "pending": []
     },
     "broader": {
       "run": 40354910689,
@@ -118,6 +111,36 @@
       "failed": 0,
       "skipped": 0,
       "cancelled": 0
+    },
+    "browser": {
+      "run": 40354911173,
+      "job": 121684645657,
+      "status": "success",
+      "observed": [
+        "PASS: cashier IndexedDB smoke and stale-backup sequence regression",
+        "P0_NATIVE_OUTBOX_REGRESSION"
+      ],
+      "limits": "Actual native IndexedDB/drain with synthetic transport, not real server authentication, recovery acceptance or hosted proof."
     }
+  },
+  "protocolNegotiationCandidate": {
+    "status": "PREPARED_CI_PENDING",
+    "fields": [
+      "protocol_version",
+      "stream_id"
+    ],
+    "legacyCompatibility": "Absent markers or protocol_version numeric1 with no stream_id retain v1. Any stream_id presence or other protocol_version is409 CASHIER_SYNC_PROTOCOL_UNSUPPORTED before core financial transaction/replay.",
+    "productionPath": "Sale and compensation canonical bundle validators; shared by merchant compatibility and operator HTTP routes.",
+    "purpose": "Reserve future v2 wire identity so it cannot silently downgrade to v1 before trusted enrollment and atomic receipt admission exist.",
+    "tests": "Six markers across sale/return/void new and exact replay, actual mounted HTTP plus direct core, selected all-owned-tenant eight-table snapshots, explicit1 positive followed by absent-marker exact retry.",
+    "localChecks": {
+      "nodeSyntax": "PASS",
+      "typecheck": "NOT_RUN: local pnpm initiated dependency bootstrap; stopped it and delegate typecheck/runtime to GitHub Actions."
+    },
+    "limits": [
+      "No v2 enrollment or financial writer implemented",
+      "No schema/grant/hosted changes",
+      "New candidate assertions are not yet runtime accepted"
+    ]
   }
 }

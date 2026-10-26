@@ -173,6 +173,21 @@ function record(value: unknown): Record<string, unknown> {
     : {};
 }
 
+// Reserve the versioned-stream wire markers before enabling v2 admission.
+// Never strip them and ACK a request using legacy financial/replay semantics.
+export function assertLegacyCashierSyncProtocol(raw: Record<string, unknown>): void {
+  if (
+    (Object.hasOwn(raw, "protocol_version") && raw.protocol_version !== 1) ||
+    Object.hasOwn(raw, "stream_id")
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_PROTOCOL_UNSUPPORTED",
+      "versioned cashier stream admission is not available",
+      409,
+    );
+  }
+}
+
 function identifier(value: unknown, field: string, maxLength = 200): string {
   const normalized = String(value ?? "").normalize("NFKC").trim();
   if (!normalized || normalized.length > maxLength || /[\u0000-\u001f\u007f]/.test(normalized)) {
@@ -598,6 +613,7 @@ function parseEnvelope(value: unknown): CashierEnvelope {
 
 export function validateCashierSaleSyncBundle(body: unknown): ValidatedBundle {
   const raw = record(body);
+  assertLegacyCashierSyncProtocol(raw);
   const cloudMerchantId = identifier(raw.cloud_merchant_id, "cloud_merchant_id");
   const localMerchantId = identifier(raw.local_merchant_id, "local_merchant_id");
   const deviceId = identifier(raw.device_id, "device_id");

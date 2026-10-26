@@ -107,6 +107,26 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   app.use(express.json()); app.use('/api', staffRouter, commerceRouter);
   server = await new Promise((resolve, reject) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); s.once('error', reject); });
   const base = `http://127.0.0.1:${server.address().port}`;
+  async function assertNoProtocolDowngrade(body, httpRequest, coreRequest) {
+    async function snapshot() {
+      const state = {};
+      for (const table of ['orders','order_items','inventory_mutations','cashier_device_operation_timeline','location_inventory_levels','cashier_operation_attribution','cashier_device_streams','cashier_operation_receipts']) {
+        state[table] = (await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`, [owned])).rows;
+      }
+      return state;
+    }
+    const before = await snapshot();
+    for (const marker of [{protocol_version:2}, {stream_id:'unverified-stream'}, {protocol_version:1,stream_id:'unverified-stream'}, {protocol_version:null}, {protocol_version:'2'}, {stream_id:null}]) {
+      const candidate = {...body,...marker};
+      const denied = await httpRequest(candidate);
+      assert.equal(denied.status,409,JSON.stringify(denied.body));
+      assert.equal(denied.body.code,'CASHIER_SYNC_PROTOCOL_UNSUPPORTED');
+      assert.equal(denied.body.accepted_entity_ids,undefined);
+      assert.equal(denied.body.order_id,undefined);
+      await assert.rejects(coreRequest(candidate), error => error.code === 'CASHIER_SYNC_PROTOCOL_UNSUPPORTED');
+      assert.deepEqual(await snapshot(),before,'unsupported protocol cannot write or receive legacy replay ACK');
+    }
+  }
   await t.test('versioned stream fences legacy sale admission and replay without changing peer financial state',async streamTest=>{
     const target=await fixture(2),peer=await fixture(1);
     async function login(f){
@@ -119,6 +139,10 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     const token=await login(target),peerToken=await login(peer);
     const instant=(await pool.query('SELECT clock_timestamp() AS instant')).rows[0].instant.toISOString();
     const body=saleBody(target,target.stations[0],instant),next=saleBody(target,target.stations[0],instant,2);
+    const assertSaleProtocolHold = () => assertNoProtocolDowngrade(body,
+      candidate => request(target,token,candidate),
+      candidate => sync.syncCashierSaleAuthoritative({merchantId:target.merchantId,body:candidate}));
+    await streamTest.test('unsupported sale protocol cannot downgrade before first commit',assertSaleProtocolHold);
     await streamTest.test('unreadable stream metadata fails closed before a legacy financial commit',async()=>{
       const before=await snapshot();
       await pool.query(`REVOKE SELECT ON cashier_device_streams FROM ${runtimeFixture.role}`);
@@ -128,7 +152,8 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
         assert.deepEqual(await snapshot(),before,'metadata failure cannot fall back to legacy admission');
       }finally{await pool.query(`GRANT SELECT ON cashier_device_streams TO ${runtimeFixture.role}`);}
     });
-    const accepted=await request(target,token,body);assert.equal(accepted.status,200,JSON.stringify(accepted.body));
+    const accepted=await request(target,token,{...body,protocol_version:1});assert.equal(accepted.status,200,JSON.stringify(accepted.body));
+    await streamTest.test('unsupported sale protocol cannot receive a legacy replay ACK',assertSaleProtocolHold);
     assert.equal((await request(target,token,body)).body.replayed,true,'unenrolled exact replay remains valid');
     // Root setup only: intentionally inconsistent synthetic history is not an
     // enrollment method or a trusted checkpoint and must remain held.
@@ -298,6 +323,11 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     expectedVersion: version, role: 'manager', permissions: ['sale.create', 'sale.return', 'sale.void', 'sale.view_all'] });
   const privileged = await request('/api/cashier/operator/login', null, { staff_id: member.id, pin: '2468' });
   assert.equal(privileged.status, 200, JSON.stringify(privileged.body));
+  const compensationCore = await import('../src/services/postgresCashierCompensationSyncAuthority.ts');
+  const assertCompensationProtocolHold = () => assertNoProtocolDowngrade(compensation,
+    candidate => request(`/api/cashier/operator/sync/${kind}`,privileged.body.operator_token,candidate),
+    candidate => compensationCore.syncCashierCompensationAuthoritative({merchantId:f.merchantId,body:candidate}));
+  await t.test(`${kind} unsupported protocol cannot downgrade before first commit`,assertCompensationProtocolHold);
   await t.test(`${kind} stream review/active fences canonical legacy compensation and replay`,async()=>{
     const id='comp-fence-'+randomUUID();
     await pool.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',[id,f.merchantId,device.deviceId]);
@@ -312,10 +342,11 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       assert.deepEqual(await snapshot(),before);
     }}finally{await pool.query('DELETE FROM cashier_device_streams WHERE id=$1',[id]);}
   });
-  const compensated = await request(`/api/cashier/operator/sync/${kind}`, privileged.body.operator_token, compensation);
+  const compensated = await request(`/api/cashier/operator/sync/${kind}`, privileged.body.operator_token, {...compensation,protocol_version:1});
   assert.equal(compensated.status, 200, JSON.stringify(compensated.body));
   assert.equal(compensated.body.compensation_kind, kind);
   assert.equal(compensated.body.replayed, false);
+  await t.test(`${kind} unsupported protocol cannot receive a legacy replay ACK`,assertCompensationProtocolHold);
   assert.deepEqual(new Set(compensated.body.accepted_entity_ids), new Set(compensation.envelopes.map(e => e.entity_id)));
   const savedComp = (await pool.query('SELECT staff_id,shift_id,operator_session_id FROM cashier_operation_attribution WHERE merchant_id=$1 AND operation_id=$2', [f.merchantId, compId])).rows[0];
   assert.deepEqual(savedComp, { staff_id: member.id, shift_id: original.context.shift_id,
