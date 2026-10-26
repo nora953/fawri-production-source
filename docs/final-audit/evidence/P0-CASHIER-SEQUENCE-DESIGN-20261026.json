@@ -27,7 +27,7 @@
     },
     {
       "id": "SEQ-D2",
-      "status": "PROPOSAL_AND_CLI_OWNER_ACL_BOUNDED_ACCEPTANCE_CANONICAL_PROMOTION_PENDING",
+      "status": "GENERATED_CANDIDATE_BOUNDED_ACCEPTANCE_FULL_SOURCE_CI_PENDING_NOT_ADOPTED",
       "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance",
       "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
       "concurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
@@ -35,7 +35,8 @@
       "streamDeletionTransactionEvidence": "P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json",
       "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json",
       "streamRestoreEvidence": "P0-CASHIER-STREAM-RESTORE-20261026.json",
-      "backupCliOwnerAclEvidence": "P0-BACKUP-CLI-OWNER-ACL-20261026.json"
+      "backupCliOwnerAclEvidence": "P0-BACKUP-CLI-OWNER-ACL-20261026.json",
+      "canonicalCandidateEvidence": "P0-CASHIER-CANONICAL-CANDIDATE-20261026.json"
     },
     {
       "id": "SEQ-D3",
@@ -63,7 +64,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Prepare additive canonical Drizzle/schema/readiness proposal with explicit non-login owner provisioning; validate generated history and committed migration restore without changing legacy admission. Keep full FAWRI role/credential bootstrap and hosted recovery separately open.",
+  "nextExactAction": "Resolve pending browser CI; Promote generated0052/schema/preimage only together with storage/restore fixture adaptation, dedicated workflow update, new table/owner/ACL/trigger readiness checks and exact-source migration/storage/deletion/restore regression. Preserve all0000-0051 bytes and legacy admission.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -76,5 +77,7 @@
   "streamDeletionTransactionEvidence": "P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json",
   "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json",
   "streamRestoreEvidence": "P0-CASHIER-STREAM-RESTORE-20261026.json",
-  "backupCliOwnerAclEvidence": "P0-BACKUP-CLI-OWNER-ACL-20261026.json"
+  "backupCliOwnerAclEvidence": "P0-BACKUP-CLI-OWNER-ACL-20261026.json",
+  "sourceCandidate": "b55328a2a3410cbb94b13b4ba2ba5085a8560336",
+  "canonicalCandidateEvidence": "P0-CASHIER-CANONICAL-CANDIDATE-20261026.json"
 }

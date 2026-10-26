@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "GENERATED_0052_CANDIDATE_BOUNDED_ACCEPTED_FULL_SOURCE_CI_PENDING_BROWSER_INSTALL",
+  "source": "b55328a2a3410cbb94b13b4ba2ba5085a8560336",
+  "sourceTree": "a6398174a81e04e2bf0266331c8650779acbc58b",
+  "checkout": "311633213c4df10eee6c875ed805cb38546b6863",
+  "checkoutTreeMatched": true,
+  "release": "NO-GO",
+  "gateClosed": false,
+  "candidateWorkflow": {
+    "run": 40315005720,
+    "job": 121545272842,
+    "proof": [
+      {
+        "candidateOnly": true,
+        "historicalFilesUnchanged": 104,
+        "journalEntries": 53,
+        "snapshotTables": 97,
+        "reviewedSql": true,
+        "liveAdmissionChanged": false,
+        "hostedChanged": false
+      }
+    ],
+    "tests": [
+      {
+        "suite": "merchant-management-tenant-rls.integration.test.mjs",
+        "auditBatch": "management",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ]
+  },
+  "generatedFiles": [
+    {
+      "file": "0052_cashier_stream_receipt_storage.sql",
+      "sha256": "eff1aa5937f373e773a5c92d1b8984bc916fdcf34921276c245c58e8c7602670",
+      "bytes": 10093
+    },
+    {
+      "file": "meta/0052_snapshot.json",
+      "sha256": "993461e7bdccce8a2c7386054ce43e57b6eab73e7f80d87d13dc5e693651c9e4",
+      "bytes": 645472
+    },
+    {
+      "file": "meta/_journal.json",
+      "sha256": "d8f226a4651d35fced281c40afc7a6d9d1c322dd9d47d89322088a6bb49db852",
+      "bytes": 8581
+    }
+  ],
+  "activeCanonical": {
+    "migrations": 52,
+    "tables": 95,
+    "changed": false
+  },
+  "candidateCanonical": {
+    "migrations": 53,
+    "tables": 97,
+    "historicalFilesByteIdentical": 104
+  },
+  "priorFailedCandidate": {
+    "source": "109166ff8f10dd061d3431beb3c3bc246d52c1c7",
+    "run": 40314567851,
+    "job": 121543813289,
+    "generationSucceeded": true,
+    "historicalFilesUnchanged": 104,
+    "migrationAccepted": false,
+    "errorCode": "42703",
+    "reason": "Reviewed candidate referenced camelCase column merchantId instead of physical SQL merchant_id; corrected SQL references and reviewed SHA in separate source"
+  },
+  "limits": [
+    "Files remain outside active schema and migration journal; CI overlays only ephemeral checkout",
+    "Actual owned candidate migration and6 TAP management contracts, not complete candidate storage/deletion/restore/readiness acceptance",
+    "Existing proposal fixtures must be adapted to consume committed schema before adoption",
+    "Dedicated candidate workflow currently expects active52 migrations and must be updated/retired on adoption",
+    "Readiness must explicitly cover new protected tables, owner role reachability, column grants, trigger/function authority",
+    "No new live admission/financial receipt writer/enrollment, hosted or provider change",
+    "FIELD005 complete policy and full FAWRI role/credential bootstrap remain open"
+  ],
+  "nextAction": "Promote generated0052/schema/preimage only together with storage/restore fixture adaptation, dedicated workflow update, new table/owner/ACL/trigger readiness checks and exact-source migration/storage/deletion/restore regression. Preserve all0000-0051 bytes and legacy admission.",
+  "ci": {
+    "total": 57,
+    "success": 56,
+    "pending": [
+      {
+        "run": 40315005762,
+        "job": 121545272094,
+        "step": "Install isolated Playwright runner and Chromium",
+        "startedAt": "2026-10-26T11:26:42Z",
+        "observedAt": "2026-10-26T11:36:21Z",
+        "testExecutionStarted": false
+      }
+    ],
+    "broader": {
+      "run": 40315005751,
+      "job": 121545708032,
+      "invocations": 93,
+      "files": 91,
+      "passed": 734,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "311633213c4df10eee6c875ed805cb38546b6863"
+    }
+  }
+}
