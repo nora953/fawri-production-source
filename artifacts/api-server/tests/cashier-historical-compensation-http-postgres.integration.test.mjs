@@ -141,6 +141,25 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     const version=(await pool.query('SELECT version FROM merchant_cashier_staff WHERE id=$1',[own.member.id])).rows[0].version;
     await staff.updateCashierStaffAuthoritative({merchantId:target.merchantId,staffId:own.member.id,expectedVersion:version,status:'disabled'});
     assert.equal((await request(target,own.token,bodies.get(2))).status,401);assert.deepEqual(await snapshot(target),accepted);assert.deepEqual(await snapshot(peer),peerBefore);
+    const fault=await fixture(),faultLogin=await login(fault);
+    await pool.query('SELECT pg_sleep(0.02)');const faultAt=(await pool.query('SELECT clock_timestamp() AS instant')).rows[0].instant.toISOString();
+    const faultBody=saleBody(fault,fault.stations[0],faultAt),trigger='attribution_fault_'+randomUUID().replaceAll('-','');
+    let partial;
+    try{
+      await pool.query(`CREATE FUNCTION public.${trigger}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.merchant_id='${fault.merchantId}' THEN RAISE EXCEPTION 'synthetic operator attribution fault'; END IF; RETURN NEW; END $$`);
+      await pool.query(`CREATE TRIGGER ${trigger} BEFORE INSERT ON cashier_operation_attribution FOR EACH ROW EXECUTE FUNCTION public.${trigger}()`);
+      const failed=await request(fault,faultLogin.token,faultBody);assert.equal(failed.status,500,JSON.stringify(failed.body));
+      partial=await snapshot(fault);assert.equal(partial.orders.length,1);assert.equal(partial.inventory_mutations.length,1);assert.equal(partial.cashier_device_operation_timeline.length,1);assert.equal(partial.cashier_operation_attribution.length,0);
+      const stock=partial.location_inventory_levels.find(x=>x.row.location_id===fault.locationId&&x.row.product_id===fault.productId&&x.row.variant_id===null);assert.equal(Number(stock.row.quantity),0);
+      assert.equal((await request(fault,faultLogin.token,faultBody)).status,500);assert.deepEqual(await snapshot(fault),partial,'failed attribution retry must not repeat committed sale or stock delta');
+    }finally{
+      await pool.query(`DROP TRIGGER IF EXISTS ${trigger} ON cashier_operation_attribution`);await pool.query(`DROP FUNCTION IF EXISTS public.${trigger}()`);
+    }
+    ack(await request(fault,faultLogin.token,faultBody),faultBody,true);
+    const repaired=await snapshot(fault);assert.equal(repaired.cashier_operation_attribution.length,1);assert.equal(repaired.cashier_operation_attribution[0].row.staff_id,faultLogin.member.id);
+    for(const table of Object.keys(partial).filter(x=>x!=='cashier_operation_attribution'))assert.deepEqual(repaired[table],partial[table],'repair must preserve committed '+table);
+    ack(await request(fault,faultLogin.token,faultBody),faultBody,true);assert.deepEqual(await snapshot(fault),repaired);assert.deepEqual(await snapshot(peer),peerBefore);
+    console.log('P0_OPERATOR_POSTCOMMIT_ATTRIBUTION_FAULT '+JSON.stringify({actualHttp:true,injectedBoundary:'attribution_insert_after_sale_commit',failedResponses:2,status:500,durableOrdersBeforeRetry:1,durableInventoryMutationsBeforeRetry:1,missingAttributionBeforeRetry:0,repairedAttributions:1,retryReplayed:true,retryInventoryMutations:0,peerPreserved:true,hostedAccepted:false}));
     console.log('P0_SEQUENCE_OPERATOR_HTTP_DIAGNOSTIC '+JSON.stringify({actualMountedRouters:true,realOperatorLogin:true,realStationCredential:true,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,orderedAccepted:[1,2,3],gapAccepted:[1,3],lateSequence:2,lateStatus:409,lateAttempts:2,orders:2,inventoryMutations:2,attributions:2,remainingStock:1,exactAckIdentity:true,replayNoMutation:true,peerPreserved:true,anonymousDenied:401,wrongDeviceDenied:401,wrongStationDenied:401,foreignTenantDenied:403,disabledSessionDenied:401,recoveryContractAccepted:false,fullApp:false,hostedAccepted:false}));
     // This passing diagnostic documents unresolved gap recovery. It does not
     // authorize dropping a real late sale or synthesizing a tombstone.
