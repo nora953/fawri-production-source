@@ -1,6 +1,6 @@
 # CASHIER-SYNC-SEQUENCE-001 — recovery contract candidate
 
-Status: CONCRETE_DESIGN_REVISION_1_WITH_SEQ_D1_INTERNAL_READ_ONLY_ACCEPTED_REMAINING_PROTOCOL_NOT_IMPLEMENTED_NOT_RELEASE_ACCEPTED. Gate OPEN; release NO-GO. This document authorizes no financial/timeline repair, tombstone, device reset, production write or hosted rollout. A diagnostic PASS is not recovery acceptance.
+Status: SEQ_D1_ACCEPTED_SEQ_D2_PROPOSAL_SQL_CONSTRAINTS_RLS_CONCURRENCY_ACCEPTED_CANONICAL_PROMOTION_PENDING_NOT_RELEASE_ACCEPTED. Gate OPEN; release NO-GO. This document authorizes no financial/timeline repair, tombstone, device reset, production write or hosted rollout. A diagnostic PASS is not recovery acceptance.
 
 ## Current source path
 
@@ -154,3 +154,18 @@ Draft stream/immutable receipt SQL is outside the canonical migration journal. O
 
 Next: reconcile through canonical Drizzle generation and verify RLS/privacy/readiness/restore and deletion constraints before canonical promotion. SEQ-D2 is partially verified, not complete; D3/D4 remain open. **CASHIER-SYNC-SEQUENCE-001 OPEN; NO-GO.** Register remains45 rows=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED, incomplete inventory, no overall percentage.
 
+
+## SEQ-D2 canonical promotion review — 2026-10-26
+
+The verified proposal remains outside the migration journal. Do not copy it into0052 unchanged. Source review identifies these concrete integration requirements:
+
+| Boundary | Current source | Required before promotion |
+| --- | --- | --- |
+| Historical generation | `lib/db/scripts/generate-migration.mjs`, stages/preimages | Declare additive schema through a stage and reproduce historical bytes; do not hand-edit old snapshots/journal |
+| Readiness | `postgresRuntimeRlsSecurity.ts:PRODUCTION_PROTECTED_RLS_TABLES` | Include adopted tables and test missing RLS/ownership/privilege denial; scoped reads require intentional grants |
+| Deletion/privacy | `postgresMerchantManagementAuthority.ts` rewrites device identity in `cashier_device_operation_timeline` and `cashier_operation_attribution` | Proposal immutable receipts/stream contain raw device IDs and current deletion has no handling for them. Resolve erasable identity mapping versus immutable financial proof; current proposal is not deletion/privacy compatible by evidence |
+| Restore | `full-schema-restore-postgres.integration.test.mjs` | Extend canonical dump/restore proof to stream data, trigger definitions/state, constraints, ACLs and restricted reads; current generic fingerprint does not prove this uninstalled proposal |
+| Financial authority | Canonical sale/return/void writers and attribution repair | Add receipt creation within original financial transaction; root-created synthetic result IDs are not financial integrity proof |
+| Admission | Existing device timeline accepts gaps | D3 must change admission only after explicit opt-in/version/replay/enrollment contract; no enrollment from MAX or client assertions |
+
+Current concurrency regression uses root setup SQL for two proposal receipt writers; it tests database row-lock constraints, not the canonical financial writer or operator HTTP. No production migration, privacy decision or retention policy is adopted by this review.

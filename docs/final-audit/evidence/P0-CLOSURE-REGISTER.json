@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "0edf291bb5d172a76ff6f840af70db710d3f6503",
-  "lastFullyAcceptedSource": "0edf291bb5d172a76ff6f840af70db710d3f6503",
+  "sourceCandidate": "4b9f9dc638e95b8b053189edf3cb6e93b48b384e",
+  "lastFullyAcceptedSource": "4b9f9dc638e95b8b053189edf3cb6e93b48b384e",
   "release": "NO-GO",
   "rows": [
     {
@@ -282,7 +282,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "SEQ_D1_ACCEPTED_D2_PROPOSAL_VERIFIED_D3_D4_OPEN",
-      "nextAction": "Reconcile proposal through canonical Drizzle schema and migration generation, then verify RLS/privacy/readiness/restore and deletion constraints before canonical acceptance; preserve legacy admission and no hosted rollout.",
+      "nextAction": "Resolve proposal raw-device identity retention against current deletion anonymization before canonical schema generation; then verify readiness, restore and trusted financial writer integration.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -296,7 +296,9 @@
       "deviceHistoryAssessmentEvidence": "evidence/P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
       "deviceHistoryAssessmentStatus": "SEQ_D1_BOUNDED_INTERNAL_READ_ONLY_ACCEPTED_NO_LIVE_ADMISSION_OR_ENROLLMENT",
       "streamStorageProposalEvidence": "evidence/P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
-      "streamStorageProposalStatus": "BOUNDED_SQL_PROPOSAL_ACCEPTED_CANONICAL_PROMOTION_PENDING"
+      "streamStorageProposalStatus": "BOUNDED_SQL_PROPOSAL_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+      "streamConcurrencyEvidence": "evidence/P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
+      "streamConcurrencyStatus": "BOUNDED_PROPOSAL_SQL_CONCURRENCY_ACCEPTED_CANONICAL_PROMOTION_PENDING"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -506,6 +508,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
+  "previousFullyAcceptedSource": "0edf291bb5d172a76ff6f840af70db710d3f6503",
   "lastUpdatedAt": "2026-10-26"
 }

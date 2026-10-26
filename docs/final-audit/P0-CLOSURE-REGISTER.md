@@ -1,3 +1,11 @@
+## SEQ-D2 proposal SQL contention accepted; canonical promotion pending — 2026-10-26
+
+Accepted source **4b9f9dc638e95b8b053189edf3cb6e93b48b384e**,56/56 CI SUCCESS. [Cashier40264134265/job121382683025](https://github.com/nora953/fawri-production-source/actions/runs/40264134265):33 TAP/14 invocations; proposal fixture5 TAP(parent+4 subtests). [Broader40264134048/job121382681239](https://github.com/nora953/fawri-production-source/actions/runs/40264134048):729 TAP/93 invocations/91 files,0 failed/skipped; exact checkout tree matched. [Evidence](evidence/P0-CASHIER-STREAM-CONCURRENCY-20261026.json).
+
+Actual row-lock wait observed with pg_blocking_pids. First commit leaves exactly one receipt/checkpoint1/version2 and rejects waiter; first rollback leaves no first receipt and waiter commits exactly one. Another merchant proceeds during blocking; existing peer selected JSON unchanged exactly. Root proposal SQL fixture only, not financial writer/HTTP acceptance. No canonical migration, live admission or hosted changes.
+
+Canonical review also records a privacy prerequisite: immutable proposal rows retain raw device IDs while current deletion anonymizes device identity in timeline/attribution. Resolve this before promotion; no retention policy adopted. Readiness/schema generation/restore/financial integration remain pending. **Sequence gate OPEN; release NO-GO.** Register unchanged45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED; incomplete inventory and no overall percentage.
+
 ## SEQ-D2 disposable SQL proposal accepted; canonical promotion pending — 2026-10-26
 
 Accepted source **0edf291bb5d172a76ff6f840af70db710d3f6503**, **56/56 CI SUCCESS**. [Cashier run40261736753](https://github.com/nora953/fawri-production-source/actions/runs/40261736753):32 TAP/14 invocations; new proposal fixture4 TAP(parent+3 subtests). [Broader run40261736766](https://github.com/nora953/fawri-production-source/actions/runs/40261736766):728 TAP/93 invocations/91 files, zero failed/skipped/cancelled. Synthetic checkout tree matches source. [Evidence](evidence/P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json).

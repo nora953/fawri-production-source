@@ -6,7 +6,7 @@
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "0edf291bb5d172a76ff6f840af70db710d3f6503",
+  "acceptedExecutable": "4b9f9dc638e95b8b053189edf3cb6e93b48b384e",
   "applicationChanged": true,
   "schemaChanged": false,
   "aclChanged": false,
@@ -27,9 +27,10 @@
     },
     {
       "id": "SEQ-D2",
-      "status": "PROPOSAL_SQL_CONSTRAINTS_AND_RLS_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+      "status": "PROPOSAL_SQL_CONSTRAINTS_RLS_CONCURRENCY_ACCEPTED_CANONICAL_PROMOTION_PENDING",
       "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance",
-      "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json"
+      "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
+      "concurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json"
     },
     {
       "id": "SEQ-D3",
@@ -57,11 +58,13 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Reconcile proposal through canonical Drizzle schema and migration generation, then verify RLS/privacy/readiness/restore and deletion constraints before canonical acceptance; preserve legacy admission and no hosted rollout.",
+  "nextExactAction": "Resolve proposal raw-device identity retention against current deletion anonymization before canonical schema generation; then verify readiness, restore and trusted financial writer integration.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
   "applicationComponentAdded": true,
   "liveAdmissionChanged": false,
-  "storageProposalEvidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json"
+  "storageProposalEvidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
+  "storageConcurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
+  "canonicalPromotionPrivacyPrerequisite": "Immutable proposal raw device IDs must be reconciled with existing merchant deletion anonymization; no policy adopted"
 }
