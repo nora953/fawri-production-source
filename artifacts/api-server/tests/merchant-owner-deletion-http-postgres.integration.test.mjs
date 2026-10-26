@@ -45,13 +45,13 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
     const result = {id, kind, role, permissions, device: `device-${randomUUID()}`}; actors.push(result); return result;
   }
   const owner = await actor('admin', 'owner_admin'), assistant = await actor('admin', 'assistant_admin', ['manage_merchant_status', 'manage_channels', 'view_logs', 'manage_subscriptions']);
-  const a = await actor('merchant'), b = await actor('merchant'), blocked = await actor('merchant'), race = await actor('merchant');
+  const a = await actor('merchant'), b = await actor('merchant'), blocked = await actor('merchant'), race = await actor('merchant'), staged = await actor('merchant');
   for (const actor of actors) {
     if (actor.kind === 'admin') {const device = await security.registerAdminDeviceAuthoritative({accountId: actor.id, accountKind: 'admin', deviceId: actor.device, deviceLabel: 'Synthetic'}); await security.setAdminDeviceTrustAuthoritative({deviceRecordId: device.id, trusted: true, actorAccountId: owner.id});}
     actor.session = await auth.issueSession({accountId: actor.id, accountKind: actor.kind, tenantId: actor.kind === 'admin' ? 'fawri-admin' : actor.id, adminRole: actor.role, permissions: actor.permissions, deviceId: actor.device});
     actor.cookie = `${actor.kind === 'admin' ? ADMIN_SESSION_COOKIE : MERCHANT_SESSION_COOKIE}=${actor.session.token}`;
   }
-  for (const actor of [a, b, blocked, race]) {
+  for (const actor of [a, b, blocked, race, staged]) {
     await management.updateMerchantStatusPostgres({merchantId: actor.id, status: 'suspended', reason: 'Synthetic deletion prerequisite', actorAdminId: owner.id});
     await admin.query("INSERT INTO products(id,merchant_id,name) VALUES($1,$2,'Synthetic private product')", [`product-${actor.id}`, actor.id]);
     await admin.query("INSERT INTO saved_answers(id,merchant_id,category,question_pattern,normalized_question,answer_text,language) VALUES($1,$2,'custom','Synthetic?','synthetic','Synthetic private answer','en')", [`answer-${actor.id}`, actor.id]);
@@ -129,6 +129,39 @@ test('actual owner deletion HTTP enforces password session quiescence and tenant
       if(deleted)assert.equal(active,0,'deleted merchant must not receive newly active emergency access');
       assert.ok(results.every(r=>[200,201,404,409].includes(r.status)),JSON.stringify(results));
     }finally{if(held)await gate.query('ROLLBACK');gate.release();await Promise.allSettled(tasks);}
+  });
+  await t.test('emergency request paused after merchant validation cannot activate on a concurrently deleted merchant',async()=>{
+    const trigger='deletion_emergency_gate_'+randomUUID().replaceAll('-','');
+    const lockKey=randomInt(100000,2000000000),gate=await admin.connect();
+    let held=false,tasks=[];
+    const peer=await snapshot([b,blocked]);
+    try{
+      await admin.query(`CREATE FUNCTION public.${trigger}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.merchant_id='${staged.id}' THEN PERFORM pg_advisory_xact_lock(${lockKey}); END IF; RETURN NEW; END $$`);
+      await admin.query(`CREATE TRIGGER ${trigger} BEFORE INSERT ON emergency_access_requests FOR EACH ROW EXECUTE FUNCTION public.${trigger}()`);
+      await gate.query('BEGIN');await gate.query('SELECT pg_advisory_xact_lock($1)',[lockKey]);held=true;
+      const gatePid=(await gate.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+      const creation=fetch(origin+'/api/auth/admin/emergency-read-access/requests',{method:'POST',headers:{'Content-Type':'application/json',Cookie:owner.cookie,'X-Fawri-Device-Id':owner.device},body:JSON.stringify({merchant_id:staged.id,incident_reference:'synthetic-staged-'+staged.id,severity:'high',reason:'Synthetic staged deletion boundary',duration_minutes:15}),signal:AbortSignal.timeout(20000)}).then(async response=>({status:response.status,body:await response.json()}));
+      tasks.push(creation);
+      let creatorPid,deadline=Date.now()+5000;
+      while(Date.now()<deadline){const rows=(await admin.query("SELECT pid,pg_blocking_pids(pid) AS blockers FROM pg_stat_activity WHERE usename=$1 AND wait_event_type='Lock' AND wait_event='advisory'",[runtime.authRole])).rows;creatorPid=rows.find(row=>row.blockers.includes(gatePid))?.pid;if(creatorPid)break;await new Promise(ok=>setTimeout(ok,25));}
+      assert.ok(creatorPid,'canonical emergency INSERT must reach the owned post-validation advisory gate');
+      let deletionResult;const deletion=req(owner,staged).then(result=>{deletionResult=result;return result;});tasks.push(deletion);
+      let deleteWait=false;deadline=Date.now()+5000;
+      while(Date.now()<deadline){if(deletionResult)break;const rows=(await admin.query("SELECT pg_blocking_pids(pid) AS blockers FROM pg_stat_activity WHERE usename=$1 AND wait_event_type='Lock'",[runtime.authRole])).rows;deleteWait=rows.some(row=>row.blockers.includes(creatorPid));if(deleteWait)break;await new Promise(ok=>setTimeout(ok,25));}
+      assert.ok(deletionResult||deleteWait,'deletion must either finish or demonstrably wait on the paused creator');
+      await gate.query('COMMIT');held=false;
+      const [created,deleted]=await Promise.all([creation,deletion]);
+      const state=(await admin.query('SELECT retention_status FROM merchants WHERE id=$1',[staged.id])).rows[0];
+      const active=(await admin.query("SELECT count(*)::int AS n FROM emergency_access_requests WHERE merchant_id=$1 AND status IN ('pending','active')",[staged.id])).rows[0].n;
+      const audit=await auditRead();
+      console.log('P0_DELETION_EMERGENCY_STAGED '+JSON.stringify({postValidationGateObserved:true,deleteWait,creationStatus:created.status,deletionStatus:deleted.status,deletionCode:deleted.body.code??null,retentionStatus:state.retention_status,activeRequests:active,auditStatus:audit.status}));
+      assert.equal(audit.status,200);assert.equal(audit.body.verification.valid,true);assert.deepEqual(await snapshot([b,blocked]),peer);
+      assert.ok(state.retention_status!=='deleted'||active===0,'post-validation emergency insertion must not activate access on a deleted merchant');
+      assert.equal(created.status,201);assert.equal(deleted.status,409);assert.equal(deleted.body.code,'MERCHANT_DELETION_AUDIT_POLICY_REQUIRED');
+    }finally{
+      if(held)await gate.query('ROLLBACK');gate.release();await Promise.allSettled(tasks);
+      await admin.query(`DROP TRIGGER IF EXISTS ${trigger} ON emergency_access_requests`);await admin.query(`DROP FUNCTION IF EXISTS public.${trigger}()`);
+    }
   });
   await t.test('authorized owner HTTP purges only target private data and local media then rejects repeat', async () => {
     const peer = await snapshot([b, blocked]), r = await req(owner); assert.equal(r.status, 200, JSON.stringify(r)); assert.equal(r.body.deletedMerchantId, a.id); assert.equal(r.body.deletion_request.status, 'completed');
