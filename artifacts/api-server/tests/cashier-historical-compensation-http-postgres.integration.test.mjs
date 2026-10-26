@@ -27,6 +27,7 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   let server;
   t.after(async () => cleanupResources([
     ['HTTP server', () => server ? new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())) : undefined],
+    ['fixture streams', () => pool.query('DELETE FROM cashier_device_streams WHERE merchant_id=ANY($1::text[])', [owned])],
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [owned])],
     ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
@@ -106,6 +107,43 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   app.use(express.json()); app.use('/api', staffRouter, commerceRouter);
   server = await new Promise((resolve, reject) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); s.once('error', reject); });
   const base = `http://127.0.0.1:${server.address().port}`;
+  await t.test('versioned stream fences legacy sale admission and replay without changing peer financial state',async()=>{
+    const target=await fixture(2),peer=await fixture(1);
+    async function login(f){
+      const member=await staff.createCashierStaffAuthoritative({merchantId:f.merchantId,displayName:'Synthetic stream cashier',role:'cashier',pin:'2468',permissions:['sale.create','sale.view_own']});
+      const d=f.stations[0],response=await fetch(base+'/api/cashier/operator/login',{method:'POST',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json','x-fawri-cashier-station-token':d.stationToken,'x-fawri-cashier-device-id':d.deviceId},body:JSON.stringify({staff_id:member.id,pin:'2468'})});
+      const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));return body.operator_token;
+    }
+    async function request(f,token,body){const d=f.stations[0],r=await fetch(base+'/api/cashier/operator/sync/sale',{method:'POST',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json','x-fawri-cashier-station-token':d.stationToken,'x-fawri-cashier-device-id':d.deviceId,'x-fawri-cashier-operator-token':token},body:JSON.stringify(body)});return {status:r.status,body:await r.json()};}
+    async function snapshot(){const state={};for(const table of ['orders','order_items','inventory_mutations','cashier_device_operation_timeline','location_inventory_levels','cashier_operation_attribution','cashier_device_streams','cashier_operation_receipts'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[[target.merchantId,peer.merchantId]])).rows;return state;}
+    const token=await login(target),peerToken=await login(peer);
+    const instant=(await pool.query('SELECT clock_timestamp() AS instant')).rows[0].instant.toISOString();
+    const body=saleBody(target,target.stations[0],instant),next=saleBody(target,target.stations[0],instant,2);
+    const accepted=await request(target,token,body);assert.equal(accepted.status,200,JSON.stringify(accepted.body));
+    assert.equal((await request(target,token,body)).body.replayed,true,'unenrolled exact replay remains valid');
+    // Root setup only: intentionally inconsistent synthetic history is not an
+    // enrollment method or a trusted checkpoint and must remain held.
+    const id='stream-fence-'+randomUUID();
+    await pool.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',[id,target.merchantId,target.stations[0].deviceId]);
+    for(const state of ['review','active']){
+      if(state==='active')await pool.query("UPDATE cashier_device_streams SET state='active',enrollment_evidence_hash=repeat('a',64),enrolled_at=now(),version=version+1 WHERE id=$1",[id]);
+      const before=await snapshot(),code=state==='review'?'CASHIER_OPERATION_STREAM_REVIEW_REQUIRED':'CASHIER_OPERATION_STREAM_PROTOCOL_REQUIRED';
+      for(const candidate of [body,next]){
+        const denied=await request(target,token,candidate);assert.equal(denied.status,409,JSON.stringify(denied.body));assert.equal(denied.body.code,code);
+        assert.equal(denied.body.accepted_entity_ids,undefined);assert.equal(denied.body.order_id,undefined);
+        assert.deepEqual(await snapshot(),before,'denial must preserve selected own/peer financial, stock, timeline, attribution and stream rows');
+      }
+      await assert.rejects(sync.syncCashierSaleAuthoritative({merchantId:target.merchantId,body:next}),error=>error.code===code,'direct core caller cannot bypass HTTP fence');
+      assert.deepEqual(await snapshot(),before);
+    }
+    // A foreign tenant using the identical physical-device string must remain
+    // eligible for its own v1 operation. Neither stream ID nor device alone is authority.
+    await pool.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',['foreign-'+randomUUID(),peer.merchantId,target.stations[0].deviceId]);
+    const peerBody=saleBody(peer,peer.stations[0],instant);
+    assert.equal((await request(peer,peerToken,peerBody)).status,200);
+    const before=await snapshot();assert.equal((await request(peer,peerToken,peerBody)).body.replayed,true);assert.deepEqual(await snapshot(),before);
+    console.log('P0_STREAM_LEGACY_FENCE '+JSON.stringify({sale:true,reviewAndActive:true,newAndReplayHeld:true,restrictedLogin:true,directCoreDenied:true,peerLegacyPreserved:true,enrollmentImplemented:false,financialWriterImplemented:false}));
+  });
   await t.test('actual operator HTTP sequence diagnostic verifies ordered sales and bounded gap late rejection without financial mutation',async()=>{
     const target=await fixture(3),peer=await fixture(3);
     async function request(f,token,payload,overrides={}){
@@ -251,6 +289,20 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     expectedVersion: version, role: 'manager', permissions: ['sale.create', 'sale.return', 'sale.void', 'sale.view_all'] });
   const privileged = await request('/api/cashier/operator/login', null, { staff_id: member.id, pin: '2468' });
   assert.equal(privileged.status, 200, JSON.stringify(privileged.body));
+  await t.test(`${kind} stream review/active fences canonical legacy compensation and replay`,async()=>{
+    const id='comp-fence-'+randomUUID();
+    await pool.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',[id,f.merchantId,device.deviceId]);
+    async function snapshot(){const state={};for(const table of ['orders','order_items','inventory_mutations','cashier_device_operation_timeline','location_inventory_levels','cashier_operation_attribution','cashier_device_streams','cashier_operation_receipts'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[owned])).rows;return state;}
+    try{for(const state of ['review','active']){
+      if(state==='active')await pool.query("UPDATE cashier_device_streams SET state='active',enrollment_evidence_hash=repeat('b',64),enrolled_at=now(),version=version+1 WHERE id=$1",[id]);
+      const before=await snapshot(),code=state==='review'?'CASHIER_OPERATION_STREAM_REVIEW_REQUIRED':'CASHIER_OPERATION_STREAM_PROTOCOL_REQUIRED';
+      const denied=await request(`/api/cashier/operator/sync/${kind}`,privileged.body.operator_token,compensation);
+      assert.equal(denied.status,409,JSON.stringify(denied.body));assert.equal(denied.body.code,code);assert.equal(denied.body.accepted_entity_ids,undefined);
+      const core=await import('../src/services/postgresCashierCompensationSyncAuthority.ts');
+      await assert.rejects(core.syncCashierCompensationAuthoritative({merchantId:f.merchantId,body:compensation}),error=>error.code===code);
+      assert.deepEqual(await snapshot(),before);
+    }}finally{await pool.query('DELETE FROM cashier_device_streams WHERE id=$1',[id]);}
+  });
   const compensated = await request(`/api/cashier/operator/sync/${kind}`, privileged.body.operator_token, compensation);
   assert.equal(compensated.status, 200, JSON.stringify(compensated.body));
   assert.equal(compensated.body.compensation_kind, kind);
@@ -265,6 +317,15 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   assert.equal(repeatComp.body.inventory_mutation_count, 0);
   assert.equal((await pool.query('SELECT quantity FROM location_inventory_levels WHERE merchant_id=$1 AND location_id=$2 AND product_id=$3 AND variant_id IS NULL', [f.merchantId, f.locationId, f.productId])).rows[0].quantity, 1);
 
+  await t.test(`${kind} exact legacy replay requires explicit mapping once a stream exists`,async()=>{
+    const id='replay-fence-'+randomUUID();await pool.query("INSERT INTO cashier_device_streams(id,merchant_id,device_id,state,enrollment_evidence_hash,enrolled_at) VALUES($1,$2,$3,'active',repeat('c',64),now())",[id,f.merchantId,device.deviceId]);
+    try{const before=(await pool.query('SELECT to_jsonb(t) AS row FROM orders t WHERE merchant_id=$1 ORDER BY id',[f.merchantId])).rows;
+      const denied=await request(`/api/cashier/operator/sync/${kind}`,privileged.body.operator_token,compensation);
+      assert.equal(denied.status,409,JSON.stringify(denied.body));assert.equal(denied.body.code,'CASHIER_OPERATION_STREAM_PROTOCOL_REQUIRED');assert.equal(denied.body.accepted_entity_ids,undefined);
+      assert.deepEqual((await pool.query('SELECT to_jsonb(t) AS row FROM orders t WHERE merchant_id=$1 ORDER BY id',[f.merchantId])).rows,before);
+      assert.equal((await pool.query('SELECT count(*)::int AS n FROM cashier_operation_receipts WHERE merchant_id=$1',[f.merchantId])).rows[0].n,0);
+    }finally{await pool.query('DELETE FROM cashier_device_streams WHERE id=$1',[id]);}
+  });
   // Real second licensed tenant: denied at the HTTP boundary, not only by a
   // mocked merchant-id adapter. The body remains the original tenant's bundle.
   const otherTenant = await fixture(), otherDevice = otherTenant.stations[0];
