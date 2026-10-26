@@ -4,6 +4,8 @@ on:
     paths:
       - 'docs/final-audit/evidence/seq-d2-canonical-candidate/**'
       - 'scripts/prepare-seq-d2-canonical-candidate.mjs'
+      - 'lib/db/scripts/lib/cashier-stream-storage-candidate-readiness.mjs'
+      - 'artifacts/api-server/tests/cashier-stream-storage-readiness-postgres.integration.test.mjs'
       - '.github/workflows/seq-d2-canonical-candidate.yml'
 permissions:
   contents: read

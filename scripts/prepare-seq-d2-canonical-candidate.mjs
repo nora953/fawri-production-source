@@ -38,3 +38,9 @@ const snapshot=JSON.parse(fs.readFileSync('lib/db/drizzle/meta/0052_snapshot.jso
 assert.equal(Object.keys(snapshot.tables).length,97);
 assert.ok(snapshot.tables['public.cashier_device_streams']);assert.ok(snapshot.tables['public.cashier_operation_receipts']);
 console.log('SEQ_D2_CANONICAL_CANDIDATE '+JSON.stringify({candidateOnly:true,historicalFilesUnchanged:oldHashes.size,journalEntries:53,snapshotTables:97,reviewedSql:true,liveAdmissionChanged:false,hostedChanged:false}));
+
+const runner='scripts/execute-disposable-postgres-audit.mjs';
+const original=fs.readFileSync(runner,'utf8');
+const anchor="management: ['merchant-management-tenant-rls.integration.test.mjs']";
+assert.ok(original.includes(anchor));
+fs.writeFileSync(runner,original.replace(anchor,"management: ['merchant-management-tenant-rls.integration.test.mjs','cashier-stream-storage-readiness-postgres.integration.test.mjs']"));
