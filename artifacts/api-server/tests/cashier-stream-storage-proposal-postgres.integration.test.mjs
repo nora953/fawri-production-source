@@ -8,10 +8,12 @@ import {cleanupResources} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY='required';
 
 test('owned disposable stream/receipt schema proposal constraints and scoped read-only access',{timeout:120000},async t=>{
- const runtime=await createDisposableKnowledgeRuntime(),admin=runtime.admin,ids=[];let installed=false;
+ const runtime=await createDisposableKnowledgeRuntime(),admin=runtime.admin,ids=[];let installed=false,ownerCreated=false;
+ const retirementOwner='sequence_retire_'+randomUUID().replaceAll('-','');
  const tables=['cashier_device_streams','cashier_operation_receipts'];
  t.after(()=>cleanupResources([
   ['proposal tables',async()=>{if(installed){await admin.query('DROP TRIGGER cashier_device_streams_merchant_deleted ON public.merchants');await admin.query('DROP FUNCTION public.fawri_sequence_merchant_deleted()');await admin.query('DROP TABLE public.cashier_operation_receipts');await admin.query('DROP FUNCTION public.fawri_sequence_receipt_guard(),public.fawri_sequence_receipt_commit_guard()');await admin.query('DROP TABLE public.cashier_device_streams');await admin.query('DROP FUNCTION public.fawri_sequence_stream_guard()');}}],
+  ['retirement owner',async()=>{if(ownerCreated){await admin.query(`DROP OWNED BY ${retirementOwner}`);await admin.query(`DROP ROLE ${retirementOwner}`);}}],
   ['fixture requests',()=>admin.query('DELETE FROM merchant_deletion_requests WHERE merchant_id_snapshot=ANY($1::text[])',[ids])],
   ['fixture accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
   ['runtime',()=>runtime.dispose()],
@@ -20,6 +22,14 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
  const sql=fs.readFileSync(new URL('../../../docs/final-audit/evidence/seq-d2-stream-receipt-schema-proposal.sql',import.meta.url),'utf8');
  const setup=await admin.connect();try{await setup.query('BEGIN');await setup.query(sql);await setup.query('COMMIT');installed=true;}catch(error){await setup.query('ROLLBACK');throw error;}finally{setup.release();}
  await admin.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON public.cashier_device_streams,public.cashier_operation_receipts TO ${runtime.role}`);
+ await admin.query(`CREATE ROLE ${retirementOwner} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);ownerCreated=true;
+ await admin.query(`GRANT USAGE,CREATE ON SCHEMA public TO ${retirementOwner}`);
+ await admin.query(`GRANT SELECT ON public.cashier_device_streams TO ${retirementOwner}`);
+ await admin.query(`GRANT UPDATE(state,device_id,version) ON public.cashier_device_streams TO ${retirementOwner}`);
+ await admin.query(`CREATE POLICY sequence_retirement_owner_read ON public.cashier_device_streams FOR SELECT TO ${retirementOwner} USING(true)`);
+ await admin.query(`CREATE POLICY sequence_retirement_owner_update ON public.cashier_device_streams FOR UPDATE TO ${retirementOwner} USING(state<>'retired') WITH CHECK(state='retired' AND device_id IS NULL)`);
+ await admin.query(`ALTER FUNCTION public.fawri_sequence_merchant_deleted() OWNER TO ${retirementOwner}`);
+ await admin.query(`REVOKE CREATE ON SCHEMA public FROM ${retirementOwner}`);
  const {withMerchantOperationalTransaction:tenant}=await import('../src/services/operationalPostgresAuthority.ts');
  async function actor(){const id='storage-'+randomUUID();ids.push(id);const f={id,device:'device-'+randomUUID(),station:'station-'+randomUUID(),location:'location-'+randomUUID(),staff:'staff-'+randomUUID(),shift:'shift-'+randomUUID(),stream:'stream-'+randomUUID()};
   await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state) VALUES($1,'merchant',$2,'synthetic','active')",[id,'+199'+randomInt(100000000,999999999)]);
@@ -35,6 +45,22 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
  async function append(f,n,overrides){return tx(async c=>{const r=await receipt(c,f,n,overrides);await c.query('UPDATE cashier_device_streams SET last_sequence=$2,version=version+1 WHERE id=$1',[f.stream,n]);return r;});}
  async function snapshot(){return {streams:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t ORDER BY id')).rows,receipts:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows};}
  const first=await append(a,1);await append(b,1);
+ await t.test('retirement definer has a non-login non-owner role and only retirement column authority',async()=>{
+  const flags=(await admin.query('SELECT rolcanlogin,rolsuper,rolbypassrls,rolcreatedb,rolcreaterole,rolinherit,rolreplication FROM pg_roles WHERE rolname=$1',[retirementOwner])).rows[0];
+  assert.deepEqual(flags,{rolcanlogin:false,rolsuper:false,rolbypassrls:false,rolcreatedb:false,rolcreaterole:false,rolinherit:false,rolreplication:false});
+  const fn=(await admin.query("SELECT pg_get_userbyid(proowner) AS owner,prosecdef,proconfig FROM pg_proc WHERE oid='public.fawri_sequence_merchant_deleted()'::regprocedure")).rows[0];
+  assert.deepEqual(fn,{owner:retirementOwner,prosecdef:true,proconfig:['search_path=pg_catalog']});
+  assert.equal((await admin.query("SELECT count(*)::int AS n FROM pg_class WHERE relowner=(SELECT oid FROM pg_roles WHERE rolname=$1)",[retirementOwner])).rows[0].n,0,'function owner owns no tables/indexes');
+  for(const role of [runtime.role,runtime.authRole]){
+   assert.equal((await admin.query("SELECT pg_has_role($1,$2,'USAGE') OR pg_has_role($1,$2,'SET') AS member",[role,retirementOwner])).rows[0].member,false);
+   assert.equal((await admin.query("SELECT has_function_privilege($1,'public.fawri_sequence_merchant_deleted()','EXECUTE') AS allowed",[role])).rows[0].allowed,false);
+  }
+  assert.equal((await admin.query("SELECT has_schema_privilege($1,'public','CREATE') AS allowed",[retirementOwner])).rows[0].allowed,false);
+  for(const column of ['state','device_id','version'])assert.equal((await admin.query("SELECT has_column_privilege($1,'public.cashier_device_streams',$2,'UPDATE') AS allowed",[retirementOwner,column])).rows[0].allowed,true);
+  for(const column of ['last_sequence','merchant_id','id','enrollment_evidence_hash'])assert.equal((await admin.query("SELECT has_column_privilege($1,'public.cashier_device_streams',$2,'UPDATE') AS allowed",[retirementOwner,column])).rows[0].allowed,false);
+  for(const [table,privileges] of [['cashier_device_streams','INSERT,DELETE,TRUNCATE,TRIGGER,REFERENCES'],['cashier_operation_receipts','SELECT,INSERT,UPDATE,DELETE'],['accounts','SELECT,INSERT,UPDATE,DELETE'],['merchants','SELECT,INSERT,UPDATE,DELETE']])assert.equal((await admin.query('SELECT has_table_privilege($1,$2,$3) AS allowed',[retirementOwner,'public.'+table,privileges])).rows[0].allowed,false);
+ });
+
  await t.test('proposal permits own scoped reads but denies cross-tenant, unscoped and direct runtime writes',async()=>{
   assert.equal((await runtime.runtimePool.query('SELECT id FROM cashier_device_streams')).rowCount,0);
   await tenant(a.id,async c=>{assert.equal((await c.query('SELECT id FROM cashier_device_streams')).rowCount,1);assert.equal((await c.query('SELECT id FROM cashier_operation_receipts')).rowCount,1);assert.equal((await c.query('SELECT id FROM cashier_device_streams WHERE id=$1',[b.stream])).rowCount,0);});
@@ -156,6 +182,12 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   }
   const before=await lifecycleSnapshot(f.id),peerBefore=await lifecycleSnapshot(b.id);
   const receiptsBefore=(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows;
+  await admin.query(`REVOKE UPDATE(version) ON public.cashier_device_streams FROM ${retirementOwner}`);
+  try{await assert.rejects(management.completeMerchantDeletionPostgres(input),e=>e.code==='42501','missing definer column authority must fail deletion closed');}
+  finally{await admin.query(`GRANT UPDATE(version) ON public.cashier_device_streams TO ${retirementOwner}`);}
+  assert.deepEqual(await lifecycleSnapshot(f.id),before,'owner misconfiguration rolls back whole selected deletion transaction');
+  assert.deepEqual(await lifecycleSnapshot(b.id),peerBefore);
+
   await assert.rejects(runtime.runtimePool.query('SELECT public.fawri_sequence_merchant_deleted()'),e=>e.code==='42501');
   await assert.rejects(tenant(f.id,c=>c.query("UPDATE merchants SET retention_status='deleted' WHERE id=$1",[f.id])),e=>e.code==='42501');
   assert.deepEqual(await lifecycleSnapshot(f.id),before);
@@ -188,5 +220,5 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   await assert.rejects(management.completeMerchantDeletionPostgres(input),e=>e.code==='MERCHANT_NOT_FOUND');
   assert.deepEqual(await lifecycleSnapshot(f.id),done,'repeat deletion cannot mutate retirement state');
  });
- console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,deviceBindingErasedOnRetirement:true,receiptHasNoRawDeviceColumn:true,retirementBlocksWaitingReceipt:true,canonicalDeletionServiceWithProposalTrigger:true,postRetirementFailureRollback:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
+ console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,deviceBindingErasedOnRetirement:true,receiptHasNoRawDeviceColumn:true,retirementBlocksWaitingReceipt:true,canonicalDeletionServiceWithProposalTrigger:true,postRetirementFailureRollback:true,nonLoginColumnLimitedRetirementOwner:true,ownerGrantFailureRollsBackDeletion:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
 });
