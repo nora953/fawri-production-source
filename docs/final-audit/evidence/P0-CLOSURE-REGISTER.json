@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "11f7e55dd59aa5674822dc3557973acc9440fef0",
-  "lastFullyAcceptedSource": "11f7e55dd59aa5674822dc3557973acc9440fef0",
+  "sourceCandidate": "3bb3c67717a17da1cba903047e35f2b622b997b1",
+  "lastFullyAcceptedSource": "3bb3c67717a17da1cba903047e35f2b622b997b1",
   "release": "NO-GO",
   "rows": [
     {
@@ -282,7 +282,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "SEQ_D1_ACCEPTED_D2_PROPOSAL_VERIFIED_D3_D4_OPEN",
-      "nextAction": "Promote generated0052/schema/preimage together with fixture adaptation and live readiness wiring of reviewed checks; update candidate workflow and require exact-source migration/storage/deletion/restore and role/config denials. Preserve legacy admission, old migration bytes and FIELD005/full role-bootstrap blockers.",
+      "nextAction": "Implement the next bounded SEQ-D3 trusted versioned receipt/admission slice against actual canonical financial transaction and exact replay/attribution repair, with explicit enrollment provenance and unsupported-operation hold. Preserve legacy admission and ambiguous histories; no hosted rollout.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -311,9 +311,11 @@
       "backupCliOwnerAclEvidence": "evidence/P0-BACKUP-CLI-OWNER-ACL-20261026.json",
       "backupCliOwnerAclStatus": "BOUNDED_BACKUP_CLI_V2_OWNER_ACL_AND_TWO_ROLE_BOOTSTRAP_ACCEPTED_CANONICAL_PROMOTION_PENDING",
       "canonicalCandidateEvidence": "evidence/P0-CASHIER-CANONICAL-CANDIDATE-20261026.json",
-      "canonicalCandidateStatus": "GENERATED_0052_CANDIDATE_FULL_SOURCE_CI_ACCEPTED_NOT_ADOPTED",
+      "canonicalCandidateStatus": "SUPERSEDED_BY_CANONICAL_0052_SOURCE_ACCEPTANCE",
       "candidateReadinessEvidence": "evidence/P0-CASHIER-CANDIDATE-READINESS-20261026.json",
-      "candidateReadinessStatus": "BOUNDED_READ_ONLY_CANDIDATE_METADATA_READINESS_ACCEPTED_NOT_OPERATIONALLY_WIRED"
+      "candidateReadinessStatus": "SUPERSEDED_BY_CANONICAL_STARTUP_READINESS",
+      "canonicalStorageAcceptanceEvidence": "evidence/P0-CASHIER-CANONICAL-0052-ACCEPTANCE-20261026.json",
+      "canonicalStorageAcceptanceStatus": "CANONICAL_0052_SOURCE_STORAGE_STARTUP_READINESS_RETIREMENT_RESTORE_BOUNDED_ACCEPTED_PROTOCOL_PENDING"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -523,6 +525,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "b55328a2a3410cbb94b13b4ba2ba5085a8560336",
+  "previousFullyAcceptedSource": "11f7e55dd59aa5674822dc3557973acc9440fef0",
   "lastUpdatedAt": "2026-10-26"
 }

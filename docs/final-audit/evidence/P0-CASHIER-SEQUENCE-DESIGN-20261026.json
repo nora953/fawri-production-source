@@ -6,10 +6,10 @@
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "11f7e55dd59aa5674822dc3557973acc9440fef0",
+  "acceptedExecutable": "3bb3c67717a17da1cba903047e35f2b622b997b1",
   "applicationChanged": true,
-  "schemaChanged": false,
-  "aclChanged": false,
+  "schemaChanged": true,
+  "aclChanged": true,
   "newRuntimeExecuted": true,
   "newCiClaimed": true,
   "report": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
@@ -27,7 +27,7 @@
     },
     {
       "id": "SEQ-D2",
-      "status": "GENERATED_CANDIDATE_AND_READONLY_METADATA_CHECKS_ACCEPTED_NOT_OPERATIONALLY_ADOPTED",
+      "status": "CANONICAL_SOURCE_STORAGE_STARTUP_READINESS_DELETION_RESTORE_BOUNDED_ACCEPTED_PROTOCOL_PENDING",
       "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance",
       "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
       "concurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
@@ -37,7 +37,8 @@
       "streamRestoreEvidence": "P0-CASHIER-STREAM-RESTORE-20261026.json",
       "backupCliOwnerAclEvidence": "P0-BACKUP-CLI-OWNER-ACL-20261026.json",
       "canonicalCandidateEvidence": "P0-CASHIER-CANONICAL-CANDIDATE-20261026.json",
-      "candidateReadinessEvidence": "P0-CASHIER-CANDIDATE-READINESS-20261026.json"
+      "candidateReadinessEvidence": "P0-CASHIER-CANDIDATE-READINESS-20261026.json",
+      "canonicalStorageAcceptanceEvidence": "P0-CASHIER-CANONICAL-0052-ACCEPTANCE-20261026.json"
     },
     {
       "id": "SEQ-D3",
@@ -65,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Promote generated0052/schema/preimage together with fixture adaptation and live readiness wiring of reviewed checks; update candidate workflow and require exact-source migration/storage/deletion/restore and role/config denials. Preserve legacy admission, old migration bytes and FIELD005/full role-bootstrap blockers.",
+  "nextExactAction": "Implement the next bounded SEQ-D3 trusted versioned receipt/admission slice against actual canonical financial transaction and exact replay/attribution repair, with explicit enrollment provenance and unsupported-operation hold. Preserve legacy admission and ambiguous histories; no hosted rollout.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -73,13 +74,16 @@
   "liveAdmissionChanged": false,
   "storageProposalEvidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
   "storageConcurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
-  "canonicalPromotionPrivacyPrerequisite": "Proposal owner/lifecycle/restore and generic CLI two-role bootstrap accepted in owned fixtures; complete FAWRI role/credential bootstrap, canonical schema/readiness and FIELD005 policy remain pending.",
+  "canonicalPromotionPrivacyPrerequisite": "Canonical0052 source storage/startup readiness/deletion/restore accepted. No financial writer/enrollment/admission; complete retained-field/retention and full role/credential/hosted policies remain pending.",
   "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json",
   "streamDeletionTransactionEvidence": "P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json",
   "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json",
   "streamRestoreEvidence": "P0-CASHIER-STREAM-RESTORE-20261026.json",
   "backupCliOwnerAclEvidence": "P0-BACKUP-CLI-OWNER-ACL-20261026.json",
-  "sourceCandidate": "11f7e55dd59aa5674822dc3557973acc9440fef0",
+  "sourceCandidate": "3bb3c67717a17da1cba903047e35f2b622b997b1",
   "canonicalCandidateEvidence": "P0-CASHIER-CANONICAL-CANDIDATE-20261026.json",
-  "candidateReadinessEvidence": "P0-CASHIER-CANDIDATE-READINESS-20261026.json"
+  "candidateReadinessEvidence": "P0-CASHIER-CANDIDATE-READINESS-20261026.json",
+  "canonicalStorageAcceptanceEvidence": "P0-CASHIER-CANONICAL-0052-ACCEPTANCE-20261026.json",
+  "canonicalSchemaAdopted": true,
+  "liveReadinessWired": true
 }
