@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "f5ab4ae7aea6679fee856f6cd8b66da4fab61460",
+  "sourceCandidate": "9d516a5bb004db07be9730dd2f2f68bc6bfd4a32",
   "lastFullyAcceptedSource": "f5ab4ae7aea6679fee856f6cd8b66da4fab61460",
   "release": "NO-GO",
   "rows": [
@@ -282,7 +282,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "SEQ_D1_D2_ACCEPTED_D3_LEGACY_FENCE_BOUNDED_ACCEPTED_ENROLLMENT_WRITER_PROTOCOL_OPEN",
-      "nextAction": "Finish bounded metadata-read-fault and colliding foreign-device regressions, then implement trusted enrollment provenance and a v2 receipt/admission writer in the actual sale/compensation core transaction. Do not enroll from empty timeline, MAX, browser baseline or synthetic fixtures.",
+      "nextAction": "Verify remaining exact-source CI for9d516a5b (browser prerequisite installation and broader PostgreSQL), then implement trusted enrollment provenance and canonical v2 receipt/admission atomic with real sale/return/void financial effects and exact replay/attribution repair. Existing stream fence is a prerequisite only; do not infer enrollment from MAX, empty timeline or client baseline.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -317,7 +317,9 @@
       "canonicalStorageAcceptanceEvidence": "evidence/P0-CASHIER-CANONICAL-0052-ACCEPTANCE-20261026.json",
       "canonicalStorageAcceptanceStatus": "CANONICAL_0052_SOURCE_STORAGE_STARTUP_READINESS_RETIREMENT_RESTORE_BOUNDED_ACCEPTED_PROTOCOL_PENDING",
       "legacyAdmissionFenceEvidence": "evidence/P0-CASHIER-STREAM-LEGACY-FENCE-20261026.json",
-      "legacyAdmissionFenceStatus": "SEQ_D3_LEGACY_ADMISSION_FENCE_BOUNDED_SOURCE_ACCEPTED_PROTOCOL_PENDING"
+      "legacyAdmissionFenceStatus": "SEQ_D3_LEGACY_ADMISSION_FENCE_BOUNDED_SOURCE_ACCEPTED_PROTOCOL_PENDING",
+      "legacyAdmissionFenceFollowupSource": "9d516a5bb004db07be9730dd2f2f68bc6bfd4a32",
+      "legacyAdmissionFenceFollowupStatus": "TARGETED_METADATA_FAULT_AND_COLLIDING_FOREIGN_DEVICE_PASS_FULL_CI_PENDING"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",

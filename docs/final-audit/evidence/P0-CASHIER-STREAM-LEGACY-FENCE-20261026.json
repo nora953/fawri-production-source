@@ -62,6 +62,62 @@
     "retry": "one failed-jobs-only retry; later success",
     "countedAsApplicationFailure": false
   },
-  "nextAction": "Finish bounded metadata-read-fault and colliding foreign-device regressions, then implement trusted enrollment provenance and a v2 receipt/admission writer in the actual sale/compensation core transaction. Do not enroll from empty timeline, MAX, browser baseline or synthetic fixtures.",
-  "followup": "Metadata-read-fault and same-device-string foreign-tenant test refinements in following test-only candidate require their own exact-source execution."
+  "nextAction": "Verify remaining exact-source CI for9d516a5b (browser prerequisite installation and broader PostgreSQL), then implement trusted enrollment provenance and canonical v2 receipt/admission atomic with real sale/return/void financial effects and exact replay/attribution repair. Existing stream fence is a prerequisite only; do not infer enrollment from MAX, empty timeline or client baseline.",
+  "followup": {
+    "source": "9d516a5bb004db07be9730dd2f2f68bc6bfd4a32",
+    "sourceTree": "1db544511d8391a08acbe3f70c89945300a2ccd9",
+    "checkout": "cf3a4e6ff8a21a65a9413d91c95923c35678f902",
+    "checkoutTreeMatched": true,
+    "status": "TARGETED_METADATA_FAULT_AND_COLLIDING_FOREIGN_DEVICE_PASS_FULL_CI_PENDING",
+    "runtimeCodeUnchangedFromFullyAcceptedSource": "f5ab4ae7aea6679fee856f6cd8b66da4fab61460",
+    "changes": [
+      "Revoked SELECT on stream storage: direct core rejects42501; mounted HTTP500 has no ACK or selected financial/state mutation; grant restored in finally",
+      "A stream in the other tenant with the exact peer device string does not block peer v1 sale/replay",
+      "Nested metadata fault is correctly scheduled on running child test context"
+    ],
+    "cashier": {
+      "run": 40354911063,
+      "job": 121684644852,
+      "invocations": 15,
+      "files": 15,
+      "passed": 58,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "priorAttempt": {
+      "source": "c3a5b27e8757608d08b49eb55a5af662a2d6ae60",
+      "run": 40354274070,
+      "job": 121682390787,
+      "status": "FAILED_TEST_HARNESS_NOT_ACCEPTED",
+      "suite": "cashier-historical-compensation-http-postgres.integration.test.mjs",
+      "passed": 0,
+      "failed": 2,
+      "cancelled": 2,
+      "timeoutMs": 180000,
+      "cause": "Nested test incorrectly scheduled on ancestor context, waiting behind running stream test. Timeout then caused fixture teardown errors. Corrected context only; no assertion weakened or runtime code changed."
+    },
+    "ci": {
+      "total": 57,
+      "success": 56,
+      "pending": [
+        {
+          "run": 40354911173,
+          "job": 121684645657,
+          "phase": "Install isolated Playwright runner and Chromium",
+          "applicationTestStarted": false
+        }
+      ]
+    },
+    "broader": {
+      "run": 40354910689,
+      "job": 121685476624,
+      "invocations": 94,
+      "files": 92,
+      "passed": 756,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  }
 }
