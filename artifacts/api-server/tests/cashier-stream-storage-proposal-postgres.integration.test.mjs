@@ -29,7 +29,7 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   await admin.query('INSERT INTO cashier_shifts(id,merchant_id,station_id,staff_id) VALUES($1,$2,$3,$4)',[f.shift,id,f.station,f.staff]);
   await admin.query("INSERT INTO cashier_device_streams(id,merchant_id,device_id,state,enrollment_evidence_hash,enrolled_at) VALUES($1,$2,$3,'active',repeat('a',64),now())",[f.stream,id,f.device]);return f;}
  const a=await actor(),b=await actor();
- async function receipt(client,f,n,overrides={}){const row={id:'receipt-'+randomUUID(),stream:f.stream,merchant:f.id,device:f.device,n:String(n),operation:'operation-'+randomUUID(),kind:'sale',hash:'a'.repeat(64),station:f.station,location:f.location,staff:f.staff,shift:f.shift,...overrides};await client.query(`INSERT INTO cashier_operation_receipts(id,stream_id,merchant_id,device_id,device_sequence,operation_id,operation_kind,canonical_version,request_hash,result_id,station_id,location_id,staff_id,shift_id,occurred_at) VALUES($1,$2,$3,$4,$5,$6,$7,1,$8,$9,$10,$11,$12,$13,now())`,[row.id,row.stream,row.merchant,row.device,row.n,row.operation,row.kind,row.hash,'synthetic-result-'+row.id,row.station,row.location,row.staff,row.shift]);return row;}
+ async function receipt(client,f,n,overrides={}){const row={id:'receipt-'+randomUUID(),stream:f.stream,merchant:f.id,n:String(n),operation:'operation-'+randomUUID(),kind:'sale',hash:'a'.repeat(64),station:f.station,location:f.location,staff:f.staff,shift:f.shift,...overrides};await client.query(`INSERT INTO cashier_operation_receipts(id,stream_id,merchant_id,device_sequence,operation_id,operation_kind,canonical_version,request_hash,result_id,station_id,location_id,staff_id,shift_id,occurred_at) VALUES($1,$2,$3,$4,$5,$6,1,$7,$8,$9,$10,$11,$12,now())`,[row.id,row.stream,row.merchant,row.n,row.operation,row.kind,row.hash,'synthetic-result-'+row.id,row.station,row.location,row.staff,row.shift]);return row;}
  async function tx(work){const c=await admin.connect();try{await c.query('BEGIN');const r=await work(c);await c.query('COMMIT');return r;}catch(error){await c.query('ROLLBACK');throw error;}finally{c.release();}}
  async function append(f,n,overrides){return tx(async c=>{const r=await receipt(c,f,n,overrides);await c.query('UPDATE cashier_device_streams SET last_sequence=$2,version=version+1 WHERE id=$1',[f.stream,n]);return r;});}
  async function snapshot(){return {streams:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t ORDER BY id')).rows,receipts:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows};}
@@ -58,7 +58,7 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   await admin.query("INSERT INTO cashier_device_streams(id,merchant_id,device_id,state,enrollment_evidence_hash,enrolled_at) VALUES($1,$2,$3,'active',repeat('b',64),now())",[replacement.stream,replacement.id,replacement.device]);
   const before=await snapshot();
   await assert.rejects(append(replacement,1,{operation:first.operation}),e=>e.code==='23505');
-  for(const overrides of [{merchant:b.id},{device:b.device},{station:b.station},{location:b.location},{staff:b.staff},{shift:b.shift}])await assert.rejects(append(a,3,overrides),e=>e.code==='23503');
+  for(const overrides of [{merchant:b.id},{station:b.station},{location:b.location},{staff:b.staff},{shift:b.shift}])await assert.rejects(append(a,3,overrides),e=>e.code==='23503');
   await assert.rejects(append(a,3,{operation:first.operation}),e=>e.code==='23505');
   await assert.rejects(append(a,3,{hash:'invalid'}),e=>e.code==='23514');
   assert.deepEqual(await snapshot(),before);
@@ -105,5 +105,32 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   await race(true);await race(false);
   assert.deepEqual({stream:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE id=$1',[b.stream])).rows,receipts:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t WHERE stream_id=$1',[b.stream])).rows},peerBefore,'existing peer unchanged exactly');
  });
- console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
+ await t.test('retirement erases device binding while receipts and peer remain exact and stream cannot resume',async()=>{
+  const f=await actor();await append(f,1);
+  const before=(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows;
+  const peer=(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE id=$1',[b.stream])).rows;
+  assert.equal((await admin.query("SELECT count(*)::int AS n FROM information_schema.columns WHERE table_schema='public' AND table_name='cashier_operation_receipts' AND column_name='device_id'")).rows[0].n,0,'immutable receipt has no raw device binding column');
+  await assert.rejects(tx(c=>c.query("UPDATE cashier_device_streams SET device_id=NULL,version=version+1 WHERE id=$1",[f.stream])),e=>e.code==='23514','active stream cannot silently lose binding');
+  await assert.rejects(tx(c=>c.query("UPDATE cashier_device_streams SET state='retired',version=version+1 WHERE id=$1",[f.stream])),e=>e.code==='23514','retirement must erase binding');
+  await tenant(f.id,async c=>assert.equal((await c.query("UPDATE cashier_device_streams SET state='retired',device_id=NULL,version=version+1 WHERE id=$1",[f.stream])).rowCount,0,'runtime cannot retire stream'));
+  const retiring=await admin.connect(),waiting=await admin.connect();let pending;
+  try{
+   await retiring.query('BEGIN');await waiting.query('BEGIN');await waiting.query("SET LOCAL statement_timeout='15000ms'");
+   const retirePid=(await retiring.query('SELECT pg_backend_pid() AS pid')).rows[0].pid,waitPid=(await waiting.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+   await retiring.query("UPDATE cashier_device_streams SET state='retired',device_id=NULL,version=version+1 WHERE id=$1",[f.stream]);
+   pending=receipt(waiting,f,2).then(value=>({value}),error=>({error}));
+   let blocked=false;const deadline=Date.now()+8000;
+   while(Date.now()<deadline){if((await admin.query('SELECT $1::int=ANY(pg_blocking_pids($2::int)) AS blocked',[retirePid,waitPid])).rows[0].blocked){blocked=true;break;}await new Promise(resolve=>setTimeout(resolve,25));}
+   assert.equal(blocked,true,'receipt writer actually waits for retirement lock');
+   await retiring.query('COMMIT');assert.equal((await pending).error?.code,'23514','waiter rechecks retired state after commit');await waiting.query('ROLLBACK');
+  }finally{await retiring.query('ROLLBACK');await waiting.query('ROLLBACK');if(pending)await pending;retiring.release();waiting.release();}
+  assert.deepEqual((await admin.query('SELECT state,device_id,last_sequence,version FROM cashier_device_streams WHERE id=$1',[f.stream])).rows[0],{state:'retired',device_id:null,last_sequence:'1',version:3});
+  assert.equal((await admin.query('SELECT id FROM cashier_device_streams WHERE device_id=$1',[f.device])).rowCount,0);
+  await assert.rejects(append(f,2),e=>e.code==='23514');
+  await assert.rejects(tx(c=>c.query("UPDATE cashier_device_streams SET state='active',device_id=$2,version=version+1 WHERE id=$1",[f.stream,f.device])),e=>e.code==='23514');
+  await assert.rejects(tx(c=>c.query("UPDATE cashier_device_streams SET device_id=$2,version=version+1 WHERE id=$1",[f.stream,f.device])),e=>e.code==='23514');
+  assert.deepEqual((await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows,before,'all selected immutable receipts preserved exactly');
+  assert.deepEqual((await admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE id=$1',[b.stream])).rows,peer);
+ });
+ console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,deviceBindingErasedOnRetirement:true,receiptHasNoRawDeviceColumn:true,retirementBlocksWaitingReceipt:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
 });

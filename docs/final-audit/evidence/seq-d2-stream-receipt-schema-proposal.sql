@@ -1,9 +1,10 @@
 -- SEQ-D2 proposal ONLY: not in the canonical migration journal, no live writer.
+-- Revision2: opaque stream identity; raw device binding erased on retirement.
 -- Execute only inside the owned disposable regression; review before promotion.
 CREATE TABLE public.cashier_device_streams (
  id text PRIMARY KEY,
  merchant_id text NOT NULL REFERENCES public.merchants(id) ON DELETE RESTRICT,
- device_id text NOT NULL,
+ device_id text,
  protocol_version integer NOT NULL DEFAULT 2 CHECK (protocol_version=2),
  state text NOT NULL DEFAULT 'review' CHECK (state IN ('review','active','retired')),
  last_sequence bigint NOT NULL DEFAULT 0 CHECK (last_sequence BETWEEN 0 AND 9007199254740991),
@@ -12,8 +13,9 @@ CREATE TABLE public.cashier_device_streams (
  enrolled_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now(),
  updated_at timestamptz NOT NULL DEFAULT now(),
- UNIQUE(id,merchant_id,device_id),
- CHECK (char_length(id) BETWEEN 1 AND 200 AND char_length(device_id) BETWEEN 1 AND 200),
+ UNIQUE(id,merchant_id),
+ CHECK (char_length(id) BETWEEN 1 AND 200),
+ CHECK ((state='retired' AND device_id IS NULL) OR (state<>'retired' AND device_id IS NOT NULL AND char_length(device_id) BETWEEN 1 AND 200)),
  CHECK (enrollment_evidence_hash IS NULL OR enrollment_evidence_hash ~ '^[0-9a-f]{64}$'),
  CHECK (state<>'active' OR (enrollment_evidence_hash IS NOT NULL AND enrolled_at IS NOT NULL))
 );
@@ -22,7 +24,6 @@ CREATE TABLE public.cashier_operation_receipts (
  id text PRIMARY KEY,
  stream_id text NOT NULL,
  merchant_id text NOT NULL,
- device_id text NOT NULL,
  device_sequence bigint NOT NULL CHECK (device_sequence BETWEEN 1 AND 9007199254740991),
  operation_id text NOT NULL,
  operation_kind text NOT NULL CHECK (operation_kind IN ('sale','return','void')),
@@ -35,7 +36,7 @@ CREATE TABLE public.cashier_operation_receipts (
  shift_id text NOT NULL,
  occurred_at timestamptz NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now(),
- FOREIGN KEY(stream_id,merchant_id,device_id) REFERENCES public.cashier_device_streams(id,merchant_id,device_id) ON DELETE RESTRICT,
+ FOREIGN KEY(stream_id,merchant_id) REFERENCES public.cashier_device_streams(id,merchant_id) ON DELETE RESTRICT,
  FOREIGN KEY(station_id,merchant_id) REFERENCES public.merchant_cashier_stations(id,merchant_id) ON DELETE RESTRICT,
  FOREIGN KEY(location_id,merchant_id) REFERENCES public.merchant_locations(id,merchant_id) ON DELETE RESTRICT,
  FOREIGN KEY(shift_id,merchant_id,station_id,staff_id) REFERENCES public.cashier_shifts(id,merchant_id,station_id,staff_id) ON DELETE RESTRICT,
@@ -54,7 +55,8 @@ BEGIN
   IF NEW.last_sequence<>0 OR NEW.version<>1 THEN RAISE EXCEPTION 'stream must begin without a guessed checkpoint' USING ERRCODE='23514'; END IF;
   RETURN NEW;
  END IF;
- IF (NEW.id,NEW.merchant_id,NEW.device_id,NEW.protocol_version) IS DISTINCT FROM (OLD.id,OLD.merchant_id,OLD.device_id,OLD.protocol_version)
+ IF (NEW.id,NEW.merchant_id,NEW.protocol_version) IS DISTINCT FROM (OLD.id,OLD.merchant_id,OLD.protocol_version)
+ OR (NEW.device_id IS DISTINCT FROM OLD.device_id AND NOT (OLD.state<>'retired' AND NEW.state='retired' AND NEW.device_id IS NULL))
  OR (OLD.enrollment_evidence_hash IS NOT NULL AND (NEW.enrollment_evidence_hash,NEW.enrolled_at) IS DISTINCT FROM (OLD.enrollment_evidence_hash,OLD.enrolled_at))
  OR (OLD.state='retired' AND NEW.state<>'retired')
  OR NEW.version<>OLD.version+1 THEN RAISE EXCEPTION 'stream identity or version conflict' USING ERRCODE='23514'; END IF;
