@@ -1,3 +1,17 @@
+## P0 retention checklist and canonical sale-sequence diagnostic — 2026-10-26
+
+Accepted test-only executable **e14ca5301d6b4da8a93c93b19cf9c58302d51a41**: **56/56CI SUCCESS**, [isolated40249040016/job121336684560](https://github.com/nora953/fawri-production-source/actions/runs/40249040016) **722TAP PASS/0FAIL/0SKIP/0CANCEL**,92invocations/90files; exact checkout tree matched. Multi-device/gap fixture4TAP(3functional), one new canonical sale-service diagnostic. No application/schema/grant or hosted change in this batch; accepted emergency fixacf6c8d remains inherited.
+
+**CASHIER-SYNC-SEQUENCE-001 staysOPEN.** Canonical restricted-role sale service accepts1/3, rejects valid late2 twice, leaves2orders/2inventory mutations/stock1(from3); exact selected financial/stock/timeline snapshots unchanged on rejection/replay, selected peer unchanged. This confirms unresolved recovery behavior; a passing diagnostic does not approve losing sale2, prove native outbox retention or implement gap recovery. [Evidence](evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json). [Recovery contract candidate](P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md) compares contiguous all-operation admission, controlled historical backfill and reconciliation hold; **not adopted/enforced**. No blind max+1 patch, deletion of backwards guard, synthetic tombstone or financial repair.
+
+FIELD005 finite checklist saved inb160689a: three reused bounded runtime items, one source-only mapping; F005-R1/R2/R3 remain policy/designOPEN, R4/R5 hosted/recoveryBLOCKED. [Decision and recovery criteria](P0-FIELD005-RETENTION-DECISIONS-20261026.md). No new FIELD005 runtime execution or retention approval.
+
+45register rows29CLOSED_SOURCE/7OPEN/9BLOCKED unchanged; inventory incomplete/percentage null; **NO-GO**. No merge/deploy/main/P1/P2. This documentation checkpoint uses[skip ci]; no new execution claimed for docs-only content.
+
+**Next exact action:** Add a native IndexedDB fault regression with sale1/manual-adjustment2/sale3 and the real cloud-sync client: unsupported2 must preserve its envelopes and later operations, never silently skip/ACK or advance upload. Keep simulated transport/client evidence separate from canonical HTTP session/device/SQL proof. Adopt a reviewed gap/non-commerce/recovery contract before changing server admission; no speculative financial repair.
+
+---
+
 ## FIELD005 finite retention checklist reconciled — 2026-10-26
 
 Source-reviewed6e94a8e; accepted executableacf6c8d and56CI/44targeted/721broader evidence reused only. **No new runtime/CI or application/schema/grant/hosted change.** [Decision and recovery criteria](P0-FIELD005-RETENTION-DECISIONS-20261026.md), [machine checklist](evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json). Three bounded runtime items reused, one source-only inventory reconciled; literal purge inventory58statements/57tables is limited to one function and is not a full-schema/P0 denominator.

@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "acf6c8d68dda271f97d9275d9b24407d3343a60f",
-  "lastFullyAcceptedSource": "acf6c8d68dda271f97d9275d9b24407d3343a60f",
+  "sourceCandidate": "e14ca5301d6b4da8a93c93b19cf9c58302d51a41",
+  "lastFullyAcceptedSource": "e14ca5301d6b4da8a93c93b19cf9c58302d51a41",
   "release": "NO-GO",
   "rows": [
     {
@@ -277,7 +277,12 @@
       "requirement": "Define and accept gap/tombstone/late missing-operation recovery contract",
       "status": "OPEN",
       "evidence": "P0-GITHUB-ONLY-GAP-RECONCILIATION-20261022.md",
-      "blocker": "Existing passing diagnostic still observes accept1,accept3,reject2 and durable[1,3]; not acceptance of gap recovery. Preserve non-commerce gaps; no speculative repair."
+      "blocker": "Canonical restricted-role sale-service diagnostic confirms accept1/accept3/reject2: two durable orders/inventory mutations and stock1(from3), with late-rejection/replay rollback and selected peer preservation. This does not approve missing-sale rejection or define gap/non-commerce/tombstone recovery.",
+      "saleServiceDiagnosticEvidence": "evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json",
+      "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
+      "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
+      "recoveryContractStatus": "CANDIDATE_NOT_ADOPTED_NOT_ENFORCED",
+      "nextAction": "Add a native IndexedDB fault regression with sale1/manual-adjustment2/sale3 and the real cloud-sync client: unsupported2 must preserve its envelopes and later operations, never silently skip/ACK or advance upload. Keep simulated transport/client evidence separate from canonical HTTP session/device/SQL proof. Adopt a reviewed gap/non-commerce/recovery contract before changing server admission; no speculative financial repair."
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -487,6 +492,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "72f01da4fb6a2df23108a2bd2e9d805addac3fae",
+  "previousFullyAcceptedSource": "acf6c8d68dda271f97d9275d9b24407d3343a60f",
   "lastUpdatedAt": "2026-10-26"
 }
