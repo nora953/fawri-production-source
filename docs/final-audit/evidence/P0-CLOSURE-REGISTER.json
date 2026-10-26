@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": null,
-  "lastFullyAcceptedSource": "66c8149f8d0e79d595fb7ca9017c42ae7ff8703a",
+  "sourceCandidate": "6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3",
+  "lastFullyAcceptedSource": "6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3",
   "release": "NO-GO",
   "rows": [
     {
@@ -282,7 +282,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "SEQ_D1_D2_ACCEPTED_D3_LEGACY_FENCE_BOUNDED_ACCEPTED_ENROLLMENT_WRITER_PROTOCOL_OPEN",
-      "nextAction": "Verify actual enrollment mutation proposal: independent privileged reviewer LOGIN, immutable evidence/stream atomicity, exact retry, histories/unknown origins/retirement holds and observed shared-device races. Do not promote until separate capability/readiness/restore/retention and actual client/receipt rollout contracts are accepted.",
+      "nextAction": "Implement opt-in v2 financial receipt/checkpoint admission in the actual canonical sale/return/void transaction against reviewed enrollment, including exact replay and attribution repair. Keep enrollment proposal isolated until coordinated canonical authority/readiness/restore/privacy/issuer/client adoption is accepted; do not deploy or enroll real devices.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -324,7 +324,8 @@
       "protocolNegotiationSource": "cc16a975e98ab13988089c6cb62848f3abca998a",
       "enrollmentHistoryReviewStatus": "BOUNDED_INTERNAL_READ_ONLY_SOURCE_ACCEPTED_NO_ENROLLMENT",
       "enrollmentHistoryReviewSource": "66c8149f8d0e79d595fb7ca9017c42ae7ff8703a",
-      "reviewedEnrollmentProposalStatus": "PREPARED_DISPOSABLE_ONLY_CI_PENDING"
+      "reviewedEnrollmentProposalStatus": "DISPOSABLE_REVIEWED_ZERO_ENROLLMENT_MUTATION_BOUNDED_ACCEPTED_CANONICAL_AND_REAL_REVIEW_PENDING",
+      "reviewedEnrollmentProposalSource": "6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",

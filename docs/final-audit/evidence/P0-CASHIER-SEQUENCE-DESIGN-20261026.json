@@ -6,7 +6,7 @@
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "3bb3c67717a17da1cba903047e35f2b622b997b1",
+  "acceptedExecutable": "6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3",
   "applicationChanged": true,
   "schemaChanged": true,
   "aclChanged": true,
@@ -42,7 +42,7 @@
     },
     {
       "id": "SEQ-D3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "LEGACY_FENCES_AND_DISPOSABLE_REVIEWED_ENROLLMENT_BOUNDED_ACCEPTED_FINANCIAL_RECEIPTS_CLIENT_OPEN",
       "scope": "Opt-in server/client admission and exact ACK/fault/version behavior"
     },
     {
@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Verify actual enrollment mutation proposal: independent privileged reviewer LOGIN, immutable evidence/stream atomicity, exact retry, histories/unknown origins/retirement holds and observed shared-device races. Do not promote until separate capability/readiness/restore/retention and actual client/receipt rollout contracts are accepted.",
+  "nextExactAction": "Implement opt-in v2 financial receipt/checkpoint admission in the actual canonical sale/return/void transaction against reviewed enrollment, including exact replay and attribution repair. Keep enrollment proposal isolated until coordinated canonical authority/readiness/restore/privacy/issuer/client adoption is accepted; do not deploy or enroll real devices.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -150,8 +150,8 @@
     ]
   },
   "reviewedEnrollmentProposal": {
-    "status": "PREPARED_DISPOSABLE_ONLY_CI_PENDING",
-    "source": null,
+    "status": "DISPOSABLE_REVIEWED_ZERO_ENROLLMENT_MUTATION_BOUNDED_ACCEPTED_CANONICAL_AND_REAL_REVIEW_PENDING",
+    "source": "6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3",
     "service": "artifacts/api-server/src/services/cashierStreamEnrollmentAuthority.ts",
     "sql": "evidence/seq-d3-reviewed-empty-enrollment-proposal.sql",
     "test": "artifacts/api-server/tests/cashier-stream-enrollment-proposal-postgres.integration.test.mjs",
@@ -160,8 +160,9 @@
     "mutation": "Server-derived stable stream ID; device advisory lock identical to canonical sale/compensation, merchant row against deletion and station binding lock; recheck server histories; active zero stream and immutable evidence hash row commit together; exact same review retries preserve identity/checkpoint; conflicting/retired reviews held.",
     "historyHolds": "Known device timeline, sale/compensation/attribution, existing bound stream, any retired erased binding or unknown-origin cashier metadata causes hold. No legacy checkpoint import or backfill.",
     "localChecks": {
-      "nodeSyntax": "PASS_INITIAL; final source recheck before publication",
-      "sqlRuntime": "NOT_RUN_AWAITING_GITHUB_ACTIONS"
+      "nodeSyntax": "PASS",
+      "whitespace": "PASS",
+      "sqlRuntime": "PASS_IN_OWNED_OFFLINE_GITHUB_ACTIONS"
     },
     "limits": [
       "Proposal SQL installed/removed only in owned offline CI; canonical53 migrations/97 tables unchanged after cleanup",
@@ -183,7 +184,71 @@
         "classification": "FIXTURE_SETUP_FAILURE_BEFORE_ENROLLMENT_ASSERTIONS",
         "cause": "Synthetic paired station omitted paired_at; canonical pairing_state_check rejected actor setup23514. SQL proposal installed and removed, existing other cashier suites passed; no enrollment runtime PASS inferred.",
         "correction": "Set paired_at=now() in synthetic station fixture; no runtime service/SQL/assertion change."
+      },
+      {
+        "source": "a120355f54d4fc2f47f1e0778e3da64e6cdf2e20",
+        "run": 40368390794,
+        "job": 121732203078,
+        "newSuite": {
+          "passed": 1,
+          "failed": 6,
+          "skipped": 0,
+          "cancelled": 0
+        },
+        "classification": "PROPOSAL_SQL_FAILURE_NOT_ACCEPTED",
+        "cause": "Unqualified stream state reference conflicted with PL/pgSQL output parameter state42702. No production/canonical migration existed; source qualified x.state without weakening assertions.",
+        "fixedBy": "6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3"
       }
-    ]
+    ],
+    "sourceTree": "256ccda31a5a1ccad19157cd5e73506a7fe9110d",
+    "checkout": "f1d5226a7d9a52a3ab093d9cd43f8d7c3ce54b60",
+    "checkoutTreeMatched": true,
+    "ci": {
+      "total": 57,
+      "success": 57,
+      "cashier": {
+        "run": 40368555476,
+        "job": 121732768396,
+        "invocations": 16,
+        "files": 16,
+        "passed": 74,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "newSuite": {
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "broader": {
+        "run": 40368555704,
+        "job": 121732777765,
+        "passed": 772,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "invocations": 95,
+        "files": 93
+      },
+      "quality": {
+        "run": 40368554280,
+        "status": "SUCCESS"
+      }
+    },
+    "verified": [
+      "Actual separate restricted reviewer LOGIN/function-only capability; primary and auth denied, no caller owner-role membership or direct review/stream/receipt reads",
+      "Reviewed active-zero stream and immutable evidence hash row atomically created; exact retry returns original identity/zero checkpoint without writes",
+      "Altered/reused review, nonzero local state, stale/future reviews, wrong binding, existing financial/unknown-origin history and retired erased identity remain held",
+      "Injected review insert failure rolls stream and review back; later retry commits once",
+      "Observed pg_blocking_pids overlap for same-device enrollment commit/rollback with peer merchant proceeding",
+      "Observed shared canonical device advisory-lock overlap with synthetic SQL financial writer; committed history blocks enrollment, rolled-back history permits reviewed creation",
+      "Proposal functions/table/policies/grants/owner removed before subsequent canonical storage/readiness/financial/restore tests pass"
+    ],
+    "reviewPrincipalBinding": "DB capability is checked. Reviewer reference and external evidence are supplied by an independently trusted operator in synthetic tests; actual owner/admin review issuer, evidence truth and retention are not accepted.",
+    "canonicalSchemaAdopted": false,
+    "publicEndpointWired": false,
+    "financialReceiptWriterImplemented": false
   }
 }
