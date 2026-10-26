@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 1,
-  "date": "2026-10-25",
+  "schemaVersion": 2,
+  "date": "2026-10-26",
   "fieldCell": "RESIDUAL-FIELD-005",
-  "status": "SOURCE_FIELD_RETENTION_RECONCILED_RUNTIME_INTERACTION_PENDING",
-  "sourceRevision": "ef7c4e7928ff081c106cfb69c76be865ef7d48a2",
+  "status": "FINITE_CHECKLIST_RECONCILED_FIELD005_OPEN",
   "applicationChanged": false,
   "newRuntimeExecuted": false,
   "release": "NO-GO",
@@ -36,21 +35,672 @@
         "previous_hash",
         "event_hash"
       ],
-      "handling": "Verifier consumes chain_payload and sequence from metadata. Broad merchant audit metadata scrubbing intersects this dependency; interaction not runtime verified in this batch."
+      "handling": "Verifier requires sequence/chain_payload. Earlier runtime reproduction confirmed deletion scrubbing breaks verification; accepted guards now block pre-existing audited deletion and serialize canonical creation. Historical repair and retention contract remain open."
     }
   ],
   "existingEvidence": "P0-OWNER-DELETION-HTTP-20261024.json",
   "existingTest": "artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs",
-  "existingScope": "Owner/password/foreign request/pending operations/tombstone/selected peer preservation and replay; existing fixture does not establish emergency ledger interaction.",
+  "existingScope": "Current accepted owner fixture has14TAP/13functional in targeted44TAP lane; broader721TAP excludes this owner fixture. Scope is bounded actual mounted routers, not canonical full-app/hosted acceptance.",
   "policyRemainder": [
     "Duration and purpose for requesting-admin identity snapshots",
     "Financial/receipt and audit retention schedule with privileged access",
     "Backups/media/deployed historical data disposition under authorized hosted scope"
   ],
-  "hypothesis": {
+  "nextExactAction": "Continue executable P0 work with the open CASHIER-SYNC-SEQUENCE-001 gate: reconcile its exact remaining acceptance criterion against existing evidence and live sequence admission/drain code before choosing a bounded regression. FIELD005-R1/R2/R3 require explicit policy/design decisions; R4/R5 remain blocked by hosted scope.",
+  "sourceReviewed": "6e94a8ec65f2cc39022ff1a1245d1951ef4924c0",
+  "acceptedExecutable": "acf6c8d68dda271f97d9275d9b24407d3343a60f",
+  "originalSourceRevision": "ef7c4e7928ff081c106cfb69c76be865ef7d48a2",
+  "originalHypothesis": {
     "status": "UNCONFIRMED_SOURCE_INTERACTION",
     "question": "Does merchant-specific audit metadata scrubbing invalidate the global emergency hash ledger and owner audit read?",
-    "notClaimed": "No hosted incident or reproduced integrity defect; no automatic exemption of PII from deletion."
+    "notClaimed": "No hosted incident or reproduced integrity defect; no automatic exemption of PII from deletion.",
+    "supersededBy": [
+      "P0-DELETION-EMERGENCY-CHAIN-20261025.json",
+      "P0-DELETION-EMERGENCY-CONCURRENCY-20261025.json"
+    ]
   },
-  "nextExactAction": "Add a bounded actual-app owner deletion regression with genuine emergency audit events for two owned merchants: verify whether deleting one merchant preserves the global emergency audit verification/authorized owner reader and peer chain, or produces a reproducible failure. Preserve privacy scrubbing, owner/password/pending-operation guards and prior deletion positive; do not change retention durations or weaken hash verification. Treat source metadata dependency as hypothesis until actual runtime proof."
+  "interactionStatus": "CONFIRMED_RUNTIME_INTERACTIONS_BOUNDED_MITIGATIONS_ACCEPTED_POLICY_HISTORY_OPEN",
+  "directPurgeSqlInventory": {
+    "source": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts:purgeMerchantOperationalData",
+    "method": "Literal backtick SQL statements within this single function; UPDATE assignments extracted after SET or comma. Exact SQL and SHA256 retained for review. This is not a SQL parser, runtime coverage or full-schema absence proof.",
+    "statementCount": 58,
+    "distinctTableCount": 57,
+    "statements": [
+      {
+        "table": "orders",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "conversation_id",
+          "customer_external_id",
+          "customer_name",
+          "customer_phone",
+          "customer_address",
+          "customer_area",
+          "notes",
+          "payment_rejection_reason",
+          "payment_conflict_resolution_note",
+          "metadata",
+          "updated_at"
+        ],
+        "sql": "UPDATE orders\n        SET conversation_id = NULL,\n            customer_external_id = NULL,\n            customer_name = '[deleted customer]',\n            customer_phone = NULL,\n            customer_address = NULL,\n            customer_area = NULL,\n            notes = NULL,\n            payment_rejection_reason = CASE\n              WHEN payment_status = 'failed' THEN '[deleted reason]'\n              ELSE NULL\n            END,\n            payment_conflict_resolution_note = CASE\n              WHEN payment_reconciliation_status = 'resolved' THEN '[deleted note]'\n              ELSE NULL\n            END,\n            metadata = '{}'::jsonb,\n            updated_at = now()\n      WHERE merchant_id = $1",
+        "sqlSha256": "275bf1fdd92a665cc4d69c1c495eb083d34fdd3c051c1ec8dd17e618944d4227"
+      },
+      {
+        "table": "order_items",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "product_id",
+          "product_variant_id",
+          "product_name_snapshot",
+          "variant_snapshot"
+        ],
+        "sql": "UPDATE order_items\n        SET product_id = NULL,\n            product_variant_id = NULL,\n            product_name_snapshot = '[deleted product]',\n            variant_snapshot = '{}'::jsonb\n      WHERE merchant_id = $1",
+        "sqlSha256": "ca77aba9187ad0c14e8497ba63c0de2454c698ea42f79f7b5d018d5b071aeda7"
+      },
+      {
+        "table": "order_payment_decisions",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "actor_session_fingerprint",
+          "reason"
+        ],
+        "sql": "UPDATE order_payment_decisions\n        SET actor_session_fingerprint = NULL,\n            reason = NULL\n      WHERE merchant_id = $1",
+        "sqlSha256": "b59d8ddf577acb5b1906e8cf1861425f35d2d45f9c04a818a76f30b212c9b920"
+      },
+      {
+        "table": "order_payment_provider_events",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "sanitized_metadata"
+        ],
+        "sql": "UPDATE order_payment_provider_events\n        SET sanitized_metadata = '{}'::jsonb\n      WHERE merchant_id = $1",
+        "sqlSha256": "45ed01da3c18c46f722d24461a5ab0a80950f121e967682997b8e90ba573b18f"
+      },
+      {
+        "table": "order_drafts",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM order_drafts WHERE merchant_id = $1",
+        "sqlSha256": "8f76e984cdae553d11db476ec542c03bba4e662ce464e118624371a578483c35"
+      },
+      {
+        "table": "manual_reply_requests",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM manual_reply_requests WHERE merchant_id = $1",
+        "sqlSha256": "be88d9e4e76000450ea1c16aa71c274028b66193385e390002db33523b3bb425"
+      },
+      {
+        "table": "messages",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM messages WHERE merchant_id = $1",
+        "sqlSha256": "fa483c63bb09e1ad70ffabbd0374f748a7855bafc67345ec6deeb69ad95c444a"
+      },
+      {
+        "table": "conversations",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM conversations WHERE merchant_id = $1",
+        "sqlSha256": "259c127aa80b0a50e6d3c298dc022f7b71db4267d5a4514c901cfa42494b8a63"
+      },
+      {
+        "table": "processed_channel_events",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM processed_channel_events WHERE merchant_id = $1",
+        "sqlSha256": "51854b97cc9d2346a3df5c5421e43d083c0a02b9b88303a66248525f42ea7966"
+      },
+      {
+        "table": "merchant_channels",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "status",
+          "external_account_id",
+          "external_account_name",
+          "page_id",
+          "page_name",
+          "instagram_account_id",
+          "instagram_username",
+          "credential_ciphertext",
+          "credential_nonce",
+          "credential_auth_tag",
+          "credential_key_id",
+          "credential_algorithm",
+          "credential_expires_at",
+          "webhook_subscribed_at",
+          "last_error_code",
+          "metadata",
+          "disconnected_at",
+          "updated_at"
+        ],
+        "sql": "UPDATE merchant_channels\n        SET status = 'revoked',\n            external_account_id = NULL,\n            external_account_name = NULL,\n            page_id = NULL,\n            page_name = NULL,\n            instagram_account_id = NULL,\n            instagram_username = NULL,\n            credential_ciphertext = NULL,\n            credential_nonce = NULL,\n            credential_auth_tag = NULL,\n            credential_key_id = NULL,\n            credential_algorithm = NULL,\n            credential_expires_at = NULL,\n            webhook_subscribed_at = NULL,\n            last_error_code = NULL,\n            metadata = '{}'::jsonb,\n            disconnected_at = COALESCE(disconnected_at, now()),\n            updated_at = now()\n      WHERE merchant_id = $1",
+        "sqlSha256": "45099e7cd2119a8adfc468c3ac7f174386f9132e4873774202040a4255866b83"
+      },
+      {
+        "table": "cashier_billing_orders",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "status",
+          "metadata",
+          "updated_at"
+        ],
+        "sql": "UPDATE cashier_billing_orders\n        SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,\n            metadata = '{}'::jsonb,\n            updated_at = now()\n      WHERE merchant_id = $1",
+        "sqlSha256": "d21fc0a2f0cb6d026cbfa42e821f30ed99bafc70ddb5ade8b7b22e6f84036600"
+      },
+      {
+        "table": "merchant_cashier_subscriptions",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "status",
+          "scheduled_licensed_seats",
+          "scheduled_change_at",
+          "version",
+          "updated_at"
+        ],
+        "sql": "UPDATE merchant_cashier_subscriptions\n        SET status = 'cancelled',\n            scheduled_licensed_seats = NULL,\n            scheduled_change_at = NULL,\n            version = version + 1,\n            updated_at = now()\n      WHERE merchant_id = $1\n        AND status <> 'cancelled'",
+        "sqlSha256": "560a3931b8b5a9f2d582fb6d3f9edaf16e7e5e31d33441045dc423e9a665ddac"
+      },
+      {
+        "table": "cashier_station_seat_assignments",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "status",
+          "release_effective_at",
+          "released_at",
+          "updated_at"
+        ],
+        "sql": "UPDATE cashier_station_seat_assignments\n        SET status = 'released',\n            release_effective_at = COALESCE(release_effective_at, now()),\n            released_at = COALESCE(released_at, now()),\n            updated_at = now()\n      WHERE merchant_id = $1\n        AND status IN ('active','release_scheduled')",
+        "sqlSha256": "991304f6f15ed0093180cd7b5a120e39354b4ee03508ef1219d57390448bd8f2"
+      },
+      {
+        "table": "cashier_device_operation_timeline",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "device_id"
+        ],
+        "sql": "UPDATE cashier_device_operation_timeline\n        SET device_id = '[deleted device:' || id || ']'\n      WHERE merchant_id = $1",
+        "sqlSha256": "3d46006630c72959d5430fe7f55a794588a82aedfa9d352d98bcca3a89d9a8e9"
+      },
+      {
+        "table": "cashier_entitlement_audit_events",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "actor_ref",
+          "metadata"
+        ],
+        "sql": "UPDATE cashier_entitlement_audit_events\n        SET actor_ref = NULL,\n            metadata = '{}'::jsonb\n      WHERE merchant_id = $1",
+        "sqlSha256": "9bef0ee712faa6c876aa27c0cbc0b259c2ac97bad4a06a2e9948f5ea4bb0160f"
+      },
+      {
+        "table": "cashier_operator_sessions",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM cashier_operator_sessions WHERE merchant_id = $1",
+        "sqlSha256": "1ebdfc45cc976bafb69e5311a90365dd4db164c2c8afd0f8c5f1218c3df771f0"
+      },
+      {
+        "table": "cashier_station_credentials",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM cashier_station_credentials WHERE merchant_id = $1",
+        "sqlSha256": "c95540eb0187a8002e9fa90844e4db942ee8a7a0b47e7ce23b0ac47d4c35c5c0"
+      },
+      {
+        "table": "cashier_station_pairing_challenges",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM cashier_station_pairing_challenges WHERE merchant_id = $1",
+        "sqlSha256": "8669f30204f447487fc8af3e95a65f1e598178b7cf9d94b580d9923e91e5a86d"
+      },
+      {
+        "table": "merchant_cashier_staff_permissions",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM merchant_cashier_staff_permissions WHERE merchant_id = $1",
+        "sqlSha256": "0cebb8105b603ca14245004d28b910310398b898b627da72b5a2e86e64aa11ea"
+      },
+      {
+        "table": "cashier_shifts",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "status",
+          "ended_at",
+          "close_reason"
+        ],
+        "sql": "UPDATE cashier_shifts\n        SET status = 'closed',\n            ended_at = COALESCE(ended_at, GREATEST(now(), started_at)),\n            close_reason = 'merchant_deleted'\n      WHERE merchant_id = $1",
+        "sqlSha256": "626bdaadff11c96aae314ac7d9fa90abf4e7b9f7e09c0228c8e35d0fe483f0a9"
+      },
+      {
+        "table": "cashier_operation_attribution",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "device_id",
+          "station_credential_id",
+          "operator_session_id"
+        ],
+        "sql": "UPDATE cashier_operation_attribution\n        SET device_id = '[deleted device]',\n            station_credential_id = '[deleted credential]',\n            operator_session_id = '[deleted operator session]'\n      WHERE merchant_id = $1",
+        "sqlSha256": "21fc394abc215a69d8e86532b12178a893e0f688760f79a5110088a3c7ee87ed"
+      },
+      {
+        "table": "merchant_cashier_staff",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "display_name",
+          "status",
+          "pin_hash",
+          "pin_version",
+          "failed_pin_attempts",
+          "pin_locked_until",
+          "pin_changed_at",
+          "version",
+          "revoked_at",
+          "updated_at"
+        ],
+        "sql": "UPDATE merchant_cashier_staff\n        SET display_name = '[deleted cashier]',\n            status = 'revoked',\n            pin_hash = repeat('0', 64),\n            pin_version = pin_version + 1,\n            failed_pin_attempts = 0,\n            pin_locked_until = NULL,\n            pin_changed_at = now(),\n            version = version + 1,\n            revoked_at = COALESCE(revoked_at, now()),\n            updated_at = now()\n      WHERE merchant_id = $1",
+        "sqlSha256": "e1b384b4c39947f9b84018b4a4cedec1260b560388f75f8eab2dbff12338ba1c"
+      },
+      {
+        "table": "merchant_cashier_stations",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "name",
+          "branch_key",
+          "branch_label",
+          "status",
+          "paired_device_id",
+          "offline_inventory_authority",
+          "credential_version",
+          "paired_at",
+          "last_seen_at",
+          "revoked_at",
+          "updated_at"
+        ],
+        "sql": "UPDATE merchant_cashier_stations\n        SET name = '[deleted station]',\n            branch_key = 'deleted',\n            branch_label = NULL,\n            status = 'revoked',\n            paired_device_id = NULL,\n            offline_inventory_authority = false,\n            credential_version = credential_version + 1,\n            paired_at = NULL,\n            last_seen_at = NULL,\n            revoked_at = COALESCE(revoked_at, now()),\n            updated_at = now()\n      WHERE merchant_id = $1",
+        "sqlSha256": "53af72d8df50dc9d66680064e61b253ad5cd6a05c67e776e7bf48390cd247577"
+      },
+      {
+        "table": "background_job_payloads",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM background_job_payloads WHERE merchant_id = $1",
+        "sqlSha256": "d1488e407ee94642c69a9208630adfabd8f8e0d8389becc116fb89250d9beb12"
+      },
+      {
+        "table": "job_attempts",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "error_code",
+          "metadata"
+        ],
+        "sql": "UPDATE job_attempts\n        SET error_code = NULL, metadata = '{}'::jsonb\n      WHERE job_id IN (SELECT id FROM background_jobs WHERE merchant_id = $1)",
+        "sqlSha256": "18c5c7d8fd62318f31ae8258612a03738403d009001b0f83e091dc9674a664d5"
+      },
+      {
+        "table": "job_dead_letters",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "payload_sha256",
+          "metadata"
+        ],
+        "sql": "UPDATE job_dead_letters\n        SET payload_sha256 = NULL, metadata = '{}'::jsonb\n      WHERE job_id IN (SELECT id FROM background_jobs WHERE merchant_id = $1)",
+        "sqlSha256": "091085daeb6243bfc55917712c0781c8e489068183523263155f6427f2ecd10c"
+      },
+      {
+        "table": "background_jobs",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "payload_hash",
+          "last_error_code",
+          "result",
+          "updated_at"
+        ],
+        "sql": "UPDATE background_jobs\n        SET payload_hash = NULL,\n            last_error_code = NULL,\n            result = '{}'::jsonb,\n            updated_at = now()\n      WHERE merchant_id = $1",
+        "sqlSha256": "fa3ee64664937aba5f4dddfc7d2633362bfdfad16f3721fde72c246d78d0efd7"
+      },
+      {
+        "table": "background_jobs",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM background_jobs j\n      WHERE j.merchant_id = $1\n        AND NOT EXISTS (\n          SELECT 1 FROM channel_inbound_events e WHERE e.enqueue_job_id = j.id\n        )",
+        "sqlSha256": "80c0a32e364d28998bbf0e3765b66b3bdea0855e37ce4c3fcd156d17341c3970"
+      },
+      {
+        "table": "commerce_promotions",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM commerce_promotions WHERE merchant_id = $1",
+        "sqlSha256": "c4e76426135502fd455f0ad9cb496847dc7a7478e84f63101775ce0adc162cff"
+      },
+      {
+        "table": "catalog_idempotency_keys",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM catalog_idempotency_keys WHERE merchant_id = $1",
+        "sqlSha256": "4e32098278efe1a798617eae86fd230465634c4c50905593435203483461b5be"
+      },
+      {
+        "table": "inventory_mutations",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM inventory_mutations WHERE merchant_id = $1",
+        "sqlSha256": "9e279ea58ad916b5ea465ec6af2391f8a38a5cdd09c2219de7e4f6f35b890b9c"
+      },
+      {
+        "table": "catalog_identifiers",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM catalog_identifiers WHERE merchant_id = $1",
+        "sqlSha256": "0a0d3409ff2906adfa8bf80cc2dd5da61e61a264ba272e7b76a85ef44e2c6829"
+      },
+      {
+        "table": "catalog_image_references",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM catalog_image_references WHERE merchant_id = $1",
+        "sqlSha256": "b8a2bf990c8f89a4738111b1c816010e78fc78bb988ebe72b591ff7494b75d0a"
+      },
+      {
+        "table": "catalog_variant_options",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM catalog_variant_options WHERE merchant_id = $1",
+        "sqlSha256": "881268c5ac0720e9a4e0de7d22b7fe927204a6750678275ff38ee31b001aab56"
+      },
+      {
+        "table": "product_variants",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM product_variants WHERE merchant_id = $1",
+        "sqlSha256": "5659d7c8271a2ecebd96f950a531be9a08f9daf0a782daf7a67e2893cec9f8db"
+      },
+      {
+        "table": "products",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM products WHERE merchant_id = $1",
+        "sqlSha256": "53c6de3447af3651b3bb9a776c46e36930c7d4d52832848bebe2f8ddc75f6699"
+      },
+      {
+        "table": "knowledge_embeddings",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM knowledge_embeddings WHERE merchant_id = $1",
+        "sqlSha256": "3725229f10019e7dec1b38e5234de8cd5448279d119dd25805ca4fa3cfcce339"
+      },
+      {
+        "table": "knowledge_audit_events",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM knowledge_audit_events WHERE merchant_id = $1",
+        "sqlSha256": "667c7bc79672b023611325ad3aaf2a3f3d73cc3d2c2e214af6464a0880bdbd80"
+      },
+      {
+        "table": "learned_answers",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM learned_answers WHERE merchant_id = $1",
+        "sqlSha256": "ab0f25eba274a98635e376adbd7ebeca8d4bf125379367b8013def0f4eb21696"
+      },
+      {
+        "table": "training_requests",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM training_requests WHERE merchant_id = $1",
+        "sqlSha256": "f61419d515c2ecfc17770faffd849fe8185d6b6844f0afccc5d9df634a48a9b2"
+      },
+      {
+        "table": "saved_answers",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM saved_answers WHERE merchant_id = $1",
+        "sqlSha256": "49e3729c2685d0e9d92ba46b39d3ded9f09feb6305d6e5fe012358fee91ce286"
+      },
+      {
+        "table": "support_attachments",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM support_attachments WHERE merchant_id = $1",
+        "sqlSha256": "86db00b9fbd9b46f317192da695fd96427ad8df9dd563b8044ce96d9ccbea796"
+      },
+      {
+        "table": "support_inspection_requests",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM support_inspection_requests WHERE merchant_id = $1",
+        "sqlSha256": "545029555e5bc9d52bef649a161f17bfa760e14d5b598ce9e0f0d2f947088ea6"
+      },
+      {
+        "table": "support_messages",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM support_messages WHERE merchant_id = $1",
+        "sqlSha256": "a821eaa268ff39757c12d726365b449ca5cc4039be88f4f61fd9011435353eb4"
+      },
+      {
+        "table": "support_preview_sessions",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM support_preview_sessions WHERE merchant_id = $1",
+        "sqlSha256": "469d2b9414cf1d8b86a02b784b4382a34cedb6d8cbc3014f24127818eed0f542"
+      },
+      {
+        "table": "support_tickets",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM support_tickets WHERE merchant_id = $1",
+        "sqlSha256": "49006b6e6d441225d51c62141b5f343c4c6469dc0c987a9e05c40cf08f9b4efe"
+      },
+      {
+        "table": "emergency_access_requests",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM emergency_access_requests WHERE merchant_id = $1",
+        "sqlSha256": "bee45e5c5e7cdbe65019b2553557260d81b737e5189cc1ed46bda650a6811d7d"
+      },
+      {
+        "table": "notifications",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM notifications WHERE merchant_id = $1",
+        "sqlSha256": "d6de79fae6ff9bcf003cd6affa0f6b43b6bfeb3c565a80942c2ac9c4fd392874"
+      },
+      {
+        "table": "merchant_settings",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM merchant_settings WHERE merchant_id = $1",
+        "sqlSha256": "49eaf0258d1a1f0cf846ad782c5f9f42dc5acdb8f27b5b144d4c0ce06f147f05"
+      },
+      {
+        "table": "merchant_admin_notes",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM merchant_admin_notes WHERE merchant_id = $1",
+        "sqlSha256": "863ed50ab1ad30bb444f8912ccbdd1e887fa54001ff962781a931232427bab25"
+      },
+      {
+        "table": "merchant_channel_overrides",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM merchant_channel_overrides WHERE merchant_id = $1",
+        "sqlSha256": "386eb5a6ff0555e252ae9d9691a9cd9c4840b83b7ceceb8ccf8b35c17c1a5c38"
+      },
+      {
+        "table": "auth_otp_challenges",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM auth_otp_challenges WHERE account_id = $1",
+        "sqlSha256": "23a765aa68ee059e82eae61898f7a27c241804d94e648357bee1c94752bf5f94"
+      },
+      {
+        "table": "trusted_devices",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM trusted_devices WHERE account_id = $1 AND kind = 'merchant'",
+        "sqlSha256": "d363e44c50862ddea0838cfd2e5da4a7b4f52ef4e182c0ae9bba5a395dad19e8"
+      },
+      {
+        "table": "account_sessions",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM account_sessions WHERE account_id = $1 AND kind = 'merchant'",
+        "sqlSha256": "cfa43b66bc4149e1a124befe385e24edd4238506f5cbc2e10c3e4698286c25c6"
+      },
+      {
+        "table": "login_attempts",
+        "operation": "DELETE FROM",
+        "assignedFields": [],
+        "sql": "DELETE FROM login_attempts WHERE account_id = $1 AND kind = 'merchant'",
+        "sqlSha256": "159a68bfb9a6fc622dbda1f64dcc3a0ddee5e4ef4b1d25b5126ece581c5e6f0b"
+      },
+      {
+        "table": "reply_ledger",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "message_id",
+          "metadata"
+        ],
+        "sql": "UPDATE reply_ledger SET message_id = NULL, metadata = '{}'::jsonb WHERE merchant_id = $1",
+        "sqlSha256": "885143a43ce518cb72b3488bf9a07fa9c73c33765ddd0f5210153439b5414c3b"
+      },
+      {
+        "table": "saas_billing_orders",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "metadata"
+        ],
+        "sql": "UPDATE saas_billing_orders SET metadata = '{}'::jsonb WHERE merchant_id = $1",
+        "sqlSha256": "9369394d87798483e697cc5246452ec3ecbddff51edefd390f4950b553cf370a"
+      },
+      {
+        "table": "audit_events",
+        "operation": "UPDATE",
+        "assignedFields": [
+          "details",
+          "metadata",
+          "ip_address",
+          "user_agent"
+        ],
+        "sql": "UPDATE audit_events\n        SET details = NULL,\n            metadata = '{}'::jsonb,\n            ip_address = NULL,\n            user_agent = NULL\n      WHERE merchant_id = $1",
+        "sqlSha256": "c574c8b50109611ce3c11f8029429f4b034b41de733c4b20d2e0e3603d923628"
+      }
+    ],
+    "exclusions": [
+      "Delegated retireMerchantProviderIdentifiers handling",
+      "Caller subscriptions/merchants/accounts/deletion-request statements",
+      "Other delete/update entrypoints, triggers, cascade effects and external copies"
+    ],
+    "delegatedSource": "artifacts/api-server/src/services/merchantDeletionProviderIdentifierRetirement.ts"
+  },
+  "finiteChecklist": {
+    "boundedItems": [
+      {
+        "id": "F005-A1",
+        "status": "REUSED_BOUNDED_RUNTIME_ACCEPTED",
+        "requirement": "Owner/password/session, foreign request, pending work, ordinary unaudited deletion, exact peers and repeat denial",
+        "evidence": "P0-OWNER-DELETION-HTTP-20261024.json",
+        "currentRegression": "P0-DELETION-EMERGENCY-CONCURRENCY-20261025.json"
+      },
+      {
+        "id": "F005-A2",
+        "status": "REUSED_BOUNDED_RUNTIME_ACCEPTED",
+        "requirement": "Pre-existing emergency ledger blocks merchant purge without scrubbing payload or changing peer hashes",
+        "evidence": "P0-DELETION-EMERGENCY-CHAIN-20261025.json"
+      },
+      {
+        "id": "F005-A3",
+        "status": "REUSED_BOUNDED_RUNTIME_ACCEPTED",
+        "requirement": "Canonical emergency creation serializes merchant eligibility with deletion in tested schedules; completed deletion rejects later creation",
+        "evidence": "P0-DELETION-EMERGENCY-CONCURRENCY-20261025.json"
+      },
+      {
+        "id": "F005-A4",
+        "status": "SOURCE_ONLY_RECONCILED_NOT_RUNTIME_OR_POLICY_ACCEPTANCE",
+        "requirement": "Bounded literal SQL purge inventory and explicit retained request/audit field handling",
+        "evidence": "P0-FIELD005-RETENTION-FIELDS-20261025.json"
+      }
+    ],
+    "remainingItems": [
+      {
+        "id": "F005-R1",
+        "status": "OPEN_POLICY",
+        "decision": "Purpose, readers, retention trigger/duration and final disposition of requesting-admin ID/name/phone snapshots and reviewer linkage",
+        "fields": [
+          "merchant_deletion_requests.requested_by_admin_id_snapshot",
+          "merchant_deletion_requests.requested_by_admin_name_snapshot",
+          "merchant_deletion_requests.requested_by_admin_phone_snapshot",
+          "merchant_deletion_requests.reviewed_by_admin_id"
+        ],
+        "acceptance": [
+          "Explicit approved per-field purpose, retention trigger/duration and authorized readers",
+          "Positive owner workflow plus unauthorized reader denials",
+          "Selected disposition preserves required deletion accountability and tenant peers"
+        ],
+        "currentBehavior": "Merchant name/phone/details are redacted on deletion; these requesting-admin snapshot fields are not changed by that statement. This does not approve indefinite retention."
+      },
+      {
+        "id": "F005-R2",
+        "status": "OPEN_POLICY",
+        "decision": "Financial/receipt and retained audit anchor schedule, privileged access, holds and expiry handling",
+        "acceptance": [
+          "Named record classes and exact field allowlist tied to purpose",
+          "Approved retention trigger/duration and hold/release behavior for each class",
+          "Boundary tests before/at/after expiry plus active financial operation and replay protection",
+          "No blanket assertion that retained identifiers or hashes are anonymous"
+        ],
+        "currentBehavior": "Current purge retains financial/accounting rows while scrubbing selected fields; code comments are not a retention-policy approval."
+      },
+      {
+        "id": "F005-R3",
+        "status": "OPEN_POLICY_AND_DESIGN",
+        "decision": "Privacy-preserving disposition of merchant-linked emergency ledger payload and deletion requests",
+        "fields": [
+          "audit_events.metadata.chain_payload",
+          "audit_events.metadata.sequence",
+          "audit_events.previous_hash",
+          "audit_events.event_hash",
+          "audit_events.reason_code",
+          "audit_events.actor_account_id"
+        ],
+        "acceptance": [
+          "Approved treatment of merchant/admin/incident identity, including duplicated values inside chain_payload",
+          "Explicit authorized reader and retention contract",
+          "Versioned design accepted before implementation; deletion, append, verification and peer invariants tested together",
+          "Do not remove current deletion409 until replacement contract is accepted"
+        ],
+        "currentBehavior": "Deletion is intentionally blocked for a merchant with emergency audit rows. No PII retention exception or peer hash rewrite has been approved."
+      },
+      {
+        "id": "F005-R4",
+        "status": "BLOCKED_HOSTED_INVENTORY_RECOVERY_NOT_ACCEPTED",
+        "decision": "Determine whether any historical chains are damaged and whether trusted original payloads are recoverable",
+        "acceptance": [
+          "Authorized read-only inventory with exact deployed source/schema/runtime identity and evidence preservation",
+          "Restore only byte-exact payload from an independently trusted backup/export and verify original hashes plus complete chain",
+          "If original payload is unavailable, retain explicit unverifiable status; no fabricated payload, silent rehash, genesis reset or valid=true override",
+          "Any chosen recovery must be rehearsed in an authorized isolated environment and reviewed before hosted writes"
+        ],
+        "currentBehavior": "Past disposable corruption was reproduced, but no hosted damage or recoverability has been established. Accepted source prevents tested new failures; it does not repair history."
+      },
+      {
+        "id": "F005-R5",
+        "status": "BLOCKED_HOSTED_VERIFICATION",
+        "decision": "Backup, object/media replicas, exports, external writers and restored-copy disposition",
+        "acceptance": [
+          "Approved scope and copy inventory, including restoration/reintroduction of deleted data",
+          "Authorized runtime proof of retry and media cleanup plus backup/restore treatment",
+          "Retention-policy and operational signoff for copies outside this source path"
+        ],
+        "currentBehavior": "Local media cleanup and selected source proofs are not hosted object-store/backup erasure acceptance."
+      }
+    ],
+    "fieldCellClosed": false,
+    "countsAreNotP0Denominator": true
+  },
+  "historicalRecoveryPreconditions": {
+    "implemented": false,
+    "hostedInspected": false,
+    "trustedPayloadRule": "A retained SHA256 digest is not a recovery copy of deleted chain_payload. Existing hashes cannot reconstruct missing original content. No reset, rehash or substitute payload is authorized by this checklist."
+  }
 }

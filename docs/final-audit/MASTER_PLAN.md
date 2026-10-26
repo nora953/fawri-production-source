@@ -1,3 +1,15 @@
+## FIELD005 finite retention checklist reconciled — 2026-10-26
+
+Source-reviewed6e94a8e; accepted executableacf6c8d and56CI/44targeted/721broader evidence reused only. **No new runtime/CI or application/schema/grant/hosted change.** [Decision and recovery criteria](P0-FIELD005-RETENTION-DECISIONS-20261026.md), [machine checklist](evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json). Three bounded runtime items reused, one source-only inventory reconciled; literal purge inventory58statements/57tables is limited to one function and is not a full-schema/P0 denominator.
+
+Remaining: **F005-R1 OPEN_POLICY** admin identity snapshots; **R2 OPEN_POLICY** financial/receipt/audit schedule; **R3 OPEN_POLICY_AND_DESIGN** emergency payload privacy/integrity/deletion contract; **R4 BLOCKED** authorized historical inventory/trusted-payload recovery; **R5 BLOCKED** hosted copies/media/backup/restore disposition. Hashes cannot reconstruct erased payloads; no fabricated content, silent rehash or verifier bypass. Existing audited deletion409 remains.
+
+FIELD005 remainsOPEN;45register rows29CLOSED_SOURCE/7OPEN/9BLOCKED unchanged, inventory incomplete/percentage null; **NO-GO**. Policy/design decisions and hosted scope are explicit dependencies, not a reason to repeat accepted deletion proofs.
+
+**Next exact action:** Inspect CASHIER-SYNC-SEQUENCE-001's existing accept1/accept3/reject2 diagnostic and live admission/drain path; reconcile the remaining gap/tombstone/late recovery contract before selecting a bounded regression. No speculative financial repair, merge/deploy or P1/P2.
+
+---
+
 ## FIELD005 emergency creation/deletion race fixed within bounded source scope — 2026-10-26
 
 Accepted executable **acf6c8d68dda271f97d9275d9b24407d3343a60f**: **56/56 CI SUCCESS**, no pending/failed/cancelled runs at acceptance. Real mounted management+emergency HTTP/SQL lane: **44TAP PASS**, zero failed/skipped/cancelled; owner fixture14TAP(13functional), three newfunctional over accepted72f01da4. Targeted run40247798744/job121332970467; source checkout tree matched. Separate canonical full-app suite13TAP is included in that lane; the owner fixture itself is mounted actual routers, not full-app acceptance.
