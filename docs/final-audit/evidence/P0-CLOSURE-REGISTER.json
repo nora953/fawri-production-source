@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "0c98d71f6ced72f6cc1d506050b63319afc15b06",
-  "lastFullyAcceptedSource": "0c98d71f6ced72f6cc1d506050b63319afc15b06",
+  "sourceCandidate": "df273707c000588e9b4e0fe772ef05f4a132d579",
+  "lastFullyAcceptedSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "release": "NO-GO",
   "rows": [
     {
@@ -281,8 +281,8 @@
       "saleServiceDiagnosticEvidence": "evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json",
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
-      "recoveryContractStatus": "CONCRETE_DESIGN_REVISION_1_PREPARED_NOT_IMPLEMENTED_OR_RELEASE_ACCEPTED",
-      "nextAction": "Implement SEQ-D1 as a bounded read-only device-history assessment under the existing tenant transaction boundary. Add actual restricted-role SQL tests for empty/contiguous/gapped/start-above1/foreign tenant-device/unsafe sequence/inspection limit and consistency; assert no checkpoint, financial or timeline writes. Do not change live admission, add migrations or return an enrollment authorization in this slice.",
+      "recoveryContractStatus": "DESIGN_REVISION_1_PREPARED_READ_ONLY_SLICE_ACCEPTED_REMAINING_PROTOCOL_NOT_IMPLEMENTED",
+      "nextAction": "Prepare and verify SEQ-D2 additive stream/receipt schema and migration proposal against existing canonical schema/RLS/privacy/readiness/restore conventions. Preserve legacy rows and current admission; use server-owned identity/versioned immutable receipt constraints,not MAX/client counters. Do not apply hosted migrations or claim recovery before later admission/client/adoption slices pass.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -292,7 +292,9 @@
         "SEQ-R2",
         "SEQ-R3"
       ],
-      "recoveryDesignEvidence": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json"
+      "recoveryDesignEvidence": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json",
+      "deviceHistoryAssessmentEvidence": "evidence/P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
+      "deviceHistoryAssessmentStatus": "SEQ_D1_BOUNDED_INTERNAL_READ_ONLY_ACCEPTED_NO_LIVE_ADMISSION_OR_ENROLLMENT"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -502,6 +504,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "b7b73221ddeb92af05b9b63f32d4c48fe19f3ea6",
+  "previousFullyAcceptedSource": "0c98d71f6ced72f6cc1d506050b63319afc15b06",
   "lastUpdatedAt": "2026-10-26"
 }

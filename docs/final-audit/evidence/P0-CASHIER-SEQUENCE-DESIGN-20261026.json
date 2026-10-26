@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "date": "2026-10-26",
   "gate": "CASHIER-SYNC-SEQUENCE-001",
-  "status": "CONCRETE_DESIGN_REVISION_1_PREPARED_NOT_IMPLEMENTED",
+  "status": "DESIGN_REVISION_1_WITH_SEQ_D1_BOUNDED_SOURCE_ACCEPTANCE_REMAINING_PROTOCOL_NOT_IMPLEMENTED",
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "0c98d71f6ced72f6cc1d506050b63319afc15b06",
-  "applicationChanged": false,
+  "acceptedExecutable": "df273707c000588e9b4e0fe772ef05f4a132d579",
+  "applicationChanged": true,
   "schemaChanged": false,
   "aclChanged": false,
-  "newRuntimeExecuted": false,
-  "newCiClaimed": false,
+  "newRuntimeExecuted": true,
+  "newCiClaimed": true,
   "report": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
   "selectedDirection": "Verified versioned device stream with contiguous future admission, exact immutable replay first and explicit hold for ambiguous legacy state; no automatic historical backfill",
   "identityRule": "Stream identity survives operator/shift/token rotation; no reset or baseline from request body",
@@ -21,8 +21,9 @@
   "implementationSlices": [
     {
       "id": "SEQ-D1",
-      "status": "SELECTED_NEXT_READ_ONLY_NOT_IMPLEMENTED",
-      "scope": "Bounded device history assessment; no enrollment/admission/financial writes"
+      "status": "BOUNDED_RESTRICTED_SQL_SOURCE_ACCEPTED_INTERNAL_ONLY",
+      "scope": "Bounded device history assessment; no enrollment/admission/financial writes",
+      "evidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json"
     },
     {
       "id": "SEQ-D2",
@@ -55,5 +56,10 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Implement SEQ-D1 as a bounded read-only device-history assessment under the existing tenant transaction boundary. Add actual restricted-role SQL tests for empty/contiguous/gapped/start-above1/foreign tenant-device/unsafe sequence/inspection limit and consistency; assert no checkpoint, financial or timeline writes. Do not change live admission, add migrations or return an enrollment authorization in this slice."
+  "nextExactAction": "Prepare and verify SEQ-D2 additive stream/receipt schema and migration proposal against existing canonical schema/RLS/privacy/readiness/restore conventions. Preserve legacy rows and current admission; use server-owned identity/versioned immutable receipt constraints,not MAX/client counters. Do not apply hosted migrations or claim recovery before later admission/client/adoption slices pass.",
+  "originalDesignBatchNewRuntimeExecuted": false,
+  "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
+  "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
+  "applicationComponentAdded": true,
+  "liveAdmissionChanged": false
 }

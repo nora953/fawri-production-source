@@ -1,3 +1,17 @@
+## SEQ-D1 bounded read-only history component accepted — 2026-10-26
+
+Accepted executable **df273707c000588e9b4e0fe772ef05f4a132d579**: **56/56CI SUCCESS**. [Cashier40257982261/job121363860931](https://github.com/nora953/fawri-production-source/actions/runs/40257982261):28TAP PASS/13invocations; multi-device fixture5TAP(parent+4functional),one new read-only assessment subtest. [Broader40257982407/job121363861470](https://github.com/nora953/fawri-production-source/actions/runs/40257982407):**724TAP PASS/92invocations/90files**,0failed/skipped/cancelled. Exact checkout tree matched. [Evidence](evidence/P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json).
+
+`assessCashierDeviceHistory` reads at most configured limit+1(default/cap512) numeric timeline rows for one merchant/device in one statement; bigint text is inspected without unsafe rounding. Reports empty/numerically contiguous/gapped/review; truncated or unsafe history cannot become a complete checkpoint. Always enrollmentAuthorized=false/statementSnapshotOnly=true. Real restricted-role READ ONLY SQL transactions assert read-only mode, own/peer positives and tenant/device negatives, empty/gap/start-above1/unsafe/limit cases; separate uncommitted setup writer invisible until commit, then its gap visible. Exact selected financial/timeline snapshots unchanged by assessor.
+
+**Boundary:** internal component has a regression caller only; no live HTTP endpoint/admission wiring or checkpoint/receipt/migration/grant changes. Supplied target must be a trusted tenant transaction; utility is not caller authentication. Statement visibility is not a durable enrollment/receipt proof or canonical writer race. **CASHIER-SYNC-SEQUENCE-001 remainsOPEN; NO-GO**.45register rows29CLOSED_SOURCE/7OPEN/9BLOCKED unchanged;inventory incomplete/percentage null;no merge/deploy/P1/P2.
+
+Concrete design revision1 was saved inc11352f2 before this slice: verified stable device streams/immutable receipts, exact replay before contiguous future admission, explicit ambiguous-legacy hold, original post-commit attribution repair, opt-in local adjustment handling and version/rollback rules. [Design](P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md), [implementation slice status](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json). SEQ-D1 bounded source acceptance does not implement or adopt the protocol, repair late operations or close SEQ-R1/R2/R3.
+
+**Next exact action:** Prepare and verify SEQ-D2 additive stream/receipt schema and migration proposal against existing canonical schema/RLS/privacy/readiness/restore conventions. Preserve legacy rows and current admission; use server-owned identity/versioned immutable receipt constraints,not MAX/client counters. Do not apply hosted migrations or claim recovery before later admission/client/adoption slices pass.
+
+---
+
 ## Concrete sequence recovery design revision1 prepared — 2026-10-26
 
 Reviewedede1f101; accepted executable0c98d71f/56CI/27cashier/723broader reused only. **No new runtime/CI,application,schema,grant or hosted change.** [Concrete protocol2 design](P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md), [machine decisions](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json). Proposed direction: verified server-owned stream identity/checkpoint, immutable exact replay first, contiguous future application and preserved hold for ambiguous legacy state. No automatic MAX/client-counter baseline, historical backfill, reset, silent ACK or tombstone.

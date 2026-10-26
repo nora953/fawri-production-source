@@ -1,6 +1,6 @@
 # CASHIER-SYNC-SEQUENCE-001 — recovery contract candidate
 
-Status: CONCRETE_DESIGN_REVISION_1_PREPARED_NOT_IMPLEMENTED_NOT_RELEASE_ACCEPTED. Gate OPEN; release NO-GO. This document authorizes no financial/timeline repair, tombstone, device reset, production write or hosted rollout. A diagnostic PASS is not recovery acceptance.
+Status: CONCRETE_DESIGN_REVISION_1_WITH_SEQ_D1_INTERNAL_READ_ONLY_ACCEPTED_REMAINING_PROTOCOL_NOT_IMPLEMENTED_NOT_RELEASE_ACCEPTED. Gate OPEN; release NO-GO. This document authorizes no financial/timeline repair, tombstone, device reset, production write or hosted rollout. A diagnostic PASS is not recovery acceptance.
 
 ## Current source path
 
@@ -143,3 +143,5 @@ Rollback before enrollment leaves v1 admission unchanged. After enrollment, a ro
 4. **Legacy review and rollout:** define and test a supervised adoption/recovery workflow with original evidence preserved. Do not declare the gate closed on the read-only classifier, future-stream fix alone or current diagnostics. Authorized hosted identity/schema/role/restore/rollout acceptance remains separate.
 
 Design review findings: an unconditional max+1 patch does not handle legacy/non-commerce history; removing the backwards check does not establish financial ordering; a timeline MAX or browser counter cannot establish a trusted checkpoint; an HTTP500 after core commit requires exact replay, not a second application. The selected design addresses these by explicit enrollment, immutable receipts, contiguous future application and preserved reconciliation holds. No recovery policy or implementation acceptance is claimed by preparing this design.
+
+SEQ-D1 implementation accepted at `df273707c000588e9b4e0fe772ef05f4a132d579`: [bounded read-only SQL assessment evidence](evidence/P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json),56CI/28cashier/724broaderTAP. The utility has no live caller/enrollment authority,inspects a bounded statement snapshot only and changes no admission/financial/timeline rows. Remaining stream/receipt storage,protocol adoption and historical/hosted work are unimplemented/unaccepted.
