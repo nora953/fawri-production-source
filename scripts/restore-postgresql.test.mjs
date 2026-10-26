@@ -92,8 +92,8 @@ test("PostgreSQL drill strips inherited libpq routing environment before tool in
   const dump = path.join(root, 'safe.dump');
   const manifest = path.join(root, 'manifest.json');
   fs.writeFileSync(dump, 'safe-fixture');
-  fs.writeFileSync(manifest, JSON.stringify({ format: 'fawri-postgresql-backup-v1', size: 12, sha256: createHash('sha256').update('safe-fixture').digest('hex') }));
-  fake('pg_restore', 'process.exit(0);');
+  fs.writeFileSync(manifest, JSON.stringify({ format: 'fawri-postgresql-backup-v2', security_model:'preserve-owners-acls',role_bootstrap:'preprovision-global-roles-before-restore', size: 12, sha256: createHash('sha256').update('safe-fixture').digest('hex') }));
+  fake('pg_restore', 'if(process.argv.includes("--no-owner")||process.argv.includes("--no-privileges"))process.exit(78);process.exit(0);');
   fake('psql', 'process.stdout.write("3\\n");');
   const args = ['--url', 'postgresql://fixture_user:fixture_password@127.0.0.1:5432/fawri_restore_target', '--backup', dump, '--manifest', manifest, '--verify-sql', 'select count(*) from restore_drill_records', '--expect', '3'];
   const result = run(args, { PATH: binaryRoot, PGHOSTADDR: '192.0.2.1', PGSERVICE: 'unexpected', PGOPTIONS: '-c search_path=unexpected', FAWRI_ALLOW_DISPOSABLE_POSTGRES_RESTORE: '1' });
@@ -108,3 +108,11 @@ for (const sql of ['select write_side_effect()', 'select count(*) from records f
     assert.match(result.stderr, /one read-only SELECT/i);
   });
 }
+
+test('legacy data-only backup is rejected before invoking restore',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'fawri-legacy-manifest-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const dump=path.join(root,'legacy.dump'),manifest=path.join(root,'legacy.json');fs.writeFileSync(dump,'legacy');
+ fs.writeFileSync(manifest,JSON.stringify({format:'fawri-postgresql-backup-v1',size:6,sha256:createHash('sha256').update('legacy').digest('hex')}));
+ const result=run(['--url','postgresql://fixture_user:fixture_password@127.0.0.1:5432/fawri_restore_target','--backup',dump,'--manifest',manifest,'--verify-sql','select count(*) from restore_drill_records','--expect','3'],{PATH:root,FAWRI_ALLOW_DISPOSABLE_POSTGRES_RESTORE:'1'});
+ assert.notEqual(result.status,0);assert.match(result.stderr,/owner\/ACL-preserving v2 backup required/);assert.doesNotMatch(result.stderr,/pg_restore could not start/);
+});

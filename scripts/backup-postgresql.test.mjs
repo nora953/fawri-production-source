@@ -70,8 +70,11 @@ test("PostgreSQL drill strips inherited libpq routing environment before tool in
   }
   const dump = path.join(root, 'safe.dump');
   const manifest = path.join(root, 'manifest.json');
-  fake('pg_dump', 'require("node:fs").writeFileSync(process.argv[process.argv.indexOf("--file")+1], "safe-fixture");');
+  fake('pg_dump', 'if(process.argv.includes("--no-owner")||process.argv.includes("--no-privileges"))process.exit(78);require("node:fs").writeFileSync(process.argv[process.argv.indexOf("--file")+1], "safe-fixture");');
   const args = ['--url', 'postgresql://fixture_user:fixture_password@127.0.0.1:5432/fawri_backup_source', '--output', dump, '--manifest', manifest];
   const result = run(args, { PATH: binaryRoot, PGHOSTADDR: '192.0.2.1', PGSERVICE: 'unexpected', PGOPTIONS: '-c search_path=unexpected', FAWRI_ALLOW_DISPOSABLE_POSTGRES_BACKUP: '1' });
   assert.equal(result.status, 0, result.stderr);
+  const metadata=JSON.parse(fs.readFileSync(manifest,'utf8'));
+  assert.equal(metadata.format,'fawri-postgresql-backup-v2');
+  assert.equal(metadata.security_model,'preserve-owners-acls');
 });

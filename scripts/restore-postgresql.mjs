@@ -104,14 +104,16 @@ function main() {
   const metadata = JSON.parse(readFileSync(path.resolve(manifest), "utf8"));
   const stat = statSync(backupPath, { throwIfNoEntry: false });
   if (
-    metadata.format !== "fawri-postgresql-backup-v1" ||
+    metadata.format !== "fawri-postgresql-backup-v2" ||
+    metadata.security_model !== "preserve-owners-acls" ||
+    metadata.role_bootstrap !== "preprovision-global-roles-before-restore" ||
     typeof metadata.size !== "number" ||
     typeof metadata.sha256 !== "string" ||
     !stat?.isFile() ||
     stat.size !== metadata.size ||
     sha256(backupPath) !== metadata.sha256
   ) {
-    throw new Error("PostgreSQL backup checksum or metadata verification failed");
+    throw new Error("PostgreSQL backup checksum or security metadata verification failed; owner/ACL-preserving v2 backup required");
   }
 
   run("pg_restore", [
@@ -119,8 +121,6 @@ function main() {
     url,
     "--clean",
     "--if-exists",
-    "--no-owner",
-    "--no-privileges",
     "--exit-on-error",
     backupPath,
   ]);
