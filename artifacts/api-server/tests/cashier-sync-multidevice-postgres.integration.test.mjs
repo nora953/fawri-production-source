@@ -135,6 +135,40 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
     }
   });
 
+  await t.test('read-only bounded device history assessment preserves financial state and observes tenant scope and statement snapshots',async()=>{
+    const {assessCashierDeviceHistory}=await import('../src/services/cashierDeviceHistoryAssessment.ts');
+    const f=await fixture(),peer=await fixture(),device=f.stations[0],peerDevice=peer.stations[0];
+    const gap='assessment-gap-'+randomUUID(),start='assessment-start-'+randomUUID(),unsafe='assessment-unsafe-'+randomUUID(),changing='assessment-changing-'+randomUUID();
+    async function seed(client,owner,deviceId,sequence){await client.query(`INSERT INTO cashier_device_operation_timeline(id,merchant_id,subscription_id,billing_order_id,station_id,device_id,device_sequence,operation_id,operation_kind,occurred_at,accepted_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'sale',now(),now())`,['assessment-'+randomUUID(),owner.merchantId,owner.subscriptionId,owner.billingOrderId,owner.stations[0].stationId,deviceId,String(sequence),'assessment-op-'+randomUUID()]);}
+    for(const n of [1,2,3])await seed(pool,f,device.deviceId,n);
+    for(const n of [1,3])await seed(pool,f,gap,n);
+    await seed(pool,f,start,5);await seed(pool,f,unsafe,'9007199254740992');await seed(pool,f,changing,1);
+    for(const n of [1,2])await seed(pool,peer,peerDevice.deviceId,n);
+    async function snapshot(){const state={};for(const table of ['orders','order_items','inventory_mutations','cashier_device_operation_timeline','location_inventory_levels'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[[f.merchantId,peer.merchantId]])).rows;return state;}
+    async function read(scope,merchantId,deviceId,inspectionLimit){return operational.withMerchantOperationalTransaction(scope,async client=>{await client.query('SET TRANSACTION READ ONLY');assert.equal((await client.query('SHOW transaction_read_only')).rows[0].transaction_read_only,'on');const result=await assessCashierDeviceHistory({target:client,merchantId,deviceId,...(inspectionLimit===undefined?{}:{inspectionLimit})});assert.equal(result.enrollmentAuthorized,false);assert.equal(result.statementSnapshotOnly,true);return result;});}
+    const before=await snapshot();
+    const contiguous=await read(f.merchantId,f.merchantId,device.deviceId);assert.equal(contiguous.status,'CONTIGUOUS');assert.equal(contiguous.reason,'CONTIGUOUS_NUMBERS_ONLY');assert.equal(contiguous.lastSequence,'3');assert.equal(contiguous.historyComplete,true);
+    const gapped=await read(f.merchantId,f.merchantId,gap);assert.equal(gapped.status,'GAPPED');assert.equal(gapped.firstMissingSequence,'2');
+    const above=await read(f.merchantId,f.merchantId,start);assert.equal(above.status,'GAPPED');assert.equal(above.firstMissingSequence,'1');
+    const numeric=await read(f.merchantId,f.merchantId,unsafe);assert.equal(numeric.status,'REVIEW_REQUIRED');assert.equal(numeric.reason,'UNSAFE_SEQUENCE');assert.equal(numeric.lastSequence,null);
+    const limited=await read(f.merchantId,f.merchantId,device.deviceId,2);assert.equal(limited.reason,'INSPECTION_LIMIT');assert.equal(limited.historyComplete,false);assert.equal(limited.lastSequence,null);
+    assert.equal((await read(f.merchantId,f.merchantId,'assessment-absent-'+randomUUID())).status,'EMPTY');
+    assert.equal((await read(f.merchantId,f.merchantId,peerDevice.deviceId)).status,'EMPTY');
+    assert.equal((await read(f.merchantId,peer.merchantId,peerDevice.deviceId)).status,'EMPTY');
+    assert.equal((await read(peer.merchantId,peer.merchantId,peerDevice.deviceId)).status,'CONTIGUOUS');
+    await assert.rejects(read(f.merchantId,f.merchantId,device.deviceId,513),error=>error.code==='CASHIER_HISTORY_INPUT_INVALID');
+    assert.deepEqual(await snapshot(),before);
+    const writer=await pool.connect();let held=false;
+    try{
+      await writer.query('BEGIN');held=true;await seed(writer,f,changing,3);
+      const during=await read(f.merchantId,f.merchantId,changing);assert.equal(during.status,'CONTIGUOUS');assert.equal(during.lastSequence,'1');
+      assert.deepEqual(await snapshot(),before,'uncommitted setup writer is invisible and assessment makes no financial writes');
+      await writer.query('COMMIT');held=false;const afterCommit=await snapshot();
+      const after=await read(f.merchantId,f.merchantId,changing);assert.equal(after.status,'GAPPED');assert.equal(after.firstMissingSequence,'2');assert.deepEqual(await snapshot(),afterCommit);
+    }finally{if(held)await writer.query('ROLLBACK');writer.release();}
+    console.log('P0_DEVICE_HISTORY_ASSESSMENT '+JSON.stringify({actualRestrictedSql:true,readOnlyTransactions:true,numericContiguityNotEnrollment:true,empty:true,contiguous:true,gap:true,startAboveOne:true,unsafeSequence:true,boundedTruncation:true,tenantAndDeviceIsolation:true,peerPositive:true,uncommittedWriterSnapshot:true,noFinancialOrTimelineWritesByAssessor:true,liveAdmissionChanged:false,hostedAccepted:false}));
+  });
+
   await t.test('canonical sale-service diagnostic observes late rejection without financial mutation after accepting a sequence gap',async()=>{
     const f=await fixture(3),peer=await fixture(),device=f.stations[0];
     const bodies=new Map([1,2,3].map(sequence=>[sequence,saleBody(f,device,sequence)]));
