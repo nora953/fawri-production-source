@@ -1,0 +1,34 @@
+name: SEQ D2 canonical generation candidate
+on:
+  pull_request:
+    paths:
+      - 'docs/final-audit/evidence/seq-d2-canonical-candidate/**'
+      - 'scripts/prepare-seq-d2-canonical-candidate.mjs'
+      - '.github/workflows/seq-d2-canonical-candidate.yml'
+permissions:
+  contents: read
+concurrency:
+  group: seq-d2-candidate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  generation-and-owned-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label seq-d2-install -- pnpm install --frozen-lockfile --ignore-scripts
+      - name: Generate candidate and preserve historical migration bytes
+        run: node scripts/prepare-seq-d2-canonical-candidate.mjs
+      - name: Apply candidate in owned offline PostgreSQL with actual management contracts
+        run: bash scripts/run-isolated-postgres-audit.sh management
+      - name: Export generated candidate text for review
+        run: node scripts/prepare-seq-d2-canonical-candidate.mjs export
