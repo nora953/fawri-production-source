@@ -30,7 +30,7 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [owned])],
     ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
-  async function fixture() {
+  async function fixture(initialStock = 1) {
     const suffix = randomUUID();
     const merchantId = `audit-sync-${suffix}`;
     owned.push(merchantId);
@@ -51,15 +51,15 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       VALUES($1,$2,'Sync location','sync',TRUE,'open',FALSE,FALSE,0,now(),now())`, [locationId, merchantId]);
     const productId = `audit-product-${suffix}`;
     await catalog.createCatalogProductAuthoritative({ merchantId, idempotencyKey: randomUUID(), input: {
-      id: productId, name: 'One last stock item', price_iqd: 1000, stock_quantity: 1,
+      id: productId, name: 'One last stock item', price_iqd: 1000, stock_quantity: initialStock,
       low_stock_threshold: 0, status: 'available', allow_fawri_reply: true,
     } });
     const levels = await pool.query('SELECT id FROM location_inventory_levels WHERE merchant_id=$1 AND location_id=$2 AND product_id=$3 AND variant_id IS NULL',
       [merchantId, locationId, productId]);
     if (!levels.rows.length) {
       await pool.query(`INSERT INTO location_inventory_levels(id,merchant_id,location_id,product_id,variant_id,
-        quantity,low_stock_threshold,version,created_at,updated_at) VALUES($1,$2,$3,$4,NULL,1,0,1,now(),now())`,
-        [`audit-level-${suffix}`, merchantId, locationId, productId]);
+        quantity,low_stock_threshold,version,created_at,updated_at) VALUES($1,$2,$3,$4,NULL,$5,0,1,now(),now())`,
+        [`audit-level-${suffix}`, merchantId, locationId, productId, initialStock]);
     }
     const stations = [];
     for (let i = 0; i < 1; i++) {
@@ -106,6 +106,45 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   app.use(express.json()); app.use('/api', staffRouter, commerceRouter);
   server = await new Promise((resolve, reject) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); s.once('error', reject); });
   const base = `http://127.0.0.1:${server.address().port}`;
+  await t.test('actual operator HTTP sequence diagnostic verifies ordered sales and bounded gap late rejection without financial mutation',async()=>{
+    const target=await fixture(3),peer=await fixture(3);
+    async function request(f,token,payload,overrides={}){
+      const device=f.stations[0];const response=await fetch(base+'/api/cashier/operator/sync/sale',{method:'POST',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json','x-fawri-cashier-station-token':device.stationToken,'x-fawri-cashier-device-id':device.deviceId,...(token?{'x-fawri-cashier-operator-token':token}:{}),...overrides},body:JSON.stringify(payload)});return {status:response.status,body:await response.json()};
+    }
+    async function login(f){
+      const member=await staff.createCashierStaffAuthoritative({merchantId:f.merchantId,displayName:'Synthetic sequence cashier',role:'cashier',pin:'2468',permissions:['sale.create','sale.view_own']});
+      const device=f.stations[0],response=await fetch(base+'/api/cashier/operator/login',{method:'POST',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json','x-fawri-cashier-station-token':device.stationToken,'x-fawri-cashier-device-id':device.deviceId},body:JSON.stringify({staff_id:member.id,pin:'2468'})});
+      const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));return {member,token:body.operator_token,context:body.context};
+    }
+    async function snapshot(f){const state={};for(const table of ['orders','order_items','inventory_mutations','cashier_device_operation_timeline','location_inventory_levels','cashier_operation_attribution'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=$1 ORDER BY to_jsonb(t)::text`,[f.merchantId])).rows;return state;}
+    function ack(result,body,replayed){assert.equal(result.status,200,JSON.stringify(result.body));assert.equal(result.body.replayed,replayed);assert.equal(result.body.operation_id,body.operation_id);assert.equal(Number(result.body.device_sequence),body.device_sequence);assert.deepEqual(new Set(result.body.accepted_entity_ids),new Set(body.envelopes.map(x=>x.entity_id)));assert.equal(result.body.inventory_mutation_count,replayed?0:1);}
+    const own=await login(target),other=await login(peer);
+    await pool.query('SELECT pg_sleep(0.02)');const occurredAt=(await pool.query('SELECT clock_timestamp() AS instant')).rows[0].instant.toISOString();
+    const bodies=new Map([1,2,3].map(sequence=>[sequence,saleBody(target,target.stations[0],occurredAt,sequence)]));
+    const ordered=new Map([1,2,3].map(sequence=>[sequence,saleBody(peer,peer.stations[0],occurredAt,sequence)]));
+    for(const sequence of [1,2,3])ack(await request(peer,other.token,ordered.get(sequence)),ordered.get(sequence),false);
+    const peerBefore=await snapshot(peer);assert.equal(peerBefore.orders.length,3);assert.deepEqual(peerBefore.cashier_device_operation_timeline.map(x=>Number(x.row.device_sequence)).sort((a,b)=>a-b),[1,2,3]);
+    const before=await snapshot(target);
+    assert.equal((await request(target,null,bodies.get(1))).status,401);
+    assert.equal((await request(target,own.token,bodies.get(1),{'x-fawri-cashier-device-id':'synthetic-wrong-device'})).status,401);
+    assert.equal((await request(target,own.token,bodies.get(1),{'x-fawri-cashier-station-token':'synthetic-wrong-token'})).status,401);
+    assert.equal((await request(peer,other.token,bodies.get(1))).status,403);
+    assert.deepEqual(await snapshot(target),before);assert.deepEqual(await snapshot(peer),peerBefore);
+    for(const sequence of [1,3])ack(await request(target,own.token,bodies.get(sequence)),bodies.get(sequence),false);
+    const accepted=await snapshot(target);assert.equal(accepted.orders.length,2);assert.equal(accepted.inventory_mutations.length,2);assert.equal(accepted.cashier_operation_attribution.length,2);
+    assert.deepEqual(accepted.cashier_device_operation_timeline.map(x=>Number(x.row.device_sequence)).sort((a,b)=>a-b),[1,3]);
+    const level=accepted.location_inventory_levels.find(x=>x.row.location_id===target.locationId&&x.row.product_id===target.productId&&x.row.variant_id===null);assert.equal(Number(level.row.quantity),1);
+    for(const attribution of accepted.cashier_operation_attribution){assert.equal(attribution.row.staff_id,own.member.id);assert.equal(attribution.row.shift_id,own.context.shift_id);assert.equal(attribution.row.operator_session_id,own.context.operator_session_id);}
+    for(let attempt=0;attempt<2;attempt++){const late=await request(target,own.token,bodies.get(2));assert.equal(late.status,409,JSON.stringify(late.body));assert.equal(late.body.code,'CASHIER_OPERATION_SEQUENCE_CONFLICT');assert.deepEqual(await snapshot(target),accepted);}
+    for(const sequence of [1,3])ack(await request(target,own.token,bodies.get(sequence)),bodies.get(sequence),true);
+    assert.deepEqual(await snapshot(target),accepted);assert.deepEqual(await snapshot(peer),peerBefore);
+    const version=(await pool.query('SELECT version FROM merchant_cashier_staff WHERE id=$1',[own.member.id])).rows[0].version;
+    await staff.updateCashierStaffAuthoritative({merchantId:target.merchantId,staffId:own.member.id,expectedVersion:version,status:'disabled'});
+    assert.equal((await request(target,own.token,bodies.get(2))).status,401);assert.deepEqual(await snapshot(target),accepted);assert.deepEqual(await snapshot(peer),peerBefore);
+    console.log('P0_SEQUENCE_OPERATOR_HTTP_DIAGNOSTIC '+JSON.stringify({actualMountedRouters:true,realOperatorLogin:true,realStationCredential:true,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,orderedAccepted:[1,2,3],gapAccepted:[1,3],lateSequence:2,lateStatus:409,lateAttempts:2,orders:2,inventoryMutations:2,attributions:2,remainingStock:1,exactAckIdentity:true,replayNoMutation:true,peerPreserved:true,anonymousDenied:401,wrongDeviceDenied:401,wrongStationDenied:401,foreignTenantDenied:403,disabledSessionDenied:401,recoveryContractAccepted:false,fullApp:false,hostedAccepted:false}));
+    // This passing diagnostic documents unresolved gap recovery. It does not
+    // authorize dropping a real late sale or synthesizing a tombstone.
+  });
   for (const kind of ['return', 'void']) {
   const f = await fixture(), device = f.stations[0];
   const member = await staff.createCashierStaffAuthoritative({ merchantId: f.merchantId,
