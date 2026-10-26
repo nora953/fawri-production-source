@@ -1,3 +1,13 @@
+## SEQ-D2 proposal-inclusive database restore accepted — 2026-10-26
+
+Accepted source **553e08f7223e5ea242b813f3edc0e270f0c4784c**,56/56 CI SUCCESS. [Broader40309933849/job121528266491](https://github.com/nora953/fawri-production-source/actions/runs/40309933849):734 TAP/93 invocations/91 files,0 failed/skipped/cancelled; source/checkout tree matched. Restore seed2 TAP and verify2 TAP(parent+1 child each). [Evidence](evidence/P0-CASHIER-STREAM-RESTORE-20261026.json).
+
+Custom pg_dump/owner-preserving pg_restore to a fresh database yields identical fingerprint before/after: public function owners, policy role bindings, proposal column ACLs, user triggers/enabled state, proposal JSON data and role flags included. Real restricted reader tests own-tenant positive/raw+forged-GUC negative, no direct mutation/trigger execution/owner activation in both phases. Immutable receipt mutation rejected. Actual unchanged deletion service after restore retires target with NULL binding/checkpoint1 preserved; receipts and selected peer stream exact.
+
+Owned cluster97 public tables include2 noncanonical proposal tables; canonical95 tables/52 migrations unchanged. Global roles are preprovisioned in same disposable cluster: not lost-cluster role bootstrap, hosted/PITR/RPO/RTO/media/financial provenance acceptance. Separate backup-postgresql/restore-postgresql scripts omit owner/ACL and are NOT certified by this drill. Initial31b4e2885415fa28eb75bfcd7707c7c1bc4993f7 seed2 PASS but verify0 PASS/2 FAIL lacked explicit operational authority for service fixture; corrected test configuration, prior failure preserved.
+
+Next: reconcile separate backup/restore ownership/ACL paths and role bootstrap, then canonical Drizzle/readiness promotion; FIELD005 policy, legacy adoption and live admission remain pending. **Sequence gate OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED, incomplete inventory, no percentage.
+
 ## SEQ-D2 non-login column-limited retirement owner accepted — 2026-10-26
 
 Accepted source **e822ba57b63d6eb06b30ed86582f71d0cab28916**,56/56 CI SUCCESS. [Cashier40306955203/job121518318946](https://github.com/nora953/fawri-production-source/actions/runs/40306955203):36 TAP/14 invocations; proposal fixture8 TAP(parent+7 subtests). [Broader40306955254/job121518317522](https://github.com/nora953/fawri-production-source/actions/runs/40306955254):732 TAP/93 invocations/91 files,0 failed/skipped/cancelled; checkout tree matched. [Evidence](evidence/P0-CASHIER-RETIREMENT-OWNER-20261026.json).

@@ -6,7 +6,7 @@
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "e822ba57b63d6eb06b30ed86582f71d0cab28916",
+  "acceptedExecutable": "553e08f7223e5ea242b813f3edc0e270f0c4784c",
   "applicationChanged": true,
   "schemaChanged": false,
   "aclChanged": false,
@@ -27,13 +27,14 @@
     },
     {
       "id": "SEQ-D2",
-      "status": "PROPOSAL_CONSTRAINTS_LIFECYCLE_NONLOGIN_OWNER_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+      "status": "PROPOSAL_CONSTRAINTS_LIFECYCLE_OWNER_SAME_CLUSTER_RESTORE_ACCEPTED_CANONICAL_PROMOTION_PENDING",
       "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance",
       "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
       "concurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
       "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json",
       "streamDeletionTransactionEvidence": "P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json",
-      "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json"
+      "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json",
+      "streamRestoreEvidence": "P0-CASHIER-STREAM-RESTORE-20261026.json"
     },
     {
       "id": "SEQ-D3",
@@ -61,7 +62,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Add proposal-inclusive dump/restore proof preserving non-login owner, function/trigger definitions, column ACLs, RLS policies and restricted caller denial/valid deletion before canonical migration promotion; then canonical Drizzle/readiness integration.",
+  "nextExactAction": "Reconcile separate disposable backup/restore tooling with explicit owner/ACL preservation or verified reconstruction and role bootstrap, then canonical Drizzle/readiness promotion of proposal; no live admission/hosted rollout or automatic legacy enrollment.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -69,8 +70,9 @@
   "liveAdmissionChanged": false,
   "storageProposalEvidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
   "storageConcurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
-  "canonicalPromotionPrivacyPrerequisite": "Non-login column-limited retirement owner and actual deletion transaction accepted in disposable fixture; canonical ownership migration/readiness, proposal-inclusive restore and full FIELD005 policy remain pending.",
+  "canonicalPromotionPrivacyPrerequisite": "Proposal owner/ACL/lifecycle same-cluster restore accepted only in owned fixture; separate backup tools and role bootstrap, canonical generation/readiness and full FIELD005 policy remain pending.",
   "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json",
   "streamDeletionTransactionEvidence": "P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json",
-  "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json"
+  "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json",
+  "streamRestoreEvidence": "P0-CASHIER-STREAM-RESTORE-20261026.json"
 }

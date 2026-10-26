@@ -211,3 +211,22 @@ Retirement definer runs as dedicated NOLOGIN/non-superuser/non-BYPASSRLS/non-cre
 
 Boundary: fixture-only role/grants/ownership and proposal tables; no canonical schema/journal or hosted mutation. Earlier root-owner evidence is historical. Next: proposal-inclusive dump/restore preserving owner/column ACL/policy/trigger/denial and valid deletion, then canonical Drizzle/readiness promotion. Financial receipt provenance, FIELD005 policy and hosted gates remain unaccepted. **Sequence gate OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED; inventory incomplete, no percentage.
 
+
+## SEQ-D2 proposal-inclusive restore candidate — 2026-10-26
+
+The owned full-schema drill now seeds the proposal tables, two merchants' synthetic stream/receipt rows, a restricted reader LOGIN and non-login column-limited retirement owner before pg_dump. Its launcher retains pg_restore ownership statements instead of --no-owner. The existing schema fingerprint additionally compares public function owners, policy role bindings, proposal column ACLs, user trigger definitions/enabled state, proposal rows and owner/reader role flags. Native CHECK normalization remains in place.
+
+Both phases execute actual restricted reader LOGIN tests: raw/forged tenant GUC reads denied, trusted issuer scopes reveal only each own merchant, direct mutation/trigger execution and owner role activation denied. Immutability rejects root receipt update. After restore only, the unchanged canonical deletion service executes with a separate restricted auth LOGIN; retired binding is NULL, original checkpoint/receipt rows survive and selected peer stream remains exact.
+
+Boundary: roles are preprovisioned in the same owned disposable cluster and persist while a fresh database is restored. This is not lost-cluster role bootstrap, hosted backups, PITR, RPO/RTO, production approval or canonical migration adoption. Proposal objects remain outside the journal, so the two added fixture tables do not increase the canonical schema's table count. Separate `scripts/backup-postgresql.mjs` and `scripts/restore-postgresql.mjs` still omit owners/privileges; this drill does not certify those tools for the proposed owner/ACL model. Before canonical promotion, reconcile those paths or an explicit owner/ACL bootstrap plan, canonical Drizzle/readiness and FIELD005 policy.
+
+## SEQ-D2 proposal-inclusive database restore accepted — 2026-10-26
+
+Accepted source **553e08f7223e5ea242b813f3edc0e270f0c4784c**,56/56 CI SUCCESS. [Broader40309933849/job121528266491](https://github.com/nora953/fawri-production-source/actions/runs/40309933849):734 TAP/93 invocations/91 files,0 failed/skipped/cancelled; source/checkout tree matched. Restore seed2 TAP and verify2 TAP(parent+1 child each). [Evidence](evidence/P0-CASHIER-STREAM-RESTORE-20261026.json).
+
+Custom pg_dump/owner-preserving pg_restore to a fresh database yields identical fingerprint before/after: public function owners, policy role bindings, proposal column ACLs, user triggers/enabled state, proposal JSON data and role flags included. Real restricted reader tests own-tenant positive/raw+forged-GUC negative, no direct mutation/trigger execution/owner activation in both phases. Immutable receipt mutation rejected. Actual unchanged deletion service after restore retires target with NULL binding/checkpoint1 preserved; receipts and selected peer stream exact.
+
+Owned cluster97 public tables include2 noncanonical proposal tables; canonical95 tables/52 migrations unchanged. Global roles are preprovisioned in same disposable cluster: not lost-cluster role bootstrap, hosted/PITR/RPO/RTO/media/financial provenance acceptance. Separate backup-postgresql/restore-postgresql scripts omit owner/ACL and are NOT certified by this drill. Initial31b4e2885415fa28eb75bfcd7707c7c1bc4993f7 seed2 PASS but verify0 PASS/2 FAIL lacked explicit operational authority for service fixture; corrected test configuration, prior failure preserved.
+
+Next: reconcile separate backup/restore ownership/ACL paths and role bootstrap, then canonical Drizzle/readiness promotion; FIELD005 policy, legacy adoption and live admission remain pending. **Sequence gate OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED, incomplete inventory, no percentage.
+

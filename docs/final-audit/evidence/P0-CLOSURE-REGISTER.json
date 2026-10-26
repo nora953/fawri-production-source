@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "e822ba57b63d6eb06b30ed86582f71d0cab28916",
-  "lastFullyAcceptedSource": "e822ba57b63d6eb06b30ed86582f71d0cab28916",
+  "sourceCandidate": "553e08f7223e5ea242b813f3edc0e270f0c4784c",
+  "lastFullyAcceptedSource": "553e08f7223e5ea242b813f3edc0e270f0c4784c",
   "release": "NO-GO",
   "rows": [
     {
@@ -282,7 +282,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "SEQ_D1_ACCEPTED_D2_PROPOSAL_VERIFIED_D3_D4_OPEN",
-      "nextAction": "Add proposal-inclusive dump/restore proof preserving non-login owner, function/trigger definitions, column ACLs, RLS policies and restricted caller denial/valid deletion before canonical migration promotion; then canonical Drizzle/readiness integration.",
+      "nextAction": "Reconcile separate disposable backup/restore tooling with explicit owner/ACL preservation or verified reconstruction and role bootstrap, then canonical Drizzle/readiness promotion of proposal; no live admission/hosted rollout or automatic legacy enrollment.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -305,7 +305,9 @@
       "streamDeletionTransactionEvidence": "evidence/P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json",
       "streamDeletionTransactionStatus": "BOUNDED_CANONICAL_DELETION_SERVICE_WITH_PROPOSAL_BRIDGE_ACCEPTED_PROMOTION_PENDING",
       "retirementOwnerEvidence": "evidence/P0-CASHIER-RETIREMENT-OWNER-20261026.json",
-      "retirementOwnerStatus": "BOUNDED_NONLOGIN_COLUMN_LIMITED_RETIREMENT_OWNER_ACCEPTED_CANONICAL_PROMOTION_PENDING"
+      "retirementOwnerStatus": "BOUNDED_NONLOGIN_COLUMN_LIMITED_RETIREMENT_OWNER_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+      "streamRestoreEvidence": "evidence/P0-CASHIER-STREAM-RESTORE-20261026.json",
+      "streamRestoreStatus": "BOUNDED_PROPOSAL_INCLUSIVE_DATABASE_RESTORE_ACCEPTED_CANONICAL_PROMOTION_PENDING"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -515,6 +517,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "3fdc89edc5500b511b3cdcd492e67bc3a5b99b80",
+  "previousFullyAcceptedSource": "e822ba57b63d6eb06b30ed86582f71d0cab28916",
   "lastUpdatedAt": "2026-10-26"
 }
