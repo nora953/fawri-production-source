@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "5a9489f6d5cde233fcb54cb690cef15ceab0d7e3",
-  "lastFullyAcceptedSource": "5a9489f6d5cde233fcb54cb690cef15ceab0d7e3",
+  "sourceCandidate": "3fdc89edc5500b511b3cdcd492e67bc3a5b99b80",
+  "lastFullyAcceptedSource": "3fdc89edc5500b511b3cdcd492e67bc3a5b99b80",
   "release": "NO-GO",
   "rows": [
     {
@@ -282,7 +282,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "SEQ_D1_ACCEPTED_D2_PROPOSAL_VERIFIED_D3_D4_OPEN",
-      "nextAction": "Implement and verify an internal trusted lifecycle retirement primitive for the revised schema proposal, including merchant transaction rollback/peer preservation; reconcile retained fields with FIELD005 before canonical schema/readiness/restore promotion.",
+      "nextAction": "Reconcile revision2 plus lifecycle bridge into canonical Drizzle generation with reviewed least-privilege function ownership, trigger/readiness checks, migration reproducibility and full dump/restore proof before any live adoption; preserve existing admission and FIELD005 policy blockers.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -301,7 +301,9 @@
       "streamConcurrencyStatus": "BOUNDED_PROPOSAL_SQL_CONCURRENCY_ACCEPTED_CANONICAL_PROMOTION_PENDING",
       "deviceBindingErasureEvidence": "evidence/P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json",
       "deviceBindingErasureStatus": "BOUNDED_PROPOSAL_DEVICE_BINDING_ERASURE_ACCEPTED_CANONICAL_LIFECYCLE_PENDING",
-      "streamStorageProposalRevision": 2
+      "streamStorageProposalRevision": 2,
+      "streamDeletionTransactionEvidence": "evidence/P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json",
+      "streamDeletionTransactionStatus": "BOUNDED_CANONICAL_DELETION_SERVICE_WITH_PROPOSAL_BRIDGE_ACCEPTED_PROMOTION_PENDING"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -511,6 +513,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "4b9f9dc638e95b8b053189edf3cb6e93b48b384e",
+  "previousFullyAcceptedSource": "5a9489f6d5cde233fcb54cb690cef15ceab0d7e3",
   "lastUpdatedAt": "2026-10-26"
 }

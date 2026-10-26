@@ -1,3 +1,13 @@
+## SEQ-D2 proposal bridge with actual deletion service accepted — 2026-10-26
+
+Accepted source **3fdc89edc5500b511b3cdcd492e67bc3a5b99b80**,56/56 CI SUCCESS. [Cashier40267010329/job121391499858](https://github.com/nora953/fawri-production-source/actions/runs/40267010329):35 TAP/14 invocations; proposal fixture7 TAP(parent+6 subtests). [Broader40267010218/job121391707258](https://github.com/nora953/fawri-production-source/actions/runs/40267010218):731 TAP/93 invocations/91 files,0 failed/skipped/cancelled; checkout tree matches source. [Evidence](evidence/P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json).
+
+Unchanged canonical deletion service runs with separate restricted auth LOGIN and proposal-only retention-transition trigger. Post-retirement account fault verifies all target bindings were retired before raising, then exact selected merchant/account/request/cashier/stream/receipt rows roll back. Retry completes deletion, retires active/review streams, preserves already retired stream, all selected immutable receipts and peer business/proposal snapshots. Direct primary invocation/state change denied; deleted enrollment and append denied; repeated deletion leaves selected target unchanged.
+
+Initial candidate c0120e5072f5803784e3dec68907c4e82d54aa7b failed fixture0 PASS/1 FAIL because plain <> rejected valid NULL retention state. Corrected with IS DISTINCT FROM; failed/cancelled/superseded runs are not accepted.
+
+Boundary: proposal trigger/tables installed and removed only in owned disposable SQL, not canonical schema/journal or hosted. No owner HTTP/media/backup acceptance, financial provenance or retention-policy adoption. Definer uses root fixture owner; canonical least-privilege non-login ownership/readiness/restore still pending. Next: canonical generation and reviewed ownership/trigger/readiness/dump-restore verification before adoption; preserve FIELD005 policy blockers and current admission. **Sequence gate OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED, incomplete inventory, no percentage.
+
 ## SEQ-D2 proposal revision2 device binding erasure accepted — 2026-10-26
 
 Accepted source **5a9489f6d5cde233fcb54cb690cef15ceab0d7e3**,56/56 CI SUCCESS. [Cashier40265005413/job121385370597](https://github.com/nora953/fawri-production-source/actions/runs/40265005413):34 TAP/14 invocations; proposal fixture6 TAP(parent+5 subtests). [Broader40265005072/job121385369306](https://github.com/nora953/fawri-production-source/actions/runs/40265005072):730 TAP/93 invocations/91 files,0 failed/skipped/cancelled; exact checkout tree matched. [Evidence](evidence/P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json).

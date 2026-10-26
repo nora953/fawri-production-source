@@ -6,7 +6,7 @@
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "5a9489f6d5cde233fcb54cb690cef15ceab0d7e3",
+  "acceptedExecutable": "3fdc89edc5500b511b3cdcd492e67bc3a5b99b80",
   "applicationChanged": true,
   "schemaChanged": false,
   "aclChanged": false,
@@ -27,11 +27,12 @@
     },
     {
       "id": "SEQ-D2",
-      "status": "REVISION2_PROPOSAL_CONSTRAINTS_RLS_CONCURRENCY_DEVICE_ERASURE_ACCEPTED_CANONICAL_LIFECYCLE_PENDING",
+      "status": "REVISION2_PROPOSAL_WITH_CANONICAL_DELETION_SERVICE_ACCEPTED_CANONICAL_PROMOTION_PENDING",
       "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance",
       "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
       "concurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
-      "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json"
+      "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json",
+      "streamDeletionTransactionEvidence": "P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json"
     },
     {
       "id": "SEQ-D3",
@@ -59,7 +60,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Implement and verify an internal trusted lifecycle retirement primitive for the revised schema proposal, including merchant transaction rollback/peer preservation; reconcile retained fields with FIELD005 before canonical schema/readiness/restore promotion.",
+  "nextExactAction": "Reconcile revision2 plus lifecycle bridge into canonical Drizzle generation with reviewed least-privilege function ownership, trigger/readiness checks, migration reproducibility and full dump/restore proof before any live adoption; preserve existing admission and FIELD005 policy blockers.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -67,6 +68,7 @@
   "liveAdmissionChanged": false,
   "storageProposalEvidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
   "storageConcurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
-  "canonicalPromotionPrivacyPrerequisite": "Revision2 raw device binding erasure accepted only in disposable SQL; trusted merchant lifecycle integration and complete retained-field/retention policy remain pending",
-  "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json"
+  "canonicalPromotionPrivacyPrerequisite": "Proposal erasure and actual deletion service rollback/retry accepted only with disposable trigger. Canonical least-privilege ownership, readiness, restore and complete retained-field/retention policy remain pending.",
+  "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json",
+  "streamDeletionTransactionEvidence": "P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json"
 }
