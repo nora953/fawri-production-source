@@ -72,7 +72,7 @@ export async function verifyStreamProposalRestore(pool,phase,authenticationUrl){
  if(phase==='verify'){
   const receipts=(await pool.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows;
   const peer=(await pool.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE merchant_id=$1',[ids[1]])).rows;
-  const oldAuth=process.env.FAWRI_AUTH_DATABASE_URL;process.env.FAWRI_AUTH_DATABASE_URL=authenticationUrl;
+  const oldAuth=process.env.FAWRI_AUTH_DATABASE_URL,oldAuthority=process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY;process.env.FAWRI_AUTH_DATABASE_URL=authenticationUrl;process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY='required';
   try{
    const management=await import('../../src/services/postgresMerchantManagementAuthority.ts');
    const adminId='sequence-restore-owner-admin';
@@ -84,7 +84,7 @@ export async function verifyStreamProposalRestore(pool,phase,authenticationUrl){
    assert.deepEqual((await pool.query('SELECT state,device_id,last_sequence FROM cashier_device_streams WHERE merchant_id=$1',[ids[0]])).rows,[{state:'retired',device_id:null,last_sequence:'1'}]);
    assert.deepEqual((await pool.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows,receipts);
    assert.deepEqual((await pool.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE merchant_id=$1',[ids[1]])).rows,peer);
-  }finally{const {closeAuthenticationPool}=await import('../../src/services/authenticationPostgresAuthority.ts');await closeAuthenticationPool();if(oldAuth===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=oldAuth;}
+  }finally{const {closeAuthenticationPool}=await import('../../src/services/authenticationPostgresAuthority.ts');await closeAuthenticationPool();if(oldAuth===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=oldAuth;if(oldAuthority===undefined)delete process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY;else process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=oldAuthority;}
  }
  console.log('P0_STREAM_PROPOSAL_RESTORE '+JSON.stringify({phase,proposalOutsideCanonicalJournal:true,ownerAndColumnAcl:true,realRestrictedLogin:true,tenantReadIsolation:true,immutableReceipts:true,actualDeletionServiceAfterRestore:phase==='verify',rolesPreprovisionedSameOwnedCluster:true,hostedAccepted:false}));
 }
