@@ -11,7 +11,8 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
  const runtime=await createDisposableKnowledgeRuntime(),admin=runtime.admin,ids=[];let installed=false;
  const tables=['cashier_device_streams','cashier_operation_receipts'];
  t.after(()=>cleanupResources([
-  ['proposal tables',async()=>{if(installed){await admin.query('DROP TABLE public.cashier_operation_receipts');await admin.query('DROP FUNCTION public.fawri_sequence_receipt_guard(),public.fawri_sequence_receipt_commit_guard()');await admin.query('DROP TABLE public.cashier_device_streams');await admin.query('DROP FUNCTION public.fawri_sequence_stream_guard()');}}],
+  ['proposal tables',async()=>{if(installed){await admin.query('DROP TRIGGER cashier_device_streams_merchant_deleted ON public.merchants');await admin.query('DROP FUNCTION public.fawri_sequence_merchant_deleted()');await admin.query('DROP TABLE public.cashier_operation_receipts');await admin.query('DROP FUNCTION public.fawri_sequence_receipt_guard(),public.fawri_sequence_receipt_commit_guard()');await admin.query('DROP TABLE public.cashier_device_streams');await admin.query('DROP FUNCTION public.fawri_sequence_stream_guard()');}}],
+  ['fixture requests',()=>admin.query('DELETE FROM merchant_deletion_requests WHERE merchant_id_snapshot=ANY($1::text[])',[ids])],
   ['fixture accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
   ['runtime',()=>runtime.dispose()],
  ]));
@@ -132,5 +133,60 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   assert.deepEqual((await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows,before,'all selected immutable receipts preserved exactly');
   assert.deepEqual((await admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE id=$1',[b.stream])).rows,peer);
  });
- console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,deviceBindingErasedOnRetirement:true,receiptHasNoRawDeviceColumn:true,retirementBlocksWaitingReceipt:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
+ await t.test('canonical deletion service atomically retires proposal streams and rolls back a later account failure',async()=>{
+  const management=await import('../src/services/postgresMerchantManagementAuthority.ts');
+  const owner='storage-owner-'+randomUUID();ids.push(owner);
+  await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state) VALUES($1,'admin',$2,'synthetic','active')",[owner,'+199'+randomInt(100000000,999999999)]);
+  await admin.query("INSERT INTO admin_profiles(id,account_id,display_name,role,enabled,must_change_password) VALUES($1,$1,'Synthetic','owner_admin',true,false)",[owner]);
+  const f=await actor();await append(f,1);
+  const reviewStream='review-'+randomUUID(),oldRetired='retired-'+randomUUID();
+  await admin.query("INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)",[reviewStream,f.id,'review-device-'+randomUUID()]);
+  await admin.query("INSERT INTO cashier_device_streams(id,merchant_id,device_id,state) VALUES($1,$2,NULL,'retired')",[oldRetired,f.id]);
+  await admin.query("UPDATE merchants SET status='suspended',account_status='suspended' WHERE id=$1",[f.id]);
+  const request=await management.createDeletionRequestPostgres({merchantId:f.id,reason:'policy_violation',details:'Synthetic proposal lifecycle',actorAdminId:owner});
+  const input={merchantId:f.id,deletionRequestId:request.id,actorAdminId:owner};
+  async function lifecycleSnapshot(merchant){
+   const result={};
+   for(const table of ['merchants','accounts','cashier_device_streams','cashier_operation_receipts','merchant_cashier_staff','merchant_cashier_stations','cashier_shifts']){
+    const column=['merchants','accounts'].includes(table)?'id':'merchant_id';
+    result[table]=(await admin.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE ${column}=$1 ORDER BY to_jsonb(t)::text`,[merchant])).rows;
+   }
+   result.requests=(await admin.query('SELECT to_jsonb(t) AS row FROM merchant_deletion_requests t WHERE merchant_id_snapshot=$1 ORDER BY id',[merchant])).rows;
+   return result;
+  }
+  const before=await lifecycleSnapshot(f.id),peerBefore=await lifecycleSnapshot(b.id);
+  const receiptsBefore=(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows;
+  await assert.rejects(runtime.runtimePool.query('SELECT public.fawri_sequence_merchant_deleted()'),e=>e.code==='42501');
+  await assert.rejects(tenant(f.id,c=>c.query("UPDATE merchants SET retention_status='deleted' WHERE id=$1",[f.id])),e=>e.code==='42501');
+  assert.deepEqual(await lifecycleSnapshot(f.id),before);
+  // Fault runs after the real service's merchant update and its retirement
+  // trigger, but before account closure. Inspect that uncommitted retirement
+  // happened, then fail so the transaction must restore every selected row.
+  await admin.query(`CREATE FUNCTION public.fawri_sequence_fixture_delete_fault() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+   BEGIN
+    IF EXISTS(SELECT 1 FROM public.cashier_device_streams WHERE merchant_id=NEW.id AND (state<>'retired' OR device_id IS NOT NULL)) THEN RAISE EXCEPTION 'retirement not reached'; END IF;
+    IF NOT EXISTS(SELECT 1 FROM public.cashier_device_streams WHERE merchant_id=NEW.id AND state='retired') THEN RAISE EXCEPTION 'retirement fixture missing'; END IF;
+    RAISE EXCEPTION 'synthetic post-retirement account fault';
+   END $$`);
+  await admin.query('REVOKE ALL ON FUNCTION public.fawri_sequence_fixture_delete_fault() FROM PUBLIC');
+  // Fixture-only fault is installed just for the one deletion attempt.
+  await admin.query(`CREATE TRIGGER sequence_fixture_delete_fault BEFORE UPDATE OF state ON public.accounts FOR EACH ROW WHEN (NEW.state='closed' AND OLD.state IS DISTINCT FROM NEW.state) EXECUTE FUNCTION public.fawri_sequence_fixture_delete_fault()`);
+  try{await assert.rejects(management.completeMerchantDeletionPostgres(input),e=>e.code==='P0001'&&e.message==='synthetic post-retirement account fault');}
+  finally{await admin.query('DROP TRIGGER sequence_fixture_delete_fault ON public.accounts');await admin.query('DROP FUNCTION public.fawri_sequence_fixture_delete_fault()');}
+  assert.deepEqual(await lifecycleSnapshot(f.id),before,'later fault rolls back merchant, account, requests, retained identities, streams and receipts');
+  assert.deepEqual(await lifecycleSnapshot(b.id),peerBefore);
+  const result=await management.completeMerchantDeletionPostgres(input);assert.equal(result.ok,true);assert.equal(result.deletionRequest.status,'completed');
+  const streams=(await admin.query('SELECT id,state,device_id,last_sequence,version FROM cashier_device_streams WHERE merchant_id=$1 ORDER BY id',[f.id])).rows;
+  assert.equal(streams.length,3);for(const row of streams){assert.equal(row.state,'retired');assert.equal(row.device_id,null);assert.equal(row.version,row.id===f.stream?3:row.id===reviewStream?2:1);}
+  assert.deepEqual((await admin.query('SELECT retention_status FROM merchants WHERE id=$1',[f.id])).rows[0],{retention_status:'deleted'});
+  assert.deepEqual((await admin.query('SELECT state FROM accounts WHERE id=$1',[f.id])).rows[0],{state:'closed'});
+  assert.deepEqual((await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows,receiptsBefore);
+  assert.deepEqual(await lifecycleSnapshot(b.id),peerBefore,'peer business and proposal data unchanged');
+  await assert.rejects(tx(c=>c.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',['late-'+randomUUID(),f.id,'late-device'])),e=>e.code==='23514');
+  await assert.rejects(append(f,2),e=>e.code==='23514');
+  const done=await lifecycleSnapshot(f.id);
+  await assert.rejects(management.completeMerchantDeletionPostgres(input),e=>e.code==='MERCHANT_NOT_FOUND');
+  assert.deepEqual(await lifecycleSnapshot(f.id),done,'repeat deletion cannot mutate retirement state');
+ });
+ console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,deviceBindingErasedOnRetirement:true,receiptHasNoRawDeviceColumn:true,retirementBlocksWaitingReceipt:true,canonicalDeletionServiceWithProposalTrigger:true,postRetirementFailureRollback:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
 });

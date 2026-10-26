@@ -52,6 +52,10 @@ CREATE POLICY cashier_operation_receipts_scoped_read ON public.cashier_operation
 CREATE FUNCTION public.fawri_sequence_stream_guard() RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$
 BEGIN
  IF TG_OP='INSERT' THEN
+  -- Serialize enrollment against the merchant deletion row lock. This is not
+  -- sufficient enrollment provenance; it only rejects already deleted targets.
+  PERFORM 1 FROM public.merchants WHERE id=NEW.merchant_id AND retention_status<>'deleted' FOR KEY SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'stream target is absent or deleted' USING ERRCODE='23514'; END IF;
   IF NEW.last_sequence<>0 OR NEW.version<>1 THEN RAISE EXCEPTION 'stream must begin without a guessed checkpoint' USING ERRCODE='23514'; END IF;
   RETURN NEW;
  END IF;
@@ -89,3 +93,27 @@ BEGIN
 END $$;
 CREATE CONSTRAINT TRIGGER cashier_operation_receipts_commit_guard AFTER INSERT ON public.cashier_operation_receipts DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.fawri_sequence_receipt_commit_guard();
 REVOKE ALL ON FUNCTION public.fawri_sequence_stream_guard(),public.fawri_sequence_receipt_guard(),public.fawri_sequence_receipt_commit_guard() FROM PUBLIC;
+
+-- Proposal-only lifecycle bridge. Installed only in the disposable fixture;
+-- canonical promotion requires a separately reviewed least-privilege owner.
+-- Trigger execution grants no caller a standalone retirement capability.
+CREATE FUNCTION public.fawri_sequence_merchant_deleted() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+BEGIN
+ IF NOT has_function_privilege(session_user,'public.fawri_authentication_runtime()','EXECUTE')
+ OR NOT EXISTS(SELECT 1 FROM pg_catalog.pg_roles WHERE rolname=session_user AND rolcanlogin AND NOT (rolsuper OR rolbypassrls OR rolcreaterole)) THEN
+  RAISE EXCEPTION 'trusted deletion authority required' USING ERRCODE='42501';
+ END IF;
+ IF NEW.status<>'suspended' THEN
+  RAISE EXCEPTION 'deleted merchant must be suspended' USING ERRCODE='23514';
+ END IF;
+ UPDATE public.cashier_device_streams
+ SET state='retired',device_id=NULL,version=version+1
+ WHERE merchant_id=NEW.id AND state<>'retired';
+ RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.fawri_sequence_merchant_deleted() FROM PUBLIC;
+CREATE TRIGGER cashier_device_streams_merchant_deleted
+AFTER UPDATE OF retention_status ON public.merchants
+FOR EACH ROW WHEN (NEW.retention_status='deleted' AND OLD.retention_status IS DISTINCT FROM NEW.retention_status)
+EXECUTE FUNCTION public.fawri_sequence_merchant_deleted();
