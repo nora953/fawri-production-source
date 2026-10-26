@@ -41,7 +41,8 @@ test('reject non-row privilege reachability while preserving scoped row operatio
       pg_has_role(session_user,c.relowner,'USAGE') OR pg_has_role(session_user,c.relowner,'SET') AS owner_reachable
       FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
       WHERE n.nspname='public' AND c.relkind IN ('r','p') AND c.relname LIKE '%cashier%' ORDER BY c.relname`)).rows;
-    assert.equal(inventory.tables.length,18);
+    assert.equal(inventory.tables.length,20,'canonical0052 adds exactly two cashier storage tables');
+    for(const name of ['cashier_device_streams','cashier_operation_receipts'])assert.ok(inventory.tables.some(row=>row.relname===name),'new storage table must participate in complete privilege inventory');
     for(const row of inventory.tables){assert.equal(row.relrowsecurity,true);assert.equal(row.rls_active,true);assert.equal(row.owner_reachable,false);assert.equal(row.can_truncate,false);assert.equal(row.can_trigger,false);assert.equal(row.can_reference,false);assert.equal(row.can_reference_column,false);}
     inventory.views=(await main.query(`SELECT n.nspname,c.relname,c.relkind,c.reloptions,
       has_table_privilege(current_user,c.oid,'SELECT') AS readable
