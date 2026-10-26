@@ -3,14 +3,16 @@ import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {assertCashierStreamStorageCandidateReady} from '../../../lib/db/scripts/lib/cashier-stream-storage-candidate-readiness.mjs';
-await assertDisposablePostgres();
+await assertDisposablePostgres();process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY='required';
 test('candidate readiness detects metadata faults without changing business rows',{timeout:120000},async t=>{
  const runtime=await createDisposableKnowledgeRuntime();t.after(()=>runtime.dispose());
+ const {assertProductionCashierStreamStorageReady:startupReady}=await import('../src/services/cashierStreamStorageReadiness.ts');
+ const env={NODE_ENV:'production',FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required'};
  const roles={primaryRole:runtime.role,authenticationRole:runtime.authRole};
  const snapshot=async()=>({streams:(await runtime.admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t ORDER BY id')).rows,receipts:(await runtime.admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t ORDER BY id')).rows});
  const before=await snapshot();
  await t.test('positive inspector executes in READ ONLY transaction',async()=>{
-  const c=await runtime.runtimePool.connect();try{await c.query('BEGIN READ ONLY');assert.equal((await c.query('SHOW transaction_read_only')).rows[0].transaction_read_only,'on');assert.deepEqual(await assertCashierStreamStorageCandidateReady(c,roles),{ok:true,internalCandidateOnly:true,statementSnapshotOnly:true,operationalAdoption:false});}finally{await c.query('ROLLBACK');c.release();}
+  const c=await runtime.runtimePool.connect();try{await c.query('BEGIN READ ONLY');await startupReady(env,c);assert.equal((await c.query('SHOW transaction_read_only')).rows[0].transaction_read_only,'on');assert.deepEqual(await assertCashierStreamStorageCandidateReady(c,roles),{ok:true,statementSnapshotOnly:true,releaseAccepted:false});}finally{await c.query('ROLLBACK');c.release();}
  });
  const owner='fawri_cashier_retirement_owner';
  const cases=[
@@ -33,5 +35,11 @@ test('candidate readiness detects metadata faults without changing business rows
   const c=await runtime.admin.connect();try{await c.query('BEGIN');await c.query(sql);await assert.rejects(assertCashierStreamStorageCandidateReady(c,roles),e=>e.code==='CASHIER_STREAM_STORAGE_CANDIDATE_NOT_READY'&&e.issues.includes(issue));}finally{await c.query('ROLLBACK');c.release();}
   await assertCashierStreamStorageCandidateReady(runtime.runtimePool,roles);assert.deepEqual(await snapshot(),before);
  });
- console.log('SEQ_D2_CANDIDATE_READINESS '+JSON.stringify({readOnlyPositive:true,metadataFaults:cases.length,rollbackRestoresPositive:true,selectedBusinessRowsUnchanged:true,liveReadinessWired:false,hostedAccepted:false}));
+ await t.test('actual startup readiness fails closed for disabled committed trigger',async()=>{
+  await runtime.admin.query('ALTER TABLE cashier_operation_receipts DISABLE TRIGGER cashier_operation_receipts_commit_guard');
+  try{await assert.rejects(startupReady(env),e=>e.code==='PRODUCTION_CASHIER_STREAM_STORAGE_NOT_READY');}
+  finally{await runtime.admin.query('ALTER TABLE cashier_operation_receipts ENABLE TRIGGER cashier_operation_receipts_commit_guard');}
+  await startupReady(env);assert.deepEqual(await snapshot(),before);
+ });
+ console.log('SEQ_D2_CANDIDATE_READINESS '+JSON.stringify({readOnlyPositive:true,metadataFaults:cases.length,rollbackRestoresPositive:true,selectedBusinessRowsUnchanged:true,liveReadinessWired:true,hostedAccepted:false}));
 });

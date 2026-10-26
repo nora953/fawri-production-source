@@ -1,35 +1,23 @@
 import assert from 'node:assert/strict';
 import {randomUUID,randomInt} from 'node:crypto';
-import fs from 'node:fs';
 import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {cleanupResources} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY='required';
 
-test('owned disposable stream/receipt schema proposal constraints and scoped read-only access',{timeout:120000},async t=>{
- const runtime=await createDisposableKnowledgeRuntime(),admin=runtime.admin,ids=[];let installed=false,ownerCreated=false;
- const retirementOwner='sequence_retire_'+randomUUID().replaceAll('-','');
+test('owned disposable stream/receipt committed schema constraints and scoped read-only access',{timeout:120000},async t=>{
+ const runtime=await createDisposableKnowledgeRuntime(),admin=runtime.admin,ids=[];
+ const retirementOwner='fawri_cashier_retirement_owner';
  const tables=['cashier_device_streams','cashier_operation_receipts'];
  t.after(()=>cleanupResources([
-  ['proposal tables',async()=>{if(installed){await admin.query('DROP TRIGGER cashier_device_streams_merchant_deleted ON public.merchants');await admin.query('DROP FUNCTION public.fawri_sequence_merchant_deleted()');await admin.query('DROP TABLE public.cashier_operation_receipts');await admin.query('DROP FUNCTION public.fawri_sequence_receipt_guard(),public.fawri_sequence_receipt_commit_guard()');await admin.query('DROP TABLE public.cashier_device_streams');await admin.query('DROP FUNCTION public.fawri_sequence_stream_guard()');}}],
-  ['retirement owner',async()=>{if(ownerCreated){await admin.query(`DROP OWNED BY ${retirementOwner}`);await admin.query(`DROP ROLE ${retirementOwner}`);}}],
+  ['fixture stream rows',async()=>{const c=await admin.connect();try{await c.query('BEGIN');await c.query('ALTER TABLE cashier_operation_receipts DISABLE TRIGGER cashier_operation_receipts_guard');await c.query('DELETE FROM cashier_operation_receipts WHERE merchant_id=ANY($1::text[])',[ids]);await c.query('DELETE FROM cashier_device_streams WHERE merchant_id=ANY($1::text[])',[ids]);await c.query('ALTER TABLE cashier_operation_receipts ENABLE TRIGGER cashier_operation_receipts_guard');await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}}],
   ['fixture requests',()=>admin.query('DELETE FROM merchant_deletion_requests WHERE merchant_id_snapshot=ANY($1::text[])',[ids])],
   ['fixture accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
   ['runtime',()=>runtime.dispose()],
  ]));
- for(const table of tables)assert.equal((await admin.query('SELECT to_regclass($1) AS present',['public.'+table])).rows[0].present,null,'proposal must not overwrite canonical objects');
- const sql=fs.readFileSync(new URL('../../../docs/final-audit/evidence/seq-d2-stream-receipt-schema-proposal.sql',import.meta.url),'utf8');
- const setup=await admin.connect();try{await setup.query('BEGIN');await setup.query(sql);await setup.query('COMMIT');installed=true;}catch(error){await setup.query('ROLLBACK');throw error;}finally{setup.release();}
+ for(const table of tables)assert.ok((await admin.query('SELECT to_regclass($1) AS present',['public.'+table])).rows[0].present,'committed migration must provide stream storage');
  await admin.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON public.cashier_device_streams,public.cashier_operation_receipts TO ${runtime.role}`);
- await admin.query(`CREATE ROLE ${retirementOwner} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);ownerCreated=true;
- await admin.query(`GRANT USAGE,CREATE ON SCHEMA public TO ${retirementOwner}`);
- await admin.query(`GRANT SELECT ON public.cashier_device_streams TO ${retirementOwner}`);
- await admin.query(`GRANT UPDATE(state,device_id,version) ON public.cashier_device_streams TO ${retirementOwner}`);
- await admin.query(`CREATE POLICY sequence_retirement_owner_read ON public.cashier_device_streams FOR SELECT TO ${retirementOwner} USING(true)`);
- await admin.query(`CREATE POLICY sequence_retirement_owner_update ON public.cashier_device_streams FOR UPDATE TO ${retirementOwner} USING(state<>'retired') WITH CHECK(state='retired' AND device_id IS NULL)`);
- await admin.query(`ALTER FUNCTION public.fawri_sequence_merchant_deleted() OWNER TO ${retirementOwner}`);
- await admin.query(`REVOKE CREATE ON SCHEMA public FROM ${retirementOwner}`);
  const {withMerchantOperationalTransaction:tenant}=await import('../src/services/operationalPostgresAuthority.ts');
  async function actor(){const id='storage-'+randomUUID();ids.push(id);const f={id,device:'device-'+randomUUID(),station:'station-'+randomUUID(),location:'location-'+randomUUID(),staff:'staff-'+randomUUID(),shift:'shift-'+randomUUID(),stream:'stream-'+randomUUID()};
   await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state) VALUES($1,'merchant',$2,'synthetic','active')",[id,'+199'+randomInt(100000000,999999999)]);
@@ -220,5 +208,5 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   await assert.rejects(management.completeMerchantDeletionPostgres(input),e=>e.code==='MERCHANT_NOT_FOUND');
   assert.deepEqual(await lifecycleSnapshot(f.id),done,'repeat deletion cannot mutate retirement state');
  });
- console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,deviceBindingErasedOnRetirement:true,receiptHasNoRawDeviceColumn:true,retirementBlocksWaitingReceipt:true,canonicalDeletionServiceWithProposalTrigger:true,postRetirementFailureRollback:true,nonLoginColumnLimitedRetirementOwner:true,ownerGrantFailureRollsBackDeletion:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
+ console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:false,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,deviceBindingErasedOnRetirement:true,receiptHasNoRawDeviceColumn:true,retirementBlocksWaitingReceipt:true,canonicalDeletionServiceWithProposalTrigger:true,postRetirementFailureRollback:true,nonLoginColumnLimitedRetirementOwner:true,ownerGrantFailureRollsBackDeletion:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:true,hostedAccepted:false}));
 });

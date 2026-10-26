@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
+  pgPolicy,
   boolean,
   check,
   foreignKey,
@@ -448,3 +450,65 @@ export type MerchantCashierStation = typeof merchantCashierStations.$inferSelect
 export type NewMerchantCashierStation = typeof merchantCashierStations.$inferInsert;
 export type CashierShift = typeof cashierShifts.$inferSelect;
 export type CashierOperatorSession = typeof cashierOperatorSessions.$inferSelect;
+
+// Canonical stream storage; sale admission remains unchanged.
+export const cashierDeviceStreams=pgTable("cashier_device_streams",{
+  id: text("id").primaryKey().notNull(),
+  merchantId: text("merchant_id").notNull(),
+  deviceId: text("device_id"),
+  protocolVersion: integer("protocol_version").notNull().default(2),
+  state: text("state").notNull().default("review"),
+  lastSequence: bigint("last_sequence", {mode:"number"}).notNull().default(0),
+  version: integer("version").notNull().default(1),
+  enrollmentEvidenceHash: text("enrollment_evidence_hash"),
+  enrolledAt: timestamp("enrolled_at", {withTimezone:true}),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", {withTimezone:true}).notNull().defaultNow(),
+},table=>[
+ check("cashier_device_streams_protocol_check",sql.raw("protocol_version=2")),
+ check("cashier_device_streams_state_check",sql.raw("state IN ('review','active','retired')")),
+ check("cashier_device_streams_sequence_check",sql.raw("last_sequence BETWEEN 0 AND 9007199254740991")),
+ check("cashier_device_streams_version_check",sql.raw("version>0")),
+ check("cashier_device_streams_id_check",sql.raw("char_length(id) BETWEEN 1 AND 200")),
+ check("cashier_device_streams_binding_check",sql.raw("(state='retired' AND device_id IS NULL) OR (state<>'retired' AND device_id IS NOT NULL AND char_length(device_id) BETWEEN 1 AND 200)")),
+ check("cashier_device_streams_evidence_check",sql.raw("enrollment_evidence_hash IS NULL OR enrollment_evidence_hash ~ '^[0-9a-f]{64}$'")),
+ check("cashier_device_streams_active_check",sql.raw("state<>'active' OR (enrollment_evidence_hash IS NOT NULL AND enrolled_at IS NOT NULL)")),
+ unique("cashier_device_streams_identity_unique").on(table.id,table.merchantId),
+ foreignKey({name:"cashier_device_streams_merchant_fk",columns:[table.merchantId],foreignColumns:[merchants.id]}).onDelete("restrict"),
+ pgPolicy("cashier_device_streams_scoped_read",{for:"select",to:"public",using:sql.raw("fawri_security.allows_merchant(merchant_id)")}),
+ uniqueIndex("cashier_device_streams_current_device_unique").on(table.merchantId,table.deviceId).where(sql.raw("state IN ('review','active')")),
+ pgPolicy("sequence_retirement_owner_read",{for:"select",to:"fawri_cashier_retirement_owner",using:sql`true`}),
+ pgPolicy("sequence_retirement_owner_update",{for:"update",to:"fawri_cashier_retirement_owner",using:sql.raw("state<>'retired'"),withCheck:sql.raw("state='retired' AND device_id IS NULL")})
+]).enableRLS();
+
+export const cashierOperationReceipts=pgTable("cashier_operation_receipts",{
+  id: text("id").primaryKey().notNull(),
+  streamId: text("stream_id").notNull(),
+  merchantId: text("merchant_id").notNull(),
+  deviceSequence: bigint("device_sequence", {mode:"number"}).notNull(),
+  operationId: text("operation_id").notNull(),
+  operationKind: text("operation_kind").notNull(),
+  canonicalVersion: integer("canonical_version").notNull(),
+  requestHash: text("request_hash").notNull(),
+  resultId: text("result_id").notNull(),
+  stationId: text("station_id").notNull(),
+  locationId: text("location_id").notNull(),
+  staffId: text("staff_id").notNull(),
+  shiftId: text("shift_id").notNull(),
+  occurredAt: timestamp("occurred_at", {withTimezone:true}).notNull(),
+  createdAt: timestamp("created_at", {withTimezone:true}).notNull().defaultNow(),
+},table=>[
+ check("cashier_operation_receipts_sequence_check",sql.raw("device_sequence BETWEEN 1 AND 9007199254740991")),
+ check("cashier_operation_receipts_kind_check",sql.raw("operation_kind IN ('sale','return','void')")),
+ check("cashier_operation_receipts_canonical_check",sql.raw("canonical_version=1")),
+ check("cashier_operation_receipts_hash_check",sql.raw("request_hash ~ '^[0-9a-f]{64}$'")),
+ check("cashier_operation_receipts_identity_check",sql.raw("char_length(id) BETWEEN 1 AND 200 AND char_length(operation_id) BETWEEN 1 AND 200 AND char_length(result_id) BETWEEN 1 AND 200")),
+ unique("cashier_operation_receipts_sequence_unique").on(table.streamId,table.deviceSequence),
+ unique("cashier_operation_receipts_stream_operation_unique").on(table.streamId,table.operationId),
+ unique("cashier_operation_receipts_merchant_operation_unique").on(table.merchantId,table.operationId),
+ foreignKey({name:"cashier_operation_receipts_stream_fk",columns:[table.streamId,table.merchantId],foreignColumns:[cashierDeviceStreams.id,cashierDeviceStreams.merchantId]}).onDelete("restrict"),
+ foreignKey({name:"cashier_operation_receipts_station_fk",columns:[table.stationId,table.merchantId],foreignColumns:[merchantCashierStations.id,merchantCashierStations.merchantId]}).onDelete("restrict"),
+ foreignKey({name:"cashier_operation_receipts_location_fk",columns:[table.locationId,table.merchantId],foreignColumns:[merchantLocations.id,merchantLocations.merchantId]}).onDelete("restrict"),
+ foreignKey({name:"cashier_operation_receipts_shift_fk",columns:[table.shiftId,table.merchantId,table.stationId,table.staffId],foreignColumns:[cashierShifts.id,cashierShifts.merchantId,cashierShifts.stationId,cashierShifts.staffId]}).onDelete("restrict"),
+ pgPolicy("cashier_operation_receipts_scoped_read",{for:"select",to:"public",using:sql.raw("fawri_security.allows_merchant(merchant_id)")})
+]).enableRLS();

@@ -5,6 +5,7 @@ import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningInciden
 import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
 import { assertProductionRuntimeConfiguration } from "./services/productionReleaseReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
+import { assertProductionCashierStreamStorageReady } from "./services/cashierStreamStorageReadiness";
 import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
 
@@ -37,6 +38,7 @@ async function main(): Promise<void> {
   // or application traffic. Staging/development must opt out explicitly.
   assertProductionRuntimeConfiguration(process.env);
   await assertProductionDatabaseRlsReady(process.env);
+  await assertProductionCashierStreamStorageReady(process.env);
   await assertProductionOwnerAdminReady(process.env);
 
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({

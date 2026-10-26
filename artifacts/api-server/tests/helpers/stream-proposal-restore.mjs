@@ -1,20 +1,11 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import {Client} from 'pg';
-export const streamRestoreOwner='fawri_sequence_restore_owner';
+export const streamRestoreOwner='fawri_cashier_retirement_owner';
 const readerRole='fawri_sequence_restore_reader';
 const readerPassword='owned-disposable-sequence-reader-only';
 const ids=['audit-restore-merchant-a','audit-restore-merchant-b'];
 export async function seedStreamProposalRestore(pool){
- await pool.query(fs.readFileSync(new URL('../../../../docs/final-audit/evidence/seq-d2-stream-receipt-schema-proposal.sql',import.meta.url),'utf8'));
- await pool.query(`CREATE ROLE ${streamRestoreOwner} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);
- await pool.query(`GRANT USAGE,CREATE ON SCHEMA public TO ${streamRestoreOwner}`);
- await pool.query(`GRANT SELECT ON cashier_device_streams TO ${streamRestoreOwner}`);
- await pool.query(`GRANT UPDATE(state,device_id,version) ON cashier_device_streams TO ${streamRestoreOwner}`);
- await pool.query(`CREATE POLICY sequence_retirement_owner_read ON cashier_device_streams FOR SELECT TO ${streamRestoreOwner} USING(true)`);
- await pool.query(`CREATE POLICY sequence_retirement_owner_update ON cashier_device_streams FOR UPDATE TO ${streamRestoreOwner} USING(state<>'retired') WITH CHECK(state='retired' AND device_id IS NULL)`);
- await pool.query(`ALTER FUNCTION public.fawri_sequence_merchant_deleted() OWNER TO ${streamRestoreOwner}`);
- await pool.query(`REVOKE CREATE ON SCHEMA public FROM ${streamRestoreOwner}`);
+ assert.equal((await pool.query("SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations")).rows[0].n,53,'restore uses committed0052');
  await pool.query(`CREATE ROLE ${readerRole} LOGIN PASSWORD '${readerPassword}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);
  await pool.query(`GRANT USAGE ON SCHEMA public,fawri_security TO ${readerRole}`);
  await pool.query(`GRANT EXECUTE ON FUNCTION fawri_security.allows_merchant(text) TO ${readerRole}`);
@@ -86,5 +77,5 @@ export async function verifyStreamProposalRestore(pool,phase,authenticationUrl){
    assert.deepEqual((await pool.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE merchant_id=$1',[ids[1]])).rows,peer);
   }finally{const {closeAuthenticationPool}=await import('../../src/services/authenticationPostgresAuthority.ts');await closeAuthenticationPool();if(oldAuth===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=oldAuth;if(oldAuthority===undefined)delete process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY;else process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=oldAuthority;}
  }
- console.log('P0_STREAM_PROPOSAL_RESTORE '+JSON.stringify({phase,proposalOutsideCanonicalJournal:true,ownerAndColumnAcl:true,realRestrictedLogin:true,tenantReadIsolation:true,immutableReceipts:true,actualDeletionServiceAfterRestore:phase==='verify',rolesPreprovisionedSameOwnedCluster:true,hostedAccepted:false}));
+ console.log('P0_STREAM_PROPOSAL_RESTORE '+JSON.stringify({phase,proposalOutsideCanonicalJournal:false,ownerAndColumnAcl:true,realRestrictedLogin:true,tenantReadIsolation:true,immutableReceipts:true,actualDeletionServiceAfterRestore:phase==='verify',rolesPreprovisionedSameOwnedCluster:true,hostedAccepted:false}));
 }

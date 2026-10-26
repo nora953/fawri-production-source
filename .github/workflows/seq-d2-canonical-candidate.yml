@@ -1,8 +1,10 @@
-name: SEQ D2 canonical generation candidate
+name: SEQ D2 canonical storage acceptance
 on:
   pull_request:
     paths:
-      - 'docs/final-audit/evidence/seq-d2-canonical-candidate/**'
+      - 'lib/db/**'
+      - 'artifacts/api-server/src/services/cashierStreamStorageReadiness.ts'
+      - 'artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs'
       - 'scripts/prepare-seq-d2-canonical-candidate.mjs'
       - 'lib/db/scripts/lib/cashier-stream-storage-candidate-readiness.mjs'
       - 'artifacts/api-server/tests/cashier-stream-storage-readiness-postgres.integration.test.mjs'
