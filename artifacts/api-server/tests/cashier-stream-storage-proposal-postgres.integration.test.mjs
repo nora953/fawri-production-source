@@ -63,5 +63,47 @@ test('owned disposable stream/receipt schema proposal constraints and scoped rea
   await assert.rejects(append(a,3,{hash:'invalid'}),e=>e.code==='23514');
   assert.deepEqual(await snapshot(),before);
  });
- console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
+ await t.test('proposal serializes same-stream receipt writers through commit and rollback while peer proceeds',async()=>{
+  async function race(commitFirst){
+   const f=await actor(),peer=await actor();
+   const left=await admin.connect(),right=await admin.connect();let pending;
+   try{
+    await left.query('BEGIN');await right.query('BEGIN');
+    await right.query("SET LOCAL statement_timeout='15000ms'");
+    const leftPid=(await left.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+    const rightPid=(await right.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+    const firstReceipt=await receipt(left,f,1);
+    pending=receipt(right,f,1).then(value=>({value}),error=>({error}));
+    let blocked=false;
+    const deadline=Date.now()+8000;
+    while(Date.now()<deadline){
+     const r=await admin.query('SELECT $1::int=ANY(pg_blocking_pids($2::int)) AS blocked',[leftPid,rightPid]);
+     if(r.rows[0].blocked){blocked=true;break;}
+     await new Promise(resolve=>setTimeout(resolve,25));
+    }
+    assert.equal(blocked,true,'second writer must actually wait on first stream lock');
+    await append(peer,1);
+    assert.equal((await admin.query('SELECT last_sequence FROM cashier_device_streams WHERE id=$1',[peer.stream])).rows[0].last_sequence,'1','peer stream proceeds while target blocked');
+    assert.equal((await admin.query('SELECT count(*)::int AS n FROM cashier_operation_receipts WHERE stream_id=$1',[f.stream])).rows[0].n,0,'uncommitted receipt invisible');
+    if(commitFirst){
+     await left.query('UPDATE cashier_device_streams SET last_sequence=1,version=version+1 WHERE id=$1',[f.stream]);await left.query('COMMIT');
+     const result=await pending;assert.equal(result.error?.code,'23514','waiter rechecks committed checkpoint');await right.query('ROLLBACK');
+     assert.equal((await admin.query('SELECT id FROM cashier_operation_receipts WHERE stream_id=$1',[f.stream])).rows[0].id,firstReceipt.id);
+    }else{
+     await left.query('ROLLBACK');const result=await pending;assert.ifError(result.error);
+     await right.query('UPDATE cashier_device_streams SET last_sequence=1,version=version+1 WHERE id=$1',[f.stream]);await right.query('COMMIT');
+     assert.equal((await admin.query('SELECT id FROM cashier_operation_receipts WHERE stream_id=$1',[f.stream])).rows[0].id,result.value.id);
+     assert.equal((await admin.query('SELECT id FROM cashier_operation_receipts WHERE id=$1',[firstReceipt.id])).rowCount,0,'rolled back receipt absent');
+    }
+    assert.equal((await admin.query('SELECT count(*)::int AS n FROM cashier_operation_receipts WHERE stream_id=$1',[f.stream])).rows[0].n,1);
+    assert.deepEqual((await admin.query('SELECT last_sequence,version FROM cashier_device_streams WHERE id=$1',[f.stream])).rows[0],{last_sequence:'1',version:2});
+   }finally{
+    await left.query('ROLLBACK');await right.query('ROLLBACK');if(pending)await pending;left.release();right.release();
+   }
+  }
+  const peerBefore={stream:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE id=$1',[b.stream])).rows,receipts:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t WHERE stream_id=$1',[b.stream])).rows};
+  await race(true);await race(false);
+  assert.deepEqual({stream:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_device_streams t WHERE id=$1',[b.stream])).rows,receipts:(await admin.query('SELECT to_jsonb(t) AS row FROM cashier_operation_receipts t WHERE stream_id=$1',[b.stream])).rows},peerBefore,'existing peer unchanged exactly');
+ });
+ console.log('P0_STREAM_STORAGE_PROPOSAL '+JSON.stringify({draftOutsideCanonicalJournal:true,actualRestrictedSql:true,scopedReads:true,directRuntimeWritesDenied:true,immutableReceipt:true,atomicReceiptCheckpoint:true,gapAndIdentityConstraints:true,tenantShiftLocationForeignKeys:true,sameStreamCommitRollbackConcurrency:true,peerProgressWhileBlocked:true,liveWriterInstalled:false,financialEffectProof:false,canonicalMigrationAccepted:false,hostedAccepted:false}));
 });
