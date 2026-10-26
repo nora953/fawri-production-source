@@ -135,7 +135,7 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
     }
   });
 
-  await t.test('canonical sale-service diagnostic preserves late rejected operation and exact financial state after accepting a sequence gap',async()=>{
+  await t.test('canonical sale-service diagnostic observes late rejection without financial mutation after accepting a sequence gap',async()=>{
     const f=await fixture(3),peer=await fixture(),device=f.stations[0];
     const bodies=new Map([1,2,3].map(sequence=>[sequence,saleBody(f,device,sequence)]));
     async function snapshot(merchantId){
