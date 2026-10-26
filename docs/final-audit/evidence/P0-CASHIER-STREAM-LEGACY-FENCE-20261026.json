@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "SEQ_D3_LEGACY_ADMISSION_FENCE_BOUNDED_SOURCE_ACCEPTED_PROTOCOL_PENDING",
+  "source": "f5ab4ae7aea6679fee856f6cd8b66da4fab61460",
+  "sourceTree": "da5dfbb3b5dca329ae19f8cda4decc320e856a8f",
+  "checkout": "dc11f8332984a876dbd343e16fa7a460431015c5",
+  "checkoutTreeMatched": true,
+  "release": "NO-GO",
+  "gateClosed": false,
+  "productionPath": [
+    "cashier-operator-commerce.ts -> cashierOperatorCommerceAuthority.ts",
+    "sale -> syncCashierSaleAuthoritative; return/void -> syncCashierCompensationAuthoritative",
+    "withMerchantOperationalTransaction -> merchant/device advisory lock -> historical authority -> recordCashierOperationTimelineInTransaction -> core financial mutation",
+    "operator attribution remains a later idempotent transaction; successful ACK remains after repair"
+  ],
+  "change": "Legacy timeline writer now denies review or active v2 device streams before any timeline/financial write or replay ACK. Absent stream retains existing v1 behavior. Read-only tenant/device-scoped lookup adds no enrollment, writer grants or checkpoint imports.",
+  "proofs": [
+    "Mounted real operator HTTP, real station credentials, historical operator attribution and restricted primary/auth LOGINs",
+    "Sale new and exact legacy replay denied409 for review/active streams; no accepted entity/order IDs",
+    "Return/void new and exact legacy replay denied409; direct canonical core callers also held",
+    "Selected own/peer financial, stock, timeline, attribution, stream and receipt state unchanged on new-operation denial",
+    "Unenrolled legacy sale/return/void and exact retry still succeed; existing gap diagnostic and post-commit attribution recovery retained"
+  ],
+  "limits": [
+    "No trusted enrollment, canonical v2 financial receipt writer or explicit legacy receipt mapping implemented",
+    "Synthetic root-created review/active records are denial fixtures, not enrollment or financial provenance proof",
+    "Concurrent enrollment writer does not exist; future enrollment must share existing merchant/device advisory lock including absent-row case",
+    "Historical gaps, manual-adjustment contract, native v2 queue/ACK integration, retained-field policy and hosted gates remain open",
+    "No merge, deployment, provider calls, Railway/Neon or hosted changes"
+  ],
+  "ci": {
+    "total": 57,
+    "success": 57,
+    "cashier": {
+      "run": 40352600169,
+      "job": 121676393700,
+      "invocations": 15,
+      "files": 15,
+      "passed": 57,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "broader": {
+      "run": 40352600158,
+      "job": 121676394638,
+      "invocations": 94,
+      "files": 92,
+      "passed": 755,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  },
+  "setupFailure": {
+    "run": 40352599802,
+    "firstJob": 121676392479,
+    "phase": "setup-node/pnpm download before application tests",
+    "cause": "Corepack/Node undici Parser.finish assertion",
+    "retry": "one failed-jobs-only retry; later success",
+    "countedAsApplicationFailure": false
+  },
+  "nextAction": "Finish bounded metadata-read-fault and colliding foreign-device regressions, then implement trusted enrollment provenance and a v2 receipt/admission writer in the actual sale/compensation core transaction. Do not enroll from empty timeline, MAX, browser baseline or synthetic fixtures.",
+  "followup": "Metadata-read-fault and same-device-string foreign-tenant test refinements in following test-only candidate require their own exact-source execution."
+}

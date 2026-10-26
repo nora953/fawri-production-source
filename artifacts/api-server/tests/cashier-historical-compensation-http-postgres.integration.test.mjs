@@ -119,6 +119,15 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     const token=await login(target),peerToken=await login(peer);
     const instant=(await pool.query('SELECT clock_timestamp() AS instant')).rows[0].instant.toISOString();
     const body=saleBody(target,target.stations[0],instant),next=saleBody(target,target.stations[0],instant,2);
+    await t.test('unreadable stream metadata fails closed before a legacy financial commit',async()=>{
+      const before=await snapshot();
+      await pool.query(`REVOKE SELECT ON cashier_device_streams FROM ${runtimeFixture.role}`);
+      try{
+        await assert.rejects(sync.syncCashierSaleAuthoritative({merchantId:target.merchantId,body}),error=>error.code==='42501');
+        const denied=await request(target,token,body);assert.equal(denied.status,500,JSON.stringify(denied.body));assert.equal(denied.body.accepted_entity_ids,undefined);
+        assert.deepEqual(await snapshot(),before,'metadata failure cannot fall back to legacy admission');
+      }finally{await pool.query(`GRANT SELECT ON cashier_device_streams TO ${runtimeFixture.role}`);}
+    });
     const accepted=await request(target,token,body);assert.equal(accepted.status,200,JSON.stringify(accepted.body));
     assert.equal((await request(target,token,body)).body.replayed,true,'unenrolled exact replay remains valid');
     // Root setup only: intentionally inconsistent synthetic history is not an
@@ -136,9 +145,9 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       await assert.rejects(sync.syncCashierSaleAuthoritative({merchantId:target.merchantId,body:next}),error=>error.code===code,'direct core caller cannot bypass HTTP fence');
       assert.deepEqual(await snapshot(),before);
     }
-    // A foreign tenant using the identical physical-device string must remain
-    // eligible for its own v1 operation. Neither stream ID nor device alone is authority.
-    await pool.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',['foreign-'+randomUUID(),peer.merchantId,target.stations[0].deviceId]);
+    // The peer has no stream, but another tenant has a stream with the peer
+    // device string. A device-only lookup would incorrectly deny the peer.
+    await pool.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',['foreign-'+randomUUID(),target.merchantId,peer.stations[0].deviceId]);
     const peerBody=saleBody(peer,peer.stations[0],instant);
     assert.equal((await request(peer,peerToken,peerBody)).status,200);
     const before=await snapshot();assert.equal((await request(peer,peerToken,peerBody)).body.replayed,true);assert.deepEqual(await snapshot(),before);
