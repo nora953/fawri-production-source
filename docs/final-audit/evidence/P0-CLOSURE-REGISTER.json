@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "cc16a975e98ab13988089c6cb62848f3abca998a",
+  "sourceCandidate": null,
   "lastFullyAcceptedSource": "cc16a975e98ab13988089c6cb62848f3abca998a",
   "release": "NO-GO",
   "rows": [
@@ -282,7 +282,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "SEQ_D1_D2_ACCEPTED_D3_LEGACY_FENCE_BOUNDED_ACCEPTED_ENROLLMENT_WRITER_PROTOCOL_OPEN",
-      "nextAction": "Trusted enrollment provenance and canonical v2 receipt/checkpoint admission atomic with real sale/return/void financial effects and exact replay/attribution repair. Reuse accepted guard/runtime tests; do not derive checkpoint from pairing alone, MAX, empty timeline or client baseline.",
+      "nextAction": "Verify single-statement scoped financial-history review with real canonical sale/return/void, missing-timeline and compensation-only aliases. Then implement trusted enrollment provenance and atomic receipt/checkpoint financial admission; no automatic enrollment from empty flags, pairing, MAX or browser baseline.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -321,7 +321,8 @@
       "legacyAdmissionFenceFollowupSource": "9d516a5bb004db07be9730dd2f2f68bc6bfd4a32",
       "legacyAdmissionFenceFollowupStatus": "EXACT_SOURCE_57_OF_57_CI_ACCEPTED_BOUNDED_METADATA_FAULT_AND_FOREIGN_DEVICE",
       "protocolNegotiationCandidateStatus": "BOUNDED_SOURCE_ACCEPTED_57_OF_57_CI_NOT_V2_ENROLLMENT_OR_ADMISSION",
-      "protocolNegotiationSource": "cc16a975e98ab13988089c6cb62848f3abca998a"
+      "protocolNegotiationSource": "cc16a975e98ab13988089c6cb62848f3abca998a",
+      "enrollmentHistoryReviewStatus": "PREPARED_INTERNAL_READ_ONLY_CI_PENDING_NO_ENROLLMENT"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",

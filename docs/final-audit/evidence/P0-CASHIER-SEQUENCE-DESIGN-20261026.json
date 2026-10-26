@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Implement the next bounded SEQ-D3 trusted versioned receipt/admission slice against actual canonical financial transaction and exact replay/attribution repair, with explicit enrollment provenance and unsupported-operation hold. Preserve legacy admission and ambiguous histories; no hosted rollout.",
+  "nextExactAction": "Verify single-statement scoped financial-history review with real canonical sale/return/void, missing-timeline and compensation-only aliases. Then implement trusted enrollment provenance and atomic receipt/checkpoint financial admission; no automatic enrollment from empty flags, pairing, MAX or browser baseline.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -85,5 +85,31 @@
   "candidateReadinessEvidence": "P0-CASHIER-CANDIDATE-READINESS-20261026.json",
   "canonicalStorageAcceptanceEvidence": "P0-CASHIER-CANONICAL-0052-ACCEPTANCE-20261026.json",
   "canonicalSchemaAdopted": true,
-  "liveReadinessWired": true
+  "liveReadinessWired": true,
+  "enrollmentHistoryReview": {
+    "status": "PREPARED_INTERNAL_READ_ONLY_CI_PENDING_NO_ENROLLMENT",
+    "source": null,
+    "service": "artifacts/api-server/src/services/cashierDeviceHistoryAssessment.ts:reviewCashierDeviceEnrollmentHistory",
+    "test": "artifacts/api-server/tests/cashier-historical-compensation-http-postgres.integration.test.mjs",
+    "purpose": "Independent server financial evidence must not disappear from enrollment review merely because numeric timeline rows are absent. Pairing identity is not fresh-device provenance.",
+    "scope": "Internal read-only prerequisite, no endpoint or production admission wiring; single scoped statement checks timeline, canonical order cashier_sync device, compensations array device, operator attribution and bound streams. Empty result never authorizes enrollment.",
+    "local": {
+      "syntax": "PASS",
+      "diffWhitespace": "PASS",
+      "newSqlHttp": "NOT_RUN_AWAITING_GITHUB_ACTIONS"
+    },
+    "preparedAssertions": [
+      "Actual restricted LOGIN with READ ONLY transaction; valid paired but financially empty device still TRUSTED_PROVENANCE_REQUIRED/enrollmentAuthorized=false",
+      "Foreign merchant scope rejected403; revoked orders SELECT propagates42501; no selected own/peer write",
+      "Real HTTP sale/return/void server history remains SERVER_HISTORY_PRESENT after root fixture temporarily removes timeline; original rows restored exactly",
+      "Synthetic metadata alias demonstrates compensation-only device evidence independently of original sale device/timeline/attribution",
+      "Foreign-tenant same-device stream does not contaminate own evidence flags"
+    ],
+    "limits": [
+      "No fresh-device attestation, trusted enrollment grant, active stream creation, writer role/grant, client upgrade or financial receipt write",
+      "Does not certify absence of erased/unlinkable/unknown historical financial identities",
+      "Snapshot only, no concurrent-writer serialization or completeness/capacity proof",
+      "Does not close sequence recovery or hosted gates"
+    ]
+  }
 }

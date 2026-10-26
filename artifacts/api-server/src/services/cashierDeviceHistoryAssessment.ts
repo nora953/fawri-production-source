@@ -85,3 +85,68 @@ export async function assessCashierDeviceHistory(input: {
     reason: missing === null ? "CONTIGUOUS_NUMBERS_ONLY" : "MISSING_SEQUENCE",
   };
 }
+
+export type CashierEnrollmentHistoryReview = {
+  serverHistoryPresent: boolean;
+  signals: {
+    timeline: boolean;
+    sale: boolean;
+    compensation: boolean;
+    attribution: boolean;
+    stream: boolean;
+  };
+  reviewReason: "SERVER_HISTORY_PRESENT" | "TRUSTED_PROVENANCE_REQUIRED";
+  enrollmentAuthorized: false;
+  statementSnapshotOnly: true;
+};
+
+// Internal enrollment prerequisite, not an enrollment grant or public API.
+// Pairing and an empty numeric timeline are not fresh-device provenance.
+// These existentials deliberately return no peer rows, amounts or operation IDs.
+// A later trusted enrollment writer must serialize this review with all writers;
+// this read-only statement neither locks nor certifies concurrent absence.
+export async function reviewCashierDeviceEnrollmentHistory(input: {
+  target: OperationalQueryTarget;
+  merchantId: string;
+  deviceId: string;
+}): Promise<CashierEnrollmentHistoryReview> {
+  const merchantId = identifier(input.merchantId), deviceId = identifier(input.deviceId);
+  const result = await input.target.query<{
+    timeline: boolean; sale: boolean; compensation: boolean;
+    attribution: boolean; stream: boolean;
+  }>(
+    `SELECT
+       EXISTS(SELECT 1 FROM cashier_device_operation_timeline
+         WHERE merchant_id=$1 AND device_id=$2) AS timeline,
+       EXISTS(SELECT 1 FROM orders
+         WHERE merchant_id=$1 AND source_channel='cashier'
+           AND metadata->'cashier_sync'->>'device_id'=$2) AS sale,
+       EXISTS(SELECT 1 FROM orders o
+         WHERE o.merchant_id=$1 AND o.source_channel='cashier'
+           AND EXISTS(SELECT 1 FROM jsonb_array_elements(
+             CASE WHEN jsonb_typeof(o.metadata->'cashier_sync'->'compensations')='array'
+               THEN o.metadata->'cashier_sync'->'compensations'
+               ELSE '[]'::jsonb END) compensation
+             WHERE compensation->>'device_id'=$2)) AS compensation,
+       EXISTS(SELECT 1 FROM cashier_operation_attribution
+         WHERE merchant_id=$1 AND device_id=$2) AS attribution,
+       EXISTS(SELECT 1 FROM cashier_device_streams
+         WHERE merchant_id=$1 AND device_id=$2) AS stream
+     FROM (SELECT 1 WHERE fawri_security.allows_merchant($1)) authorized_scope`,
+    [merchantId, deviceId],
+  );
+  const signals = result.rows[0];
+  if (!signals) {
+    throw new OperationalPostgresAuthorityError(
+      "CASHIER_ENROLLMENT_SCOPE_REQUIRED",
+      "cashier enrollment history requires the trusted merchant scope",
+      403,
+    );
+  }
+  const serverHistoryPresent = Object.values(signals).some(Boolean);
+  return {
+    serverHistoryPresent, signals,
+    reviewReason: serverHistoryPresent ? "SERVER_HISTORY_PRESENT" : "TRUSTED_PROVENANCE_REQUIRED",
+    enrollmentAuthorized: false, statementSnapshotOnly: true,
+  };
+}

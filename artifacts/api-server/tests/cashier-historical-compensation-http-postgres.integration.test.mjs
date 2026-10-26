@@ -107,6 +107,18 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   app.use(express.json()); app.use('/api', staffRouter, commerceRouter);
   server = await new Promise((resolve, reject) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); s.once('error', reject); });
   const base = `http://127.0.0.1:${server.address().port}`;
+
+  async function reviewEnrollmentHistory(scope, merchantId, deviceId) {
+    const {reviewCashierDeviceEnrollmentHistory} = await import('../src/services/cashierDeviceHistoryAssessment.ts');
+    return operational.withMerchantOperationalTransaction(scope, async client => {
+      await client.query('SET TRANSACTION READ ONLY');
+      assert.equal((await client.query('SHOW transaction_read_only')).rows[0].transaction_read_only,'on');
+      const result = await reviewCashierDeviceEnrollmentHistory({target:client,merchantId,deviceId});
+      assert.equal(result.enrollmentAuthorized,false);
+      assert.equal(result.statementSnapshotOnly,true);
+      return result;
+    });
+  }
   async function assertNoProtocolDowngrade(body, httpRequest, coreRequest) {
     async function snapshot() {
       const state = {};
@@ -137,6 +149,17 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     async function request(f,token,body){const d=f.stations[0],r=await fetch(base+'/api/cashier/operator/sync/sale',{method:'POST',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json','x-fawri-cashier-station-token':d.stationToken,'x-fawri-cashier-device-id':d.deviceId,'x-fawri-cashier-operator-token':token},body:JSON.stringify(body)});return {status:r.status,body:await r.json()};}
     async function snapshot(){const state={};for(const table of ['orders','order_items','inventory_mutations','cashier_device_operation_timeline','location_inventory_levels','cashier_operation_attribution','cashier_device_streams','cashier_operation_receipts'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[[target.merchantId,peer.merchantId]])).rows;return state;}
     const token=await login(target),peerToken=await login(peer);
+    await streamTest.test('paired device with no server financial history still lacks trusted enrollment provenance',async()=>{
+      const before=await snapshot();
+      const empty=await reviewEnrollmentHistory(target.merchantId,target.merchantId,target.stations[0].deviceId);
+      assert.deepEqual(empty.signals,{timeline:false,sale:false,compensation:false,attribution:false,stream:false});
+      assert.equal(empty.serverHistoryPresent,false);assert.equal(empty.reviewReason,'TRUSTED_PROVENANCE_REQUIRED');
+      await pool.query(`REVOKE SELECT ON orders FROM ${runtimeFixture.role}`);
+      try {await assert.rejects(reviewEnrollmentHistory(target.merchantId,target.merchantId,target.stations[0].deviceId),error=>error.code==='42501');}
+      finally {await pool.query(`GRANT SELECT ON orders TO ${runtimeFixture.role}`);}
+      await assert.rejects(reviewEnrollmentHistory(target.merchantId,peer.merchantId,peer.stations[0].deviceId),error=>error.code==='CASHIER_ENROLLMENT_SCOPE_REQUIRED');
+      assert.deepEqual(await snapshot(),before);
+    });
     const instant=(await pool.query('SELECT clock_timestamp() AS instant')).rows[0].instant.toISOString();
     const body=saleBody(target,target.stations[0],instant),next=saleBody(target,target.stations[0],instant,2);
     const assertSaleProtocolHold = () => assertNoProtocolDowngrade(body,
@@ -159,6 +182,9 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     // enrollment method or a trusted checkpoint and must remain held.
     const id='stream-fence-'+randomUUID();
     await pool.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',[id,target.merchantId,target.stations[0].deviceId]);
+    const known=await reviewEnrollmentHistory(target.merchantId,target.merchantId,target.stations[0].deviceId);
+    assert.deepEqual(known.signals,{timeline:true,sale:true,compensation:false,attribution:true,stream:true});
+    assert.equal(known.reviewReason,'SERVER_HISTORY_PRESENT');
     for(const state of ['review','active']){
       if(state==='active')await pool.query("UPDATE cashier_device_streams SET state='active',enrollment_evidence_hash=repeat('a',64),enrolled_at=now(),version=version+1 WHERE id=$1",[id]);
       const before=await snapshot(),code=state==='review'?'CASHIER_OPERATION_STREAM_REVIEW_REQUIRED':'CASHIER_OPERATION_STREAM_PROTOCOL_REQUIRED';
@@ -174,6 +200,9 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     // device string. A device-only lookup would incorrectly deny the peer.
     await pool.query('INSERT INTO cashier_device_streams(id,merchant_id,device_id) VALUES($1,$2,$3)',['foreign-'+randomUUID(),target.merchantId,peer.stations[0].deviceId]);
     const peerBody=saleBody(peer,peer.stations[0],instant);
+    const peerEmpty=await reviewEnrollmentHistory(peer.merchantId,peer.merchantId,peer.stations[0].deviceId);
+    assert.equal(peerEmpty.serverHistoryPresent,false,'foreign tenant device-string collision is not own server history');
+    assert.equal(peerEmpty.reviewReason,'TRUSTED_PROVENANCE_REQUIRED');
     assert.equal((await request(peer,peerToken,peerBody)).status,200);
     const before=await snapshot();assert.equal((await request(peer,peerToken,peerBody)).body.replayed,true);assert.deepEqual(await snapshot(),before);
     console.log('P0_STREAM_LEGACY_FENCE '+JSON.stringify({sale:true,reviewAndActive:true,newAndReplayHeld:true,restrictedLogin:true,directCoreDenied:true,peerLegacyPreserved:true,enrollmentImplemented:false,financialWriterImplemented:false}));
@@ -366,6 +395,42 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       assert.equal((await pool.query('SELECT count(*)::int AS n FROM cashier_operation_receipts WHERE merchant_id=$1',[f.merchantId])).rows[0].n,0);
     }finally{await pool.query('DELETE FROM cashier_device_streams WHERE id=$1',[id]);}
   });
+
+  await t.test(`${kind} enrollment review finds canonical financial history without timeline rows`,async()=>{
+    async function selectedState(){const state={};for(const table of ['orders','order_items','inventory_mutations','cashier_device_operation_timeline','location_inventory_levels','cashier_operation_attribution','cashier_device_streams','cashier_operation_receipts'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[owned])).rows;return state;}
+    const before=await selectedState();
+    const known=await reviewEnrollmentHistory(f.merchantId,f.merchantId,device.deviceId);
+    assert.deepEqual(known.signals,{timeline:true,sale:true,compensation:true,attribution:true,stream:false});
+    assert.equal(known.reviewReason,'SERVER_HISTORY_PRESENT');
+    assert.deepEqual(await selectedState(),before);
+    // Root-owned fault fixture only. Remove numeric history, never financial
+    // rows; restore the exact timeline in finally. This is not a live repair.
+    const removed=(await pool.query('DELETE FROM cashier_device_operation_timeline WHERE merchant_id=$1 RETURNING to_jsonb(cashier_device_operation_timeline) AS row',[f.merchantId])).rows.map(x=>x.row);
+    assert.equal(removed.length,2);
+    try {
+      const orphanBefore=await selectedState();
+      const orphan=await reviewEnrollmentHistory(f.merchantId,f.merchantId,device.deviceId);
+      assert.deepEqual(orphan.signals,{timeline:false,sale:true,compensation:true,attribution:true,stream:false});
+      assert.equal(orphan.reviewReason,'SERVER_HISTORY_PRESENT');
+      assert.deepEqual(await selectedState(),orphanBefore);
+      // Probe compensation independently of the original sale's device string.
+      // This synthetic metadata alias must not be mistaken for a fresh device.
+      const alias='enrollment-compensation-'+randomUUID();
+      const original=(await pool.query('SELECT metadata FROM orders WHERE merchant_id=$1 AND id=$2',[f.merchantId,sale.sale_id])).rows[0].metadata;
+      try {
+        await pool.query("UPDATE orders SET metadata=jsonb_set(metadata,'{cashier_sync,compensations,0,device_id}',to_jsonb($3::text),false) WHERE merchant_id=$1 AND id=$2",[f.merchantId,sale.sale_id,alias]);
+        const aliasedBefore=await selectedState();
+        const compensationOnly=await reviewEnrollmentHistory(f.merchantId,f.merchantId,alias);
+        assert.deepEqual(compensationOnly.signals,{timeline:false,sale:false,compensation:true,attribution:false,stream:false});
+        assert.equal(compensationOnly.reviewReason,'SERVER_HISTORY_PRESENT');
+        assert.deepEqual(await selectedState(),aliasedBefore);
+      } finally {await pool.query('UPDATE orders SET metadata=$3::jsonb WHERE merchant_id=$1 AND id=$2',[f.merchantId,sale.sale_id,JSON.stringify(original)]);}
+    } finally {
+      for(const row of removed)await pool.query('INSERT INTO cashier_device_operation_timeline SELECT (jsonb_populate_record(NULL::cashier_device_operation_timeline,$1::jsonb)).*',[JSON.stringify(row)]);
+    }
+    assert.deepEqual(await selectedState(),before);
+  });
+
   // Real second licensed tenant: denied at the HTTP boundary, not only by a
   // mocked merchant-id adapter. The body remains the original tenant's bundle.
   const otherTenant = await fixture(), otherDevice = otherTenant.stations[0];

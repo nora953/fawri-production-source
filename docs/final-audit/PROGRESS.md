@@ -1,3 +1,11 @@
+## SEQ-D3 internal enrollment financial-history review prepared — 2026-10-26
+
+Last accepted executable remains **cc16a975e98ab13988089c6cb62848f3abca998a**,57/57 CI and762 TAP. New candidate adds internal read-only `reviewCashierDeviceEnrollmentHistory` beside the existing numeric history assessor. One scoped SQL statement checks actual canonical sale metadata, nested compensation device identities, timeline, attribution and current stream binding. Wrong trusted merchant scope rejects403; empty signals still require independent trusted provenance and always return enrollmentAuthorized=false. No endpoint or live admission/enrollment wiring.
+
+Prepared restricted READ ONLY SQL assertions reuse real mounted HTTP sale/return/void, temporarily remove owned-fixture timeline rows, and require retained financial history/review hold and exact restoration. Compensation-only alias, foreign-tenant device collision and revoked SELECT are included; selected own/peer state must remain exact. Local syntax/whitespace PASS; runtime/CI PENDING, no success inferred. [Existing sequence design evidence](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json) records scope/limits.
+
+This is enrollment preparation, not a fresh-device grant or certified history absence. Pairing, MAX, empty timeline/flags and browser claims cannot establish a checkpoint. Next: verify candidate, then trusted enrollment provenance and atomic v2 receipt/checkpoint with real financial effects/replay repair. **CASHIER-SYNC-SEQUENCE-001 OPEN; NO-GO.** No schema, grant, hosted, merge or deployment change.
+
 ## SEQ-D3 protocol downgrade guard bounded accepted — 2026-10-26
 
 Accepted source **cc16a975e98ab13988089c6cb62848f3abca998a**, **57/57 CI SUCCESS**. [Cashier40357915238/job121695233590](https://github.com/nora953/fawri-production-source/actions/runs/40357915238):64 TAP/15 files; changed actual HTTP suite14 TAP includes6 new protocol tests. [Broader40357915488/job121695233362](https://github.com/nora953/fawri-production-source/actions/runs/40357915488):**762 TAP/94 invocations/92 files,0 failed/skipped/cancelled**. Checkout 15f39df59d05f18ff2a594fee6a86b7e959bf3ff tree714c4cfe97a3a0cee06ffa86bbfec918bb39cd47 matches source. Repository/API typecheck and build pass. [Existing evidence](evidence/P0-CASHIER-STREAM-LEGACY-FENCE-20261026.json).
