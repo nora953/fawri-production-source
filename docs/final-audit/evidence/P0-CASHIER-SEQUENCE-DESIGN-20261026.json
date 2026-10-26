@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "CONCRETE_DESIGN_REVISION_1_PREPARED_NOT_IMPLEMENTED",
+  "release": "NO-GO",
+  "gateClosed": false,
+  "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
+  "acceptedExecutable": "0c98d71f6ced72f6cc1d506050b63319afc15b06",
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "newRuntimeExecuted": false,
+  "newCiClaimed": false,
+  "report": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
+  "selectedDirection": "Verified versioned device stream with contiguous future admission, exact immutable replay first and explicit hold for ambiguous legacy state; no automatic historical backfill",
+  "identityRule": "Stream identity survives operator/shift/token rotation; no reset or baseline from request body",
+  "legacyRule": "Empty timeline or MAX alone does not establish checkpoint provenance. Reconcile original financial receipts and compatible complete local queue; ambiguous/oversized/unsafe history stays in review.",
+  "manualAdjustmentRule": "Proposed opt-in v2 guard before all local writes; legacy API/data unchanged. Existing movement-only envelopes retained and held; no no-op/tombstone. No new offline adjustment feature without intended product contract and verified server authority.",
+  "postCommitRule": "Core commit/receipt can precede attribution. No complete ACK until exact replay repairs original attribution; no second sale/stock effect.",
+  "implementationSlices": [
+    {
+      "id": "SEQ-D1",
+      "status": "SELECTED_NEXT_READ_ONLY_NOT_IMPLEMENTED",
+      "scope": "Bounded device history assessment; no enrollment/admission/financial writes"
+    },
+    {
+      "id": "SEQ-D2",
+      "status": "NOT_IMPLEMENTED",
+      "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance"
+    },
+    {
+      "id": "SEQ-D3",
+      "status": "NOT_IMPLEMENTED",
+      "scope": "Opt-in server/client admission and exact ACK/fault/version behavior"
+    },
+    {
+      "id": "SEQ-D4",
+      "status": "OPEN_HISTORICAL_AND_HOSTED",
+      "scope": "Supervised legacy reconciliation/adoption and separately authorized hosted rollout"
+    }
+  ],
+  "sourceAnchors": [
+    "artifacts/api-server/src/services/cashierHistoricalOperationAuthority.ts:recordCashierOperationTimelineInTransaction",
+    "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts:syncCashierSaleAuthoritative",
+    "artifacts/api-server/src/services/postgresCashierCompensationSyncAuthority.ts",
+    "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts:syncCashierOperatorSaleAuthoritative",
+    "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+    "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+    "artifacts/fawri/src/lib/cashierCompensationAuthority.ts",
+    "lib/db/drizzle/0027_cashier_subscription_licensing.sql"
+  ],
+  "reusedEvidence": [
+    "P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json",
+    "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
+    "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
+  ],
+  "nextExactAction": "Implement SEQ-D1 as a bounded read-only device-history assessment under the existing tenant transaction boundary. Add actual restricted-role SQL tests for empty/contiguous/gapped/start-above1/foreign tenant-device/unsafe sequence/inspection limit and consistency; assert no checkpoint, financial or timeline writes. Do not change live admission, add migrations or return an enrollment authorization in this slice."
+}

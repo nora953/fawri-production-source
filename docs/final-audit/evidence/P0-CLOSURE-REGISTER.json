@@ -281,8 +281,8 @@
       "saleServiceDiagnosticEvidence": "evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json",
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
-      "recoveryContractStatus": "CANDIDATE_NOT_ADOPTED_NOT_ENFORCED",
-      "nextAction": "Prepare one concrete, reviewable recovery design in the existing candidate for authenticated existing-device checkpoints, future gaps and late financial operations, with an explicit disposition for the reviewed local manual-adjustment API and retained outboxes. Reuse the accepted SQL/native/HTTP/fault layers; do not add another identical1/3/2 diagnostic, guess a device baseline, drop an operation or alter financial history. Select a bounded implementation only after checking all affected callers and schema constraints.",
+      "recoveryContractStatus": "CONCRETE_DESIGN_REVISION_1_PREPARED_NOT_IMPLEMENTED_OR_RELEASE_ACCEPTED",
+      "nextAction": "Implement SEQ-D1 as a bounded read-only device-history assessment under the existing tenant transaction boundary. Add actual restricted-role SQL tests for empty/contiguous/gapped/start-above1/foreign tenant-device/unsafe sequence/inspection limit and consistency; assert no checkpoint, financial or timeline writes. Do not change live admission, add migrations or return an enrollment authorization in this slice.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -291,7 +291,8 @@
         "SEQ-R1",
         "SEQ-R2",
         "SEQ-R3"
-      ]
+      ],
+      "recoveryDesignEvidence": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",

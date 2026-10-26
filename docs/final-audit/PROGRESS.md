@@ -1,3 +1,13 @@
+## Concrete sequence recovery design revision1 prepared — 2026-10-26
+
+Reviewedede1f101; accepted executable0c98d71f/56CI/27cashier/723broader reused only. **No new runtime/CI,application,schema,grant or hosted change.** [Concrete protocol2 design](P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md), [machine decisions](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json). Proposed direction: verified server-owned stream identity/checkpoint, immutable exact replay first, contiguous future application and preserved hold for ambiguous legacy state. No automatic MAX/client-counter baseline, historical backfill, reset, silent ACK or tombstone.
+
+Design covers original operator attribution repair after core commit, typed complete ACK, local queue compatibility, four reviewed producers and intended manual-adjustment disposition, version downgrade/credential rotation/rollback and four implementation slices. This is a concrete proposal, **not implemented,not adopted runtime policy,not recovery acceptance**. Remaining SEQ-R1/R2/R3 remainOPEN;45register rows29CLOSED_SOURCE/7OPEN/9BLOCKED unchanged;inventory incomplete/percentage null;**NO-GO**. No merge/deploy/P1/P2.
+
+**Selected next slice SEQ-D1:** bounded read-only device-history assessment under current tenant scope, actual SQL negative/positive/limit/numeric/snapshot cases; no financial,timeline,checkpoint or admission write and no enrollment capability. Reuse prior1/3/2/native/HTTP/fault diagnostics rather than rerunning them solely for these docs.
+
+---
+
 ## Canonical operator HTTP sequence and post-commit retry proof — 2026-10-26
 
 Accepted test-only executable **0c98d71f6ced72f6cc1d506050b63319afc15b06**: **56/56CI SUCCESS**. [Cashier40252881652/job121348379020](https://github.com/nora953/fawri-production-source/actions/runs/40252881652):27TAP PASS/13invocations; historical compensation fixture2TAP(parent+one new subtest containing the diagnostic/fault scenarios). [Broader40252881441/job121348658711](https://github.com/nora953/fawri-production-source/actions/runs/40252881441):**723TAP PASS/92invocations/90files**,0failed/skipped/cancelled. Both use exact checkout tree matched to source. [Evidence](evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json).
