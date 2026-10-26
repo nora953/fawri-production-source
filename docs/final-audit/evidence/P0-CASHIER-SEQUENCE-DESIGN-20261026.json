@@ -6,7 +6,7 @@
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "926fac511bc507b37475f00e574e3468cfec73a8",
+  "acceptedExecutable": "11f7e55dd59aa5674822dc3557973acc9440fef0",
   "applicationChanged": true,
   "schemaChanged": false,
   "aclChanged": false,
@@ -27,7 +27,7 @@
     },
     {
       "id": "SEQ-D2",
-      "status": "GENERATED_CANDIDATE_BOUNDED_ACCEPTANCE_FULL_SOURCE_CI_PENDING_NOT_ADOPTED",
+      "status": "GENERATED_CANDIDATE_AND_READONLY_METADATA_CHECKS_ACCEPTED_NOT_OPERATIONALLY_ADOPTED",
       "scope": "Versioned stream/receipt storage and transaction/tenant/restore acceptance",
       "evidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
       "concurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
@@ -36,7 +36,8 @@
       "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json",
       "streamRestoreEvidence": "P0-CASHIER-STREAM-RESTORE-20261026.json",
       "backupCliOwnerAclEvidence": "P0-BACKUP-CLI-OWNER-ACL-20261026.json",
-      "canonicalCandidateEvidence": "P0-CASHIER-CANONICAL-CANDIDATE-20261026.json"
+      "canonicalCandidateEvidence": "P0-CASHIER-CANONICAL-CANDIDATE-20261026.json",
+      "candidateReadinessEvidence": "P0-CASHIER-CANDIDATE-READINESS-20261026.json"
     },
     {
       "id": "SEQ-D3",
@@ -64,7 +65,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Resolve pending browser CI; Promote generated0052/schema/preimage only together with storage/restore fixture adaptation, dedicated workflow update, new table/owner/ACL/trigger readiness checks and exact-source migration/storage/deletion/restore regression. Preserve all0000-0051 bytes and legacy admission.",
+  "nextExactAction": "Promote generated0052/schema/preimage together with fixture adaptation and live readiness wiring of reviewed checks; update candidate workflow and require exact-source migration/storage/deletion/restore and role/config denials. Preserve legacy admission, old migration bytes and FIELD005/full role-bootstrap blockers.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -78,6 +79,7 @@
   "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json",
   "streamRestoreEvidence": "P0-CASHIER-STREAM-RESTORE-20261026.json",
   "backupCliOwnerAclEvidence": "P0-BACKUP-CLI-OWNER-ACL-20261026.json",
-  "sourceCandidate": "b55328a2a3410cbb94b13b4ba2ba5085a8560336",
-  "canonicalCandidateEvidence": "P0-CASHIER-CANONICAL-CANDIDATE-20261026.json"
+  "sourceCandidate": "11f7e55dd59aa5674822dc3557973acc9440fef0",
+  "canonicalCandidateEvidence": "P0-CASHIER-CANONICAL-CANDIDATE-20261026.json",
+  "candidateReadinessEvidence": "P0-CASHIER-CANDIDATE-READINESS-20261026.json"
 }

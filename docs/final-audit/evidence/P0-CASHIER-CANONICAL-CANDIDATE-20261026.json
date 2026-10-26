@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-26",
   "gate": "CASHIER-SYNC-SEQUENCE-001",
-  "status": "GENERATED_0052_CANDIDATE_BOUNDED_ACCEPTED_FULL_SOURCE_CI_PENDING_BROWSER_INSTALL",
+  "status": "GENERATED_0052_CANDIDATE_FULL_SOURCE_CI_ACCEPTED_NOT_ADOPTED",
   "source": "b55328a2a3410cbb94b13b4ba2ba5085a8560336",
   "sourceTree": "a6398174a81e04e2bf0266331c8650779acbc58b",
   "checkout": "311633213c4df10eee6c875ed805cb38546b6863",
@@ -86,17 +86,8 @@
   "nextAction": "Promote generated0052/schema/preimage only together with storage/restore fixture adaptation, dedicated workflow update, new table/owner/ACL/trigger readiness checks and exact-source migration/storage/deletion/restore regression. Preserve all0000-0051 bytes and legacy admission.",
   "ci": {
     "total": 57,
-    "success": 56,
-    "pending": [
-      {
-        "run": 40315005762,
-        "job": 121545272094,
-        "step": "Install isolated Playwright runner and Chromium",
-        "startedAt": "2026-10-26T11:26:42Z",
-        "observedAt": "2026-10-26T11:36:21Z",
-        "testExecutionStarted": false
-      }
-    ],
+    "success": 57,
+    "pending": [],
     "broader": {
       "run": 40315005751,
       "job": 121545708032,
@@ -107,6 +98,24 @@
       "skipped": 0,
       "cancelled": 0,
       "checkout": "311633213c4df10eee6c875ed805cb38546b6863"
+    },
+    "previouslyPending": [
+      {
+        "run": 40315005762,
+        "job": 121545272094,
+        "step": "Install isolated Playwright runner and Chromium",
+        "startedAt": "2026-10-26T11:26:42Z",
+        "observedAt": "2026-10-26T11:36:21Z",
+        "testExecutionStarted": false
+      }
+    ],
+    "resolvedBrowser": {
+      "source": "b55328a2a3410cbb94b13b4ba2ba5085a8560336",
+      "ciTotal": 57,
+      "ciSuccess": 57,
+      "browserRun": 40315005762,
+      "browserJob": 121545272094,
+      "result": "PASS: cashier IndexedDB smoke and stale-backup sequence regression"
     }
   }
 }

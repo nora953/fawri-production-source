@@ -264,3 +264,24 @@ Candidate source **b55328a2a3410cbb94b13b4ba2ba5085a8560336**. [Generation403150
 
 Active schema/journal remain52 migrations/95 tables. Candidate only, not adopted; no admission/client/hosted change. Next: resolve pending CI then promote generated artifacts only together with storage/restore fixture adaptation, new table/owner/ACL/trigger readiness checks and candidate-workflow update; run exact-source acceptance. Full FIELD005 policy and role/credential bootstrap remain open. **Sequence gate OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED; inventory incomplete, no percentage.
 
+
+## SEQ-D2 internal metadata readiness candidate — 2026-10-26
+
+The previously pending browser job40315005762/job121545272094 completed successfully; source b55328a2a3410cbb94b13b4ba2ba5085a8560336 has57/57 CI SUCCESS. Installation delay was not an application test failure.
+
+The new internal SELECT-only inspector accepts trusted caller-supplied primary/authentication role names and checks candidate table RLS, exact scoped read policy, absence of public writes, owner retirement policy shape, non-login owner/caller flags and membership reachability, owner column allowlist and extra grants, approved function body hashes/security/search_path/owner/PUBLIC execute, and expected enabled/deferred trigger bindings. It returns operationalAdoption=false; no active API/readiness route calls it yet. These are catalog observations, not authentication, concurrent-DDL attestation or complete financial/retention policy proof.
+
+In owned candidate PostgreSQL, a real restricted LOGIN runs the positive inspector inside BEGIN READ ONLY. Thirteen independent metadata faults are injected by fixture admin transactions, each rejected with the specific readiness issue; rollback restores the valid configuration and selected stream/receipt snapshot. Faults include RLS, owner flags/grants/membership/capability, function grants/path/security/body, trigger disabling, and broadened read/write/owner policies. Existing management contracts still run alongside this fixture. Candidate53/97 remains ephemeral; active52/95, historical bytes and admission unchanged.
+
+Before adoption, wire reviewed checks to actual readiness, adapt storage/restore tests to consume generated committed tables and update the candidate workflow. Candidate acceptance does not close CASHIER-SYNC-SEQUENCE-001 or FIELD005.
+
+## SEQ-D2 internal read-only metadata readiness accepted; prior browser pending resolved — 2026-10-26
+
+Accepted source **11f7e55dd59aa5674822dc3557973acc9440fef0**,57/57 CI SUCCESS. [Candidate40318675833/job121557666907](https://github.com/nora953/fawri-production-source/actions/runs/40318675833):21 TAP/0failed/skipped across existing management6 and new readiness15(parent+positive+13 metadata faults). Historical104 files unchanged; candidate53/97 generation remains reproducible. [Broader40318676078/job121557667401](https://github.com/nora953/fawri-production-source/actions/runs/40318676078):734 TAP/93 invocations/91 files,0 failed/skipped/cancelled; exact source tree matched. [Evidence](evidence/P0-CASHIER-CANDIDATE-READINESS-20261026.json).
+
+Prior b55328a2a3410cbb94b13b4ba2ba5085a8560336 also reached57/57: browser40315005762/job121545272094 completed SUCCESS with actual IndexedDB/stale-backup PASS; previous installation delay is resolved, not an application failure.
+
+New inspector uses catalog SELECTs; actual restricted LOGIN positive runs READ ONLY. Checks include RLS/policies, owner/caller flags and reachability, column/grant boundaries, function body hashes/security/search_path/owner/PUBLIC execute, enabled/deferred trigger bindings.13 actual metadata fault transactions each rejected; rollback restores positive state and selected stream/receipt rows. Trusted caller supplies role names; this is not actor authentication, concurrent-DDL attestation or complete business/privacy proof. Returns operationalAdoption=false; no live readiness wiring.
+
+Active schema remains52/95, candidate53/97 ephemeral. Next: promote generated artifacts together with fixture adaptation, reviewed live readiness wiring and workflow update; require exact-source storage/deletion/restore/role denials before adoption. FIELD005 policy/full role bootstrap/hosted remain open. **Sequence gate OPEN; NO-GO.** Register45=29 CLOSED_SOURCE/7 OPEN/9 BLOCKED, incomplete inventory, no percentage.
+
