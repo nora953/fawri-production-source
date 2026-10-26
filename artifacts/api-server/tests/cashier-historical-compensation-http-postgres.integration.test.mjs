@@ -107,7 +107,7 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   app.use(express.json()); app.use('/api', staffRouter, commerceRouter);
   server = await new Promise((resolve, reject) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); s.once('error', reject); });
   const base = `http://127.0.0.1:${server.address().port}`;
-  await t.test('versioned stream fences legacy sale admission and replay without changing peer financial state',async()=>{
+  await t.test('versioned stream fences legacy sale admission and replay without changing peer financial state',async streamTest=>{
     const target=await fixture(2),peer=await fixture(1);
     async function login(f){
       const member=await staff.createCashierStaffAuthoritative({merchantId:f.merchantId,displayName:'Synthetic stream cashier',role:'cashier',pin:'2468',permissions:['sale.create','sale.view_own']});
@@ -119,7 +119,7 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     const token=await login(target),peerToken=await login(peer);
     const instant=(await pool.query('SELECT clock_timestamp() AS instant')).rows[0].instant.toISOString();
     const body=saleBody(target,target.stations[0],instant),next=saleBody(target,target.stations[0],instant,2);
-    await t.test('unreadable stream metadata fails closed before a legacy financial commit',async()=>{
+    await streamTest.test('unreadable stream metadata fails closed before a legacy financial commit',async()=>{
       const before=await snapshot();
       await pool.query(`REVOKE SELECT ON cashier_device_streams FROM ${runtimeFixture.role}`);
       try{
