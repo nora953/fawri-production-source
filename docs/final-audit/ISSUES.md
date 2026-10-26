@@ -1,3 +1,17 @@
+## Native cashier outbox hold and lost-ACK reload verified — 2026-10-26
+
+Accepted test/workflow executable **b7b73221ddeb92af05b9b63f32d4c48fe19f3ea6**: **56/56CI SUCCESS**. [Chromium40250800705/job121342045349](https://github.com/nora953/fawri-production-source/actions/runs/40250800705) runs native IndexedDB and real production drain clients in a fresh context with a synthetic in-browser fetch ledger. Actual page reload, exact raw-store snapshots, selected peer database and supported legacy-drain positive allPASS; no numeric browser TAP count claimed. Source/checkout trees matched. [Evidence](evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json).
+
+Real local sale1/adjustment2/sale3 produces5envelopes. Synthetic operator context + real operator preflight rejects unsupported2 with zero transport calls/all stores intact. Legacy drain suffers synthetic accepted-operation1/lost-response ambiguity:5envelopes survive reload; exact replay ACK clears only operation1's2envelopes, then unsupported2 holds remaining3envelopes for sequences2/3. Repeated retries do not upload3. Separate supported legacy queue uploads/ACKs2sales without altering held database or committed stock/sales.
+
+**Proof boundary:** fetch ledger and operator context are synthetic, not actual SQL commit or HTTP authentication. Operator positive upload is not tested here; supported positive/replay is the legacy merchant drain. New harness/workflow only; no production application/schema/grant/policy/hosted changes. Broader [isolated40250800858/job121342046391](https://github.com/nora953/fawri-production-source/actions/runs/40250800858): **722TAP PASS**,92invocations/90files,0failed/skipped/cancelled, exact checkout tree matched.
+
+**CASHIER-SYNC-SEQUENCE-001 remainsOPEN**: server accept1/3/reject2 is still the accepted diagnostic, not recovery approval. No new non-commerce upload, backfill, tombstone, sequence reset or adopted contract.45register rows29CLOSED_SOURCE/7OPEN/9BLOCKED unchanged;inventory incomplete/percentage null;**NO-GO**. No merge/deploy/P1/P2. Docs-only checkpoint uses[skip ci];no additional runtime claimed for documentation.
+
+**Next exact action:** Inspect existing canonical cashier operator HTTP fixture coverage for /api/cashier/operator/sync/sale with real station/operator session binding, then add a missing bounded ordered/gap/late-retry case only if not already covered. Preserve the native browser and canonical SQL evidence as separate layers; adopt a reviewed all-operation gap/non-commerce recovery contract before changing admission or authorizing tombstones.
+
+---
+
 ## P0 retention checklist and canonical sale-sequence diagnostic — 2026-10-26
 
 Accepted test-only executable **e14ca5301d6b4da8a93c93b19cf9c58302d51a41**: **56/56CI SUCCESS**, [isolated40249040016/job121336684560](https://github.com/nora953/fawri-production-source/actions/runs/40249040016) **722TAP PASS/0FAIL/0SKIP/0CANCEL**,92invocations/90files; exact checkout tree matched. Multi-device/gap fixture4TAP(3functional), one new canonical sale-service diagnostic. No application/schema/grant or hosted change in this batch; accepted emergency fixacf6c8d remains inherited.

@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "e14ca5301d6b4da8a93c93b19cf9c58302d51a41",
-  "lastFullyAcceptedSource": "e14ca5301d6b4da8a93c93b19cf9c58302d51a41",
+  "sourceCandidate": "b7b73221ddeb92af05b9b63f32d4c48fe19f3ea6",
+  "lastFullyAcceptedSource": "b7b73221ddeb92af05b9b63f32d4c48fe19f3ea6",
   "release": "NO-GO",
   "rows": [
     {
@@ -282,7 +282,9 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "CANDIDATE_NOT_ADOPTED_NOT_ENFORCED",
-      "nextAction": "Add a native IndexedDB fault regression with sale1/manual-adjustment2/sale3 and the real cloud-sync client: unsupported2 must preserve its envelopes and later operations, never silently skip/ACK or advance upload. Keep simulated transport/client evidence separate from canonical HTTP session/device/SQL proof. Adopt a reviewed gap/non-commerce/recovery contract before changing server admission; no speculative financial repair."
+      "nextAction": "Inspect existing canonical cashier operator HTTP fixture coverage for /api/cashier/operator/sync/sale with real station/operator session binding, then add a missing bounded ordered/gap/late-retry case only if not already covered. Preserve the native browser and canonical SQL evidence as separate layers; adopt a reviewed all-operation gap/non-commerce recovery contract before changing admission or authorizing tombstones.",
+      "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
+      "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -492,6 +494,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "acf6c8d68dda271f97d9275d9b24407d3343a60f",
+  "previousFullyAcceptedSource": "e14ca5301d6b4da8a93c93b19cf9c58302d51a41",
   "lastUpdatedAt": "2026-10-26"
 }
