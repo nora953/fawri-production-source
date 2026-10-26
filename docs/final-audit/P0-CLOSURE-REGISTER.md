@@ -1,3 +1,19 @@
+## FIELD005 emergency creation/deletion race fixed within bounded source scope — 2026-10-26
+
+Accepted executable **acf6c8d68dda271f97d9275d9b24407d3343a60f**: **56/56 CI SUCCESS**, no pending/failed/cancelled runs at acceptance. Real mounted management+emergency HTTP/SQL lane: **44TAP PASS**, zero failed/skipped/cancelled; owner fixture14TAP(13functional), three newfunctional over accepted72f01da4. Targeted run40247798744/job121332970467; source checkout tree matched. Separate canonical full-app suite13TAP is included in that lane; the owner fixture itself is mounted actual routers, not full-app acceptance.
+
+New finding **MERCHANT-DELETION-EMERGENCY-RACE-002** reproduced on1d894be3/run40247342559/job121331597782: a fixture gate paused canonical emergency INSERT after the merchant eligibility read; owner deletion200 completed, then creator201 left one active emergency request on the deleted merchant. Audit remained200/valid; no deleted-merchant snapshot disclosure or hosted incident asserted. Fix keeps merchant eligibility locked FOR UPDATE through emergency request/audit commit; existing emergency-ledger deletion409 remains. No retention exception, hash rewrite, schema/ACL or hosted change.
+
+Acceptance proves two bounded SQL-overlap schedules (including post-validation gate) and completed-deletion404, legitimate creation201/deletion409, valid audit, exact peers and ordinary unaudited deletion. Initial harness missed scope-issuer and later transitive waits; diagnostics and unsuccessful attempts remain in [evidence](evidence/P0-DELETION-EMERGENCY-CONCURRENCY-20261025.json). Prior32fd10e0 broader runs49SUCCESS/7CANCELLED are not whole-source acceptance. Priorca2c90c7 browser cleanup failed then passed exact-source retry; final source browser passed without code changes for that cleanup.
+
+Broader [isolated audit40247798502](https://github.com/nora953/fawri-production-source/actions/runs/40247798502)/job121333162482: **721TAP PASS**,92invocations/90unique files; zero failed/skipped/cancelled and exact source tree matched. Owner deletion fixture is not selected in this broader lane; its evidence is the separate targeted lane above.
+
+**FIELD005 and retention policy/history remain OPEN; NO-GO.** Register45/statuses29CLOSED_SOURCE/7OPEN/9BLOCKED unchanged; inventory incomplete/percentage null. No all-schedule/capacity/hosted claim, no historical repair, no merge/deploy. Audited-merchant deletion remains blocked pending an explicit privacy-preserving retention contract.
+
+**Next exact action:** Reconcile FIELD005 into a finite field/lifecycle checklist using this accepted concurrency evidence; prepare remaining retention/privacy decisions and historical-chain recovery acceptance criteria. Do not invent retention durations, approve admin-identity snapshot retention, rewrite chain hashes or infer hosted acceptance.
+
+---
+
 ## FIELD005 concurrency attempt: overlap not proven — 2026-10-25
 
 Source20703a6b/run40218027798/job121243499529 executed actual deletion/emergency requests behind a merchant row gate. Required2SQLwaiters were not observed within5s;fixture10PASS/2FAIL(1functional+parent). **Harness failure, not product race evidence or PASS.** No application changes. Prior72f01da4 bounded pre-existing-ledger mitigation remains accepted; concurrency/policy/history OPEN. [Evidence](evidence/P0-DELETION-EMERGENCY-CONCURRENCY-20261025.json). No merge/deploy/hosted change; releaseNO-GO.
