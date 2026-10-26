@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Verify single-statement scoped financial-history review with real canonical sale/return/void, missing-timeline and compensation-only aliases. Then implement trusted enrollment provenance and atomic receipt/checkpoint financial admission; no automatic enrollment from empty flags, pairing, MAX or browser baseline.",
+  "nextExactAction": "Implement the actual trusted enrollment mutation with reviewed independent provenance, least-privilege writer authority and shared merchant/device serialization, then atomic receipt/checkpoint financial admission and exact attribution repair. Reuse accepted internal history review; do not expand numeric/empty-history diagnostics or infer authorization from pairing, empty flags, MAX or browser baseline.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -87,8 +87,8 @@
   "canonicalSchemaAdopted": true,
   "liveReadinessWired": true,
   "enrollmentHistoryReview": {
-    "status": "PREPARED_INTERNAL_READ_ONLY_CI_PENDING_NO_ENROLLMENT",
-    "source": null,
+    "status": "BOUNDED_INTERNAL_READ_ONLY_SOURCE_ACCEPTED_NO_ENROLLMENT",
+    "source": "66c8149f8d0e79d595fb7ca9017c42ae7ff8703a",
     "service": "artifacts/api-server/src/services/cashierDeviceHistoryAssessment.ts:reviewCashierDeviceEnrollmentHistory",
     "test": "artifacts/api-server/tests/cashier-historical-compensation-http-postgres.integration.test.mjs",
     "purpose": "Independent server financial evidence must not disappear from enrollment review merely because numeric timeline rows are absent. Pairing identity is not fresh-device provenance.",
@@ -96,20 +96,57 @@
     "local": {
       "syntax": "PASS",
       "diffWhitespace": "PASS",
-      "newSqlHttp": "NOT_RUN_AWAITING_GITHUB_ACTIONS"
+      "newSqlHttp": "PASS_IN_GITHUB_ACTIONS"
     },
-    "preparedAssertions": [
-      "Actual restricted LOGIN with READ ONLY transaction; valid paired but financially empty device still TRUSTED_PROVENANCE_REQUIRED/enrollmentAuthorized=false",
-      "Foreign merchant scope rejected403; revoked orders SELECT propagates42501; no selected own/peer write",
-      "Real HTTP sale/return/void server history remains SERVER_HISTORY_PRESENT after root fixture temporarily removes timeline; original rows restored exactly",
-      "Synthetic metadata alias demonstrates compensation-only device evidence independently of original sale device/timeline/attribution",
-      "Foreign-tenant same-device stream does not contaminate own evidence flags"
-    ],
     "limits": [
       "No fresh-device attestation, trusted enrollment grant, active stream creation, writer role/grant, client upgrade or financial receipt write",
       "Does not certify absence of erased/unlinkable/unknown historical financial identities",
       "Snapshot only, no concurrent-writer serialization or completeness/capacity proof",
       "Does not close sequence recovery or hosted gates"
+    ],
+    "sourceTree": "6356b5d3b57861f258e47f872f3aaa2d92d185b0",
+    "checkout": "5b2ce140267efd9dca8d574bea5fb7bb360ab13f",
+    "checkoutTreeMatched": true,
+    "ci": {
+      "total": 57,
+      "success": 57,
+      "cashier": {
+        "run": 40364029230,
+        "job": 121716741926,
+        "passed": 67,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "invocations": 15,
+        "files": 15
+      },
+      "changedSuite": {
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "broader": {
+        "run": 40364029254,
+        "job": 121716741566,
+        "passed": 765,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "invocations": 94,
+        "files": 92
+      },
+      "quality": {
+        "run": 40364029216,
+        "status": "SUCCESS"
+      }
+    },
+    "verifiedAssertions": [
+      "Actual restricted LOGIN with READ ONLY transaction; valid paired but financially empty device still TRUSTED_PROVENANCE_REQUIRED/enrollmentAuthorized=false",
+      "Foreign merchant scope rejected403; revoked orders SELECT propagates42501; no selected own/peer write",
+      "Real HTTP sale/return/void server history remains SERVER_HISTORY_PRESENT after root fixture temporarily removes timeline; original rows restored exactly",
+      "Synthetic metadata alias demonstrates compensation-only device evidence independently of original sale device/timeline/attribution",
+      "Foreign-tenant same-device stream does not contaminate own evidence flags"
     ]
   }
 }
