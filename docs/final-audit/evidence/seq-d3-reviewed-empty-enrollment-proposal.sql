@@ -76,7 +76,7 @@ BEGIN
  PERFORM 1 FROM public.merchant_cashier_stations x WHERE x.id=st AND x.merchant_id=m
   AND x.status='active' AND x.paired_device_id=d AND x.location_id IS NOT NULL FOR SHARE;
  IF NOT FOUND THEN RAISE EXCEPTION 'reviewed station/device binding required' USING ERRCODE='23514';END IF;
- IF EXISTS(SELECT 1 FROM public.cashier_device_streams WHERE merchant_id=m AND (device_id=d OR state='retired'))
+ IF EXISTS(SELECT 1 FROM public.cashier_device_streams x WHERE x.merchant_id=m AND (x.device_id=d OR x.state='retired'))
  OR EXISTS(SELECT 1 FROM public.cashier_device_operation_timeline WHERE merchant_id=m AND device_id=d)
  OR EXISTS(SELECT 1 FROM public.cashier_operation_attribution WHERE merchant_id=m AND device_id=d)
  OR EXISTS(SELECT 1 FROM public.orders o WHERE o.merchant_id=m AND o.source_channel='cashier' AND (
