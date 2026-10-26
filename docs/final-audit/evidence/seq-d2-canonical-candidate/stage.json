@@ -3,7 +3,7 @@
   "name": "cashier_stream_receipt_storage",
   "when": 1791936000024,
   "mode": "reviewed_sql",
-  "sql_sha256": "af1b9f5aab843ff5d5ce036ed0deb042dbe1471482f2d4be61ed182fb108e07c",
+  "sql_sha256": "eff1aa5937f373e773a5c92d1b8984bc916fdcf34921276c245c58e8c7602670",
   "preimage_files": [
     "cashier-staff.ts"
   ]

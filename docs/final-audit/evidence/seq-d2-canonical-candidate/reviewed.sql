@@ -46,10 +46,10 @@ CREATE TABLE public.cashier_operation_receipts (
  CONSTRAINT cashier_operation_receipts_sequence_unique UNIQUE(stream_id,device_sequence),
  CONSTRAINT cashier_operation_receipts_stream_operation_unique UNIQUE(stream_id,operation_id),
  CONSTRAINT cashier_operation_receipts_merchant_operation_unique UNIQUE(merchant_id,operation_id),
- CONSTRAINT cashier_operation_receipts_stream_fk FOREIGN KEY(stream_id,merchant_id) REFERENCES public.cashier_device_streams(id,merchantId) ON DELETE RESTRICT,
- CONSTRAINT cashier_operation_receipts_station_fk FOREIGN KEY(station_id,merchant_id) REFERENCES public.merchant_cashier_stations(id,merchantId) ON DELETE RESTRICT,
- CONSTRAINT cashier_operation_receipts_location_fk FOREIGN KEY(location_id,merchant_id) REFERENCES public.merchant_locations(id,merchantId) ON DELETE RESTRICT,
- CONSTRAINT cashier_operation_receipts_shift_fk FOREIGN KEY(shift_id,merchant_id,station_id,staff_id) REFERENCES public.cashier_shifts(id,merchantId,stationId,staffId) ON DELETE RESTRICT
+ CONSTRAINT cashier_operation_receipts_stream_fk FOREIGN KEY(stream_id,merchant_id) REFERENCES public.cashier_device_streams(id,merchant_id) ON DELETE RESTRICT,
+ CONSTRAINT cashier_operation_receipts_station_fk FOREIGN KEY(station_id,merchant_id) REFERENCES public.merchant_cashier_stations(id,merchant_id) ON DELETE RESTRICT,
+ CONSTRAINT cashier_operation_receipts_location_fk FOREIGN KEY(location_id,merchant_id) REFERENCES public.merchant_locations(id,merchant_id) ON DELETE RESTRICT,
+ CONSTRAINT cashier_operation_receipts_shift_fk FOREIGN KEY(shift_id,merchant_id,station_id,staff_id) REFERENCES public.cashier_shifts(id,merchant_id,station_id,staff_id) ON DELETE RESTRICT
 );
 CREATE UNIQUE INDEX cashier_device_streams_current_device_unique ON public.cashier_device_streams(merchant_id,device_id) WHERE state IN ('review','active');
 ALTER TABLE public.cashier_device_streams ENABLE ROW LEVEL SECURITY;
