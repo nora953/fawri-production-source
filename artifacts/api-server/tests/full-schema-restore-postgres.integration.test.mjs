@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import {Client} from 'pg';
+import {seedStreamProposalRestore,streamRestoreComponents,verifyStreamProposalRestore} from './helpers/stream-proposal-restore.mjs';
 import {createDisposableAuthenticationRole} from './helpers/disposable-authentication-role.mjs';
 import { assertDisposablePostgres } from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 await assertDisposablePostgres();
@@ -24,9 +25,11 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
       await pool.query("INSERT INTO merchant_channels(id,merchant_id,platform,status,page_id) VALUES($1,$2,'messenger','connected',$3)", [`channel-${id}`, id, `page-${id}`]);
     }
   }
+  if(phase==='seed')await seedStreamProposalRestore(pool);
+  const proposalComponents=await streamRestoreComponents(pool);
   const tables = (await pool.query("SELECT relname, relrowsecurity, relforcerowsecurity, ARRAY(SELECT entry::text FROM unnest(coalesce(relacl,acldefault('r',relowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_class JOIN pg_namespace n ON n.oid=relnamespace WHERE n.nspname='public' AND relkind IN ('r','p') ORDER BY relname")).rows;
-  const policies = (await pool.query("SELECT c.relname, polname, polcmd, polpermissive, pg_get_expr(polqual,polrelid) AS predicate, pg_get_expr(polwithcheck,polrelid) AS check_predicate FROM pg_policy JOIN pg_class c ON c.oid=polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,polname")).rows;
-  const functions = (await pool.query("SELECT proname, pg_get_function_identity_arguments(p.oid) AS args, pg_get_functiondef(p.oid) AS definition, ARRAY(SELECT entry::text FROM unnest(coalesce(proacl,acldefault('f',proowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_proc p JOIN pg_namespace n ON n.oid=pronamespace WHERE n.nspname='public' AND prokind='f' ORDER BY proname,args")).rows;
+  const policies = (await pool.query("SELECT c.relname, polname, polcmd, polpermissive, ARRAY(SELECT CASE WHEN role_oid=0 THEN 'public' ELSE pg_get_userbyid(role_oid)::text END FROM unnest(polroles) AS role_oid ORDER BY 1) AS roles, pg_get_expr(polqual,polrelid) AS predicate, pg_get_expr(polwithcheck,polrelid) AS check_predicate FROM pg_policy JOIN pg_class c ON c.oid=polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,polname")).rows;
+  const functions = (await pool.query("SELECT proname, pg_get_userbyid(p.proowner) AS owner, pg_get_function_identity_arguments(p.oid) AS args, pg_get_functiondef(p.oid) AS definition, ARRAY(SELECT entry::text FROM unnest(coalesce(proacl,acldefault('f',proowner))) AS grants(entry) ORDER BY entry::text) AS acl FROM pg_proc p JOIN pg_namespace n ON n.oid=pronamespace WHERE n.nspname='public' AND prokind='f' ORDER BY proname,args")).rows;
   const constraints = (await pool.query("SELECT c.relname, conname, contype, convalidated, condeferrable, condeferred, pg_get_constraintdef(k.oid) AS definition FROM pg_constraint k JOIN pg_class c ON c.oid=conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY c.relname,conname")).rows;
   // pg_dump reparses CHECK DDL and PostgreSQL flattens associative leading AND
   // groups. Round-trip both sides through the same native parser; never strip
@@ -105,7 +108,7 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
       }finally{await privateNormalizer.query('DROP TABLE '+table);}
     }
   }finally{privateNormalizer.release();}
-  const components = { tables, policies, functions, constraints, indexes, migrations, channels, privateSchemas, privateTables, privateFunctions, privateConstraints, privateIndexes };
+  const components = { tables, policies, functions, constraints, indexes, migrations, channels, privateSchemas, privateTables, privateFunctions, privateConstraints, privateIndexes, ...proposalComponents };
   const fingerprint = createHash('sha256').update(JSON.stringify(components)).digest('hex');
   let before;
   if (phase === 'seed') fs.writeFileSync('/restore-proof/before.json', JSON.stringify({ fingerprint, components }), { mode: 0o600 });
@@ -144,6 +147,7 @@ test(`full committed schema restore ${phase}: data, policies, ACLs and restricte
       }finally{await client.query('ROLLBACK');}
       assert.equal((await client.query('SELECT count(*)::int AS count FROM merchant_channels')).rows[0].count,0,'scope cannot survive pool reuse');
     }
+    await t.test('proposal streams preserve ownership ACL isolation and restored deletion behavior',()=>verifyStreamProposalRestore(pool,phase,authentication.url));
   } finally {
     await client.end();await issuer.end();await authentication.dispose();
   }

@@ -63,7 +63,7 @@ if [ "$audit_suite" = full-restore ]; then
   # No URL or host connection is used by pg_dump/pg_restore/psql.
   docker exec "$audit_pg" pg_dump -U fawri_ci -d fawri_ci --format=custom --file=/tmp/fawri-full-schema.dump
   docker exec "$audit_pg" createdb -U fawri_ci --template=template0 fawri_restore_target
-  docker exec "$audit_pg" pg_restore -U fawri_ci -d fawri_restore_target --no-owner --exit-on-error /tmp/fawri-full-schema.dump
+  docker exec "$audit_pg" pg_restore -U fawri_ci -d fawri_restore_target --exit-on-error /tmp/fawri-full-schema.dump
   docker exec "$audit_pg" psql -U fawri_ci -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE fawri_ci' -c 'ALTER DATABASE fawri_restore_target RENAME TO fawri_ci' >/dev/null
   docker exec "$audit_pg" psql -U fawri_ci -d fawri_ci -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE fawri_ci IS 'fawri-disposable:$audit_run'" >/dev/null
   echo 'AUDIT_FULL_SCHEMA_DUMP_RESTORE_PASS'
