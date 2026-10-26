@@ -27,7 +27,7 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
     ['actual runtime fixture', () => runtimeFixture.dispose()],
   ]));
 
-  async function fixture() {
+  async function fixture(initialStock = 1) {
     const suffix = randomUUID();
     const merchantId = `audit-sync-${suffix}`;
     owned.push(merchantId);
@@ -48,15 +48,15 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
       VALUES($1,$2,'Sync location','sync',TRUE,'open',FALSE,FALSE,0,now(),now())`, [locationId, merchantId]);
     const productId = `audit-product-${suffix}`;
     await catalog.createCatalogProductAuthoritative({ merchantId, idempotencyKey: randomUUID(), input: {
-      id: productId, name: 'One last stock item', price_iqd: 1000, stock_quantity: 1,
+      id: productId, name: 'One last stock item', price_iqd: 1000, stock_quantity: initialStock,
       low_stock_threshold: 0, status: 'available', allow_fawri_reply: true,
     } });
     const levels = await pool.query('SELECT id FROM location_inventory_levels WHERE merchant_id=$1 AND location_id=$2 AND product_id=$3 AND variant_id IS NULL',
       [merchantId, locationId, productId]);
     if (!levels.rows.length) {
       await pool.query(`INSERT INTO location_inventory_levels(id,merchant_id,location_id,product_id,variant_id,
-        quantity,low_stock_threshold,version,created_at,updated_at) VALUES($1,$2,$3,$4,NULL,1,0,1,now(),now())`,
-        [`audit-level-${suffix}`, merchantId, locationId, productId]);
+        quantity,low_stock_threshold,version,created_at,updated_at) VALUES($1,$2,$3,$4,NULL,$5,0,1,now(),now())`,
+        [`audit-level-${suffix}`, merchantId, locationId, productId, initialStock]);
     }
     const stations = [];
     for (let i = 0; i < 2; i++) {
@@ -133,6 +133,28 @@ test('isolated cashier multi-device final-stock, replay and gap observations', a
       await assert.rejects(sync.syncCashierSaleAuthoritative({ merchantId: f.merchantId, body: bodies[1 - winner] }),
         err => err.code === 'CASHIER_SYNC_NEGATIVE_STOCK');
     }
+  });
+
+  await t.test('canonical sale-service diagnostic preserves late rejected operation and exact financial state after accepting a sequence gap',async()=>{
+    const f=await fixture(3),peer=await fixture(),device=f.stations[0];
+    const bodies=new Map([1,2,3].map(sequence=>[sequence,saleBody(f,device,sequence)]));
+    async function snapshot(merchantId){
+      const state={};
+      for(const table of ['orders','order_items','inventory_mutations','cashier_device_operation_timeline','location_inventory_levels'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=$1 ORDER BY to_jsonb(t)::text`,[merchantId])).rows;
+      return state;
+    }
+    const peerBefore=await snapshot(peer.merchantId);
+    for(const sequence of [1,3]){const result=await sync.syncCashierSaleAuthoritative({merchantId:f.merchantId,body:bodies.get(sequence)});assert.equal(result.replayed,false);assert.equal(result.inventory_mutation_count,1);}
+    const beforeLate=await snapshot(f.merchantId);assert.equal(beforeLate.orders.length,2);assert.equal(beforeLate.inventory_mutations.length,2);
+    assert.deepEqual(beforeLate.cashier_device_operation_timeline.map(x=>Number(x.row.device_sequence)).sort((a,b)=>a-b),[1,3]);
+    const level=beforeLate.location_inventory_levels.find(x=>x.row.location_id===f.locationId&&x.row.product_id===f.productId&&x.row.variant_id===null);assert.ok(level);assert.equal(Number(level.row.quantity),1);
+    for(let attempt=0;attempt<2;attempt++)await assert.rejects(sync.syncCashierSaleAuthoritative({merchantId:f.merchantId,body:bodies.get(2)}),error=>error.code==='CASHIER_OPERATION_SEQUENCE_CONFLICT');
+    assert.deepEqual(await snapshot(f.merchantId),beforeLate,'late rejection must roll back all selected financial/stock/timeline state');
+    for(const sequence of [1,3]){const replay=await sync.syncCashierSaleAuthoritative({merchantId:f.merchantId,body:bodies.get(sequence)});assert.equal(replay.replayed,true);assert.equal(replay.inventory_mutation_count,0);}
+    assert.deepEqual(await snapshot(f.merchantId),beforeLate);assert.deepEqual(await snapshot(peer.merchantId),peerBefore);
+    console.log('P0_SEQUENCE_GAP_SALE_DIAGNOSTIC '+JSON.stringify({canonicalSaleService:true,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,accepted:[1,3],lateRejected:2,durableOrders:2,durableInventoryMutations:2,remainingStock:1,replayNoMutation:true,peerPreserved:true,recoveryContractAccepted:false,httpTest:false,hostedAccepted:false}));
+    // A passing observation is a reproduced unresolved recovery behavior, not
+    // approval to discard the missing operation or synthesize a tombstone.
   });
 
   await t.test('SQL observation: gap is accepted but its later missing sequence is rejected', async () => {
