@@ -1,3 +1,7 @@
+## SEQ-D3 receipt fault fixtures corrected; runtime acceptance pending — 2026-10-27
+
+Candidate6f4fef317581a161009aae5501e7c8acb4d6b58a completed54 SUCCESS/3 FAILURE workflows. Cashier40375019290/job121755599681 and broader40375019435/job121755599131 show three fault-injection DDL syntax errors42601 (single dollar delimiters), producing historical suite18 PASS/5 FAIL including parents. Correct only those three test function delimiters to PostgreSQL dollar quoting; preserve rollback/retry assertions and production source unchanged. Signed native40375007232/job121755556204 failed browser prerequisite timeout before tests; no product result inferred. Corrected candidate CI pending; last fully accepted source remains6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3. Sequence gate OPEN; release NO-GO. No hosted, merge or deployment action.
+
 ## SEQ-D3 internal canonical financial receipt/checkpoint candidate prepared — 2026-10-26
 
 Last accepted executable remains **6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3**,57/57 CI and772 TAP. New candidate connects an explicit internal v2 context to actual canonical sale/return/void transactions and existing operator attribution wrapper. Ordinary callers/routes keep legacy behavior and public v2 rejection; no client flag or environment switch enables it.
