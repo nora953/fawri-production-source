@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomBytes} from 'node:crypto';
+import {createRequire} from 'node:module';
 import {assertDisposablePostgres} from './disposable-postgres-test-guard.mjs';
 
 // Owned offline rehearsal only. No hosted/general role provisioning interface.
@@ -45,8 +46,9 @@ async function main(){
  const attestation=JSON.parse(fs.readFileSync(process.env.FAWRI_DISPOSABLE_PG_ATTESTATION,'utf8'));
  assert.notEqual(attestation.containerId,plan.sourceContainerId,'source container cannot be reused');
  assert.notEqual(process.env.FAWRI_DISPOSABLE_PG_RUN_ID,plan.sourceRunId,'source run cannot be reused');
+ recoveryStage='target-driver';
+ const {Client}=createRequire(new URL('../../lib/db/package.json',import.meta.url))('pg');
  recoveryStage='target-identity';
- const {Client}=await import('pg');
  const root=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:5000});
  try{
   await root.connect();
@@ -55,6 +57,8 @@ async function main(){
   assert.notEqual(targetSystemIdentifier,plan.sourceSystemIdentifier,'independent PostgreSQL cluster required');
   if(phase==='bootstrap'){
    recoveryStage='empty-independent-target';
+   const hostRules=(await root.query("SELECT address,auth_method FROM pg_hba_file_rules WHERE type='host' AND address IN ('127.0.0.1','::1')")).rows;
+   assert.ok(hostRules.some(r=>r.address==='127.0.0.1')&&hostRules.every(r=>r.auth_method==='scram-sha-256'),'loopback TCP password authentication must be explicit');
    assert.equal((await root.query('SELECT count(*)::int AS n FROM pg_roles WHERE rolname=ANY($1::text[])',[names])).rows[0].n,0,'all reviewed source roles must initially be absent');
    assert.equal((await root.query("SELECT count(*)::int AS n FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN ('r','p')")).rows[0].n,0,'bootstrap target must be empty');
    const keys=['primaryUrl','authUrl','reviewerUrl'];
@@ -78,7 +82,7 @@ async function main(){
     const fresh=new Client({connectionString:manifest[key],connectionTimeoutMillis:5000});
     try{await fresh.connect();assert.equal((await fresh.query('SELECT session_user::text AS login')).rows[0].login,callers[i]);}finally{await fresh.end();}
    }
-   manifest.recovery={sourceSystemIdentifier:plan.sourceSystemIdentifier,targetSystemIdentifier,sourceContainerId:plan.sourceContainerId,targetContainerId:attestation.containerId,rolesInitiallyAbsent:6,rolesCreated:6,oldCredentialsRejected:3,newLoginsVerified:3,rolePasswordsCopied:false};
+   manifest.recovery={sourceSystemIdentifier:plan.sourceSystemIdentifier,targetSystemIdentifier,sourceContainerId:plan.sourceContainerId,targetContainerId:attestation.containerId,rolesInitiallyAbsent:6,rolesCreated:6,oldCredentialsRejected:3,newLoginsVerified:3,rolePasswordsCopied:false,loopbackAuth:'scram-sha-256'};
   }else{
    recoveryStage='discard-restored-scope-leases';
    assert.equal(manifest.recovery?.targetSystemIdentifier,targetSystemIdentifier);

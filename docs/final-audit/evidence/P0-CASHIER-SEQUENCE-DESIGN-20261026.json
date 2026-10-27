@@ -2045,6 +2045,38 @@
       "Owned fixture role inventory only; bootstrap administrator provisioned independently by harness",
       "Application secrets supplied unchanged; no real vault/KMS recovery or full hosted identity inventory",
       "Not generic production provisioning/restore CLI adoption or hosted/PITR/media recovery"
-    ]
+    ],
+    "failedAttempts": [
+      {
+        "source": "9c6954a1db5064ac1d31ca03a21a4b216e5cdeef",
+        "workflows": {
+          "total": 57,
+          "success": 54,
+          "failed": 3
+        },
+        "repositorySecurity": {
+          "runs": [
+            40448148413,
+            40448148611
+          ],
+          "cause": "Synthetic unused remote rejection URL in new unit test classified credential-url; remove userinfo entirely. Preserve history without broad allowlists using exact immutable blob/path/rule/span classification, with negative regression tests.",
+          "blob": "5b2ebc7b8262d8cc44fda859a2bab52337bafb59",
+          "finding": {
+            "rule": "credential-url",
+            "index": 2607,
+            "length": 54
+          }
+        },
+        "freshRecovery": {
+          "run": 40448148549,
+          "job": 122004238895,
+          "seedPassed": 31,
+          "verification": "NOT_RUN",
+          "refusalStage": "target-identity",
+          "sourceInspectionCause": "Native script imported pg from repository root without a direct dependency; resolve through lib/db/package.json as the attestation guard does."
+        }
+      }
+    ],
+    "targetAuthentication": "Explicit SCRAM loopback host authentication; old and new password assertions remain required."
   }
 }

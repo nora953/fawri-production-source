@@ -14,6 +14,6 @@ test('password or arbitrary SQL fields cannot enter the reviewed plan',()=>{for(
 test('unknown missing duplicate and unsafe role identities are denied',()=>{for(const edit of [p=>p.roles.pop(),p=>p.roles[0].rolname='unreviewed',p=>p.roles[0].rolname=p.roles[1].rolname]){const p=plan();edit(p);assert.throws(()=>validateCashierRecoveryRolePlan(p,manifest));}assert.throws(()=>validateCashierRecoveryRolePlan(plan(),{...manifest,primaryRole:'unsafe";DROP ROLE x;--'}));});
 test('unreviewed role membership and absent source cluster identity are denied',()=>{const p=plan();p.memberships=[{role:'app_fixture',member:'auth_fixture'}];assert.throws(()=>validateCashierRecoveryRolePlan(p,manifest));const q=plan();q.sourceSystemIdentifier='';assert.throws(()=>validateCashierRecoveryRolePlan(q,manifest));});
 test('actual role recovery CLI refuses a remote target before pg import or proof-file access',()=>{
- const r=spawnSync(process.execPath,['scripts/lib/disposable-cashier-role-recovery.mjs','bootstrap'],{encoding:'utf8',env:{...process.env,DATABASE_URL:'postgresql://example:private-synthetic@outside.invalid/fawri_ci'},timeout:10000});
- assert.equal(r.status,1);assert.match(r.stderr,/Owned offline cashier role recovery refused/);assert.doesNotMatch(r.stderr,/private-synthetic|outside.invalid|ENOENT|Cannot find package/);
+ const r=spawnSync(process.execPath,['scripts/lib/disposable-cashier-role-recovery.mjs','bootstrap'],{encoding:'utf8',env:{...process.env,DATABASE_URL:'postgresql://outside.invalid/fawri_ci'},timeout:10000});
+ assert.equal(r.status,1);assert.match(r.stderr,/Owned offline cashier role recovery refused/);assert.doesNotMatch(r.stderr,/outside.invalid|ENOENT|Cannot find package/);
 });

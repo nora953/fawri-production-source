@@ -81,7 +81,7 @@ if [ "$audit_suite" = full-restore ] || [ "$audit_suite" = financial-proposal-re
     # password. Only the protected database dump and reviewed role plan survive.
     audit_password="$(node -e "process.stdout.write(require('node:crypto').randomBytes(24).toString('hex'))")"
     audit_run="$(node -e "process.stdout.write(require('node:crypto').randomBytes(16).toString('hex'))")"
-    printf 'POSTGRES_USER=fawri_ci\nPOSTGRES_DB=fawri_ci\nPOSTGRES_PASSWORD=%s\n' "$audit_password" > "$audit_temp/postgres.env"
+    printf 'POSTGRES_USER=fawri_ci\nPOSTGRES_DB=fawri_ci\nPOSTGRES_PASSWORD=%s\nPOSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=trust\n' "$audit_password" > "$audit_temp/postgres.env"
     audit_pg="$(docker run -d --label "fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}" --network none --env-file "$audit_temp/postgres.env" postgres:16-alpine)"
     test "$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$audit_pg")" = none
     for audit_attempt in {1..40}; do

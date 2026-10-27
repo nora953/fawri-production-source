@@ -297,6 +297,15 @@ export function isKnownHistoricalEntrypointFenceFixture(finding, objectPath, obj
     finding.rule === "credential-url" && finding.index === 641 && finding.length === 54;
 }
 
+// Fabricated pre-import rejection input from the initial fresh-role rehearsal.
+ // The current test no longer embeds credentials. Only this immutable historical
+ // blob/path/rule/span is classified as a fixture; all changed findings still fail.
+export function isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) {
+  return objectId === "5b2ebc7b8262d8cc44fda859a2bab52337bafb59" &&
+    normalizeRepositoryPath(objectPath) === "scripts/tests/disposable-cashier-role-recovery.test.mjs" &&
+    finding.rule === "credential-url" && finding.index === 2607 && finding.length === 54;
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -375,7 +384,8 @@ function scanHistory(root) {
         isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath) ||
         isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId) ||
         isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId) ||
-        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId)
+        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,

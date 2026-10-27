@@ -184,7 +184,7 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     assert.notEqual(source.sourceSystemIdentifier,manifest.recovery.targetSystemIdentifier);
     assert.equal(manifest.recovery.rolesInitiallyAbsent,6);assert.equal(manifest.recovery.rolesCreated,6);
     assert.equal(manifest.recovery.oldCredentialsRejected,3);assert.equal(manifest.recovery.newLoginsVerified,3);
-    assert.equal(manifest.recovery.ownerPasswordsAbsent,true);assert.equal(manifest.recovery.rolePasswordsCopied,false);
+    assert.equal(manifest.recovery.loopbackAuth,'scram-sha-256');assert.equal(manifest.recovery.ownerPasswordsAbsent,true);assert.equal(manifest.recovery.rolePasswordsCopied,false);
     assert.ok(manifest.recovery.scopeLeasesDiscarded>0);assert.equal(manifest.recovery.scopeLeasesAfterReset,0);
     assert.equal((await pool.query('SELECT count(*)::int AS n FROM fawri_security.transaction_scopes')).rows[0].n,0);
     assert.equal((await pool.query('SELECT system_identifier::text FROM pg_control_system()')).rows[0].system_identifier,manifest.recovery.targetSystemIdentifier);

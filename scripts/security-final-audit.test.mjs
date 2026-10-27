@@ -12,6 +12,7 @@ import {
   isKnownHistoricalRestoreRejectionFixture,
   isKnownHistoricalDisposableGuardFixture,
   isKnownHistoricalEntrypointFenceFixture,
+  isKnownHistoricalFreshRoleRecoveryFenceFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -386,4 +387,19 @@ test("advisory diagnostics stay bounded for oversized registry lists", () => {
     severity: "high", module_name: "package-name",
   }]));
   assert.equal(summarizeBlockingAdvisories({ advisories }).length, 50);
+});
+
+test("historical fresh role rejection fixture classification is bound to one immutable finding", () => {
+  const file = "scripts/tests/disposable-cashier-role-recovery.test.mjs";
+  const blob = "5b2ebc7b8262d8cc44fda859a2bab52337bafb59";
+  const target = new URL("postgresql://outside.invalid/fawri_ci");
+  target.username = "example";
+  target.password = ["private", "synthetic"].join("-");
+  const text = " ".repeat(2607) + target.toString();
+  const finding = findSensitiveText(text, { includePrivateData: false, includeAssignments: false }).find(x => x.rule === "credential-url");
+  assert.equal(finding.index, 2607);assert.equal(finding.length, 54);
+  assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, file, blob), true);
+  for(const otherBlob of [undefined, "0".repeat(40)])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, file, otherBlob), false);
+  for(const otherFile of ["scripts/restore-postgresql.mjs", "scripts/tests/other.test.mjs"])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, otherFile, blob), false);
+  for(const changed of [{...finding,index:finding.index+1},{...finding,length:finding.length+1},{...finding,rule:"private-key"}])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(changed, file, blob), false);
 });
