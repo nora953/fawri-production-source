@@ -2027,5 +2027,24 @@
       ]
     },
     "minimizationBoundary": "No raw review/reviewer references retained in proposal ledger; internal merchant/stream IDs, timestamps and correlation hashes remain retained and require FIELD005 policy approval."
+  },
+  "freshClusterRoleRecovery": {
+    "status": "PREPARED_OWNED_FRESH_CLUSTER_ROLE_ROTATION_SCOPE_RESET_CI_PENDING",
+    "source": null,
+    "helper": "scripts/lib/disposable-cashier-role-recovery.mjs",
+    "suite": "financial-proposal-restore",
+    "preparedAssertions": [
+      "Source container/anonymous volume removed; fresh container/system identifier/run attestation and empty target",
+      "All6 reviewed fixture roles initially absent,3 safe NOLOGIN owners plus3 independent LOGIN identities recreated",
+      "No source database-role passwords exported; old3 credentials rejected and new3 passwords authenticate",
+      "Owner/ACL-preserving full restore and volatile source transaction scope leases removed before app sessions",
+      "Combined read-only metadata/fault/tenant denials, financial replay/next sale and deletion lifecycle operate after independent-cluster recovery"
+    ],
+    "localUnitTests": 31,
+    "limits": [
+      "Owned fixture role inventory only; bootstrap administrator provisioned independently by harness",
+      "Application secrets supplied unchanged; no real vault/KMS recovery or full hosted identity inventory",
+      "Not generic production provisioning/restore CLI adoption or hosted/PITR/media recovery"
+    ]
   }
 }

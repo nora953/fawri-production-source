@@ -43,7 +43,7 @@ jobs:
         id: install
         run: node scripts/ci-run-redacted.mjs --label audit-install -- pnpm install --frozen-lockfile --ignore-scripts
       - name: Prove fail-closed guard and teardown with no database
-        run: node --test scripts/disposable-postgres-test-guard.test.mjs
+        run: node --test scripts/disposable-postgres-test-guard.test.mjs scripts/tests/disposable-cashier-role-recovery.test.mjs
       - name: Prove PostgreSQL response frame filtering without a database
         run: node --test scripts/tests/postgres-commit-response-proxy.test.mjs
       - name: Build API for child-process journeys
@@ -68,7 +68,7 @@ jobs:
       - name: Full committed schema and restricted tenant restore drill
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
         run: bash scripts/run-isolated-postgres-audit.sh full-restore
-      - name: Combined cashier enrollment and receipt proposal restore (not canonical adoption)
+      - name: Fresh-cluster cashier proposal role bootstrap and restore (not canonical adoption)
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
         run: bash scripts/run-isolated-postgres-audit.sh financial-proposal-restore
       - name: Prove Node22 staging runtime compatibility on an offline HTTP journey

@@ -7,6 +7,7 @@ import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres
 import {cleanupResources} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 const phase=process.env.FAWRI_AUDIT_RESTORE_PHASE;
+const freshRecovery=process.env.FAWRI_AUDIT_FRESH_CLUSTER_RECOVERY==='1';
 assert.ok(['seed','verify'].includes(phase));
 const proofFile='/restore-proof/financial-proposals.json';
 const bootstrapUrl=process.env.DATABASE_URL;
@@ -176,6 +177,19 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     const memberships=(await pool.query('SELECT pg_get_userbyid(roleid) AS role,pg_get_userbyid(member) AS member,pg_get_userbyid(grantor) AS grantor,admin_option FROM pg_auth_members WHERE pg_get_userbyid(roleid)=ANY($1::text[]) OR pg_get_userbyid(member)=ANY($1::text[]) ORDER BY role,member',[names])).rows;
     return{tables,columns,functions,policies,triggers,constraints,roles,memberships,data:await data()};
   }
+  if(freshRecovery&&phase==='verify')await t.test('new cluster recovers reviewed roles with rotated credentials and cleared volatile scopes',async()=>{
+    const source=JSON.parse(fs.readFileSync('/restore-proof/cashier-roles.json','utf8'));
+    const target=JSON.parse(fs.readFileSync(process.env.FAWRI_DISPOSABLE_PG_ATTESTATION,'utf8'));
+    assert.notEqual(source.sourceContainerId,target.containerId);assert.notEqual(source.sourceRunId,process.env.FAWRI_DISPOSABLE_PG_RUN_ID);
+    assert.notEqual(source.sourceSystemIdentifier,manifest.recovery.targetSystemIdentifier);
+    assert.equal(manifest.recovery.rolesInitiallyAbsent,6);assert.equal(manifest.recovery.rolesCreated,6);
+    assert.equal(manifest.recovery.oldCredentialsRejected,3);assert.equal(manifest.recovery.newLoginsVerified,3);
+    assert.equal(manifest.recovery.ownerPasswordsAbsent,true);assert.equal(manifest.recovery.rolePasswordsCopied,false);
+    assert.ok(manifest.recovery.scopeLeasesDiscarded>0);assert.equal(manifest.recovery.scopeLeasesAfterReset,0);
+    assert.equal((await pool.query('SELECT count(*)::int AS n FROM fawri_security.transaction_scopes')).rows[0].n,0);
+    assert.equal((await pool.query('SELECT system_identifier::text FROM pg_control_system()')).rows[0].system_identifier,manifest.recovery.targetSystemIdentifier);
+  });
+
   const initial=await components(),fingerprint=createHash('sha256').update(JSON.stringify(initial)).digest('hex');
   await t.test('data schema function owners role flags policies constraints triggers and ACLs match',async()=>{
     assert.equal((await pool.query('SELECT count(*)::int AS n FROM drizzle.__drizzle_migrations')).rows[0].n,53);
@@ -374,7 +388,17 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     console.log('P0_REVIEW_LEDGER_DELETION_LIFECYCLE '+JSON.stringify({actualMerchantDeletionService:true,postRestore:true,retirementFaultRollback:true,immutableReceiptsAndReviewHashesPreserved:true,rawReviewReferencesAbsent:true,deviceBindingErased:true,noReenrollmentReset:true,peerMerchantPreserved:true,hashesArePseudonymousNotAnonymity:true,retentionScheduleApproved:false,ownerHttpOrHosted:false}));
   });
 
-  console.log('P0_COMBINED_CASHIER_PROPOSAL_RESTORE '+JSON.stringify({phase,fingerprint,canonicalMigrations:53,publicTablesIncludingProposal:98,proposalNotCanonical:true,realRestrictedLogins:true,independentEvidenceAssumed:true,rolesPreprovisionedSameOwnedCluster:true,exactReplayAndNoReset:true,restoredNextCanonicalSale:phase==='verify',hosted:false}));
+  if(freshRecovery&&phase==='seed'){
+    const {validateCashierRecoveryRolePlan}=await import('../../../scripts/lib/disposable-cashier-role-recovery.mjs');
+    const source=JSON.parse(fs.readFileSync(process.env.FAWRI_DISPOSABLE_PG_ATTESTATION,'utf8'));
+    const roles=(await pool.query("SELECT rolname,rolcanlogin,rolsuper,rolbypassrls,rolcreatedb,rolcreaterole,rolinherit,rolreplication FROM pg_roles WHERE rolname !~ '^pg_' AND rolname<>session_user ORDER BY rolname")).rows;
+    const memberships=(await pool.query('SELECT pg_get_userbyid(roleid) AS role,pg_get_userbyid(member) AS member FROM pg_auth_members WHERE pg_get_userbyid(roleid)=ANY($1::text[]) OR pg_get_userbyid(member)=ANY($1::text[])',[roles.map(x=>x.rolname)])).rows;
+    const plan={format:'fawri-disposable-cashier-role-recovery-v1',sourceSystemIdentifier:(await pool.query('SELECT system_identifier::text FROM pg_control_system()')).rows[0].system_identifier,sourceContainerId:source.containerId,sourceRunId:process.env.FAWRI_DISPOSABLE_PG_RUN_ID,roles,memberships};
+    validateCashierRecoveryRolePlan(plan,manifest);
+    fs.writeFileSync('/restore-proof/cashier-roles.json',JSON.stringify(plan),{mode:0o600});
+  }
+
+  console.log('P0_COMBINED_CASHIER_PROPOSAL_RESTORE '+JSON.stringify({phase,fingerprint,canonicalMigrations:53,publicTablesIncludingProposal:98,proposalNotCanonical:true,realRestrictedLogins:true,independentEvidenceAssumed:true,rolesPreprovisionedSameOwnedCluster:!freshRecovery,freshClusterRecovery:freshRecovery,roleBootstrapVerified:freshRecovery&&phase==='verify',exactReplayAndNoReset:true,restoredNextCanonicalSale:phase==='verify',hosted:false}));
   // Deliberately retain roles and fixture data for pg_dump/pg_restore. The
   // existing launcher destroys both owned containers and anonymous volumes.
 });
