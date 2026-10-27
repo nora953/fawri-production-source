@@ -4477,5 +4477,12 @@
     "acceptedSource": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
     "parentGateClosed": false,
     "newGate": false
+  },
+  "currentBackgroundJobAdminHttpProof": {
+    "evidence": "evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json",
+    "status": "BOUNDED_EXISTING_ADMIN_JOB_HTTP_AUTHORITY_SUMMARY_AND_REQUEUE_ATOMICITY_ACCEPTED",
+    "source": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+    "newGate": false,
+    "parentGateClosed": false
   }
 }

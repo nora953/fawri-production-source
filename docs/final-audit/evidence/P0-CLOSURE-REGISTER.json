@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
-  "lastFullyAcceptedSource": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+  "sourceCandidate": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+  "lastFullyAcceptedSource": "205b5eca8908885a676ec02cd3643faf64f5fe22",
   "release": "NO-GO",
   "rows": [
     {
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Reconcile channelDurableJobAdmin actual-app GET(view_logs/manage_channels) versus requeue(manage_channels) and producer/result-field assertions against existing evidence; select a missing case only after that trace. Continue existing SEQ-R1/R2/R3 acceptance mapping separately without duplicate pairing.",
+      "nextAction": "Reuse bounded provider-cost and background-job actor/summary/requeue proofs. Continue only named remaining actor/field/producer reconciliation; current map references are source candidates, not blanket acceptance. The next prioritized executable/design slice is SEQ-R3 admission/compatibility in the existing cashier contract; do not regenerate identical catalogues or repeat these HTTP cases without a new change/failure.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -194,8 +194,10 @@
       },
       "backgroundJobAdminHttpProof": {
         "evidence": "evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json",
-        "status": "PREPARED_PENDING_EXACT_SOURCE_CI",
-        "existingGate": true
+        "status": "BOUNDED_EXISTING_ADMIN_JOB_HTTP_AUTHORITY_SUMMARY_AND_REQUEUE_ATOMICITY_ACCEPTED",
+        "source": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+        "newGate": false,
+        "parentGateClosed": false
       }
     },
     {
@@ -323,7 +325,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "INTERNAL_REV2_AUTHORITY_LIFECYCLE_FRESH_FIXTURE_CLUSTER_RECOVERY_ACCEPTED_CANONICAL_ISSUER_POLICY_CLIENT_OPEN",
-      "nextAction": "Produce one acceptance map for SEQ-R1/R2/R3 and existing pairing. Identify the precise missing implementation/proof; do not create another isolated issuer candidate or duplicate pairing flow.",
+      "nextAction": "Resolve the SEQ-R3 admission/compatibility boundary using existing merchant pairing and actual local queue/server history paths in the existing recovery contract. Prepare one concrete reviewable specification for new versus known/restored devices; explicitly identify required trusted evidence and exceptional owner recovery. Keep public v2 unsupported until that contract and its integration acceptance are met. Do not create another disconnected issuer or rerun accepted internal proof.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -2079,7 +2081,17 @@
         "broaderTap": 829,
         "allWorkflowsSuccess": 57
       },
-      "closurePlanPointer": "closurePlan.entries[gate=CASHIER-SYNC-SEQUENCE-001]"
+      "closurePlanPointer": "closurePlan.entries[gate=CASHIER-SYNC-SEQUENCE-001]",
+      "closureGapMap": {
+        "evidence": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#closureGapMap20261027",
+        "status": "EXISTING_SEQ_R1_R2_R3_PROOF_LAYER_GAPS_RECONCILED_NOT_ADOPTED",
+        "remaining": [
+          "SEQ-R1",
+          "SEQ-R2",
+          "SEQ-R3"
+        ],
+        "newRuntime": false
+      }
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -2348,12 +2360,31 @@
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
         "completedPrerequisite": "Current320-source/363-test AST/reference catalogue and bounded8-table/86-field schema continuity; historical manifests classified without runtime promotion. Named provider cost HTTP subcondition executed; final source CI acceptance recorded separately.",
-        "nextNamedReview": "Channel durable job admin GET versus requeue actor/field assertions and producer/result provenance under existing declared policy; not a new gate."
+        "nextNamedReview": "Channel durable job admin GET versus requeue actor/field assertions and producer/result provenance under existing declared policy; not a new gate.",
+        "latestAcceptedBoundary": {
+          "evidence": "evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json",
+          "status": "BOUNDED_EXISTING_ADMIN_JOB_HTTP_AUTHORITY_SUMMARY_AND_REQUEUE_ATOMICITY_ACCEPTED",
+          "source": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+          "newGate": false,
+          "parentGateClosed": false
+        },
+        "noRepeat": "Provider-cost and background-job named boundaries now accepted within their stated scopes. Do not repeat absent source change/failure or a named integration gap; completeP0Inventory remainsfalse."
       },
       {
         "order": 2,
         "gate": "CASHIER-SYNC-SEQUENCE-001",
-        "deliverable": "SEQ-R1/R2/R3 acceptance-to-proof gap map using existing merchant pairing, then one missing implementation/proof; no automatic extra HTTP test absent mapped necessity."
+        "deliverable": "SEQ-R1/R2/R3 acceptance-to-proof gap map using existing merchant pairing, then one missing implementation/proof; no automatic extra HTTP test absent mapped necessity.",
+        "currentGapMap": {
+          "evidence": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#closureGapMap20261027",
+          "status": "EXISTING_SEQ_R1_R2_R3_PROOF_LAYER_GAPS_RECONCILED_NOT_ADOPTED",
+          "remaining": [
+            "SEQ-R1",
+            "SEQ-R2",
+            "SEQ-R3"
+          ],
+          "newRuntime": false
+        },
+        "nextAction": "Resolve the SEQ-R3 admission/compatibility boundary using existing merchant pairing and actual local queue/server history paths in the existing recovery contract. Prepare one concrete reviewable specification for new versus known/restored devices; explicitly identify required trusted evidence and exceptional owner recovery. Keep public v2 unsupported until that contract and its integration acceptance are met. Do not create another disconnected issuer or rerun accepted internal proof."
       },
       {
         "order": 3,
@@ -2384,7 +2415,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Reconcile channelDurableJobAdmin actual-app GET(view_logs/manage_channels) versus requeue(manage_channels) and producer/result-field assertions against existing evidence; select a missing case only after that trace. Continue existing SEQ-R1/R2/R3 acceptance mapping separately without duplicate pairing.",
+        "nextAction": "Reuse bounded provider-cost and background-job actor/summary/requeue proofs. Continue only named remaining actor/field/producer reconciliation; current map references are source candidates, not blanket acceptance. The next prioritized executable/design slice is SEQ-R3 admission/compatibility in the existing cashier contract; do not regenerate identical catalogues or repeat these HTTP cases without a new change/failure.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -2414,6 +2445,13 @@
           "source": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
           "status": "BOUNDED_EXISTING_OWNER_ONLY_HTTP_SQL_ACTOR_FIELD_AND_AUDIT_ACCEPTED",
           "closesParent": false
+        },
+        "backgroundJobAdminBoundary": {
+          "evidence": "evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json",
+          "status": "BOUNDED_EXISTING_ADMIN_JOB_HTTP_AUTHORITY_SUMMARY_AND_REQUEUE_ATOMICITY_ACCEPTED",
+          "source": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+          "newGate": false,
+          "parentGateClosed": false
         }
       },
       {
@@ -2431,10 +2469,20 @@
         "missingEvidenceOrDecision": "Actual service pairing continuity is accepted at b15f4b8. HTTP pairing continuity and full protocol/client/recovery integration are not closed; independent original-review provenance is not supplied by pairing.",
         "executableNowWithinGitHub": "Reconcile each required recovery-contract row against existing evidence. Implement only the next missing row that advances SEQ-R1/R2/R3; the HTTP pairing extension is conditional on that mapping.",
         "externalDependency": "Intended manual-adjustment/legacy disposition, trusted enrollment/recovery rules, FIELD005 and separately authorized operational adoption remain dependencies.",
-        "nextAction": "Produce one acceptance map for SEQ-R1/R2/R3 and existing pairing. Identify the precise missing implementation/proof; do not create another isolated issuer candidate or duplicate pairing flow.",
+        "nextAction": "Resolve the SEQ-R3 admission/compatibility boundary using existing merchant pairing and actual local queue/server history paths in the existing recovery contract. Prepare one concrete reviewable specification for new versus known/restored devices; explicitly identify required trusted evidence and exceptional owner recovery. Keep public v2 unsupported until that contract and its integration acceptance are met. Do not create another disconnected issuer or rerun accepted internal proof.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
-        ]
+        ],
+        "currentGapMap": {
+          "evidence": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#closureGapMap20261027",
+          "status": "EXISTING_SEQ_R1_R2_R3_PROOF_LAYER_GAPS_RECONCILED_NOT_ADOPTED",
+          "remaining": [
+            "SEQ-R1",
+            "SEQ-R2",
+            "SEQ-R3"
+          ],
+          "newRuntime": false
+        }
       },
       {
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",

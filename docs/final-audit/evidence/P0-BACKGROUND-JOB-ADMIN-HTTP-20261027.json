@@ -4,7 +4,7 @@
   "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
   "subcondition": "Actual app background-job admin GET versus requeue actor/summary/atomic-state boundary",
   "basedOnCheckpoint": "c8e7cf58ddd3e56c2ed75d51b811006c84059804",
-  "status": "PREPARED_PENDING_EXACT_SOURCE_CI",
+  "status": "BOUNDED_EXISTING_ADMIN_JOB_HTTP_AUTHORITY_SUMMARY_AND_REQUEUE_ATOMICITY_ACCEPTED",
   "newGate": false,
   "gateClosed": false,
   "applicationChanged": false,
@@ -67,10 +67,342 @@
     "Selected fixtures and snapshots, not every job type/producer/nested result or global P0 privacy proof.",
     "Summary includes merchant/dedupe identifiers and sanitized result under existing global admin policy; no new field visibility policy adopted.",
     "Actual HTTP/service requeue tested; no worker run, Graph send, financial debit, hosted queue or production key acceptance.",
-    "Session bookkeeping outside immutable business snapshots remains permitted.",
-    "Exact-source targeted and broader CI pending; no runtime PASS inferred from syntax."
+    "Session bookkeeping outside immutable business snapshots remains permitted."
   ],
   "localSyntax": "PASS_node_check",
-  "runtime": "PENDING",
-  "nextAction": "Read exact-source targeted and broader CI; fix any observed failure without weakening assertions. Keep full role/privacy gate OPEN and no repeated accepted provider-cost tests except the relevant shared fixture regression."
+  "runtime": "PASS_OWNED_OFFLINE_POSTGRES_ACTUAL_APP",
+  "nextAction": "Reuse accepted provider-cost and background-job HTTP boundaries. Next prioritized source slice is existing SEQ-R3 admission/compatibility specification using merchant pairing, queue and authoritative history. Keep arbitrary job-result field privacy and remaining role/producer inventory open; no repeat of accepted queue cases absent a change, failure or named integration gap.",
+  "acceptedSource": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+  "acceptedTree": "ace4e5fe79fcdd5904b77e615fcb8daaff21d686",
+  "applicationRuntimeUnchangedFrom": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+  "verification": {
+    "allWorkflowsSuccess": 57,
+    "checkout": "6aa5c439b396b5dbec68ed8153c441242ec3c04a",
+    "checkoutTree": "ace4e5fe79fcdd5904b77e615fcb8daaff21d686",
+    "checkoutTreeMatchesSource": true,
+    "targeted": {
+      "run": 40522350216,
+      "job": 122252533900,
+      "passed": 58,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "invocations": 4,
+      "uniqueFiles": 4,
+      "fullAppTap": 27,
+      "newFunctionalCases": 7,
+      "includesParentTests": true
+    },
+    "broader": {
+      "run": 40522350592,
+      "job": 122252535350,
+      "passed": 829,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "invocations": 97,
+      "uniqueFiles": 94,
+      "includesParentTests": true,
+      "newManagementHttpFileIncluded": false
+    },
+    "security": {
+      "run": 40522350197,
+      "repositoryJob": 122252534302,
+      "trackedAndFullReachableHistory": "PASS"
+    },
+    "freshClusterRestore": {
+      "sourceFingerprint": "66f1ce167b080977cda83298e02070efa42a5fb30f08d8bcdd1c529849b3dcc2",
+      "targetFingerprint": "66f1ce167b080977cda83298e02070efa42a5fb30f08d8bcdd1c529849b3dcc2",
+      "matched": true,
+      "boundedFixtureOnly": true
+    },
+    "denominatorRule": "Targeted58 and broader829 are separate reports, both include parents. Broader does not include the new management HTTP file. No aggregation into overall P0 progress.",
+    "workflowRuns": [
+      {
+        "id": 40522350771,
+        "name": "P0 signed cashier offline authority",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350487,
+        "name": "Cashier operational cutoff",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350577,
+        "name": "Subscription service guarantee validation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350864,
+        "name": "P0 dependency security upgrade candidate",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350388,
+        "name": "Product catalog UI cutover",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350648,
+        "name": "Global admin golden journey",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350657,
+        "name": "Meta webhook pipeline",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350197,
+        "name": "Final security and supply chain",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350674,
+        "name": "PostgreSQL schema validation",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350281,
+        "name": "Observability mounted routes",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350216,
+        "name": "P0 management privacy HTTP matrix",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350502,
+        "name": "PostgreSQL outage recovery proof",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350566,
+        "name": "Catalog variant signature schema contract",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350401,
+        "name": "Merchant deletion physical media lifecycle",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350172,
+        "name": "Merchant deletion provider identifiers",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350597,
+        "name": "Bot logic adversarial matrix",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350739,
+        "name": "Merchant deletion audit PII",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350450,
+        "name": "Complete migration safety",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350663,
+        "name": "Complete schema candidate",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350275,
+        "name": "Dashboard channel coherence",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350611,
+        "name": "Merchant deletion cashier lifecycle",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350608,
+        "name": "Order operations",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350273,
+        "name": "Merchant access security",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350541,
+        "name": "Pre-release performance smoke gate",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350834,
+        "name": "Browser storage authority audit",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350277,
+        "name": "Isolated Neon preflight static safety",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350414,
+        "name": "Cashier dashboard surface regression",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350605,
+        "name": "Billing provider readiness",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350435,
+        "name": "Backup and restore drill",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350696,
+        "name": "Meta OAuth operational cutoff",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350486,
+        "name": "Auth PostgreSQL concurrency proof",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350860,
+        "name": "Merchant settings",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350573,
+        "name": "AWS KMS production adapter readiness",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350695,
+        "name": "Auth OTP contract continuity",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350319,
+        "name": "P0 notification privacy HTTP matrix",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350207,
+        "name": "Staging container contract",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350709,
+        "name": "Commerce cashier closeout",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350572,
+        "name": "Location inventory authority",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522349882,
+        "name": "PostgreSQL migration candidate",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350780,
+        "name": "Global subscription golden journey",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350631,
+        "name": "Location routing engine",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522351802,
+        "name": "P0 conversation privacy HTTP matrix",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350603,
+        "name": "Meta webhook PostgreSQL ingress cutover",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350865,
+        "name": "Final quality gates",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350434,
+        "name": "Merchant account security UI",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522351127,
+        "name": "Global merchant golden journey",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522351691,
+        "name": "Merchant regional PostgreSQL authority",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350798,
+        "name": "Knowledge embedding readiness",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350807,
+        "name": "Merchant deletion promotions lifecycle",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522351108,
+        "name": "P0 Support privacy authority diagnostic",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350883,
+        "name": "Global Merchant PostgreSQL HTTP Journey",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350840,
+        "name": "Clean deployment golden gate",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350679,
+        "name": "Cashier subscription lifecycle",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522351311,
+        "name": "Foundation integration final gate",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350042,
+        "name": "P0 cashier IndexedDB browser regression",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350612,
+        "name": "SEQ D2 canonical storage acceptance",
+        "conclusion": "success"
+      },
+      {
+        "id": 40522350592,
+        "name": "Isolated PostgreSQL engineering audit",
+        "conclusion": "success"
+      }
+    ]
+  }
 }

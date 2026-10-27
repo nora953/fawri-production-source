@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Extend the same existing merchant pairing continuity scenarios through authenticated merchant HTTP issuance and real cashier redemption, reusing current session and station authority. Then reconcile protocol negotiation/recovery; keep v2 unsupported until complete acceptance, with no guessed fresh-empty provenance, historical reset, routine platform-owner approval or duplicate pairing.",
+  "nextExactAction": "Resolve the SEQ-R3 admission/compatibility boundary using existing merchant pairing and actual local queue/server history paths in the existing recovery contract. Prepare one concrete reviewable specification for new versus known/restored devices; explicitly identify required trusted evidence and exceptional owner recovery. Keep public v2 unsupported until that contract and its integration acceptance are met. Do not create another disconnected issuer or rerun accepted internal proof.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4370,5 +4370,95 @@
     "acceptedSource": "b15f4b8751da7d8e84933ffd2e778b28538caa3b",
     "broaderTap": 829,
     "allWorkflowsSuccess": 57
+  },
+  "closureGapMap20261027": {
+    "date": "2026-10-27",
+    "status": "EXISTING_SEQ_R1_R2_R3_PROOF_LAYER_GAPS_RECONCILED_NOT_ADOPTED",
+    "sourceReviewed": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+    "newRuntimeExecutedByReconciliation": false,
+    "newReleaseRequirements": false,
+    "gateClosed": false,
+    "releaseAccepted": false,
+    "reusedAcceptedLayers": [
+      {
+        "layer": "Canonical0052 storage/startup/deletion/restore",
+        "evidence": "P0-CASHIER-CANONICAL-0052-ACCEPTANCE-20261026.json",
+        "limit": "Storage/lifecycle acceptance, not public v2 admission or client ACK."
+      },
+      {
+        "layer": "Candidate0053 generation/fresh/upgrade/history-withheld preflight",
+        "source": "699af77df6be59510cc4638512d876d4a9a16173",
+        "limit": "Candidate54/98 only; canonical53/97 remains. No automatic operational grants."
+      },
+      {
+        "layer": "Internal reviewed-empty enrollment and financial receipt handoff",
+        "source": "84f13d49dbe7432d4e839d5abaf0fcd9b63dab0e",
+        "limit": "Synthetic independent original/reviewer assumptions and internal trusted capability; not real issuance, public route or native v2."
+      },
+      {
+        "layer": "Native hold/reload/replay",
+        "evidence": "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
+        "limit": "Synthetic transport/context; no native v2-to-real-server recovery acceptance."
+      },
+      {
+        "layer": "Real operator HTTP gap/postcommit retry",
+        "evidence": "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+        "limit": "Existing observed legacy accept1/3/reject2 plus retry; not a recovered late operation."
+      },
+      {
+        "layer": "Merchant station pairing continuity",
+        "evidence": "P0-CASHIER-PAIRING-CONTINUITY-20261027.json",
+        "source": "b15f4b8751da7d8e84933ffd2e778b28538caa3b",
+        "limit": "Existing merchant-owned pairing and service/SQL history preservation; not fresh-empty provenance or complete v2 handoff."
+      }
+    ],
+    "rows": [
+      {
+        "id": "SEQ-R1",
+        "existingRequirement": "Future-gap/late sale-return-void dependency and replay/hold semantics",
+        "accepted": "Bounded internal receipt/checkpoint transactions, replay/concurrency/faults and legacy refusal/attribution retry.",
+        "missing": "Adopted end-to-end admission/ACK/hold/recovery behavior through existing operator HTTP and real native client. Current public path rejects v2/stream markers; current native drains are not versioned-stream transports.",
+        "sourceAnchors": [
+          "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts#assertLegacyCashierSyncProtocol",
+          "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts#syncCashierOperatorSaleAuthoritative",
+          "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+          "artifacts/fawri/src/lib/cashierOperatorCloudSync.ts",
+          "artifacts/fawri/src/lib/cashierCloudOutboxSync.ts"
+        ],
+        "necessaryPreconditions": [
+          "SEQ-R2 supported operation/legacy movement contract",
+          "SEQ-R3 trusted stream admission and checkpoint/restore identity"
+        ],
+        "doNotRepeat": "No additional identical internal receipt/preflight proof to stand in for the missing public/native integration."
+      },
+      {
+        "id": "SEQ-R2",
+        "existingRequirement": "Intended local manual-adjustment API and retained movement-only outboxes",
+        "accepted": "Unsupported-operation hold/persistence is bounded tested; no silent skip/ACK is allowed.",
+        "missing": "Explicit supported-versus-retained-compatibility lifecycle and recovery/disposition for movement-only records that share the local counter. Bounded lack of a production UI caller cannot authorize deleting old records or inventing a new upload feature.",
+        "sourceAnchors": [
+          "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts#adjustInventory",
+          "artifacts/fawri/src/lib/cashierCloudOutboxSync.ts",
+          "artifacts/fawri/src/lib/cashierOperatorCloudSync.ts",
+          "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md#bounded-producer-and-reachability-reconciliation"
+        ],
+        "doNotRepeat": "No tombstone replacing nonzero stock, new unused CRUD/upload or synthetic tests presented as a product scope choice."
+      },
+      {
+        "id": "SEQ-R3",
+        "existingRequirement": "First-device/legacy checkpoint/restore and authorized reconciliation",
+        "accepted": "Merchant issues existing one-use pairing code; storage/read-only history, safe owner/capability/restore/preflight boundaries are bounded accepted.",
+        "missing": "Concrete trusted automatic admission/compatibility contract reusing that pairing, including existing device identity, original local pending/counter evidence, authoritative financial/history conflicts and restore refusal/recovery. Synthetic independent review is not a real issuer, and pairing authorizes station identity rather than proving prior empty history.",
+        "sourceAnchors": [
+          "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts#beginCashierStationPairingAuthoritative",
+          "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts#redeemCashierStationPairingAuthoritative",
+          "artifacts/api-server/src/services/cashierDeviceHistoryAssessment.ts#reviewCashierDeviceEnrollmentHistory",
+          "artifacts/api-server/src/services/cashierStreamEnrollmentAuthority.ts",
+          "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts#pairCashierStation"
+        ],
+        "doNotRepeat": "No platform-owner approval for every ordinary pairing, duplicate issuer candidate, baseline MAX/reset or silently promoted0053."
+      }
+    ],
+    "nextExactAction": "Resolve the SEQ-R3 admission/compatibility boundary using existing merchant pairing and actual local queue/server history paths in the existing recovery contract. Prepare one concrete reviewable specification for new versus known/restored devices; explicitly identify required trusted evidence and exceptional owner recovery. Keep public v2 unsupported until that contract and its integration acceptance are met. Do not create another disconnected issuer or rerun accepted internal proof."
   }
 }
