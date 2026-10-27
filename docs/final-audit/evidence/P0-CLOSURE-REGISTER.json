@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "6b8188037be2cdf50548acb67a3d71c91539f064",
-  "lastFullyAcceptedSource": "6b8188037be2cdf50548acb67a3d71c91539f064",
+  "sourceCandidate": "fb4b1c40d669bfc1b38ce6f79b39872ed222c7d9",
+  "lastFullyAcceptedSource": "fb4b1c40d669bfc1b38ce6f79b39872ed222c7d9",
   "release": "NO-GO",
   "rows": [
     {
@@ -284,7 +284,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "INTERNAL_REV2_AUTHORITY_LIFECYCLE_FRESH_FIXTURE_CLUSTER_RECOVERY_ACCEPTED_CANONICAL_ISSUER_POLICY_CLIENT_OPEN",
-      "nextAction": "Prepare a coordinated additive canonical authority migration candidate for the revision2 hashed review ledger and NOLOGIN enrollment/receipt owners/functions, with pinned readiness, grant/bootstrap and restore contracts. Preserve all historical migrations and ordinary legacy/public admission. No promotion or v2 activation before candidate acceptance, trusted real-reviewer issuance and explicit policy prerequisites; hosted/KMS/PITR/media recovery remains separately blocked.",
+      "nextAction": "Prepare the candidate Drizzle schema/preimage boundary and deterministic 0053 reviewed_sql generation in a separate candidate checkout; preserve all0000-0052 bytes, then prove fresh-install/upgrade rollback before canonical promotion. Trusted reviewer issuance, FIELD005 policy and operational grants remain prerequisites; hosted/KMS/PITR/media remain separately blocked.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -341,14 +341,351 @@
       "freshClusterRoleRecoveryStatus": "BOUNDED_OWNED_FRESH_CLUSTER_SIX_ROLE_ROTATION_AND_SCOPE_RESET_SOURCE_ACCEPTED",
       "freshClusterRoleRecoverySource": "6b8188037be2cdf50548acb67a3d71c91539f064",
       "coordinatedAuthorityCandidate": {
-        "status": "PREPARED_CI_PENDING",
-        "path": "docs/final-audit/evidence/seq-d3-authority-candidate/contract.json",
-        "candidateOnly": true,
-        "canonicalPromoted": false,
-        "localRegressionTests": 6,
+        "status": "ACCEPTED_BOUNDED_REVIEW_PACKAGE",
+        "source": "fb4b1c40d669bfc1b38ce6f79b39872ed222c7d9",
+        "sourceTree": "c1dd9109f826277d5e028edd72f3bdd47f2d77c9",
+        "ciCheckout": "fbbc696df357e4bf2da4e2f5c83ccb5bbabdad37",
+        "ciCheckoutTreeMatchesSource": true,
+        "allWorkflowsSuccess": 57,
+        "broader": {
+          "run": 40451234790,
+          "job": 122014193160,
+          "tapPassed": 826,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "includesParentTests": true
+        },
+        "candidateGuard": {
+          "tests": 6,
+          "passed": 6,
+          "includedInBroaderTapTotal": false,
+          "checks": [
+            "accepted SQL assembly",
+            "106 historical SQL/snapshot Git blobs",
+            "readiness and recovery prerequisites",
+            "SQL/history/readiness drift rejection",
+            "canonical stage promotion/adoption rejection"
+          ]
+        },
+        "combinedRestore": {
+          "seedTap": 31,
+          "verifyTap": 12,
+          "fingerprint": "b22bc79ec3002176adcd55f3db1a3c29f1d9ef4bf63b7a497dd62a0f99841ecf",
+          "sourceAndTargetMatch": true,
+          "exactCandidateSqlConsumed": true,
+          "rolesCreated": 6,
+          "oldCredentialsRejected": 3,
+          "newLoginIdentitiesVerified": 3,
+          "volatileScopeLeasesAfterReset": 0
+        },
+        "security": {
+          "run": 40451234916,
+          "repositoryJob": 122014193602,
+          "trackedAndFullReachableHistoryScan": "SUCCESS"
+        },
         "canonicalMigrations": 53,
         "canonicalPublicTables": 97,
-        "nextAction": "Prepare candidate schema/preimage boundary and deterministic 0053 reviewed_sql generation; accept isolated fresh-install/upgrade rollback before any canonical promotion."
+        "candidatePublicTables": 98,
+        "candidateOnly": true,
+        "canonicalPromoted": false,
+        "releaseAccepted": false,
+        "workflowRuns": [
+          {
+            "id": 40451234738,
+            "name": "Browser storage authority audit",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234834,
+            "name": "Pre-release performance smoke gate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234653,
+            "name": "Knowledge embedding readiness",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234549,
+            "name": "Isolated Neon preflight static safety",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234781,
+            "name": "Cashier dashboard surface regression",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234693,
+            "name": "Merchant deletion promotions lifecycle",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234579,
+            "name": "Billing provider readiness",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234741,
+            "name": "P0 conversation privacy HTTP matrix",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234705,
+            "name": "P0 Support privacy authority diagnostic",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234561,
+            "name": "Order operations",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234618,
+            "name": "Meta OAuth operational cutoff",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234573,
+            "name": "Global subscription golden journey",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234574,
+            "name": "Observability mounted routes",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234785,
+            "name": "P0 management privacy HTTP matrix",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234583,
+            "name": "Staging container contract",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234784,
+            "name": "Product catalog UI cutover",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234749,
+            "name": "PostgreSQL outage recovery proof",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234763,
+            "name": "Subscription service guarantee validation",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234864,
+            "name": "Merchant account security UI",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234756,
+            "name": "Merchant regional PostgreSQL authority",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234740,
+            "name": "Auth OTP contract continuity",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234820,
+            "name": "P0 cashier IndexedDB browser regression",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234767,
+            "name": "P0 signed cashier offline authority",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234796,
+            "name": "PostgreSQL migration candidate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234639,
+            "name": "Cashier operational cutoff",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234811,
+            "name": "Bot logic adversarial matrix",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234789,
+            "name": "Complete migration safety",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234819,
+            "name": "Merchant access security",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234840,
+            "name": "P0 dependency security upgrade candidate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234803,
+            "name": "Merchant deletion provider identifiers",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234779,
+            "name": "Dashboard channel coherence",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234830,
+            "name": "Catalog variant signature schema contract",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234550,
+            "name": "Location routing engine",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234832,
+            "name": "Location inventory authority",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234531,
+            "name": "Merchant settings",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234682,
+            "name": "SEQ D2 canonical storage acceptance",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234823,
+            "name": "Complete schema candidate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234851,
+            "name": "Backup and restore drill",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234766,
+            "name": "P0 notification privacy HTTP matrix",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234764,
+            "name": "Merchant deletion physical media lifecycle",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234808,
+            "name": "Global merchant golden journey",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234848,
+            "name": "Auth PostgreSQL concurrency proof",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234829,
+            "name": "Clean deployment golden gate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234827,
+            "name": "Meta webhook PostgreSQL ingress cutover",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234814,
+            "name": "AWS KMS production adapter readiness",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234887,
+            "name": "Global Merchant PostgreSQL HTTP Journey",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234667,
+            "name": "Global admin golden journey",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234773,
+            "name": "Final quality gates",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234874,
+            "name": "Cashier subscription lifecycle",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234772,
+            "name": "Meta webhook pipeline",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234535,
+            "name": "Foundation integration final gate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234723,
+            "name": "PostgreSQL schema validation",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234916,
+            "name": "Final security and supply chain",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234562,
+            "name": "Commerce cashier closeout",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234790,
+            "name": "Isolated PostgreSQL engineering audit",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234506,
+            "name": "Merchant deletion audit PII",
+            "conclusion": "success"
+          },
+          {
+            "id": 40451234511,
+            "name": "Merchant deletion cashier lifecycle",
+            "conclusion": "success"
+          }
+        ],
+        "limits": [
+          "No generated0053 schema/preimage/journal/snapshot yet",
+          "No fresh/upgrade migration fault acceptance or canonical promotion",
+          "No real reviewer provenance or runtime provisioning adoption",
+          "FIELD005/hosted/KMS/PITR/media remain unaccepted"
+        ],
+        "nextAction": "Prepare the candidate Drizzle schema/preimage boundary and deterministic 0053 reviewed_sql generation in a separate candidate checkout; preserve all0000-0052 bytes, then prove fresh-install/upgrade rollback before canonical promotion."
       }
     },
     {
@@ -561,6 +898,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "544764c23eee8d72e1e783ee313cbf648ef68470",
+  "previousFullyAcceptedSource": "6b8188037be2cdf50548acb67a3d71c91539f064",
   "lastUpdatedAt": "2026-10-27"
 }

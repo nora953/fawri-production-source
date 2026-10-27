@@ -9,3 +9,5 @@ The combined restore test now verifies these pins and installs this exact candid
 Local verifier regressions reject changed SQL, historical bytes, readiness, accidental0053 stage promotion and an operational-adoption flag. The manifest is reviewed repository data, not a cryptographic signature or independent provenance authority.
 
 Next: prepare the Drizzle schema/preimage boundary and deterministic0053 reviewed_sql generation in a separate candidate checkout, then prove fresh-install/upgrade/fault rollback. No generated0053 snapshot/journal is claimed by this batch. Canonical promotion, actual reviewer issuance/grant policy and FIELD005 retention remain open; hosted roles/KMS/PITR/media recovery remain blocked. Release NO-GO.
+
+Accepted source `fb4b1c40d669bfc1b38ce6f79b39872ed222c7d9`:57/57 workflows SUCCESS; broader826 TAP/97 invocations/94 files and separate6 candidate guard tests PASS. Fresh-cluster combined seed31/verify12 PASS, source/target fingerprint match. See the structured design evidence for exact run/job/tree and limits.
