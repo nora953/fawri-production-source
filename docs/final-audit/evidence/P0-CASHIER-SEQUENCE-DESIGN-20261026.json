@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Obtain the explicit reviewer-model choice for this concrete proposal, then prepare its source-only issuer/evidence-binding contract. Keep retention/provisioning/hosted approvals unset until separately decided; no repeated proof of accepted preflight without a source change or new failure.",
+  "nextExactAction": "Choose the reviewer policy explicitly, then specify real session/policy revocation, trusted original evidence observation/custody/access, and the transaction-bound issuance/reuse contract before any application adapter or route. Keep the policy-neutral candidate unimported until those dependencies are resolved.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4342,5 +4342,16 @@
     "decisionRecordingRule": "A continuation request, passing CI, prepared proposal or null field is not policy approval. Record the explicit choice, responsible approver, decision date and evidence; retain per-field approval scope. Do not propagate one approval to other records.",
     "initialDecisionNeeded": "reviewer_authority.adoptedModel",
     "nextAction": "Obtain the explicit reviewer-model choice for this concrete proposal, then prepare its source-only issuer/evidence-binding contract. Keep retention/provisioning/hosted approvals unset until separately decided; no repeated proof of accepted preflight without a source change or new failure."
+  },
+  "policyNeutralIssuerCandidate": {
+    "status": "SOURCE_ONLY_POLICY_NEUTRAL_ISSUER_CANDIDATE_LOCAL_SYNTHETIC_TESTED_NOT_ADOPTED",
+    "evidence": "evidence/P0-REVIEWED-DEVICE-ISSUER-CANDIDATE-20261027.json",
+    "module": "evidence/p0-reviewed-device-issuer-candidate.mjs",
+    "test": "evidence/p0-reviewed-device-issuer-candidate.test.mjs",
+    "localSyntheticTests": 69,
+    "applicationImported": false,
+    "adoptedModel": null,
+    "operationalAdoption": false,
+    "releaseAccepted": false
   }
 }

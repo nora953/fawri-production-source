@@ -284,7 +284,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "INTERNAL_REV2_AUTHORITY_LIFECYCLE_FRESH_FIXTURE_CLUSTER_RECOVERY_ACCEPTED_CANONICAL_ISSUER_POLICY_CLIENT_OPEN",
-      "nextAction": "Obtain the explicit reviewer-model choice for this concrete proposal, then prepare its source-only issuer/evidence-binding contract. Keep retention/provisioning/hosted approvals unset until separately decided; no repeated proof of accepted preflight without a source change or new failure.",
+      "nextAction": "Choose the reviewer policy explicitly, then specify real session/policy revocation, trusted original evidence observation/custody/access, and the transaction-bound issuance/reuse contract before any application adapter or route. Keep the policy-neutral candidate unimported until those dependencies are resolved.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -2018,6 +2018,17 @@
         "grantsAuthorized": false,
         "operationalAdoption": false,
         "newRuntimeExecuted": false
+      },
+      "policyNeutralIssuerCandidate": {
+        "status": "SOURCE_ONLY_POLICY_NEUTRAL_ISSUER_CANDIDATE_LOCAL_SYNTHETIC_TESTED_NOT_ADOPTED",
+        "evidence": "evidence/P0-REVIEWED-DEVICE-ISSUER-CANDIDATE-20261027.json",
+        "module": "evidence/p0-reviewed-device-issuer-candidate.mjs",
+        "test": "evidence/p0-reviewed-device-issuer-candidate.test.mjs",
+        "localSyntheticTests": 69,
+        "applicationImported": false,
+        "adoptedModel": null,
+        "operationalAdoption": false,
+        "releaseAccepted": false
       }
     },
     {

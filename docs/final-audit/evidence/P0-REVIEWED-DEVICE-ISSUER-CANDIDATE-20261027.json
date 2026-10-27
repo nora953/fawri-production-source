@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "SOURCE_ONLY_POLICY_NEUTRAL_ISSUER_CANDIDATE_LOCAL_SYNTHETIC_TESTED_NOT_ADOPTED",
+  "basedOnCheckpoint": "c45c883a4e4f607843137413273a4403043499ba",
+  "lastFullyAcceptedExecutable": "699af77df6be59510cc4638512d876d4a9a16173",
+  "module": "p0-reviewed-device-issuer-candidate.mjs",
+  "test": "p0-reviewed-device-issuer-candidate.test.mjs",
+  "applicationChanged": false,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "productionImported": false,
+  "canonicalPromoted": false,
+  "grantsAuthorized": false,
+  "operationalAdoption": false,
+  "releaseAccepted": false,
+  "adoptedReviewerModel": null,
+  "allExistingApprovalsUnchanged": true,
+  "gateClosed": false,
+  "release": "NO-GO",
+  "localVerification": {
+    "command": "node --test docs/final-audit/evidence/p0-reviewed-device-issuer-candidate.test.mjs",
+    "passed": 69,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "syntheticAdapters": true,
+    "databaseRuntimeExecuted": false,
+    "httpRuntimeExecuted": false,
+    "newCiClaimed": false
+  },
+  "liveSourceReviewed": [
+    "artifacts/api-server/src/middleware/authSession.ts",
+    "artifacts/api-server/src/services/postgresAdminAccountAuthority.ts",
+    "artifacts/api-server/src/services/adminAuthPostgresCutover.ts",
+    "artifacts/api-server/src/services/cashierStreamEnrollmentAuthority.ts",
+    "docs/final-audit/evidence/seq-d3-reviewed-empty-enrollment-proposal.sql"
+  ],
+  "observedLiveBoundary": "Secure admin middleware validates session/account/version/profile/password-change restrictions and supplies server AuthContext; the internal enrollment primitive takes review data and delegates history/freshness/locking to proposal SQL. No real reviewer issuer, original-evidence reader or enrollment route/pool is implemented.",
+  "candidateContract": {
+    "clientSelection": [
+      "merchantId",
+      "stationId",
+      "deviceId",
+      "reviewReference"
+    ],
+    "rejectsClientAuthorityFields": true,
+    "serverAdapters": [
+      "authenticateReviewer",
+      "authorizeReviewer",
+      "readOriginalEvidence",
+      "now"
+    ],
+    "principalBinding": [
+      "subjectId",
+      "sessionId"
+    ],
+    "authorizationBinding": [
+      "APPROVED status",
+      "explicit adopted model",
+      "policy decision reference and revision",
+      "same subject/session and all four selection fields",
+      "not revoked",
+      "unexpired"
+    ],
+    "finalAuthorizationRechecked": true,
+    "changedDecisionRefModelOrRevisionRefused": true,
+    "originalFormat": "Candidate-only compact JSON UTF-8 round-trip representation; no whitespace, duplicate keys, alternate escapes, BOM or unknown fields. Maximum16384 bytes. This format/limit is proposed, not an approved evidence ingestion policy.",
+    "originalObservationFields": [
+      "version",
+      "kind",
+      "merchantId",
+      "stationId",
+      "deviceId",
+      "reviewReference",
+      "reviewerSubjectId",
+      "observedAt",
+      "localCounter",
+      "pendingOperations"
+    ],
+    "countersMustBeNumericZero": true,
+    "freshness": "Existing proposal SQL outer bounds:15 minutes past/1 minute future; checked again after final authorization; SQL may reject later.",
+    "evidenceDigest": "SHA256 of copied original bytes, not a client digest",
+    "reviewerReference": "reviewer_subject_v1_ + SHA256(cashier-reviewer-subject-v1\\0 + authenticated subjectId); maps server identity, not a browser string. Candidate convention only; pseudonymous, not anonymous.",
+    "output": "Frozen IndependentlyReviewedEmptyDevice-shaped data only, without raw evidence, server session or evidence custody reference. Does not invoke the enrollment primitive or authorize SQL.",
+    "noQueueInferenceFromHistory": true
+  },
+  "trustAssumptionsAndLimits": [
+    "Trusted adapters are server composition dependencies, never request JSON. Tests inject synthetic adapters only.",
+    "APPROVED and custodyVerified booleans do not authenticate anything independently. Real session/policy/assignment/revocation and original authenticity/custody/observation readers remain unimplemented.",
+    "Both recognized policy models require an explicit server approval. Candidate does not grant owner_admin or appointed reviewers any live authority, select a model, implement assignments or infer approval from continuation.",
+    "Canonical JSON/hash binds bytes to interpretation; it is not a signature, source authenticity proof or independent queue observation.",
+    "Final authorization recheck does not make preparation and later database enrollment atomic. A source implementation must define session/policy revocation at the transaction boundary and binding of one-time evidence/review reuse; no route may wire this candidate before those decisions and tests.",
+    "Original-evidence reader access, custody, retention, signing, namespace uniqueness and review reference issuance remain explicit design dependencies.",
+    "No all-operation recovery, client activation, physical device acceptance, operational provisioning, retention approval or hosted proof.",
+    "Application/canonical/source acceptance remains699; these69 tests are separate from prior826/92/9 denominators."
+  ],
+  "nextAction": "Choose the reviewer policy explicitly, then specify real session/policy revocation, trusted original evidence observation/custody/access, and the transaction-bound issuance/reuse contract before any application adapter or route. Keep the policy-neutral candidate unimported until those dependencies are resolved."
+}
