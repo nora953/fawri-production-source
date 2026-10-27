@@ -181,7 +181,7 @@ test('full application management privacy preserves cutover ordering and current
       });
       await t.test('rate update rolls back if its audit write fails and a later real retry succeeds once',async()=>{
         const before=await costSnapshot(),business=await snapshot();
-        await admin.query("CREATE FUNCTION public."+fault+"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic provider cost audit persistence fault'; END $");faultInstalled=true;
+        await admin.query("CREATE FUNCTION public."+fault+"() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN RAISE EXCEPTION ''synthetic provider cost audit persistence fault''; END'");faultInstalled=true;
         await admin.query('CREATE TRIGGER '+fault+' BEFORE INSERT ON provider_cost_audit_events FOR EACH ROW EXECUTE FUNCTION public.'+fault+'()');
         try{
           const r=await req(endpoints[1][0],owner,'PUT',{...body,rate_usd:2.5});

@@ -3,7 +3,7 @@
   "date": "2026-10-27",
   "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
   "subcondition": "Owner-only provider cost configuration HTTP actor/field/atomic-audit acceptance",
-  "status": "PREPARED_PENDING_EXACT_SOURCE_CI",
+  "status": "FIXTURE_SQL_CORRECTED_PENDING_EXACT_SOURCE_CI",
   "basedOnCheckpoint": "0bd95edf01c93e0f15e0e8bde79f19b4543c116f",
   "newGate": false,
   "gateClosed": false,
@@ -51,5 +51,20 @@
     "Session bookkeeping and selected app helper background behavior are outside immutable business snapshot claims.",
     "No full P0, all roles/fields, hosted or performance acceptance."
   ],
-  "nextAction": "Read exact-source targeted and broader CI. If failed, preserve the failure and fix the cause without weakening assertions."
+  "nextAction": "Read exact-source targeted and broader CI. If failed, preserve the failure and fix the cause without weakening assertions.",
+  "initialFailure": {
+    "source": "16499546a56ee69304385e7b7df7edf219926f0a",
+    "run": 40506167504,
+    "job": 122195904144,
+    "fullAppTest": {
+      "passed": 16,
+      "failed": 3,
+      "skipped": 0,
+      "cancelled": 0,
+      "includesFailedParentTests": true
+    },
+    "cause": "Malformed synthetic trigger-function SQL: dollar quote closing delimiter collapsed by JavaScript replacement-string handling. Fault never executed; not evidence of application rollback behavior.",
+    "correction": "Use a standard SQL-quoted function body and callback-based replacement, keep the same audit-failure/rollback/retry assertions.",
+    "accepted": false
+  }
 }
