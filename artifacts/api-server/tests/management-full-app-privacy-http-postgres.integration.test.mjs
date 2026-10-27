@@ -768,5 +768,157 @@ test('full application management privacy preserves cutover ordering and current
     }));
   });
 
+  await t.test('admin account projections and owner password reset preserve current SQL privacy boundaries',async accountTest=>{
+    const target=await actor('admin','assistant_admin',['view_merchants']);
+    const peer=await actor('admin','assistant_admin',[]);
+    const {hashPassword,verifyPassword}=await import('../src/services/authPasswordService.ts');
+    const ownerPassword='SyntheticProjectionOwner9@',oldPassword='SyntheticTargetBefore9@',temporary='SyntheticTargetReset9@';
+    await admin.query('UPDATE accounts SET password_hash=$2 WHERE id=$1',[owner.id,hashPassword(ownerPassword)]);
+    await admin.query('UPDATE accounts SET password_hash=$2 WHERE id=$1',[target.id,hashPassword(oldPassword)]);
+    async function trusted(account,deviceId){
+      const device=await security.registerAdminDeviceAuthoritative({accountId:account.id,accountKind:'admin',deviceId,deviceLabel:'Synthetic projection '+deviceId});
+      await security.setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:owner.id});
+      return device;
+    }
+    const secondId='synthetic-projection-second-'+randomUUID();
+    const firstDevice=await trusted(target,target.device),secondDevice=await trusted(target,secondId);
+    await trusted(peer,peer.device);
+    async function issue(account,device){
+      const session=await auth.issueSession({accountId:account.id,accountKind:'admin',tenantId:'fawri-admin',
+        adminRole:'assistant_admin',permissions:account.permissions,deviceId:device});
+      return {...account,device,session,cookie:ADMIN_SESSION_COOKIE+'='+session.token};
+    }
+    const first=await issue(target,target.device),second=await issue(target,secondId),other=await issue(peer,peer.device);
+    const state=async()=>({
+      accounts:(await admin.query('SELECT id,kind,phone,password_hash,state,password_version,security_version,session_version,password_changed_at FROM accounts WHERE id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+      profiles:(await admin.query('SELECT id,account_id,display_name,role,enabled,must_change_password FROM admin_profiles WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+      permissions:(await admin.query('SELECT admin_id,permission,granted_by_admin_id FROM admin_permissions WHERE admin_id=ANY($1::text[]) ORDER BY admin_id,permission',[ids])).rows,
+      sessions:(await admin.query('SELECT id,account_id,kind,tenant_id,status,token_hash,device_fingerprint_hash,session_version,security_version,role_snapshot,permission_snapshot,created_at,revoked_at,revoke_reason,replaced_by_session_id FROM account_sessions WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+      devices:(await admin.query('SELECT to_jsonb(d) AS row FROM trusted_devices d WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+    });
+    const base='/api/auth/admins/'+target.id,business=await snapshot();
+    const resetBody={owner_password:ownerPassword,temporary_password:temporary,confirm_temporary_password:temporary};
+    await accountTest.test('account lifecycle and projection routes deny non-owner actors and invalid owner credentials without selected state changes',async()=>{
+      const before=await state();
+      const routes=[
+        ['/api/auth/admins','GET',undefined],
+        [base+'/work-monitor','GET',undefined],
+        ['/api/auth/admins','POST',{owner_name:'Synthetic rejected',phone:'+198'+randomInt(100000000,999999999),password:temporary,confirm_password:temporary,language:'en'}],
+        [base+'/enabled','PATCH',{enabled:false}],
+        [base+'/permissions','PATCH',{permissions:['manage_channels']}],
+        [base+'/password','PATCH',resetBody],
+      ];
+      for(const [path,method,body] of routes){
+        for(const [actor,status] of [[undefined,401],[a,401],[b,401],[first,403],[other,403]]){
+          const r=await req(path,actor,method,body);assert.equal(r.status,status,path);
+          assert.equal(r.body.admins,undefined);assert.equal(r.body.sessions,undefined);assert.equal(r.body.admin,undefined);
+        }
+        for(const headers of [{'X-Fawri-Device-Id':'synthetic-wrong-device'},{Cookie:owner.cookie+'; '+a.cookie}]){
+          assert.equal((await req(path,owner,method,body,headers)).status,401);
+        }
+        if(method!=='GET'){
+          const r=await req(path,owner,method,body,{Origin:'https://foreign.example.invalid'});
+          assert.equal(r.status,403);assert.equal(r.body.code,'AUTH_ORIGIN_FORBIDDEN');
+        }
+      }
+      for(const [suffix,body] of [['/enabled',{enabled:false}],['/permissions',{permissions:[]}],['/password',resetBody]]){
+        const r=await req('/api/auth/admins/'+owner.id+suffix,owner,'PATCH',body);
+        assert.equal(r.status,404);assert.equal(r.body.code,'ASSISTANT_ADMIN_NOT_FOUND');
+      }
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+    });
+    await accountTest.test('owner directory and work monitor expose only current declared summaries and target session device log projections',async()=>{
+      const ownEvent='synthetic_projection_target_'+randomUUID(),foreignEvent='synthetic_projection_peer_'+randomUUID();
+      await security.auditAdminSecurityEventAuthoritative({event_type:ownEvent,actor_account_id:owner.id,actor_kind:'admin',subject_hash:target.id});
+      await security.auditAdminSecurityEventAuthoritative({event_type:foreignEvent,actor_account_id:owner.id,actor_kind:'admin',subject_hash:peer.id});
+      const before=await state();
+      const directory=await req('/API/Auth/Admins/?account_id='+peer.id,owner);assert.equal(directory.status,200);
+      assert.deepEqual(Object.keys(directory.body).sort(),['admins','ok']);
+      const owned=directory.body.admins.filter(x=>ids.includes(x.account.id));
+      assert.deepEqual(new Set(owned.map(x=>x.account.id)),new Set(before.profiles.map(x=>x.account_id)));
+      const compatibility=['id','owner_name','store_name','phone','activity_type','status','language','created_at','is_admin','admin_role','permissions','admin_enabled','otp_verified','must_change_password'];
+      for(const row of owned){
+        assert.deepEqual(Object.keys(row).sort(),[...compatibility,'account','account_type','admin_profile','admin','work_status','open_session_count','last_activity_at','pending_device_count'].sort());
+        assert.deepEqual(Object.keys(row.account).sort(),['id','phone','kind','enabled','otp_verified'].sort());
+        assert.deepEqual(Object.keys(row.admin_profile).sort(),['adminId','role','permissions','displayName','language','createdAt','mustChangePassword'].sort());
+        assert.deepEqual(Object.keys(row.admin).sort(),compatibility.sort());
+        assert.equal(row.account.id,row.id);assert.equal(row.admin_profile.adminId,row.id);assert.equal(row.admin.id,row.id);
+      }
+      const row=owned.find(x=>x.id===target.id);assert.ok(row);
+      assert.equal(row.admin_role,'assistant_admin');assert.deepEqual(row.permissions,['view_merchants']);
+      assert.equal(row.open_session_count,2);assert.equal(row.pending_device_count,0);assert.equal(row.must_change_password,false);
+      const monitor=await req('/API/Auth/Admins/'+target.id+'/Work-Monitor/?account_id='+peer.id+'&adminId='+peer.id,owner);
+      assert.equal(monitor.status,200);
+      const value=monitor.body;
+      assert.deepEqual(Object.keys(value).sort(),['ok','admin','summary','sessions','devices','failed_logins','recent_logs'].sort());
+      assert.deepEqual(Object.keys(value.admin).sort(),['id','owner_name','phone','admin_enabled'].sort());assert.equal(value.admin.id,target.id);
+      assert.deepEqual(Object.keys(value.summary).sort(),['work_status','open_session_count','last_activity_at','pending_device_count','session_limit','trusted_device_limit','trusted_device_count','failed_login_count_24h'].sort());
+      assert.equal(value.summary.open_session_count,2);assert.equal(value.summary.trusted_device_count,2);assert.equal(value.summary.pending_device_count,0);
+      assert.deepEqual(new Set(value.sessions.map(x=>x.id)),new Set([first.session.session.id,second.session.session.id]));
+      for(const session of value.sessions){
+        assert.deepEqual(Object.keys(session).sort(),['id','device_id','device_label','user_agent','created_at','last_seen_at','last_activity_at','expires_at'].sort());
+        assert.equal(session.device_id,session.id);
+      }
+      assert.deepEqual(new Set(value.devices.map(x=>x.id)),new Set([firstDevice.id,secondDevice.id]));
+      for(const device of value.devices)assert.deepEqual(Object.keys(device).sort(),['id','device_id','device_label','user_agent','status','first_seen_at','last_seen_at','trusted_at'].sort());
+      assert.ok(value.recent_logs.some(x=>x.action_type===ownEvent));assert.ok(!value.recent_logs.some(x=>x.action_type===foreignEvent));
+      for(const log of value.recent_logs){assert.deepEqual(Object.keys(log).sort(),['id','action_type','details','created_at'].sort());assert.equal(log.details,log.action_type);}
+      assert.deepEqual(value.failed_logins,[]); // Existing stub contract, not accuracy acceptance.
+      for(const body of [directory.body,value]){
+        const encoded=JSON.stringify(body);assert.doesNotMatch(encoded,/password_hash|passwordHash|token_hash|device_hash|device_fingerprint_hash|subject_hash/);
+        for(const session of [first,second,other,owner])assert.equal(encoded.includes(session.session.token),false);
+        assert.equal(encoded.includes(ownEvent)&&body===directory.body,false);
+      }
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+    });
+    await accountTest.test('owner password reset validation preserves hash versions flags sessions devices and peer state',async()=>{
+      const before=await state();
+      for(const [body,status,code] of [
+        [{...resetBody,owner_password:'synthetic-wrong-password'},401,'OWNER_PASSWORD_INCORRECT'],
+        [{...resetBody,confirm_temporary_password:'SyntheticMismatch9@'},400,'PASSWORD_CONFIRMATION_INVALID'],
+        [{...resetBody,temporary_password:'Aa1',confirm_temporary_password:'Aa1'},400,'PASSWORD_TOO_SHORT'],
+      ]){
+        const r=await req(base+'/password',owner,'PATCH',body);assert.equal(r.status,status);assert.equal(r.body.code,code);
+        assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+      }
+    });
+    await accountTest.test('valid owner reset binds path assistant increments versions and invalidates both target cookies only',async()=>{
+      const before=await state();
+      const r=await req('/API/Auth/Admins/'+target.id+'/Password/?account_id='+peer.id,owner,'PATCH',
+        {...resetBody,account_id:peer.id,adminId:peer.id,actor_account_id:peer.id,mustChangePassword:false,permissions:['manage_channels']});
+      assert.equal(r.status,200);assert.deepEqual(r.body,{ok:true,reauthentication_required:true});
+      const after=await state(),old=before.accounts.find(x=>x.id===target.id),changed=after.accounts.find(x=>x.id===target.id);
+      assert.ok(verifyPassword(temporary,changed.password_hash));assert.equal(verifyPassword(oldPassword,changed.password_hash),false);
+      for(const key of ['password_version','security_version','session_version'])assert.equal(changed[key],old[key]+1);
+      assert.ok(changed.password_changed_at);
+      assert.deepEqual({...changed,password_hash:old.password_hash,password_version:old.password_version,security_version:old.security_version,session_version:old.session_version,password_changed_at:old.password_changed_at},old);
+      assert.deepEqual(after.accounts.filter(x=>x.id!==target.id),before.accounts.filter(x=>x.id!==target.id));
+      const profile=after.profiles.find(x=>x.account_id===target.id),oldProfile=before.profiles.find(x=>x.account_id===target.id);
+      assert.equal(profile.must_change_password,true);assert.deepEqual({...profile,must_change_password:oldProfile.must_change_password},oldProfile);
+      assert.deepEqual(after.profiles.filter(x=>x.account_id!==target.id),before.profiles.filter(x=>x.account_id!==target.id));
+      assert.deepEqual(after.permissions,before.permissions);assert.deepEqual(after.devices,before.devices);
+      const selected=[first.session.session.id,second.session.session.id];
+      assert.deepEqual(after.sessions.filter(x=>!selected.includes(x.id)),before.sessions.filter(x=>!selected.includes(x.id)));
+      for(const id of selected){
+        const prior=before.sessions.find(x=>x.id===id),next=after.sessions.find(x=>x.id===id);
+        assert.equal(next.status,'revoked');assert.equal(next.revoke_reason,'password_reset');assert.ok(next.revoked_at);
+        assert.deepEqual({...next,status:prior.status,revoke_reason:prior.revoke_reason,revoked_at:prior.revoked_at},prior);
+      }
+      for(const session of [first,second])assert.equal((await req('/api/auth/admin/me',session)).status,401);
+      for(const session of [other,owner])assert.equal((await req('/api/auth/admin/me',session)).status,200);
+      const audit=(await admin.query("SELECT actor_account_id,actor_kind,reason_code FROM auth_audit_events WHERE actor_account_id=$1 AND event_type='assistant_admin_password_reset'",[owner.id])).rows;
+      assert.ok(audit.some(x=>x.actor_account_id===owner.id&&x.actor_kind==='admin'&&x.reason_code==='sessions_revoked'));
+      assert.deepEqual(await state(),after);assert.deepEqual(await snapshot(),business);
+    });
+    console.log('P0_ADMIN_ACCOUNT_PROJECTION_RESET_HTTP '+JSON.stringify({
+      actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,nonOwnerSixRoutesDenied:true,
+      directorySummaryKeys:true,workMonitorTargetSessionsDevicesLogs:true,secretFieldsExcluded:true,
+      passwordResetValidationPreservesSelectedState:true,passwordResetPathScopeAndVersions:true,
+      bothTargetCookiesInvalidated:true,forcedChangeFlagSet:true,peerAccountsTrustPermissionsAndBusinessPreserved:true,
+      successfulCreatePermissionsEnabledAndSelfPasswordJourneyReused:true,sessionHeartbeatAndIdleExpiryExcluded:true,
+      failedLoginMetricsAccuracyAndCrossTransactionFaultAtomicityAccepted:false,hosted:false
+    }));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
