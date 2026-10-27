@@ -1,5 +1,11 @@
 ## Current SEQ-D3 checkpoint — 2026-10-27
 
+Accepted source699af77df6be59510cc4638512d876d4a9a16173,57/57 CI SUCCESS. Complete54-entry migration history and withheld-capability preflight accepted in fresh35/upgrade35 TAP; broader826 TAP and history9 tests PASS. Current source53/97 remains unchanged; no activation/grants. [Authoritative register](P0-CLOSURE-REGISTER.md) and [design evidence](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json) record failed sources53ef9049/71610e08, correction and exact run/tree evidence. CASHIER-SYNC-SEQUENCE-001 OPEN; policy/reviewer/provisioning/hosted prerequisites remain, releaseNO-GO. Entries below are historical in their original scope.
+
+Next: Reconcile these existing prerequisites with the finite FIELD005 checklist and prepare a concrete reviewer/provisioning/retention decision record. Keep approvals unset, avoid invented durations or permissions, and do not repeat accepted migration/preflight proofs without a new change or failure.
+
+## Current SEQ-D3 checkpoint — 2026-10-27
+
 Accepted sourcefec5efedeefbf253af8b764d63a5911dd6fb99f0,57/57 CI SUCCESS. Actual Drizzle candidate0053 fresh8/upgrade8 TAP and full broader826 TAP PASS; see authoritative [register](P0-CLOSURE-REGISTER.md) and [design evidence](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json). Candidate54/98 exists only in isolated tests; canonical source53/97 unchanged. CASHIER-SYNC-SEQUENCE-001 OPEN, FIELD005/reviewer policy and hosted prerequisites unresolved, releaseNO-GO. Historical entries below retain their original scope.
 
 Next: Prepare an internal read-only candidate installation preflight verifying the actual complete Drizzle journal hashes/timestamps against the reviewed54-entry package and accepted owner/function/role boundaries before any future EXECUTE grant. Prove missing/tampered/extra journal and denied-role/partial-installation refusals with fault rollback. No startup wiring, canonical promotion, operational grants or public v2 activation; trusted reviewer issuance, FIELD005 and hosted/KMS/PITR/media remain prerequisites.
