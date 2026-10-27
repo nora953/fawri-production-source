@@ -68,6 +68,9 @@ jobs:
       - name: Full committed schema and restricted tenant restore drill
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
         run: bash scripts/run-isolated-postgres-audit.sh full-restore
+      - name: Combined cashier enrollment and receipt proposal restore (not canonical adoption)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
+        run: bash scripts/run-isolated-postgres-audit.sh financial-proposal-restore
       - name: Prove Node22 staging runtime compatibility on an offline HTTP journey
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.build.outcome == 'success' && (inputs.suite == '' || inputs.suite == 'priority') }}
         run: bash scripts/run-isolated-postgres-audit.sh node22-http

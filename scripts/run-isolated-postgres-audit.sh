@@ -3,7 +3,7 @@ set -euo pipefail
 # Only fresh Docker-owned PostgreSQL; no host DB URL or hosted credentials inherited.
 audit_suite="${1:-priority}"
 case "$audit_suite" in
-  priority|conversation-privacy-http|notification-privacy-http|management-privacy-http|support-image-runtime|foundation-runtime|auth-contract|settings-runtime|regional-runtime|channels-runtime|variant-runtime|inventory-runtime|media-runtime|subscription-reminder|http|node22-http|knowledge-rls|management|meta|meta-rls|bootstrap|deletion|cashier|cashier-operational|subscription-golden|online-routing|billing|tenant|meta-bot|full-restore) ;;
+  priority|conversation-privacy-http|notification-privacy-http|management-privacy-http|support-image-runtime|foundation-runtime|auth-contract|settings-runtime|regional-runtime|channels-runtime|variant-runtime|inventory-runtime|media-runtime|subscription-reminder|http|node22-http|knowledge-rls|management|meta|meta-rls|bootstrap|deletion|cashier|cashier-operational|subscription-golden|online-routing|billing|tenant|meta-bot|full-restore|financial-proposal-restore) ;;
   *) echo 'Unsupported audit suite' >&2; exit 2 ;;
 esac
 audit_node_image="node:24-bookworm-slim"
@@ -58,7 +58,7 @@ NODE
 docker start -a "$audit_node"
 audit_exit="$(docker inspect -f '{{.State.ExitCode}}' "$audit_node")"
 if [ "$audit_exit" -ne 0 ]; then exit "$audit_exit"; fi
-if [ "$audit_suite" = full-restore ]; then
+if [ "$audit_suite" = full-restore ] || [ "$audit_suite" = financial-proposal-restore ]; then
   # All commands below address only the fresh owned, offline container ID.
   # No URL or host connection is used by pg_dump/pg_restore/psql.
   docker exec "$audit_pg" pg_dump -U fawri_ci -d fawri_ci --format=custom --file=/tmp/fawri-full-schema.dump
@@ -66,7 +66,7 @@ if [ "$audit_suite" = full-restore ]; then
   docker exec "$audit_pg" pg_restore -U fawri_ci -d fawri_restore_target --exit-on-error /tmp/fawri-full-schema.dump
   docker exec "$audit_pg" psql -U fawri_ci -d postgres -v ON_ERROR_STOP=1 -c 'DROP DATABASE fawri_ci' -c 'ALTER DATABASE fawri_restore_target RENAME TO fawri_ci' >/dev/null
   docker exec "$audit_pg" psql -U fawri_ci -d fawri_ci -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE fawri_ci IS 'fawri-disposable:$audit_run'" >/dev/null
-  echo 'AUDIT_FULL_SCHEMA_DUMP_RESTORE_PASS'
+  if [ "$audit_suite" = full-restore ]; then echo 'AUDIT_FULL_SCHEMA_DUMP_RESTORE_PASS'; else echo 'AUDIT_COMBINED_PROPOSALS_DUMP_RESTORE_PASS'; fi
   docker rm -fv "$audit_node" >/dev/null
   audit_node=""
   audit_node="$(docker create --label "fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}" --network "container:$audit_pg" --env-file "$audit_temp/runner.env" --env FAWRI_AUDIT_RESTORE_PHASE=verify \
@@ -74,7 +74,7 @@ if [ "$audit_suite" = full-restore ]; then
     --mount "type=bind,src=$audit_temp/attestation.json,dst=/audit-proof.json,readonly" \
     --mount "type=bind,src=$audit_temp/restore-proof,dst=/restore-proof,readonly" \
     --workdir "$audit_root" "$audit_node_image" \
-    node scripts/ci-run-redacted.mjs --label isolated-full-schema-restore -- node scripts/execute-disposable-postgres-audit.mjs full-restore)"
+    node scripts/ci-run-redacted.mjs --label isolated-full-schema-restore -- node scripts/execute-disposable-postgres-audit.mjs "$audit_suite")"
   docker start -a "$audit_node"
   audit_exit="$(docker inspect -f '{{.State.ExitCode}}' "$audit_node")"
 fi

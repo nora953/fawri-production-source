@@ -971,5 +971,23 @@
       },
       "node22HttpPassed": 1
     }
+  },
+  "combinedProposalRestore": {
+    "status": "PREPARED_OWNED_OFFLINE_PG_DUMP_RESTORE_CI_PENDING",
+    "source": null,
+    "test": "artifacts/api-server/tests/cashier-combined-proposal-restore-postgres.integration.test.mjs",
+    "suite": "financial-proposal-restore",
+    "activation": "New isolated runner batch only; canonical full-restore remains separate.",
+    "preparedAssertions": [
+      "Fingerprint proposed ledger and actual financial/stock/stream/receipt rows plus function owners, definitions, ACL, policies, triggers, constraints, column ACL and role flags/memberships",
+      "Real restricted LOGIN capability and trusted scope denial matrix before and after database restore",
+      "Exact reviewed enrollment and financial replays preserve advanced checkpoint and original ledger",
+      "After restore actual canonical next sale commits once with stock/receipt/checkpoint/attribution and exact retry; peer tenant preserved"
+    ],
+    "limits": [
+      "Global roles and synthetic credentials retained in same owned offline cluster; no lost-cluster/bootstrap proof",
+      "Independent review truth synthetic; no real reviewer issuance or device provenance",
+      "Proposals outside canonical migration journal and startup readiness; no hosted or public HTTP/native v2 adoption"
+    ]
   }
 }
