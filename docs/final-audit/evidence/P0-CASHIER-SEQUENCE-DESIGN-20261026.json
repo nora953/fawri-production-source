@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "date": "2026-10-26",
   "gate": "CASHIER-SYNC-SEQUENCE-001",
-  "status": "SEQ_D1_ACCEPTED_D2_SQL_PROPOSAL_VERIFIED_CANONICAL_PROMOTION_PENDING",
+  "status": "SEQ_D1_D2_SOURCE_ACCEPTED_D3_INTERNAL_FINANCIAL_PROTOTYPE_BOUNDED_ACCEPTED_ADOPTION_OPEN",
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3",
+  "acceptedExecutable": "c430529e666e5fc832919370c1c00933c24591a3",
   "applicationChanged": true,
   "schemaChanged": true,
   "aclChanged": true,
@@ -42,7 +42,7 @@
     },
     {
       "id": "SEQ-D3",
-      "status": "LEGACY_FENCES_AND_DISPOSABLE_REVIEWED_ENROLLMENT_BOUNDED_ACCEPTED_FINANCIAL_RECEIPTS_CLIENT_OPEN",
+      "status": "INTERNAL_ENROLLMENT_AND_CANONICAL_FINANCIAL_PROTOTYPES_BOUNDED_ACCEPTED_END_TO_END_CONCURRENCY_ADOPTION_CLIENT_OPEN",
       "scope": "Opt-in server/client admission and exact ACK/fault/version behavior"
     },
     {
@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Verify opt-in internal canonical sale/return/void receipt/checkpoint transaction and exact replay/attribution repair. Keep HTTP v2 held, enrollment/receipt SQL proposals isolated, and require coordinated canonical readiness/restore/authority/issuer/client adoption.",
+  "nextExactAction": "Verify the reviewed-enrollment-to-financial-receipt handoff and concurrent same-device/exact replay transactions under restricted roles. Keep public HTTP/native v2 held; coordinated canonical authority/readiness/restore/issuer/client adoption and hosted gates remain open.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -74,7 +74,7 @@
   "liveAdmissionChanged": false,
   "storageProposalEvidence": "P0-CASHIER-STREAM-STORAGE-PROPOSAL-20261026.json",
   "storageConcurrencyEvidence": "P0-CASHIER-STREAM-CONCURRENCY-20261026.json",
-  "canonicalPromotionPrivacyPrerequisite": "Canonical0052 source storage/startup readiness/deletion/restore accepted. No financial writer/enrollment/admission; complete retained-field/retention and full role/credential/hosted policies remain pending.",
+  "canonicalPromotionPrivacyPrerequisite": "Canonical0052 source storage/startup readiness/deletion/restore accepted; enrollment and financial writer SQL remain disposable-only proposals. Real reviewer provenance, complete retained-field/retention, role bootstrap/readiness/restore, native/public protocol and hosted policy adoption remain pending.",
   "deviceBindingErasureEvidence": "P0-CASHIER-DEVICE-BINDING-ERASURE-20261026.json",
   "streamDeletionTransactionEvidence": "P0-CASHIER-STREAM-DELETION-TRANSACTION-20261026.json",
   "retirementOwnerEvidence": "P0-CASHIER-RETIREMENT-OWNER-20261026.json",
@@ -252,8 +252,8 @@
     "financialReceiptWriterImplemented": false
   },
   "financialReceiptProposal": {
-    "status": "PREPARED_INTERNAL_CANONICAL_TRANSACTION_CI_PENDING",
-    "source": null,
+    "status": "BOUNDED_INTERNAL_CANONICAL_FINANCIAL_TRANSACTION_SOURCE_ACCEPTED_NOT_OPERATIONAL_ADOPTION",
+    "source": "c430529e666e5fc832919370c1c00933c24591a3",
     "sql": "evidence/seq-d3-financial-receipt-proposal.sql",
     "service": "artifacts/api-server/src/services/cashierStreamAdmissionAuthority.ts",
     "productionPathsModified": [
@@ -264,7 +264,36 @@
     "activation": "Explicit internal server argument only. Existing routes never populate it and still reject public v2 body markers. SQL capabilities only installed/granted/removed in owned fixture.",
     "semantics": "Normalized business digest, historical operator context, locked active stream, exact immutable replay first, next-sequence only, clock checks, no legacy financial adoption. Receipt and checkpoint persist after core financial mutation inside same transaction; attribution remains repairable after commit.",
     "dbBoundary": "Separate NOLOGIN receipt owner, scoped real primary LOGIN/function marker, column-limited stream checkpoint UPDATE and receipt INSERT, canonical constraints; writer verifies historical identity and matching order/compensation with same-transaction tuple XID. No enrollment/state change or public writer grants.",
-    "preparedTests": [
+    "limits": [
+      "Active stream fixtures created by root; independent enrollment mutation proof is separate, not end-to-end operational approval",
+      "No native client v2 or public HTTP success path enabled",
+      "No canonical migration, hosted role/provisioning, deployment or release approval",
+      "Enrollment-to-receipt handoff and concurrent canonical v2 financial operations not yet proven together; prior lower-level storage/enrollment concurrency proofs do not close this boundary.",
+      "Restore verified canonical storage after proposal cleanup; receipt proposal functions/owner not restored or startup-certified."
+    ],
+    "failedAttempts": [
+      {
+        "source": "6f4fef317581a161009aae5501e7c8acb4d6b58a",
+        "cashierRun": 40375019290,
+        "job": 121755599681,
+        "suite": {
+          "passed": 18,
+          "failed": 5
+        },
+        "cause": "Three fault trigger definitions used single-dollar delimiters (42601). Signed browser prerequisite timeout before application tests in run40375007232."
+      },
+      {
+        "source": "a2471947d2bb04153e56cbd1b4c29263cb0676aa",
+        "cashierRun": 40429682513,
+        "job": 121944045885,
+        "suite": {
+          "passed": 18,
+          "failed": 5
+        },
+        "cause": "JavaScript replacement-string dollar expansion left single closing delimiters (42601). Replaced both ends with named dollar tags via callback; assertions unchanged."
+      }
+    ],
+    "tests": [
       "Unprovisioned capability and public HTTP v2 remain denied",
       "Canonical internal operator sale1/late3 hold/2/3 then return4/void5; receipt identity and exact replay/no duplicate effects",
       "Receipt insertion faults for return/void and checkpoint update fault for sale roll finance/stock/receipt/checkpoint back together",
@@ -272,11 +301,335 @@
       "Legacy committed financial effect cannot be retrospectively adopted or directly minted by receipt function",
       "Own/peer snapshots and owner-role/auth-role boundaries preserved"
     ],
-    "limits": [
-      "New source not runtime accepted until exact-source CI",
-      "Active stream fixtures created by root; independent enrollment mutation proof is separate, not end-to-end operational approval",
-      "No native client v2 or public HTTP success path enabled",
-      "No canonical migration, hosted role/provisioning, deployment or release approval"
-    ]
+    "evidence": {
+      "source": "c430529e666e5fc832919370c1c00933c24591a3",
+      "tree": "0ccd2e2f7c86e9e073c45454323dfb20fd52595f",
+      "checkout": "0bc0c726e140a9349d063c61d955e3175b942cb4",
+      "cashier": {
+        "run": 40429845024,
+        "job": 121944577919,
+        "passed": 80,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "invocations": 16,
+        "files": 16,
+        "historicalCompensationSuite": 23
+      },
+      "browser": {
+        "run": 40429845089,
+        "job": 121944578226,
+        "status": "SUCCESS",
+        "version": "Chrome/155.0.8059.39",
+        "scope": "Existing signed offline native suite only; v2 client/server sync NOT_EXECUTED"
+      },
+      "workflowCount": 57,
+      "workflowSuccess": 57,
+      "broader": {
+        "run": 40429844349,
+        "job": 121944578500,
+        "invocations": 95,
+        "files": 93,
+        "passed": 778,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "allWorkflowRuns": [
+        {
+          "id": 40429844676,
+          "name": "Knowledge embedding readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844635,
+          "name": "Billing provider readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429845089,
+          "name": "P0 signed cashier offline authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844487,
+          "name": "Global subscription golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844671,
+          "name": "Merchant deletion audit PII",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844627,
+          "name": "PostgreSQL outage recovery proof",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844873,
+          "name": "Merchant deletion physical media lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844862,
+          "name": "Pre-release performance smoke gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844925,
+          "name": "Browser storage authority audit",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844703,
+          "name": "P0 conversation privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844633,
+          "name": "Order operations",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844806,
+          "name": "Merchant access security",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844774,
+          "name": "AWS KMS production adapter readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844773,
+          "name": "Backup and restore drill",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844446,
+          "name": "P0 management privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844952,
+          "name": "Isolated Neon preflight static safety",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844732,
+          "name": "Complete migration safety",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844937,
+          "name": "Global merchant golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844992,
+          "name": "Complete schema candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844927,
+          "name": "Cashier dashboard surface regression",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844841,
+          "name": "Product catalog UI cutover",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844859,
+          "name": "Commerce cashier closeout",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844688,
+          "name": "Location inventory authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844924,
+          "name": "Merchant deletion provider identifiers",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844449,
+          "name": "Location routing engine",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844705,
+          "name": "Global Merchant PostgreSQL HTTP Journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844899,
+          "name": "Meta OAuth operational cutoff",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844888,
+          "name": "Observability mounted routes",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429845024,
+          "name": "Cashier subscription lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429845000,
+          "name": "Catalog variant signature schema contract",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844797,
+          "name": "Clean deployment golden gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844776,
+          "name": "Merchant regional PostgreSQL authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429845043,
+          "name": "Merchant settings",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429845026,
+          "name": "Auth OTP contract continuity",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844817,
+          "name": "Meta webhook PostgreSQL ingress cutover",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844871,
+          "name": "Dashboard channel coherence",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844735,
+          "name": "Global admin golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844868,
+          "name": "PostgreSQL migration candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844849,
+          "name": "Subscription service guarantee validation",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844622,
+          "name": "SEQ D2 canonical storage acceptance",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844867,
+          "name": "Final security and supply chain",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844950,
+          "name": "Meta webhook pipeline",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844781,
+          "name": "Final quality gates",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844901,
+          "name": "Foundation integration final gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844595,
+          "name": "PostgreSQL schema validation",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844352,
+          "name": "Bot logic adversarial matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844281,
+          "name": "P0 cashier IndexedDB browser regression",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844177,
+          "name": "Merchant deletion promotions lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844189,
+          "name": "P0 Support privacy authority diagnostic",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844361,
+          "name": "Staging container contract",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844322,
+          "name": "Cashier operational cutoff",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844233,
+          "name": "Merchant account security UI",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844292,
+          "name": "P0 notification privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844265,
+          "name": "Merchant deletion cashier lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844396,
+          "name": "Auth PostgreSQL concurrency proof",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844323,
+          "name": "P0 dependency security upgrade candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40429844349,
+          "name": "Isolated PostgreSQL engineering audit",
+          "conclusion": "success"
+        }
+      ],
+      "restore": {
+        "canonicalMigrations": 53,
+        "canonicalTables": 97,
+        "seedPassed": 2,
+        "verifyPassed": 2,
+        "proposalInstalled": false
+      },
+      "node22HttpPassed": 1
+    }
   }
 }
