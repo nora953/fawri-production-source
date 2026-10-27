@@ -1,3 +1,76 @@
+## SEQ-R3 admission and compatibility specification — 2026-10-27
+
+Status: **REVIEWABLE_SPECIFICATION_ONLY_NOT_ADOPTED**. Existing gate CASHIER-SYNC-SEQUENCE-001 stays OPEN. This revision completes the previously named specification prerequisite; it does not certify device provenance, activate protocol2, grant SQL capabilities or close SEQ-R1/R2/R3. Source pinned to `8171f07f55c0e9e04c9899744d6368a5b2531812`; last executable acceptance remains `205b5eca8908885a676ec02cd3643faf64f5fe22`. No runtime/CI is claimed by this revision.
+
+### Authority and evidence inputs
+
+Ordinary pairing uses the merchant's existing code and existing station credential authority. The source issuer checks operational merchant access, active station and licensed seat; redemption locks station before challenge, checks unused/unexpired challenge, rotates credentials and consumes the code. None of those steps enrolls a stream. A station credential authorizes the bound device/station; the caller-supplied device ID is not hardware attestation and does not prove a new physical computer. Operator permissions, historical operation authority and offline entitlement remain separate checks.
+
+The existing client `pairCashierStation` refuses pending envelopes before sending its request. That count is a local guard, not an independent provenance assertion, an atomic cross-database snapshot or a server admission grant. Its current behavior remains unchanged. In particular, a known device with pending work and expired credentials must HOLD for the unresolved recovery path; this proposal does not bypass that guard or claim that normal re-pairing already recovers it.
+
+| Input | Trusted use | Insufficient use |
+|---|---|---|
+| Existing merchant pairing and current authenticated station context | Merchant/station/device credential binding and current permission checks | Empty-history claim, arbitrary baseline, physical uniqueness or historical operation approval |
+| Server stream and immutable receipts | Existing stream identity, committed checkpoint and exact replay result, under scoped transaction/locks | MAX of old timeline, client-supplied stream ID, automatic conversion of legacy rows |
+| Server history assessment | Scoped signals from timeline, cashier sales/compensations, attribution and streams | Empty/contiguous result as an enrollment grant; the read-only statement does not lock concurrent writers |
+| Local recovery snapshot | Compatibility inspection of original counter, operation groups and envelope identity from one coherent local transaction | Trusted server provenance, merely counting envelopes, a limited prefix presented as the complete queue |
+| Existing independent empty-device review capability | Reviewed counter0/pending0 manifest after real authorized original review and serialized server recheck | A browser JSON assertion, pairing response, synthetic fixture or the disconnected issuer candidate treated as real review |
+
+No new issuer, OTP, hardware identity system or routine platform-owner approval is selected. Current code has no trusted automatic original-local-state attestation. Therefore **absence of server history plus a client assertion cannot automatically enroll an unknown legacy identity**. Automation may resume a previously admitted, compatible stream after all checks; first enrollment still needs the already specified trusted provenance, whose real operational source remains unresolved. This is an explicit implementation boundary, not a reason to send every ordinary pairing to the platform owner.
+
+### Coherent local compatibility rules
+
+Let N be the server's committed checkpoint for an already verified stream, and M the persisted local counter. Both must be nonnegative safe integers represented without lossy conversion. Read counter and outbox groups together in the existing device database; identity stored in the separate bootstrap database must match before/after inspection, and any binding change invalidates the snapshot. A database read failure, partial inspection, version/identity mismatch or scan bound reached produces HOLD, never EMPTY. A snapshot is diagnostic and can become stale: future admission must prevent local allocation/binding races and recheck server authority under its normal locks.
+
+Group envelopes by immutable operation identity and sequence: a sale's multiple envelopes are one operation, not multiple sequence steps. Validate required members, merchant/device/station/location linkage, supported kind, payload and operation identity. Conflicting identities at one sequence or one identity at multiple sequences are HOLD. Do not reconstruct missing members from a different operation. Retained movement-only adjustments remain UNSUPPORTED/HOLD; their nonzero stock effect cannot become a tombstone.
+
+For sequences above N, complete supported operation groups must cover N+1 through M without gaps. M<N is RESTORE_REVIEW_REQUIRED; do not raise M to N. Pending groups at or below N are retained for authenticated exact replay against their individual receipts; the checkpoint alone cannot ACK them. Successfully acknowledged past operations need not remain in the pending queue. Thus neither an empty queue with M=N nor absence of already acknowledged historical envelopes is itself a defect. With M>N and a missing pending group, HOLD even when some later groups are present. Native snapshot compatibility never supplies the missing independent review needed for new or legacy enrollment.
+
+### Deterministic classification
+
+These are proposed internal disposition names, not newly implemented HTTP codes.
+
+| Observed state | Proposed disposition and permitted next step |
+|---|---|
+| Current merchant pairing succeeds, no admitted stream proven | PAIRED_ONLY. Preserve identity and history; evaluate provenance/compatibility separately. No implicit stream creation |
+| Trusted original empty review, counter0/pending0, no conflicting server signals, all authority/readiness prerequisites valid | EMPTY_ENROLLMENT_ELIGIBLE for the existing reviewed-empty capability only. Recheck history under shared merchant/device serialization before committing one stable stream; a read-only precheck cannot authorize it |
+| Unknown/legacy identity with no server signals and client counter0/empty queue, but no trusted original review | PROVENANCE_REVIEW_REQUIRED; retain state, no enrollment or assumed zero |
+| Local queue starts at1 but is already nonempty and no admitted stream exists | LEGACY_REVIEW_REQUIRED. Existing reviewed-empty primitive explicitly requires pending0; do not falsely pass its manifest or discard the queue |
+| Existing verified active stream, same bindings, M=N and queue empty | RESUME_ELIGIBLE after fresh authority/readiness checks. Keep same stream/checkpoint; no re-enrollment |
+| Existing stream with complete compatible pending groups, M>=N | REPLAY_THEN_RESUME_ELIGIBLE. Resolve any pending <=N by exact replay/attribution ACK; admit new groups >N contiguously only after protocol acceptance |
+| Same-device credential/operator/shift rotation | Preserve same stream/counter/receipts. If local pending guard blocks re-pairing, HOLD; token rotation cannot clear work |
+| Replacement device at same station | Preserve prior device stream/receipts. New device follows its own provenance classification; never inherits checkpoint or pending operations merely through station pairing |
+| Legacy history numerically contiguous but lacks matching immutable receipts/provenance | LEGACY_REVIEW_REQUIRED. No import at MAX, no rehash or automatic legacy-to-v2 conversion; existing primitive supports reviewed empty only |
+| Restored M<N, missing local groups, altered receipt digest, conflicting identity or unsafe/truncated inspection | RESTORE_REVIEW_REQUIRED. Retain local records and server evidence; block v2 upgrade/new allocation in the proposed recovery flow. No blanket ACK/reset/backfill |
+| Retired/review stream, wrong tenant/device/location, revoked authority or unavailable required key/readiness | HOLD or existing authorization denial. Do not recreate the stream, revive credentials or expose peer evidence |
+
+“Eligible” is a diagnostic prerequisite, not permission to write. Existing public routes continue returning CASHIER_SYNC_PROTOCOL_UNSUPPORTED for protocol2 or stream markers. Current legacy behavior is not silently replaced by this table.
+
+### Failure, concurrency and exceptional recovery
+
+Pairing and later admission are separate transactions. A successful pairing followed by admission failure leaves PAIRED_ONLY with no new receipt/checkpoint; retry must use current credentials rather than consume the used code again. Do not claim atomic rollback across pairing, server admission and IndexedDB. If the server commits admission but its response/local persistence is lost, future recovery must authenticate and discover that same binding/review result; never create another stream to recover an uncertain response. This is missing integration acceptance, not an available endpoint.
+
+Before any future writable admission, acquire the existing merchant/station/device locks in the reviewed compatible order, re-read current credential/binding and server history, and make the existing authority transaction reject a concurrent legacy write or device replacement. Exact receipt replay precedes new financial effects and requires original attribution repair before final ACK. The client retains groups on timeout, ambiguous result or failed local ACK persistence. No response from pairing or diagnostic snapshot may be passed to acknowledgeSynced.
+
+Exceptional intervention belongs to the platform owner only under an explicit record-specific recovery authority yet to be adopted. The proposed recovery record must identify merchant/device/station/stream, original evidence, affected operations, reason, requested action, authorized reviewer and resulting disposition. Safe actions at this stage are inspection and preserved HOLD; approve no reset, deletion, manufactured receipt, financial correction or retention change through this document. If reconciliation needs a financial/stock action or migration of legacy history, its exact effect and audit/replay/rollback contract require separate approval and executable proof. No universal “owner override” bypasses invariants.
+
+### Missing acceptance mapped to actual seams
+
+| Named condition | Reused accepted layer | Missing integration proof |
+|---|---|---|
+| Existing pairing keeps history on same/replacement device and refuses used-code replay | b15f4b8 service/SQL continuity | Any newly activated admission path must prove it derives binding from actual authenticated context, not body claims |
+| Local snapshot is complete/coherent and survives fault/reload | Existing native hold/replay fixture is reused at its stated layer | Counter+complete operation grouping in one IndexedDB snapshot; scan bound, malformed group, unsupported operation and binding change produce HOLD with no mutations |
+| Unknown fresh/legacy and concurrent first admission | Existing read-only history and internal reviewed-empty proposal | Actual authorized original review and integrated locked enrollment; synthetic original/reviewer assumptions do not supply it |
+| Known/restored device, lost admission/operation response | Internal immutable receipt, rollback/concurrency and native synthetic lost-ACK proofs | Authenticated HTTP plus real native transport: same stream, exact receipt/attribution ACK, retained outbox and no duplicate financial effect |
+| Replacement/expired credentials with pending original work | Existing pairing client guard and credential invalidation | Adopted original-device recovery authority and historical operation entitlement; no bypass selected |
+| Legacy/movement-only compatibility | Existing unsupported hold | SEQ-R2 product/disposition contract and explicit supported operation set before public activation |
+
+Next bounded executable prerequisite: Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending.
+
+This is one extension of the existing recovery contract, with the machine-readable summary in the existing design evidence. No duplicate proof artifact or new release gate. All45 known statuses remain29 CLOSED_SOURCE/7 OPEN/9 BLOCKED; completeP0Inventory=false, overallPercentage=null, release NO-GO.
+
+---
+
 ## مطابقة المتبقي الحالي — 2026-10-27
 
 هذا التحديث يوضح الحالة الحالية ويُبقي الأقسام المؤرخة أدناه في نطاقها التاريخي. تخزين0052 وبدء التشغيل والحذف والاستعادة مقبولة ضمن المصدر؛ مرشح0053 وفحصه مقبولان ضمن fixtures فقط. لا يظل تبني تخزين0052 معلقًا كما يوحي العنوان التاريخي أدناه. بوابة CASHIER-SYNC-SEQUENCE-001 نفسها ما زالت OPEN، والإطلاقNO-GO.

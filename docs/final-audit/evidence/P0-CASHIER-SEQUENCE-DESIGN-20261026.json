@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Resolve the SEQ-R3 admission/compatibility boundary using existing merchant pairing and actual local queue/server history paths in the existing recovery contract. Prepare one concrete reviewable specification for new versus known/restored devices; explicitly identify required trusted evidence and exceptional owner recovery. Keep public v2 unsupported until that contract and its integration acceptance are met. Do not create another disconnected issuer or rerun accepted internal proof.",
+  "nextExactAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4459,6 +4459,84 @@
         "doNotRepeat": "No platform-owner approval for every ordinary pairing, duplicate issuer candidate, baseline MAX/reset or silently promoted0053."
       }
     ],
-    "nextExactAction": "Resolve the SEQ-R3 admission/compatibility boundary using existing merchant pairing and actual local queue/server history paths in the existing recovery contract. Prepare one concrete reviewable specification for new versus known/restored devices; explicitly identify required trusted evidence and exceptional owner recovery. Keep public v2 unsupported until that contract and its integration acceptance are met. Do not create another disconnected issuer or rerun accepted internal proof."
+    "nextExactAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending."
+  },
+  "admissionCompatibilitySpecification20261027": {
+    "date": "2026-10-27",
+    "status": "REVIEWABLE_SPECIFICATION_ONLY_NOT_ADOPTED",
+    "gate": "CASHIER-SYNC-SEQUENCE-001",
+    "condition": "SEQ-R3",
+    "sourceReviewed": "8171f07f55c0e9e04c9899744d6368a5b2531812",
+    "report": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md#seq-r3-admission-and-compatibility-specification--2026-10-27",
+    "newRuntimeExecuted": false,
+    "newCiClaimed": false,
+    "gateClosed": false,
+    "operationalAdoption": false,
+    "publicV2Enabled": false,
+    "requiresRoutinePlatformOwnerApproval": false,
+    "duplicateIssuerSelected": false,
+    "automaticResume": "Only an existing verified active compatible stream after fresh authenticated checks; not implemented by this documentation.",
+    "firstEnrollment": "Existing reviewed-empty capability still requires real trusted original review and serialized server history recheck; pairing and browser assertions cannot supply this.",
+    "legacyAndRestore": "Hold ambiguous/retained/rollback state. No MAX baseline, reset, implicit checkpoint import, deletion or synthetic ACK.",
+    "coherentLocalSnapshot": "One readonly transaction for persisted counter and complete operation groups, explicit inspection bound/completeness, identity stability checks across separate bootstrap store. Diagnostic only; no server trust.",
+    "knownPairingPendingConstraint": "Current pairCashierStation refuses any pending envelopes; expired-credential original-device recovery remains unresolved and is not bypassed.",
+    "ownerExceptionalRecovery": "Record-specific authority/policy not adopted. No general owner override, financial repair or retention approval.",
+    "sourceAnchors": [
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts",
+        "symbol": "beginCashierStationPairingAuthoritative",
+        "gitBlob": "d7212e7b4c8055f7bfeda3430fbb6ace843ebcbb",
+        "line": 1035
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts",
+        "symbol": "redeemCashierStationPairingAuthoritative",
+        "gitBlob": "d7212e7b4c8055f7bfeda3430fbb6ace843ebcbb",
+        "line": 1094
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierDeviceHistoryAssessment.ts",
+        "symbol": "reviewCashierDeviceEnrollmentHistory",
+        "gitBlob": "0c4bf333767fdcf039015723b8a6f405ca784140",
+        "line": 108
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierStreamEnrollmentAuthority.ts",
+        "symbol": "enrollReviewedEmptyCashierStreamInTransaction",
+        "gitBlob": "10294e8f52d7760c36e3ad0fa4770c9ec0121b22",
+        "line": 15
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts",
+        "symbol": "assertLegacyCashierSyncProtocol",
+        "gitBlob": "54f3a7ccfc72ed6d5b69073b4161b2bae6618eb2",
+        "line": 184
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts",
+        "symbol": "pairCashierStation",
+        "gitBlob": "54235aff17a3d8093f53a101f8031578fbd4421b",
+        "line": 336
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+        "symbol": "async listPendingSync",
+        "gitBlob": "891b533d6d5c2e8cf85476fd4dbe629b8347e264",
+        "line": 1068
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorCloudSync.ts",
+        "symbol": "syncCashierOperatorOutboxToCloud",
+        "gitBlob": "b63911a2b2aa08a30bf2a150979b767a90c4bd45",
+        "line": 770
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierCloudOutboxSync.ts",
+        "symbol": "syncCashierOutboxToCloud",
+        "gitBlob": "72a92960fd674a8f790d8d1c88d483cd110f1dcc",
+        "line": 276
+      }
+    ],
+    "nextExactAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending."
   }
 }

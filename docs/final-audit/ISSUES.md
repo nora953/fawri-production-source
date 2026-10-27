@@ -1,3 +1,15 @@
+## SEQ-R3 device admission specification prepared — 2026-10-27
+
+Completed the named specification prerequisite inside the [existing recovery contract](P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md). [Machine-readable summary and9 source blob anchors](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#admissionCompatibilitySpecification20261027). Source reviewed8171f07f55c0e9e04c9899744d6368a5b2531812; all9 anchor references verified against exact Git blobs. This is REVIEWABLE_SPECIFICATION_ONLY_NOT_ADOPTED, not runtime or policy acceptance.
+
+Reuses merchant pairing; separates PAIRED_ONLY from fresh enrollment, known-stream resume, legacy review and restored-state hold. Defines safe counter/receipt/complete-group compatibility and lost-response/concurrency boundaries. Current pairing client refuses pending envelopes; expired credentials plus pending original work still require an adopted recovery path. No trusted automatic original-local-state attestation exists: client-empty/no-server-signals cannot become a grant, and internal reviewed-empty fixtures remain assumed original review. No ordinary platform-owner approval or duplicate issuer. No MAX/reset, financial correction, discard, blanket ACK or public v2 activation.
+
+Next executable prerequisite: Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending.
+
+Documentation only; no new tests/CI or executable/source acceptance claimed. Last accepted205b5eca8908885a676ec02cd3643faf64f5fe22 and its57/57 results remain historical accepted evidence. All45 statuses unchanged29 CLOSED_SOURCE/7 OPEN/9 BLOCKED; completeP0Inventory=false, overallPercentage=null, release NO-GO. No hosted/merge/deploy/P1/P2.
+
+---
+
 ## Background-job admin HTTP subcondition accepted; cashier proof gaps reconciled — 2026-10-27
 
 Accepted source205b5eca8908885a676ec02cd3643faf64f5fe22,57/57 CI SUCCESS. [Authoritative checkpoint](P0-CLOSURE-REGISTER.md); [job HTTP evidence](evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json). Seven new functional cases exercise actual GET(view_logs/manage_channels) versus POST(manage_channels), summary payload exclusion, latest/missing safety refusal, path-selected once-only safe requeue, queued-state denial, payload-hydration atomic rollback/retry and SQL permission removal. Actual enqueue/encryption, root-seeded DLQ fixture state, no worker/provider/KMS/hosted claim. Target58 TAP/4files (full app27, includes parents); broader829 TAP/97invocations/94files excludes the HTTP file. Tracked/full-history security PASS, checkout tree matched, owned fresh-cluster fingerprints match. App/schema/ACL unchanged; no whole result-JSON privacy certification.
