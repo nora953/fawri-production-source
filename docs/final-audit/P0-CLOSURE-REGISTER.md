@@ -1,3 +1,23 @@
+## قبول تصحيح تطابق إعادة الإرجاع والإلغاء المحلي — 2026-10-27
+
+المصدر المقبول **711fd97d989b3733e68af7e1a094fe92dfb08d74**: **58/58 مسار CI ناجح**، دون معلّق أوفاشل أوملغى عند القبول. [الدليل في الملف الموجود](evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localCompensationReplay20261027). هذه حالة فرعية داخل شرط الهوية غير القابلة للتبديل في CASHIER-SYNC-SEQUENCE-001/SEQ-R1، وليست بوابة جديدة أوإغلاقًا للتسلسل.
+
+رُوجع المسار الفعلي: فحص جلسة/صلاحية المشغّل وظهور البيع فيcashierOperatorHistoryRuntime ثمbase ثمIndexedDbCashierCompensationAuthority. smoke الموجود يثبت الإعادة المطابقة والسعر الأصلي وبعض حالات الرفض وإعادة الفتح؛ اختبارreturn-pricing مصدرّي؛native23 السابق لا يغيّر مدخلات إعادة التعويض. جرى تحديد الفجوة قبل إضافة5 حالات إلى harness الموجود، دونجرداختبارات شامل مزعوم أوإعادة اختبار غير مرتبط.
+
+**الإثبات قبل الإصلاح:** المصدر01eebd026fc33c3bf43b02001d4f0876fe77447b غيّر الاختبار ومرشّح workflow فقط؛ التطبيق لم يتغير. [native40547891355/job122343355851](https://github.com/nora953/fawri-production-source/actions/runs/40547891355):26PASS/2FAIL من28 فيChrome155. قُبلت5 تغييرات إرجاع (الكمية،هوية السطر،الترتيب،عدد الأسطر،الملاحظة) وتغيير ملاحظة الإلغاء وأُعيدت النتيجة القديمة؛ تغيير البيع/النوع رُفض أصلًا. لم تُثبت هذه المحاولة أثرًا مخزنيًا إضافيًا، لكن النتيجة المعادة لم تطابق الطلب الجديد. بقيت المخازن كما هي. المحاولة غير مقبولة:CI41نجاح/1فشل/16إلغاء؛ لم تُحسب الإلغاءات نجاحًا.
+
+**التصحيح المحدود:**21سطرًا فيخدمة التعويض المحلي الموجودة؛ تمرير المدخلات المطبّعة مسبقًا إلىreplayOperation ومقارنتها بالملاحظة ومعرّفات/كميات أسطر الإرجاع وترتيبها المحفوظ. الاختلاف يعيدCASHIER_COMPENSATION_OPERATION_ID_CONFLICT الموجود، دونإعادة تسعير أوكتابة أوتغيير سجلقديم. ترتيب الطلب المحفوظ جزء من المقارنة؛ لا فرز أوتطبيع تاريخي جديد. فحوص المشغّل والحساب المالي وصلاحيات الخادم وآلية الربط لم تتغير.
+
+[native40548267829/job122344689717](https://github.com/nora953/fawri-production-source/actions/runs/40548267829): **28/28 حالة ناجحة**، منها5 جديدة تشمل9 تغييرات طلب مرفوضة مع مطابقة جميع مخازن قاعدةfixture المحلية؛ الإعادة المطابقة بعدتطبيع المسافات وبعدإرجاع آخر وتحديث الكتالوج والإقرار وإعادة فتح القاعدة مع حفظ المبلغ الأصلي وعدمإعادة الطابور؛ عطلput فعلي عندالطابور بعدالكتابات السابقة، يتراجع معهكل المخازن فيالإرجاع والإلغاء ثمينجحretry مرةواحدة (عداد+1/مخزون+1)، وإعادته المطابقة لا تغيّر شيئًا؛ وطلبا إرجاع متزامنان يعطيان العملية نفسها مع حركة واحدة وحفظ لقطاتpeer المختارة. هذا تزامن طلباتnative وليس برهان تداخل أقفالSQL مفروض. المبلغ هنا snapshot محلي، لا تحويل مالي أوردّ أموال منمزود.
+
+[المتصفح الأوسع40548267765/job122344692634](https://github.com/nora953/fawri-production-source/actions/runs/40548267765) نجح فيsmoke/النسخة القديمة والطابور ذيالنقل المصطنع. [SQL الأوسع40548267115/job122345188807](https://github.com/nora953/fawri-production-source/actions/runs/40548267115): **829TAP/97استدعاء/94ملفًا**،0فشل/تخطٍّ/إلغاء، تشمل الآباء ولا تتضمن28حالةnative. TypeScriptAPI/frontend والبناء والأمنtracked/historyPASS. checkout **cff91d4bcae5a9cc55358fc5199877ba108c6131** يطابق شجرة المصدر **dccf936a9783bd34f9a1d3267c36628a1fa0caad** فيnative/browser/typecheck/security/SQL؛ شجرة المحاولة الأولى طابقت مصدرها أيضًا. بصمتا الاستعادة المعزولة متطابقتان؛ مراجعة الأصل فيfixture تبقى مفترضة.
+
+التالي: Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending.
+
+صُحح مؤشرnextAction القديم فيحزمة قرارات الترقية ليتبع قائمة التنفيذ الحالية بدلتوليد اختبار ربطHTTP إضافي تلقائيًا؛ لم يُعتمد نموذج مراجع أوصلاحيات أوسياسة احتفاظ. تبقى سياسةmovement-only والمراجعة الأصلية والقبول/الاستعادة العامة مفتوحة. لاAPI/schema/ACL/OTP/issuer أوترقية0053 أوبيئة مستضافة أوmerge/deploy/P1/P2.45حالة البوابات دونتغيير:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false،overallPercentage=null، **NO-GO**.
+
+---
+
 ## قبول ربط فحص الاستعادة بهوية الجهاز والمحطة — 2026-10-27
 
 المصدر المقبول **e73fe8d90552d71d2a5953c17c757202956c4241**: **58/58 مسار CI ناجح** في النتيجة النهائية. [الدليل في الملف الموجود](evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#deviceBindingRecovery20261027). أُنجز شرط الوصلة المحلية المسماة داخل CASHIER-SYNC-SEQUENCE-001/SEQ-R3؛ لا بوابة جديدة أوإغلاق كامل.

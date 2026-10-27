@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "e73fe8d90552d71d2a5953c17c757202956c4241",
-  "lastFullyAcceptedSource": "e73fe8d90552d71d2a5953c17c757202956c4241",
+  "sourceCandidate": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+  "lastFullyAcceptedSource": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
   "release": "NO-GO",
   "rows": [
     {
@@ -2325,7 +2325,7 @@
       "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
     }
   ],
-  "previousFullyAcceptedSource": "389679488185e9d81a8edc120fdfdeaff4130efd",
+  "previousFullyAcceptedSource": "e73fe8d90552d71d2a5953c17c757202956c4241",
   "lastUpdatedAt": "2026-10-27",
   "closurePlan": {
     "schemaVersion": 1,
@@ -2343,7 +2343,7 @@
     "release": "NO-GO",
     "noNewReleaseRequirementsAdded": true,
     "noExistingStatusChanged": true,
-    "acceptedSource": "e73fe8d90552d71d2a5953c17c757202956c4241",
+    "acceptedSource": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
     "executionRules": [
       "Select one existing gate and its exact unmet closure condition before new code/tests. State whether the batch closes it or only completes a named necessary prerequisite.",
       "Reuse accepted positive/negative/runtime evidence at its original layer and source. No repeated accepted test solely to increase totals; rerun only for a source change, failure or identified integration gap.",
@@ -2384,8 +2384,8 @@
           ],
           "newRuntime": false
         },
-        "nextAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending.",
-        "completedPrerequisite": "Existing runtime exposes read-only coherent local recovery view with before/after bootstrap binding observation, existing-only database opens and no credential/session mutation. Source e73fe8d,58/58 final CI,23 native cases including8 new. No whole-gate or protocol activation."
+        "nextAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending.",
+        "completedPrerequisite": "Local sale replay plus coherent local recovery/binding observation retained; missing return/void input identity confirmed by native26pass/2fail before fix and corrected to28/28. Source711fd97,58/58CI,829 broaderTAP; no full sequence or public v2 acceptance."
       },
       {
         "order": 3,
@@ -2467,10 +2467,10 @@
           "Required source/native/HTTP/restricted-SQL matrix in the existing recovery contract passes: exact replay,1/3/late2 chosen handling, unsupported operation hold, lost ACK/restart, rollback, tenant/device/station denial, real concurrency and restore.",
           "New protocol remains unsupported publicly until its complete acceptance boundary is met; operational promotion and grant/retention prerequisites are separately satisfied, not inferred from fixtures."
         ],
-        "missingEvidenceOrDecision": "Coherent native snapshot plus before/after existing bootstrap binding observation accepted at e73fe8d; no cross-database lease/authentication implied. Local return/void immutable-input replay needs reconciliation with accepted coverage, followed by outstanding trusted original review, retained movement-only disposition, exceptional recovery and integrated public/native v2 admission. Existing merchant pairing remains authoritative for pairing.",
+        "missingEvidenceOrDecision": "Local return/void immutable input replay is now bounded source accepted at711fd97 with native before/after regression, matching retry, fault rollback and concurrent return. Remaining: actual public HTTP protocol negotiation proof reconciliation, adopted SEQ-R2 retained-movement compatibility, trusted original review and full HTTP/native v2 recovery/admission. No routine owner approval or duplicate pairing.",
         "executableNowWithinGitHub": "Reconcile each required recovery-contract row against existing evidence. Implement only the next missing row that advances SEQ-R1/R2/R3; the HTTP pairing extension is conditional on that mapping.",
         "externalDependency": "Intended manual-adjustment/legacy disposition, trusted enrollment/recovery rules, FIELD005 and separately authorized operational adoption remain dependencies.",
-        "nextAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending.",
+        "nextAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -2485,7 +2485,8 @@
           "newRuntime": false,
           "admissionSpecification": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#admissionCompatibilitySpecification20261027",
           "localSnapshotAcceptance": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localRecoverySnapshot20261027",
-          "deviceBindingAcceptance": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#deviceBindingRecovery20261027"
+          "deviceBindingAcceptance": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#deviceBindingRecovery20261027",
+          "localCompensationReplayAcceptance": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localCompensationReplay20261027"
         }
       },
       {
@@ -2787,6 +2788,15 @@
       "newGateCount": 0,
       "gateClosed": false,
       "nextExactAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending."
+    },
+    "localCompensationReplayAcceptance20261027": {
+      "source": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+      "evidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localCompensationReplay20261027",
+      "status": "BOUNDED_NATIVE_LOCAL_RETURN_VOID_REPLAY_INPUT_IDENTITY_SOURCE_ACCEPTED",
+      "knownGate": "CASHIER-SYNC-SEQUENCE-001",
+      "newGateCount": 0,
+      "gateClosed": false,
+      "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending."
     }
   }
 }

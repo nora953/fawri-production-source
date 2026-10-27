@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending.",
+  "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4342,12 +4342,20 @@
     ],
     "decisionRecordingRule": "A continuation request, passing CI, prepared proposal or null field is not policy approval. Record the explicit choice, responsible approver, decision date and evidence; retain per-field approval scope. Do not propagate one approval to other records.",
     "initialDecisionNeeded": "Define existing merchant pairing to stream lifecycle/recovery boundary; owner-only versus appointed reviewer is not a routine device-pairing prerequisite.",
-    "nextAction": "Extend the same existing merchant pairing continuity scenarios through authenticated merchant HTTP issuance and real cashier redemption, reusing current session and station authority. Then reconcile protocol negotiation/recovery; keep v2 unsupported until complete acceptance, with no guessed fresh-empty provenance, historical reset, routine platform-owner approval or duplicate pairing.",
+    "nextAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending.",
     "routinePairingClarification": {
       "date": "2026-10-27",
       "evidence": "P0-CASHIER-PAIRING-CONTINUITY-20261027.json",
       "modelChoicePromptForRoutinePairing": "SUPERSEDED_BY_EXISTING_MERCHANT_PAIRING_SOURCE_TRACE",
       "exceptionalReviewerPolicyApproved": false
+    },
+    "currentExecutionBoundary20261027": {
+      "source": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+      "reason": "Supersede the older automatic extra HTTP-pairing work order with the current finite acceptance reconciliation; existing merchant pairing remains authoritative.",
+      "routinePlatformOwnerApprovalRequired": false,
+      "duplicateIssuerAuthorized": false,
+      "reviewerAuthorityOrRetentionPolicyAdopted": false,
+      "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending."
     }
   },
   "policyNeutralIssuerCandidate": {
@@ -4459,7 +4467,7 @@
         "doNotRepeat": "No platform-owner approval for every ordinary pairing, duplicate issuer candidate, baseline MAX/reset or silently promoted0053."
       }
     ],
-    "nextExactAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending."
+    "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending."
   },
   "admissionCompatibilitySpecification20261027": {
     "date": "2026-10-27",
@@ -4567,5 +4575,24 @@
     "bootstrapBindingComparisonImplemented": true,
     "productionEnrollmentWired": false,
     "nextExactAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending."
+  },
+  "localCompensationReplayAcceptance20261027": {
+    "status": "BOUNDED_NATIVE_LOCAL_RETURN_VOID_REPLAY_INPUT_IDENTITY_SOURCE_ACCEPTED",
+    "source": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+    "evidence": "P0-CASHIER-NATIVE-OUTBOX-20261026.json#localCompensationReplay20261027",
+    "nativeCases": 28,
+    "newNativeCases": 5,
+    "changedInputVariants": 9,
+    "ciSuccess": 58,
+    "broaderTap": 829,
+    "scope": "Local normalized return/void input identity, exact replay, native rollback/retry and concurrent matching return. No financial policy/schema/API/admission change.",
+    "baselineSource": "01eebd026fc33c3bf43b02001d4f0876fe77447b",
+    "baselineNative": {
+      "passed": 26,
+      "failed": 2
+    },
+    "gateClosed": false,
+    "publicV2Enabled": false,
+    "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending."
   }
 }
