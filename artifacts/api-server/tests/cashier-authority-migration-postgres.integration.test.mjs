@@ -140,12 +140,13 @@ test('candidate0053 actual Drizzle migration '+mode+': atomic faults, collision,
     const {assertCashierAuthorityCandidateInstallationReady:preflight}=await import('../src/services/cashierAuthorityCandidateInstallationReadiness.ts');
     const identities={primaryRole:runtime.role,authenticationRole:runtime.authRole,reviewerRole:role,bootstrapRole:'fawri_ci'};
     const installationCode=code=>e=>e.code==='CASHIER_AUTHORITY_CANDIDATE_INSTALLATION_NOT_READY'&&e.issues.includes(code);
+    let positiveChecks=0,faultChecks=0,actorChecks=0,snapshotChecks=0;
     async function positive(){
       const client=await pool.connect();try{
         await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
         const result=await preflight(client,identities);
         assert.equal(result.ok,true);assert.equal(result.transactionReadOnly,true);assert.equal(result.historyEntries,54);
-        assert.equal(result.capabilitiesWithheld,true);assert.equal(result.grantsAuthorized,false);assert.equal(result.operationalAdoption,false);
+        assert.equal(result.capabilitiesWithheld,true);assert.equal(result.grantsAuthorized,false);assert.equal(result.operationalAdoption,false);positiveChecks++;
       }finally{await client.query('ROLLBACK');client.release();}
     }
     await sub.test('actual READ ONLY preflight accepts the complete pinned54-entry install with capabilities withheld',positive);
@@ -179,19 +180,21 @@ test('candidate0053 actual Drizzle migration '+mode+': atomic faults, collision,
         await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ');
         await client.query(mutation);await assert.rejects(preflight(client,identities),installationCode(expected));
       }finally{await client.query('ROLLBACK');client.release();}
-      assert.deepEqual(await snapshot(),prior);await positive();
+      assert.deepEqual(await snapshot(),prior);await positive();faultChecks++;
     });
     for(const [name,target] of [['primary',runtime.runtimePool],['reviewer',reviewer],['authentication',new Pool({connectionString:process.env.FAWRI_AUTH_DATABASE_URL,connectionTimeoutMillis:5000})]])await sub.test('actual '+name+' LOGIN is denied bootstrap preflight',async()=>{
       const prior=await snapshot(),client=await target.connect();try{
         await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
         await assert.rejects(preflight(client,identities),installationCode('BOOTSTRAP_CONTEXT'));
       }finally{await client.query('ROLLBACK');client.release();if(name==='authentication')await target.end();}
-      assert.deepEqual(await snapshot(),prior);
+      assert.deepEqual(await snapshot(),prior);actorChecks++;
     });
     await sub.test('preflight refuses read-committed inspection without the required snapshot context',async()=>{
       const client=await pool.connect();try{await client.query('BEGIN READ ONLY');await assert.rejects(preflight(client,identities),installationCode('SNAPSHOT_CONTEXT'));}
       finally{await client.query('ROLLBACK');client.release();}
+      snapshotChecks++;
     });
+    assert.deepEqual({positiveChecks,faultChecks,actorChecks,snapshotChecks},{positiveChecks:23,faultChecks:22,actorChecks:3,snapshotChecks:1},'emit proof only after every preflight assertion passes');
     console.log('P0_AUTHORITY_INSTALLATION_PREFLIGHT '+JSON.stringify({mode,historyEntries:54,metadataFaults:22,deniedLoginActors:3,readOnlyPositive:true,repeatableRead:true,capabilitiesWithheld:true,grantsAuthorized:false,priorPublicDataAndSelectedCatalogsPreserved:true,canonicalSourceUnchanged:true,hosted:false}));
     // Explicit fixture grants are applied only AFTER the withheld preflight proof.
     await pool.query('GRANT EXECUTE ON FUNCTION public.fawri_cashier_enrollment_runtime(),public.fawri_enroll_reviewed_empty_cashier_stream(text,jsonb) TO '+role);

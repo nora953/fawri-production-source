@@ -27,7 +27,7 @@ export async function assertCashierAuthorityCandidateInstallationReady(client:Op
     if(!relation||relation.relkind!=='r'||relation.relrowsecurity||relation.relforcerowsecurity||relation.owner!==identities.bootstrapRole||relation.schema_owner!==identities.bootstrapRole)throw new CashierAuthorityCandidateInstallationError(['JOURNAL_RELATION']);
     fail(!relation.public_acl&&!relation.public_schema_acl,'JOURNAL_PUBLIC_ACL');
     stage='JOURNAL_COLUMNS';
-    const columns=(await client.query("SELECT a.attname,format_type(a.atttypid,a.atttypmod) AS type,a.attnotnull,EXISTS(SELECT 1 FROM aclexplode(coalesce(a.attacl,ARRAY[]::aclitem[])) x WHERE x.grantee=0) AS public_acl FROM pg_attribute a WHERE a.attrelid=$1::oid AND a.attnum>0 AND NOT a.attisdropped ORDER BY a.attnum",[relation.oid])).rows;
+    const columns=(await client.query("SELECT a.attname,format_type(a.atttypid,a.atttypmod) AS type,a.attnotnull,EXISTS(SELECT 1 FROM aclexplode(CASE WHEN cardinality(a.attacl)>0 THEN a.attacl END) x WHERE x.grantee=0) AS public_acl FROM pg_attribute a WHERE a.attrelid=$1::oid AND a.attnum>0 AND NOT a.attisdropped ORDER BY a.attnum",[relation.oid])).rows;
     const expected=[['id','integer',true],['hash','text',true],['created_at','bigint',false]];
     fail(columns.length===3&&columns.every((c,i)=>c.attname===expected[i]?.[0]&&c.type===expected[i]?.[1]&&c.attnotnull===expected[i]?.[2]),'JOURNAL_COLUMNS');
     fail(columns.every(c=>!c.public_acl),'JOURNAL_PUBLIC_ACL');

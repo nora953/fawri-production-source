@@ -1,3 +1,7 @@
+## SEQ-D3 preflight empty column-ACL correction — 2026-10-27
+
+Diagnostic source71610e08 candidate40480938413/job122110774411 pins failure to JOURNAL_COLUMNS SQLSTATE22023: aclexplode rejects the synthetic zero-dimensional empty ACL array used for NULL attacl. Initial53ef9049 and diagnostic71610e08 both fresh10 TAP PASS/25 FAIL; upgradeNOT_RUN; neither accepted. Current query passes only nonempty explicit column ACLs to aclexplode and otherwise NULL, which means no explicit column grant; table/PUBLIC/caller and nonempty column grants remain checked. No assertion removed. Proof emission now checks all23 positives/22 faults/3 denied actors/1 snapshot-context refusal before emitting success, preventing misleading proof lines when nested subtests fail. Local history9/package8 PASS; exact-source CI pending. Last acceptedfec5efed, canonical53/97 unchanged, releaseNO-GO.
+
 ## SEQ-D3 installation preflight diagnostic correction — 2026-10-27
 
 Initial source53ef9049 candidate40480084563/job122107913293 failed the fresh preflight positive before history matching;10 TAP passed/25 failed (includes parents), upgradeNOT_RUN. Actual migrator fault/collision/positive/rerun checks before preflight passed. This is NOT accepted. Preserve all assertions; add sanitized catalog-query stage/SQLSTATE diagnostics (no raw errors, SQL or credentials) to locate the refusal. Last accepted source remainsfec5efed; canonical53/97 unchanged, releaseNO-GO. Runtime CI pending.

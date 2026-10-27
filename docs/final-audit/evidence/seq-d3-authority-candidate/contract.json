@@ -520,7 +520,7 @@
     },
     {
       "path": "artifacts/api-server/src/services/cashierAuthorityCandidateInstallationReadiness.ts",
-      "sha256": "99aad0b7c57a6a7b0a5f5dae0726e18e6e9826d5a8c37e7126a924a561c32658"
+      "sha256": "dc596778a5ad237fc0786c7aca4e29f73ec955fcdd58b44906c69b07edd3232d"
     },
     {
       "path": "lib/db/scripts/lib/cashier-authority-candidate-history.mjs",
