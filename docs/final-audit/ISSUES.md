@@ -1,3 +1,9 @@
+## Current SEQ-D3 checkpoint — 2026-10-27
+
+Accepted sourcefec5efedeefbf253af8b764d63a5911dd6fb99f0,57/57 CI SUCCESS. Actual Drizzle candidate0053 fresh8/upgrade8 TAP and full broader826 TAP PASS; see authoritative [register](P0-CLOSURE-REGISTER.md) and [design evidence](evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json). Candidate54/98 exists only in isolated tests; canonical source53/97 unchanged. CASHIER-SYNC-SEQUENCE-001 OPEN, FIELD005/reviewer policy and hosted prerequisites unresolved, releaseNO-GO. Historical entries below retain their original scope.
+
+Next: Prepare an internal read-only candidate installation preflight verifying the actual complete Drizzle journal hashes/timestamps against the reviewed54-entry package and accepted owner/function/role boundaries before any future EXECUTE grant. Prove missing/tampered/extra journal and denied-role/partial-installation refusals with fault rollback. No startup wiring, canonical promotion, operational grants or public v2 activation; trusted reviewer issuance, FIELD005 and hosted/KMS/PITR/media remain prerequisites.
+
 ## SEQ-D2 canonical0052 source storage/startup readiness/deletion/restore accepted — 2026-10-26
 
 Accepted source **3bb3c67717a17da1cba903047e35f2b622b997b1**,57/57 CI SUCCESS. [Canonical40323848241/job121575332020](https://github.com/nora953/fawri-production-source/actions/runs/40323848241):22 TAP/2 files,104 historical SQL/snapshots byte-identical. [Cashier40323848140/job121575332493](https://github.com/nora953/fawri-production-source/actions/runs/40323848140):52 TAP/15 invocations; committed storage8 and startup/catalog readiness16 pass. [Broader40323848365/job121575333763](https://github.com/nora953/fawri-production-source/actions/runs/40323848365):750 TAP/94 invocations/92 files,0 failed/skipped/cancelled, exact source tree matched. Complete schema40323848361 and schema validation40323848333 SUCCESS. [Evidence](evidence/P0-CASHIER-CANONICAL-0052-ACCEPTANCE-20261026.json).

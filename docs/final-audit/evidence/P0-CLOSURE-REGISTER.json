@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "1e7ac9d91a6f2b54691c0a9bc720e2f0d1706eb3",
-  "lastFullyAcceptedSource": "1e7ac9d91a6f2b54691c0a9bc720e2f0d1706eb3",
+  "sourceCandidate": "fec5efedeefbf253af8b764d63a5911dd6fb99f0",
+  "lastFullyAcceptedSource": "fec5efedeefbf253af8b764d63a5911dd6fb99f0",
   "release": "NO-GO",
   "rows": [
     {
@@ -284,7 +284,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "INTERNAL_REV2_AUTHORITY_LIFECYCLE_FRESH_FIXTURE_CLUSTER_RECOVERY_ACCEPTED_CANONICAL_ISSUER_POLICY_CLIENT_OPEN",
-      "nextAction": "Use the actual Drizzle migrator and stabilized migration folder in owned offline PostgreSQL to prove candidate0053 fresh installation,0052-to0053 upgrade, idempotent rerun, owner-collision refusal and injected transaction rollback with prior ledger/financial/peer data preserved. Keep canonical source53/97 and public admission unchanged until separate acceptance; trusted reviewer/grants/FIELD005 and hosted/KMS/PITR/media prerequisites remain.",
+      "nextAction": "Prepare an internal read-only candidate installation preflight verifying the actual complete Drizzle journal hashes/timestamps against the reviewed54-entry package and accepted owner/function/role boundaries before any future EXECUTE grant. Prove missing/tampered/extra journal and denied-role/partial-installation refusals with fault rollback. No startup wiring, canonical promotion, operational grants or public v2 activation; trusted reviewer issuance, FIELD005 and hosted/KMS/PITR/media remain prerequisites.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -1090,10 +1090,406 @@
         ]
       },
       "candidateMigrationRuntime": {
-        "status": "PREPARED_CI_PENDING",
-        "freshAndUpgradeSeparateOwnedClusters": true,
-        "actualDrizzleMigrator": true,
-        "canonicalPromoted": false
+        "status": "ACCEPTED_BOUNDED_ACTUAL_MIGRATOR_REHEARSAL",
+        "source": "fec5efedeefbf253af8b764d63a5911dd6fb99f0",
+        "tree": "51fda04ae2969a9741ec23ddc006a75d69015fdc",
+        "checkout": "12242f38d7116d2a63b87c5405f904bb26bdf441",
+        "checkoutTreeMatchesSource": true,
+        "allWorkflowsSuccess": 57,
+        "migration": {
+          "run": 40458909596,
+          "job": 122038610688,
+          "actualDrizzleMigrator": true,
+          "stabilizedMigrationFolder": true,
+          "canonicalRunnerComponentsUsed": [
+            "drizzle-orm/node-postgres/migrator.migrate",
+            "createStabilizedMigrationFolder"
+          ],
+          "freshAndUpgradeSeparateOwnedClusters": true,
+          "freshTap": 8,
+          "upgradeTap": 8,
+          "includesParentTests": true,
+          "managementTap": 22,
+          "totalJobTap": 38,
+          "invocations": 4,
+          "uniqueFiles": 3,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "candidateMigrationCount": 54,
+          "candidatePublicTables": 98,
+          "proofs": [
+            {
+              "mode": "fresh",
+              "actualDrizzleMigrator": true,
+              "stabilizedMigrationFolder": true,
+              "journalEntries": 54,
+              "publicTables": 98,
+              "ddlFaultsRolledBack": 2,
+              "collisionRefused": true,
+              "idempotentRerun": true,
+              "priorPublicDataPreserved": true,
+              "syntheticFinancialAndReviewFixtures": true,
+              "realRestrictedReadiness": true,
+              "canonicalSourceUnchanged": true,
+              "candidateOnly": true,
+              "hosted": false
+            },
+            {
+              "mode": "upgrade",
+              "actualDrizzleMigrator": true,
+              "stabilizedMigrationFolder": true,
+              "journalEntries": 54,
+              "publicTables": 98,
+              "ddlFaultsRolledBack": 2,
+              "collisionRefused": true,
+              "idempotentRerun": true,
+              "priorPublicDataPreserved": true,
+              "syntheticFinancialAndReviewFixtures": true,
+              "realRestrictedReadiness": true,
+              "canonicalSourceUnchanged": true,
+              "candidateOnly": true,
+              "hosted": false
+            }
+          ],
+          "newRuntimeFile": "artifacts/api-server/tests/cashier-authority-migration-postgres.integration.test.mjs"
+        },
+        "assertions": [
+          "Fresh starts with zero public tables and initializes only the migrator journal bootstrap before faults",
+          "Upgrade starts from canonical0052 and synthetic two-merchant orders, products/quantity, advanced streams and immutable receipts",
+          "Midpoint and tail errors roll back pending DDL/roles and preserve selected catalogs, all prior public table rows and journal hash/timestamp rows",
+          "Existing receipt-owner role refuses reuse; earlier enrollment DDL rolls back and original role flags remain unchanged",
+          "Successful candidate installation commits54 hash/timestamp journal rows and98 tables with prior rows preserved",
+          "Rerun preserves synthetic hashed review, receipts, checkpoints, finance, stock and peer rows",
+          "Actual separate LOGIN identities pass internal READ ONLY readiness with explicit fixture-only grants",
+          "Restricted primary migrator execution is denied and journal hash/timestamp rows remain unchanged"
+        ],
+        "limits": [
+          "Synthetic direct SQL financial/review fixtures are preservation evidence, not real reviewer provenance or an additional end-to-end sale test",
+          "Journal bootstrap occurs outside pending DDL transaction; PostgreSQL sequence allocation is not required to rewind",
+          "Selected catalog metadata plus all public table data are compared; no concurrent-DDL or complete hosted certification",
+          "Candidate remains outside canonical source; no operational role/grant adoption"
+        ],
+        "broader": {
+          "run": 40458909054,
+          "job": 122038609672,
+          "tapPassed": 826,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "includesParentTests": true,
+          "newMigrationTestsIncluded": false
+        },
+        "combinedRestore": {
+          "seedTap": 31,
+          "verifyTap": 12,
+          "fingerprint": "bba3992ab2019235ce0f3573691409e205ca4a694fa29c681c28c4cb66c5c4c6",
+          "sourceTargetMatch": true,
+          "freshClusterRecovery": true
+        },
+        "security": {
+          "run": 40458909067,
+          "repositoryJob": 122038609619,
+          "trackedAndFullReachableHistoryScan": "SUCCESS"
+        },
+        "local": {
+          "guardAndPackageTestsPassed": 23
+        },
+        "canonicalMigrations": 53,
+        "canonicalPublicTables": 97,
+        "canonicalPromoted": false,
+        "operationalAdoption": false,
+        "releaseAccepted": false,
+        "nextAction": "Prepare an internal read-only candidate installation preflight verifying the actual complete Drizzle journal hashes/timestamps against the reviewed54-entry package and accepted owner/function/role boundaries before any future EXECUTE grant. Prove missing/tampered/extra journal and denied-role/partial-installation refusals with fault rollback. No startup wiring, canonical promotion, operational grants or public v2 activation; trusted reviewer issuance, FIELD005 and hosted/KMS/PITR/media remain prerequisites.",
+        "workflowRuns": [
+          {
+            "id": 40458909618,
+            "name": "P0 management privacy HTTP matrix",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909586,
+            "name": "Observability mounted routes",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909585,
+            "name": "AWS KMS production adapter readiness",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458910264,
+            "name": "Cashier dashboard surface regression",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909599,
+            "name": "Merchant deletion promotions lifecycle",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909563,
+            "name": "P0 Support privacy authority diagnostic",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909643,
+            "name": "Pre-release performance smoke gate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909584,
+            "name": "Knowledge embedding readiness",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909668,
+            "name": "P0 conversation privacy HTTP matrix",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909608,
+            "name": "Merchant access security",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909549,
+            "name": "P0 cashier IndexedDB browser regression",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909664,
+            "name": "Merchant account security UI",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909589,
+            "name": "Backup and restore drill",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909572,
+            "name": "P0 notification privacy HTTP matrix",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909672,
+            "name": "Clean deployment golden gate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909684,
+            "name": "Meta OAuth operational cutoff",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909621,
+            "name": "Auth OTP contract continuity",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909562,
+            "name": "PostgreSQL migration candidate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909624,
+            "name": "Global merchant golden journey",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909652,
+            "name": "Product catalog UI cutover",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909582,
+            "name": "P0 dependency security upgrade candidate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909632,
+            "name": "Complete schema candidate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909561,
+            "name": "Cashier subscription lifecycle",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909596,
+            "name": "SEQ D2 canonical storage acceptance",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909683,
+            "name": "Meta webhook PostgreSQL ingress cutover",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909625,
+            "name": "Final quality gates",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909535,
+            "name": "Foundation integration final gate",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909520,
+            "name": "Bot logic adversarial matrix",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909471,
+            "name": "Merchant deletion audit PII",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458908991,
+            "name": "Browser storage authority audit",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909074,
+            "name": "Merchant deletion physical media lifecycle",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909107,
+            "name": "Global subscription golden journey",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458908937,
+            "name": "Merchant regional PostgreSQL authority",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909053,
+            "name": "Global Merchant PostgreSQL HTTP Journey",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909503,
+            "name": "Isolated Neon preflight static safety",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458908992,
+            "name": "Location routing engine",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909061,
+            "name": "Merchant deletion provider identifiers",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458908996,
+            "name": "Merchant deletion cashier lifecycle",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909363,
+            "name": "Auth PostgreSQL concurrency proof",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909226,
+            "name": "Cashier operational cutoff",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909399,
+            "name": "Commerce cashier closeout",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909008,
+            "name": "Staging container contract",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909506,
+            "name": "Order operations",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458908926,
+            "name": "Complete migration safety",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909525,
+            "name": "Billing provider readiness",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909479,
+            "name": "Catalog variant signature schema contract",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909454,
+            "name": "Merchant settings",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909461,
+            "name": "Location inventory authority",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909519,
+            "name": "P0 signed cashier offline authority",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909400,
+            "name": "PostgreSQL outage recovery proof",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909435,
+            "name": "Subscription service guarantee validation",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909516,
+            "name": "Dashboard channel coherence",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909466,
+            "name": "Meta webhook pipeline",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909067,
+            "name": "Final security and supply chain",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909492,
+            "name": "Global admin golden journey",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909505,
+            "name": "PostgreSQL schema validation",
+            "conclusion": "success"
+          },
+          {
+            "id": 40458909054,
+            "name": "Isolated PostgreSQL engineering audit",
+            "conclusion": "success"
+          }
+        ]
       }
     },
     {
@@ -1306,6 +1702,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "fb4b1c40d669bfc1b38ce6f79b39872ed222c7d9",
+  "previousFullyAcceptedSource": "1e7ac9d91a6f2b54691c0a9bc720e2f0d1706eb3",
   "lastUpdatedAt": "2026-10-27"
 }
