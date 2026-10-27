@@ -1,3 +1,28 @@
+## قبول حدود تحكم المالك بجلسات الإدارة وأجهزتها — 2026-10-27
+
+البوابة القائمة **P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX**؛ الشرط المحدد هو قبول/رفض الوصول إلى6 مسارات فعلية مع ضبط الحساب والجهاز والحقول. طوبقت مسارات auth-admin-postgres-routes وتسلسل auth-security وownerContext وخدمات الجلسات/الأجهزة قبل الإضافة. اختبار admin-work-monitor القديم يستخدم JSON، ودليل seq321 يثبت14 حالة lifecycle تاريخية عبر Authv2 aggregate، منها logout-all؛ وseq327 يثبت جلسات ذاتية/دورانًا تاريخيًا. حُفظت هذه الأدلة بطبقاتها ولم تُعد لتوصف دليلًا جديدًا. رحلة admin-auth-router الحالية تغطي OTP/password/permissions/disable وأجهزة متداخلة؛ ليست قبولًا للمسارات الستة بكل حدودها. ملف الراوتر مطابق بالبايت لمصدر seq321، لكن خدمتي الأجهزة والجلسات انتقلتا إلى authenticationPostgresAuthority بدلpool/transactions التشغيلية القديمة؛ لذلك الإضافة هنا لفجوة التطبيق الكامل بهويةSQL الحالية المقيّدة وauth منفصل؛ لا تكرار رحلة OTP أوnested device trust/revoke ولا إضافة جلسات ذاتية جديدة.
+
+المصدر **898c92b9890d084b8b64fb12c1e5a9295870a2be**، شجرته **22ac735ed50e408b69dfad598eb7f6a392db5f67**. تغير ملف management-full-app الموجود فقط بإضافة7 حالات وظيفية ومجموعة أب؛ لم يتغير التطبيق أوالمخطط أوالسياسة. [الدليل في الخريطة الموجودة](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json) تحت manualReconciliation.namedBoundaryReconciliation، boundary=ownerDelegatedSessionAndGlobalAdminDevice، مع بصمات المسارات والاختبار. يبقى جرد AST السابق مؤرخًا؛ لم يُعد توليده ولم تتحول مراجعه إلى قبول تلقائي.
+
+النتائج المثبتة:
+
+- المسارات الستة ترفض الضيف والتاجرين والمساعدين، وترفض جهاز المالك الخاطئ أوالكوكيز المختلطة؛ mutations ترفض Origin الأجنبي. لا تغير لأعمدة الأمن/الأجهزة وجداول الأعمال المختارة.
+- إلغاء جلسة مساعد مختارة وإلغاء كل جلساته منwork-monitor يشترطان كلمة مرور المالك الحالية؛ جلسة حساب آخر لا تمر عبر معرّف المساعد، وحساب المالك ليس مساعدًا مستهدفًا. المسار يحدد الهوية رغمحقول body/query المزورة؛ الإلغاء المختار مرة ثم404، والشامل2 ثم0.
+- logout-all المفوّض يحتفظ بسياسة جلسة المالك الآمنة الحالية دون اشتراط كلمة المرور الإضافية الخاصةبمسار work-monitor؛ ينهي جلسات المساعد المختار وحده. سُجلت أعمال الإلغاء المفوّضة باسم المالك الفعلي وبموضوع hashed.
+- قائمة الأجهزة عامة للمالك داخل النظام، وليست ذاتية أوضاقت باستعلام account_id. مفاتيح الملخص المطابقة لا تكشف device_hash/device_fingerprint_hash أوtoken/password material.
+- رفض اعتماد جهاز ثالث409 يحفظ الحالة، والجهاز المفقود404؛ إعادة اعتماد الجهاز الموجود تنسب الفعل إلى المالك الحقيقي وتحفظ حد2.
+- إلغاء اعتماد جهاز محدد ينهي جلساته وحدها، ويبقي الجلسة الشقيقة والنظير والمالك. بعدتحرير خانة الثقة ينجح اعتماد الجهاز pending الموجود، دون تغيير جلسات أخرى.
+
+[HTTP40566558334/job122409274418](https://github.com/nora953/fawri-production-source/actions/runs/40566558334): **71/71 TAP في4 ملفات**؛ الملف المعدّل40/40، والزيادة8 تشمل7 حالات والأب. checkout **632519758d9c9bce12a9a74a035f15f7c5ec7aa3** يطابق شجرة المصدر. [SQL الأوسع40566559046/job122409280011](https://github.com/nora953/fawri-production-source/actions/runs/40566559046): **829TAP/97 استدعاء/94 ملفًا**،0 فشل/تخطٍّ/إلغاء؛ يستثني ملف management-full-app فلا يُجمع العددان كتغطية فريدة. **58/58 مسار CI ناجح** عند المصدر المذكور، دونمعلّق أوفاشل أوملغى. البناء الكامل والأنواع ووحداتAPI/frontend ناجحة في40566558949؛ فحوص الأمن في40566560253 ناجحة،tracked2543 ملفًا والتاريخ10547blob دونfindings. شجرة checkout طابقت شجرة المصدر.
+
+حدود القبول: بيانات الحسابات/الثقة/الجلسات وكلمة مرور المالك المصطنعة تهيئةfixture؛ ليست رحلة login/OTP أوبيئةhosted. لقطات الجلسات تستثني heartbeat/activity/idle expiry المشروع؛ قورنت صفوف trusted_devices للحسابات المملوكة و6 جداول أعمال، لاكامل المخطط. فحص التدقيق محصور بإلغاءات المساعد الناجحة وهوية المالك والموضوع hashed؛ لا ادعاء بأن global device actions تضيف audit أوأن خطوات device/session/audit المنفصلة ذرّية عندحقن عطل. ثبات فشل حد الثقة وحده مقبول. لا سياسة ربط كاشير أوOTP أواعتماد جديدة؛ SEQ-R2 يبقىUNAPPROVED.
+
+التالي: Reconcile remaining current admin directory/work-monitor field projections and assistant create/enabled/permissions/password routes against seq321 historical lifecycle evidence and the current PostgreSQL admin-auth journey. Reuse matching evidence and classify precise current source/policy/runtime gaps before any new test; a source catalogue reference alone is not acceptance and a historical test alone does not require blanket full-app duplication. Preserve the accepted self-session and delegated/global-device boundaries; SEQ-R2 remains UNAPPROVED.
+
+بوابة الصلاحيات تبقىOPEN؛45 حالة دون تغيير:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false،overallPercentage=null،**NO-GO**. لا hosted/merge/deploy/P1/P2.
+
+---
+
 ## قبول حدود جلسات حساب الإدارة عبر التطبيق الكامل — 2026-10-27
 
 البوابة القائمة: **P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX**؛ شرطها هنا هو إثبات الصلاحيات والحقول على مسار فعلي مع قبول مشروع ورفض غير مخوّل. طوبقت أولًا مسارات auth-session-routes الحالية وتسلسل تركيبها في app.ts/auth-security مع الاختبارات المقبولة. اختبار admin-auth-router PostgreSQL يغطي رحلة الدخول والثقة وتغيير كلمة المرور والصلاحيات وتعطيل الحساب وإلغاء جهاز متداخل؛ فحص /admin/sessions الموجود فيه رفض أثناء تغيير كلمة المرور الإجباري فقط. اختبار role-session-isolation يعتمد جلسات JSON القديمة، واختبار جلسات التاجر لا يثبت حد الإدارة. لذلك أضيف النقص المحدد إلى ملف management-full-app الموجود، دون تغيير التطبيق أو أي صلاحية أو سياسة أجهزة.

@@ -4493,5 +4493,14 @@
     "newTapIncludingGroup": 5,
     "newGate": false,
     "parentGateClosed": false
+  },
+  "currentOwnerDelegatedSessionAndGlobalDeviceProof": {
+    "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=ownerDelegatedSessionAndGlobalAdminDevice]",
+    "status": "BOUNDED_CURRENT_OWNER_DELEGATED_SESSION_AND_GLOBAL_ADMIN_DEVICE_FULL_APP_HTTP_SQL_ACCEPTED",
+    "source": "898c92b9890d084b8b64fb12c1e5a9295870a2be",
+    "newFunctionalCases": 7,
+    "newTapIncludingGroup": 8,
+    "newGate": false,
+    "parentGateClosed": false
   }
 }
