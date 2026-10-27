@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending.",
+  "nextExactAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4342,7 +4342,7 @@
     ],
     "decisionRecordingRule": "A continuation request, passing CI, prepared proposal or null field is not policy approval. Record the explicit choice, responsible approver, decision date and evidence; retain per-field approval scope. Do not propagate one approval to other records.",
     "initialDecisionNeeded": "Define existing merchant pairing to stream lifecycle/recovery boundary; owner-only versus appointed reviewer is not a routine device-pairing prerequisite.",
-    "nextAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending.",
+    "nextAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request.",
     "routinePairingClarification": {
       "date": "2026-10-27",
       "evidence": "P0-CASHIER-PAIRING-CONTINUITY-20261027.json",
@@ -4350,12 +4350,14 @@
       "exceptionalReviewerPolicyApproved": false
     },
     "currentExecutionBoundary20261027": {
-      "source": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
-      "reason": "Supersede the older automatic extra HTTP-pairing work order with the current finite acceptance reconciliation; existing merchant pairing remains authoritative.",
+      "sourceReviewed": "242821b938b3a7183831ee043ca77cb815ffbb9b",
+      "reusedExecutable": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+      "publicProtocolRefusalAlreadyProven": true,
+      "newTestRequiredForThatBoundary": false,
       "routinePlatformOwnerApprovalRequired": false,
       "duplicateIssuerAuthorized": false,
       "reviewerAuthorityOrRetentionPolicyAdopted": false,
-      "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending."
+      "nextExactAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request."
     }
   },
   "policyNeutralIssuerCandidate": {
@@ -4381,8 +4383,8 @@
   },
   "closureGapMap20261027": {
     "date": "2026-10-27",
-    "status": "EXISTING_SEQ_R1_R2_R3_PROOF_LAYER_GAPS_RECONCILED_NOT_ADOPTED",
-    "sourceReviewed": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+    "status": "CURRENT_ACCEPTED_LAYERS_RECONCILED_REMAINING_POLICY_AND_POSITIVE_PUBLIC_HANDOFF_OPEN",
+    "sourceReviewed": "242821b938b3a7183831ee043ca77cb815ffbb9b",
     "newRuntimeExecutedByReconciliation": false,
     "newReleaseRequirements": false,
     "gateClosed": false,
@@ -4418,14 +4420,20 @@
         "evidence": "P0-CASHIER-PAIRING-CONTINUITY-20261027.json",
         "source": "b15f4b8751da7d8e84933ffd2e778b28538caa3b",
         "limit": "Existing merchant-owned pairing and service/SQL history preservation; not fresh-empty provenance or complete v2 handoff."
+      },
+      {
+        "layer": "Public operator sale/return/void negative protocol negotiation",
+        "evidence": "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json#protocolNegotiationReconciliation20261027",
+        "source": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+        "limit": "Existing6 cases/36HTTP refusals plus direct core checks in actual mounted routers; no whole app chain or positive public v2 handoff."
       }
     ],
     "rows": [
       {
         "id": "SEQ-R1",
         "existingRequirement": "Future-gap/late sale-return-void dependency and replay/hold semantics",
-        "accepted": "Bounded internal receipt/checkpoint transactions, replay/concurrency/faults and legacy refusal/attribution retry.",
-        "missing": "Adopted end-to-end admission/ACK/hold/recovery behavior through existing operator HTTP and real native client. Current public path rejects v2/stream markers; current native drains are not versioned-stream transports.",
+        "accepted": "Existing internal receipt/checkpoint/replay/concurrency/fault proofs; bounded local sale/return/void immutable replay; coherent local snapshot/binding observation; public operator negative protocol negotiation6cases/36HTTP refusals accepted.",
+        "missing": "Adopted positive public HTTP/native v2 admission, complete ACK/hold/recovery and legacy handling. Negative protocol refusal is already proven and must not be retested absent source change or a named missing boundary.",
         "sourceAnchors": [
           "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts#assertLegacyCashierSyncProtocol",
           "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts#syncCashierOperatorSaleAuthoritative",
@@ -4455,8 +4463,8 @@
       {
         "id": "SEQ-R3",
         "existingRequirement": "First-device/legacy checkpoint/restore and authorized reconciliation",
-        "accepted": "Merchant issues existing one-use pairing code; storage/read-only history, safe owner/capability/restore/preflight boundaries are bounded accepted.",
-        "missing": "Concrete trusted automatic admission/compatibility contract reusing that pairing, including existing device identity, original local pending/counter evidence, authoritative financial/history conflicts and restore refusal/recovery. Synthetic independent review is not a real issuer, and pairing authorizes station identity rather than proving prior empty history.",
+        "accepted": "Existing merchant-owned pairing, read-only history/storage/restore, prepared admission specification, bounded coherent local recovery snapshot and before/after bootstrap binding observation.",
+        "missing": "Real trusted original-device/queue provenance and adopted initial/legacy/restore recovery authority remain unresolved. Prepared specification and local observation do not authenticate original history or grant a stream; positive HTTP/native integration is pending.",
         "sourceAnchors": [
           "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts#beginCashierStationPairingAuthoritative",
           "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts#redeemCashierStationPairingAuthoritative",
@@ -4467,7 +4475,7 @@
         "doNotRepeat": "No platform-owner approval for every ordinary pairing, duplicate issuer candidate, baseline MAX/reset or silently promoted0053."
       }
     ],
-    "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending."
+    "nextExactAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request."
   },
   "admissionCompatibilitySpecification20261027": {
     "date": "2026-10-27",
@@ -4594,5 +4602,74 @@
     "gateClosed": false,
     "publicV2Enabled": false,
     "nextExactAction": "Reconcile actual public operator sale/return/void HTTP protocol negotiation against accepted tests and evidence. Select a new case only if the existing requirement that public v2/stream markers remain unsupported lacks mounted real-HTTP proof; then verify refusal without tenant financial, stock, timeline or receipt mutations using current authenticated routes. Reuse accepted local replay, snapshot, binding and merchant pairing evidence. No new issuer, routine owner approval, baseline reset or v2 activation; SEQ-R2 compatibility and trusted original-review decisions remain pending."
+  },
+  "publicProtocolRefusalReconciliation20261027": {
+    "status": "EXISTING_MOUNTED_HTTP_PROTOCOL_REFUSAL_PROOF_RECONCILED_NO_NEW_TEST_NEEDED",
+    "sourceReviewed": "242821b938b3a7183831ee043ca77cb815ffbb9b",
+    "reusedAcceptedExecutable": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+    "evidence": "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json#protocolNegotiationReconciliation20261027",
+    "functionalCases": 6,
+    "httpRequestsReused": 36,
+    "directCoreRejectionsReused": 36,
+    "newTestsAdded": 0,
+    "newRuntimeExecuted": false,
+    "newCiClaimed": false,
+    "fullAppExecuted": false,
+    "gateClosed": false,
+    "nextExactAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request."
+  },
+  "seqR2OperationCompatibilityDecision20261027": {
+    "schemaVersion": 1,
+    "date": "2026-10-27",
+    "gate": "CASHIER-SYNC-SEQUENCE-001",
+    "condition": "SEQ-R2 intended independent local manual-adjustment API and retained outbox compatibility",
+    "status": "CONCRETE_PRODUCT_CHOICE_READY_NOT_ADOPTED",
+    "sourceReviewed": "242821b938b3a7183831ee043ca77cb815ffbb9b",
+    "existingContractOnly": true,
+    "newGateCount": 0,
+    "selectedModel": null,
+    "approval": {
+      "status": "UNAPPROVED",
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": null
+    },
+    "definition": "Independent local manual adjustment is a stock-changing movement-only operation from IndexedDbCashierAuthority.adjustInventory. Stock movements belonging to supported sale/return/void remain parts of their normal operation.",
+    "recommended": {
+      "id": "FUTURE_V2_SALE_RETURN_VOID_WITH_PRESERVED_LEGACY_HOLD",
+      "status": "PROPOSED_NOT_ADOPTED",
+      "futureSupportedKinds": [
+        "sale",
+        "return",
+        "void"
+      ],
+      "independentLocalAdjustment": "Refuse before stock, counter, movement or outbox writes in an explicitly adopted v2 mode; no partial writes or consumed sequence.",
+      "existingMovementOnlyRecords": "Preserve original counter, payload, movement, stock projection and later queue. HOLD for record-specific reconciliation; no ACK, deletion, skipped sequence, tombstone, fake sale or automatic backfill.",
+      "legacyApiAndData": "Current legacy API/data remain unchanged by this choice; no unrequested removal, retroactive recoding or legacy v2 promotion.",
+      "existingOnlineInventoryAdministration": "Outside this device-stream contract; no change authorized.",
+      "doesNotCreateUploadFeature": true
+    },
+    "defer": {
+      "id": "DEFER_KEEP_V2_UNSUPPORTED",
+      "effect": "Do not adopt a new behavior; retain the blocker and continue independent known P0 work."
+    },
+    "authorizedOnlyAfterExplicitChoice": [
+      "Source compatibility contract and its necessary bounded native/HTTP implementation/proof at the existing planned v2 integration boundary."
+    ],
+    "notAuthorizedByThisChoice": [
+      "Public v2 activation before all acceptance",
+      "Original-device evidence fabrication or enrollment baseline import",
+      "Reviewer model, role grants, canonical0053 promotion or hosted action",
+      "Historical financial/stock reconciliation, retention/deletion schedules or privileged override",
+      "New offline adjustment upload feature or UI"
+    ],
+    "remainingEvenIfRecommendedAccepted": [
+      "Implement and test the adopted future pre-write boundary with current counters/queues preserved.",
+      "Trusted original-device review and legacy/restore recovery evidence/authority remain unresolved.",
+      "Actual positive HTTP/native v2 handoff and complete release prerequisites remain open."
+    ],
+    "userQuestionArabic": "هل نعتمد للمزامنة الجديدة البيع والإرجاع والإلغاء فقط، مع منع التعديل اليدوي المحلي المستقل قبل أي كتابة جديدة في وضعv2، وحفظ تعديلات المخزون المحلية القديمة للمراجعة دون إسقاطها؟",
+    "approvalRule": "AGENTS.md: Plan approval does not approve policies, hosted actions, merge or deployment. This explicit product choice is not inferred from اكمل or the already-approved closure method.",
+    "nextExactAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request."
   }
 }

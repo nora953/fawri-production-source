@@ -1664,5 +1664,203 @@
     "Gap late rejection reproduced,not repaired/approved; no new adjustment API,tombstone,reset,backfill/history mutation",
     "No hosted/physical device/capacity/complete P0 acceptance"
   ],
-  "nextExactAction": "Prepare one concrete, reviewable recovery design in the existing candidate for authenticated existing-device checkpoints, future gaps and late financial operations, with an explicit disposition for the reviewed local manual-adjustment API and retained outboxes. Reuse the accepted SQL/native/HTTP/fault layers; do not add another identical1/3/2 diagnostic, guess a device baseline, drop an operation or alter financial history. Select a bounded implementation only after checking all affected callers and schema constraints."
+  "nextExactAction": "Prepare one concrete, reviewable recovery design in the existing candidate for authenticated existing-device checkpoints, future gaps and late financial operations, with an explicit disposition for the reviewed local manual-adjustment API and retained outboxes. Reuse the accepted SQL/native/HTTP/fault layers; do not add another identical1/3/2 diagnostic, guess a device baseline, drop an operation or alter financial history. Select a bounded implementation only after checking all affected callers and schema constraints.",
+  "protocolNegotiationReconciliation20261027": {
+    "schemaVersion": 1,
+    "date": "2026-10-27",
+    "gate": "CASHIER-SYNC-SEQUENCE-001",
+    "condition": "Existing public v2/stream protocol must remain unsupported before complete acceptance",
+    "status": "EXISTING_MOUNTED_HTTP_PROTOCOL_REFUSAL_PROOF_RECONCILED_NO_NEW_TEST_NEEDED",
+    "sourceReviewed": "242821b938b3a7183831ee043ca77cb815ffbb9b",
+    "reusedAcceptedExecutable": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+    "newApplicationCode": false,
+    "newTestCode": false,
+    "newRuntimeExecuted": false,
+    "newCiClaimed": false,
+    "newGateCount": 0,
+    "gateClosed": false,
+    "release": "NO-GO",
+    "caseMatrix": [
+      {
+        "kind": "sale",
+        "phase": "before_first_commit",
+        "endpoint": "POST /api/cashier/operator/sync/sale",
+        "testName": "unsupported sale protocol cannot downgrade before first commit",
+        "logOutcome": "PASS",
+        "markers": 6,
+        "httpRequestsDerived": 6,
+        "coreRejectionsDerived": 6
+      },
+      {
+        "kind": "sale",
+        "phase": "after_legacy_commit_replay",
+        "endpoint": "POST /api/cashier/operator/sync/sale",
+        "testName": "unsupported sale protocol cannot receive a legacy replay ACK",
+        "logOutcome": "PASS",
+        "markers": 6,
+        "httpRequestsDerived": 6,
+        "coreRejectionsDerived": 6
+      },
+      {
+        "kind": "return",
+        "phase": "before_first_commit",
+        "endpoint": "POST /api/cashier/operator/sync/return",
+        "testName": "return unsupported protocol cannot downgrade before first commit",
+        "logOutcome": "PASS",
+        "markers": 6,
+        "httpRequestsDerived": 6,
+        "coreRejectionsDerived": 6
+      },
+      {
+        "kind": "return",
+        "phase": "after_legacy_commit_replay",
+        "endpoint": "POST /api/cashier/operator/sync/return",
+        "testName": "return unsupported protocol cannot receive a legacy replay ACK",
+        "logOutcome": "PASS",
+        "markers": 6,
+        "httpRequestsDerived": 6,
+        "coreRejectionsDerived": 6
+      },
+      {
+        "kind": "void",
+        "phase": "before_first_commit",
+        "endpoint": "POST /api/cashier/operator/sync/void",
+        "testName": "void unsupported protocol cannot downgrade before first commit",
+        "logOutcome": "PASS",
+        "markers": 6,
+        "httpRequestsDerived": 6,
+        "coreRejectionsDerived": 6
+      },
+      {
+        "kind": "void",
+        "phase": "after_legacy_commit_replay",
+        "endpoint": "POST /api/cashier/operator/sync/void",
+        "testName": "void unsupported protocol cannot receive a legacy replay ACK",
+        "logOutcome": "PASS",
+        "markers": 6,
+        "httpRequestsDerived": 6,
+        "coreRejectionsDerived": 6
+      }
+    ],
+    "markers": [
+      {
+        "protocol_version": 2
+      },
+      {
+        "stream_id": "unverified-stream"
+      },
+      {
+        "protocol_version": 1,
+        "stream_id": "unverified-stream"
+      },
+      {
+        "protocol_version": null
+      },
+      {
+        "protocol_version": "2"
+      },
+      {
+        "stream_id": null
+      }
+    ],
+    "derivedCounts": {
+      "functionalCases": 6,
+      "httpRequests": 36,
+      "directCoreRejections": 36,
+      "derivation": "6 phases/kinds x6 pinned marker-loop iterations; counts derived from unchanged source plus all6 passing subtests, not a new traffic capture.",
+      "newRequestsExecutedThisReconciliation": 0
+    },
+    "rejection": {
+      "status": 409,
+      "code": "CASHIER_SYNC_PROTOCOL_UNSUPPORTED",
+      "accepted_entity_ids": "absent",
+      "order_id": "absent",
+      "selectedState": "exactly unchanged after HTTP plus direct core rejection for every marker"
+    },
+    "positiveControls": "Existing explicit protocol1 sale/return/void commits and exact legacy replays remain accepted. Public routes do not forward the internal versionedStreamId capability.",
+    "snapshotTables": [
+      "orders",
+      "order_items",
+      "inventory_mutations",
+      "cashier_device_operation_timeline",
+      "location_inventory_levels",
+      "cashier_operation_attribution",
+      "cashier_device_streams",
+      "cashier_operation_receipts"
+    ],
+    "reusedRun": {
+      "run": 40548267115,
+      "job": 122345188807,
+      "source": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+      "checkout": "cff91d4bcae5a9cc55358fc5199877ba108c6131",
+      "checkoutTree": "dccf936a9783bd34f9a1d3267c36628a1fa0caad",
+      "checkoutTreeMatches": true,
+      "file": "cashier-historical-compensation-http-postgres.integration.test.mjs",
+      "fileTap": 28,
+      "fileTapIncludesParents": true,
+      "broaderTap": 829,
+      "broaderInvocations": 97,
+      "broaderFiles": 94,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "allWorkflowRunsSuccess": 58,
+      "codeAndTestBlobsUnchangedAtReviewedCheckpoint": true
+    },
+    "sourceAnchors": [
+      {
+        "path": "artifacts/api-server/tests/cashier-historical-compensation-http-postgres.integration.test.mjs",
+        "gitBlob": "f8d6a6f2180bcdb703e103a10434a1f9d408c614"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+        "gitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierCompensationSyncValidation.ts",
+        "gitBlob": "c57819b0ec650b5c1d38e8f92118fe29d88fa4d7"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts",
+        "gitBlob": "6e806a12a9b11b71bff47d67e3645215eebfbb31"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts",
+        "gitBlob": "54f3a7ccfc72ed6d5b69073b4161b2bae6618eb2"
+      },
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "gitBlob": "d0b72e95a4957252e3dbe94b64056572f56018c2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+        "gitBlob": "9ca0baf5e42e4e9f567e151c5a9243ed502699c6"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierCloudOutboxSync.ts",
+        "gitBlob": "72a92960fd674a8f790d8d1c88d483cd110f1dcc"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorCloudSync.ts",
+        "gitBlob": "b63911a2b2aa08a30bf2a150979b767a90c4bd45"
+      }
+    ],
+    "proofLayer": "Actual Express staff/commerce routers on owned loopback HTTP with real station/operator login and restricted SQL runtime, separate auth LOGIN. Same production router symbols mounted by app.ts; this fixture does not execute the complete app.ts middleware chain.",
+    "limits": [
+      "Not a new execution or newCI PASS; reuses exact-source accepted evidence.",
+      "Only the6 named root-level marker variants and phase/kind matrix; not an exhaustive JSON/auth/permission inventory.",
+      "Selected8 financial/history/stream tables are checked; authentication/session bookkeeping is not claimed immutable.",
+      "Negative protocol negotiation is not successful public v2 admission, ACK/recovery or native-to-real-server v2 integration.",
+      "Current v1 sequence gap behavior, trusted original enrollment review, SEQ-R2 compatibility and exceptional recovery are unresolved.",
+      "No issuer, normal platform-owner approval, schema/capability promotion, hosted action or release acceptance."
+    ],
+    "nextExactAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request.",
+    "all9PinnedBlobsVerified": true
+  },
+  "latestReconciliation": {
+    "section": "protocolNegotiationReconciliation20261027",
+    "sourceReviewed": "242821b938b3a7183831ee043ca77cb815ffbb9b",
+    "reusedExecutable": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+    "newRuntimeExecuted": false
+  }
 }
