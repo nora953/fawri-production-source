@@ -126,6 +126,92 @@ test('full application management privacy preserves cutover ordering and current
     }
     assert.deepEqual(await snapshot(),before);assert.equal((await req(canonical,owner)).status,200);
   });
+  await t.test('provider cost owner-only HTTP contract preserves private fields and atomic audit',async t=>{
+    const dimension='p0-http-'+randomUUID(),fault='provider_http_fault_'+randomUUID().replaceAll('-','');
+    const providerTables=['provider_cost_rates','provider_cost_settings','provider_cost_audit_events'];
+    const settingsBefore=(await admin.query("SELECT to_jsonb(t) AS row FROM provider_cost_settings t WHERE id='global'")).rows[0]?.row;
+    const costSnapshot=async()=>Object.fromEntries(await Promise.all(providerTables.map(async table=>[table,(await admin.query('SELECT to_jsonb(t) AS row FROM '+table+' t ORDER BY to_jsonb(t)::text')).rows])));
+    const body={provider_key:'synthetic-http',rate_usd:1.25,source_type:'owner_configured',source_reference:'private-provider-reference-'+dimension,notes:'private-provider-note-'+dimension,dimension_key:'p0_http_fixture',dimension_value:dimension,actor_account_id:manager.id,owner:true};
+    const endpoints=[
+      ['/api/auth/admin/provider-costs','GET',undefined],
+      ['/api/auth/admin/provider-costs/rates/otp_message','PUT',body],
+      ['/api/auth/admin/provider-costs/settings','PATCH',{monthly_budget_usd:123.45,actor_account_id:manager.id,owner:true}],
+    ];
+    let faultInstalled=false;
+    try{
+      await t.test('unauthenticated merchants and assistants cannot read or mutate provider cost configuration',async()=>{
+        const before=await costSnapshot(),business=await snapshot();
+        for(const [actor,status] of [[undefined,401],[a,401],[b,401],[manager,403],[viewer,403],[denied,403]]){
+          for(const [path,method,body] of endpoints){
+            const r=await req(path,actor,method,body);assert.equal(r.status,status,path);
+            assert.doesNotMatch(JSON.stringify(r.body),/private-provider-|current_rates|monthly_budget_usd|source_reference/);
+          }
+        }
+        for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:owner.cookie+'; '+a.cookie}]){
+          for(const [path,method,body] of endpoints)assert.equal((await req(path,owner,method,body,headers)).status,401);
+        }
+        assert.deepEqual(await costSnapshot(),before);assert.deepEqual(await snapshot(),business);
+      });
+      await t.test('owner can set and read configuration with server-derived rate and audit attribution',async()=>{
+        const before=await snapshot();
+        const write=await req(endpoints[1][0],owner,'PUT',body);assert.equal(write.status,200);
+        assert.equal(write.body.rate.rate_usd,1.25);assert.equal(write.body.rate.notes,body.notes);
+        const budget=await req(endpoints[2][0],owner,'PATCH',endpoints[2][2]);assert.equal(budget.status,200);
+        assert.equal(budget.body.settings.monthly_budget_usd,123.45);
+        const read=await req('/API/Auth/Admin/Provider-Costs/?history_limit=200&owner=true',owner);assert.equal(read.status,200);assert.equal(read.cache,'no-store');
+        const rate=read.body.configuration.history.find(r=>r.dimension_value===dimension);assert.ok(rate);
+        assert.equal(rate.source_reference,body.source_reference);assert.equal(rate.notes,body.notes);
+        assert.equal(read.body.configuration.monthly_budget_usd,123.45);
+        assert.equal((await admin.query("SELECT created_by_account_id FROM provider_cost_rates WHERE dimension_key='p0_http_fixture' AND dimension_value=$1",[dimension])).rows[0].created_by_account_id,owner.id);
+        const audits=(await admin.query('SELECT actor_account_id,action FROM provider_cost_audit_events WHERE actor_account_id=$1 ORDER BY action',[owner.id])).rows;
+        assert.deepEqual(audits,[{actor_account_id:owner.id,action:'budget_updated'},{actor_account_id:owner.id,action:'rate_created'}]);
+        assert.deepEqual(await snapshot(),before);
+        const protectedCosts=await costSnapshot();
+        for(const actor of [manager,viewer,denied]){
+          const denied=await req('/API/Auth/Admin/Provider-Costs/?history_limit=200&owner=true',actor);assert.equal(denied.status,403);
+          assert.doesNotMatch(JSON.stringify(denied.body),new RegExp(dimension));
+        }
+        assert.deepEqual(await costSnapshot(),protectedCosts);
+      });
+      await t.test('even the owner cannot label a manual rate as trusted provider automation',async()=>{
+        const before=await costSnapshot();
+        const r=await req(endpoints[1][0],owner,'PUT',{...body,source_type:'provider_api',rate_usd:99});
+        assert.equal(r.status,403);assert.equal(r.body.code,'PROVIDER_COST_AUTOMATION_RESERVED');
+        assert.deepEqual(await costSnapshot(),before);
+      });
+      await t.test('rate update rolls back if its audit write fails and a later real retry succeeds once',async()=>{
+        const before=await costSnapshot(),business=await snapshot();
+        await admin.query("CREATE FUNCTION public."+fault+"() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic provider cost audit persistence fault'; END $");faultInstalled=true;
+        await admin.query('CREATE TRIGGER '+fault+' BEFORE INSERT ON provider_cost_audit_events FOR EACH ROW EXECUTE FUNCTION public.'+fault+'()');
+        try{
+          const r=await req(endpoints[1][0],owner,'PUT',{...body,rate_usd:2.5});
+          assert.equal(r.status,503);assert.equal(r.body.code,'PROVIDER_COST_AUTHORITY_FAILED');
+          assert.doesNotMatch(JSON.stringify(r.body),/persistence fault|password|DATABASE_URL/);
+          assert.deepEqual(await costSnapshot(),before);assert.deepEqual(await snapshot(),business);
+        }finally{
+          await admin.query('DROP FUNCTION public.'+fault+'() CASCADE');faultInstalled=false;
+        }
+        const retry=await req(endpoints[1][0],owner,'PUT',{...body,rate_usd:2.5});assert.equal(retry.status,200);assert.equal(retry.body.rate.rate_usd,2.5);
+        const audits=(await admin.query('SELECT action FROM provider_cost_audit_events WHERE actor_account_id=$1 ORDER BY action',[owner.id])).rows;
+        assert.deepEqual(audits,[{action:'budget_updated'},{action:'rate_created'},{action:'rate_updated'}]);
+        assert.deepEqual(await snapshot(),business);
+      });
+      await t.test('current SQL role removal denies the original owner session without relying on cached role claims',async()=>{
+        const before=await costSnapshot();
+        await admin.query("UPDATE admin_profiles SET role='assistant_admin' WHERE id=$1",[owner.id]);
+        try{for(const [path,method,body] of endpoints)assert.equal((await req(path,owner,method,body)).status,403);}
+        finally{await admin.query("UPDATE admin_profiles SET role='owner_admin' WHERE id=$1",[owner.id]);}
+        assert.deepEqual(await costSnapshot(),before);
+        assert.equal((await req(endpoints[0][0],owner)).status,200);
+      });
+    }finally{
+      if(faultInstalled)await admin.query('DROP FUNCTION public.'+fault+'() CASCADE');
+      await admin.query('DELETE FROM provider_cost_audit_events WHERE actor_account_id=$1',[owner.id]);
+      await admin.query("DELETE FROM provider_cost_rates WHERE dimension_key='p0_http_fixture' AND dimension_value=$1",[dimension]);
+      await admin.query("DELETE FROM provider_cost_settings WHERE id='global'");
+      if(settingsBefore)await admin.query('INSERT INTO provider_cost_settings SELECT (jsonb_populate_record(NULL::provider_cost_settings,$1::jsonb)).*',[JSON.stringify(settingsBefore)]);
+    }
+  });
   const incidentKeys=[...merchants.flatMap(id=>[`merchant-no-connected-channel:${id}`,`merchant-channel-errors:${id}`]),'channel-recent-errors'];
   const incidentSnapshot=async()=>(await admin.query("SELECT to_jsonb(t) AS row FROM audit_events t WHERE entity_type='early_warning_incident' AND entity_id=ANY($1::text[]) ORDER BY id",[incidentKeys])).rows;
   const historyKeys=['severity','area','code','value','runbook','scope','merchant_id','merchant_name','episode_id','incident_key','status','started_at','last_seen_at','resolved_at','duration_seconds'].sort();

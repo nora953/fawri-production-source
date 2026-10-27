@@ -1,3 +1,9 @@
+## Current P0 source inventory and named provider-cost HTTP gap — 2026-10-27
+
+From0bd95edf01c93e0f15e0e8bde79f19b4543c116f, verified320 API source blobs and363 API test blobs against current GitHub tree. AST catalogue prepared for current mounted registrations and explicit test references; this is not case/runtime acceptance or a complete P0 denominator. Historical UI222 rows are all P1 (84TRIAGE/138NOT_RUN), IDs matched; no UI/P1 expansion. Historical non-UI453 paths all exist,387 blobs unchanged/66 changed; not new runtime credit.
+
+Selected one existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX subcondition: provider cost configuration is already owner-only in code, but reviewed direct tests cover catalog units, not named mounted HTTP actor/private-field/atomic-audit behavior. Extended the existing full-app management PostgreSQL test with5 nested cases, without product/policy/schema/ACL changes. [Named gap/evidence](evidence/P0-PROVIDER-COST-HTTP-20261027.json). Local syntax PASS; exact-source CI PENDING. Gate statuses45 unchanged; releaseNO-GO. No hosted/merge/deploy.
+
 ## P0 finite known-remainder closure queue fixed — 2026-10-27
 
 From checkpoint9dedf2ebd5560f0a57f77246f5885c258fd4f7d2, reconciled all16 known remaining rows (7 OPEN/9 BLOCKED) into the existing authoritative register, each with precise closure conditions, missing evidence/decision, authorized work now, external dependency and next action. No new gates, status changes, runtime/CI claims or policy/hosted approvals. Accepted source remainsb15f4b8751da7d8e84933ffd2e778b28538caa3b. Complete inventory remainsfalse; no overall completion percentage. [Closure queue and execution order](P0-CLOSURE-REGISTER.md); machine-readable closurePlan is in existing evidence/P0-CLOSURE-REGISTER.json.

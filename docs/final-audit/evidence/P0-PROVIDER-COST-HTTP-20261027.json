@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+  "subcondition": "Owner-only provider cost configuration HTTP actor/field/atomic-audit acceptance",
+  "status": "PREPARED_PENDING_EXACT_SOURCE_CI",
+  "basedOnCheckpoint": "0bd95edf01c93e0f15e0e8bde79f19b4543c116f",
+  "newGate": false,
+  "gateClosed": false,
+  "applicationChanged": false,
+  "testChanged": true,
+  "sourceDecision": "Existing requireSecureAdminSession plus SQL-backed current owner_admin check; no new policy.",
+  "sourcePaths": [
+    "artifacts/api-server/src/app.ts",
+    "artifacts/api-server/src/routes/auth-security.ts",
+    "artifacts/api-server/src/routes/auth-provider-cost-postgres-routes.ts",
+    "artifacts/api-server/src/services/providerCostAuthority.ts",
+    "artifacts/api-server/src/middleware/authSession.ts"
+  ],
+  "routes": [
+    [
+      "GET",
+      "/api/auth/admin/provider-costs"
+    ],
+    [
+      "PUT",
+      "/api/auth/admin/provider-costs/rates/:meterKey"
+    ],
+    [
+      "PATCH",
+      "/api/auth/admin/provider-costs/settings"
+    ]
+  ],
+  "previousEvidence": "provider-cost-authority.test.ts has4 catalog/unit cases; no named mounted HTTP actor/field proof located in reviewed current API test tree and focused scripts scan. This is a bounded evidence gap, not a vulnerability or whole-program absence theorem.",
+  "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+  "newNestedCases": 5,
+  "scenarios": [
+    "guest/merchant/assistant denial on3 routes; wrong-device/combined-role denial; unchanged provider and peer business snapshots",
+    "owner legitimate rate/budget read-write with private note/reference and server-derived SQL attribution despite forged request actor",
+    "manual provider_api source label refused even to owner, no mutation",
+    "forced audit insert failure rolls rate update back; real retry updates once with one audit",
+    "SQL owner role removal denies original still-valid session; restored role restores legitimate access"
+  ],
+  "localSyntax": "PASS",
+  "runtime": "PENDING_OWNED_CI",
+  "hosted": false,
+  "release": "NO-GO",
+  "limits": [
+    "Source catalogue and literal test references do not count as accepted actor cases.",
+    "Global provider configuration, not merchant billing/settlement or real provider cost integration.",
+    "Session bookkeeping and selected app helper background behavior are outside immutable business snapshot claims.",
+    "No full P0, all roles/fields, hosted or performance acceptance."
+  ],
+  "nextAction": "Read exact-source targeted and broader CI. If failed, preserve the failure and fix the cause without weakening assertions."
+}

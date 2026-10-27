@@ -163,7 +163,12 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "First work item: build the exact outstanding actor/entrypoint/field-to-evidence map from current source and the existing manifests. Select no runtime test until it names an uncovered closure condition."
+      "nextAction": "First work item: build the exact outstanding actor/entrypoint/field-to-evidence map from current source and the existing manifests. Select no runtime test until it names an uncovered closure condition.",
+      "providerCostHttpReconciliation": {
+        "evidence": "evidence/P0-PROVIDER-COST-HTTP-20261027.json",
+        "status": "PREPARED_PENDING_EXACT_SOURCE_CI",
+        "existingGate": true
+      }
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
