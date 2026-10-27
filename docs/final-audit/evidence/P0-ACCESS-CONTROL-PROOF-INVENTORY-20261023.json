@@ -4449,5 +4449,33 @@
       "limits": "Ordinary own-tenant operations retained; trusted global audit services moved to auth. Actual tests and0051snapshot pending."
     }
   },
-  "acceptanceScope": "Bounded workflow execution completeness; residual privacy diagnostic observations are not accepted security boundaries."
+  "acceptanceScope": "Bounded workflow execution completeness; residual privacy diagnostic observations are not accepted security boundaries.",
+  "currentEntrypointReconciliation": {
+    "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
+    "generator": "tools/build_p0_actor_entrypoint_map.cjs",
+    "source": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+    "status": "CURRENT_AST_SOURCE_AND_NAMED_ROLE_FIELD_RECONCILIATION",
+    "counts": {
+      "verifiedApiSourceBlobs": 320,
+      "parsedApiModules": 316,
+      "verifiedApiTestBlobs": 363,
+      "parsedTestModules": 363,
+      "routerIdentities": 51,
+      "resolvedMountEdges": 53,
+      "literalMountedRegistrationRows": 362,
+      "uniqueMethodPaths": 236,
+      "nonliteralOrUnresolvedRegistrationRows": 0,
+      "parseFailures": 0,
+      "registrationRowsWithLiteralTestReference": 270,
+      "registrationRowsWithoutLiteralTestReference": 92
+    },
+    "fullP0InventoryAccepted": false
+  },
+  "currentProviderCostHttpProof": {
+    "evidence": "evidence/P0-PROVIDER-COST-HTTP-20261027.json",
+    "status": "BOUNDED_EXISTING_OWNER_ONLY_HTTP_SQL_ACTOR_FIELD_AND_AUDIT_ACCEPTED",
+    "acceptedSource": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+    "parentGateClosed": false,
+    "newGate": false
+  }
 }

@@ -1,8 +1,10 @@
-## Current P0 source inventory and named provider-cost HTTP gap — 2026-10-27
+## Current-source reconciliation and one named HTTP subcondition accepted — 2026-10-27
 
-From0bd95edf01c93e0f15e0e8bde79f19b4543c116f, verified320 API source blobs and363 API test blobs against current GitHub tree. AST catalogue prepared for current mounted registrations and explicit test references; this is not case/runtime acceptance or a complete P0 denominator. Historical UI222 rows are all P1 (84TRIAGE/138NOT_RUN), IDs matched; no UI/P1 expansion. Historical non-UI453 paths all exist,387 blobs unchanged/66 changed; not new runtime credit.
+Accepted sourceccda10c03b91633825cd2a1aea58f97ca2727da9,57/57 CI SUCCESS. [Authoritative checkpoint and next case](P0-CLOSURE-REGISTER.md); [current actor/entrypoint map](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json); [provider cost HTTP evidence](evidence/P0-PROVIDER-COST-HTTP-20261027.json). Verified320 source/363 test blobs; AST362 registration rows/236 method-path pairs, not a P0 denominator or runtime acceptance. Existing8-table/86-field schema unchanged; historical UI222 remains P1, no scope expansion.
 
-Selected one existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX subcondition: provider cost configuration is already owner-only in code, but reviewed direct tests cover catalog units, not named mounted HTTP actor/private-field/atomic-audit behavior. Extended the existing full-app management PostgreSQL test with5 nested cases, without product/policy/schema/ACL changes. [Named gap/evidence](evidence/P0-PROVIDER-COST-HTTP-20261027.json). Local syntax PASS; exact-source CI PENDING. Gate statuses45 unchanged; releaseNO-GO. No hosted/merge/deploy.
+One existing full-role/privacy subcondition accepted with5 real app/SQL cases: owner-only provider configuration, private fields/actor binding, manual provider_api refusal, audit failure rollback/retry, current SQL role removal. Target50 TAP/4files (full app19 includes parents); broader829 TAP/97invocations/94files excludes that HTTP file. Security full historyPASS, exact checkout tree matched. Initial16499546 had54success/1fail/2cancelled; fixture dollar-quote SQL corrected without weakening assertions, failure retained. Runtime application/schema/ACL unchanged. All45 gate statuses unchanged, inventory incomplete, releaseNO-GO.
+
+Next: Reconcile channelDurableJobAdmin actual-app GET(view_logs/manage_channels) versus requeue(manage_channels) and producer/result-field assertions against existing evidence; select a missing case only after that trace. Continue existing SEQ-R1/R2/R3 acceptance mapping separately without duplicate pairing.
 
 ## P0 finite known-remainder closure queue fixed — 2026-10-27
 

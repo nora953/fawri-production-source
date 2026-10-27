@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "b15f4b8751da7d8e84933ffd2e778b28538caa3b",
-  "lastFullyAcceptedSource": "b15f4b8751da7d8e84933ffd2e778b28538caa3b",
+  "sourceCandidate": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+  "lastFullyAcceptedSource": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
   "release": "NO-GO",
   "rows": [
     {
@@ -163,11 +163,34 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "First work item: build the exact outstanding actor/entrypoint/field-to-evidence map from current source and the existing manifests. Select no runtime test until it names an uncovered closure condition.",
+      "nextAction": "Reconcile channelDurableJobAdmin actual-app GET(view_logs/manage_channels) versus requeue(manage_channels) and producer/result-field assertions against existing evidence; select a missing case only after that trace. Continue existing SEQ-R1/R2/R3 acceptance mapping separately without duplicate pairing.",
+      "currentEntrypointReconciliation": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
+        "generator": "tools/build_p0_actor_entrypoint_map.cjs",
+        "source": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+        "status": "CURRENT_AST_SOURCE_AND_NAMED_ROLE_FIELD_RECONCILIATION",
+        "counts": {
+          "verifiedApiSourceBlobs": 320,
+          "parsedApiModules": 316,
+          "verifiedApiTestBlobs": 363,
+          "parsedTestModules": 363,
+          "routerIdentities": 51,
+          "resolvedMountEdges": 53,
+          "literalMountedRegistrationRows": 362,
+          "uniqueMethodPaths": 236,
+          "nonliteralOrUnresolvedRegistrationRows": 0,
+          "parseFailures": 0,
+          "registrationRowsWithLiteralTestReference": 270,
+          "registrationRowsWithoutLiteralTestReference": 92
+        },
+        "fullP0InventoryAccepted": false
+      },
       "providerCostHttpReconciliation": {
         "evidence": "evidence/P0-PROVIDER-COST-HTTP-20261027.json",
-        "status": "PREPARED_PENDING_EXACT_SOURCE_CI",
-        "existingGate": true
+        "status": "BOUNDED_EXISTING_OWNER_ONLY_HTTP_SQL_ACTOR_FIELD_AND_AUDIT_ACCEPTED",
+        "acceptedSource": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+        "parentGateClosed": false,
+        "newGate": false
       }
     },
     {
@@ -2318,7 +2341,9 @@
       {
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
-        "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0."
+        "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
+        "completedPrerequisite": "Current320-source/363-test AST/reference catalogue and bounded8-table/86-field schema continuity; historical manifests classified without runtime promotion. Named provider cost HTTP subcondition executed; final source CI acceptance recorded separately.",
+        "nextNamedReview": "Channel durable job admin GET versus requeue actor/field assertions and producer/result provenance under existing declared policy; not a new gate."
       },
       {
         "order": 2,
@@ -2354,10 +2379,37 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "First work item: build the exact outstanding actor/entrypoint/field-to-evidence map from current source and the existing manifests. Select no runtime test until it names an uncovered closure condition.",
+        "nextAction": "Reconcile channelDurableJobAdmin actual-app GET(view_logs/manage_channels) versus requeue(manage_channels) and producer/result-field assertions against existing evidence; select a missing case only after that trace. Continue existing SEQ-R1/R2/R3 acceptance mapping separately without duplicate pairing.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
-        ]
+        ],
+        "currentReconciliation": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
+          "generator": "tools/build_p0_actor_entrypoint_map.cjs",
+          "source": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+          "status": "CURRENT_AST_SOURCE_AND_NAMED_ROLE_FIELD_RECONCILIATION",
+          "counts": {
+            "verifiedApiSourceBlobs": 320,
+            "parsedApiModules": 316,
+            "verifiedApiTestBlobs": 363,
+            "parsedTestModules": 363,
+            "routerIdentities": 51,
+            "resolvedMountEdges": 53,
+            "literalMountedRegistrationRows": 362,
+            "uniqueMethodPaths": 236,
+            "nonliteralOrUnresolvedRegistrationRows": 0,
+            "parseFailures": 0,
+            "registrationRowsWithLiteralTestReference": 270,
+            "registrationRowsWithoutLiteralTestReference": 92
+          },
+          "fullP0InventoryAccepted": false
+        },
+        "acceptedProviderCostSubcondition": {
+          "evidence": "evidence/P0-PROVIDER-COST-HTTP-20261027.json",
+          "source": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+          "status": "BOUNDED_EXISTING_OWNER_ONLY_HTTP_SQL_ACTOR_FIELD_AND_AUDIT_ACCEPTED",
+          "closesParent": false
+        }
       },
       {
         "gate": "CASHIER-SYNC-SEQUENCE-001",

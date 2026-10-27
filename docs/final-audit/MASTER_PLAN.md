@@ -1,3 +1,11 @@
+## Current-source reconciliation and one named HTTP subcondition accepted — 2026-10-27
+
+Accepted sourceccda10c03b91633825cd2a1aea58f97ca2727da9,57/57 CI SUCCESS. [Authoritative checkpoint and next case](P0-CLOSURE-REGISTER.md); [current actor/entrypoint map](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json); [provider cost HTTP evidence](evidence/P0-PROVIDER-COST-HTTP-20261027.json). Verified320 source/363 test blobs; AST362 registration rows/236 method-path pairs, not a P0 denominator or runtime acceptance. Existing8-table/86-field schema unchanged; historical UI222 remains P1, no scope expansion.
+
+One existing full-role/privacy subcondition accepted with5 real app/SQL cases: owner-only provider configuration, private fields/actor binding, manual provider_api refusal, audit failure rollback/retry, current SQL role removal. Target50 TAP/4files (full app19 includes parents); broader829 TAP/97invocations/94files excludes that HTTP file. Security full historyPASS, exact checkout tree matched. Initial16499546 had54success/1fail/2cancelled; fixture dollar-quote SQL corrected without weakening assertions, failure retained. Runtime application/schema/ACL unchanged. All45 gate statuses unchanged, inventory incomplete, releaseNO-GO.
+
+Next: Reconcile channelDurableJobAdmin actual-app GET(view_logs/manage_channels) versus requeue(manage_channels) and producer/result-field assertions against existing evidence; select a missing case only after that trace. Continue existing SEQ-R1/R2/R3 acceptance mapping separately without duplicate pairing.
+
 ## P0 finite known-remainder closure queue fixed — 2026-10-27
 
 From checkpoint9dedf2ebd5560f0a57f77246f5885c258fd4f7d2, reconciled all16 known remaining rows (7 OPEN/9 BLOCKED) into the existing authoritative register, each with precise closure conditions, missing evidence/decision, authorized work now, external dependency and next action. No new gates, status changes, runtime/CI claims or policy/hosted approvals. Accepted source remainsb15f4b8751da7d8e84933ffd2e778b28538caa3b. Complete inventory remainsfalse; no overall completion percentage. [Closure queue and execution order](P0-CLOSURE-REGISTER.md); machine-readable closurePlan is in existing evidence/P0-CLOSURE-REGISTER.json.
