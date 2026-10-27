@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "0215e053891b249ab22f7b028ff93626d81529b5",
+  "sourceCandidate": null,
   "lastFullyAcceptedSource": "0215e053891b249ab22f7b028ff93626d81529b5",
   "release": "NO-GO",
   "rows": [
@@ -331,7 +331,8 @@
       "enrollmentFinancialHandoffStatus": "BOUNDED_COMBINED_INTERNAL_PROPOSAL_HANDOFF_AND_OBSERVED_SALE_CONCURRENCY_SOURCE_ACCEPTED",
       "enrollmentFinancialHandoffSource": "84f13d49dbe7432d4e839d5abaf0fcd9b63dab0e",
       "combinedProposalRestoreStatus": "OWNED_OFFLINE_SAME_CLUSTER_COMBINED_PROPOSAL_DATABASE_RESTORE_BOUNDED_ACCEPTED",
-      "combinedProposalRestoreSource": "0215e053891b249ab22f7b028ff93626d81529b5"
+      "combinedProposalRestoreSource": "0215e053891b249ab22f7b028ff93626d81529b5",
+      "combinedAuthorityReadinessStatus": "PREPARED_INTERNAL_READ_ONLY_CATALOG_CI_PENDING"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",

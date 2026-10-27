@@ -186,6 +186,61 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     if(phase==='seed'){manifest.components=initial;manifest.fingerprint=fingerprint;fs.writeFileSync(proofFile,JSON.stringify(manifest),{mode:0o600});}
     else{assert.deepEqual(initial,manifest.components);assert.equal(fingerprint,manifest.fingerprint);}
   });
+
+  const {assertCashierStreamAuthorityCandidateReady:authorityReady}=await import('../src/services/cashierStreamAuthorityReadiness.ts');
+  const bootstrapRole=(await pool.query('SELECT session_user::text AS login')).rows[0].login;
+  const identities={primaryRole:manifest.primaryRole,authenticationRole:manifest.authRole,reviewerRole:manifest.reviewerRole,bootstrapRole};
+  async function readonlyAuthority(){
+    const c=await primary.connect();
+    try{await c.query('BEGIN READ ONLY');
+      assert.equal((await c.query('SELECT session_user::text AS login')).rows[0].login,manifest.primaryRole);
+      assert.deepEqual(await authorityReady(c,identities),{ok:true,statementSnapshotOnly:true,operationalAdoption:false,releaseAccepted:false});
+      assert.equal((await c.query('SHOW transaction_read_only')).rows[0].transaction_read_only,'on');
+    }finally{await c.query('ROLLBACK');c.release();}
+  }
+  await t.test('combined authority catalog readiness executes read only through real separate identities',async()=>{
+    assert.equal((await reviewer.query('SELECT session_user::text AS login')).rows[0].login,manifest.reviewerRole);
+    const {withAuthenticationTransaction}=await import('../src/services/authenticationPostgresAuthority.ts');
+    assert.equal(await withAuthenticationTransaction(async c=>(await c.query('SELECT session_user::text AS login')).rows[0].login),manifest.authRole);
+    await readonlyAuthority();
+    await assert.rejects(authorityReady(primary,{...identities,reviewerRole:manifest.primaryRole}),e=>e.code==='CASHIER_STREAM_AUTHORITY_CANDIDATE_NOT_READY'&&e.issues.includes('DISTINCT_TRUSTED_IDENTITIES'));
+    assert.deepEqual(await data(),initial.data);
+  });
+  if(phase==='seed')await t.test('metadata faults hold internal authority readiness and rollback preserves financial state',async faultT=>{
+    const cases=[
+      ['review ledger RLS disabled','ALTER TABLE cashier_stream_enrollment_reviews DISABLE ROW LEVEL SECURITY','PROPOSAL_TABLE_METADATA'],
+      ['receipt owner LOGIN','ALTER ROLE fawri_cashier_receipt_owner LOGIN','OWNER_ROLE_FLAGS'],
+      ['reviewer unsafe inheritance','ALTER ROLE '+manifest.reviewerRole+' INHERIT','CALLER_ROLE_FLAGS'],
+      ['receipt owner extra state update','GRANT UPDATE(state) ON cashier_device_streams TO fawri_cashier_receipt_owner','OWNER_COLUMN_ACL'],
+      ['enrollment owner ledger delete','GRANT DELETE ON cashier_stream_enrollment_reviews TO fawri_cashier_enrollment_owner','OWNER_TABLE_ACL'],
+      ['owner role reachable by reviewer','GRANT fawri_cashier_receipt_owner TO '+manifest.reviewerRole,'OWNER_MEMBERSHIPS'],
+      ['public financial execution','GRANT EXECUTE ON FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb) TO PUBLIC','FUNCTION_PUBLIC_EXECUTE'],
+      ['unsafe financial search path','ALTER FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb) SET search_path=public','FUNCTION_SEARCH_PATH'],
+      ['wrong financial definer mode','ALTER FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb) SECURITY INVOKER','FUNCTION_SECURITY'],
+      ['wrong financial owner','ALTER FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb) OWNER TO '+bootstrapRole,'FUNCTION_OWNER'],
+      ['marker body drift',"CREATE OR REPLACE FUNCTION public.fawri_cashier_enrollment_runtime() RETURNS boolean LANGUAGE sql STABLE SET search_path=pg_catalog AS 'SELECT false'",'FUNCTION_BODY'],
+      ['unexpected financial overload',"CREATE FUNCTION public.fawri_cashier_stream_financial_runtime(integer) RETURNS boolean LANGUAGE sql STABLE SET search_path=pg_catalog AS 'SELECT true'",'FUNCTION_SET'],
+      ['weakened zero-checkpoint policy','ALTER POLICY enrollment_owner_stream_insert ON cashier_device_streams WITH CHECK(true)','OWNER_POLICY'],
+      ['unknown stream policy','CREATE POLICY unexpected_authority_read ON cashier_device_streams FOR SELECT TO PUBLIC USING(true)','UNEXPECTED_POLICY'],
+      ['extra owner policy outside stream tables','CREATE POLICY unexpected_authority_order_delete ON orders FOR DELETE TO fawri_cashier_receipt_owner USING(true)','OWNER_POLICY_SET'],
+      ['review immutable trigger disabled','ALTER TABLE cashier_stream_enrollment_reviews DISABLE TRIGGER cashier_stream_enrollment_reviews_immutable','REVIEW_TRIGGER'],
+      ['review immutable trigger rebound','DROP TRIGGER cashier_stream_enrollment_reviews_immutable ON cashier_stream_enrollment_reviews; CREATE TRIGGER cashier_stream_enrollment_reviews_immutable BEFORE UPDATE OR DELETE ON cashier_stream_enrollment_reviews FOR EACH ROW EXECUTE FUNCTION public.fawri_sequence_stream_guard()','REVIEW_TRIGGER'],
+      ['receipt owner private issuer','GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO fawri_cashier_receipt_owner','OWNER_AUTHORITY_ACL'],
+      ['primary raw review column exposed','GRANT SELECT(reviewer_reference) ON cashier_stream_enrollment_reviews TO '+manifest.primaryRole,'CALLER_LEDGER_ACL'],
+      ['auth financial capability','GRANT EXECUTE ON FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb) TO '+manifest.authRole,'CALLER_FUNCTION_CAPABILITY'],
+      ['reviewer financial capability','GRANT EXECUTE ON FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb) TO '+manifest.reviewerRole,'CALLER_FUNCTION_CAPABILITY'],
+      ['primary financial capability removed','REVOKE EXECUTE ON FUNCTION public.fawri_lock_cashier_financial_stream(text,text,text) FROM '+manifest.primaryRole,'CALLER_FUNCTION_CAPABILITY'],
+      ['owner public schema CREATE','GRANT CREATE ON SCHEMA public TO fawri_cashier_receipt_owner','OWNER_SCHEMA_ACL'],
+    ];
+    for(const [name,sql,issue]of cases)await faultT.test(name,async()=>{
+      const c=await pool.connect();
+      try{await c.query('BEGIN');await c.query(sql);await assert.rejects(authorityReady(c,identities),e=>e.code==='CASHIER_STREAM_AUTHORITY_CANDIDATE_NOT_READY'&&e.issues.includes(issue));}
+      finally{await c.query('ROLLBACK');c.release();}
+      await readonlyAuthority();assert.deepEqual(await data(),initial.data);
+    });
+    console.log('P0_COMBINED_AUTHORITY_READINESS '+JSON.stringify({readOnlyRestrictedPrimary:true,distinctAuthenticatedIdentities:true,metadataFaults:cases.length,rolledBackFaults:true,financialStatePreserved:true,operationalAdoption:false,productionStartupWired:false,hosted:false}));
+  });
+
   await t.test('separate real LOGIN capabilities and trusted tenant reads remain isolated',async()=>{
     for(const candidate of [manifest.primaryRole,manifest.authRole,manifest.reviewerRole]){
       for(const owner of ['fawri_cashier_enrollment_owner','fawri_cashier_receipt_owner'])assert.equal((await pool.query("SELECT pg_has_role($1,$2,'USAGE') OR pg_has_role($1,$2,'SET') AS member",[candidate,owner])).rows[0].member,false);

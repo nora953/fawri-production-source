@@ -1327,5 +1327,20 @@
         }
       ]
     }
+  },
+  "combinedAuthorityReadiness": {
+    "status": "PREPARED_INTERNAL_READ_ONLY_CATALOG_CI_PENDING",
+    "source": null,
+    "service": "artifacts/api-server/src/services/cashierStreamAuthorityReadiness.ts",
+    "test": "artifacts/api-server/tests/cashier-combined-proposal-restore-postgres.integration.test.mjs",
+    "metadataFaultsPrepared": 23,
+    "operationalAdoption": false,
+    "productionStartupWired": false,
+    "scope": "Composes canonical storage readiness with pinned new function bodies/signatures/security/owners/search_path/execute capabilities, exact owner column ACL and no inherited owner membership, owner policies/RLS/review immutability trigger and separate primary/auth/reviewer identities.",
+    "limits": [
+      "Trusted supplied role names are not actor authentication; fixture obtains actual authenticated sessions",
+      "SELECT-only multiple catalog snapshots cannot attest concurrent DDL",
+      "No canonical authority/startup adoption, real reviewer provenance, lost-cluster credential bootstrap, retained-field lifecycle, public HTTP/native v2 or hosted acceptance"
+    ]
   }
 }
