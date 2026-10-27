@@ -1,3 +1,26 @@
+## قبول حدود جلسات حساب الإدارة عبر التطبيق الكامل — 2026-10-27
+
+البوابة القائمة: **P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX**؛ شرطها هنا هو إثبات الصلاحيات والحقول على مسار فعلي مع قبول مشروع ورفض غير مخوّل. طوبقت أولًا مسارات auth-session-routes الحالية وتسلسل تركيبها في app.ts/auth-security مع الاختبارات المقبولة. اختبار admin-auth-router PostgreSQL يغطي رحلة الدخول والثقة وتغيير كلمة المرور والصلاحيات وتعطيل الحساب وإلغاء جهاز متداخل؛ فحص /admin/sessions الموجود فيه رفض أثناء تغيير كلمة المرور الإجباري فقط. اختبار role-session-isolation يعتمد جلسات JSON القديمة، واختبار جلسات التاجر لا يثبت حد الإدارة. لذلك أضيف النقص المحدد إلى ملف management-full-app الموجود، دون تغيير التطبيق أو أي صلاحية أو سياسة أجهزة.
+
+المصدر التنفيذي **7e0d2965329bf1138140ae4dbdfc6696d8fa83a3**؛ شجرته **cb8b8d70c0d12e4ef901e6573ee0eb6a19f72a65**. [الدليل داخل الخريطة الموجودة](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json) تحت manualReconciliation.namedBoundaryReconciliation، boundary=currentAdminSelfSessions؛ لا ملف دليل مكرر. ثبتت بصمات المسارات والاختبار الحالية داخل ذلك الدليل؛ جرد AST السابق ومدخلاته وأعداده يبقى مؤرخًا، ولم يُعد توليده أو يُرقَّ إلى قبول شامل.
+
+أربع حالات وظيفية جديدة عبر التطبيق الفعلي وPostgreSQL المملوك للـworkflow، مع primary مقيّد وauth login منفصل:
+
+- المساعد دون صلاحيات أعمال يعرض جلساته النشطة وحده؛ account/kind في الاستعلام لا يغيران الحساب، ولا تظهر الرموز الخام أو token_hash. الضيف والتاجران والجهاز الخاطئ والكوكيز المختلطة والرمز التالف مرفوضون.
+- حذف جلسة حساب آخر يعيد404 دون أثر، والحقول المزورة لا توسع النطاق. حذف الجلسة الذاتية المختارة ينجح مرة، ثم404؛ تبقى جلسة الحساب الأخرى وحسابات النظراء.
+- تسجيل الخروج ينهي جلسة الكوكيز وحدها، ويقبل التكرار بأمان؛ الجلسة الشقيقة والنظراء يبقون صالحين.
+- logout-all يرفض الجهاز/الكوكيز/Origin غير المقبولة ثم ينهي جلسات الحساب الحالي وحده؛ النظير والمالك والتاجران محفوظون.
+
+[الفحص المعني40563873764/job122399816744](https://github.com/nora953/fawri-production-source/actions/runs/40563873764): **63/63 TAP في4 ملفات**، منها **32/32** في الملف المعدّل؛ زيادة5 تشمل مجموعة الأب و4 حالات، وليست5 رحلات مستقلة. checkout **4af7c5d5b79d6efe3ffff106626f3f079a89b1eb** يطابق شجرة المصدر. [SQL الأوسع40563873441/job122399814633](https://github.com/nora953/fawri-production-source/actions/runs/40563873441): **829TAP/97 استدعاء/94 ملفًا**،0 فشل/تخطٍّ/إلغاء؛ هذه الحزمة تستثني ملف management-full-app، فلا يُجمع العددان كتغطية فريدة. **58/58 مسار CI ناجح** عند المصدر المذكور، دون معلّق أو ملغى. البناء الكامل والأنواع ووحدات API/frontend ناجحة؛ فحص tracked والتاريخ الأمني الكامل ناجحان بلا findings. فحصا الجودة40563873576 والأمن40563873654 مثبتان في الدليل.
+
+حدود القبول: بيانات الثقة والجلسات تُنشأ بالسلطات الموجودة كتهيئة fixture؛ ليس اعتماد رحلة OTP أو تحكم المالك المفوّض أو واجهات الأجهزة العامة. device_hash جزء من ملخص الجلسة الذاتية الحالي؛ لم نضع سياسة منع كل البصمات. ثبات SQL يشمل أعمدة الأمن والملكية/الإصدار/الإلغاء المختارة ويستثني heartbeat/activity/idle expiry المشروع وآثار تدقيق المصادقة؛ قورنت6 جداول أعمال موجودة، وليس كامل المخطط. لا قبول hosted أو كل الأدوار/الحقول. لم تتغير قواعد ربط أجهزة الكاشير أو SEQ-R2، الذي يبقى UNAPPROVED.
+
+التالي: Reconcile the owner-delegated current PostgreSQL admin session revoke-one/revoke-all/logout-all and global admin-device list/trust/revoke HTTP boundaries with existing admin-auth journey and service tests. Select only a named missing actor/field/runtime assertion; do not repeat accepted self-session or nested device journey coverage. Keep SEQ-R2 UNAPPROVED and preserve existing cashier merchant pairing.
+
+البوابة تبقى OPEN؛45 حالة دون تغيير:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false،overallPercentage=null،**NO-GO**. لا merge/deploy/P1/P2.
+
+---
+
 ## تصحيح الجرد ومطابقة دليل المراقبة الموجود — 2026-10-27
 
 نقطة المراجعة 775bbe50424e5f9bd5dcefa99978d670e73dcad3؛ آخر مصدر تنفيذي مقبول يبقى 711fd97d989b3733e68af7e1a094fe92dfb08d74. العمل الحالي مستقل عن خيار SEQ-R2؛ ذلك الخيار يبقى UNAPPROVED ولم يُستنتج اعتماده من «أكمل». [الخريطة المحدثة](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json)، مع referenceFilterCorrection20261027 و namedBoundaryReconciliation في الملف نفسه.
