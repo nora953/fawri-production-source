@@ -447,5 +447,141 @@ test('full application management privacy preserves cutover ordering and current
     assert.equal((await req(`/api/auth/merchants/${b.id}/note`,owner)).body.note,`private-note-${b.id}`);
     assert.deepEqual(fs.readdirSync(process.env.FAWRI_DATA_DIR).filter(name=>name.endsWith('.json')),[]);
   });
+
+  await t.test('current admin self-session HTTP scope excludes peers and preserves other accounts',async sessionTest=>{
+    // Own-security endpoints require a secure admin session, no business
+    // permission. Existing unprivileged assistant remains the least-privilege
+    // positive; existing viewer/owner/merchants supply independent peers.
+    const self=denied,peer=viewer;
+    const securitySnapshot=async()=>(
+      await admin.query(`SELECT id,account_id,kind,tenant_id,status,token_hash,
+        device_fingerprint_hash,session_version,security_version,role_snapshot,
+        permission_snapshot,created_at,revoked_at,revoke_reason,replaced_by_session_id
+        FROM account_sessions WHERE account_id=ANY($1::text[]) ORDER BY id`,[ids])
+    ).rows;
+    const peerSecurity=rows=>rows.filter(row=>row.account_id!==self.id);
+    const selfRows=rows=>rows.filter(row=>row.account_id===self.id);
+    const secondDevice='synthetic-admin-session-'+randomUUID();
+    const record=await security.registerAdminDeviceAuthoritative({
+      accountId:self.id,accountKind:'admin',deviceId:secondDevice,deviceLabel:'Synthetic second session',
+    });
+    await security.setAdminDeviceTrustAuthoritative({deviceRecordId:record.id,trusted:true,actorAccountId:owner.id});
+    async function issue(device){
+      const issued=await auth.issueSession({accountId:self.id,accountKind:'admin',tenantId:'fawri-admin',
+        adminRole:'assistant_admin',deviceId:device,permissions:[]});
+      return {...self,device,session:issued,cookie:ADMIN_SESSION_COOKIE+'='+issued.token};
+    }
+    let sibling=await issue(secondDevice);
+    const businessBefore=await snapshot();
+    await sessionTest.test('unprivileged admin lists only own active sessions without bearer material',async()=>{
+      const before=await securitySnapshot();
+      for(const [actor,status,headers] of [
+        [undefined,401,{}],[a,401,{}],[b,401,{}],
+        [self,401,{'X-Fawri-Device-Id':'synthetic-wrong-device'}],
+        [self,401,{Cookie:self.cookie+'; '+a.cookie}],
+        [self,401,{Cookie:ADMIN_SESSION_COOKIE+'=synthetic-invalid'}],
+      ]){
+        const r=await req('/api/auth/admin/sessions',actor,'GET',undefined,headers);
+        assert.equal(r.status,status);assert.equal(r.body.sessions,undefined);
+        assert.deepEqual(await securitySnapshot(),before);
+      }
+      for(const [actor,expected] of [[self,[self.session.session.id,sibling.session.session.id]],[peer,[peer.session.session.id]]]){
+        const r=await req('/API/Auth/Admin/Sessions/?account_id='+owner.id+'&kind=merchant',actor);
+        assert.equal(r.status,200);assert.deepEqual(new Set(r.body.sessions.map(x=>x.id)),new Set(expected));
+        assert.ok(r.body.sessions.every(x=>x.account_id===actor.id&&x.account_kind==='admin'&&x.tenant_id==='fawri-admin'));
+        assert.equal(JSON.stringify(r.body).includes('token_hash'),false);
+        for(const token of [self.session.token,sibling.session.token,peer.session.token,owner.session.token,a.session.token,b.session.token]){
+          assert.equal(JSON.stringify(r.body).includes(token),false);
+        }
+      }
+      assert.deepEqual(await securitySnapshot(),before);
+      assert.deepEqual(await snapshot(),businessBefore);
+    });
+    await sessionTest.test('foreign session deletion and denied own deletion preserve security state; selected own revoke applies once',async()=>{
+      const before=await securitySnapshot();
+      const foreign=await req('/api/auth/admin/sessions/'+peer.session.session.id,self,'DELETE',
+        {account_id:peer.id,actorAccountId:owner.id,kind:'admin'});
+      assert.equal(foreign.status,404);assert.equal(foreign.body.ok,false);
+      assert.deepEqual(await securitySnapshot(),before);
+      for(const [status,headers] of [
+        [401,{'X-Fawri-Device-Id':'synthetic-wrong-device'}],
+        [403,{Origin:'https://foreign.example.invalid'}],
+      ]){
+        const r=await req('/api/auth/admin/sessions/'+sibling.session.session.id,self,'DELETE',{},headers);
+        assert.equal(r.status,status);
+        if(status===403)assert.equal(r.body.code,'AUTH_ORIGIN_FORBIDDEN');
+        assert.deepEqual(await securitySnapshot(),before);
+      }
+      const own=await req('/API/Auth/Admin/Sessions/'+sibling.session.session.id+'/?account_id='+peer.id,self,'DELETE',
+        {account_id:peer.id,session_id:peer.session.session.id,actorAccountId:owner.id});
+      assert.equal(own.status,200);assert.equal(own.body.ok,true);
+      const after=await securitySnapshot();
+      assert.deepEqual(peerSecurity(after),peerSecurity(before));
+      const target=after.find(x=>x.id===sibling.session.session.id);
+      assert.equal(target.status,'revoked');assert.equal(target.revoke_reason,'manual_revocation');
+      assert.ok(target.revoked_at);
+      assert.equal(after.find(x=>x.id===self.session.session.id).status,'active');
+      const repeated=await req('/api/auth/admin/sessions/'+sibling.session.session.id,self,'DELETE');
+      assert.equal(repeated.status,404);assert.equal(repeated.body.ok,false);
+      assert.deepEqual(await securitySnapshot(),after);
+      assert.equal((await req('/api/auth/admin/sessions',sibling)).status,401);
+      assert.equal((await req('/api/auth/admin/sessions',self)).status,200);
+      assert.equal((await req('/api/auth/admin/sessions',peer)).status,200);
+      assert.deepEqual(await snapshot(),businessBefore);
+    });
+    await sessionTest.test('single admin logout revokes its cookie only and remains idempotent without clearing sibling or peers',async()=>{
+      sibling=await issue(secondDevice);
+      const before=await securitySnapshot();
+      const logout=await req('/api/auth/admin/logout',self,'POST',
+        {account_id:peer.id,token:peer.session.token},{Origin:'https://management.example.invalid'});
+      assert.equal(logout.status,200);assert.equal(logout.body.ok,true);assert.match(logout.cache,/no-store/);
+      const after=await securitySnapshot();assert.deepEqual(peerSecurity(after),peerSecurity(before));
+      assert.equal(after.find(x=>x.id===self.session.session.id).status,'revoked');
+      assert.equal(after.find(x=>x.id===self.session.session.id).revoke_reason,'logout');
+      assert.equal(after.find(x=>x.id===sibling.session.session.id).status,'active');
+      const repeat=await req('/api/auth/admin/logout',self,'POST');
+      assert.equal(repeat.status,200);assert.equal(repeat.body.ok,true);
+      assert.deepEqual(await securitySnapshot(),after);
+      assert.equal((await req('/api/auth/admin/sessions',self)).status,401);
+      assert.equal((await req('/api/auth/admin/sessions',sibling)).status,200);
+      assert.equal((await req('/api/auth/admin/sessions',peer)).status,200);
+      assert.deepEqual(await snapshot(),businessBefore);
+    });
+    await sessionTest.test('own logout-all requires current device and origin then revokes only the current admin account',async()=>{
+      const restored=await issue(self.device);
+      const before=await securitySnapshot();assert.equal(selfRows(before).filter(x=>x.status==='active').length,2);
+      for(const [status,headers] of [
+        [401,{'X-Fawri-Device-Id':'synthetic-wrong-device'}],
+        [401,{Cookie:sibling.cookie+'; '+a.cookie}],
+        [403,{Origin:'https://foreign.example.invalid'}],
+      ]){
+        const r=await req('/api/auth/admin/logout-all',sibling,'POST',{account_id:peer.id},headers);
+        assert.equal(r.status,status);
+        if(status===403)assert.equal(r.body.code,'AUTH_ORIGIN_FORBIDDEN');
+        assert.deepEqual(await securitySnapshot(),before);
+      }
+      const logout=await req('/API/Auth/Admin/Logout-All/',sibling,'POST',
+        {account_id:peer.id,session_id:peer.session.session.id,kind:'merchant'},{Origin:'https://management.example.invalid'});
+      assert.equal(logout.status,200);assert.equal(logout.body.ok,true);assert.match(logout.cache,/no-store/);
+      const after=await securitySnapshot();assert.deepEqual(peerSecurity(after),peerSecurity(before));
+      assert.ok(selfRows(after).every(x=>x.status==='revoked'));
+      const justRevoked=selfRows(after).filter(x=>[sibling.session.session.id,restored.session.session.id].includes(x.id));
+      assert.equal(justRevoked.length,2);assert.ok(justRevoked.every(x=>x.revoke_reason==='logout_all'&&x.revoked_at));
+      assert.equal((await req('/api/auth/admin/sessions',sibling)).status,401);
+      assert.equal((await req('/api/auth/admin/sessions',restored)).status,401);
+      assert.equal((await req('/api/auth/admin/sessions',peer)).status,200);
+      assert.equal((await req('/api/auth/admin/me',owner)).status,200);
+      assert.deepEqual(await securitySnapshot(),after);
+      assert.deepEqual(await snapshot(),businessBefore);
+    });
+    console.log('P0_ADMIN_SELF_SESSION_HTTP '+JSON.stringify({
+      actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,unprivilegedAssistantOwnSecurityAllowed:true,
+      ownListing:true,rawTokenAndTokenHashExcluded:true,foreignRevokeDenied:true,selectedOwnRevokeOnce:true,
+      singleLogoutPreservesSibling:true,logoutAllOnlyOwnAccount:true,deviceOriginAndMixedRoleDenials:true,
+      selectedSessionSecurityColumnsPreserved:true,sessionHeartbeatAndIdleExpiryExcluded:true,businessAndPeersPreserved:true,
+      loginOtpOrDelegatedOwnerDeviceWorkflowAccepted:false,hosted:false
+    }));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
