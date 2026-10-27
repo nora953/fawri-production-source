@@ -1,3 +1,7 @@
+## SEQ-D3 fault fixture quoting correction completed; CI pending — 2026-10-27
+
+Follow-up a2471947d2bb04153e56cbd1b4c29263cb0676aa still produced18 PASS/5 FAIL in cashier40429682513/job121944045885: JavaScript replacement-string dollar expansion preserved a single closing delimiter. Replace both ends with explicit named $receipt_fault$ delimiters using a replacement callback; verify all three complete pairs before publication. This is a fixture correction only, no weakened assertions or production change. Prior failed attempts remain recorded; no new runtime acceptance. Sequence gate OPEN; release NO-GO.
+
 ## SEQ-D3 receipt fault fixtures corrected; runtime acceptance pending — 2026-10-27
 
 Candidate6f4fef317581a161009aae5501e7c8acb4d6b58a completed54 SUCCESS/3 FAILURE workflows. Cashier40375019290/job121755599681 and broader40375019435/job121755599131 show three fault-injection DDL syntax errors42601 (single dollar delimiters), producing historical suite18 PASS/5 FAIL including parents. Correct only those three test function delimiters to PostgreSQL dollar quoting; preserve rollback/retry assertions and production source unchanged. Signed native40375007232/job121755556204 failed browser prerequisite timeout before tests; no product result inferred. Corrected candidate CI pending; last fully accepted source remains6e8d7af3293e9ecb2df4040c6b4103071a2fe7c3. Sequence gate OPEN; release NO-GO. No hosted, merge or deployment action.

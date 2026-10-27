@@ -210,7 +210,7 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       for(const body of [first.body,second,third]){const before=await snapshot(),r=await sell(first,body);assert.equal(r.replayed,true);assert.equal(r.inventory_mutation_count,0);assert.deepEqual(await snapshot(),before);}
       for(const [kind,body,seq]of [['return',first.body,4],['void',second,5]]){
         const comp=compensation(first,body,kind,seq),before=await snapshot(),name='receipt_fault_'+randomUUID().replaceAll('-','');
-        await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.merchant_id='${first.f.merchantId}' THEN RAISE EXCEPTION 'synthetic receipt insertion fault'; END IF; RETURN NEW; END $`);
+        await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $receipt_fault$ BEGIN IF NEW.merchant_id='${first.f.merchantId}' THEN RAISE EXCEPTION 'synthetic receipt insertion fault'; END IF; RETURN NEW; END $receipt_fault$`);
         await pool.query(`CREATE TRIGGER ${name} BEFORE INSERT ON cashier_operation_receipts FOR EACH ROW EXECUTE FUNCTION public.${name}()`);
         try{await assert.rejects(compensate(first,comp,kind),e=>e.code==='P0001'&&e.message.includes('synthetic receipt insertion fault'));assert.deepEqual(await snapshot(),before);}
         finally{await pool.query(`DROP TRIGGER ${name} ON cashier_operation_receipts`);await pool.query(`DROP FUNCTION public.${name}()`);}
@@ -228,7 +228,7 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     });
     await v2t.test('checkpoint failure rolls back sale, stock and receipt; retry commits once',async()=>{
       const x=await create(),before=await snapshot(),name='checkpoint_fault_'+randomUUID().replaceAll('-','');
-      await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.merchant_id='${x.f.merchantId}' AND NEW.last_sequence>OLD.last_sequence THEN RAISE EXCEPTION 'synthetic checkpoint fault'; END IF; RETURN NEW; END $`);
+      await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $receipt_fault$ BEGIN IF NEW.merchant_id='${x.f.merchantId}' AND NEW.last_sequence>OLD.last_sequence THEN RAISE EXCEPTION 'synthetic checkpoint fault'; END IF; RETURN NEW; END $receipt_fault$`);
       await pool.query(`CREATE TRIGGER ${name} BEFORE UPDATE ON cashier_device_streams FOR EACH ROW EXECUTE FUNCTION public.${name}()`);
       try{await assert.rejects(sell(x),e=>e.code==='P0001'&&e.message.includes('synthetic checkpoint fault'));assert.deepEqual(await snapshot(),before);}
       finally{await pool.query(`DROP TRIGGER ${name} ON cashier_device_streams`);await pool.query(`DROP FUNCTION public.${name}()`);}
@@ -236,7 +236,7 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     });
     await v2t.test('post-commit attribution failure retains exact receipt and replay repairs original identity',async()=>{
       const x=await create(),name='v2_attribution_fault_'+randomUUID().replaceAll('-','');let partial;
-      await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.merchant_id='${x.f.merchantId}' THEN RAISE EXCEPTION 'synthetic v2 attribution fault'; END IF; RETURN NEW; END $`);
+      await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $receipt_fault$ BEGIN IF NEW.merchant_id='${x.f.merchantId}' THEN RAISE EXCEPTION 'synthetic v2 attribution fault'; END IF; RETURN NEW; END $receipt_fault$`);
       await pool.query(`CREATE TRIGGER ${name} BEFORE INSERT ON cashier_operation_attribution FOR EACH ROW EXECUTE FUNCTION public.${name}()`);
       try{await assert.rejects(sell(x),e=>e.code==='P0001'&&e.message.includes('synthetic v2 attribution fault'));partial=await snapshot();
         const own=table=>partial[table].filter(y=>y.row.merchant_id===x.f.merchantId);
