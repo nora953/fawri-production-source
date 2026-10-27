@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'scripts/*disposable-postgres*'
+      - 'scripts/lib/cashier-authority-candidate.mjs'
+      - 'scripts/tests/cashier-authority-candidate.test.mjs'
+      - 'docs/final-audit/evidence/seq-d3-authority-candidate/**'
       - 'scripts/run-isolated-postgres-audit.sh'
       - 'scripts/lib/disposable-postgres*.mjs'
       - 'lib/db/scripts/audit-disposable-migrate.mjs'
@@ -43,7 +46,7 @@ jobs:
         id: install
         run: node scripts/ci-run-redacted.mjs --label audit-install -- pnpm install --frozen-lockfile --ignore-scripts
       - name: Prove fail-closed guard and teardown with no database
-        run: node --test scripts/disposable-postgres-test-guard.test.mjs scripts/tests/disposable-cashier-role-recovery.test.mjs
+        run: node --test scripts/disposable-postgres-test-guard.test.mjs scripts/tests/disposable-cashier-role-recovery.test.mjs scripts/tests/cashier-authority-candidate.test.mjs
       - name: Prove PostgreSQL response frame filtering without a database
         run: node --test scripts/tests/postgres-commit-response-proxy.test.mjs
       - name: Build API for child-process journeys

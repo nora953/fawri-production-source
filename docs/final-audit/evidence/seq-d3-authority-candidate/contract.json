@@ -1,0 +1,490 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "candidateOnly": true,
+  "operationalAdoption": false,
+  "releaseAccepted": false,
+  "acceptedPrerequisiteSource": "6b8188037be2cdf50548acb67a3d71c91539f064",
+  "canonicalMigrationCount": 53,
+  "canonicalPublicTables": 97,
+  "candidatePublicTables": 98,
+  "proposedStage": 53,
+  "historicalFiles": [
+    {
+      "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+      "gitBlobSha1": "0c9920caee6ea03d4f4776354bfdecd172234969"
+    },
+    {
+      "path": "lib/db/drizzle/0001_military_proteus.sql",
+      "gitBlobSha1": "0631349cad0075d927bfcf67a96180111555a5a4"
+    },
+    {
+      "path": "lib/db/drizzle/0002_cross_lane_stage.sql",
+      "gitBlobSha1": "3355d8cd9324b085961236bbb7afe3553d789313"
+    },
+    {
+      "path": "lib/db/drizzle/0003_cross_lane_cleanup.sql",
+      "gitBlobSha1": "38d71170941615f60d097c398041352e43d297f6"
+    },
+    {
+      "path": "lib/db/drizzle/0004_product_shipping_measurements.sql",
+      "gitBlobSha1": "fdf3a5c90d58bf4418f954c4a8b686e5500aa2d8"
+    },
+    {
+      "path": "lib/db/drizzle/0005_delivery_fee_per_area.sql",
+      "gitBlobSha1": "ff4e02df7d0f311e1d24fa66fb7f01cfe24912a4"
+    },
+    {
+      "path": "lib/db/drizzle/0006_saas_billing_authority.sql",
+      "gitBlobSha1": "74bd891659d23dc623e9b020a9005ed32fee845c"
+    },
+    {
+      "path": "lib/db/drizzle/0007_merchant_customer_payment_confirmation_authority.sql",
+      "gitBlobSha1": "678454cad18cfaccaa8df7fc16493e32a6317335"
+    },
+    {
+      "path": "lib/db/drizzle/0008_admin_device_verification_auth.sql",
+      "gitBlobSha1": "16e502ce0ec92a153dce1b1d3094d700b801a6ae"
+    },
+    {
+      "path": "lib/db/drizzle/0009_merchant_management_lifecycle_authority.sql",
+      "gitBlobSha1": "ac9709a33e1411a3fc5716db0b4bb8f672162e60"
+    },
+    {
+      "path": "lib/db/drizzle/0010_provider_cost_authority.sql",
+      "gitBlobSha1": "198d1d788f13443f3bb366ed34347e89f16fa283"
+    },
+    {
+      "path": "lib/db/drizzle/0011_commerce_promotions_timezone_authority.sql",
+      "gitBlobSha1": "64f7465a3bc99fda9a1dac14702c8d288c63cb0e"
+    },
+    {
+      "path": "lib/db/drizzle/0012_catalog_variant_signature_guard.sql",
+      "gitBlobSha1": "0ffa1def74719acaf073229b6f17341faaaf6652"
+    },
+    {
+      "path": "lib/db/drizzle/0013_cashier_staff_station_authority.sql",
+      "gitBlobSha1": "ae99c5011c1194af22c946a32bfd1d3a91dce638"
+    },
+    {
+      "path": "lib/db/drizzle/0014_cashier_operation_attribution.sql",
+      "gitBlobSha1": "2d0549996343373309c2759d42b5e59a74f6a468"
+    },
+    {
+      "path": "lib/db/drizzle/0015_cashier_discount_override_authority.sql",
+      "gitBlobSha1": "1a720d6f840b2bf0d379732d6b6c47e2d10f8404"
+    },
+    {
+      "path": "lib/db/drizzle/0016_cashier_merchant_discount_kind.sql",
+      "gitBlobSha1": "137c29fc7b24d3ad680ddea363aaacf1c46e5f35"
+    },
+    {
+      "path": "lib/db/drizzle/0017_multi_location_inventory_foundation.sql",
+      "gitBlobSha1": "8597608339ddde6197a635243d3455215d2038ae"
+    },
+    {
+      "path": "lib/db/drizzle/0018_location_inventory_authority.sql",
+      "gitBlobSha1": "45fa8c8f33e4d236b3f12538b17708be64838764"
+    },
+    {
+      "path": "lib/db/drizzle/0019_location_delivery_area_routing.sql",
+      "gitBlobSha1": "30fdfbcb409695b7faad31bf53937ffaa0f65f82"
+    },
+    {
+      "path": "lib/db/drizzle/0020_cashier_operation_location_backfill.sql",
+      "gitBlobSha1": "671e8b62d4c1d38693613dbff6bd76c466bb39d1"
+    },
+    {
+      "path": "lib/db/drizzle/0021_merchant_inventory_freshness_policy.sql",
+      "gitBlobSha1": "d9adace73b86af57eec8d13b5b97d1159e5a1acf"
+    },
+    {
+      "path": "lib/db/drizzle/0022_location_rls_schema_alignment.sql",
+      "gitBlobSha1": "664959150e888c606712c233d08d404295a35eca"
+    },
+    {
+      "path": "lib/db/drizzle/0023_canonical_tenant_rls_schema_alignment.sql",
+      "gitBlobSha1": "b6a0d4698efc47cb42084b7d7cf7af23b5d4b7e3"
+    },
+    {
+      "path": "lib/db/drizzle/0024_tenant_rls_security_definer_predicate.sql",
+      "gitBlobSha1": "87e49d2124975030203b9a33f1b086f8c3191575"
+    },
+    {
+      "path": "lib/db/drizzle/0025_tenant_rls_policy_predicate_cutover.sql",
+      "gitBlobSha1": "043066bf39f144e537e91fee8b115ad03674a8b1"
+    },
+    {
+      "path": "lib/db/drizzle/0026_global_e164_phone_identity.sql",
+      "gitBlobSha1": "e25dcf09b759438171517466e5deea1604f9a59c"
+    },
+    {
+      "path": "lib/db/drizzle/0027_cashier_subscription_licensing.sql",
+      "gitBlobSha1": "f4fa482d412664091b38fb980f25e399ff6b1847"
+    },
+    {
+      "path": "lib/db/drizzle/0028_meta_ingress_bounded_page_resolver.sql",
+      "gitBlobSha1": "903fd7fe3bd8e530f11a25921769d961e95425ea"
+    },
+    {
+      "path": "lib/db/drizzle/0029_verified_provider_payment_receipts.sql",
+      "gitBlobSha1": "028fd9b071c68ce74f34c43bd36ff5ef20cb45e3"
+    },
+    {
+      "path": "lib/db/drizzle/0030_audited_verified_receipt_reads.sql",
+      "gitBlobSha1": "285cdbc4e4de3094c0e6b826e40c82e211d64a46"
+    },
+    {
+      "path": "lib/db/drizzle/0031_audited_receipt_replay_reviews.sql",
+      "gitBlobSha1": "1cce7b8b6693aefb95157d045bfc372205327a89"
+    },
+    {
+      "path": "lib/db/drizzle/0032_authorized_receipt_replay_execution.sql",
+      "gitBlobSha1": "b7eeda10d855bd0160367722b723ad3d0520f7de"
+    },
+    {
+      "path": "lib/db/drizzle/0033_confirmed_provider_order_resolution.sql",
+      "gitBlobSha1": "cbb92f1e1b3cc20828cd3f7069389ebc9838842c"
+    },
+    {
+      "path": "lib/db/drizzle/0034_cross_authority_payment_identity_guard.sql",
+      "gitBlobSha1": "ea5b17efb223310ef56a09ba43833e576e9dd85e"
+    },
+    {
+      "path": "lib/db/drizzle/0035_order_items_tenant_rls.sql",
+      "gitBlobSha1": "423b8cc4b300c65600c05efc27896b45d7da2c39"
+    },
+    {
+      "path": "lib/db/drizzle/0036_audited_admin_active_state_guard.sql",
+      "gitBlobSha1": "57d672d725ba18a50bba6f18709b7db7e1751af9"
+    },
+    {
+      "path": "lib/db/drizzle/0037_audited_admin_transaction_binding.sql",
+      "gitBlobSha1": "948f406c789378bcbd0b04f97d953f7849689373"
+    },
+    {
+      "path": "lib/db/drizzle/0038_role_bound_admin_directory_issuer.sql",
+      "gitBlobSha1": "1ab287e78d7c61e721860e8591fae1b40b8adf64"
+    },
+    {
+      "path": "lib/db/drizzle/0039_role_bound_authentication_runtime.sql",
+      "gitBlobSha1": "3275129afee9ba454ba1e69ea619f538a94e1c14"
+    },
+    {
+      "path": "lib/db/drizzle/0040_transaction_scoped_tenant_authority.sql",
+      "gitBlobSha1": "718330bb9b1ac592e0f2f835be2062c11f0dbffe"
+    },
+    {
+      "path": "lib/db/drizzle/0041_private_tenant_predicate_cutover.sql",
+      "gitBlobSha1": "ad9c6ad522a32268aeb6f585829f270c451fb2c2"
+    },
+    {
+      "path": "lib/db/drizzle/0042_scoped_cashier_approver_lock.sql",
+      "gitBlobSha1": "23a5ac80f7869c640f191845739e0554d38faee1"
+    },
+    {
+      "path": "lib/db/drizzle/0043_cashier_identity_tenant_rls.sql",
+      "gitBlobSha1": "9eb2fd52a3ea8bd797bdcbd736a943b5b98b8004"
+    },
+    {
+      "path": "lib/db/drizzle/0044_cashier_discount_attribution_tenant_rls.sql",
+      "gitBlobSha1": "4146a005ab8a6ddf7b6ff924099ff320a83b29ea"
+    },
+    {
+      "path": "lib/db/drizzle/0045_scoped_cashier_approval_mutations.sql",
+      "gitBlobSha1": "54259d4871bc1e680f655c6ce87e488c4931980c"
+    },
+    {
+      "path": "lib/db/drizzle/0046_cashier_settings_authentication_authority.sql",
+      "gitBlobSha1": "c85a7cc2d674af5e4e1e5adf0530fc9df7c10efc"
+    },
+    {
+      "path": "lib/db/drizzle/0047_support_privacy_tenant_authority.sql",
+      "gitBlobSha1": "a976221a084f6a830e264cb8b57560d3fcb8e5f1"
+    },
+    {
+      "path": "lib/db/drizzle/0048_emergency_privacy_authentication_authority.sql",
+      "gitBlobSha1": "0501ef3d21e435c33f6d18ed001f1ed1cf872ccb"
+    },
+    {
+      "path": "lib/db/drizzle/0049_order_items_declarative_rls_alignment.sql",
+      "gitBlobSha1": "199f6f877fc1d1f8428dded50561b9ba3f39ce08"
+    },
+    {
+      "path": "lib/db/drizzle/0050_merchant_management_privacy_authentication_authority.sql",
+      "gitBlobSha1": "12b23279eed22a402110ce88a603349941c2c682"
+    },
+    {
+      "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+      "gitBlobSha1": "d915ed6dbcfaf3628c8500cee9928f75b99326bc"
+    },
+    {
+      "path": "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql",
+      "gitBlobSha1": "429661188ba00a9adbc89c7e4464f054775ba127"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0000_snapshot.json",
+      "gitBlobSha1": "2789825cce5fd6edf4e2a79921d8da067df46992"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0001_snapshot.json",
+      "gitBlobSha1": "23c23f8572482893b7b474311917b71f7869db64"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0002_snapshot.json",
+      "gitBlobSha1": "d090b6f30182b086df81f0182e242e6237292380"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0003_snapshot.json",
+      "gitBlobSha1": "4e6f601b17196e9f5f834aab1cca98d37d2499d2"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0004_snapshot.json",
+      "gitBlobSha1": "992c4bd591adbd32096b1ac93760bb952f446bb0"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0005_snapshot.json",
+      "gitBlobSha1": "2b1dcfbc66c13e9871344c0015cece420670fd0d"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0006_snapshot.json",
+      "gitBlobSha1": "44c6be43bb3cf6a84250c22b2e54ec54c1f39968"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0007_snapshot.json",
+      "gitBlobSha1": "f6222077f8f0bac5921605f891d862246dcc3aa3"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0008_snapshot.json",
+      "gitBlobSha1": "8103af84eac05b68b715c19aaf2f31a07805c979"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0009_snapshot.json",
+      "gitBlobSha1": "88cb7641e749b795f19c92670cec76d16bbd39e9"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0010_snapshot.json",
+      "gitBlobSha1": "0fab43e8c77489e694de223b622c5fcd09260d89"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0011_snapshot.json",
+      "gitBlobSha1": "ea040b09a714148f6af4689408ec8afd52f0486b"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0012_snapshot.json",
+      "gitBlobSha1": "04e70a1bc1b832ce91ff5dd56b9cc08f6888e74a"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0013_snapshot.json",
+      "gitBlobSha1": "a4b6959a32e2acb75c15cf21975277b960b2998c"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0014_snapshot.json",
+      "gitBlobSha1": "7261da3be3929f312f0c94f355d89a8fc1a87b92"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0015_snapshot.json",
+      "gitBlobSha1": "3b7e0cbdf1bd3fda3ea0a872238c791b41676224"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0016_snapshot.json",
+      "gitBlobSha1": "83a62af276c819b5504866300cd424825acfb7ed"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0017_snapshot.json",
+      "gitBlobSha1": "85bba2574ae4c68b5060a28086aed683f77f7001"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0018_snapshot.json",
+      "gitBlobSha1": "d102f3d1c70c7f4cb7544f64987d8f4370690f60"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0019_snapshot.json",
+      "gitBlobSha1": "04a21adbda2bc6a9f056e5a0862b0cfb29273d32"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0020_snapshot.json",
+      "gitBlobSha1": "7da059e215a6ffc8d761b1a6984211a197738198"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0021_snapshot.json",
+      "gitBlobSha1": "cb095de4a8323435fd169678e2d6db4ace1a35b4"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0022_snapshot.json",
+      "gitBlobSha1": "2a46d7c68f69657d356ab36284acf158eea9f03d"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0023_snapshot.json",
+      "gitBlobSha1": "2ef8a835ff7a9b10e8e732777250aca98bda16ea"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0024_snapshot.json",
+      "gitBlobSha1": "fe294ce00b4d5061e41e967a0759aa24b35c7302"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0025_snapshot.json",
+      "gitBlobSha1": "36c875082a0202255c00a5e1c5a84596579781a2"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0026_snapshot.json",
+      "gitBlobSha1": "8c0847222e682796de7a55e42e5e9894115bb11f"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0027_snapshot.json",
+      "gitBlobSha1": "fa5ef2e0009470ec7136e49713724550b71f000f"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0028_snapshot.json",
+      "gitBlobSha1": "c70f595c9d3dd3f529084dd19df91df814768080"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0029_snapshot.json",
+      "gitBlobSha1": "397dd9f04d2be970e94ae9ed16fbefd32671dcd1"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0030_snapshot.json",
+      "gitBlobSha1": "e5eefc8876b597fb02962e79c754cc5c92a75d05"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0031_snapshot.json",
+      "gitBlobSha1": "656659aeb43ac0ca307f2282c027614fabab85e0"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0032_snapshot.json",
+      "gitBlobSha1": "acbda5d6d30e90f69dc43008942b27ed301cc0ae"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0033_snapshot.json",
+      "gitBlobSha1": "9fe63c8770fdb513be3db9f3e1b303bc820f397e"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0034_snapshot.json",
+      "gitBlobSha1": "3eae156e8c389bdbe69336242f6ba4af5e8ba5be"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0035_snapshot.json",
+      "gitBlobSha1": "0ba806b97865ca59a38fddbfbaf1b5d32f12a5e5"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0036_snapshot.json",
+      "gitBlobSha1": "53bee6117293fd96ab5530a9277782534df408dd"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0037_snapshot.json",
+      "gitBlobSha1": "6a5c050fe9153bbd6678d860350acaeff182dfc7"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0038_snapshot.json",
+      "gitBlobSha1": "fe79de2324f5067003b982ddf050146a112e53ed"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0039_snapshot.json",
+      "gitBlobSha1": "5f7e014cb9e6b898b10b26c777c9f9dbf8b241b7"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0040_snapshot.json",
+      "gitBlobSha1": "aaeecb2bbf6f24f909fc7a396157fd1cb7f5bbb2"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0041_snapshot.json",
+      "gitBlobSha1": "6aa96cbd8afca5af4fdd08a1773d39757096d366"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0042_snapshot.json",
+      "gitBlobSha1": "96ec21fa6790caddae82b1016f2477c2bf65e1c6"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0043_snapshot.json",
+      "gitBlobSha1": "9c71dfff1b0328dc1b9487e1566f7e986105acab"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0044_snapshot.json",
+      "gitBlobSha1": "e29fa8b30bf3934351030ac281bdd245587b5fb8"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0045_snapshot.json",
+      "gitBlobSha1": "a816d4d6eda764473eef1f5d712a8f1b857e8f0d"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0046_snapshot.json",
+      "gitBlobSha1": "ae1be78f847f68624b2685197b88c688a8863cc7"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0047_snapshot.json",
+      "gitBlobSha1": "e3ada9cf5771fabf1a0c01c6047b9b5d8f592fcc"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0048_snapshot.json",
+      "gitBlobSha1": "a69b1a7bbfe20986d81592f80c064c5206c83101"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0049_snapshot.json",
+      "gitBlobSha1": "07ccc0df313a1c0f3a99487441ab44a17339449b"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0050_snapshot.json",
+      "gitBlobSha1": "d236ab06f463688313c746371d9d35c485099909"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0051_snapshot.json",
+      "gitBlobSha1": "f3e3d40dbe41cc0be8af17c88e15ab92ab67da06"
+    },
+    {
+      "path": "lib/db/drizzle/meta/0052_snapshot.json",
+      "gitBlobSha1": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535"
+    }
+  ],
+  "enrollmentSql": "docs/final-audit/evidence/seq-d3-reviewed-empty-enrollment-proposal.sql",
+  "receiptSql": "docs/final-audit/evidence/seq-d3-financial-receipt-proposal.sql",
+  "inputs": [
+    {
+      "path": "docs/final-audit/evidence/seq-d3-reviewed-empty-enrollment-proposal.sql",
+      "sha256": "308e06c96af2d881b59f7bae4028459ff266fc4252ece78fe394d56c44a51867"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-financial-receipt-proposal.sql",
+      "sha256": "f4749923db8dc3fbc1642d94b5d0c1b295191ab6c3ba3824eeafa55333c2b741"
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierStreamAuthorityReadiness.ts",
+      "sha256": "c8cf8e23eec46bbc8fcccbdde0ee55d0ddde5d84e5f71ed8054031b85fea6a8f"
+    },
+    {
+      "path": "scripts/lib/disposable-cashier-role-recovery.mjs",
+      "sha256": "9c90cc94310423cf364291e3452addcc2237d97fff2e2166b73b452ab195231c"
+    },
+    {
+      "path": "scripts/run-isolated-postgres-audit.sh",
+      "sha256": "6f5bd701373ea6d7ef12f3b9f46f47f28279f5b561f88c175b5519a0dc9499f3"
+    }
+  ],
+  "bootstrapContract": {
+    "owners": [
+      "fawri_cashier_enrollment_owner",
+      "fawri_cashier_receipt_owner"
+    ],
+    "ownerLogin": false,
+    "runtimeLoginCreation": false,
+    "runtimeExecuteGrants": false,
+    "publicExecute": false,
+    "existingOwnerCollision": "fail transaction; do not reuse or alter unknown roles",
+    "application": "single transaction; root/admin only in owned isolated test"
+  },
+  "restoreContract": {
+    "preserveOwnersAndAcls": true,
+    "sourceClusterDestroyed": true,
+    "newLoginCredentialsRequired": true,
+    "oldCredentialsRejected": true,
+    "volatileTransactionScopesClearedBeforeApplication": true,
+    "proof": "artifacts/api-server/tests/cashier-combined-proposal-restore-postgres.integration.test.mjs"
+  },
+  "acceptanceBlockers": [
+    "Generate schema/preimage and deterministic reviewed_sql journal/snapshot in a separate candidate checkout; preserve 0000-0052",
+    "Prove candidate fresh-install and upgrade atomic rollback before canonical promotion",
+    "Trusted real reviewer issuance and operational grant/bootstrap policy",
+    "FIELD005 retention policy and independent hosted/KMS/PITR/media recovery"
+  ],
+  "nextAction": "Prepare candidate schema boundary and deterministic 0053 generation without changing canonical production files.",
+  "sqlSha256": "4c003d0f021d814a6172f913b7cdbbb9dac2d13b997cd43405682978dd5583b4"
+}

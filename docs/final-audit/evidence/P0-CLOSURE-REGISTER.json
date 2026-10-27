@@ -339,7 +339,17 @@
       "reviewLedgerLifecycleStatus": "BOUNDED_PROPOSAL_REFERENCE_MINIMIZATION_AND_RESTORED_ACTUAL_DELETION_SOURCE_ACCEPTED_POLICY_OPEN",
       "reviewLedgerLifecycleSource": "544764c23eee8d72e1e783ee313cbf648ef68470",
       "freshClusterRoleRecoveryStatus": "BOUNDED_OWNED_FRESH_CLUSTER_SIX_ROLE_ROTATION_AND_SCOPE_RESET_SOURCE_ACCEPTED",
-      "freshClusterRoleRecoverySource": "6b8188037be2cdf50548acb67a3d71c91539f064"
+      "freshClusterRoleRecoverySource": "6b8188037be2cdf50548acb67a3d71c91539f064",
+      "coordinatedAuthorityCandidate": {
+        "status": "PREPARED_CI_PENDING",
+        "path": "docs/final-audit/evidence/seq-d3-authority-candidate/contract.json",
+        "candidateOnly": true,
+        "canonicalPromoted": false,
+        "localRegressionTests": 6,
+        "canonicalMigrations": 53,
+        "canonicalPublicTables": 97,
+        "nextAction": "Prepare candidate schema/preimage boundary and deterministic 0053 reviewed_sql generation; accept isolated fresh-install/upgrade rollback before any canonical promotion."
+      }
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",

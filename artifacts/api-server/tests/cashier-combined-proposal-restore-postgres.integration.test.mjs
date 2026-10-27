@@ -4,6 +4,8 @@ import {randomUUID,randomInt,createHash} from 'node:crypto';
 import test from 'node:test';
 import {Pool} from 'pg';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
+import {verifyCashierAuthorityCandidate} from '../../../scripts/lib/cashier-authority-candidate.mjs';
+import {fileURLToPath} from 'node:url';
 import {cleanupResources} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 const phase=process.env.FAWRI_AUDIT_RESTORE_PHASE;
@@ -30,7 +32,8 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     manifest={primaryUrl:process.env.DATABASE_URL,authUrl:process.env.FAWRI_AUTH_DATABASE_URL,primaryRole:runtime.role,authRole:runtime.authRole};
     const setup=await pool.connect();
     try{await setup.query('BEGIN');
-      for(const name of ['seq-d3-reviewed-empty-enrollment-proposal.sql','seq-d3-financial-receipt-proposal.sql'])await setup.query(fs.readFileSync(new URL('../../../docs/final-audit/evidence/'+name,import.meta.url),'utf8'));
+      verifyCashierAuthorityCandidate(fileURLToPath(new URL('../../../',import.meta.url)));
+      await setup.query(fs.readFileSync(new URL('../../../docs/final-audit/evidence/seq-d3-authority-candidate/reviewed.sql',import.meta.url),'utf8'));
       await setup.query('COMMIT');
     }catch(e){await setup.query('ROLLBACK');throw e;}finally{setup.release();}
     const role='restore_reviewer_'+randomUUID().replaceAll('-',''),password=randomUUID().replaceAll('-','');
