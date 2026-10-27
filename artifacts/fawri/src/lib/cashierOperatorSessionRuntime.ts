@@ -1,4 +1,8 @@
 import {
+  IndexedDbCashierAuthority,
+  type CashierLocalRecoverySnapshot,
+} from './cashierIndexedDbAuthority';
+import {
   persistCashierEntitlementAuthority,
   assertCashierSaleEntitlementFromCache,
   clearCashierEntitlementAuthority,
@@ -119,7 +123,7 @@ function randomId(prefix: string): string {
   return `${prefix}-${value}`;
 }
 
-function openBootstrapDatabase(): Promise<IDBDatabase> {
+function openBootstrapDatabase(existingOnly = false): Promise<IDBDatabase> {
   if (typeof indexedDB === 'undefined') {
     throw new CashierOperatorSessionClientError(
       'CASHIER_INDEXEDDB_UNAVAILABLE',
@@ -129,6 +133,10 @@ function openBootstrapDatabase(): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(BOOTSTRAP_DATABASE, 1);
     request.onupgradeneeded = () => {
+      if (existingOnly) {
+        request.transaction!.abort();
+        return;
+      }
       if (!request.result.objectStoreNames.contains(BOOTSTRAP_STORE)) {
         request.result.createObjectStore(BOOTSTRAP_STORE, { keyPath: 'id' });
       }
@@ -209,6 +217,87 @@ function stationBinding(
 
 export async function getCashierStationBinding(): Promise<CashierStationBinding | null> {
   return stationBinding(await getOrCreateCashierDeviceIdentity());
+}
+
+
+export type CashierDeviceRecoveryInspection = CashierLocalRecoverySnapshot & {
+  /** Observed equal local values only; not authentication or an atomic lease. */
+  binding_observed_unchanged: boolean;
+};
+
+async function readExistingCashierRecoveryIdentity(): Promise<CashierDeviceIdentity | undefined> {
+  const database = await openBootstrapDatabase(true);
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readonly');
+    const completion = transactionDone(transaction);
+    // Await both request and transaction; an aborted read is never a snapshot.
+    const [identity] = await Promise.all([
+      requestResult(transaction.objectStore(BOOTSTRAP_STORE).get('default')) as Promise<CashierDeviceIdentity | undefined>,
+      completion,
+    ]);
+    return identity;
+  } finally {
+    database.close();
+  }
+}
+
+/**
+ * Local diagnostic prerequisite for recovery. Does not call getOrCreate,
+ * stationBinding, session cleanup, legacy binding refresh or any HTTP route.
+ * Before/after equality detects observed drift across the separate databases;
+ * it cannot certify authenticity, ABA absence or stability after return.
+ */
+export async function inspectCashierDeviceRecovery(
+  options: { maxRecords?: number } = {},
+): Promise<CashierDeviceRecoveryInspection> {
+  const held = (reason: string): CashierDeviceRecoveryInspection => ({
+    status: 'HOLD', inspection_complete: false, local_counter: null,
+    inspected_envelopes: 0, reasons: [reason], operations: [],
+    enrollment_authorized: false, server_history_verified: false,
+    binding_observed_unchanged: false,
+  });
+  const bindingKey = (identity: CashierDeviceIdentity | undefined): string | null => {
+    if (!identity || identity.id !== 'default') return null;
+    const required = [
+      identity.local_merchant_id, identity.cloud_merchant_id, identity.device_id,
+      identity.station_id, identity.location_id, identity.branch_key,
+      identity.station_token, identity.station_credential_expires_at,
+    ];
+    if (required.some(value => typeof value !== 'string' || !value ||
+        value.length > 200 || value !== value.normalize('NFKC').trim() ||
+        /[\u0000-\u001f\u007f]/.test(value))) return null;
+    if (!Number.isFinite(Date.parse(identity.station_credential_expires_at!))) return null;
+    // Credential values are compared in memory, never included in the result.
+    // Expiry metadata is not treated as a server authentication decision here.
+    return JSON.stringify([
+      ...required, identity.created_at, identity.cloud_bound_at,
+      identity.offline_inventory_authority,
+    ]);
+  };
+  let authority: IndexedDbCashierAuthority | undefined;
+  try {
+    const before = await readExistingCashierRecoveryIdentity();
+    const beforeKey = bindingKey(before);
+    if (!before || !beforeKey) return held('BOOTSTRAP_RECOVERY_BINDING_MISSING_OR_INVALID');
+    authority = new IndexedDbCashierAuthority({
+      localMerchantId: before.local_merchant_id,
+      cloudMerchantId: before.cloud_merchant_id,
+      deviceId: before.device_id,
+      existingOnly: true,
+    });
+    const snapshot = await authority.inspectLocalRecoverySnapshot(options);
+    const after = await readExistingCashierRecoveryIdentity();
+    const afterKey = bindingKey(after);
+    if (!afterKey || beforeKey !== afterKey) {
+      // Discard the old view rather than exposing it as the new identity's view.
+      return held('BOOTSTRAP_RECOVERY_BINDING_CHANGED');
+    }
+    return { ...snapshot, binding_observed_unchanged: true };
+  } catch {
+    return held('BOOTSTRAP_RECOVERY_READ_FAILED');
+  } finally {
+    if (authority) await authority.close().catch(() => undefined);
+  }
 }
 
 function parseOperatorSession(value: string | null): CashierOperatorSession | null {

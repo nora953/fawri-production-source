@@ -62,6 +62,8 @@ export type IndexedDbCashierConfig = {
   cloudMerchantId?: string;
   deviceId: string;
   databaseName?: string;
+  /** Diagnostic readers must never create or upgrade a missing/old database. */
+  existingOnly?: boolean;
   now?: () => Date;
 };
 
@@ -226,7 +228,7 @@ function createSchema(database: IDBDatabase): void {
   }
 }
 
-function openDatabase(name: string): Promise<IDBDatabase> {
+function openDatabase(name: string, existingOnly = false): Promise<IDBDatabase> {
   if (typeof indexedDB === 'undefined') {
     throw new CashierIndexedDbError(
       'CASHIER_INDEXEDDB_UNAVAILABLE',
@@ -236,7 +238,13 @@ function openDatabase(name: string): Promise<IDBDatabase> {
 
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(name, DATABASE_VERSION);
-    request.onupgradeneeded = () => createSchema(request.result);
+    request.onupgradeneeded = () => {
+      if (existingOnly) {
+        request.transaction!.abort();
+        return;
+      }
+      createSchema(request.result);
+    };
     request.onsuccess = () => {
       const database = request.result;
       database.onversionchange = () => database.close();
@@ -426,6 +434,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     // Keep the original database name so schema v1 installations upgrade in place.
     this.databasePromise = openDatabase(
       config.databaseName || `fawri-cashier-${this.localMerchantId}-v1`,
+      config.existingOnly === true,
     );
   }
 

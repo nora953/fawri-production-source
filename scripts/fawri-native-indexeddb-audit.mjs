@@ -53,7 +53,7 @@ async function check(name, fn) {
   catch (e) { evidence.results.push({ name, status: 'FAIL', error: e.message }); }
 }
 try {
-  const bundled = await build({ stdin: { contents: "export { IndexedDbCashierAuthority } from './artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts'; export { IndexedDbCashierCompensationAuthority } from './artifacts/fawri/src/lib/cashierCompensationAuthority.ts';", resolveDir: process.cwd() }, bundle: true, format: 'iife', globalName: 'FawriAudit', platform: 'browser', write: false });
+  const bundled = await build({ stdin: { contents: "export { IndexedDbCashierAuthority } from './artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts'; export { IndexedDbCashierCompensationAuthority } from './artifacts/fawri/src/lib/cashierCompensationAuthority.ts'; export { inspectCashierDeviceRecovery, writeCashierDeviceIdentity } from './artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts';", resolveDir: process.cwd() }, bundle: true, format: 'iife', globalName: 'FawriAudit', platform: 'browser', write: false });
   // Refuse an unexpected bundled HTTP dependency before launching any page.
   assert.ok(!/fetch\s*\(|XMLHttpRequest|WebSocket\s*\(/.test(bundled.outputFiles[0].text), 'Authority bundle unexpectedly includes network I/O');
   server = createServer((req, res) => {
@@ -277,6 +277,156 @@ try {
     return {actualPageReload:true,closedHandleHeld:true};
   });
 
+
+  // SEQ-R3 integration prerequisite: existing bootstrap values + local view.
+  await check('device recovery on absent bootstrap holds without creating identity or database', async () => {
+    const before=await evaluate(a,'indexedDB.databases().then(rows=>rows.map(x=>x.name).sort())');
+    assert.ok(!before.includes('fawri-cashier-bootstrap-v1'));
+    const r=await evaluate(a,'FawriAudit.inspectCashierDeviceRecovery()');
+    assert.equal(r.status,'HOLD');assert.equal(r.binding_observed_unchanged,false);
+    assert.equal(r.local_counter,null);assert.equal(r.operations.length,0);
+    assert.deepEqual(await evaluate(a,'indexedDB.databases().then(rows=>rows.map(x=>x.name).sort())'),before);
+    return {absentIdentityHeld:true,noDatabaseCreated:true};
+  });
+  await evaluateStatements(a,`
+    globalThis.bindingOriginal={
+      id:'default',local_merchant_id:'binding-'+crypto.randomUUID(),
+      cloud_merchant_id:'synthetic-cloud',device_id:'synthetic-binding-device',
+      created_at:new Date().toISOString(),cloud_bound_at:new Date().toISOString(),
+      station_id:'synthetic-station',station_name:'Synthetic',
+      location_id:'synthetic-location',branch_key:'synthetic-branch',
+      station_token:'synthetic-binding-token',
+      station_credential_expires_at:new Date(Date.now()+3600000).toISOString(),
+      offline_inventory_authority:true
+    };
+    globalThis.bindingConfig={
+      localMerchantId:bindingOriginal.local_merchant_id,
+      cloudMerchantId:bindingOriginal.cloud_merchant_id,
+      deviceId:bindingOriginal.device_id,
+      databaseName:'fawri-cashier-'+bindingOriginal.local_merchant_id+'-v1'
+    };
+    globalThis.bindingAuthority=new FawriAudit.IndexedDbCashierAuthority(bindingConfig);
+    await bindingAuthority.upsertCatalogSnapshot([${JSON.stringify({...item,stock_quantity:5})}],{preserveLocalInventory:false});
+    await bindingAuthority.commitSale(${JSON.stringify(sale('binding-sale'))});
+    await FawriAudit.writeCashierDeviceIdentity(bindingOriginal);
+    globalThis.rawBindingDb=async name=>{
+      const d=await new Promise((ok,no)=>{const r=indexedDB.open(name);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+      try{const stores=[...d.objectStoreNames].sort(),tx=d.transaction(stores,'readonly'),done=new Promise((ok,no)=>{tx.oncomplete=ok;tx.onabort=()=>no(tx.error);tx.onerror=()=>no(tx.error)});
+      const rows=await Promise.all(stores.map(n=>new Promise((ok,no)=>{const r=tx.objectStore(n).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})));await done;
+      return {version:d.version,stores,rows};}finally{d.close()}
+    };
+    globalThis.bindingDataBefore=await rawBindingDb(bindingConfig.databaseName);
+    globalThis.bindingBootBefore=await rawBindingDb('fawri-cashier-bootstrap-v1');
+    sessionStorage.setItem('fawri.cashier.operator-session.v1','synthetic-invalid-session');
+    globalThis.bindingNetworkCalls=0;
+    globalThis.bindingOriginalFetch=globalThis.fetch;
+    globalThis.fetch=()=>{bindingNetworkCalls++;return Promise.reject(Error('Unexpected diagnostic network request'))};
+  `);
+  await check('device recovery stable binding exposes the real readonly local snapshot without credentials', async () => {
+    const r=await evaluate(a,'FawriAudit.inspectCashierDeviceRecovery()');
+    assert.equal(r.status,'INSPECTED');assert.equal(r.binding_observed_unchanged,true);
+    assert.equal(r.local_counter,1);assert.equal(r.operations.length,1);
+    assert.equal(r.enrollment_authorized,false);assert.equal(r.server_history_verified,false);
+    assert.ok(!JSON.stringify(r).includes('synthetic-binding-token'));
+    assert.deepEqual(await evaluate(a,'rawBindingDb(bindingConfig.databaseName)'),await evaluate(a,'Promise.resolve(bindingDataBefore)'));
+    assert.deepEqual(await evaluate(a,"rawBindingDb('fawri-cashier-bootstrap-v1')"),await evaluate(a,'Promise.resolve(bindingBootBefore)'));
+    assert.equal(await evaluate(a,"sessionStorage.getItem('fawri.cashier.operator-session.v1')"),'synthetic-invalid-session');
+    assert.equal(await evaluate(a,'bindingNetworkCalls'),0);
+    return {bindingObservedUnchanged:true,localCounter:1,operationGroups:1,credentialsOmitted:true,noNetwork:true,noSessionCleanup:true};
+  });
+  await check('device recovery detects observed merchant device station and credential changes during read', async () => {
+    const fields=['local_merchant_id','cloud_merchant_id','device_id','station_id','location_id','branch_key','station_token'];
+    for(const field of fields){
+      const r=await evaluateStatements(a,`
+        const original=FawriAudit.IndexedDbCashierAuthority.prototype.inspectLocalRecoverySnapshot;
+        FawriAudit.IndexedDbCashierAuthority.prototype.inspectLocalRecoverySnapshot=async function(...args){
+          const view=await original.apply(this,args);
+          await FawriAudit.writeCashierDeviceIdentity({...bindingOriginal,[${JSON.stringify(field)}]:'synthetic-changed'});
+          return view;
+        };
+        try{return await FawriAudit.inspectCashierDeviceRecovery()}
+        finally{FawriAudit.IndexedDbCashierAuthority.prototype.inspectLocalRecoverySnapshot=original}
+      `);
+      try{
+        assert.equal(r.status,'HOLD');assert.equal(r.inspection_complete,false);
+        assert.equal(r.binding_observed_unchanged,false);assert.equal(r.local_counter,null);assert.equal(r.operations.length,0);
+        assert.ok(r.reasons.includes('BOOTSTRAP_RECOVERY_BINDING_CHANGED'));
+        assert.deepEqual(await evaluate(a,'rawBindingDb(bindingConfig.databaseName)'),await evaluate(a,'Promise.resolve(bindingDataBefore)'));
+        const identity=await evaluate(a,"rawBindingDb('fawri-cashier-bootstrap-v1').then(x=>x.rows[0][0])");
+        assert.equal(identity[field],'synthetic-changed');
+      }finally{await evaluate(a,'FawriAudit.writeCashierDeviceIdentity(bindingOriginal).then(()=>true)')}
+    }
+    return {observedDriftFields:fields.length,staleViewDiscarded:true,noRecoveryWrite:true,abaOrAtomicLeaseProof:false};
+  });
+  await check('device recovery incomplete binding holds without refresh repair or session removal', async () => {
+    await evaluateStatements(a,"const broken={...bindingOriginal};delete broken.location_id;await FawriAudit.writeCashierDeviceIdentity(broken)");
+    try{
+      const before=await evaluate(a,"rawBindingDb('fawri-cashier-bootstrap-v1')");
+      const r=await evaluate(a,'FawriAudit.inspectCashierDeviceRecovery()');
+      assert.equal(r.status,'HOLD');assert.ok(r.reasons.includes('BOOTSTRAP_RECOVERY_BINDING_MISSING_OR_INVALID'));
+      assert.deepEqual(await evaluate(a,"rawBindingDb('fawri-cashier-bootstrap-v1')"),before);
+      assert.equal(await evaluate(a,"sessionStorage.getItem('fawri.cashier.operator-session.v1')"),'synthetic-invalid-session');
+      assert.equal(await evaluate(a,'bindingNetworkCalls'),0);
+    }finally{await evaluate(a,'FawriAudit.writeCashierDeviceIdentity(bindingOriginal).then(()=>true)')}
+    return {missingLocationHeld:true,noLegacyRefresh:true,noSessionMutation:true};
+  });
+  await check('device recovery bootstrap abort before or after local read never returns partial success', async () => {
+    for(const failAt of [1,2]){
+      const r=await evaluateStatements(a,`
+        const original=IDBDatabase.prototype.transaction;let reads=0;
+        IDBDatabase.prototype.transaction=function(...args){const tx=original.apply(this,args);
+          if(this.name==='fawri-cashier-bootstrap-v1'&&++reads===${failAt})queueMicrotask(()=>tx.abort());
+          return tx;
+        };
+        try{return await FawriAudit.inspectCashierDeviceRecovery()}
+        finally{IDBDatabase.prototype.transaction=original}
+      `);
+      assert.equal(r.status,'HOLD');assert.equal(r.inspection_complete,false);
+      assert.equal(r.local_counter,null);assert.equal(r.operations.length,0);
+      assert.ok(r.reasons.includes('BOOTSTRAP_RECOVERY_READ_FAILED'));
+      assert.deepEqual(await evaluate(a,'rawBindingDb(bindingConfig.databaseName)'),await evaluate(a,'Promise.resolve(bindingDataBefore)'));
+      assert.deepEqual(await evaluate(a,"rawBindingDb('fawri-cashier-bootstrap-v1')"),await evaluate(a,'Promise.resolve(bindingBootBefore)'));
+    }
+    assert.equal((await evaluate(a,'FawriAudit.inspectCashierDeviceRecovery()')).status,'INSPECTED');
+    return {nativeBootstrapAborts:2,partialViewsDiscarded:true,retryAfterFault:true};
+  });
+  await check('device recovery missing or old cashier storage is neither created nor upgraded', async () => {
+    for(const mode of ['missing','old']){
+      const identity=await evaluate(a,`Promise.resolve({...bindingOriginal,local_merchant_id:bindingOriginal.local_merchant_id+'-${mode}'})`);
+      const name='fawri-cashier-'+identity.local_merchant_id+'-v1';
+      if(mode==='old')await evaluate(a,`new Promise((ok,no)=>{const r=indexedDB.open(${JSON.stringify(name)},1);r.onupgradeneeded=()=>r.result.createObjectStore('meta',{keyPath:'key'});r.onsuccess=()=>{r.result.close();ok(true)};r.onerror=()=>no(r.error)})`);
+      await evaluate(a,`FawriAudit.writeCashierDeviceIdentity(${JSON.stringify(identity)}).then(()=>true)`);
+      try{
+        const names=await evaluate(a,'indexedDB.databases().then(rows=>rows.map(x=>[x.name,x.version]).sort())');
+        const r=await evaluate(a,'FawriAudit.inspectCashierDeviceRecovery()');
+        assert.equal(r.status,'HOLD');assert.ok(r.reasons.includes('LOCAL_RECOVERY_READ_FAILED'));
+        assert.equal(r.operations.length,0);
+        assert.deepEqual(await evaluate(a,'indexedDB.databases().then(rows=>rows.map(x=>[x.name,x.version]).sort())'),names);
+        if(mode==='old'){const raw=await evaluate(a,`rawBindingDb(${JSON.stringify(name)})`);assert.equal(raw.version,1);assert.deepEqual(raw.stores,['meta']);}
+      }finally{await evaluate(a,'FawriAudit.writeCashierDeviceIdentity(bindingOriginal).then(()=>true)')}
+    }
+    return {missingNotCreated:true,version1NotUpgraded:true};
+  });
+  await check('device recovery propagates incomplete local inspection instead of upgrading it to success', async () => {
+    const r=await evaluate(a,'FawriAudit.inspectCashierDeviceRecovery({maxRecords:1})');
+    assert.equal(r.status,'HOLD');assert.equal(r.inspection_complete,false);
+    assert.equal(r.binding_observed_unchanged,true);
+    assert.ok(r.reasons.includes('INSPECTION_LIMIT_REACHED'));assert.equal(r.operations.length,0);
+    assert.deepEqual(await evaluate(a,'rawBindingDb(bindingConfig.databaseName)'),await evaluate(a,'Promise.resolve(bindingDataBefore)'));
+    return {stableBindingDoesNotOverrideHold:true,recordsPreserved:true};
+  });
+  await check('device recovery actual page reload retains same binding and pending operation', async () => {
+    const before=await evaluate(a,'FawriAudit.inspectCashierDeviceRecovery()');
+    assert.equal(await evaluate(a,'bindingNetworkCalls'),0);
+    await evaluate(a,'bindingAuthority.close().then(()=>true)');
+    await a('Page.reload',{ignoreCache:true});
+    await waitFor(()=>evaluate(a,'typeof FawriAudit!=="undefined"'));
+    assert.deepEqual(await evaluate(a,'FawriAudit.inspectCashierDeviceRecovery()'),before);
+    assert.equal(await evaluate(a,"sessionStorage.getItem('fawri.cashier.operator-session.v1')"),'synthetic-invalid-session');
+    await evaluate(a,`globalThis.authority=new FawriAudit.IndexedDbCashierAuthority(${JSON.stringify(config)});true`);
+    return {actualPageReload:true,sameObservedBinding:true,pendingPreserved:true};
+  });
+
   await check('versionchange closes both old handles; pending data survives upgrade', async () => {
     const before = await evaluate(a, 'authority.listPendingSync()');
     const upgraded = await evaluate(b, `new Promise((ok,no)=>{const r=indexedDB.open(${JSON.stringify(config.databaseName)},3);r.onsuccess=()=>{globalThis.upgraded=r.result;ok(r.result.version)};r.onerror=()=>no(r.error);r.onblocked=()=>no(Error('upgrade blocked'))})`);
@@ -306,4 +456,4 @@ finally {
 }
 if (infrastructureError) evidence.infrastructureError = infrastructureError;
 console.log('AUDIT_NATIVE_INDEXEDDB_RESULT ' + JSON.stringify(evidence));
-if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 15) process.exitCode = 1;
+if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 23) process.exitCode = 1;
