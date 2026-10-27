@@ -6,6 +6,8 @@ on:
       - 'artifacts/api-server/src/services/cashierStreamStorageReadiness.ts'
       - 'artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs'
       - 'scripts/prepare-seq-d2-canonical-candidate.mjs'
+      - 'scripts/prepare-seq-d3-authority-candidate.mjs'
+      - 'docs/final-audit/evidence/seq-d3-authority-candidate/**'
       - 'lib/db/scripts/lib/cashier-stream-storage-candidate-readiness.mjs'
       - 'artifacts/api-server/tests/cashier-stream-storage-readiness-postgres.integration.test.mjs'
       - '.github/workflows/seq-d2-canonical-candidate.yml'
@@ -36,3 +38,5 @@ jobs:
         run: bash scripts/run-isolated-postgres-audit.sh management
       - name: Export generated candidate text for review
         run: node scripts/prepare-seq-d2-canonical-candidate.mjs export
+      - name: Generate coordinated authority candidate in a separate copy and preserve canonical source
+        run: node scripts/prepare-seq-d3-authority-candidate.mjs

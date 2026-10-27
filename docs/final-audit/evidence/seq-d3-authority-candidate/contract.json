@@ -457,6 +457,54 @@
     {
       "path": "scripts/run-isolated-postgres-audit.sh",
       "sha256": "6f5bd701373ea6d7ef12f3b9f46f47f28279f5b561f88c175b5519a0dc9499f3"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/schema/cashier-staff.ts",
+      "sha256": "d521adbc1fa3479bfcbd0a812bf52e3a37a2cddf2ecfe9231d2db75dd7413d96"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/preimage/cashier-staff.ts",
+      "sha256": "ceba81de981d66118dfbc373dc92bab5ae80e81a659e92e56af4eda1125964bc"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/schema/orders.ts",
+      "sha256": "6f2f7bbe3ae7d0927ab06c654e7610b7f005b821c46b9af8a73c4fdabf6c4a18"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/preimage/orders.ts",
+      "sha256": "b84d1fd59d3d0dc779ec3bf48564d05d19f2b097c2210dbfb7cfe0c4b6248884"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/schema/merchants.ts",
+      "sha256": "1d0266a7ea430ab852759c402bb72bae830efbbf646db7b2988f75e5a1853616"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/preimage/merchants.ts",
+      "sha256": "2ccfbc1324a72afab8ded1bf9d005187d03b25b2caf05a2f9a02b4fcae62aea2"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/schema/cashier-operation-attribution.ts",
+      "sha256": "b543b76d6fd5ab68e89e81777ee34e36f4862a5601fc888586c4dcd38b9e3300"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/preimage/cashier-operation-attribution.ts",
+      "sha256": "fd8f46f629948100b0255fd600f7eb7e9d15ad84443780b2fc8219ee01992bc7"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/schema/cashier-subscription.ts",
+      "sha256": "97763bf31ea040e556e0b5fca101fc8bb1a3d2b2e3fe4a9c83235fc51e293c96"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/preimage/cashier-subscription.ts",
+      "sha256": "bfc224f57b63bfc4c873cb58b848ccda59476dcb92e106a76963c4300b3a42c9"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/stage.json",
+      "sha256": "ff1e95e86d0414b553c73043896eb39e5842b596a86fc43674f4e4caf2f8d0f8"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/policies.json",
+      "sha256": "7e8bb7d32a552948b9de825aebb25f762bfaf5ee15972fc7c4dbc8efb7083d8b"
     }
   ],
   "bootstrapContract": {
@@ -480,11 +528,13 @@
     "proof": "artifacts/api-server/tests/cashier-combined-proposal-restore-postgres.integration.test.mjs"
   },
   "acceptanceBlockers": [
-    "Generate schema/preimage and deterministic reviewed_sql journal/snapshot in a separate candidate checkout; preserve 0000-0052",
+    "Deterministic candidate generation and schema boundary exact-source CI pending",
     "Prove candidate fresh-install and upgrade atomic rollback before canonical promotion",
     "Trusted real reviewer issuance and operational grant/bootstrap policy",
     "FIELD005 retention policy and independent hosted/KMS/PITR/media recovery"
   ],
-  "nextAction": "Prepare candidate schema boundary and deterministic 0053 generation without changing canonical production files.",
-  "sqlSha256": "4c003d0f021d814a6172f913b7cdbbb9dac2d13b997cd43405682978dd5583b4"
+  "nextAction": "Accept deterministic candidate0053 artifacts, then prove fresh-install/upgrade and transaction fault rollback before canonical promotion.",
+  "sqlSha256": "4c003d0f021d814a6172f913b7cdbbb9dac2d13b997cd43405682978dd5583b4",
+  "schemaBoundaryPrepared": true,
+  "generatedArtifactsAccepted": false
 }

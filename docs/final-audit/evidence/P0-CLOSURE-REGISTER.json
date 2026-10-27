@@ -686,6 +686,14 @@
           "FIELD005/hosted/KMS/PITR/media remain unaccepted"
         ],
         "nextAction": "Prepare the candidate Drizzle schema/preimage boundary and deterministic 0053 reviewed_sql generation in a separate candidate checkout; preserve all0000-0052 bytes, then prove fresh-install/upgrade rollback before canonical promotion."
+      },
+      "candidateSchemaBoundary": {
+        "status": "PREPARED_CI_PENDING",
+        "schemaFiles": 5,
+        "preimageFiles": 5,
+        "addedPolicies": 20,
+        "canonicalPromoted": false,
+        "generatedSnapshotAccepted": false
       }
     },
     {
