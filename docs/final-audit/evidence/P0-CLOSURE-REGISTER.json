@@ -284,7 +284,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "INTERNAL_REV2_AUTHORITY_LIFECYCLE_FRESH_FIXTURE_CLUSTER_RECOVERY_ACCEPTED_CANONICAL_ISSUER_POLICY_CLIENT_OPEN",
-      "nextAction": "Reconcile these existing prerequisites with the finite FIELD005 checklist and prepare a concrete reviewer/provisioning/retention decision record. Keep approvals unset, avoid invented durations or permissions, and do not repeat accepted migration/preflight proofs without a new change or failure.",
+      "nextAction": "Obtain the explicit reviewer-model choice for this concrete proposal, then prepare its source-only issuer/evidence-binding contract. Keep retention/provisioning/hosted approvals unset until separately decided; no repeated proof of accepted preflight without a source change or new failure.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -2008,6 +2008,16 @@
             "conclusion": "success"
           }
         ]
+      },
+      "promotionDecisionRecord": {
+        "status": "CONCRETE_DECISION_RECORD_PREPARED_NOT_ADOPTED",
+        "path": "docs/final-audit/evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#promotionPrerequisiteDecisionPacket",
+        "records": 5,
+        "reviewerModelRecommended": "OWNER_ADMIN_ONLY_INITIAL_REVIEW",
+        "reviewerModelAdopted": null,
+        "grantsAuthorized": false,
+        "operationalAdoption": false,
+        "newRuntimeExecuted": false
       }
     },
     {

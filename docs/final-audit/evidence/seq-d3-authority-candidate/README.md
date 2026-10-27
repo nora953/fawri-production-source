@@ -22,3 +22,7 @@ The following are existing prerequisites, not new release gates or approved deci
 Use the existing [FIELD005 decision checklist](../../P0-FIELD005-RETENTION-DECISIONS-20261026.md); it also preserves F005-R4/R5 historical/copy recovery limits. No canonical promotion or public v2 activation. GateOPEN; releaseNO-GO; no hosted, merge or deployment.
 
 Next: Reconcile these existing prerequisites with the finite FIELD005 checklist and prepare a concrete reviewer/provisioning/retention decision record. Keep approvals unset, avoid invented durations or permissions, and do not repeat accepted migration/preflight proofs without a new change or failure.
+
+## Concrete decision record
+
+The existing [reviewer/provisioning/FIELD005 decision record](../../P0-FIELD005-RETENTION-DECISIONS-20261026.md) now expands these prerequisites into five unapproved records. Owner_admin-only initial review is a proposed source-policy model, not adopted behavior. No reviewer assignment, operational role identity, retention duration, grant or hosted permission is inferred from this preparation. The matching machine-readable promotionPrerequisiteDecisionPacket remains in the design evidence.

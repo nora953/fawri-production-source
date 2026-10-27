@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Reconcile these existing prerequisites with the finite FIELD005 checklist and prepare a concrete reviewer/provisioning/retention decision record. Keep approvals unset, avoid invented durations or permissions, and do not repeat accepted migration/preflight proofs without a new change or failure.",
+  "nextExactAction": "Obtain the explicit reviewer-model choice for this concrete proposal, then prepare its source-only issuer/evidence-binding contract. Keep retention/provisioning/hosted approvals unset until separately decided; no repeated proof of accepted preflight without a source change or new failure.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4099,59 +4099,248 @@
     ]
   },
   "promotionPrerequisiteDecisionPacket": {
-    "scope": "Existing promotion prerequisites only; not new release gates or approved policy.",
-    "items": [
+    "schemaVersion": 2,
+    "date": "2026-10-27",
+    "status": "CONCRETE_DECISION_RECORD_PREPARED_NOT_ADOPTED",
+    "basedOnExecutable": "699af77df6be59510cc4638512d876d4a9a16173",
+    "basedOnCheckpoint": "b4d649a397948d363b6c6c908d36b1f1fd9b0ba3",
+    "scope": "Existing CASHIER-SYNC-SEQUENCE-001 and FIELD005/promotion prerequisites. Decision records are not new release gates.",
+    "codeChanged": false,
+    "newRuntimeExecuted": false,
+    "newCiClaimed": false,
+    "canonicalPromoted": false,
+    "grantsAuthorized": false,
+    "operationalAdoption": false,
+    "releaseAccepted": false,
+    "records": [
       {
+        "key": "reviewer_authority",
         "gate": "CASHIER-SYNC-SEQUENCE-001",
-        "decision": "Bind independent review issuance to real authenticated reviewer identity and trusted original evidence, including approval/revocation responsibility.",
-        "requiredRecord": [
-          "responsible approver",
-          "trusted identity/evidence source",
-          "binding from reviewer reference to real issuer",
-          "issuance/revocation/audit procedure"
+        "questionArabic": "هل يقتصر اعتماد مراجعات الأجهزة الجديدة على مالك المنصة (owner_admin)، أم يُسمح أيضًا لمراجعين محددين يُعيَّنون صراحةً؟",
+        "recommendation": {
+          "status": "PROPOSED_NOT_ADOPTED",
+          "model": "OWNER_ADMIN_ONLY_INITIAL_REVIEW",
+          "applicationRole": "owner_admin",
+          "assistantAdminAllowed": false,
+          "merchantAllowed": false,
+          "cashierOperatorAllowed": false,
+          "independentFromCashierOperation": true,
+          "separateEnrollmentDatabaseAuthority": true,
+          "serverDerivedReviewerReference": true,
+          "noBrowserOrOperatorTokenAsEnrollmentAuthority": true
+        },
+        "alternative": {
+          "status": "OPTION_NOT_IMPLEMENTED",
+          "model": "EXPLICITLY_APPOINTED_REVIEWERS",
+          "requires": "Named assignment/revocation/reader/audit contract before any new application permission or role is implemented."
+        },
+        "adoptedModel": null,
+        "approval": {
+          "status": "UNAPPROVED",
+          "approvedBy": null,
+          "approvedAt": null,
+          "decisionEvidence": null
+        },
+        "beforeImplementation": [
+          "Authenticated real issuer must be bound server-side to reviewer_reference; a caller-supplied reference is not identity proof",
+          "Evidence source/custodian/access and its binding to merchant/station/device/fresh empty queue must be declared",
+          "Review issuer cannot infer freshness from MAX, no history or a client counter alone",
+          "Issuer revocation and audit responsibility must be named",
+          "Existing active/retired/ambiguous histories remain held; no baseline reset or automatic backfill"
         ],
-        "currentApproval": null,
-        "sourceProofLimit": "Owned fixtures assume independent evidence; role flags, function capabilities and hashed references do not establish provenance."
+        "evidenceAdmission": {
+          "trustedOriginalSource": null,
+          "custodian": null,
+          "permittedReaders": null,
+          "sourceAuthenticityCheck": null,
+          "deviceQueueObservationProcedure": null,
+          "reviewerIdentityBinding": null,
+          "revocationProcedure": null
+        },
+        "effectOfApproval": "Authorizes the selected source-only policy/issuance design, not canonical promotion, operational credentials/grants, hosted action or public v2 activation.",
+        "availableTechnicalEvidence": "Separate NOLOGIN owners, restricted LOGIN capabilities, hashed review ledger and actual fresh/upgrade/restore checks are accepted only within isolated fixtures."
       },
       {
+        "key": "operational_provisioning",
         "gate": "CASHIER-SYNC-SEQUENCE-001",
-        "decision": "Approve actual primary/auth/reviewer/bootstrap inventory and separated provisioning/grant/promotion procedure before activating any capability.",
-        "requiredRecord": [
-          "approved operational identities (no credentials in repository)",
-          "authorized migration/grant operator",
-          "separation and revocation/rollback procedure",
-          "exact deployed schema/history verification"
+        "approval": {
+          "status": "UNAPPROVED",
+          "approvedBy": null,
+          "approvedAt": null,
+          "decisionEvidence": null
+        },
+        "actualRoleInventory": null,
+        "authorizedMigrationOperator": null,
+        "authorizedGrantOperator": null,
+        "revocationAndRollbackProcedure": null,
+        "expectedSeparation": [
+          {
+            "roleClass": "primary",
+            "actualRoleName": null,
+            "newAuthorityAfterSeparateApprovalOnly": "financial marker + stream lock + receipt commit; no enrollment or raw review ledger"
+          },
+          {
+            "roleClass": "authentication",
+            "actualRoleName": null,
+            "newAuthorityAfterSeparateApprovalOnly": "none of the enrollment/financial proposal capabilities"
+          },
+          {
+            "roleClass": "reviewer",
+            "actualRoleName": null,
+            "newAuthorityAfterSeparateApprovalOnly": "enrollment marker + reviewed-empty enrollment function only; no raw tables or financial authority"
+          },
+          {
+            "roleClass": "bootstrap",
+            "actualRoleName": null,
+            "newAuthorityAfterSeparateApprovalOnly": "separately authorized migration/grant operator; minimum operational privileges must be established, not copied from fixture fawri_ci"
+          }
         ],
-        "currentApproval": null,
-        "sourceProofLimit": "Preflight is SELECT-only and always grantsAuthorized=false; fixture grants and fawri_ci are not operational adoption."
+        "noLoginOwners": [
+          "fawri_cashier_retirement_owner",
+          "fawri_cashier_enrollment_owner",
+          "fawri_cashier_receipt_owner"
+        ],
+        "safeguards": [
+          "No role memberships to owners",
+          "Restricted application LOGIN flags as verified by accepted readiness",
+          "Full54-entry history and withheld preflight before any separately approved grant procedure",
+          "No credentials/URLs/secrets in this decision record",
+          "A prior snapshot does not freeze concurrent DDL or authorize later writes"
+        ],
+        "currentState": "All proposed capabilities remain withheld operationally; fawri_ci and generated fixture roles are not production identities."
       },
       {
+        "key": "review_and_financial_retention",
         "gate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY",
-        "decision": "Resolve F005-R1/R2/R3 for identity/reviewer links, financial/receipt/audit anchors and emergency integrity/privacy.",
-        "requiredRecord": [
-          "exact fields and purpose",
-          "authorized readers",
-          "retention trigger and duration",
-          "holds and final disposition",
-          "negative/positive/expiry acceptance"
+        "mapsTo": [
+          "F005-R1",
+          "F005-R2",
+          "F005-R5"
         ],
-        "currentApproval": null,
-        "evidence": "docs/final-audit/P0-FIELD005-RETENTION-DECISIONS-20261026.md",
-        "sourceProofLimit": "Hashes remain pseudonymous and immutable storage does not approve indefinite retention or a field schedule."
+        "approval": {
+          "status": "UNAPPROVED",
+          "approvedBy": null,
+          "approvedAt": null,
+          "decisionEvidence": null
+        },
+        "observedRetainedReviewFields": [
+          "review_reference_hash",
+          "stream_id",
+          "merchant_id",
+          "manifest_hash",
+          "reviewer_reference_hash",
+          "evidence_sha256",
+          "reviewed_at",
+          "created_at"
+        ],
+        "originalPlaintextReferencesStoredInLedger": false,
+        "hashesArePseudonymous": true,
+        "schedules": [
+          {
+            "recordClass": "review identity/correlation",
+            "fields": [
+              "review_reference_hash",
+              "reviewer_reference_hash",
+              "stream_id",
+              "merchant_id"
+            ],
+            "approvedPurpose": null,
+            "authorizedReaders": null,
+            "retentionTrigger": null,
+            "retentionDuration": null,
+            "holdRules": null,
+            "finalDisposition": null
+          },
+          {
+            "recordClass": "evidence/manifest correlation",
+            "fields": [
+              "manifest_hash",
+              "evidence_sha256"
+            ],
+            "approvedPurpose": null,
+            "authorizedReaders": null,
+            "retentionTrigger": null,
+            "retentionDuration": null,
+            "holdRules": null,
+            "finalDisposition": null
+          },
+          {
+            "recordClass": "review/creation timeline",
+            "fields": [
+              "reviewed_at",
+              "created_at"
+            ],
+            "approvedPurpose": null,
+            "authorizedReaders": null,
+            "retentionTrigger": null,
+            "retentionDuration": null,
+            "holdRules": null,
+            "finalDisposition": null
+          },
+          {
+            "recordClass": "financial/receipt/audit anchors",
+            "fieldSchedulePointer": "P0-FIELD005-RETENTION-FIELDS-20261025.json#finiteChecklist",
+            "approvedPurpose": null,
+            "authorizedReaders": null,
+            "retentionTrigger": null,
+            "retentionDuration": null,
+            "holdRules": null,
+            "finalDisposition": null
+          }
+        ],
+        "currentBoundary": "Accepted actual merchant deletion retires/erases live device binding and preserves immutable receipts/review hashes/checkpoint. That behavior does not approve indefinite retention, anonymity, or the external original evidence schedule.",
+        "acceptanceAfterPolicy": [
+          "Before/at/after expiry and active holds",
+          "Authorized/unauthorized readers and field allowlist",
+          "Financial operation, exact replay and retirement invariants preserved",
+          "Backup/export/media/restored-copy disposition separately verified"
+        ]
       },
       {
-        "gate": "P0-HOSTED-RECOVERY",
-        "decision": "Authorize and verify hosted inventory, role/secret/KMS recovery, PITR and media/copy disposition separately under the existing blocked gates.",
-        "requiredRecord": [
-          "separately authorized hosted scope",
-          "deployed revision/inventory",
-          "trusted backup/restore and key evidence",
-          "media/export/copy inventory and measured recovery"
+        "key": "emergency_privacy_integrity",
+        "gate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY",
+        "mapsTo": [
+          "F005-R3"
         ],
-        "currentApproval": null,
-        "sourceProofLimit": "Independent owned-cluster six-role recovery and candidate migrations are isolated source evidence only."
+        "approval": {
+          "status": "UNAPPROVED",
+          "approvedBy": null,
+          "approvedAt": null,
+          "decisionEvidence": null
+        },
+        "versionedDispositionDesign": null,
+        "authorizedReaders": null,
+        "retentionTrigger": null,
+        "retentionDuration": null,
+        "holdRules": null,
+        "finalDisposition": null,
+        "currentBoundary": "Merchant deletion with emergency audit rows stays409. No exception, payload fabrication, rehash, peer rewrite, genesis reset or verifier bypass is approved."
+      },
+      {
+        "key": "hosted_inventory_recovery",
+        "gate": "P0-HOSTED-RECOVERY",
+        "mapsTo": [
+          "F005-R4",
+          "F005-R5"
+        ],
+        "approval": {
+          "status": "UNAPPROVED",
+          "approvedBy": null,
+          "approvedAt": null,
+          "decisionEvidence": null
+        },
+        "status": "BLOCKED_HOSTED_AUTHORIZATION_AND_EVIDENCE",
+        "authorizedScope": null,
+        "deployedRevision": null,
+        "trustedOriginalBackupEvidence": null,
+        "roleAndSecretKeyInventory": null,
+        "pitrEvidence": null,
+        "mediaExportCopyInventory": null,
+        "currentBoundary": "Current GitHub-only authorization remains. No hosted inspection, credentials, KMS/PITR/media restore or historical chain repair is authorized by this record."
       }
     ],
-    "nextAction": "Reconcile these existing prerequisites with the finite FIELD005 checklist and prepare a concrete reviewer/provisioning/retention decision record. Keep approvals unset, avoid invented durations or permissions, and do not repeat accepted migration/preflight proofs without a new change or failure."
+    "decisionRecordingRule": "A continuation request, passing CI, prepared proposal or null field is not policy approval. Record the explicit choice, responsible approver, decision date and evidence; retain per-field approval scope. Do not propagate one approval to other records.",
+    "initialDecisionNeeded": "reviewer_authority.adoptedModel",
+    "nextAction": "Obtain the explicit reviewer-model choice for this concrete proposal, then prepare its source-only issuer/evidence-binding contract. Keep retention/provisioning/hosted approvals unset until separately decided; no repeated proof of accepted preflight without a source change or new failure."
   }
 }

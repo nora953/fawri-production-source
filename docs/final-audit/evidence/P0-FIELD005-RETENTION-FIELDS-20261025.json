@@ -725,7 +725,8 @@
     "evidence": "P0-CASHIER-SEQUENCE-DESIGN-20261026.json",
     "restoreRun": 40443672989,
     "restoreJob": 121989991509,
-    "hashesArePseudonymousNotAnonymity": true
+    "hashesArePseudonymousNotAnonymity": true,
+    "decisionRecordPointer": "P0-CASHIER-SEQUENCE-DESIGN-20261026.json#promotionPrerequisiteDecisionPacket.records"
   },
   "proposalSqlChanged": true,
   "canonicalSchemaChanged": false,
