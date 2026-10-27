@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "date": "2026-10-26",
   "gate": "CASHIER-SYNC-SEQUENCE-001",
-  "status": "INTERNAL_COMBINED_PROPOSAL_MINIMIZATION_HANDOFF_CONCURRENCY_RESTORE_READINESS_DELETION_LIFECYCLE_BOUNDED_ACCEPTED_ADOPTION_OPEN",
+  "status": "INTERNAL_REV2_AUTHORITY_PREREQUISITES_AND_FRESH_FIXTURE_CLUSTER_RECOVERY_BOUNDED_ACCEPTED_CANONICAL_PROMOTION_PENDING",
   "release": "NO-GO",
   "gateClosed": false,
   "sourceReviewed": "ede1f101abedaa0761cbcc814918ed98276e0f4d",
-  "acceptedExecutable": "544764c23eee8d72e1e783ee313cbf648ef68470",
+  "acceptedExecutable": "6b8188037be2cdf50548acb67a3d71c91539f064",
   "applicationChanged": true,
   "schemaChanged": true,
   "aclChanged": true,
@@ -42,7 +42,7 @@
     },
     {
       "id": "SEQ-D3",
-      "status": "INTERNAL_PROPOSAL_REV2_HASH_MINIMIZATION_RESTORED_DELETION_ACCEPTED_ROLE_BOOTSTRAP_ISSUER_POLICY_CANONICAL_CLIENT_OPEN",
+      "status": "INTERNAL_COMBINED_AUTHORITY_LIFECYCLE_AND_FRESH_ROLE_RECOVERY_ACCEPTED_CANONICAL_ISSUER_POLICY_CLIENT_OPEN",
       "scope": "Opt-in server/client admission and exact ACK/fault/version behavior"
     },
     {
@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Inspect the existing owner/ACL-preserving backup/restore v2 role prerequisites and implement a fresh-owned-cluster role/bootstrap restore rehearsal for the combined authorities; same-cluster preprovisioned identities are not lost-cluster recovery proof. Preserve reviewer/primary/auth separation, NOLOGIN owners, tenant denials and exact financial replay. FIELD005 purpose/readers/holds/duration/disposition, real reviewer issuance, canonical adoption and public HTTP/native/hosted gates remain open.",
+  "nextExactAction": "Prepare a coordinated additive canonical authority migration candidate for the revision2 hashed review ledger and NOLOGIN enrollment/receipt owners/functions, with pinned readiness, grant/bootstrap and restore contracts. Preserve all historical migrations and ordinary legacy/public admission. No promotion or v2 activation before candidate acceptance, trusted real-reviewer issuance and explicit policy prerequisites; hosted/KMS/PITR/media recovery remains separately blocked.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -1334,6 +1334,12 @@
       "seedPassed": 31,
       "verifyPassed": 11,
       "actualDeletionLifecycle": true
+    },
+    "freshClusterFollowup": {
+      "source": "6b8188037be2cdf50548acb67a3d71c91539f064",
+      "evidence": "freshClusterRoleRecovery",
+      "rolesPreprovisionedSameCluster": false,
+      "bootstrapAndApplicationSecretsStillProvided": true
     }
   },
   "combinedAuthorityReadiness": {
@@ -2029,17 +2035,10 @@
     "minimizationBoundary": "No raw review/reviewer references retained in proposal ledger; internal merchant/stream IDs, timestamps and correlation hashes remain retained and require FIELD005 policy approval."
   },
   "freshClusterRoleRecovery": {
-    "status": "PREPARED_OWNED_FRESH_CLUSTER_ROLE_ROTATION_SCOPE_RESET_CI_PENDING",
-    "source": null,
+    "status": "BOUNDED_OWNED_FRESH_CLUSTER_SIX_ROLE_ROTATION_AND_SCOPE_RESET_SOURCE_ACCEPTED",
+    "source": "6b8188037be2cdf50548acb67a3d71c91539f064",
     "helper": "scripts/lib/disposable-cashier-role-recovery.mjs",
     "suite": "financial-proposal-restore",
-    "preparedAssertions": [
-      "Source container/anonymous volume removed; fresh container/system identifier/run attestation and empty target",
-      "All6 reviewed fixture roles initially absent,3 safe NOLOGIN owners plus3 independent LOGIN identities recreated",
-      "No source database-role passwords exported; old3 credentials rejected and new3 passwords authenticate",
-      "Owner/ACL-preserving full restore and volatile source transaction scope leases removed before app sessions",
-      "Combined read-only metadata/fault/tenant denials, financial replay/next sale and deletion lifecycle operate after independent-cluster recovery"
-    ],
     "localUnitTests": 31,
     "limits": [
       "Owned fixture role inventory only; bootstrap administrator provisioned independently by harness",
@@ -2077,6 +2076,357 @@
         }
       }
     ],
-    "targetAuthentication": "Explicit SCRAM loopback host authentication; old and new password assertions remain required."
+    "targetAuthentication": "Explicit SCRAM loopback host authentication; old and new password assertions remain required.",
+    "assertions": [
+      "Source container/anonymous volume removed; fresh container/system identifier/run attestation and empty target",
+      "All6 reviewed fixture roles initially absent,3 safe NOLOGIN owners plus3 independent LOGIN identities recreated",
+      "No source database-role passwords exported; old3 credentials rejected and new3 passwords authenticate",
+      "Owner/ACL-preserving full restore and volatile source transaction scope leases removed before app sessions",
+      "Combined read-only metadata/fault/tenant denials, financial replay/next sale and deletion lifecycle operate after independent-cluster recovery"
+    ],
+    "evidence": {
+      "source": "6b8188037be2cdf50548acb67a3d71c91539f064",
+      "sourceTree": "d1b88c7c8d34fedd5c7c1da08fc93b2825f281b1",
+      "checkout": "1d76d43cc5fe5cff28e82b94d02915405b80a0e2",
+      "workflowCount": 57,
+      "workflowSuccess": 57,
+      "broader": {
+        "run": 40449246733,
+        "job": 122007807521,
+        "invocations": 97,
+        "files": 94,
+        "passed": 826,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "combinedRecovery": {
+        "seedPassed": 31,
+        "verifyPassed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "fingerprint": "a05bc86f51428b99b751ce31da610126fb2e82aa2d0e563213b8ae76f45ffee1",
+        "sourceRemoved": true,
+        "sourceAndTargetSystemIdentifiersDiffer": true,
+        "rolesInitiallyAbsent": 6,
+        "rolesCreated": 6,
+        "oldLoginCredentialsRejected": 3,
+        "newLoginsVerified": 3,
+        "rolePasswordsCopied": false,
+        "loopbackAuthentication": "scram-sha-256",
+        "scopeLeasesAfterReset": 0
+      },
+      "cashier": {
+        "run": 40449246633,
+        "job": 122007807239,
+        "passed": 85,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "invocations": 16,
+        "files": 16
+      },
+      "repositoryAndHistorySecurity": {
+        "run": 40449246748,
+        "job": 122007807671,
+        "status": "SUCCESS",
+        "historicalFixture": {
+          "blob": "5b2ebc7b8262d8cc44fda859a2bab52337bafb59",
+          "path": "scripts/tests/disposable-cashier-role-recovery.test.mjs",
+          "rule": "credential-url",
+          "index": 2607,
+          "length": 54,
+          "classification": "One immutable fabricated rejection input only; no broad rule exception"
+        }
+      },
+      "allWorkflowRuns": [
+        {
+          "id": 40449246686,
+          "name": "Cashier dashboard surface regression",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246645,
+          "name": "Browser storage authority audit",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246642,
+          "name": "Bot logic adversarial matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246510,
+          "name": "P0 signed cashier offline authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246702,
+          "name": "Isolated Neon preflight static safety",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246505,
+          "name": "Merchant deletion promotions lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246576,
+          "name": "Knowledge embedding readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246497,
+          "name": "AWS KMS production adapter readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246715,
+          "name": "Billing provider readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246730,
+          "name": "Meta OAuth operational cutoff",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246667,
+          "name": "P0 notification privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246771,
+          "name": "P0 Support privacy authority diagnostic",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246703,
+          "name": "Order operations",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246528,
+          "name": "Commerce cashier closeout",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246530,
+          "name": "Complete schema candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246716,
+          "name": "Merchant deletion provider identifiers",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246673,
+          "name": "Observability mounted routes",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246557,
+          "name": "Global subscription golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246691,
+          "name": "Pre-release performance smoke gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246778,
+          "name": "Product catalog UI cutover",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246710,
+          "name": "Merchant settings",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246541,
+          "name": "Dashboard channel coherence",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246623,
+          "name": "Catalog variant signature schema contract",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246620,
+          "name": "Auth OTP contract continuity",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246687,
+          "name": "P0 conversation privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246706,
+          "name": "Global merchant golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246700,
+          "name": "SEQ D2 canonical storage acceptance",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246728,
+          "name": "P0 cashier IndexedDB browser regression",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246756,
+          "name": "PostgreSQL migration candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246677,
+          "name": "Auth PostgreSQL concurrency proof",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246734,
+          "name": "Merchant regional PostgreSQL authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246696,
+          "name": "Complete migration safety",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246804,
+          "name": "Merchant deletion physical media lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246738,
+          "name": "Cashier operational cutoff",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246747,
+          "name": "Location inventory authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246801,
+          "name": "P0 dependency security upgrade candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246769,
+          "name": "Global admin golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246725,
+          "name": "Final quality gates",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246810,
+          "name": "Staging container contract",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246649,
+          "name": "Merchant access security",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246757,
+          "name": "PostgreSQL outage recovery proof",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246651,
+          "name": "Merchant account security UI",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246633,
+          "name": "Cashier subscription lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246579,
+          "name": "Location routing engine",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246800,
+          "name": "Backup and restore drill",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246735,
+          "name": "Merchant deletion cashier lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246514,
+          "name": "P0 management privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246766,
+          "name": "Merchant deletion audit PII",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246770,
+          "name": "Global Merchant PostgreSQL HTTP Journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246744,
+          "name": "Meta webhook PostgreSQL ingress cutover",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246760,
+          "name": "Clean deployment golden gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246631,
+          "name": "Subscription service guarantee validation",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246692,
+          "name": "Meta webhook pipeline",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246718,
+          "name": "Foundation integration final gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246748,
+          "name": "Final security and supply chain",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246767,
+          "name": "PostgreSQL schema validation",
+          "conclusion": "success"
+        },
+        {
+          "id": 40449246733,
+          "name": "Isolated PostgreSQL engineering audit",
+          "conclusion": "success"
+        }
+      ]
+    }
   }
 }

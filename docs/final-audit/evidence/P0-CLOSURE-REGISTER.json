@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": null,
-  "lastFullyAcceptedSource": "544764c23eee8d72e1e783ee313cbf648ef68470",
+  "sourceCandidate": "6b8188037be2cdf50548acb67a3d71c91539f064",
+  "lastFullyAcceptedSource": "6b8188037be2cdf50548acb67a3d71c91539f064",
   "release": "NO-GO",
   "rows": [
     {
@@ -207,7 +207,9 @@
       "requirement": "Committed-schema dump/restore preserves policies, ACLs, constraints, data and restricted tenant read isolation",
       "status": "CLOSED_SOURCE",
       "evidence": "https://github.com/nora953/fawri-production-source/actions/runs/40033977598/job/120688827685",
-      "blocker": "None within this bounded source contract. Separate seed and verify phase each1PASS. Owned full dump/restore only, not hosted backup retention, PITR, RPO/RTO or real disaster recovery."
+      "blocker": "None within this bounded source contract. Separate seed and verify phase each1PASS. Owned full dump/restore only, not hosted backup retention, PITR, RPO/RTO or real disaster recovery.",
+      "freshCashierFixtureRoleRecoverySource": "6b8188037be2cdf50548acb67a3d71c91539f064",
+      "freshCashierFixtureRoleRecoveryStatus": "BOUNDED_OWNED_FRESH_CLUSTER_SIX_ROLE_ROTATION_AND_SCOPE_RESET_SOURCE_ACCEPTED"
     },
     {
       "id": "P0-ORDER-ITEMS-DECLARATIVE-RLS-ALIGNMENT",
@@ -281,8 +283,8 @@
       "saleServiceDiagnosticEvidence": "evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json",
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
-      "recoveryContractStatus": "INTERNAL_REV2_MINIMIZED_PROPOSAL_HANDOFF_RESTORE_READINESS_DELETION_ACCEPTED_BOOTSTRAP_ISSUER_POLICY_CANONICAL_CLIENT_OPEN",
-      "nextAction": "Inspect the existing owner/ACL-preserving backup/restore v2 role prerequisites and implement a fresh-owned-cluster role/bootstrap restore rehearsal for the combined authorities; same-cluster preprovisioned identities are not lost-cluster recovery proof. Preserve reviewer/primary/auth separation, NOLOGIN owners, tenant denials and exact financial replay. FIELD005 purpose/readers/holds/duration/disposition, real reviewer issuance, canonical adoption and public HTTP/native/hosted gates remain open.",
+      "recoveryContractStatus": "INTERNAL_REV2_AUTHORITY_LIFECYCLE_FRESH_FIXTURE_CLUSTER_RECOVERY_ACCEPTED_CANONICAL_ISSUER_POLICY_CLIENT_OPEN",
+      "nextAction": "Prepare a coordinated additive canonical authority migration candidate for the revision2 hashed review ledger and NOLOGIN enrollment/receipt owners/functions, with pinned readiness, grant/bootstrap and restore contracts. Preserve all historical migrations and ordinary legacy/public admission. No promotion or v2 activation before candidate acceptance, trusted real-reviewer issuance and explicit policy prerequisites; hosted/KMS/PITR/media recovery remains separately blocked.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -336,7 +338,8 @@
       "combinedAuthorityReadinessSource": "bb8f500c0e12119c7518e576507e14237fe2df80",
       "reviewLedgerLifecycleStatus": "BOUNDED_PROPOSAL_REFERENCE_MINIMIZATION_AND_RESTORED_ACTUAL_DELETION_SOURCE_ACCEPTED_POLICY_OPEN",
       "reviewLedgerLifecycleSource": "544764c23eee8d72e1e783ee313cbf648ef68470",
-      "freshClusterRoleRecoveryStatus": "PREPARED_OWNED_FRESH_CLUSTER_ROLE_ROTATION_SCOPE_RESET_CI_PENDING"
+      "freshClusterRoleRecoveryStatus": "BOUNDED_OWNED_FRESH_CLUSTER_SIX_ROLE_ROTATION_AND_SCOPE_RESET_SOURCE_ACCEPTED",
+      "freshClusterRoleRecoverySource": "6b8188037be2cdf50548acb67a3d71c91539f064"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -548,6 +551,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "bb8f500c0e12119c7518e576507e14237fe2df80",
+  "previousFullyAcceptedSource": "544764c23eee8d72e1e783ee313cbf648ef68470",
   "lastUpdatedAt": "2026-10-27"
 }
