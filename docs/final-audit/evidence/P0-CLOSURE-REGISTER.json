@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": null,
-  "lastFullyAcceptedSource": "84f13d49dbe7432d4e839d5abaf0fcd9b63dab0e",
+  "sourceCandidate": "0215e053891b249ab22f7b028ff93626d81529b5",
+  "lastFullyAcceptedSource": "0215e053891b249ab22f7b028ff93626d81529b5",
   "release": "NO-GO",
   "rows": [
     {
@@ -281,8 +281,8 @@
       "saleServiceDiagnosticEvidence": "evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json",
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
-      "recoveryContractStatus": "SEQ_D1_D2_D3_INTERNAL_COMBINED_PROPOSAL_HANDOFF_AND_SALE_CONCURRENCY_BOUNDED_ACCEPTED_CANONICAL_ISSUER_CLIENT_OPEN",
-      "nextAction": "Verify an owned offline restore of the combined enrollment/receipt proposals, preserving review ledger, advanced checkpoints, immutable receipts and separate reviewer/primary capability ACLs with tenant denials and no retry reset. Canonical authority/readiness, retained-field lifecycle, real reviewer issuance, public HTTP/native v2 and hosted adoption remain open.",
+      "recoveryContractStatus": "SEQ_D1_D2_D3_INTERNAL_COMBINED_HANDOFF_CONCURRENCY_DATABASE_RESTORE_ACCEPTED_CANONICAL_READINESS_ISSUER_CLIENT_OPEN",
+      "nextAction": "Define and implement read-only combined-proposal catalog readiness (function owner/body/search_path/ACL, separate reviewer/primary identity, column privileges, policy/trigger bindings) with positive and metadata-fault tests before canonical adoption. Keep operational reviewer issuance, retained-field lifecycle, full lost-cluster role/bootstrap recovery, public HTTP/native v2 and hosted gates open.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -330,7 +330,8 @@
       "financialReceiptProposalSource": "c430529e666e5fc832919370c1c00933c24591a3",
       "enrollmentFinancialHandoffStatus": "BOUNDED_COMBINED_INTERNAL_PROPOSAL_HANDOFF_AND_OBSERVED_SALE_CONCURRENCY_SOURCE_ACCEPTED",
       "enrollmentFinancialHandoffSource": "84f13d49dbe7432d4e839d5abaf0fcd9b63dab0e",
-      "combinedProposalRestoreStatus": "PREPARED_OWNED_OFFLINE_PG_DUMP_RESTORE_CI_PENDING"
+      "combinedProposalRestoreStatus": "OWNED_OFFLINE_SAME_CLUSTER_COMBINED_PROPOSAL_DATABASE_RESTORE_BOUNDED_ACCEPTED",
+      "combinedProposalRestoreSource": "0215e053891b249ab22f7b028ff93626d81529b5"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -540,6 +541,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "c430529e666e5fc832919370c1c00933c24591a3",
+  "previousFullyAcceptedSource": "84f13d49dbe7432d4e839d5abaf0fcd9b63dab0e",
   "lastUpdatedAt": "2026-10-27"
 }
