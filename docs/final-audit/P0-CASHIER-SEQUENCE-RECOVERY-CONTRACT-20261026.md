@@ -1,3 +1,23 @@
+## قبول فحص التخزين المحلي وتصحيح إعادة محاولة البيع — 2026-10-27
+
+المصدر المقبول **389679488185e9d81a8edc120fdfdeaff4130efd**: **58/58 مسار CI ناجح**، دون معلّق أو فاشل أو ملغى عند القبول. [الدليل في السجل الموجود](evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localRecoverySnapshot20261027). هذه وصلة تنفيذية داخل CASHIER-SYNC-SEQUENCE-001/SEQ-R3 وشرط هوية إعادة المحاولة القائم، وليست بوابة جديدة أو إغلاقًا لكامل التسلسل.
+
+أُضيف inspectLocalRecoverySnapshot إلى سلطة IndexedDB الموجودة: قراءة العداد والطابور والمبيعات والحركات في معاملةreadonly واحدة؛ تجميع المكوّنات حسب العملية، وفحص الربط البنيوي مع السجلات المحلية، وإرجاعHOLD عند النقص أو التعارض أو الفشل أو تجاوز الحد. حد الفحص1000 سجل لكل مخزن مختار؛ لا يشهد بكمال التاريخ الأصلي أو بالهوية في قاعدةbootstrap المنفصلة. INSPECTED نتيجة فحص محلي فقط؛ enrollment_authorized=false وserver_history_verified=false دائمًا. لا مسح أوACK أوreset أوقبولstream، ولا ربط بمسار اعتماد إنتاجي.
+
+كشف التشغيل الأول خطأً حقيقيًا فيcommitSale: معرّف عملية موجود أعاد البيع القديم عند تغيير كمية صحيحة. التصحيح يقارن حقائق الطلب الأصلية المحفوظة قبل الإعادة، ويعيدCASHIER_SALE_OPERATION_ID_CONFLICT عند الاختلاف؛ لا يعيد التسعير من الكتالوج الحالي. ثبت رفض10 تغييرات مع حفظ لقطات المبيعات/المخزون/الطابور، وبقاء الإعادة المطابقة بعد نفاد المخزون والإقرار وإعادة فتح التخزين دون أثر ثانٍ أو إعادة إدراج. التصحيح محصور بالبيع المحلي، وليس اعتمادًا شاملًا لإعاداتreturn/void أوالخادم.
+
+[الفحص المباشر40530364376/job122281161856](https://github.com/nora953/fawri-production-source/actions/runs/40530364376): **15/15 حالة ناجحة** فيChrome155؛11 حالة جديدة (10 للفحص وحالة للإعادة المطابقة)، مع توسيع اختبار الاختلاف الموجود إلى10 تغييرات. يشمل معاملات بيع/إرجاع/إلغاء محلية فعلية، نقص مكوّنات، حدود الفحص، عدادًا مفقودًا/غير آمن/غير رقمي/متأخرًا، اختلاف هوية، تعديل مخزون غير مدعوم محفوظًا، تعارض التسلسل/الحركة، إلغاء معاملة حقيقيًا، طلب كتابة متزامنًا، وإعادة تحميل الصفحة وإغلاق المقبض. التزامن المطلوب ليس برهانًا عامًا علىlinearizability أوحاجز تداخل أقفال مفروض.
+
+[المتصفح الأوسع40530364674](https://github.com/nora953/fawri-production-source/actions/runs/40530364674): smoke والنسخة الاحتياطية القديمة وطابور الشبكة المصطنعPASS. تأخر تجهيزChromium ثم بدأ الاختبار ونجح؛ ليس فشل تطبيق. [SQL الأوسع40530364597/job122281417333](https://github.com/nora953/fawri-production-source/actions/runs/40530364597): **829TAP/97استدعاء/94ملفًا**،0فشل/تخطٍّ/إلغاء، تشمل الآباء ولا تتضمن15 حالة الفحص المباشر. typecheckAPI/frontend والبناء ناجحان، وفحص tracked والتاريخ الأمني الكاملPASS. checkout **ecad6582ded9b91de25a16d7d99f82855d25d6c8** يطابق شجرة المصدر **ece51baa845c500280fc83ccdd4776db0206339e** في سجلات الفحص/المتصفح/SQL/الأنواع/الأمن. بصمتا الاستعادة المستقلة متطابقتان؛ مراجعة الأصل فيfixture ما زالت مفترضة وليست اعتماد إصدار.
+
+المحاولة الأولى **cfd9cfa252dedcae0da32fc4d789601f4cc9873f** محفوظة وغير مقبولة: الفحص المباشر13PASS/1FAIL، مع نجاح10 حالات الفحص الجديدة وفشل شرط اختلاف البيع الموجود؛CI52نجاح/1فشل/5إلغاء. لم يُخفف الاختبار؛ صُحح التطبيق وأضيفت حالة الإعادة المطابقة.
+
+التالي: Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending.
+
+لا تغييرAPI/schema/ACL أوالربط أوالبروتوكول العام أوترقية0053 أوخدمات مستضافة.45 حالة البوابات دون تغيير:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false وoverallPercentage=null؛ **NO-GO**. لاmerge/deploy/P1/P2.
+
+---
+
 ## SEQ-R3 admission and compatibility specification — 2026-10-27
 
 Status: **REVIEWABLE_SPECIFICATION_ONLY_NOT_ADOPTED**. Existing gate CASHIER-SYNC-SEQUENCE-001 stays OPEN. This revision completes the previously named specification prerequisite; it does not certify device provenance, activate protocol2, grant SQL capabilities or close SEQ-R1/R2/R3. Source pinned to `8171f07f55c0e9e04c9899744d6368a5b2531812`; last executable acceptance remains `205b5eca8908885a676ec02cd3643faf64f5fe22`. No runtime/CI is claimed by this revision.

@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending.",
+  "nextExactAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4459,7 +4459,7 @@
         "doNotRepeat": "No platform-owner approval for every ordinary pairing, duplicate issuer candidate, baseline MAX/reset or silently promoted0053."
       }
     ],
-    "nextExactAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending."
+    "nextExactAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending."
   },
   "admissionCompatibilitySpecification20261027": {
     "date": "2026-10-27",
@@ -4538,5 +4538,19 @@
       }
     ],
     "nextExactAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending."
+  },
+  "localRecoverySnapshotAcceptance20261027": {
+    "status": "BOUNDED_NATIVE_LOCAL_RECOVERY_SNAPSHOT_AND_SALE_REPLAY_SOURCE_ACCEPTED",
+    "source": "389679488185e9d81a8edc120fdfdeaff4130efd",
+    "evidence": "P0-CASHIER-NATIVE-OUTBOX-20261026.json#localRecoverySnapshot20261027",
+    "nativeCases": 15,
+    "newNativeCases": 11,
+    "ciSuccess": 58,
+    "broaderTap": 829,
+    "scope": "Coherent bounded local structural inspection and commitSale replay identity; not a trusted original-state review or stream admission.",
+    "gateClosed": false,
+    "publicV2Enabled": false,
+    "bootstrapBindingComparisonImplemented": false,
+    "nextExactAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending."
   }
 }

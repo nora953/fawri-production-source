@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "205b5eca8908885a676ec02cd3643faf64f5fe22",
-  "lastFullyAcceptedSource": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+  "sourceCandidate": "389679488185e9d81a8edc120fdfdeaff4130efd",
+  "lastFullyAcceptedSource": "389679488185e9d81a8edc120fdfdeaff4130efd",
   "release": "NO-GO",
   "rows": [
     {
@@ -2325,7 +2325,7 @@
       "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
     }
   ],
-  "previousFullyAcceptedSource": "fec5efedeefbf253af8b764d63a5911dd6fb99f0",
+  "previousFullyAcceptedSource": "205b5eca8908885a676ec02cd3643faf64f5fe22",
   "lastUpdatedAt": "2026-10-27",
   "closurePlan": {
     "schemaVersion": 1,
@@ -2343,7 +2343,7 @@
     "release": "NO-GO",
     "noNewReleaseRequirementsAdded": true,
     "noExistingStatusChanged": true,
-    "acceptedSource": "b15f4b8751da7d8e84933ffd2e778b28538caa3b",
+    "acceptedSource": "389679488185e9d81a8edc120fdfdeaff4130efd",
     "executionRules": [
       "Select one existing gate and its exact unmet closure condition before new code/tests. State whether the batch closes it or only completes a named necessary prerequisite.",
       "Reuse accepted positive/negative/runtime evidence at its original layer and source. No repeated accepted test solely to increase totals; rerun only for a source change, failure or identified integration gap.",
@@ -2384,8 +2384,8 @@
           ],
           "newRuntime": false
         },
-        "nextAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending.",
-        "completedPrerequisite": "One concrete SEQ-R3 new/known/restored admission specification in the existing recovery contract; source-only, no adoption/CI claim."
+        "nextAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending.",
+        "completedPrerequisite": "SEQ-R3 reviewable specification plus bounded native coherent local inspection and commitSale immutable replay correction; source3896794,58/58 CI,15 native cases. No public v2 or full gate closure."
       },
       {
         "order": 3,
@@ -2467,10 +2467,10 @@
           "Required source/native/HTTP/restricted-SQL matrix in the existing recovery contract passes: exact replay,1/3/late2 chosen handling, unsupported operation hold, lost ACK/restart, rollback, tenant/device/station denial, real concurrency and restore.",
           "New protocol remains unsupported publicly until its complete acceptance boundary is met; operational promotion and grant/retention prerequisites are separately satisfied, not inferred from fixtures."
         ],
-        "missingEvidenceOrDecision": "SEQ-R3 reviewable specification prepared at checkpoint8171 source, not adopted. Missing coherent native local snapshot, real trusted original review, legacy/movement-only policy, expired-credential pending-work recovery and integrated public/native v2 acceptance; existing pairing is reused and no ordinary owner approval is required.",
+        "missingEvidenceOrDecision": "Bounded coherent native local snapshot and commitSale replay correction accepted at3896794. Missing bootstrap binding stability across the separate identity database, real trusted original-state review, legacy/movement-only disposition, expired-credential pending-work recovery and integrated public/native v2 admission. Existing pairing is reused; no routine owner approval.",
         "executableNowWithinGitHub": "Reconcile each required recovery-contract row against existing evidence. Implement only the next missing row that advances SEQ-R1/R2/R3; the HTTP pairing extension is conditional on that mapping.",
         "externalDependency": "Intended manual-adjustment/legacy disposition, trusted enrollment/recovery rules, FIELD005 and separately authorized operational adoption remain dependencies.",
-        "nextAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending.",
+        "nextAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -2483,7 +2483,8 @@
             "SEQ-R3"
           ],
           "newRuntime": false,
-          "admissionSpecification": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#admissionCompatibilitySpecification20261027"
+          "admissionSpecification": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#admissionCompatibilitySpecification20261027",
+          "localSnapshotAcceptance": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localRecoverySnapshot20261027"
         }
       },
       {
@@ -2767,6 +2768,15 @@
       "newRuntime": false,
       "gateClosed": false,
       "nextExactAction": "Implement a bounded read-only coherent local recovery snapshot on the existing IndexedDB authority, with native fault/reload/overflow/unsupported-envelope cases. It must read counter and complete operation groups in one transaction, report incomplete inspection as HOLD, and grant no enrollment, pairing, ACK, reset or public v2 capability. Reuse existing merchant pairing and SQL history proofs; keep trusted original-review provenance, legacy migration policy and HTTP/native v2 activation pending."
+    },
+    "localRecoverySnapshotAcceptance20261027": {
+      "source": "389679488185e9d81a8edc120fdfdeaff4130efd",
+      "evidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localRecoverySnapshot20261027",
+      "status": "BOUNDED_NATIVE_LOCAL_RECOVERY_SNAPSHOT_AND_SALE_REPLAY_SOURCE_ACCEPTED",
+      "knownGate": "CASHIER-SYNC-SEQUENCE-001",
+      "newGateCount": 0,
+      "gateClosed": false,
+      "nextExactAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending."
     }
   }
 }
