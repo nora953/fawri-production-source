@@ -583,5 +583,190 @@ test('full application management privacy preserves cutover ordering and current
     }));
   });
 
+  await t.test('owner delegated session and global admin device HTTP boundaries use current SQL scope',async ownerTest=>{
+    // This fills current full-app/restricted-role integration gaps. Historical
+    // aggregate Authv2 lifecycle and JSON work-monitor proofs remain separate.
+    const target=await actor('admin','assistant_admin',[]);
+    const peer=await actor('admin','assistant_admin',[]);
+    const {hashPassword}=await import('../src/services/authPasswordService.ts');
+    const ownerPassword='SyntheticOwnerSession9@';
+    await admin.query('UPDATE accounts SET password_hash=$2 WHERE id=$1',[owner.id,hashPassword(ownerPassword)]);
+    async function register(account,device){
+      return security.registerAdminDeviceAuthoritative({accountId:account.id,accountKind:'admin',deviceId:device,deviceLabel:'Synthetic delegated '+device});
+    }
+    const firstDevice=await register(target,target.device);
+    const secondId='synthetic-delegated-second-'+randomUUID();
+    const secondDevice=await register(target,secondId);
+    const peerDevice=await register(peer,peer.device);
+    for(const device of [firstDevice,secondDevice,peerDevice]){
+      await security.setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:owner.id});
+    }
+    const pending=await register(target,'synthetic-delegated-third-'+randomUUID());
+    async function issue(account,device){
+      const issued=await auth.issueSession({accountId:account.id,accountKind:'admin',tenantId:'fawri-admin',
+        adminRole:'assistant_admin',deviceId:device,permissions:[]});
+      return {...account,device,session:issued,cookie:ADMIN_SESSION_COOKIE+'='+issued.token};
+    }
+    let first=await issue(target,target.device),second=await issue(target,secondId);
+    const other=await issue(peer,peer.device);
+    const state=async()=>({
+      sessions:(await admin.query('SELECT id,account_id,kind,tenant_id,status,token_hash,device_fingerprint_hash,session_version,security_version,role_snapshot,permission_snapshot,created_at,revoked_at,revoke_reason,replaced_by_session_id FROM account_sessions WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+      devices:(await admin.query('SELECT to_jsonb(d) AS row FROM trusted_devices d WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+    });
+    const base='/api/auth/admins/'+target.id;
+    const deviceBase='/api/auth/admin/devices';
+    const business=await snapshot();
+    function assertRevoke(before,after,selected,reason,{deviceMutation=false}={}){
+      if(!deviceMutation)assert.deepEqual(after.devices,before.devices);
+      assert.deepEqual(after.sessions.filter(x=>!selected.includes(x.id)),before.sessions.filter(x=>!selected.includes(x.id)));
+      for(const id of selected){
+        const old=before.sessions.find(x=>x.id===id),now=after.sessions.find(x=>x.id===id);
+        assert.equal(old.status,'active');assert.equal(now.status,'revoked');
+        assert.equal(now.revoke_reason,reason);assert.ok(now.revoked_at);
+        assert.deepEqual({...now,status:old.status,revoked_at:old.revoked_at,revoke_reason:old.revoke_reason},old);
+      }
+    }
+    async function assertAudit(type){
+      const rows=(await admin.query('SELECT actor_account_id,actor_kind,subject_hash FROM auth_audit_events WHERE actor_account_id=$1 AND event_type=$2',[owner.id,type])).rows;
+      assert.ok(rows.length>0);assert.ok(rows.every(x=>x.actor_account_id===owner.id&&x.actor_kind==='admin'));
+      assert.ok(rows.every(x=>x.subject_hash&&x.subject_hash!==target.id));
+    }
+    await ownerTest.test('only current owner may access delegated session and global device routes',async()=>{
+      const before=await state();
+      const routes=[
+        [base+'/sessions/'+first.session.session.id+'/revoke','POST'],
+        [base+'/sessions/revoke-all','POST'],[base+'/logout-all','POST'],
+        [deviceBase,'GET'],[deviceBase+'/'+pending.id+'/trust','POST'],
+        [deviceBase+'/'+firstDevice.id+'/revoke','POST'],
+      ];
+      for(const [path,method] of routes){
+        for(const [actor,status] of [[undefined,401],[a,401],[b,401],[other,403],[viewer,403]]){
+          const r=await req(path,actor,method,method==='POST'?{owner:true,owner_password:ownerPassword,actor_account_id:owner.id}:undefined);
+          assert.equal(r.status,status,path);assert.equal(r.body.devices,undefined);assert.equal(r.body.revoked_count,undefined);
+        }
+        for(const headers of [{'X-Fawri-Device-Id':'synthetic-wrong-device'},{Cookie:owner.cookie+'; '+a.cookie}]){
+          assert.equal((await req(path,owner,method,method==='POST'?{owner_password:ownerPassword}:undefined,headers)).status,401);
+        }
+        if(method==='POST'){
+          const r=await req(path,owner,method,{owner_password:ownerPassword},{Origin:'https://foreign.example.invalid'});
+          assert.equal(r.status,403);assert.equal(r.body.code,'AUTH_ORIGIN_FORBIDDEN');
+        }
+      }
+      for(const suffix of ['/sessions/'+first.session.session.id+'/revoke','/sessions/revoke-all','/logout-all']){
+        const r=await req('/api/auth/admins/'+owner.id+suffix,owner,'POST',{owner_password:ownerPassword});
+        assert.equal(r.status,404);assert.equal(r.body.code,'ASSISTANT_ADMIN_NOT_FOUND');
+      }
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+    });
+    await ownerTest.test('delegated selected revoke requires owner password and path account membership',async()=>{
+      const before=await state(),path=base+'/sessions/'+first.session.session.id+'/revoke';
+      for(const body of [{},{owner_password:'synthetic-wrong-password'}]){
+        const r=await req(path,owner,'POST',body);assert.equal(r.status,401);assert.equal(r.body.code,'OWNER_PASSWORD_INCORRECT');
+        assert.deepEqual(await state(),before);
+      }
+      const foreign=await req(base+'/sessions/'+other.session.session.id+'/revoke',owner,'POST',{owner_password:ownerPassword});
+      assert.equal(foreign.status,404);assert.equal(foreign.body.code,'SESSION_NOT_FOUND');assert.deepEqual(await state(),before);
+      const r=await req('/API/Auth/Admins/'+target.id+'/Sessions/'+first.session.session.id+'/Revoke/?account_id='+peer.id,owner,'POST',
+        {owner_password:ownerPassword,account_id:peer.id,session_id:other.session.session.id,actor_account_id:peer.id});
+      assert.equal(r.status,200);assert.equal(r.body.ok,true);
+      const after=await state();assertRevoke(before,after,[first.session.session.id],'manual_revocation');
+      assert.equal((await req(path,owner,'POST',{owner_password:ownerPassword})).status,404);
+      assert.deepEqual(await state(),after);
+      assert.equal((await req('/api/auth/admin/me',first)).status,401);
+      for(const live of [second,other,owner])assert.equal((await req('/api/auth/admin/me',live)).status,200);
+      await assertAudit('assistant_session_revoked');assert.deepEqual(await snapshot(),business);
+    });
+    await ownerTest.test('delegated revoke-all requires password and affects only the selected assistant once',async()=>{
+      first=await issue(target,target.device);
+      const before=await state(),path=base+'/sessions/revoke-all';
+      for(const body of [{},{owner_password:'synthetic-wrong-password'}]){
+        const r=await req(path,owner,'POST',body);assert.equal(r.status,401);assert.equal(r.body.code,'OWNER_PASSWORD_INCORRECT');
+        assert.deepEqual(await state(),before);
+      }
+      const r=await req(path+'?account_id='+peer.id,owner,'POST',
+        {owner_password:ownerPassword,account_id:peer.id,actor_account_id:peer.id});
+      assert.equal(r.status,200);assert.equal(r.body.revoked_count,2);
+      const after=await state();assertRevoke(before,after,[first.session.session.id,second.session.session.id],'manual_revocation');
+      const repeat=await req(path,owner,'POST',{owner_password:ownerPassword});assert.equal(repeat.status,200);assert.equal(repeat.body.revoked_count,0);
+      assert.deepEqual(await state(),after);
+      for(const dead of [first,second])assert.equal((await req('/api/auth/admin/me',dead)).status,401);
+      for(const live of [other,owner])assert.equal((await req('/api/auth/admin/me',live)).status,200);
+      await assertAudit('assistant_sessions_revoked');assert.deepEqual(await snapshot(),business);
+    });
+    await ownerTest.test('delegated logout-all preserves its existing owner-session policy and selected assistant scope',async()=>{
+      first=await issue(target,target.device);second=await issue(target,secondId);
+      const before=await state();
+      // This existing route requires the secure owner session, unlike the
+      // separate password-confirmed work-monitor revoke-all action.
+      const r=await req('/API/Auth/Admins/'+target.id+'/Logout-All/?account_id='+peer.id,owner,'POST',
+        {account_id:peer.id,session_id:other.session.session.id,actor_account_id:peer.id});
+      assert.equal(r.status,200);assert.equal(r.body.revoked_count,2);
+      const after=await state();assertRevoke(before,after,[first.session.session.id,second.session.session.id],'manual_revocation');
+      for(const dead of [first,second])assert.equal((await req('/api/auth/admin/me',dead)).status,401);
+      for(const live of [other,owner])assert.equal((await req('/api/auth/admin/me',live)).status,200);
+      await assertAudit('assistant_admin_sessions_revoked');assert.deepEqual(await snapshot(),business);
+    });
+    await ownerTest.test('owner global device list exposes current summaries without fingerprint or bearer material',async()=>{
+      const before=await state();
+      const r=await req('/API/Auth/Admin/Devices/?account_id='+peer.id,owner);assert.equal(r.status,200);
+      const owned=r.body.devices.filter(x=>ids.includes(x.account_id));
+      assert.deepEqual(new Set(owned.map(x=>x.id)),new Set(before.devices.map(x=>x.row.id)));
+      assert.ok(owned.every(x=>x.account_kind==='admin'));
+      for(const row of owned){
+        assert.deepEqual(Object.keys(row).sort(),['id','account_id','account_kind','label','status','created_at','last_seen_at',
+          ...(row.trusted_at?['trusted_at']:[]),...(row.trusted_by?['trusted_by']:[]),...(row.revoked_at?['revoked_at']:[])].sort());
+      }
+      const serialized=JSON.stringify(r.body);
+      assert.doesNotMatch(serialized,/device_hash|device_fingerprint_hash|token_hash|password_hash/);
+      for(const session of [first,second,other,owner])assert.equal(serialized.includes(session.session.token),false);
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+    });
+    await ownerTest.test('global trust limit failure preserves state and existing device trust uses server actor',async()=>{
+      const before=await state();
+      const r=await req(deviceBase+'/'+pending.id+'/trust',owner,'POST',{account_id:peer.id,actor_account_id:peer.id});
+      assert.equal(r.status,409);assert.equal(r.body.code,'TRUSTED_DEVICE_LIMIT_REACHED');assert.deepEqual(await state(),before);
+      const missing=await req(deviceBase+'/'+randomUUID()+'/trust',owner,'POST');assert.equal(missing.status,404);
+      assert.deepEqual(await state(),before);
+      const same=await req(deviceBase+'/'+secondDevice.id+'/trust',owner,'POST',{actor_account_id:peer.id});
+      assert.equal(same.status,200);
+      const after=await state();assert.deepEqual(after.sessions,before.sessions);
+      assert.deepEqual(after.devices.filter(x=>x.row.id!==secondDevice.id),before.devices.filter(x=>x.row.id!==secondDevice.id));
+      const row=after.devices.find(x=>x.row.id===secondDevice.id).row;
+      assert.equal(row.status,'trusted');assert.equal(row.trusted_by_account_id,owner.id);
+      assert.equal(after.devices.filter(x=>x.row.account_id===target.id&&x.row.status==='trusted').length,2);
+      assert.deepEqual(await snapshot(),business);
+    });
+    await ownerTest.test('global device revoke invalidates only that device and freed trust slot accepts pending device',async()=>{
+      first=await issue(target,target.device);second=await issue(target,secondId);
+      const before=await state();
+      const r=await req('/API/Auth/Admin/Devices/'+firstDevice.id+'/Revoke/?account_id='+peer.id,owner,'POST',
+        {deviceRecordId:peerDevice.id,account_id:peer.id,actor_account_id:peer.id});
+      assert.equal(r.status,200);assert.equal(r.body.ok,true);
+      const after=await state();
+      assertRevoke(before,after,[first.session.session.id],'device_revoked',{deviceMutation:true});
+      assert.deepEqual(after.devices.filter(x=>x.row.id!==firstDevice.id),before.devices.filter(x=>x.row.id!==firstDevice.id));
+      const revoked=after.devices.find(x=>x.row.id===firstDevice.id).row;
+      assert.equal(revoked.status,'revoked');assert.equal(revoked.trust_slot,null);
+      assert.equal(revoked.trusted_by_account_id,null);assert.equal(revoked.revoked_by_account_id,owner.id);assert.ok(revoked.revoked_at);
+      assert.equal((await req('/api/auth/admin/me',first)).status,401);
+      for(const live of [second,other,owner])assert.equal((await req('/api/auth/admin/me',live)).status,200);
+      const trusted=await req(deviceBase+'/'+pending.id+'/trust',owner,'POST',{actor_account_id:peer.id});
+      assert.equal(trusted.status,200);const final=await state();
+      assert.deepEqual(final.sessions,after.sessions);
+      assert.deepEqual(final.devices.filter(x=>x.row.id!==pending.id),after.devices.filter(x=>x.row.id!==pending.id));
+      const pendingNow=final.devices.find(x=>x.row.id===pending.id).row;
+      assert.equal(pendingNow.status,'trusted');assert.equal(pendingNow.trusted_by_account_id,owner.id);
+      assert.equal(final.devices.filter(x=>x.row.account_id===target.id&&x.row.status==='trusted').length,2);
+      assert.deepEqual(await snapshot(),business);
+    });
+    console.log('P0_OWNER_ADMIN_SECURITY_HTTP '+JSON.stringify({
+      actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,ownerOnlySixRoutes:true,
+      delegatedSelectedAccountMembership:true,passwordConfirmedRevokeActions:true,existingLogoutAllPolicyPreserved:true,
+      ownerTargetDenied:true,serverActorAudit:true,globalDeviceSummaryFields:true,deviceFingerprintExcluded:true,
+      trustedDeviceLimitRollback:true,selectedDeviceRevokeKeepsSibling:true,peerSecurityAndBusinessPreserved:true,
+      sessionHeartbeatAndIdleExpiryExcluded:true,loginOtpAndCrossTransactionFaultAtomicityAccepted:false,hosted:false
+    }));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
