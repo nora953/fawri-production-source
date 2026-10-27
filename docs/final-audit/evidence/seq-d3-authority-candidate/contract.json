@@ -456,7 +456,7 @@
     },
     {
       "path": "scripts/run-isolated-postgres-audit.sh",
-      "sha256": "6f5bd701373ea6d7ef12f3b9f46f47f28279f5b561f88c175b5519a0dc9499f3"
+      "sha256": "c726e6f097ea91f9df98f88fbc7ce6c8bc741566e6c6a7c16453473b38941b32"
     },
     {
       "path": "docs/final-audit/evidence/seq-d3-authority-candidate/schema/cashier-staff.ts",
@@ -549,5 +549,12 @@
   "sqlSha256": "4c003d0f021d814a6172f913b7cdbbb9dac2d13b997cd43405682978dd5583b4",
   "schemaBoundaryPrepared": true,
   "generatedArtifactsPresent": true,
-  "generatedArtifactAcceptance": "Exact-source CI must reproduce every committed generated artifact byte-for-byte."
+  "generatedArtifactAcceptance": "Exact-source CI must reproduce every committed generated artifact byte-for-byte.",
+  "migrationRuntimeRehearsal": {
+    "freshSuite": "authority-migration-fresh",
+    "upgradeSuite": "authority-migration-upgrade",
+    "separateOwnedClusters": true,
+    "usesActualDrizzleMigrator": true,
+    "acceptance": "requires exact-source CI; not operational adoption"
+  }
 }

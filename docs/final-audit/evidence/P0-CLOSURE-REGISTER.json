@@ -1088,6 +1088,12 @@
             "conclusion": "success"
           }
         ]
+      },
+      "candidateMigrationRuntime": {
+        "status": "PREPARED_CI_PENDING",
+        "freshAndUpgradeSeparateOwnedClusters": true,
+        "actualDrizzleMigrator": true,
+        "canonicalPromoted": false
       }
     },
     {
