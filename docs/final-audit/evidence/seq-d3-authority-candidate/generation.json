@@ -28,6 +28,12 @@
       "bytes": 8734
     }
   ],
-  "committedArtifactReproduction": "PENDING_NEXT_SOURCE_CI",
+  "committedArtifactReproduction": {
+    "source": "1e7ac9d91a6f2b54691c0a9bc720e2f0d1706eb3",
+    "run": 40456451573,
+    "job": 122030796172,
+    "status": "SUCCESS",
+    "treeMatches": true
+  },
   "operationalAdoption": false
 }

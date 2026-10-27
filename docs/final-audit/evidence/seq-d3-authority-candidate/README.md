@@ -11,3 +11,5 @@ The SQL creates two safe NOLOGIN owners and their restricted functions/policies.
 Eight package tests include positive verification plus SQL/history/readiness/schema/generated-artifact drift and silent canonical/adoption promotion rejections. These are package checks, not production migration acceptance. The manifest is reviewed repository data, not an independent signature or provenance authority.
 
 Next: prove canonical-runner fresh-install/upgrade and transaction fault rollback for the candidate before any promotion. Actual reviewer issuance/grant policy and FIELD005 retention remain open; hosted roles/KMS/PITR/media recovery remain separately blocked. Release NO-GO; no merge or deployment.
+
+Accepted source `1e7ac9d91a6f2b54691c0a9bc720e2f0d1706eb3`:57/57 workflows SUCCESS. Generation40456451573/job122030796172 reproduced all three committed artifacts exactly with106 historical files unchanged. Broader40456451253/job122031073729 passed826 TAP/97 invocations/94 files; separate8 package checks PASS. This accepts candidate generation/reproduction and regression preservation only;0053 canonical-runner fresh-install/upgrade/fault acceptance remains pending.
