@@ -1,3 +1,9 @@
+## Named background-job admin HTTP boundary prepared — 2026-10-27
+
+Continuation fromc8e7cf58ddd3e56c2ed75d51b811006c84059804. Followed current source map's named review: actual app authorizeChannelDurableJobAdmin already permits GET for view_logs or manage_channels and mutations only for manage_channels. Queue requeue checks the latest trusted dead-letter safe flag, then resets/stamps/hydrates inside the tenant transaction; summaries omit payload hydration but retain declared result metadata. No new policy or defect asserted from a text scan.
+
+Extended existing full-app management PostgreSQL fixture with7 functional cases for actor separation, payload-free summaries, latest/missing-policy denial, exact-path safe requeue/second-refusal/peer preservation, non-dead-letter rejection, payload-hydration rollback/retry and current SQL permission revocation. Uses actual enqueue/encryption with an owned synthetic key and root-seeded dead-letter state; no worker/provider/hosted claim. [Evidence](evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json). Local node syntax PASS; actual runtime CI PENDING. App/schema/ACL unchanged, all45 gate statuses unchanged, releaseNO-GO.
+
 ## Current-source reconciliation and one named HTTP subcondition accepted — 2026-10-27
 
 Accepted sourceccda10c03b91633825cd2a1aea58f97ca2727da9,57/57 CI SUCCESS. [Authoritative checkpoint and next case](P0-CLOSURE-REGISTER.md); [current actor/entrypoint map](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json); [provider cost HTTP evidence](evidence/P0-PROVIDER-COST-HTTP-20261027.json). Verified320 source/363 test blobs; AST362 registration rows/236 method-path pairs, not a P0 denominator or runtime acceptance. Existing8-table/86-field schema unchanged; historical UI222 remains P1, no scope expansion.

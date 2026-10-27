@@ -52,6 +52,7 @@ test('full application management privacy preserves cutover ordering and current
   const denied=await actor('admin','assistant_admin',[]);
   const viewer=await actor('admin','assistant_admin',['view_logs']);
   const healthViewer=await actor('admin','assistant_admin',['view_logs','view_merchants']);
+  const channelManager=await actor('admin','assistant_admin',['manage_channels']);
   const a=await actor('merchant'),b=await actor('merchant');
   for(const actor of actors){
     if(actor.kind==='admin'){
@@ -210,6 +211,120 @@ test('full application management privacy preserves cutover ordering and current
       await admin.query("DELETE FROM provider_cost_rates WHERE dimension_key='p0_http_fixture' AND dimension_value=$1",[dimension]);
       await admin.query("DELETE FROM provider_cost_settings WHERE id='global'");
       if(settingsBefore)await admin.query('INSERT INTO provider_cost_settings SELECT (jsonb_populate_record(NULL::provider_cost_settings,$1::jsonb)).*',[JSON.stringify(settingsBefore)]);
+    }
+  });
+  await t.test('background job HTTP authority separates summaries from requeue and preserves atomic state',async t=>{
+    const queue=await import('../src/services/postgresDurableJobQueue.ts');
+    const key={id:'synthetic-admin-job-http-key',key:Buffer.alloc(32,37)};
+    queue.configurePostgresDurableJobCredentialKeyProvider({current:()=>key,resolve:id=>id===key.id?key:null});
+    const ownedJobs=[],privateMarkers=[],jobTables=['background_jobs','background_job_payloads','job_dead_letters','job_attempts'];
+    const jobsSnapshot=async(selected=ownedJobs)=>Object.fromEntries(await Promise.all(jobTables.map(async table=>[table,(await admin.query('SELECT to_jsonb(t) AS row FROM '+table+' t WHERE '+(table==='background_jobs'?'id':'job_id')+'=ANY($1::text[]) ORDER BY to_jsonb(t)::text',[selected])).rows])));
+    async function seed(merchant,policy,queued=false){
+      const marker='private-job-payload-'+randomUUID();privateMarkers.push(marker);
+      const created=await queue.enqueueDurableJobAuthoritative({type:'p0.admin-http.synthetic',dedupeKey:'admin-http-'+randomUUID(),merchantId:merchant.id,payload:{body:marker,customer_reference:'private-job-customer-'+marker},maxAttempts:3});
+      const id=created.job.id;ownedJobs.push(id);
+      if(!queued){
+        const result={channel_id:'synthetic-channel-'+id,status:'disconnected',...(policy===undefined?{}:{_fawri_requeue_policy:policy?'safe':'blocked'})};
+        await admin.query("UPDATE background_jobs SET status='dead_letter',attempts=1,last_error_code='SYNTHETIC_ADMIN_HTTP',dead_lettered_at=now(),result=$2::jsonb WHERE id=$1",[id,JSON.stringify(result)]);
+        // Trusted fixture state, not a worker execution or proof of provider failure.
+        await admin.query("INSERT INTO job_dead_letters(id,job_id,occurrence,reason_code,attempts,payload_sha256,metadata) SELECT $1,id,1,'SYNTHETIC_ADMIN_HTTP',1,payload_hash,$3::jsonb FROM background_jobs WHERE id=$2",['dlq-'+randomUUID(),id,JSON.stringify(policy===undefined?{}:{requeue_safe:policy})]);
+      }
+      return {id,merchantId:merchant.id};
+    }
+    function noPayload(r){
+      assert.equal(r.body.payloads_included,false);
+      for(const marker of privateMarkers)assert.equal(JSON.stringify(r.body).includes(marker),false);
+      assert.equal(JSON.stringify(r.body).includes('_fawri_requeue_policy'),false);
+      for(const row of r.body.jobs||[r.body.job]){
+        if(!row)continue;
+        for(const field of ['payload','ciphertext','key_id','payload_hash'])assert.equal(Object.hasOwn(row,field),false);
+      }
+    }
+    const list='/api/admin/background-jobs',url=job=>list+'/'+encodeURIComponent(job.id)+'/requeue';
+    try{
+      const own=await seed(a,true),peer=await seed(b,true),uncertain=await seed(a,false),unknown=await seed(b,undefined),queued=await seed(a,true,true),rollback=await seed(b,true);
+      // Older safe history must not override a later uncertain dead-letter occurrence.
+      await admin.query("UPDATE job_dead_letters SET metadata=$2::jsonb WHERE job_id=$1",[uncertain.id,JSON.stringify({requeue_safe:true})]);
+      await admin.query("INSERT INTO job_dead_letters(id,job_id,occurrence,reason_code,attempts,payload_sha256,metadata) SELECT $1,id,2,'SYNTHETIC_UNCERTAIN',1,payload_hash,$3::jsonb FROM background_jobs WHERE id=$2",['dlq-'+randomUUID(),uncertain.id,JSON.stringify({requeue_safe:false})]);
+      await t.test('owner and view_logs or manage_channels readers receive summaries without raw encrypted payload',async()=>{
+        const before=await jobsSnapshot(),business=await snapshot();
+        for(const actor of [owner,viewer,channelManager]){
+          const r=await req(list+'?status=dead_letter&limit=500',actor);assert.equal(r.status,200);assert.equal(r.cache,'no-store');noPayload(r);
+          for(const job of [own,peer,uncertain,unknown,rollback]){
+            const row=r.body.jobs.find(x=>x.id===job.id);assert.ok(row);assert.equal(row.merchant_id,job.merchantId);
+            assert.equal(row.status,'dead_letter');assert.equal(row.has_payload,true);assert.equal(row.has_result,true);
+            assert.deepEqual(row.result,{channel_id:'synthetic-channel-'+job.id,status:'disconnected'});
+          }
+          assert.equal(r.body.jobs.some(x=>x.id===queued.id),false);
+        }
+        const limited=await req('/API/Admin/Background-Jobs/?status=dead_letter&limit=1',viewer);assert.equal(limited.status,200);assert.equal(limited.body.jobs.length,1);noPayload(limited);
+        assert.deepEqual(await jobsSnapshot(),before);assert.deepEqual(await snapshot(),business);
+      });
+      await t.test('guest merchant and unprivileged assistant cannot read summaries and log-only reader cannot requeue',async()=>{
+        const before=await jobsSnapshot(),business=await snapshot();
+        for(const [actor,status] of [[undefined,401],[a,401],[b,401],[denied,403]]){
+          for(const [path,method] of [[list,'GET'],[url(own),'POST']]){
+            const r=await req(path,actor,method,method==='POST'?{manage_channels:true,requeue_safe:true}:undefined);assert.equal(r.status,status);
+            for(const id of ownedJobs)assert.equal(JSON.stringify(r.body).includes(id),false);
+          }
+        }
+        const readOnly=await req(url(own),viewer,'POST',{manage_channels:true,owner:true,requeue_safe:true});assert.equal(readOnly.status,403);assert.equal(readOnly.body.code,'ADMIN_PERMISSION_REQUIRED');
+        for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:owner.cookie+'; '+a.cookie}]){
+          assert.equal((await req(list,owner,'GET',undefined,headers)).status,401);
+          assert.equal((await req(url(own),owner,'POST',{},headers)).status,401);
+        }
+        assert.deepEqual(await jobsSnapshot(),before);assert.deepEqual(await snapshot(),business);
+      });
+      await t.test('latest uncertain or absent requeue policy remains blocked despite caller claims',async()=>{
+        const before=await jobsSnapshot();
+        for(const job of [uncertain,unknown])for(const actor of [owner,channelManager]){
+          const r=await req(url(job),actor,'POST',{requeue_safe:true,status:'queued',owner:true});assert.equal(r.status,409);assert.equal(r.body.code,'DURABLE_JOB_REQUEUE_BLOCKED');
+          assert.doesNotMatch(JSON.stringify(r.body),/private-job-payload-|ciphertext/);
+        }
+        assert.deepEqual(await jobsSnapshot(),before);
+      });
+      await t.test('owner and manage_channels-only assistant requeue the selected safe job once without changing peers',async()=>{
+        const business=await snapshot();
+        for(const [job,actor,other] of [[own,owner,peer],[peer,channelManager,own]]){
+          const unchanged=ownedJobs.filter(id=>id!==job.id),before=await jobsSnapshot(unchanged);
+          const r=await req(url(job),actor,'POST',{job_id:other.id,merchant_id:other.merchantId});assert.equal(r.status,200);assert.equal(r.body.job.id,job.id);assert.equal(r.body.job.merchant_id,job.merchantId);assert.equal(r.body.job.status,'queued');noPayload(r);
+          const row=(await admin.query('SELECT status,attempts,requeue_count FROM background_jobs WHERE id=$1',[job.id])).rows[0];assert.deepEqual(row,{status:'queued',attempts:0,requeue_count:1});
+          assert.ok((await admin.query('SELECT requeued_at FROM job_dead_letters WHERE job_id=$1 ORDER BY occurrence DESC LIMIT 1',[job.id])).rows[0].requeued_at);
+          assert.deepEqual(await jobsSnapshot(unchanged),before);
+          const after=await jobsSnapshot();const retry=await req(url(job),actor,'POST',{});assert.equal(retry.status,400);assert.equal(retry.body.code,'DURABLE_JOB_REQUEUE_FAILED');assert.deepEqual(await jobsSnapshot(),after);
+        }
+        assert.deepEqual(await snapshot(),business);
+      });
+      await t.test('a non-dead-letter job is refused without changing its queued work or siblings',async()=>{
+        const before=await jobsSnapshot();const r=await req(url(queued),channelManager,'POST',{});assert.equal(r.status,400);assert.equal(r.body.code,'DURABLE_JOB_REQUEUE_FAILED');assert.deepEqual(await jobsSnapshot(),before);
+      });
+      await t.test('payload hydration failure rolls back both job reset and dead-letter stamp then real retry succeeds',async()=>{
+        const original=(await admin.query('SELECT ciphertext FROM background_job_payloads WHERE job_id=$1',[rollback.id])).rows[0].ciphertext;
+        await admin.query("UPDATE background_job_payloads SET ciphertext='not-json' WHERE job_id=$1",[rollback.id]);
+        try{
+          const before=await jobsSnapshot(),business=await snapshot();
+          const r=await req(url(rollback),owner,'POST',{});assert.equal(r.status,400);assert.equal(r.body.code,'DURABLE_JOB_PAYLOAD_INVALID');
+          assert.doesNotMatch(JSON.stringify(r.body),/not-json|private-job-payload-|ciphertext/);
+          assert.deepEqual(await jobsSnapshot(),before);assert.deepEqual(await snapshot(),business);
+        }finally{await admin.query('UPDATE background_job_payloads SET ciphertext=$2 WHERE job_id=$1',[rollback.id,original]);}
+        const otherBefore=await jobsSnapshot(ownedJobs.filter(id=>id!==rollback.id));
+        const r=await req(url(rollback),owner,'POST',{});assert.equal(r.status,200);noPayload(r);
+        assert.equal((await admin.query('SELECT requeue_count FROM background_jobs WHERE id=$1',[rollback.id])).rows[0].requeue_count,1);
+        assert.deepEqual(await jobsSnapshot(ownedJobs.filter(id=>id!==rollback.id)),otherBefore);
+      });
+      await t.test('SQL permission removal overrides the original manage_channels session on both routes',async()=>{
+        const before=await jobsSnapshot();await admin.query("DELETE FROM admin_permissions WHERE admin_id=$1 AND permission='manage_channels'",[channelManager.id]);
+        try{
+          assert.equal((await req(list,channelManager)).status,403);assert.equal((await req(url(uncertain),channelManager,'POST',{})).status,403);
+        }finally{await admin.query("INSERT INTO admin_permissions(admin_id,permission) VALUES($1,'manage_channels')",[channelManager.id]);}
+        assert.deepEqual(await jobsSnapshot(),before);assert.equal((await req(list,owner)).status,200);
+      });
+    }finally{
+      await cleanupResources([
+        ...['job_attempts','job_dead_letters','background_job_payloads'].map(table=>[table,()=>admin.query('DELETE FROM '+table+' WHERE job_id=ANY($1::text[])',[ownedJobs])]),
+        ['background jobs',()=>admin.query('DELETE FROM background_jobs WHERE id=ANY($1::text[])',[ownedJobs])],
+        ['fixture key provider',()=>queue.configurePostgresDurableJobCredentialKeyProvider(null)],
+      ]);
     }
   });
   const incidentKeys=[...merchants.flatMap(id=>[`merchant-no-connected-channel:${id}`,`merchant-channel-errors:${id}`]),'channel-recent-errors'];

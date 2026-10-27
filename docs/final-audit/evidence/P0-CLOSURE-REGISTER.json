@@ -191,6 +191,11 @@
         "acceptedSource": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
         "parentGateClosed": false,
         "newGate": false
+      },
+      "backgroundJobAdminHttpProof": {
+        "evidence": "evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json",
+        "status": "PREPARED_PENDING_EXACT_SOURCE_CI",
+        "existingGate": true
       }
     },
     {

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+  "subcondition": "Actual app background-job admin GET versus requeue actor/summary/atomic-state boundary",
+  "basedOnCheckpoint": "c8e7cf58ddd3e56c2ed75d51b811006c84059804",
+  "status": "PREPARED_PENDING_EXACT_SOURCE_CI",
+  "newGate": false,
+  "gateClosed": false,
+  "applicationChanged": false,
+  "testChanged": true,
+  "schemaChanged": false,
+  "aclChanged": false,
+  "hosted": false,
+  "release": "NO-GO",
+  "sourcePolicy": {
+    "read": "Secure admin with view_logs OR manage_channels (owner role has inherited application permission semantics).",
+    "requeue": "Secure admin with manage_channels; not a view_logs-only reader.",
+    "requeueState": "Only dead_letter and latest job_dead_letters.metadata.requeue_safe=true, under row lock. Caller body is not authority.",
+    "summary": "payloads_included=false; no payload hydration in summary list. publicResult strips only internal requeue policy; arbitrary nested result confidentiality is NOT accepted by these tests."
+  },
+  "sourcePaths": [
+    "artifacts/api-server/src/app.ts#authorizeChannelDurableJobAdmin",
+    "artifacts/api-server/src/routes/channel-durable-job-admin.ts",
+    "artifacts/api-server/src/services/postgresDurableJobQueue.ts#listDurableJobSummariesAuthoritative",
+    "artifacts/api-server/src/services/postgresDurableJobQueue.ts#requeueDeadLetterJobAuthoritative",
+    "artifacts/api-server/src/services/metaChannelJobs.ts",
+    "artifacts/api-server/src/services/metaWebhookWorker.ts"
+  ],
+  "priorEvidence": "Current source catalogue named this boundary for assertion/effective-route review. Focused current API test/scripts scan found queue/worker/core/storage tests but no named actual-app admin GET/requeue actor matrix. Bounded missing proof, not a confirmed vulnerability or whole-program absence claim.",
+  "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+  "newFunctionalCases": 7,
+  "fixture": {
+    "realRestrictedPrimaryAndAuthLogins": true,
+    "actualAppRouter": true,
+    "merchants": 2,
+    "syntheticJobs": 6,
+    "actualEnqueueAndEncryption": true,
+    "deadLetterState": "Trusted root-seeded fixture state only; no worker/provider execution claimed.",
+    "crypto": "Synthetic in-memory fixture key provider only; no operational credentials/KMS interaction.",
+    "workersDisabled": true
+  },
+  "cases": [
+    "Owner, log-only assistant and channels-only assistant can list global summaries with safe declared result fields, no raw payload/ciphertext/key/hash; status/limit/case variants and SQL/business state preservation.",
+    "Guest/two merchants/unprivileged assistant cannot list or mutate; log-only assistant cannot requeue; wrong device and combined-role cookies denied with selected snapshots unchanged.",
+    "Latest uncertain occurrence or missing policy remains409 despite request claims; older safe history cannot override latest false.",
+    "Owner and channels-only assistant requeue exact path-selected safe job once, reset attempt state and stamp DLQ; peer jobs/business unchanged and second POST refused without second increment.",
+    "Already queued job is refused without mutation.",
+    "Corrupted encrypted payload parsing fails after proposed state reset; transaction rolls back job and DLQ stamp, then restored original payload permits one real retry.",
+    "SQL manage_channels revocation overrides original session claims on both GET and POST; owner access remains valid."
+  ],
+  "snapshotTables": [
+    "background_jobs",
+    "background_job_payloads",
+    "job_dead_letters",
+    "job_attempts"
+  ],
+  "businessSnapshots": [
+    "merchant_admin_notes",
+    "merchant_channel_overrides",
+    "merchant_deletion_requests",
+    "audit_events",
+    "emergency_access_requests",
+    "merchant_channels"
+  ],
+  "limits": [
+    "Selected fixtures and snapshots, not every job type/producer/nested result or global P0 privacy proof.",
+    "Summary includes merchant/dedupe identifiers and sanitized result under existing global admin policy; no new field visibility policy adopted.",
+    "Actual HTTP/service requeue tested; no worker run, Graph send, financial debit, hosted queue or production key acceptance.",
+    "Session bookkeeping outside immutable business snapshots remains permitted.",
+    "Exact-source targeted and broader CI pending; no runtime PASS inferred from syntax."
+  ],
+  "localSyntax": "PASS_node_check",
+  "runtime": "PENDING",
+  "nextAction": "Read exact-source targeted and broader CI; fix any observed failure without weakening assertions. Keep full role/privacy gate OPEN and no repeated accepted provider-cost tests except the relevant shared fixture regression."
+}
