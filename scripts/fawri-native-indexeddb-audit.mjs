@@ -106,12 +106,46 @@ try {
   await check('same operation ID with changed valid quantity must reject', async () => {
     const old = (await evaluate(a, 'authority.listSales()'))[0];
     assert.ok(old);
-    const changed = sale(old.operation_id); changed.lines[0].quantity = 2;
-    const r = await evaluate(a, `authority.commitSale(${JSON.stringify(changed)}).then(r=>({accepted:true,quantity:r.sale.lines[0].quantity,duplicate:r.duplicate}),e=>({accepted:false,code:e.code}))`);
-    assert.equal(r.accepted, false, 'Changed operation payload accepted: ' + JSON.stringify(r));
-    return r;
+    const before = await evaluate(a, 'Promise.all([authority.listSales(),authority.listPendingSync(),authority.getCatalogItem("product")])');
+    const original = sale(old.operation_id);
+    const changes = [
+      {lines:[{product_id:'product',quantity:2}]},
+      {lines:[{product_id:'other',quantity:1}]},
+      {lines:[{product_id:'product',variant_id:'other',quantity:1}]},
+      {payment_method:'card'}, {payment_status:'pending'}, {note:'changed'},
+      {payment_provider:'other'}, {payment_reference:'other'},
+      {manual_discount_minor:1,manual_discount_kind:'amount',manual_discount_reason:'changed'},
+      {cash_tendered_minor:1000,change_due_minor:0},
+    ];
+    for (const patch of changes) {
+      const changed={...original,...patch};
+      const r = await evaluate(a, `authority.commitSale(${JSON.stringify(changed)}).then(()=>({accepted:true}),e=>({accepted:false,code:e.code}))`);
+      assert.equal(r.accepted, false, 'Changed operation payload accepted: ' + JSON.stringify(r));
+      assert.equal(r.code,'CASHIER_SALE_OPERATION_ID_CONFLICT');
+      assert.deepEqual(await evaluate(a, 'Promise.all([authority.listSales(),authority.listPendingSync(),authority.getCatalogItem("product")])'),before);
+    }
+    return {changedInputs:changes.length,rejected:true,unchanged:true};
   });
-
+  await check('exact local replay survives exhausted stock ACK and page reopen without a second effect', async () => {
+    const old = (await evaluate(a, 'authority.listSales()'))[0];
+    const input=sale(old.operation_id);
+    const before=await evaluate(a,'Promise.all([authority.listSales(),authority.listPendingSync(),authority.getCatalogItem("product")])');
+    const replay=await evaluate(a,`authority.commitSale(${JSON.stringify(input)})`);
+    assert.deepEqual(replay.sale,old);
+    assert.deepEqual(await evaluate(a,'Promise.all([authority.listSales(),authority.listPendingSync(),authority.getCatalogItem("product")])'),before);
+    await evaluate(a,`authority.acknowledgeSynced([${JSON.stringify(old.operation_id)}]).then(()=>true)`);
+    await evaluate(a,'authority.close().then(()=>true)');
+    await evaluate(a,`globalThis.authority=new FawriAudit.IndexedDbCashierAuthority(${JSON.stringify(config)});true`);
+    const afterAck=await evaluate(a,`authority.commitSale(${JSON.stringify(input)})`);
+    assert.deepEqual(afterAck.sale,old);assert.equal(afterAck.outbox.length,0);
+    assert.equal(await evaluate(a,'authority.getCatalogItem("product").then(x=>x.stock_quantity)'),0);
+    // Restore only the original fixture outbox for the existing versionchange
+    // test. This is fixture setup, never a production repair path.
+    await evaluateStatements(a,`const d=await new Promise((ok,no)=>{const r=indexedDB.open(${JSON.stringify(config.databaseName)});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+      try{const t=d.transaction('outbox','readwrite'),done=new Promise((ok,no)=>{t.oncomplete=ok;t.onabort=()=>no(t.error);t.onerror=()=>no(t.error)});
+      for(const e of ${JSON.stringify(before[1])})t.objectStore('outbox').put({...e,outbox_id:'outbox:'+e.operation_id+':'+e.entity_type+':'+e.entity_id});await done;}finally{d.close()}`);
+    return {exactReplay:true,afterAckAndReopen:true,stock:0,noReenqueue:true};
+  });
   // SEQ-R3 prerequisite: real local stores, no server admission or transport.
   await evaluateStatements(a, `
     globalThis.recConfig=${JSON.stringify({...config,databaseName:config.databaseName+'-recovery'})};
@@ -272,4 +306,4 @@ finally {
 }
 if (infrastructureError) evidence.infrastructureError = infrastructureError;
 console.log('AUDIT_NATIVE_INDEXEDDB_RESULT ' + JSON.stringify(evidence));
-if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 14) process.exitCode = 1;
+if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 15) process.exitCode = 1;

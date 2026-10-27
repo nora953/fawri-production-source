@@ -639,6 +639,42 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         operationId,
       );
       if (replay) {
+        // Compare original caller-controlled facts, not today's catalog/pricing
+        // or mutable sale status/return history. An operation ID is no license
+        // to acknowledge a different local sale request.
+        const saved = replay.sale;
+        const optionalText = (value: string | undefined) => String(value || '').trim();
+        const optionalNumber = (value: number | undefined) =>
+          value === undefined ? undefined : Number(value);
+        const sameLines = saved.lines.length === input.lines.length &&
+          saved.lines.every((line, index) => {
+            const requested = input.lines[index];
+            return catalogKey(line.product_id, line.variant_id) ===
+              catalogKey(requested.product_id, requested.variant_id) &&
+              line.quantity === requested.quantity;
+          });
+        if (saved.local_merchant_id !== this.localMerchantId ||
+            saved.cloud_merchant_id !== this.cloudMerchantId ||
+            saved.device_id !== this.deviceId || !sameLines ||
+            saved.payment_method !== input.payment_method ||
+            saved.payment_status !== input.payment_status ||
+            (saved.manual_discount_minor || 0) !== Number(input.manual_discount_minor || 0) ||
+            saved.manual_discount_kind !== input.manual_discount_kind ||
+            optionalText(saved.manual_discount_reason) !==
+              String(input.manual_discount_reason || '').normalize('NFKC').trim() ||
+            optionalText(saved.manual_discount_override_approval_id) !==
+              (input.manual_discount_override_approval_id
+                ? requiredIdentifier(input.manual_discount_override_approval_id, 'manual discount override approval id') : '') ||
+            saved.cash_tendered_minor !== optionalNumber(input.cash_tendered_minor) ||
+            saved.change_due_minor !== optionalNumber(input.change_due_minor) ||
+            optionalText(saved.payment_provider) !== optionalText(input.payment_provider) ||
+            optionalText(saved.payment_reference) !== optionalText(input.payment_reference) ||
+            optionalText(saved.note) !== optionalText(input.note)) {
+          throw new CashierIndexedDbError(
+            'CASHIER_SALE_OPERATION_ID_CONFLICT',
+            'Operation id is already bound to different sale input',
+          );
+        }
         await completion;
         return replay;
       }
