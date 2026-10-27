@@ -920,5 +920,111 @@ test('full application management privacy preserves cutover ordering and current
     }));
   });
 
+  await t.test('owner permission changes invalidate active assistant cookies and use current SQL grants',async permissionTest=>{
+    const target=await actor('admin','assistant_admin',['view_merchants']);
+    const peer=await actor('admin','assistant_admin',['view_merchants']);
+    async function trusted(account,deviceId){
+      const device=await security.registerAdminDeviceAuthoritative({accountId:account.id,accountKind:'admin',deviceId,deviceLabel:'Synthetic permission '+deviceId});
+      await security.setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:owner.id});
+    }
+    const secondId='synthetic-permission-second-'+randomUUID();
+    await trusted(target,target.device);await trusted(target,secondId);await trusted(peer,peer.device);
+    async function issue(account,device,permissions){
+      const session=await auth.issueSession({accountId:account.id,accountKind:'admin',tenantId:'fawri-admin',adminRole:'assistant_admin',deviceId:device,permissions});
+      return {...account,device,session,cookie:ADMIN_SESSION_COOKIE+'='+session.token};
+    }
+    const first=await issue(target,target.device,['view_merchants']),second=await issue(target,secondId,['view_merchants']);
+    const other=await issue(peer,peer.device,['view_merchants']);
+    let updated;
+    const path='/api/auth/admins/'+target.id+'/permissions';
+    const state=async()=>({
+      accounts:(await admin.query('SELECT id,kind,phone,password_hash,state,password_version,security_version,session_version,password_changed_at FROM accounts WHERE id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+      profiles:(await admin.query('SELECT id,account_id,display_name,role,enabled,must_change_password FROM admin_profiles WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+      permissions:(await admin.query('SELECT admin_id,permission,granted_by_admin_id FROM admin_permissions WHERE admin_id=ANY($1::text[]) ORDER BY admin_id,permission',[ids])).rows,
+      sessions:(await admin.query('SELECT id,account_id,kind,tenant_id,status,token_hash,device_fingerprint_hash,session_version,security_version,role_snapshot,permission_snapshot,created_at,revoked_at,revoke_reason,replaced_by_session_id FROM account_sessions WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+      devices:(await admin.query('SELECT to_jsonb(d) AS row FROM trusted_devices d WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows,
+    });
+    function assertChanged(before,after,selected,permissions){
+      const prior=before.accounts.find(x=>x.id===target.id),next=after.accounts.find(x=>x.id===target.id);
+      assert.equal(next.session_version,prior.session_version+1);assert.equal(next.security_version,prior.security_version+1);
+      assert.deepEqual({...next,session_version:prior.session_version,security_version:prior.security_version},prior);
+      assert.deepEqual(after.accounts.filter(x=>x.id!==target.id),before.accounts.filter(x=>x.id!==target.id));
+      assert.deepEqual(after.profiles,before.profiles);assert.deepEqual(after.devices,before.devices);
+      assert.deepEqual(after.permissions.filter(x=>x.admin_id!==target.id),before.permissions.filter(x=>x.admin_id!==target.id));
+      assert.deepEqual(after.permissions.filter(x=>x.admin_id===target.id),permissions.map(permission=>({admin_id:target.id,permission,granted_by_admin_id:owner.id})));
+      assert.deepEqual(after.sessions.filter(x=>!selected.includes(x.id)),before.sessions.filter(x=>!selected.includes(x.id)));
+      for(const id of selected){
+        const old=before.sessions.find(x=>x.id===id),row=after.sessions.find(x=>x.id===id);
+        assert.equal(old.status,'active');assert.equal(row.status,'revoked');assert.equal(row.revoke_reason,'role_changed');assert.ok(row.revoked_at);
+        assert.deepEqual({...row,status:old.status,revoke_reason:old.revoke_reason,revoked_at:old.revoked_at},old);
+      }
+    }
+    const business=await snapshot();
+    await permissionTest.test('invalid permission payloads preserve active sessions and current grants',async()=>{
+      assert.equal((await req('/api/auth/merchants',first)).status,200);assert.equal((await req('/api/auth/admin/logs',first)).status,403);
+      const before=await state();
+      for(const [body,code] of [[{permissions:'view_logs'},'INVALID_PERMISSIONS_VALUE'],[{permissions:['synthetic_unknown_permission']},'INVALID_ADMIN_PERMISSION']]){
+        const r=await req(path,owner,'PATCH',body);assert.equal(r.status,400);assert.equal(r.body.code,code);
+        assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+      }
+      for(const session of [first,second,other])assert.equal((await req('/api/auth/merchants',session)).status,200);
+      assert.deepEqual(await state(),before);
+    });
+    await permissionTest.test('SQL insertion fault after grant deletion rolls back without invalidating active cookies',async()=>{
+      const fault='p0_admin_perm_'+randomUUID().replaceAll('-',''),before=await state();
+      await admin.query('CREATE FUNCTION '+fault+"() RETURNS trigger LANGUAGE plpgsql AS $fault$ BEGIN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='synthetic permission write fault'; END $fault$");
+      let installed=false;
+      try{
+        await admin.query('CREATE TRIGGER '+fault+" BEFORE INSERT ON admin_permissions FOR EACH ROW WHEN (NEW.admin_id = '"+target.id+"') EXECUTE FUNCTION "+fault+'()');installed=true;
+        // Test-mode error marker identifies the injected SQL fault; no
+        // production error-envelope privacy contract is accepted here.
+        const r=await fetch(origin+path,{method:'PATCH',headers:{Cookie:owner.cookie,'X-Fawri-Device-Id':owner.device,'Content-Type':'application/json'},body:JSON.stringify({permissions:['view_logs']})});
+        assert.equal(r.status,500);assert.match(await r.text(),/synthetic permission write fault/);
+        assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+      }finally{
+        if(installed)await admin.query('DROP TRIGGER '+fault+' ON admin_permissions');
+        await admin.query('DROP FUNCTION '+fault+'()');
+      }
+      for(const session of [first,second,other])assert.equal((await req('/api/auth/merchants',session)).status,200);
+      assert.equal((await req('/api/auth/admin/logs',first)).status,403);assert.equal((await req('/api/auth/admin/me',owner)).status,200);
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+    });
+    await permissionTest.test('owner replaces grants revokes both old devices and fresh session receives only current rights',async()=>{
+      const before=await state();
+      const r=await req('/API/Auth/Admins/'+target.id+'/Permissions/?account_id='+peer.id,owner,'PATCH',{permissions:['view_logs'],adminId:peer.id,account_id:peer.id,actor_account_id:peer.id,role:'owner_admin'});
+      assert.equal(r.status,200);assert.equal(r.body.account.id,target.id);
+      assert.equal(r.body.admin_profile.role,'assistant_admin');assert.deepEqual(r.body.admin_profile.permissions,['view_logs']);
+      const after=await state();assertChanged(before,after,[first.session.session.id,second.session.session.id],['view_logs']);
+      for(const session of [first,second])for(const endpoint of ['/api/auth/admin/me','/api/auth/merchants','/api/auth/admin/logs'])assert.equal((await req(endpoint,session)).status,401);
+      assert.equal((await req('/api/auth/merchants',other)).status,200);assert.equal((await req('/api/auth/admin/me',owner)).status,200);
+      assert.deepEqual(await state(),after);assert.deepEqual(await snapshot(),business);
+      updated=await issue(target,target.device,['view_logs']);
+      const current=await req('/api/auth/admin/me',updated);assert.equal(current.status,200);assert.deepEqual(current.body.admin_profile.permissions,['view_logs']);
+      assert.equal((await req('/api/auth/merchants',updated)).status,403);assert.equal((await req('/api/auth/admin/logs',updated)).status,200);
+      assert.deepEqual(await snapshot(),business);
+    });
+    await permissionTest.test('empty grant list revokes the active cookie and preserves authenticated own identity without business rights',async()=>{
+      const before=await state(),r=await req(path,owner,'PATCH',{permissions:[],adminId:peer.id,account_id:peer.id});
+      assert.equal(r.status,200);assert.deepEqual(r.body.admin_profile.permissions,[]);
+      const after=await state();assertChanged(before,after,[updated.session.session.id],[]);
+      for(const session of [first,second,updated])assert.equal((await req('/api/auth/admin/me',session)).status,401);
+      assert.equal((await req('/api/auth/merchants',other)).status,200);assert.equal((await req('/api/auth/admin/me',owner)).status,200);
+      assert.deepEqual(await state(),after);
+      const empty=await issue(target,target.device,[]),current=await req('/api/auth/admin/me',empty);
+      assert.equal(current.status,200);assert.deepEqual(current.body.admin_profile.permissions,[]);
+      for(const endpoint of ['/api/auth/merchants','/api/auth/admin/logs'])assert.equal((await req(endpoint,empty)).status,403);
+      const audits=(await admin.query("SELECT actor_account_id,actor_kind,subject_hash FROM auth_audit_events WHERE actor_account_id=$1 AND event_type='assistant_admin_permissions_changed'",[owner.id])).rows;
+      assert.ok(audits.filter(x=>x.actor_account_id===owner.id&&x.actor_kind==='admin').length>=2);
+      assert.ok(audits.every(x=>x.subject_hash&&x.subject_hash!==target.id));assert.deepEqual(await snapshot(),business);
+    });
+    console.log('P0_ADMIN_ACTIVE_PERMISSION_HTTP '+JSON.stringify({
+      actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,invalidInputPreservesState:true,
+      actualSqlInsertFaultAfterDeleteRollsBack:true,oldTwoDeviceCookiesInvalidated:true,currentGrantOnlyAfterFreshIssue:true,
+      emptyGrantsKeepIdentityButDenyBusiness:true,serverActorAndTargetBinding:true,
+      versionsIncrementAndCredentialsTrustPeersPreserved:true,selectedBusinessTablesPreserved:true,
+      sessionHeartbeatAndIdleExpiryExcluded:true,interactiveReloginRaceAndCrossTransactionAuditFaultAccepted:false,hosted:false
+    }));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
