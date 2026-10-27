@@ -1,3 +1,7 @@
+## SEQ-D3 deletion fault observation stays owned-fixture authority — 2026-10-27
+
+Source follow-up to286f9d34: the post-retirement test hook inspects stream state inside the actual deletion transaction. Existing auth LOGIN lacks direct execution of the scoped stream predicate; its production privileges must not be expanded for this test observation. Make only the root-created disposable fault trigger SECURITY DEFINER with pinned pg_catalog search_path and fully qualified stream read. No application grant or financial/deletion assertion changes; no runtime failure/pass inferred from this source review. New exact-source CI pending; last accepted executable remainsbb8f500c. NO-GO.
+
 ## SEQ-D3 review-ledger minimization and deletion lifecycle candidate prepared — 2026-10-27
 
 Continue fromb37734e0 checkpoint / acceptedbb8f500c executable (57/57 CI;818 TAP). Source review found proposal-only immutable review_reference/reviewer_reference free text could retain caller/device/personal strings after canonical merchant deletion. Proposal revision replaces these stored references with domain-separated SHA256 correlation hashes; transient independent-review manifest/API and exact retry/stream identity remain unchanged. No historical/canonical/hosted records rewritten. These hashes remain pseudonymous evidence, not anonymity or an approved retention period. Readiness pins new function body and exact8-column minimized ledger contract, with legacy raw-column fault detection.
