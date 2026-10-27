@@ -2051,9 +2051,843 @@
     "sourceTree": "ece51baa845c500280fc83ccdd4776db0206339e"
   },
   "latestAddition": {
-    "section": "localRecoverySnapshot20261027",
-    "source": "389679488185e9d81a8edc120fdfdeaff4130efd",
-    "status": "BOUNDED_NATIVE_LOCAL_RECOVERY_SNAPSHOT_AND_SALE_REPLAY_SOURCE_ACCEPTED",
+    "section": "deviceBindingRecovery20261027",
+    "source": "e73fe8d90552d71d2a5953c17c757202956c4241",
+    "status": "BOUNDED_EXISTING_DEVICE_BINDING_LOCAL_RECOVERY_INSPECTION_SOURCE_ACCEPTED",
     "doesNotSupersedeHistoricalSyntheticTransportLimits": true
+  },
+  "deviceBindingRecovery20261027": {
+    "schemaVersion": 1,
+    "date": "2026-10-27",
+    "gate": "CASHIER-SYNC-SEQUENCE-001",
+    "condition": "SEQ-R3 existing bootstrap/device/station binding around coherent local inspection",
+    "status": "BOUNDED_EXISTING_DEVICE_BINDING_LOCAL_RECOVERY_INSPECTION_SOURCE_ACCEPTED",
+    "source": "e73fe8d90552d71d2a5953c17c757202956c4241",
+    "baseCheckpoint": "172f9df0ddd4f167d111b1d2cb5e475ee667abaf",
+    "newRuntimeExecuted": true,
+    "applicationPath": "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts#inspectCashierDeviceRecovery",
+    "storagePath": "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts#existingOnly",
+    "harness": "scripts/fawri-native-indexeddb-audit.mjs",
+    "expectedNativeCases": 23,
+    "newNativeCases": 8,
+    "newGateCount": 0,
+    "gateClosed": false,
+    "release": "NO-GO",
+    "apiRuntimeChanged": false,
+    "schemaChanged": false,
+    "aclChanged": false,
+    "publicV2Enabled": false,
+    "productionEnrollmentWired": false,
+    "ordinaryMerchantPairingChanged": false,
+    "sourceScope": "Expose prior coherent local inspection through current device runtime, compare existing binding before/after, preserve existing-only storage. Diagnostic only.",
+    "localChecks": {
+      "javascriptSyntax": "PASS",
+      "typescriptSyntaxTransform": "PASS",
+      "typecheck": "PASS"
+    },
+    "limits": [
+      "Before/after equality of local values is neither server authentication nor physical-device attestation.",
+      "No atomic transaction/lease across separate bootstrap and cashier databases; ABA changes and changes after return are not certified absent.",
+      "No operator session or historical per-operation binding authentication in this wrapper; invalid cached session is intentionally left untouched.",
+      "No trusted first enrollment/original empty-state review, server checkpoint comparison, legacy migration or adopted exceptional recovery.",
+      "No HTTP call, pairing/OTP/issuer creation, ACK, counter reset, repair, local-history deletion or live v2 admission.",
+      "Absent or old storage must HOLD without creating/upgrading it; existing callers retain normal create/upgrade behavior.",
+      "Expired credential metadata can be inspected diagnostically; no server credential acceptance is inferred.",
+      "Storage completeness/size/financial semantic limits of the prior bounded snapshot still apply."
+    ],
+    "native": {
+      "run": 40542265726,
+      "job": 122323490587,
+      "browser": "Chrome/155.0.8059.39",
+      "source": "b6116ea67545709b6453ef02bbdf46046436a609",
+      "results": [
+        {
+          "name": "two tabs race for final stock: exactly one complete operation",
+          "status": "PASS",
+          "details": {
+            "attempts": [
+              {
+                "ok": true
+              },
+              {
+                "ok": false,
+                "code": "CASHIER_OUT_OF_STOCK"
+              }
+            ],
+            "stock": 0,
+            "pending": 2
+          }
+        },
+        {
+          "name": "close and reopen retains unacknowledged operation",
+          "status": "PASS",
+          "details": {
+            "pending": 2
+          }
+        },
+        {
+          "name": "same operation ID with changed valid quantity must reject",
+          "status": "PASS",
+          "details": {
+            "changedInputs": 10,
+            "rejected": true,
+            "unchanged": true
+          }
+        },
+        {
+          "name": "exact local replay survives exhausted stock ACK and page reopen without a second effect",
+          "status": "PASS",
+          "details": {
+            "exactReplay": true,
+            "afterAckAndReopen": true,
+            "stock": 0,
+            "noReenqueue": true
+          }
+        },
+        {
+          "name": "recovery snapshot groups real sale return and void in one readonly transaction",
+          "status": "PASS",
+          "details": {
+            "counter": 4,
+            "operationGroups": 4,
+            "envelopes": 8,
+            "readOnly": true,
+            "serverProof": false
+          }
+        },
+        {
+          "name": "recovery partial primary and movement groups hold without repairing or ACKing",
+          "status": "PASS",
+          "details": {
+            "partialGroups": [
+              [
+                "UNSUPPORTED_OR_INCOMPLETE_OPERATION"
+              ],
+              [
+                "MOVEMENT_GROUP_INCOMPLETE",
+                "MOVEMENT_RECORD_MISMATCH"
+              ]
+            ],
+            "unchanged": true
+          }
+        },
+        {
+          "name": "recovery bounded prefix and invalid bounds never appear complete",
+          "status": "PASS",
+          "details": {
+            "overflowAndInvalid": 4,
+            "exactBound": 8
+          }
+        },
+        {
+          "name": "recovery missing unsafe and nonnumeric counters hold without coercion",
+          "status": "PASS",
+          "details": {
+            "counterFaults": 4,
+            "noReset": true
+          }
+        },
+        {
+          "name": "recovery rejects foreign device and merchant database interpretation",
+          "status": "PASS",
+          "details": {
+            "foreignInterpretations": 2,
+            "originalPreserved": true
+          }
+        },
+        {
+          "name": "recovery retains movement-only stock operation as unsupported",
+          "status": "PASS",
+          "details": {
+            "nonzeroAdjustmentRetained": true,
+            "noTombstone": true
+          }
+        },
+        {
+          "name": "recovery sequence collision and changed movement preserve original evidence",
+          "status": "PASS",
+          "details": {
+            "conflicts": 2,
+            "unchanged": true
+          }
+        },
+        {
+          "name": "recovery native transaction abort cannot return a successful prefix",
+          "status": "PASS",
+          "details": {
+            "nativeAbort": true,
+            "noPartialSuccess": true
+          }
+        },
+        {
+          "name": "recovery snapshot and overlapping writer cannot mix counter and queue",
+          "status": "PASS",
+          "details": {
+            "counter": 4,
+            "groups": 4,
+            "coherent": true
+          }
+        },
+        {
+          "name": "recovery actual page reload preserves inspection and closed handle holds",
+          "status": "PASS",
+          "details": {
+            "actualPageReload": true,
+            "closedHandleHeld": true
+          }
+        },
+        {
+          "name": "device recovery on absent bootstrap holds without creating identity or database",
+          "status": "PASS",
+          "details": {
+            "absentIdentityHeld": true,
+            "noDatabaseCreated": true
+          }
+        },
+        {
+          "name": "device recovery stable binding exposes the real readonly local snapshot without credentials",
+          "status": "PASS",
+          "details": {
+            "bindingObservedUnchanged": true,
+            "localCounter": 1,
+            "operationGroups": 1,
+            "credentialsOmitted": true,
+            "noNetwork": true,
+            "noSessionCleanup": true
+          }
+        },
+        {
+          "name": "device recovery detects observed merchant device station and credential changes during read",
+          "status": "PASS",
+          "details": {
+            "observedDriftFields": 7,
+            "staleViewDiscarded": true,
+            "noRecoveryWrite": true,
+            "abaOrAtomicLeaseProof": false
+          }
+        },
+        {
+          "name": "device recovery incomplete binding holds without refresh repair or session removal",
+          "status": "PASS",
+          "details": {
+            "missingLocationHeld": true,
+            "noLegacyRefresh": true,
+            "noSessionMutation": true
+          }
+        },
+        {
+          "name": "device recovery bootstrap abort before or after local read never returns partial success",
+          "status": "PASS",
+          "details": {
+            "nativeBootstrapAborts": 2,
+            "partialViewsDiscarded": true,
+            "retryAfterFault": true
+          }
+        },
+        {
+          "name": "device recovery missing or old cashier storage is neither created nor upgraded",
+          "status": "PASS",
+          "details": {
+            "missingNotCreated": true,
+            "version1NotUpgraded": true
+          }
+        },
+        {
+          "name": "device recovery propagates incomplete local inspection instead of upgrading it to success",
+          "status": "PASS",
+          "details": {
+            "stableBindingDoesNotOverrideHold": true,
+            "recordsPreserved": true
+          }
+        },
+        {
+          "name": "device recovery actual page reload retains same binding and pending operation",
+          "status": "PASS",
+          "details": {
+            "actualPageReload": true,
+            "sameObservedBinding": true,
+            "pendingPreserved": true
+          }
+        },
+        {
+          "name": "versionchange closes both old handles; pending data survives upgrade",
+          "status": "PASS",
+          "details": {
+            "oldHandleError": "InvalidStateError",
+            "oldVersionReopen": "VersionError",
+            "pending": 2
+          }
+        }
+      ],
+      "checkoutTree": "e412a5656c71db81ebae9c7d3387b6c533c35d5e",
+      "checkoutTreeMatched": true,
+      "passed": 23,
+      "failed": 0
+    },
+    "nextExactAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending.",
+    "initialInfrastructureFailure": {
+      "run": 40542265603,
+      "job": 122323490316,
+      "source": "e73fe8d90552d71d2a5953c17c757202956c4241",
+      "unitTests": {
+        "passed": 24,
+        "failed": 0,
+        "skipped": 0
+      },
+      "nativeResults": 0,
+      "nativeBrowser": null,
+      "error": "Browser prerequisite timed out",
+      "applicationFailureObserved": false,
+      "accepted": false
+    },
+    "remainingLocalCompensationReplay": {
+      "status": "SOURCE_OBSERVATION_RECONCILIATION_PENDING_NOT_RUNTIME_FAILURE_CLAIMED",
+      "path": "artifacts/fawri/src/lib/cashierCompensationAuthority.ts#replayOperation",
+      "sourceReviewed": "172f9df0ddd4f167d111b1d2cb5e475ee667abaf",
+      "gitBlob": "97fffe5e8a33dd70075c3b94dbb9e98d56a0f330",
+      "observation": "Helper validates operation kind and sale ID before returning an old return/void snapshot. Caller input completeness/changed-payload rejection needs reconciliation against accepted tests before a new regression is selected.",
+      "existingGate": "CASHIER-SYNC-SEQUENCE-001",
+      "existingCondition": "Immutable sale/return/void replay identity; no new gate or count."
+    },
+    "infrastructureRetry": {
+      "run": 40542265603,
+      "attempt": 2,
+      "job": 122324821539,
+      "unchangedSource": true,
+      "unitTests": {
+        "passed": 24,
+        "failed": 0,
+        "skipped": 0
+      },
+      "native": {
+        "browser": "Chrome/156.0.8078.47",
+        "source": "b6116ea67545709b6453ef02bbdf46046436a609",
+        "results": [
+          {
+            "name": "real WebCrypto + IndexedDB signed main sale and complete outbox",
+            "status": "PASS",
+            "details": {
+              "stock": 0,
+              "sales": 1,
+              "outbox": 2
+            }
+          },
+          {
+            "name": "new browser context restores signed authority and pending inventory operation",
+            "status": "PASS",
+            "details": {
+              "signedRestore": true,
+              "outbox": 2
+            }
+          },
+          {
+            "name": "altered and legacy cache deny before additional sale",
+            "status": "PASS",
+            "details": {
+              "denied": 3,
+              "unchangedSales": 1
+            }
+          },
+          {
+            "name": "station device branch and credential binding reject mismatches",
+            "status": "PASS",
+            "details": {
+              "denied": 5
+            }
+          },
+          {
+            "name": "secondary cashier and unsigned migration cannot authorize offline",
+            "status": "PASS",
+            "details": {
+              "secondaryNotIssued": true,
+              "unsignedDenied": true
+            }
+          },
+          {
+            "name": "signed version rollback denied and rotation overlap accepted",
+            "status": "PASS",
+            "details": {
+              "staleDenied": true,
+              "rotation": true
+            }
+          },
+          {
+            "name": "rollback and exact authorization expiry deny with native cached state",
+            "status": "PASS",
+            "details": {
+              "rollbackDenied": true,
+              "expiryDenied": true
+            }
+          },
+          {
+            "name": "reconnection acknowledgement drains outbox without changing local inventory or sale",
+            "status": "PASS",
+            "details": {
+              "syntheticAck": true,
+              "outbox": 0,
+              "stock": 0,
+              "sales": 1,
+              "serverSync": "NOT_EXECUTED"
+            }
+          }
+        ]
+      },
+      "accepted": true
+    },
+    "quality": {
+      "run": 40542265364,
+      "typecheckJob": 122323489194,
+      "buildJob": 122323488482,
+      "status": "SUCCESS"
+    },
+    "security": {
+      "run": 40542264882,
+      "job": 122323488455,
+      "tracked": "PASS",
+      "fullReachableHistory": "PASS",
+      "trackedFiles": 2543,
+      "historicalBlobs": 10503
+    },
+    "sourceTree": "e412a5656c71db81ebae9c7d3387b6c533c35d5e",
+    "sourceAnchors": [
+      {
+        "path": "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+        "gitBlob": "9ca0baf5e42e4e9f567e151c5a9243ed502699c6"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts",
+        "gitBlob": "521fda9ac08e6c31be37883f46ab67cb8dda074d"
+      },
+      {
+        "path": "scripts/fawri-native-indexeddb-audit.mjs",
+        "gitBlob": "6221ecab755f121ca3fefbe03ff32eb88d28af03"
+      },
+      {
+        "path": ".github/workflows/cashier-native-indexeddb-audit.yml",
+        "gitBlob": "d1085a8fee28c914582fece6cedb642384da6715"
+      }
+    ],
+    "originalGateCounts": {
+      "known": 45,
+      "closedSource": 29,
+      "open": 7,
+      "blocked": 9,
+      "completeP0Inventory": false,
+      "overallPercentage": null,
+      "newGateCount": 0
+    },
+    "ci": {
+      "total": 58,
+      "success": 58,
+      "failed": 0,
+      "cancelled": 0,
+      "pending": 0,
+      "runs": [
+        {
+          "id": 40542265394,
+          "name": "Merchant deletion cashier lifecycle",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265371,
+          "name": "Pre-release performance smoke gate",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265141,
+          "name": "Complete schema candidate",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265477,
+          "name": "Catalog variant signature schema contract",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265726,
+          "name": "Cashier native IndexedDB engineering audit",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265507,
+          "name": "Observability mounted routes",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265583,
+          "name": "Merchant settings",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542266623,
+          "name": "Backup and restore drill",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542266185,
+          "name": "Commerce cashier closeout",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265487,
+          "name": "Order operations",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265537,
+          "name": "Merchant deletion physical media lifecycle",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265540,
+          "name": "Merchant deletion promotions lifecycle",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265919,
+          "name": "Location routing engine",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265138,
+          "name": "PostgreSQL migration candidate",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265551,
+          "name": "Auth OTP contract continuity",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265801,
+          "name": "Product catalog UI cutover",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265492,
+          "name": "Subscription service guarantee validation",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265502,
+          "name": "Location inventory authority",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265242,
+          "name": "P0 notification privacy HTTP matrix",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265718,
+          "name": "Global merchant golden journey",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265473,
+          "name": "Meta webhook pipeline",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542266011,
+          "name": "Staging container contract",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265342,
+          "name": "P0 dependency security upgrade candidate",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265613,
+          "name": "Dashboard channel coherence",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265603,
+          "name": "P0 signed cashier offline authority",
+          "conclusion": "success",
+          "attempt": 2
+        },
+        {
+          "id": 40542265229,
+          "name": "Merchant deletion audit PII",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265301,
+          "name": "Knowledge embedding readiness",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265586,
+          "name": "P0 Support privacy authority diagnostic",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265582,
+          "name": "Isolated Neon preflight static safety",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265434,
+          "name": "Complete migration safety",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265276,
+          "name": "Cashier dashboard surface regression",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542266087,
+          "name": "Bot logic adversarial matrix",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542266105,
+          "name": "Global subscription golden journey",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265265,
+          "name": "Merchant account security UI",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265388,
+          "name": "Meta webhook PostgreSQL ingress cutover",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265672,
+          "name": "P0 management privacy HTTP matrix",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265652,
+          "name": "Billing provider readiness",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265607,
+          "name": "AWS KMS production adapter readiness",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265121,
+          "name": "Auth PostgreSQL concurrency proof",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265789,
+          "name": "Clean deployment golden gate",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265258,
+          "name": "Cashier subscription lifecycle",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265199,
+          "name": "Global Merchant PostgreSQL HTTP Journey",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265248,
+          "name": "PostgreSQL outage recovery proof",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265797,
+          "name": "P0 conversation privacy HTTP matrix",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542266179,
+          "name": "Cashier operational cutoff",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265364,
+          "name": "Final quality gates",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265161,
+          "name": "Foundation integration final gate",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542266990,
+          "name": "PostgreSQL schema validation",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542267782,
+          "name": "Isolated PostgreSQL engineering audit",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265022,
+          "name": "Merchant deletion provider identifiers",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542264965,
+          "name": "Global admin golden journey",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265020,
+          "name": "Merchant access security",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542264892,
+          "name": "Browser storage authority audit",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265040,
+          "name": "Meta OAuth operational cutoff",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542265079,
+          "name": "Merchant regional PostgreSQL authority",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542264858,
+          "name": "P0 cashier IndexedDB browser regression",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542264882,
+          "name": "Final security and supply chain",
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "id": 40542264934,
+          "name": "SEQ D2 canonical storage acceptance",
+          "conclusion": "success",
+          "attempt": 1
+        }
+      ],
+      "checkout": "b6116ea67545709b6453ef02bbdf46046436a609",
+      "checkoutTree": "e412a5656c71db81ebae9c7d3387b6c533c35d5e",
+      "matchesSourceTree": true,
+      "containsInfrastructureRetry": true
+    },
+    "broader": {
+      "run": 40542267782,
+      "job": 122323500992,
+      "passed": 829,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "invocations": 97,
+      "files": 94,
+      "tapIncludesParents": true,
+      "includesNative23Cases": false,
+      "restore": [
+        {
+          "phase": "seed",
+          "fingerprint": "9a0c3a188ef3bb8582622274d72c53f084857ac23dcbee02c055927ab7d9fbb5",
+          "canonicalMigrations": 53,
+          "publicTablesIncludingProposal": 98,
+          "proposalNotCanonical": true,
+          "realRestrictedLogins": true,
+          "independentEvidenceAssumed": true,
+          "rolesPreprovisionedSameOwnedCluster": false,
+          "freshClusterRecovery": true,
+          "roleBootstrapVerified": false,
+          "exactReplayAndNoReset": true,
+          "restoredNextCanonicalSale": false,
+          "hosted": false
+        },
+        {
+          "phase": "verify",
+          "fingerprint": "9a0c3a188ef3bb8582622274d72c53f084857ac23dcbee02c055927ab7d9fbb5",
+          "canonicalMigrations": 53,
+          "publicTablesIncludingProposal": 98,
+          "proposalNotCanonical": true,
+          "realRestrictedLogins": true,
+          "independentEvidenceAssumed": true,
+          "rolesPreprovisionedSameOwnedCluster": false,
+          "freshClusterRecovery": true,
+          "roleBootstrapVerified": true,
+          "exactReplayAndNoReset": true,
+          "restoredNextCanonicalSale": true,
+          "hosted": false
+        }
+      ]
+    },
+    "browserRegression": {
+      "run": 40542264858,
+      "job": 122323486885,
+      "smokeAndStaleBackup": "PASS",
+      "nativeOutbox": "PASS",
+      "syntheticTransport": true,
+      "realServerHttpProof": false
+    }
   }
 }

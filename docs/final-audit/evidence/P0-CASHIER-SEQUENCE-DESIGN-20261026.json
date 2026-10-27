@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending.",
+  "nextExactAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4459,7 +4459,7 @@
         "doNotRepeat": "No platform-owner approval for every ordinary pairing, duplicate issuer candidate, baseline MAX/reset or silently promoted0053."
       }
     ],
-    "nextExactAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending."
+    "nextExactAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending."
   },
   "admissionCompatibilitySpecification20261027": {
     "date": "2026-10-27",
@@ -4552,5 +4552,20 @@
     "publicV2Enabled": false,
     "bootstrapBindingComparisonImplemented": false,
     "nextExactAction": "Expose the existing authority's read-only recovery snapshot through the current cashier device runtime, checking bootstrap merchant/device/station binding before and after the IndexedDB read. Native binding-change or incomplete-read cases must HOLD without writes. No enrollment grant, public v2 activation, pending-work pairing bypass or new issuer; trusted original review, legacy/movement disposition and expired-credential recovery remain pending."
+  },
+  "deviceBindingRecoveryAcceptance20261027": {
+    "status": "BOUNDED_EXISTING_DEVICE_BINDING_LOCAL_RECOVERY_INSPECTION_SOURCE_ACCEPTED",
+    "source": "e73fe8d90552d71d2a5953c17c757202956c4241",
+    "evidence": "P0-CASHIER-NATIVE-OUTBOX-20261026.json#deviceBindingRecovery20261027",
+    "nativeCases": 23,
+    "newNativeCases": 8,
+    "ciSuccess": 58,
+    "broaderTap": 829,
+    "scope": "Existing-only bootstrap + coherent local storage observation; changed observed merchant/device/station/credential binding discards view. Not server authentication, original-state attestation or cross-database lease.",
+    "gateClosed": false,
+    "publicV2Enabled": false,
+    "bootstrapBindingComparisonImplemented": true,
+    "productionEnrollmentWired": false,
+    "nextExactAction": "Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending."
   }
 }

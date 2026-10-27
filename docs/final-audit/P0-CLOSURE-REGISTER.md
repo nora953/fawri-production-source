@@ -1,3 +1,25 @@
+## قبول ربط فحص الاستعادة بهوية الجهاز والمحطة — 2026-10-27
+
+المصدر المقبول **e73fe8d90552d71d2a5953c17c757202956c4241**: **58/58 مسار CI ناجح** في النتيجة النهائية. [الدليل في الملف الموجود](evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#deviceBindingRecovery20261027). أُنجز شرط الوصلة المحلية المسماة داخل CASHIER-SYNC-SEQUENCE-001/SEQ-R3؛ لا بوابة جديدة أوإغلاق كامل.
+
+أضيف inspectCashierDeviceRecovery إلى runtime الهوية الموجود: يقرأ هويةbootstrap الموجودة فقط، يستدعي الفحص المحلي المتسق ثم يعيد قراءة الربط. تغيّر التاجر المحلي/السحابي أوالجهاز أوالمحطة أوالموقع أوالفرع أوالرمز المرصود أثناء القراءة يعيدHOLD ويحجب العداد ومجموعات العمليات القديمة. صلاحية الربط المحلي لا تحوّل فحصًا ناقصًا إلى نجاح. لا يناديgetOrCreate أوتنظيف الجلسة أوتحديث/استعادة الربط القديم أوHTTP. القيم السرية تُقارن داخل الذاكرة ولا تظهر في النتيجة. existingOnly يمنع إنشاء/ترقيةbootstrap أوcashier DB أثناء التشخيص، ويحفظ السلوك الاعتيادي للمستدعين الحاليين.
+
+المقارنة رصد لقيم محلية قبل/بعد، وليست مصادقة خادم أوإثبات جهاز مادي أومعاملة/lease بين قاعدتي بيانات. لا تثبت غياب تبديلABA أوتغيّر لاحق بعدالإرجاع. الجلسة والصلاحية التاريخية لكل عملية، ومصدر مراجعة الجهاز الفارغ، وحدود كمال التخزين والحقول المالية تبقى في نطاقاتها المنفصلة. enrollment_authorized=false وserver_history_verified=false دائمًا؛ لا مسار اعتماد إنتاجي أوv2 عام.
+
+[المتصفح المباشر40542265726/job122323490587](https://github.com/nora953/fawri-production-source/actions/runs/40542265726): **23/23 حالة ناجحة** فيChrome155، منها8 جديدة للوصلة: bootstrap غائب دون إنشاء، ربط ثابت مع حفظ المخازن والجلسة وغياب الشبكة/الرمز في النتيجة،7 تغييرات ربط فعلية بين القراءتين مع حجب الرؤية القديمة، هوية ناقصة دون إصلاح، إلغاء معاملةbootstrap قبل/بعد قراءة العمليات مع نجاح retry، مخزن كاشير غائب/نسخة1 دون إنشاء/ترقية، نقلHOLD للفحص الناقص رغم ثبات الربط، وإعادة تحميل صفحة فعلية تحفظ الربط والعمليات. الحالات الـ15 السابقة أعيدت كاختبارات انحدار ذات صلة بتغيّر القارئ، دونجمع الأعداد كمتطلباتP0.
+
+[المتصفح الأوسع40542264858/job122323486885](https://github.com/nora953/fawri-production-source/actions/runs/40542264858) نجح فيsmoke والنسخة القديمة والطابور؛ النقل فيه مصطنع، ليسHTTP خادمًا. [SQL الأوسع40542267782/job122323500992](https://github.com/nora953/fawri-production-source/actions/runs/40542267782): **829TAP/97استدعاء/94ملفًا**،0فشل/تخطٍّ/إلغاء؛ يشمل الآباء ولا يتضمن23 حالة الفحص المباشر. typecheckAPI/frontend والبناء وفحص tracked والتاريخ الأمني الكاملPASS. checkout **b6116ea67545709b6453ef02bbdf46046436a609** يطابق شجرة المصدر **e412a5656c71db81ebae9c7d3387b6c533c35d5e** في سجلاتnative/browser/typecheck/security/SQL وإعادة الوظيفة. بصمتا الاستعادة المستقلة متطابقتان؛ مراجعة الأصل فيfixture ما زالت مفترضة.
+
+حُفظ تعثر تهيئة مستقل: تشغيل40542265603/job122323490316 أنهى24 اختبارًا ناجحًا، ثم انتهت مهلة تشغيلChrome قبل أي نتيجة متصفح (browser=null/results=[]). لم يُعدّل التطبيق أوالاختبارات لمعالجته؛ أُعيدت الوظيفة المتعثرة وحدها على المصدر نفسه. المحاولة2/job122324821539 نجحت:24 اختبارًا و8 حالاتnative فيChrome156، مع بقاء النقل المصطنع وحدوده. لا قبول للمحاولة الأولى ولا تجاهل/تخفيف assertion.
+
+التالي: Reconcile existing local return/void replay input identity against the current accepted tests and the existing SEQ-R1 immutable replay requirement. The bounded source trace checks operation kind/sale ID before returning an old compensation; first establish whether changed valid quantity/lines/note are already rejected in executable coverage. Add only the missing native regression and smallest confirmed fix while retaining exact retries and no second stock/refund effect. This is the existing sale/return/void matrix, not a new gate; trusted enrollment, movement-only policy and public v2 handoff remain pending.
+
+ملاحظة الخطوة التالية مصدرية فقط: replayOperation فيcashierCompensationAuthority يتحقق من النوع ومعرّف البيع قبل إعادة تعويض قديم؛ مطابقة رفض تغيّر كمية/أسطر/ملاحظة مع التغطية المقبولة لم تنفّذ في هذه الدفعة، ولا يُدّعى فشلruntime أوإصلاح لها. هذا جزء من شرط هوية sale/return/void الموجود، ولا يضيف بوابة أويوسّع العدد.
+
+لا تغييرAPI/schema/ACL أوآلية الربط أوOTP أوissuer أوترقية0053 أوبيئة مستضافة؛ لاmerge/deploy/P1/P2. الحالات45 دون تغيير:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false، overallPercentage=null، **NO-GO**.
+
+---
+
 ## قبول فحص التخزين المحلي وتصحيح إعادة محاولة البيع — 2026-10-27
 
 المصدر المقبول **389679488185e9d81a8edc120fdfdeaff4130efd**: **58/58 مسار CI ناجح**، دون معلّق أو فاشل أو ملغى عند القبول. [الدليل في السجل الموجود](evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localRecoverySnapshot20261027). هذه وصلة تنفيذية داخل CASHIER-SYNC-SEQUENCE-001/SEQ-R3 وشرط هوية إعادة المحاولة القائم، وليست بوابة جديدة أو إغلاقًا لكامل التسلسل.
