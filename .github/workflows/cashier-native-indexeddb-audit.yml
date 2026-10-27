@@ -4,6 +4,7 @@ on:
     paths:
       - 'scripts/fawri-native-indexeddb-audit.mjs'
       - 'artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts'
+      - 'artifacts/fawri/src/lib/cashierCompensationAuthority.ts'
       - 'artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts'
       - 'artifacts/fawri/src/lib/cashierLocalContracts.ts'
       - 'artifacts/fawri/src/lib/cashier*Pricing*.ts'

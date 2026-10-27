@@ -146,6 +146,147 @@ try {
       for(const e of ${JSON.stringify(before[1])})t.objectStore('outbox').put({...e,outbox_id:'outbox:'+e.operation_id+':'+e.entity_type+':'+e.entity_id});await done;}finally{d.close()}`);
     return {exactReplay:true,afterAckAndReopen:true,stock:0,noReenqueue:true};
   });
+
+  // Existing SEQ-R1 immutable local compensation replay condition.
+  await evaluateStatements(a,`
+    globalThis.cpConfig=${JSON.stringify({...config,databaseName:config.databaseName+'-comp-replay'})};
+    globalThis.cpSale=new FawriAudit.IndexedDbCashierAuthority(cpConfig);
+    globalThis.cp=new FawriAudit.IndexedDbCashierCompensationAuthority(cpConfig);
+    globalThis.cpRaw=async()=>{
+      const d=await new Promise((ok,no)=>{const r=indexedDB.open(cpConfig.databaseName);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+      try{const stores=[...d.objectStoreNames].sort(),t=d.transaction(stores,'readonly'),done=new Promise((ok,no)=>{t.oncomplete=ok;t.onabort=()=>no(t.error);t.onerror=()=>no(t.error)});
+      const rows=await Promise.all(stores.map(n=>new Promise((ok,no)=>{const r=t.objectStore(n).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})));await done;
+      return Object.fromEntries(stores.map((n,i)=>[n,rows[i]]));}finally{d.close()}
+    };
+    await cpSale.upsertCatalogSnapshot([
+      ${JSON.stringify({...item,stock_quantity:20})},
+      ${JSON.stringify({...item,product_id:'product-b',stock_quantity:20})},
+      ${JSON.stringify({...item,product_id:'service',item_type:'service',track_inventory:false})}
+    ],{preserveLocalInventory:false});
+    const sold=await cpSale.commitSale({operation_id:'cp-sale',payment_method:'cash',payment_status:'paid',
+      lines:[{product_id:'product',quantity:3},{product_id:'product-b',quantity:2},{product_id:'service',quantity:1}]});
+    globalThis.cpReturnInput={operation_id:'cp-return',sale_id:sold.sale.sale_id,note:'original return',
+      lines:[{original_line_id:sold.sale.lines[0].line_id,quantity:1},{original_line_id:sold.sale.lines[1].line_id,quantity:1}]};
+    globalThis.cpServiceLine=sold.sale.lines[2].line_id;
+    globalThis.cpFirstReturn=await cp.returnSale(cpReturnInput);
+    const voidable=await cpSale.commitSale({operation_id:'cp-void-sale',payment_method:'cash',payment_status:'paid',lines:[{product_id:'product',quantity:1}]});
+    globalThis.cpVoidInput={operation_id:'cp-void',sale_id:voidable.sale.sale_id,note:'original void'};
+    globalThis.cpFirstVoid=await cp.voidSale(cpVoidInput);
+    globalThis.cpBaseline=await cpRaw();
+  `);
+  await check('local return replay rejects changed valid quantity lines order note and sale without writes', async () => {
+    const original=await evaluate(a,'Promise.resolve(cpReturnInput)');
+    const serviceLine=await evaluate(a,'Promise.resolve(cpServiceLine)');
+    const changes=[
+      {label:'quantity',patch:{lines:original.lines.map((l,i)=>({...l,quantity:i===0?2:l.quantity}))}},
+      {label:'line_identity',patch:{lines:[{original_line_id:serviceLine,quantity:1},original.lines[1]]}},
+      {label:'line_order',patch:{lines:[...original.lines].reverse()}},
+      {label:'line_count',patch:{lines:[original.lines[0]]}},
+      {label:'note',patch:{note:'changed return'}},
+      {label:'sale_identity',patch:{sale_id:'sale:cp-void-sale'}},
+    ];
+    const observed=[];
+    for(const {label,patch} of changes){
+      const r=await evaluate(a,`cp.returnSale(${JSON.stringify({...original,...patch})}).then(()=>({accepted:true}),e=>({accepted:false,code:e.code}))`);
+      observed.push({label,...r});
+      assert.deepEqual(await evaluate(a,'cpRaw()'),await evaluate(a,'Promise.resolve(cpBaseline)'));
+    }
+    assert.ok(observed.every(x=>!x.accepted&&x.code==='CASHIER_COMPENSATION_OPERATION_ID_CONFLICT'),
+      'Conflicting return replay observations: '+JSON.stringify(observed));
+    return {changedInputs:observed.length,rejected:true,allStoresUnchanged:true};
+  });
+  await check('local void replay rejects changed note sale and kind without writes', async () => {
+    const original=await evaluate(a,'Promise.resolve(cpVoidInput)'),ret=await evaluate(a,'Promise.resolve(cpReturnInput)');
+    const requests=[
+      ['note','voidSale',{...original,note:'changed void'}],
+      ['sale_identity','voidSale',{...original,sale_id:ret.sale_id}],
+      ['kind','returnSale',{...ret,operation_id:original.operation_id,sale_id:original.sale_id}],
+    ],observed=[];
+    for(const [label,method,input] of requests){
+      const r=await evaluate(a,`cp.${method}(${JSON.stringify(input)}).then(()=>({accepted:true}),e=>({accepted:false,code:e.code}))`);
+      observed.push({label,...r});
+      assert.deepEqual(await evaluate(a,'cpRaw()'),await evaluate(a,'Promise.resolve(cpBaseline)'));
+    }
+    assert.ok(observed.every(x=>!x.accepted&&x.code==='CASHIER_COMPENSATION_OPERATION_ID_CONFLICT'),
+      'Conflicting void replay observations: '+JSON.stringify(observed));
+    return {changedInputs:observed.length,rejected:true,allStoresUnchanged:true};
+  });
+  await check('matching normalized compensation replay survives later return repricing ACK and reopen', async () => {
+    await evaluateStatements(a,`
+      await cp.returnSale({operation_id:'cp-later-return',sale_id:cpReturnInput.sale_id,lines:[cpReturnInput.lines[0]]});
+      await cpSale.upsertCatalogSnapshot([${JSON.stringify({...item,stock_quantity:999,base_unit_price_minor:9000,catalog_version:2})}]);
+    `);
+    const before=await evaluate(a,'cpRaw()');
+    const result=await evaluateStatements(a,`
+      const ret=await cp.returnSale({...cpReturnInput,note:'  original return  ',lines:cpReturnInput.lines.map(l=>({...l,original_line_id:' '+l.original_line_id+' '}))});
+      const voided=await cp.voidSale({...cpVoidInput,note:' original void '});
+      return {ret:ret.return_snapshot,voided:voided.void_snapshot}
+    `);
+    assert.deepEqual(result.ret,await evaluate(a,'Promise.resolve(cpFirstReturn.return_snapshot)'));
+    assert.deepEqual(result.voided,await evaluate(a,'Promise.resolve(cpFirstVoid.void_snapshot)'));
+    assert.deepEqual(await evaluate(a,'cpRaw()'),before);
+    await evaluateStatements(a,'await cpSale.acknowledgeSynced([cpReturnInput.operation_id,cpVoidInput.operation_id]);await cp.close();await cpSale.close();globalThis.cpSale=new FawriAudit.IndexedDbCashierAuthority(cpConfig);globalThis.cp=new FawriAudit.IndexedDbCashierCompensationAuthority(cpConfig)');
+    const afterAck=await evaluate(a,'cpRaw()');
+    const replay=await evaluateStatements(a,'return {ret:await cp.returnSale(cpReturnInput),voided:await cp.voidSale(cpVoidInput)}');
+    assert.deepEqual(replay.ret.return_snapshot,result.ret);assert.deepEqual(replay.voided.void_snapshot,result.voided);
+    assert.equal(replay.ret.outbox.length,0);assert.equal(replay.voided.outbox.length,0);
+    assert.deepEqual(await evaluate(a,'cpRaw()'),afterAck);
+    return {normalizedEquivalentAccepted:true,originalRefundRetained:true,afterLaterReturnAndReprice:true,afterAckAndReopen:true,noReenqueue:true,allStoresUnchanged:true};
+  });
+  await check('native compensation outbox fault rolls back every store and real retry applies once', async () => {
+    const reports=[];
+    for(const kind of ['return','void']){
+      if(kind==='void')await evaluate(a,"cpSale.commitSale({operation_id:'cp-fault-void-sale',payment_method:'cash',payment_status:'paid',lines:[{product_id:'product-b',quantity:1}]}).then(()=>true)");
+      const input=kind==='return'
+        ?await evaluate(a,"Promise.resolve({operation_id:'cp-fault-return',sale_id:cpReturnInput.sale_id,lines:[cpReturnInput.lines[0]],note:'fault retry'})")
+        :{operation_id:'cp-fault-void',sale_id:'sale:cp-fault-void-sale',note:'fault retry'};
+      const before=await evaluate(a,'cpRaw()');
+      const fault=await evaluateStatements(a,`
+        const original=IDBObjectStore.prototype.put;
+        IDBObjectStore.prototype.put=function(...args){
+          if(this.name==='outbox'&&this.transaction.db.name===cpConfig.databaseName)throw Error('Synthetic compensation outbox fault');
+          return original.apply(this,args)
+        };
+        try{await cp.${kind==='return'?'returnSale':'voidSale'}(${JSON.stringify(input)});return {accepted:true}}
+        catch(e){return {accepted:false,message:e.message}}
+        finally{IDBObjectStore.prototype.put=original}
+      `);
+      assert.equal(fault.accepted,false);assert.match(fault.message,/Synthetic compensation outbox fault/);
+      assert.deepEqual(await evaluate(a,'cpRaw()'),before);
+      const applied=await evaluate(a,`cp.${kind==='return'?'returnSale':'voidSale'}(${JSON.stringify(input)})`);
+      const after=await evaluate(a,'cpRaw()');
+      await evaluate(a,`cp.${kind==='return'?'returnSale':'voidSale'}(${JSON.stringify(input)})`);
+      assert.deepEqual(await evaluate(a,'cpRaw()'),after);
+      const counter=rows=>rows.meta.find(x=>x.key==='device_sequence').value;
+      assert.equal(counter(after),counter(before)+1);
+      assert.equal(after.outbox.filter(x=>x.operation_id===input.operation_id).length,2);
+      const productId=kind==='return'?'product':'product-b';
+      assert.equal(after.catalog.find(x=>x.product_id===productId).stock_quantity,
+        before.catalog.find(x=>x.product_id===productId).stock_quantity+1);
+      reports.push({kind,counterAdvancedOnce:true,refund:kind==='return'?applied.return_snapshot.refund_total_minor:applied.void_snapshot.refund_total_minor});
+    }
+    return {actualNativeRollback:true,selectedAllStores:true,retries:reports};
+  });
+  await check('concurrent matching local returns resolve one durable operation and preserve peer', async () => {
+    const peerBefore=await evaluate(a,'Promise.all([authority.listSales(),authority.listPendingSync(),authority.getCatalogItem("product")])');
+    const before=await evaluate(a,'cpRaw()');
+    const r=await evaluateStatements(a,`
+      const peer=new FawriAudit.IndexedDbCashierCompensationAuthority(cpConfig);
+      const input={operation_id:'cp-overlap-return',sale_id:cpReturnInput.sale_id,lines:[cpReturnInput.lines[1]],note:'overlap'};
+      try{const results=await Promise.all([cp.returnSale(input),peer.returnSale(input)]);return results.map(r=>r.return_snapshot)}
+      finally{await peer.close()}
+    `);
+    assert.deepEqual(r[0],r[1]);
+    const after=await evaluate(a,'cpRaw()');
+    assert.equal(after.meta.find(x=>x.key==='device_sequence').value,before.meta.find(x=>x.key==='device_sequence').value+1);
+    assert.equal(after.outbox.filter(x=>x.operation_id==='cp-overlap-return').length,2);
+    assert.equal(after.catalog.find(x=>x.product_id==='product-b').stock_quantity,
+      before.catalog.find(x=>x.product_id==='product-b').stock_quantity+1);
+    assert.deepEqual(await evaluate(a,'Promise.all([authority.listSales(),authority.listPendingSync(),authority.getCatalogItem("product")])'),peerBefore);
+    await evaluate(a,'Promise.all([cp.close(),cpSale.close()]).then(()=>true)');
+    return {concurrentRequests:2,oneOperation:true,noSecondStockOrRefundEffect:true,selectedPeerPreserved:true,forcedLockOverlapClaimed:false};
+  });
+
   // SEQ-R3 prerequisite: real local stores, no server admission or transport.
   await evaluateStatements(a, `
     globalThis.recConfig=${JSON.stringify({...config,databaseName:config.databaseName+'-recovery'})};
@@ -456,4 +597,4 @@ finally {
 }
 if (infrastructureError) evidence.infrastructureError = infrastructureError;
 console.log('AUDIT_NATIVE_INDEXEDDB_RESULT ' + JSON.stringify(evidence));
-if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 23) process.exitCode = 1;
+if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 28) process.exitCode = 1;
