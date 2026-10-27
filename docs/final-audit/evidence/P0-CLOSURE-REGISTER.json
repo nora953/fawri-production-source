@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "898c92b9890d084b8b64fb12c1e5a9295870a2be",
-  "lastFullyAcceptedSource": "898c92b9890d084b8b64fb12c1e5a9295870a2be",
+  "sourceCandidate": "323432be46368316bf0c6714d9c790cccde91414",
+  "lastFullyAcceptedSource": "323432be46368316bf0c6714d9c790cccde91414",
   "release": "NO-GO",
   "rows": [
     {
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Reconcile remaining current admin directory/work-monitor field projections and assistant create/enabled/permissions/password routes against seq321 historical lifecycle evidence and the current PostgreSQL admin-auth journey. Reuse matching evidence and classify precise current source/policy/runtime gaps before any new test; a source catalogue reference alone is not acceptance and a historical test alone does not require blanket full-app duplication. Preserve the accepted self-session and delegated/global-device boundaries; SEQ-R2 remains UNAPPROVED.",
+      "nextAction": "Reconcile the existing active-assistant permission-change requirement with current PostgreSQL route/service proofs before another test. The current admin-auth journey grants permissions before login, while authentication-operator-pool changes permissions without an active assistant cookie; legacy admin-permissions uses JSON. Reuse exact current evidence if available; otherwise add only the missing current owner PATCH permissions -> old-cookie denial/new-session granted-access case in the existing harness. Preserve accepted projection/reset/session/device cases, avoid blanket full-app duplication, and keep SEQ-R2 UNAPPROVED.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -214,6 +214,15 @@
         "source": "898c92b9890d084b8b64fb12c1e5a9295870a2be",
         "newFunctionalCases": 7,
         "newTapIncludingGroup": 8,
+        "newGate": false,
+        "parentGateClosed": false
+      },
+      "adminAccountProjectionAndOwnerPasswordResetProof": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=adminAccountProjectionAndOwnerPasswordReset]",
+        "status": "BOUNDED_CURRENT_ADMIN_PROJECTION_AND_OWNER_RESET_FULL_APP_HTTP_SQL_ACCEPTED",
+        "source": "323432be46368316bf0c6714d9c790cccde91414",
+        "newFunctionalCases": 4,
+        "newTapIncludingGroup": 5,
         "newGate": false,
         "parentGateClosed": false
       }
@@ -2343,7 +2352,7 @@
       "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
     }
   ],
-  "previousFullyAcceptedSource": "7e0d2965329bf1138140ae4dbdfc6696d8fa83a3",
+  "previousFullyAcceptedSource": "898c92b9890d084b8b64fb12c1e5a9295870a2be",
   "lastUpdatedAt": "2026-10-27",
   "closurePlan": {
     "schemaVersion": 1,
@@ -2377,19 +2386,19 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "Reconciled historical seq321 lifecycle/seq327 sessions, legacy JSON work-monitor and current admin-auth journey. Route source unchanged versus seq321, but device/session pools now use separate authentication authority. Accepted seven missing current full-app restricted-primary/separate-auth cases over six owner-only delegated-session/global-device routes; no policy/app change.",
-        "nextNamedReview": "Reconcile remaining current admin directory/work-monitor field projections and assistant create/enabled/permissions/password routes against seq321 historical lifecycle evidence and the current PostgreSQL admin-auth journey. Reuse matching evidence and classify precise current source/policy/runtime gaps before any new test; a source catalogue reference alone is not acceptance and a historical test alone does not require blanket full-app duplication. Preserve the accepted self-session and delegated/global-device boundaries; SEQ-R2 remains UNAPPROVED.",
+        "completedPrerequisite": "Six-route lifecycle evidence reconciliation preserves current aggregate create/grant/disable/self-password journey and existing separate-auth SQL service proof. Four new current full-app cases accept directory/work-monitor field keys and target scope, owner reset validation and version/forced-change/two-cookie invalidation while preserving peers/trust/permissions/business. No policy/app change.",
+        "nextNamedReview": "Reconcile the existing active-assistant permission-change requirement with current PostgreSQL route/service proofs before another test. The current admin-auth journey grants permissions before login, while authentication-operator-pool changes permissions without an active assistant cookie; legacy admin-permissions uses JSON. Reuse exact current evidence if available; otherwise add only the missing current owner PATCH permissions -> old-cookie denial/new-session granted-access case in the existing harness. Preserve accepted projection/reset/session/device cases, avoid blanket full-app duplication, and keep SEQ-R2 UNAPPROVED.",
         "latestAcceptedBoundary": {
-          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=ownerDelegatedSessionAndGlobalAdminDevice]",
-          "status": "BOUNDED_CURRENT_OWNER_DELEGATED_SESSION_AND_GLOBAL_ADMIN_DEVICE_FULL_APP_HTTP_SQL_ACCEPTED",
-          "source": "898c92b9890d084b8b64fb12c1e5a9295870a2be",
-          "newFunctionalCases": 7,
-          "newTapIncludingGroup": 8,
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=adminAccountProjectionAndOwnerPasswordReset]",
+          "status": "BOUNDED_CURRENT_ADMIN_PROJECTION_AND_OWNER_RESET_FULL_APP_HTTP_SQL_ACCEPTED",
+          "source": "323432be46368316bf0c6714d9c790cccde91414",
+          "newFunctionalCases": 4,
+          "newTapIncludingGroup": 5,
           "newGate": false,
           "parentGateClosed": false
         },
-        "noRepeat": "Reuse accepted self-session and owner-delegated/global admin-device boundaries. Do not repeat without source change/failure or named integration gap. Keep historical route/field evidence where source matches; avoid automatic full-app duplication of every old test. Whole inventory remains incomplete.",
-        "nextAction": "Reconcile remaining current admin directory/work-monitor field projections and assistant create/enabled/permissions/password routes against seq321 historical lifecycle evidence and the current PostgreSQL admin-auth journey. Reuse matching evidence and classify precise current source/policy/runtime gaps before any new test; a source catalogue reference alone is not acceptance and a historical test alone does not require blanket full-app duplication. Preserve the accepted self-session and delegated/global-device boundaries; SEQ-R2 remains UNAPPROVED."
+        "noRepeat": "Reuse current projection/reset, self-session and delegated/global-device accepted boundaries. Initial permission grant before issuance is not positive proof of changing permissions against an active cookie; reconcile that exact existing requirement next. Avoid automatic full-app repetition of every old aggregate test.",
+        "nextAction": "Reconcile the existing active-assistant permission-change requirement with current PostgreSQL route/service proofs before another test. The current admin-auth journey grants permissions before login, while authentication-operator-pool changes permissions without an active assistant cookie; legacy admin-permissions uses JSON. Reuse exact current evidence if available; otherwise add only the missing current owner PATCH permissions -> old-cookie denial/new-session granted-access case in the existing harness. Preserve accepted projection/reset/session/device cases, avoid blanket full-app duplication, and keep SEQ-R2 UNAPPROVED."
       },
       {
         "order": 2,
@@ -2437,7 +2446,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Reconcile remaining current admin directory/work-monitor field projections and assistant create/enabled/permissions/password routes against seq321 historical lifecycle evidence and the current PostgreSQL admin-auth journey. Reuse matching evidence and classify precise current source/policy/runtime gaps before any new test; a source catalogue reference alone is not acceptance and a historical test alone does not require blanket full-app duplication. Preserve the accepted self-session and delegated/global-device boundaries; SEQ-R2 remains UNAPPROVED.",
+        "nextAction": "Reconcile the existing active-assistant permission-change requirement with current PostgreSQL route/service proofs before another test. The current admin-auth journey grants permissions before login, while authentication-operator-pool changes permissions without an active assistant cookie; legacy admin-permissions uses JSON. Reuse exact current evidence if available; otherwise add only the missing current owner PATCH permissions -> old-cookie denial/new-session granted-access case in the existing harness. Preserve accepted projection/reset/session/device cases, avoid blanket full-app duplication, and keep SEQ-R2 UNAPPROVED.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -2499,6 +2508,15 @@
           "source": "898c92b9890d084b8b64fb12c1e5a9295870a2be",
           "newFunctionalCases": 7,
           "newTapIncludingGroup": 8,
+          "newGate": false,
+          "parentGateClosed": false
+        },
+        "adminAccountProjectionAndOwnerPasswordResetBoundary": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=adminAccountProjectionAndOwnerPasswordReset]",
+          "status": "BOUNDED_CURRENT_ADMIN_PROJECTION_AND_OWNER_RESET_FULL_APP_HTTP_SQL_ACCEPTED",
+          "source": "323432be46368316bf0c6714d9c790cccde91414",
+          "newFunctionalCases": 4,
+          "newTapIncludingGroup": 5,
           "newGate": false,
           "parentGateClosed": false
         }
@@ -2875,7 +2893,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Reconcile remaining current admin directory/work-monitor field projections and assistant create/enabled/permissions/password routes against seq321 historical lifecycle evidence and the current PostgreSQL admin-auth journey. Reuse matching evidence and classify precise current source/policy/runtime gaps before any new test; a source catalogue reference alone is not acceptance and a historical test alone does not require blanket full-app duplication. Preserve the accepted self-session and delegated/global-device boundaries; SEQ-R2 remains UNAPPROVED.",
+      "nextExactAction": "Reconcile the existing active-assistant permission-change requirement with current PostgreSQL route/service proofs before another test. The current admin-auth journey grants permissions before login, while authentication-operator-pool changes permissions without an active assistant cookie; legacy admin-permissions uses JSON. Reuse exact current evidence if available; otherwise add only the missing current owner PATCH permissions -> old-cookie denial/new-session granted-access case in the existing harness. Preserve accepted projection/reset/session/device cases, avoid blanket full-app duplication, and keep SEQ-R2 UNAPPROVED.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -2891,6 +2909,15 @@
         "source": "898c92b9890d084b8b64fb12c1e5a9295870a2be",
         "newFunctionalCases": 7,
         "newTapIncludingGroup": 8,
+        "newGate": false,
+        "parentGateClosed": false
+      },
+      "adminAccountProjectionAndOwnerPasswordResetProof": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=adminAccountProjectionAndOwnerPasswordReset]",
+        "status": "BOUNDED_CURRENT_ADMIN_PROJECTION_AND_OWNER_RESET_FULL_APP_HTTP_SQL_ACCEPTED",
+        "source": "323432be46368316bf0c6714d9c790cccde91414",
+        "newFunctionalCases": 4,
+        "newTapIncludingGroup": 5,
         "newGate": false,
         "parentGateClosed": false
       }

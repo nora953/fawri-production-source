@@ -4502,5 +4502,14 @@
     "newTapIncludingGroup": 8,
     "newGate": false,
     "parentGateClosed": false
+  },
+  "currentAdminAccountProjectionAndOwnerPasswordResetProof": {
+    "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=adminAccountProjectionAndOwnerPasswordReset]",
+    "status": "BOUNDED_CURRENT_ADMIN_PROJECTION_AND_OWNER_RESET_FULL_APP_HTTP_SQL_ACCEPTED",
+    "source": "323432be46368316bf0c6714d9c790cccde91414",
+    "newFunctionalCases": 4,
+    "newTapIncludingGroup": 5,
+    "newGate": false,
+    "parentGateClosed": false
   }
 }
