@@ -4,7 +4,7 @@
   "fieldCell": "RESIDUAL-FIELD-005",
   "status": "FINITE_CHECKLIST_RECONCILED_FIELD005_OPEN",
   "applicationChanged": false,
-  "newRuntimeExecuted": false,
+  "newRuntimeExecuted": true,
   "release": "NO-GO",
   "fieldCellClosed": false,
   "observations": [
@@ -704,7 +704,7 @@
     "trustedPayloadRule": "A retained SHA256 digest is not a recovery copy of deleted chain_payload. Existing hashes cannot reconstruct missing original content. No reset, rehash or substitute payload is authorized by this checklist."
   },
   "enrollmentProposalRetention": {
-    "status": "PREPARED_PSEUDONYMOUS_REFERENCE_MINIMIZATION_DELETION_CI_PENDING",
+    "status": "BOUNDED_PROPOSAL_REFERENCE_MINIMIZATION_AND_RESTORED_ACTUAL_DELETION_SOURCE_ACCEPTED_POLICY_OPEN",
     "canonical": false,
     "fieldsRetained": [
       "review_reference_hash",
@@ -718,7 +718,16 @@
     ],
     "originalReferenceFieldsRetained": false,
     "policyApproved": false,
-    "reason": "Free-text proposal reference fields can carry PII/device strings. Revision2 retains hashes only while preserving verifiable external correlation; lifecycle runtime is pending.",
-    "remaining": "Approve purpose/readers/hold/retention trigger/duration/disposition and complete copies/restore coverage under F005-R1/R2/R5; hashes alone are not anonymity."
-  }
+    "reason": "Proposal revision2 retains domain-separated correlation hashes instead of caller/device/contact-bearing raw references. Actual isolated post-restore merchant deletion preserves immutable receipts/review hashes and checkpoint, erases live device/auth bindings, rolls all selected state back on an injected post-retirement fault and holds re-enrollment.",
+    "remaining": "Approve purpose/readers/hold/retention trigger/duration/disposition and complete copies/restore coverage under F005-R1/R2/R5; hashes alone are not anonymity.",
+    "source": "544764c23eee8d72e1e783ee313cbf648ef68470",
+    "newRuntimeExecuted": true,
+    "evidence": "P0-CASHIER-SEQUENCE-DESIGN-20261026.json",
+    "restoreRun": 40443672989,
+    "restoreJob": 121989991509,
+    "hashesArePseudonymousNotAnonymity": true
+  },
+  "proposalSqlChanged": true,
+  "canonicalSchemaChanged": false,
+  "canonicalDeletionServiceChanged": false
 }

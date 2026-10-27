@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": null,
-  "lastFullyAcceptedSource": "bb8f500c0e12119c7518e576507e14237fe2df80",
+  "sourceCandidate": "544764c23eee8d72e1e783ee313cbf648ef68470",
+  "lastFullyAcceptedSource": "544764c23eee8d72e1e783ee313cbf648ef68470",
   "release": "NO-GO",
   "rows": [
     {
@@ -281,8 +281,8 @@
       "saleServiceDiagnosticEvidence": "evidence/P0-CASHIER-SEQUENCE-SALE-DIAGNOSTIC-20261026.json",
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
-      "recoveryContractStatus": "INTERNAL_COMBINED_HANDOFF_CONCURRENCY_RESTORE_CATALOG_READINESS_ACCEPTED_LIFECYCLE_ISSUER_CANONICAL_CLIENT_OPEN",
-      "nextAction": "Reconcile retained enrollment-review fields with the existing P0 deletion/privacy contract and verify actual merchant deletion/stream retirement with both proposals installed before canonical promotion. Preserve immutable financial receipts, advanced checkpoints, peer tenant isolation and no re-enrollment reset. Real reviewer issuance, retention policy, lost-cluster credential/role bootstrap, canonical startup adoption, public HTTP/native v2 and hosted gates remain open.",
+      "recoveryContractStatus": "INTERNAL_REV2_MINIMIZED_PROPOSAL_HANDOFF_RESTORE_READINESS_DELETION_ACCEPTED_BOOTSTRAP_ISSUER_POLICY_CANONICAL_CLIENT_OPEN",
+      "nextAction": "Inspect the existing owner/ACL-preserving backup/restore v2 role prerequisites and implement a fresh-owned-cluster role/bootstrap restore rehearsal for the combined authorities; same-cluster preprovisioned identities are not lost-cluster recovery proof. Preserve reviewer/primary/auth separation, NOLOGIN owners, tenant denials and exact financial replay. FIELD005 purpose/readers/holds/duration/disposition, real reviewer issuance, canonical adoption and public HTTP/native/hosted gates remain open.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -334,7 +334,8 @@
       "combinedProposalRestoreSource": "0215e053891b249ab22f7b028ff93626d81529b5",
       "combinedAuthorityReadinessStatus": "BOUNDED_INTERNAL_READ_ONLY_AUTHORITY_CATALOG_SOURCE_ACCEPTED_NO_STARTUP_ADOPTION",
       "combinedAuthorityReadinessSource": "bb8f500c0e12119c7518e576507e14237fe2df80",
-      "reviewLedgerLifecycleStatus": "PREPARED_HASH_MINIMIZATION_AND_RESTORED_DELETION_CI_PENDING"
+      "reviewLedgerLifecycleStatus": "BOUNDED_PROPOSAL_REFERENCE_MINIMIZATION_AND_RESTORED_ACTUAL_DELETION_SOURCE_ACCEPTED_POLICY_OPEN",
+      "reviewLedgerLifecycleSource": "544764c23eee8d72e1e783ee313cbf648ef68470"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -485,7 +486,9 @@
         "F005-R4",
         "F005-R5"
       ],
-      "retentionDecisionReport": "P0-FIELD005-RETENTION-DECISIONS-20261026.md"
+      "retentionDecisionReport": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+      "enrollmentReviewMinimizationSource": "544764c23eee8d72e1e783ee313cbf648ef68470",
+      "enrollmentReviewMinimizationStatus": "BOUNDED_PROPOSAL_HASH_MINIMIZATION_AND_RESTORED_DELETION_ACCEPTED_RETENTION_POLICY_OPEN"
     },
     {
       "id": "P0-HOSTED-PROVIDER-PAYMENT",
@@ -544,6 +547,6 @@
       "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
     }
   ],
-  "previousFullyAcceptedSource": "0215e053891b249ab22f7b028ff93626d81529b5",
+  "previousFullyAcceptedSource": "bb8f500c0e12119c7518e576507e14237fe2df80",
   "lastUpdatedAt": "2026-10-27"
 }
