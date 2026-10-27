@@ -147,10 +147,14 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     let installed=false;
     v2t.after(()=>cleanupResources([
       ['v2 data',async()=>{
+        if(!installed)return;
         const c=await pool.connect();
         try{await c.query('BEGIN');await c.query('ALTER TABLE cashier_operation_receipts DISABLE TRIGGER cashier_operation_receipts_guard');
           await c.query('DELETE FROM cashier_operation_receipts WHERE merchant_id=ANY($1::text[])',[v2Ids]);
           await c.query('ALTER TABLE cashier_operation_receipts ENABLE TRIGGER cashier_operation_receipts_guard');
+          await c.query('ALTER TABLE cashier_stream_enrollment_reviews DISABLE TRIGGER cashier_stream_enrollment_reviews_immutable');
+          await c.query('DELETE FROM cashier_stream_enrollment_reviews WHERE merchant_id=ANY($1::text[])',[v2Ids]);
+          await c.query('ALTER TABLE cashier_stream_enrollment_reviews ENABLE TRIGGER cashier_stream_enrollment_reviews_immutable');
           await c.query('DELETE FROM cashier_device_streams WHERE merchant_id=ANY($1::text[])',[v2Ids]);await c.query('COMMIT');
         }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
       }],
@@ -161,10 +165,16 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
         await pool.query('DROP FUNCTION public.fawri_cashier_stream_financial_runtime()');
         for(const [name,table]of [['receipt_owner_stream_read','cashier_device_streams'],['receipt_owner_stream_update','cashier_device_streams'],['receipt_owner_receipt_read','cashier_operation_receipts'],['receipt_owner_receipt_insert','cashier_operation_receipts'],['receipt_owner_order_read','orders'],['receipt_owner_session_read','cashier_operator_sessions'],['receipt_owner_shift_read','cashier_shifts'],['receipt_owner_station_read','merchant_cashier_stations'],['receipt_owner_credential_read','cashier_station_credentials']])await pool.query('DROP POLICY '+name+' ON public.'+table);
         await pool.query('DROP OWNED BY fawri_cashier_receipt_owner');await pool.query('DROP ROLE fawri_cashier_receipt_owner');
+        await pool.query('DROP FUNCTION public.fawri_enroll_reviewed_empty_cashier_stream(text,jsonb)');
+        await pool.query('DROP TABLE public.cashier_stream_enrollment_reviews');
+        await pool.query('DROP FUNCTION public.fawri_enrollment_review_immutable()');
+        await pool.query('DROP FUNCTION public.fawri_cashier_enrollment_runtime()');
+        for(const [name,table]of [['enrollment_owner_stream_read','cashier_device_streams'],['enrollment_owner_stream_insert','cashier_device_streams'],['enrollment_owner_timeline_read','cashier_device_operation_timeline'],['enrollment_owner_attribution_read','cashier_operation_attribution'],['enrollment_owner_order_read','orders'],['enrollment_owner_station_read','merchant_cashier_stations'],['enrollment_owner_station_lock','merchant_cashier_stations'],['enrollment_owner_merchant_read','merchants'],['enrollment_owner_merchant_lock','merchants']])await pool.query('DROP POLICY '+name+' ON public.'+table);
+        await pool.query('DROP OWNED BY fawri_cashier_enrollment_owner');await pool.query('DROP ROLE fawri_cashier_enrollment_owner');
       }],
     ]));
     const ddl=await readFile(new URL('../../../docs/final-audit/evidence/seq-d3-financial-receipt-proposal.sql',import.meta.url),'utf8');
-    const setup=await pool.connect();try{await setup.query('BEGIN');await setup.query(ddl);await setup.query('COMMIT');installed=true;}catch(e){await setup.query('ROLLBACK');throw e;}finally{setup.release();}
+    const setup=await pool.connect();try{await setup.query('BEGIN');await setup.query(ddl);await setup.query(await readFile(new URL('../../../docs/final-audit/evidence/seq-d3-reviewed-empty-enrollment-proposal.sql',import.meta.url),'utf8'));await setup.query('COMMIT');installed=true;}catch(e){await setup.query('ROLLBACK');throw e;}finally{setup.release();}
     async function create(withStream=true){
       const f=await fixture(3);v2Ids.push(f.merchantId);
       const member=await staff.createCashierStaffAuthoritative({merchantId:f.merchantId,displayName:'Synthetic v2 manager',role:'manager',pin:'2468',permissions:['sale.create','sale.return','sale.void','sale.view_all']});
@@ -179,7 +189,7 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     function versioned(x,body){return {...body,protocol_version:2,stream_id:x.streamId};}
     const sell=(x,body=x.body)=>commerce.syncCashierOperatorSaleAuthoritative({context:x.context,body:versioned(x,body),versionedStreamId:x.streamId});
     const compensate=(x,body,kind)=>commerce.syncCashierOperatorCompensationAuthoritative({context:x.context,body:versioned(x,body),kind,versionedStreamId:x.streamId});
-    async function snapshot(){const state={};for(const table of ['orders','order_items','inventory_mutations','location_inventory_levels','cashier_device_operation_timeline','cashier_operation_attribution','cashier_device_streams','cashier_operation_receipts'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[v2Ids])).rows;return state;}
+    async function snapshot(){const state={};for(const table of ['orders','order_items','inventory_mutations','location_inventory_levels','cashier_device_operation_timeline','cashier_operation_attribution','cashier_device_streams','cashier_operation_receipts','cashier_stream_enrollment_reviews'])state[table]=(await pool.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[v2Ids])).rows;return state;}
     function compensation(x,body,kind,sequence){
       const sale=body.envelopes[0].payload,op='v2-comp-'+randomUUID(),at=new Date(Date.parse(body.envelopes[0].occurred_at)+sequence).toISOString(),returnId='v2-return-'+randomUUID();
       const identity={local_merchant_id:body.local_merchant_id,cloud_merchant_id:body.cloud_merchant_id,device_id:body.device_id,operation_id:op,device_sequence:sequence};
@@ -256,6 +266,133 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       const r={stream_id:x.streamId,merchant_id:x.f.merchantId,device_id:x.f.stations[0].deviceId,device_sequence:1,operation_id:x.body.operation_id,operation_kind:'sale',request_hash:order.metadata.cashier_sync.request_hash,result_id:old.order_id,station_id:a.station_id,location_id:a.location_id,staff_id:a.staff_id,shift_id:a.shift_id,occurred_at:x.body.envelopes[0].occurred_at,operator_session_id:a.operator_session_id,credential_id:a.credential_id};
       await assert.rejects(operational.withMerchantOperationalTransaction(x.f.merchantId,c=>c.query('SELECT public.fawri_commit_cashier_financial_receipt($1::jsonb)',[JSON.stringify(r)])),e=>e.code==='23514');assert.deepEqual(await snapshot(),before);
     });
+
+
+    // Install the already-reviewed enrollment proposal beside the receipt
+    // proposal only in this owned fixture. The reviewer is a separate LOGIN.
+    const enrollment=await import('../src/services/cashierStreamEnrollmentAuthority.ts');
+    const {Pool}=await import('pg');
+    const reviewerRole='receipt_review_'+randomUUID().replaceAll('-',''),reviewerPassword=randomUUID().replaceAll('-','');
+    let reviewer,reviewerCreated=false;
+    v2t.after(()=>cleanupResources([
+      ['reviewer pool',()=>reviewer?.end()],
+      ['reviewer grants',()=>reviewerCreated?pool.query('DROP OWNED BY '+reviewerRole):undefined],
+      ['reviewer role',()=>reviewerCreated?pool.query('DROP ROLE '+reviewerRole):undefined],
+    ]));
+    await pool.query(`CREATE ROLE ${reviewerRole} LOGIN PASSWORD '${reviewerPassword}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);reviewerCreated=true;
+    await pool.query('GRANT USAGE ON SCHEMA public TO '+reviewerRole);
+    await pool.query('GRANT EXECUTE ON FUNCTION public.fawri_cashier_enrollment_runtime(),public.fawri_enroll_reviewed_empty_cashier_stream(text,jsonb) TO '+reviewerRole);
+    const reviewerUrl=new URL(process.env.DATABASE_URL);reviewerUrl.username=reviewerRole;reviewerUrl.password=reviewerPassword;reviewerUrl.search='';
+    reviewer=new Pool({connectionString:reviewerUrl.toString(),connectionTimeoutMillis:5000});
+    async function reviewedEnroll(review){
+      const c=await reviewer.connect();
+      try{await c.query('BEGIN');const r=await enrollment.enrollReviewedEmptyCashierStreamInTransaction(c,review);await c.query('COMMIT');return r;}
+      catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+    }
+    async function reviewed(){
+      const x=await create(false),d=x.f.stations[0];
+      x.review={merchantId:x.f.merchantId,stationId:d.stationId,deviceId:d.deviceId,reviewReference:'receipt-review-'+randomUUID(),reviewerReference:'independent-synthetic-reviewer',evidenceSha256:'e'.repeat(64),reviewedAt:new Date().toISOString(),reviewedLocalCounter:0,reviewedPendingOperations:0};
+      const r=await reviewedEnroll(x.review);assert.equal(r.last_sequence,'0');assert.equal(r.version,1);assert.equal(r.replayed,false);x.streamId=r.stream_id;return x;
+    }
+    const own=(state,x)=>Object.fromEntries(Object.entries(state).map(([k,rows])=>[k,rows.filter(y=>y.row.merchant_id===x.f.merchantId)]));
+    async function assertFinancial(x,count,last,stock){
+      const state=own(await snapshot(),x);
+      assert.equal(state.orders.length,count);assert.equal(state.inventory_mutations.length,count);
+      assert.equal(state.cashier_operation_receipts.length,count);assert.equal(state.cashier_operation_attribution.length,count);
+      assert.equal(state.cashier_device_operation_timeline.length,0);assert.equal(state.cashier_stream_enrollment_reviews.length,1);
+      assert.equal(Number(state.cashier_device_streams[0].row.last_sequence),last);assert.equal(state.cashier_device_streams[0].row.version,last+1);
+      const level=state.location_inventory_levels.find(y=>y.row.location_id===x.f.locationId&&y.row.product_id===x.f.productId&&y.row.variant_id===null);
+      assert.equal(Number(level.row.quantity),stock);return state;
+    }
+    async function observedWait(blocker){
+      const end=Date.now()+5000;
+      while(Date.now()<end){
+        const r=await pool.query('SELECT pid FROM pg_stat_activity WHERE usename=$1 AND $2::int=ANY(pg_blocking_pids(pid))',[runtimeFixture.role,blocker]);
+        if(r.rows.length===1)return r.rows[0].pid;
+        assert.ok(r.rows.length<=1,'one expected restricted financial waiter');
+        await new Promise(resolve=>setTimeout(resolve,20));
+      }
+      assert.fail('restricted canonical financial transaction did not enter the observed lock wait');
+    }
+    // The first real receipt INSERT waits at a root-owned test barrier. Its
+    // second caller must then wait on that real financial transaction's lock.
+    async function overlap(x,sequence,firstCall,secondCall,rollbackFirst=false,peerCall=async()=>{}){
+      const name='receipt_race_'+randomUUID().replaceAll('-',''),seq=name+'_seq',gate='receipt-barrier:'+name;
+      let first,second;const blocker=await pool.connect();
+      const capture=call=>Promise.resolve().then(call).then(value=>({value}),error=>({error}));
+      try{
+        await pool.query('CREATE SEQUENCE public.'+seq);
+        await pool.query('GRANT USAGE ON SEQUENCE public.'+seq+' TO fawri_cashier_receipt_owner');
+        await pool.query(`CREATE FUNCTION public.${name}() RETURNS trigger LANGUAGE plpgsql AS $race$ BEGIN IF NEW.merchant_id='${x.f.merchantId}' AND NEW.device_sequence=${sequence} THEN IF nextval('public.${seq}')=1 THEN PERFORM pg_advisory_xact_lock(hashtextextended('${gate}',0)); ${rollbackFirst?"RAISE EXCEPTION 'synthetic overlapped receipt rollback';":""} END IF; END IF; RETURN NEW; END $race$`);
+        await pool.query(`CREATE TRIGGER ${name} AFTER INSERT ON cashier_operation_receipts FOR EACH ROW EXECUTE FUNCTION public.${name}()`);
+        await blocker.query('BEGIN');await blocker.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[gate]);
+        first=capture(firstCall);const firstPid=await observedWait(blocker.processID);
+        second=capture(secondCall);const secondPid=await observedWait(firstPid);assert.notEqual(firstPid,secondPid);
+        await peerCall();await blocker.query('COMMIT');
+        const outcomes=await Promise.all([first,second]);return outcomes;
+      }finally{
+        await blocker.query('ROLLBACK');await Promise.all([first,second].filter(Boolean));blocker.release();
+        await pool.query('DROP TRIGGER IF EXISTS '+name+' ON cashier_operation_receipts');
+        await pool.query('DROP FUNCTION IF EXISTS public.'+name+'()');
+        await pool.query('DROP SEQUENCE IF EXISTS public.'+seq);
+      }
+    }
+    await v2t.test('reviewed enrollment hands off to canonical sale return void without checkpoint reset',async()=>{
+      const x=await reviewed(),ledger=own(await snapshot(),x).cashier_stream_enrollment_reviews;
+      await assert.rejects(operational.withMerchantOperationalTransaction(x.f.merchantId,c=>enrollment.enrollReviewedEmptyCashierStreamInTransaction(c,x.review)),e=>e.code==='42501');
+      await assert.rejects(reviewer.query("SELECT public.fawri_commit_cashier_financial_receipt('{}'::jsonb)"),e=>e.code==='42501');
+      const second=saleBody(x.f,x.f.stations[0],x.body.envelopes[0].occurred_at,2);
+      await sell(x);await sell(x,second);
+      const returned=compensation(x,x.body,'return',3),voided=compensation(x,second,'void',4);
+      await compensate(x,returned,'return');await compensate(x,voided,'void');
+      const state=own(await snapshot(),x);assert.equal(state.cashier_operation_receipts.length,4);
+      assert.deepEqual(state.cashier_operation_receipts.map(y=>Number(y.row.device_sequence)).sort((a,b)=>a-b),[1,2,3,4]);
+      assert.equal(Number(state.cashier_device_streams[0].row.last_sequence),4);assert.equal(state.cashier_device_streams[0].row.version,5);
+      assert.deepEqual(state.cashier_stream_enrollment_reviews,ledger);
+      const retry=await reviewedEnroll(x.review);assert.equal(retry.replayed,true);assert.equal(retry.last_sequence,'4');assert.equal(retry.version,5);
+      await assert.rejects(reviewedEnroll({...x.review,reviewReference:'conflict-'+randomUUID()}),e=>e.code==='23514');
+      assert.deepEqual(own(await snapshot(),x),state);
+      for(const [body,kind] of [[x.body,'sale'],[second,'sale'],[returned,'return'],[voided,'void']]){
+        const r=kind==='sale'?await sell(x,body):await compensate(x,body,kind);assert.equal(r.replayed,true);
+      }
+      assert.deepEqual(own(await snapshot(),x),state);
+    });
+    await v2t.test('observed concurrent exact sale retry commits one receipt while peer merchant proceeds',async()=>{
+      const x=await reviewed(),peer=await reviewed();
+      const [first,second]=await overlap(x,1,()=>sell(x),()=>sell(x),false,()=>sell(peer));
+      assert.ifError(first.error);assert.ifError(second.error);assert.equal(first.value.replayed,false);assert.equal(second.value.replayed,true);
+      assert.equal(second.value.inventory_mutation_count,0);assert.equal(first.value.order_id,second.value.order_id);
+      const state=await assertFinancial(x,1,1,2);await assertFinancial(peer,1,1,2);
+      assert.equal((await sell(x)).replayed,true);assert.deepEqual(own(await snapshot(),x),state);
+    });
+    await v2t.test('observed same-sequence different operation conflicts after first real commit',async()=>{
+      const x=await reviewed(),other=saleBody(x.f,x.f.stations[0],x.body.envelopes[0].occurred_at,1);
+      const [first,second]=await overlap(x,1,()=>sell(x),()=>sell(x,other));
+      assert.ifError(first.error);assert.equal(second.error?.code,'CASHIER_STREAM_IDENTITY_CONFLICT');
+      const state=await assertFinancial(x,1,1,2);assert.equal(state.orders[0].row.id,first.value.order_id);
+      await assert.rejects(sell(x,other),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT');assert.deepEqual(own(await snapshot(),x),state);
+    });
+    await v2t.test('observed first financial rollback lets waiting exact request commit once',async()=>{
+      const x=await reviewed();const [first,second]=await overlap(x,1,()=>sell(x),()=>sell(x),true);
+      assert.equal(first.error?.code,'P0001');assert.match(first.error.message,/synthetic overlapped receipt rollback/);
+      assert.ifError(second.error);assert.equal(second.value.replayed,false);
+      const state=await assertFinancial(x,1,1,2);assert.equal((await sell(x)).replayed,true);assert.deepEqual(own(await snapshot(),x),state);
+    });
+    await v2t.test('observed adjacent canonical requests preserve contiguous checkpoint after commit or rollback',async()=>{
+      for(const rollbackFirst of [false,true]){
+        const x=await reviewed();await sell(x);
+        const second=saleBody(x.f,x.f.stations[0],x.body.envelopes[0].occurred_at,2),third=saleBody(x.f,x.f.stations[0],x.body.envelopes[0].occurred_at,3);
+        const [a,b]=await overlap(x,2,()=>sell(x,second),()=>sell(x,third),rollbackFirst);
+        if(rollbackFirst){
+          assert.equal(a.error?.code,'P0001');assert.equal(b.error?.code,'CASHIER_STREAM_SEQUENCE_GAP');
+          await assertFinancial(x,1,1,2);await sell(x,second);await sell(x,third);
+        }else{assert.ifError(a.error);assert.ifError(b.error);assert.equal(a.value.replayed,false);assert.equal(b.value.replayed,false);}
+        const state=await assertFinancial(x,3,3,0);
+        assert.deepEqual(state.cashier_operation_receipts.map(y=>Number(y.row.device_sequence)).sort((a,b)=>a-b),[1,2,3]);
+      }
+    });
+    console.log('P0_REVIEWED_ENROLLMENT_FINANCIAL_HANDOFF '+JSON.stringify({separateReviewerLogin:true,actualCanonicalSaleReturnVoid:true,observedRestrictedFinancialWaits:true,exactConcurrentRetry:true,conflictingOperationHeld:true,firstRollback:true,adjacentCommitRollback:true,peerMerchantProgress:true,independentEvidenceAssumed:true,publicHttpNativeV2:false,canonicalProposalAdoption:false,hosted:false}));
+
     console.log('P0_INTERNAL_V2_FINANCIAL_RECEIPTS '+JSON.stringify({actualCanonicalSaleReturnVoid:true,actualOperatorAttributionWrapper:true,restrictedPrimaryLogin:true,receiptAndCheckpointSameFinancialTransaction:true,postCommitAttributionRepair:true,publicHttpV2Held:true,streamEnrollmentSyntheticRootFixture:true,proposalCanonical:false,fullClientOrHosted:false}));
   });
 

@@ -631,5 +631,21 @@
       },
       "node22HttpPassed": 1
     }
+  },
+  "enrollmentFinancialHandoff": {
+    "status": "PREPARED_COMBINED_PROPOSAL_CANONICAL_CONCURRENCY_CI_PENDING",
+    "source": null,
+    "applicationChanged": false,
+    "preparedAssertions": [
+      "Separate reviewer enrollment function to actual canonical operator sale/return/void and immutable ledger",
+      "Exact enrollment retry after financial progress returns existing checkpoint without reset",
+      "Observed restricted primary lock wait chains for exact replay, conflicting operation and first transaction rollback",
+      "Adjacent sequence commit/rollback rechecks without skipped receipt; peer merchant progresses independently"
+    ],
+    "limits": [
+      "Independent reviewer evidence assumed synthetic",
+      "Both SQL proposals ephemeral; no canonical authority/readiness/restore adoption",
+      "No public HTTP/native v2 or hosted proof"
+    ]
   }
 }
