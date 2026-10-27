@@ -1,3 +1,23 @@
+## تصحيح الجرد ومطابقة دليل المراقبة الموجود — 2026-10-27
+
+نقطة المراجعة 775bbe50424e5f9bd5dcefa99978d670e73dcad3؛ آخر مصدر تنفيذي مقبول يبقى 711fd97d989b3733e68af7e1a094fe92dfb08d74. العمل الحالي مستقل عن خيار SEQ-R2؛ ذلك الخيار يبقى UNAPPROVED ولم يُستنتج اعتماده من «أكمل». [الخريطة المحدثة](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json)، مع referenceFilterCorrection20261027 و namedBoundaryReconciliation في الملف نفسه.
+
+**أُصلح خطأ في أداة التدقيق:** مرشح النصوص كان يحتفظ بالقيم التي تبدأبـ/ أوتحتوي /api/، فيُسقط template مثل `${base}/ops/readiness`. أُبقيت النصوص المحتوية على / لتخضع لمطابقة المسار الموجودة، دوناستنتاج تنفيذ HTTP أوقبول صلاحيات من مجرد تطابق. لم يتغير منطق التطبيق أواختباراته؛ الأداة تحت docs/final-audit/tools فقط.
+
+التحقق المحلي: node--checkPASS، ثمتشغيل الأداة القديمة والمصححة علىالمدخلات نفسها بعدمطابقة **683blob** مع GitHub:320 مصدر API/363 اختبارًا،316module مصدرية parsed/363testmodule. احتاجت 3 ملفات اختبار فينسخة العمل القديمة إلى overrides بالبايت من المصدر المحدد؛ لم تُنشر تغييراتها أوتُقبل نسخة عمل غير مطابقة. النتيجة القديمة علىمدخلات اليوم 271 صفًا ذامرجع /91 دونمرجع؛ المصححة 273/89. بقيت 362 تسجيلًا /236method-path/53mount edges،0parse failures/0unresolved؛ هويات المسارات وترتيب تركيبها ثابتة ولم يُحذف أي مرجع. أضيفت مراجع 4 مسارات(/healthz,/ops/health,/ops/readiness,/ops/metrics)، لكن صفين فقط انتقلا منبلا مرجع إلىذَيمرجع:readiness و metrics.
+
+الجرد التاريخي ccda10c كان 270/92؛ الفرق إلى 271/91 قبلتصحيح المرشح سببه تغيرملف management-full-app المقبول سابقًا، وليس أثر المرشح الجديد. حُفظت الأعداد والنسخة والبصمات التاريخية منفصلة. حقول literal القديمة تشملمراجع template quasis؛ هي مرشحات مصدرية لا URLs منفذة أوحالات مقبولة. **89 صفًا دونمرجع لا يعني 89 اختبارًا ناقصًا**، ولا تُعد 362/236 مقامًا لاكتمال P0.
+
+**الدليل الموجود الذي أُعيد ربطه:** [Observability40548268035/job122344692144](https://github.com/nora953/fawri-production-source/actions/runs/40548268035)، **اختباران ناجحان** عبر child يشغّل التطبيق الفعلي و PostgreSQL المملوك للـworkflow: public health/readiness سليمان فيوضع test؛ metrics بلا Bearer أوبرمزخاطئ تعيد 503 وجسمًا فارغًا، وبالرمز الصحيح 200text/plain؛ عندتعذّر PostgreSQL تعيد readiness503/not_ready وكودًا محدودًا دون URL الاتصال. checkoutcff91d4bcae5a9cc55358fc5199877ba108c6131 طابق شجرةالمصدر التنفيذي dccf936a9783bd34f9a1d3267c36628a1fa0caad، و run ناجح ضمن 58 مسارًا مقبولًا سابقًا. **لم نُعد تشغيله** ولم ندّع قبولًا تشغيليًا مستضافًا أوجاهزية production أوقبول كل labels/حقول metrics أوكلالأدوار.
+
+صُحح أيضًا مؤشر background-job اليدوي القديم فيالخريطة إلىدليله المقبول 205b5ec بدلأن يبقىطلب اختبارمكرر، مع الإبقاءعلىحدوده الخاصةبـnested result. بقيالجرد التاريخي UI/P1 ومرشحوالمصادر ومصفوفةالحقول 8/86 فينطاقاتهم دونترقية قبول. بوابة P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX تبقى OPEN.
+
+التالي: Reconcile the current PostgreSQL admin session/device listing and revocation registrations with the existing real HTTP admin-auth-router journey and retired legacy overlaps. Identify exact assertion/actor gaps before adding any test; do not create another cashier pairing/enrollment or approval mechanism. SEQ-R2 stays UNAPPROVED unless an explicit product choice is recorded.
+
+لا Runtime جديد للتطبيق أو CI جديد أوسياسة جديدة؛ تغيرتأداة الجرد وبيانات المطابقة والتوثيق فقط.45 حالة دونتغيير:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false،overallPercentage=null،**NO-GO**. لا hosted/merge/deploy/P1/P2.
+
+---
+
 ## مطابقة دليل رفض البروتوكول وتحضير قرار SEQ-R2 — 2026-10-27
 
 الحالة: **الدليل الموجود كافٍ للحد السلبي المسمّى؛ لا اختبار أو تشغيل CI جديد**. المصدر المراجع242821b938b3a7183831ee043ca77cb815ffbb9b؛ آخر مصدر تنفيذي مقبول يبقى711fd97d989b3733e68af7e1a094fe92dfb08d74. [المطابقة في ملف HTTP الموجود](evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json#protocolNegotiationReconciliation20261027).

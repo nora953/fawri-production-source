@@ -180,7 +180,10 @@ for(const entry of input.testEntries) {
   try {
     const ast=babelParse(text,entry.path,true),strings=[];
     walk(ast,n=>{let s=n.type==='StringLiteral'?n.value:n.type==='TemplateLiteral'?n.quasis.map(q=>q.value.cooked).join('__EXPR__'):null;
-      if(s && (s.startsWith('/') || s.includes('/api/')))strings.push({value:s,line:n.loc.start.line});});
+      // Test URLs can prefix ANY mounted path (e.g. `${base}/ops/readiness`).
+      // Keep slash-bearing source text, then match the pinned route below.
+      // This remains a path-reference candidate, never call/assertion proof.
+      if(s && s.includes('/'))strings.push({value:s,line:n.loc.start.line});});
     tests.push({path:entry.path,sha:entry.sha,strings});
   }catch(error){parseFailures.push({path:entry.path,error:error.message});}
 }

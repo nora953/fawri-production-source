@@ -803,9 +803,9 @@
     "historical": true,
     "superseded_current_source": "2f782c850c50526e2fe977f026b6f07ff0d867b7"
   },
-  "updated_at": "2026-10-24",
+  "updated_at": "2026-10-27",
   "release": "NO-GO",
-  "next": "Adopt and verify body-parser security graph; continue table/field/actor inventory and retention/missing-order policy reconciliation without repeating indexed SQL proofs. Keep hosted gates blocked and whole-P0 completeness false.",
+  "next": "Reconcile the current PostgreSQL admin session/device listing and revocation registrations with the existing real HTTP admin-auth-router journey and retired legacy overlaps. Identify exact assertion/actor gaps before adding any test; do not create another cashier pairing/enrollment or approval mechanism. SEQ-R2 stays UNAPPROVED unless an explicit product choice is recorded.",
   "reconciliation_note": "Existing accepted executions indexed, not newly run tests; parent TAP totals are not unique requirement counts. Full role/privacy/retention policy inventory remains open.",
   "schema_table_inventory": {
     "source_sha": "0563880fa5961af544c39352b82a90e3498c89ae",
@@ -4453,8 +4453,8 @@
   "currentEntrypointReconciliation": {
     "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
     "generator": "tools/build_p0_actor_entrypoint_map.cjs",
-    "source": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
-    "status": "CURRENT_AST_SOURCE_AND_NAMED_ROLE_FIELD_RECONCILIATION",
+    "source": "775bbe50424e5f9bd5dcefa99978d670e73dcad3",
+    "status": "CURRENT_SOURCE_REFERENCE_FILTER_FIXED_NAMED_PROOFS_REUSED",
     "counts": {
       "verifiedApiSourceBlobs": 320,
       "parsedApiModules": 316,
@@ -4466,10 +4466,13 @@
       "uniqueMethodPaths": 236,
       "nonliteralOrUnresolvedRegistrationRows": 0,
       "parseFailures": 0,
-      "registrationRowsWithLiteralTestReference": 270,
-      "registrationRowsWithoutLiteralTestReference": 92
+      "registrationRowsWithLiteralTestReference": 273,
+      "registrationRowsWithoutLiteralTestReference": 89
     },
-    "fullP0InventoryAccepted": false
+    "fullP0InventoryAccepted": false,
+    "auditToolChanged": true,
+    "applicationCodeChanged": false,
+    "newRuntimeExecuted": false
   },
   "currentProviderCostHttpProof": {
     "evidence": "evidence/P0-PROVIDER-COST-HTTP-20261027.json",
@@ -4483,6 +4486,17 @@
     "status": "BOUNDED_EXISTING_ADMIN_JOB_HTTP_AUTHORITY_SUMMARY_AND_REQUEUE_ATOMICITY_ACCEPTED",
     "source": "205b5eca8908885a676ec02cd3643faf64f5fe22",
     "newGate": false,
+    "parentGateClosed": false
+  },
+  "currentObservabilityProofReconciliation": {
+    "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation",
+    "boundary": "mountedObservability",
+    "status": "BOUNDED_EXISTING_REAL_APP_PROBE_AND_METRICS_AUTH_PROOF_REUSED",
+    "acceptedExecutable": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+    "run": 40548268035,
+    "job": 122344692144,
+    "tests": 2,
+    "newTestsExecuted": 0,
     "parentGateClosed": false
   }
 }

@@ -2359,8 +2359,8 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "Current320-source/363-test AST/reference catalogue and bounded8-table/86-field schema continuity; historical manifests classified without runtime promotion. Named provider cost HTTP subcondition executed; final source CI acceptance recorded separately.",
-        "nextNamedReview": "Channel durable job admin GET versus requeue actor/field assertions and producer/result provenance under existing declared policy; not a new gate.",
+        "completedPrerequisite": "Corrected audit prefilter dropping prefixed non-/api URLs. All683 Git blobs verified; same-input original271/91 versus corrected273/89 reference rows. Same362 registrations/236 method-paths/53 mount edges,0parse/unresolved. Reused2 real-app observability cases and existing background-job proof; no new application tests.",
+        "nextNamedReview": "Reconcile the current PostgreSQL admin session/device listing and revocation registrations with the existing real HTTP admin-auth-router journey and retired legacy overlaps. Identify exact assertion/actor gaps before adding any test; do not create another cashier pairing/enrollment or approval mechanism. SEQ-R2 stays UNAPPROVED unless an explicit product choice is recorded.",
         "latestAcceptedBoundary": {
           "evidence": "evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json",
           "status": "BOUNDED_EXISTING_ADMIN_JOB_HTTP_AUTHORITY_SUMMARY_AND_REQUEUE_ATOMICITY_ACCEPTED",
@@ -2368,7 +2368,8 @@
           "newGate": false,
           "parentGateClosed": false
         },
-        "noRepeat": "Provider-cost and background-job named boundaries now accepted within their stated scopes. Do not repeat absent source change/failure or a named integration gap; completeP0Inventory remainsfalse."
+        "noRepeat": "Provider-cost and background-job named boundaries now accepted within their stated scopes. Do not repeat absent source change/failure or a named integration gap; completeP0Inventory remainsfalse.",
+        "nextAction": "Reconcile the current PostgreSQL admin session/device listing and revocation registrations with the existing real HTTP admin-auth-router journey and retired legacy overlaps. Identify exact assertion/actor gaps before adding any test; do not create another cashier pairing/enrollment or approval mechanism. SEQ-R2 stays UNAPPROVED unless an explicit product choice is recorded."
       },
       {
         "order": 2,
@@ -2416,15 +2417,15 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Reuse bounded provider-cost and background-job actor/summary/requeue proofs. Continue only named remaining actor/field/producer reconciliation; current map references are source candidates, not blanket acceptance. The next prioritized executable/design slice is SEQ-R3 admission/compatibility in the existing cashier contract; do not regenerate identical catalogues or repeat these HTTP cases without a new change/failure.",
+        "nextAction": "Reconcile the current PostgreSQL admin session/device listing and revocation registrations with the existing real HTTP admin-auth-router journey and retired legacy overlaps. Identify exact assertion/actor gaps before adding any test; do not create another cashier pairing/enrollment or approval mechanism. SEQ-R2 stays UNAPPROVED unless an explicit product choice is recorded.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
         "currentReconciliation": {
           "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
           "generator": "tools/build_p0_actor_entrypoint_map.cjs",
-          "source": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
-          "status": "CURRENT_AST_SOURCE_AND_NAMED_ROLE_FIELD_RECONCILIATION",
+          "source": "775bbe50424e5f9bd5dcefa99978d670e73dcad3",
+          "status": "CURRENT_SOURCE_REFERENCE_FILTER_FIXED_AND_BOUNDED_OBSERVABILITY_PROOF_REUSED",
           "counts": {
             "verifiedApiSourceBlobs": 320,
             "parsedApiModules": 316,
@@ -2436,8 +2437,8 @@
             "uniqueMethodPaths": 236,
             "nonliteralOrUnresolvedRegistrationRows": 0,
             "parseFailures": 0,
-            "registrationRowsWithLiteralTestReference": 270,
-            "registrationRowsWithoutLiteralTestReference": 92
+            "registrationRowsWithLiteralTestReference": 273,
+            "registrationRowsWithoutLiteralTestReference": 89
           },
           "fullP0InventoryAccepted": false
         },
@@ -2451,6 +2452,15 @@
           "evidence": "evidence/P0-BACKGROUND-JOB-ADMIN-HTTP-20261027.json",
           "status": "BOUNDED_EXISTING_ADMIN_JOB_HTTP_AUTHORITY_SUMMARY_AND_REQUEUE_ATOMICITY_ACCEPTED",
           "source": "205b5eca8908885a676ec02cd3643faf64f5fe22",
+          "newGate": false,
+          "parentGateClosed": false
+        },
+        "observabilityBoundary": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation",
+          "status": "BOUNDED_EXISTING_REAL_APP_PROBE_AND_METRICS_AUTH_PROOF_REUSED",
+          "source": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+          "reusedTests": 2,
+          "newTests": 0,
           "newGate": false,
           "parentGateClosed": false
         }
@@ -2816,6 +2826,18 @@
       "selectedModel": null,
       "approval": "UNAPPROVED",
       "approvalDoesNotActivateV2": true
+    },
+    "independentWorkSelection20261027": {
+      "sourceReviewed": "775bbe50424e5f9bd5dcefa99978d670e73dcad3",
+      "selectedGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "reason": "Continue authorized source/evidence reconciliation independent of the unapproved SEQ-R2 product choice. A continuation request is not an adoption record.",
+      "seqR2Status": "UNAPPROVED_NO_CHOICE_RECORDED",
+      "newGateCount": 0,
+      "newAppOrTestCode": false,
+      "auditToolChanged": true,
+      "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
+      "newRuntime": false,
+      "nextExactAction": "Reconcile the current PostgreSQL admin session/device listing and revocation registrations with the existing real HTTP admin-auth-router journey and retired legacy overlaps. Identify exact assertion/actor gaps before adding any test; do not create another cashier pairing/enrollment or approval mechanism. SEQ-R2 stays UNAPPROVED unless an explicit product choice is recorded."
     }
   }
 }
