@@ -126,19 +126,76 @@ test('candidate0053 actual Drizzle migration '+mode+': atomic faults, collision,
   await t.test('rerunning actual migrator preserves hashed review, advanced checkpoints, receipts, finance, stock and peers',async()=>{
     const accepted=await snapshot();await run(valid);assert.deepEqual(await snapshot(),accepted);
   });
-  await t.test('actual restricted LOGIN identities pass read-only candidate readiness with explicit fixture grants',async()=>{
+  await t.test('actual restricted LOGIN identities pass read-only candidate readiness with explicit fixture grants',async sub=>{
     process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY='required';
     const {createDisposableKnowledgeRuntime}=await import('./helpers/disposable-knowledge-runtime.mjs');runtime=await createDisposableKnowledgeRuntime();
     const role='migration_reviewer_'+randomUUID().replaceAll('-',''),password=randomUUID().replaceAll('-','');
     await pool.query('CREATE ROLE '+role+" LOGIN PASSWORD '"+password+"' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION");
     await pool.query('REVOKE ALL ON public.cashier_stream_enrollment_reviews FROM '+runtime.role+','+runtime.authRole);
     await pool.query('GRANT USAGE ON SCHEMA public TO '+role);
-    await pool.query('GRANT EXECUTE ON FUNCTION public.fawri_cashier_enrollment_runtime(),public.fawri_enroll_reviewed_empty_cashier_stream(text,jsonb) TO '+role);
-    await pool.query('GRANT EXECUTE ON FUNCTION public.fawri_cashier_stream_financial_runtime(),public.fawri_lock_cashier_financial_stream(text,text,text),public.fawri_commit_cashier_financial_receipt(jsonb) TO '+runtime.role);
     const url=new URL(process.env.DATABASE_URL);url.username=role;url.password=password;url.search='';
     reviewer=new Pool({connectionString:url.toString(),connectionTimeoutMillis:5000});
     assert.equal((await reviewer.query('SELECT session_user::text AS actor')).rows[0].actor,role);
     await assert.rejects(reviewer.query('SELECT * FROM public.cashier_stream_enrollment_reviews'),e=>stateCode(e)==='42501');
+    const {assertCashierAuthorityCandidateInstallationReady:preflight}=await import('../src/services/cashierAuthorityCandidateInstallationReadiness.ts');
+    const identities={primaryRole:runtime.role,authenticationRole:runtime.authRole,reviewerRole:role,bootstrapRole:'fawri_ci'};
+    const installationCode=code=>e=>e.code==='CASHIER_AUTHORITY_CANDIDATE_INSTALLATION_NOT_READY'&&e.issues.includes(code);
+    async function positive(){
+      const client=await pool.connect();try{
+        await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+        const result=await preflight(client,identities);
+        assert.equal(result.ok,true);assert.equal(result.transactionReadOnly,true);assert.equal(result.historyEntries,54);
+        assert.equal(result.capabilitiesWithheld,true);assert.equal(result.grantsAuthorized,false);assert.equal(result.operationalAdoption,false);
+      }finally{await client.query('ROLLBACK');client.release();}
+    }
+    await sub.test('actual READ ONLY preflight accepts the complete pinned54-entry install with capabilities withheld',positive);
+    const firstTime=journal.entries[0].when,lastTime=journal.entries[53].when;
+    const faults=[
+      ['missing journal entry','DELETE FROM drizzle.__drizzle_migrations WHERE created_at='+lastTime,'HISTORY_COUNT'],
+      ['early hash drift',"UPDATE drizzle.__drizzle_migrations SET hash=repeat('0',64) WHERE created_at="+firstTime,'HISTORY_HASH'],
+      ['timestamp drift','UPDATE drizzle.__drizzle_migrations SET created_at=created_at+1 WHERE created_at='+lastTime,'HISTORY_TIMESTAMP'],
+      ['extra future history',"INSERT INTO drizzle.__drizzle_migrations(hash,created_at) VALUES(repeat('1',64),"+(lastTime+10)+')','HISTORY_COUNT'],
+      ['duplicate history','INSERT INTO drizzle.__drizzle_migrations(hash,created_at) SELECT hash,created_at FROM drizzle.__drizzle_migrations WHERE created_at='+firstTime,'HISTORY_COUNT'],
+      ['null timestamp','UPDATE drizzle.__drizzle_migrations SET created_at=NULL WHERE created_at='+lastTime,'HISTORY_TIMESTAMP'],
+      ['missing journal relation','ALTER TABLE drizzle.__drizzle_migrations RENAME TO held_migrations','JOURNAL_RELATION'],
+      ['view replacing journal','ALTER TABLE drizzle.__drizzle_migrations RENAME TO held_migrations; CREATE VIEW drizzle.__drizzle_migrations AS SELECT * FROM drizzle.held_migrations','JOURNAL_RELATION'],
+      ['journal RLS drift','ALTER TABLE drizzle.__drizzle_migrations ENABLE ROW LEVEL SECURITY','JOURNAL_RELATION'],
+      ['journal field type drift','ALTER TABLE drizzle.__drizzle_migrations ALTER COLUMN hash TYPE varchar','JOURNAL_COLUMNS'],
+      ['public journal access','GRANT SELECT ON drizzle.__drizzle_migrations TO PUBLIC','JOURNAL_PUBLIC_ACL'],
+      ['public journal column access','GRANT SELECT(hash) ON drizzle.__drizzle_migrations TO PUBLIC','JOURNAL_PUBLIC_ACL'],
+      ['primary journal column access','GRANT SELECT(hash) ON drizzle.__drizzle_migrations TO '+runtime.role,'JOURNAL_CALLER_ACL'],
+      ['reviewer journal schema access','GRANT USAGE ON SCHEMA drizzle TO '+role,'JOURNAL_CALLER_ACL'],
+      ['foreign journal owner','GRANT CREATE ON SCHEMA drizzle TO '+role+'; ALTER TABLE drizzle.__drizzle_migrations OWNER TO '+role,'JOURNAL_RELATION'],
+      ['partial missing financial function','DROP FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb)','WITHHELD_AUTHORITY_BOUNDARY'],
+      ['unsafe owner login','ALTER ROLE fawri_cashier_receipt_owner LOGIN','WITHHELD_AUTHORITY_BOUNDARY'],
+      ['disabled review RLS','ALTER TABLE public.cashier_stream_enrollment_reviews DISABLE ROW LEVEL SECURITY','WITHHELD_AUTHORITY_BOUNDARY'],
+      ['premature primary capability','GRANT EXECUTE ON FUNCTION public.fawri_cashier_stream_financial_runtime() TO '+runtime.role,'WITHHELD_AUTHORITY_BOUNDARY'],
+      ['premature reviewer capability','GRANT EXECUTE ON FUNCTION public.fawri_cashier_enrollment_runtime() TO '+role,'WITHHELD_AUTHORITY_BOUNDARY'],
+      ['authentication financial capability','GRANT EXECUTE ON FUNCTION public.fawri_lock_cashier_financial_stream(text,text,text) TO '+runtime.authRole,'WITHHELD_AUTHORITY_BOUNDARY'],
+      ['active role mismatch','SET LOCAL ROLE '+role,'BOOTSTRAP_CONTEXT'],
+    ];
+    for(const [name,mutation,expected] of faults)await sub.test('installation preflight refuses '+name+' and rollback restores prior state',async()=>{
+      const prior=await snapshot(),client=await pool.connect();try{
+        await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ');
+        await client.query(mutation);await assert.rejects(preflight(client,identities),installationCode(expected));
+      }finally{await client.query('ROLLBACK');client.release();}
+      assert.deepEqual(await snapshot(),prior);await positive();
+    });
+    for(const [name,target] of [['primary',runtime.runtimePool],['reviewer',reviewer],['authentication',new Pool({connectionString:process.env.FAWRI_AUTH_DATABASE_URL,connectionTimeoutMillis:5000})]])await sub.test('actual '+name+' LOGIN is denied bootstrap preflight',async()=>{
+      const prior=await snapshot(),client=await target.connect();try{
+        await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+        await assert.rejects(preflight(client,identities),installationCode('BOOTSTRAP_CONTEXT'));
+      }finally{await client.query('ROLLBACK');client.release();if(name==='authentication')await target.end();}
+      assert.deepEqual(await snapshot(),prior);
+    });
+    await sub.test('preflight refuses read-committed inspection without the required snapshot context',async()=>{
+      const client=await pool.connect();try{await client.query('BEGIN READ ONLY');await assert.rejects(preflight(client,identities),installationCode('SNAPSHOT_CONTEXT'));}
+      finally{await client.query('ROLLBACK');client.release();}
+    });
+    console.log('P0_AUTHORITY_INSTALLATION_PREFLIGHT '+JSON.stringify({mode,historyEntries:54,metadataFaults:22,deniedLoginActors:3,readOnlyPositive:true,repeatableRead:true,capabilitiesWithheld:true,grantsAuthorized:false,priorPublicDataAndSelectedCatalogsPreserved:true,canonicalSourceUnchanged:true,hosted:false}));
+    // Explicit fixture grants are applied only AFTER the withheld preflight proof.
+    await pool.query('GRANT EXECUTE ON FUNCTION public.fawri_cashier_enrollment_runtime(),public.fawri_enroll_reviewed_empty_cashier_stream(text,jsonb) TO '+role);
+    await pool.query('GRANT EXECUTE ON FUNCTION public.fawri_cashier_stream_financial_runtime(),public.fawri_lock_cashier_financial_stream(text,text,text),public.fawri_commit_cashier_financial_receipt(jsonb) TO '+runtime.role);
     const {assertCashierStreamAuthorityCandidateReady}=await import('../src/services/cashierStreamAuthorityReadiness.ts');
     const c=await runtime.runtimePool.connect();try{
       await c.query('BEGIN READ ONLY');

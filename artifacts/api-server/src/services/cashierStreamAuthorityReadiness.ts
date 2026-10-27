@@ -186,7 +186,9 @@ export class CashierStreamAuthorityReadinessError extends Error {
  readonly code="CASHIER_STREAM_AUTHORITY_CANDIDATE_NOT_READY";
  constructor(readonly issues:string[]){super("Cashier stream authority proposal metadata is unsafe or incomplete");this.name="CashierStreamAuthorityReadinessError";}
 }
-export async function assertCashierStreamAuthorityCandidateReady(client:OperationalQueryTarget,identities:Identities){
+export async function assertCashierStreamAuthorityCandidateReady(client:OperationalQueryTarget,identities:Identities,options:{capabilityPhase?:"fixture-enabled"|"withheld"}={}){
+ const phase=options.capabilityPhase??"fixture-enabled";
+ if(phase!=="fixture-enabled"&&phase!=="withheld")throw new CashierStreamAuthorityReadinessError(["CAPABILITY_PHASE"]);
  const issues:string[]=[];const fail=(ok:unknown,code:string)=>{if(!ok)issues.push(code);};
  const callerNames=[identities.primaryRole,identities.authenticationRole,identities.reviewerRole];
  const names=[...callerNames,identities.bootstrapRole,...owners];
@@ -212,7 +214,7 @@ export async function assertCashierStreamAuthorityCandidateReady(client:Operatio
    fail(JSON.stringify(p.proconfig)===JSON.stringify(["search_path=pg_catalog"]),"FUNCTION_SEARCH_PATH");
    fail(createHash("sha256").update(String(p.prosrc)).digest("hex")===expected.hash,"FUNCTION_BODY");fail(!p.public_execute,"FUNCTION_PUBLIC_EXECUTE");
    for(const name of callerNames){
-    const allowed=p.proname==="fawri_enrollment_review_immutable"?false:
+    const allowed=phase==="withheld"||p.proname==="fawri_enrollment_review_immutable"?false:
      String(p.proname).includes("enroll")?name===identities.reviewerRole:name===identities.primaryRole;
     fail((await client.query("SELECT has_function_privilege($1,$2::oid,'EXECUTE') AS allowed",[name,p.oid])).rows[0]?.allowed===allowed,"CALLER_FUNCTION_CAPABILITY");
    }

@@ -448,7 +448,7 @@
     },
     {
       "path": "artifacts/api-server/src/services/cashierStreamAuthorityReadiness.ts",
-      "sha256": "c8cf8e23eec46bbc8fcccbdde0ee55d0ddde5d84e5f71ed8054031b85fea6a8f"
+      "sha256": "057208efd013e94c89c2eaef9cdc7356d7cfdb535b210a31056b9e927f84fd10"
     },
     {
       "path": "scripts/lib/disposable-cashier-role-recovery.mjs",
@@ -517,6 +517,18 @@
     {
       "path": "docs/final-audit/evidence/seq-d3-authority-candidate/generated/meta/_journal.json",
       "sha256": "ea3cba70944a90e3baa99544b99e23a929238ba2f1dbf7418bcaf62f65affb52"
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierAuthorityCandidateInstallationReadiness.ts",
+      "sha256": "61d283266fc0d79bf84ed291027c8a0a438e21b1b58660fd0d4d886bd5b08b66"
+    },
+    {
+      "path": "lib/db/scripts/lib/cashier-authority-candidate-history.mjs",
+      "sha256": "e19b7dd85500f6c80279f9e0c12525b814ced54db0361e74d8ffef056d5d3110"
+    },
+    {
+      "path": "lib/db/scripts/lib/cashier-authority-candidate-history.d.mts",
+      "sha256": "495e30ea9606c2c29b5976d0a3452d6b63861fdefd1aac925ab5607710ab0d3e"
     }
   ],
   "bootstrapContract": {
@@ -556,5 +568,14 @@
     "separateOwnedClusters": true,
     "usesActualDrizzleMigrator": true,
     "acceptance": "requires exact-source CI; not operational adoption"
+  },
+  "installationPreflight": {
+    "internal": true,
+    "selectOnly": true,
+    "completeJournalEntries": 54,
+    "capabilityPhase": "withheld",
+    "grantsAuthorized": false,
+    "operationalAdoption": false,
+    "acceptance": "requires exact-source CI; not startup or provisioning adoption"
   }
 }

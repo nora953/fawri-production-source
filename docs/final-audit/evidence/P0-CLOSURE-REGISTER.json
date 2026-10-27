@@ -1490,6 +1490,14 @@
             "conclusion": "success"
           }
         ]
+      },
+      "candidateInstallationPreflight": {
+        "status": "PREPARED_CI_PENDING",
+        "completeHistoryEntries": 54,
+        "selectOnly": true,
+        "capabilitiesWithheld": true,
+        "grantsAuthorized": false,
+        "operationalAdoption": false
       }
     },
     {
