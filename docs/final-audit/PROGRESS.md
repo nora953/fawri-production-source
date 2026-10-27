@@ -1,3 +1,9 @@
+## P0 finite known-remainder closure queue fixed — 2026-10-27
+
+From checkpoint9dedf2ebd5560f0a57f77246f5885c258fd4f7d2, reconciled all16 known remaining rows (7 OPEN/9 BLOCKED) into the existing authoritative register, each with precise closure conditions, missing evidence/decision, authorized work now, external dependency and next action. No new gates, status changes, runtime/CI claims or policy/hosted approvals. Accepted source remainsb15f4b8751da7d8e84933ffd2e778b28538caa3b. Complete inventory remainsfalse; no overall completion percentage. [Closure queue and execution order](P0-CLOSURE-REGISTER.md); machine-readable closurePlan is in existing evidence/P0-CLOSURE-REGISTER.json.
+
+Next batch: reconcile current P0 actors/entrypoints/fields/producers/consumers against existing manifests/evidence and name exact unmatched rows. Then map SEQ-R1/R2/R3 before selecting necessary cashier implementation/proof. Do not automatically add the previously proposed HTTP test or repeat accepted layers. New code/tests require an existing gate plus an unmet closure condition; discovered critical scope changes require explicit evidence and count impact. No hosted/merge/deploy; releaseNO-GO.
+
 ## Existing merchant pairing continuity accepted — 2026-10-27
 
 Accepted test/source **b15f4b8751da7d8e84933ffd2e778b28538caa3b**, all **57/57 CI SUCCESS**. Existing merchant-managed station pairing is reused, not replaced. Three new nested real restricted-LOGIN PostgreSQL/service cases pass: same-device credential rotation preserves legacy sequence1 and canonical review stream0/version1; replacement leaves the old device's stream/history in place and creates no replacement stream; consumed code and revoked old credential are refused with protected state unchanged. [Evidence](evidence/P0-CASHIER-PAIRING-CONTINUITY-20261027.json).

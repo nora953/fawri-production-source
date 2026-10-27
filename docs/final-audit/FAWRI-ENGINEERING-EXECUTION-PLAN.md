@@ -28,3 +28,11 @@ Release requires: complete P0 inventory and all critical gates accepted; P1 merc
 
 ## Checkpoint and handoff protocol
 After each bounded batch, write a concise GitHub checkpoint including: branch/HEAD, gate ID, changed files, exact commands/workflows and results, evidence links, decisions, blocked dependencies, next one actionable step. Prefer existing `PROGRESS.md` and gate evidence over new overlapping documents. Any new chat or agent must first read this plan and the live register, then inspect the current HEAD/PR before touching code. Memory/chat context is advisory; GitHub is the durable source of truth.
+
+## Closure control amendment — 2026-10-27
+
+The user approved consolidating the known P0 remainder into a finite closure queue. The authoritative queue is now in P0-CLOSURE-REGISTER.md and closurePlan in evidence/P0-CLOSURE-REGISTER.json:45 existing known rows,29 CLOSED_SOURCE,7 OPEN,9 BLOCKED; no new release gate or status change. This freezes known register scope, not completeness: completeP0Inventory remainsfalse and overallPercentage remainsnull until row-level reconciliation is accepted.
+
+Each new engineering batch must name an existing gate, its unmet acceptance condition, the missing evidence/decision, and whether it closes the gate or completes a necessary prerequisite. Reuse accepted proofs; repeat only for changed source, a failure or a named integration gap. Do not create unused features, duplicate pairing/issuer designs or overlapping proof documents to generate activity. Newly confirmed critical additions must record evidence, justification and scope/count impact; never silently enlarge or suppress the known remainder.
+
+Immediate execution order: reconcile current P0 actor/entrypoint/field-to-evidence gaps from existing manifests; map SEQ-R1/R2/R3 to current pairing/client/SQL evidence; then implement the identified missing acceptance condition. The previously suggested HTTP pairing test is conditional on that gap map, not an automatic next task. Policy proposals must be concrete and reviewable before a choice is requested. GitHub-only restrictions, no merge/deploy and releaseNO-GO remain in force; user agreement to closure planning approves none of the outstanding operational or record-specific policies.

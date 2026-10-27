@@ -98,14 +98,18 @@
       "requirement": "Actual deployed runtime DB login, target branch and pooling independently verified",
       "status": "BLOCKED",
       "evidence": "evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json",
-      "blocker": "No new hosted inspection performed. Historical hosted evidence does not accept current source."
+      "blocker": "No new hosted inspection performed. Historical hosted evidence does not accept current source.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-HOSTED-IDENTITY]",
+      "nextAction": "After authorization, collect exact revision/DB/login/pooling evidence read-only; refuse to accept based on environment-variable names alone."
     },
     {
       "id": "P0-ACCESS-HOSTED-ROLLOUT",
       "requirement": "Hosted schema, function owners, grants and RLS match an accepted source",
       "status": "BLOCKED",
       "evidence": "evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json",
-      "blocker": "No new hosted inspection performed. Historical hosted evidence does not accept current source."
+      "blocker": "No new hosted inspection performed. Historical hosted evidence does not accept current source.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-HOSTED-ROLLOUT]",
+      "nextAction": "Once identity is verified and scope authorized, compare actual catalog and full journal to accepted source; record discrepancies before proposing writes."
     },
     {
       "id": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -157,7 +161,9 @@
       "field004Remaining": [
         "F004-R1",
         "F004-R2"
-      ]
+      ],
+      "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
+      "nextAction": "First work item: build the exact outstanding actor/entrypoint/field-to-evidence map from current source and the existing manifests. Select no runtime test until it names an uncovered closure condition."
     },
     {
       "id": "P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
@@ -284,7 +290,7 @@
       "saleServiceDiagnosticStatus": "BOUNDED_SERVICE_SQL_OBSERVATION_ACCEPTED_NOT_RECOVERY",
       "recoveryContractCandidate": "P0-CASHIER-SEQUENCE-RECOVERY-CONTRACT-20261026.md",
       "recoveryContractStatus": "INTERNAL_REV2_AUTHORITY_LIFECYCLE_FRESH_FIXTURE_CLUSTER_RECOVERY_ACCEPTED_CANONICAL_ISSUER_POLICY_CLIENT_OPEN",
-      "nextAction": "Extend the same existing merchant pairing continuity scenarios through authenticated merchant HTTP issuance and real cashier redemption, reusing current session and station authority. Then reconcile protocol negotiation/recovery; keep v2 unsupported until complete acceptance, with no guessed fresh-empty provenance, historical reset, routine platform-owner approval or duplicate pairing.",
+      "nextAction": "Produce one acceptance map for SEQ-R1/R2/R3 and existing pairing. Identify the precise missing implementation/proof; do not create another isolated issuer candidate or duplicate pairing flow.",
       "nativeOutboxEvidence": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
       "nativeOutboxStatus": "BOUNDED_CHROMIUM_NATIVE_HOLD_RELOAD_REPLAY_ACCEPTED_SYNTHETIC_TRANSPORT_NOT_RECOVERY",
       "operatorHttpEvidence": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
@@ -2039,7 +2045,8 @@
         "acceptedSource": "b15f4b8751da7d8e84933ffd2e778b28538caa3b",
         "broaderTap": 829,
         "allWorkflowsSuccess": 57
-      }
+      },
+      "closurePlanPointer": "closurePlan.entries[gate=CASHIER-SYNC-SEQUENCE-001]"
     },
     {
       "id": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
@@ -2047,7 +2054,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Resolve F005-R1/R2/R3 explicit policy/design and R4/R5 authorized hosted inventory/recovery dependencies using the finite checklist; no inferred duration, hash repair or hosted acceptance. Continue executable P0 work with CASHIER-SYNC-SEQUENCE-001.",
+      "nextAction": "Reconcile the finite FIELD002/003/004/005 remainders to this gate and reuse accepted cells. Do not rerun the whole matrix or implement unused CRUD/retired producers.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -2145,28 +2152,35 @@
         "F005-R4",
         "F005-R5"
       ],
-      "retentionDecisionReport": "P0-FIELD005-RETENTION-DECISIONS-20261026.md"
+      "retentionDecisionReport": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-RESIDUAL-MERCHANT-PRIVACY-001/http]"
     },
     {
       "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
       "requirement": "Physical device/main-secondary/grace/time/profile tamper and operator transition acceptance",
       "status": "OPEN",
       "evidence": "P0-CASHIER-OFFLINE-ENTITLEMENT-TRUST-BOUNDARY-20261023.md",
-      "blocker": "Native8 and real HTTP/SQL proof retained; synthetic native ACK and untrusted OS/profile are explicit limits."
+      "blocker": "Native8 and real HTTP/SQL proof retained; synthetic native ACK and untrusted OS/profile are explicit limits.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-OFFLINE-DEVICE-ACCEPTANCE]",
+      "nextAction": "Name the missing physical profile/case and expected observation. Mark execution blocked when the device/environment is unavailable; do not regenerate synthetic device proofs."
     },
     {
       "id": "P0-OFFLINE-KEY-RELEASE",
       "requirement": "Operational signing/public release key parity, rotation and signed rollout",
       "status": "BLOCKED",
       "evidence": "P0-CASHIER-OFFLINE-ENTITLEMENT-TRUST-BOUNDARY-20261023.md",
-      "blocker": "No key provisioning, secret change or hosted rollout authorized."
+      "blocker": "No key provisioning, secret change or hosted rollout authorized.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-OFFLINE-KEY-RELEASE]",
+      "nextAction": "Collect approved key-ID/public-key/release-manifest parity, then rehearse authorized rotation and rollback; do not substitute generated fixture keys."
     },
     {
       "id": "P0-RECEIPT-OWNERSHIP-POLICY",
       "requirement": "Arbitrary missing-order ownership, privileged repair and manual recovery policy",
       "status": "OPEN",
       "evidence": "https://github.com/nora953/fawri-production-source/issues/523",
-      "blocker": "Fixture mapping restoration is not a supported administrative repair workflow; product/operator decision and acceptance needed."
+      "blocker": "Fixture mapping restoration is not a supported administrative repair workflow; product/operator decision and acceptance needed.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-RECEIPT-OWNERSHIP-POLICY]",
+      "nextAction": "Present one source-grounded ownership/recovery proposal with approval scope and failure cases; no repair writes or new authority before that decision."
     },
     {
       "id": "P0-RETENTION-PRIVILEGED-DELETION-POLICY",
@@ -2175,7 +2189,7 @@
       "evidence": "https://github.com/nora953/fawri-production-source/issues/523",
       "blocker": "Existing retention/deletion service proofs do not approve duration, privileged access or every field.",
       "retentionFieldEvidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json",
-      "nextAction": "Resolve F005-R1/R2/R3 explicit policy/design and R4/R5 authorized hosted inventory/recovery dependencies using the finite checklist; no inferred duration, hash repair or hosted acceptance. Continue executable P0 work with CASHIER-SYNC-SEQUENCE-001.",
+      "nextAction": "Resolve R1/R2/R3 as concrete per-field decisions; keep R4/R5 attached to existing hosted recovery/storage gates. Implement only approved changed behavior.",
       "retentionAuditInteractionStatus": "CONFIRMED_RUNTIME_INTERACTIONS_BOUNDED_MITIGATIONS_ACCEPTED_POLICY_HISTORY_OPEN",
       "deletionEmergencyChainEvidence": "evidence/P0-DELETION-EMERGENCY-CHAIN-20261025.json",
       "deletionEmergencyChainStatus": "PREEXISTING_LEDGER_AND_CONCURRENT_CREATION_MITIGATIONS_ACCEPTED_POLICY_HISTORY_OPEN",
@@ -2192,49 +2206,62 @@
       ],
       "retentionDecisionReport": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
       "enrollmentReviewMinimizationSource": "544764c23eee8d72e1e783ee313cbf648ef68470",
-      "enrollmentReviewMinimizationStatus": "BOUNDED_PROPOSAL_HASH_MINIMIZATION_AND_RESTORED_DELETION_ACCEPTED_RETENTION_POLICY_OPEN"
+      "enrollmentReviewMinimizationStatus": "BOUNDED_PROPOSAL_HASH_MINIMIZATION_AND_RESTORED_DELETION_ACCEPTED_RETENTION_POLICY_OPEN",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-RETENTION-PRIVILEGED-DELETION-POLICY]"
     },
     {
       "id": "P0-HOSTED-PROVIDER-PAYMENT",
       "requirement": "Actual payment sandbox/signature/settlement/retry acceptance",
       "status": "BLOCKED",
       "evidence": "https://github.com/nora953/fawri-production-source/issues/523",
-      "blocker": "Fake signed gateway only; live integration excluded by task boundaries."
+      "blocker": "Fake signed gateway only; live integration excluded by task boundaries.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-HOSTED-PROVIDER-PAYMENT]",
+      "nextAction": "After authorization, execute only the missing provider contract cases and retain redacted original evidence; fake fixtures remain labeled fake."
     },
     {
       "id": "P0-HOSTED-PROVIDER-META",
       "requirement": "Actual Meta/AI credentials, connected-page delivery and provider failure acceptance",
       "status": "BLOCKED",
       "evidence": "https://github.com/nora953/fawri-production-source/issues/535",
-      "blocker": "Injected Graph/AI proof is retained; hosted provider checks not performed."
+      "blocker": "Injected Graph/AI proof is retained; hosted provider checks not performed.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-HOSTED-PROVIDER-META]",
+      "nextAction": "Execute a bounded approved real-provider scenario set and reconcile delivery/failure outputs; do not activate planned channels."
     },
     {
       "id": "P0-HOSTED-STORAGE-DELETION",
       "requirement": "Durable hosted media/object storage, access and physical deletion acceptance",
       "status": "BLOCKED",
       "evidence": "P0-SOURCE-HOSTED-RECONCILIATION-20261023.md",
-      "blocker": "Local filesystem deletion is not object-store acceptance; live services untouched."
+      "blocker": "Local filesystem deletion is not object-store acceptance; live services untouched.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-HOSTED-STORAGE-DELETION]",
+      "nextAction": "After authorization, establish actual copy/storage inventory before mutation, then test only the approved deletion/access path."
     },
     {
       "id": "P0-HOSTED-RECOVERY",
       "requirement": "Hosted backup/PITR, media restore, RPO/RTO and incident recovery",
       "status": "BLOCKED",
       "evidence": "P0-RECOVERY-RELEASE-STATUS-20261021.md",
-      "blocker": "Owned dump/restore proof retained; operational recovery evidence/signoff missing."
+      "blocker": "Owned dump/restore proof retained; operational recovery evidence/signoff missing.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-HOSTED-RECOVERY]",
+      "nextAction": "Inventory dependencies read-only under approved scope; define measurable targets before the separately authorized recovery rehearsal."
     },
     {
       "id": "P0-HOSTED-BRANCH-DEPLOYMENT",
       "requirement": "Exact deployed branch/image, readiness, rollback and release controls",
       "status": "BLOCKED",
       "evidence": "P0-SOURCE-HOSTED-RECONCILIATION-20261023.md",
-      "blocker": "Last read-only observation was old main/d38d2922; current deployment not inspected or authorized."
+      "blocker": "Last read-only observation was old main/d38d2922; current deployment not inspected or authorized.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-HOSTED-BRANCH-DEPLOYMENT]",
+      "nextAction": "Verify current artifact identity first; record parity gap and concrete reviewed rollout/rollback before requesting any change."
     },
     {
       "id": "P0-INCIDENT-REVIEW",
       "requirement": "Incident resolution, account/service audit and exposure-window assessment",
       "status": "OPEN",
       "evidence": "P0-SOURCE-HOSTED-RECONCILIATION-20261023.md",
-      "blocker": "Historical healthy samples do not establish incident clearance or uncompromised credentials. No rotation performed."
+      "blocker": "Historical healthy samples do not establish incident clearance or uncompromised credentials. No rotation performed.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-INCIDENT-REVIEW]",
+      "nextAction": "List required original logs/identity/time windows and responsible review, preserving GitHub-only boundary. No broad rescan to simulate incident clearance."
     },
     {
       "id": "P0-DEPENDENCY-SECURITY",
@@ -2248,9 +2275,378 @@
       "requirement": "Independent owner/operator approval of all release requirements",
       "status": "BLOCKED",
       "evidence": "AUDIT_EXECUTION_CONTROL_PLAN_V1_20261014.md",
-      "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization."
+      "blocker": "NO-GO. Complete requirement/field/actor inventory and every operational blocker must be resolved; no merge/deploy authorization.",
+      "closurePlanPointer": "closurePlan.entries[gate=P0-RELEASE-SIGNOFF]",
+      "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
     }
   ],
   "previousFullyAcceptedSource": "fec5efedeefbf253af8b764d63a5911dd6fb99f0",
-  "lastUpdatedAt": "2026-10-27"
+  "lastUpdatedAt": "2026-10-27",
+  "closurePlan": {
+    "schemaVersion": 1,
+    "date": "2026-10-27",
+    "basedOnCheckpoint": "9dedf2ebd5560f0a57f77246f5885c258fd4f7d2",
+    "status": "KNOWN_P0_CLOSURE_QUEUE_FROZEN_V1_INVENTORY_RECONCILIATION_PENDING",
+    "userAuthorizationScope": "Reconcile existing remaining P0 requirements into a finite closure plan and prioritize closure; does not adopt product/retention/repair policies or authorize hosted/merge/deploy.",
+    "existingKnownRegisterRows": 45,
+    "closedSourceRows": 29,
+    "openRows": 7,
+    "blockedRows": 9,
+    "remainingKnownRows": 16,
+    "completeP0Inventory": false,
+    "overallPercentage": null,
+    "release": "NO-GO",
+    "noNewReleaseRequirementsAdded": true,
+    "noExistingStatusChanged": true,
+    "acceptedSource": "b15f4b8751da7d8e84933ffd2e778b28538caa3b",
+    "executionRules": [
+      "Select one existing gate and its exact unmet closure condition before new code/tests. State whether the batch closes it or only completes a named necessary prerequisite.",
+      "Reuse accepted positive/negative/runtime evidence at its original layer and source. No repeated accepted test solely to increase totals; rerun only for a source change, failure or identified integration gap.",
+      "Do not create unused product features, another issuer/pairing candidate or overlapping proof documents to simulate closure.",
+      "Prepare concrete reviewable policy/operational proposals before asking for a decision; no durations, powers, repair authority or external authorization inferred from agreement to this plan.",
+      "Unchanged hosted/physical/policy blockers remain explicit; GitHub-only constraints persist.",
+      "Use existing gate IDs; new subcases are not new P0 gates. Any newly confirmed critical gap must be recorded with source/evidence and scope/count impact; no silent scope expansion or suppression.",
+      "Inventory completeness requires explicit row-level reconciliation of current P0 entrypoints/actors/fields/producers/consumers with existing accepted manifests/evidence. Historical UI222 imports are reused as historical input only; no new P1/UI audit.",
+      "Once complete inventory and source requirements are accepted, report source-phase closure separately from operational/release acceptance. Do not relabel OPEN/BLOCKED as CLOSED_SOURCE merely to clear the queue."
+    ],
+    "activeWorkOrder": [
+      {
+        "order": 1,
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0."
+      },
+      {
+        "order": 2,
+        "gate": "CASHIER-SYNC-SEQUENCE-001",
+        "deliverable": "SEQ-R1/R2/R3 acceptance-to-proof gap map using existing merchant pairing, then one missing implementation/proof; no automatic extra HTTP test absent mapped necessity."
+      },
+      {
+        "order": 3,
+        "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+        "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells."
+      },
+      {
+        "order": 4,
+        "gates": [
+          "P0-RECEIPT-OWNERSHIP-POLICY",
+          "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+        ],
+        "deliverable": "Concrete bounded policy records; ask only the decisions that unlock named implementation work."
+      }
+    ],
+    "entries": [
+      {
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "titleArabic": "اكتمال جرد الصلاحيات والحقول",
+        "currentStatus": "OPEN",
+        "workClass": "SOURCE_RECONCILIATION_THEN_TARGETED_EXECUTION",
+        "acceptedEvidence": "AUDIT_MANIFEST_SCHEMA_AND_DOMAIN_QUEUE_20261014.md",
+        "closureConditions": [
+          "Reconcile current mounted entrypoints, background/alternate producers, actors, roles/sessions and sensitive field consumers to the existing register and accepted proof layers; every P0 exposure has an evidence link or explicit unmet acceptance item.",
+          "No unresolved P0 actor/field boundary remains unclassified; known/unknown and policy/hosted requirements remain explicit rather than counted as accepted.",
+          "Any actual unproved authorization boundary has legitimate-positive, unauthorized-negative and required runtime evidence at the accepted source."
+        ],
+        "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
+        "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
+        "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
+        "nextAction": "First work item: build the exact outstanding actor/entrypoint/field-to-evidence map from current source and the existing manifests. Select no runtime test until it names an uncovered closure condition.",
+        "dependsOn": [
+          "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+        ]
+      },
+      {
+        "gate": "CASHIER-SYNC-SEQUENCE-001",
+        "titleArabic": "مزامنة الكاشير واستعادة التسلسل",
+        "currentStatus": "OPEN",
+        "workClass": "SOURCE_IMPLEMENTATION_WITH_EXPLICIT_RECOVERY_CONTRACT",
+        "acceptedEvidence": "P0-GITHUB-ONLY-GAP-RECONCILIATION-20261022.md",
+        "closureConditions": [
+          "Resolve SEQ-R1/R2/R3: future-gap/late operation disposition, movement-only local API/outbox treatment, first-device/checkpoint/restore and legacy reconciliation.",
+          "Reuse authenticated merchant pairing; define its connection to stream identity/checkpoint without reset, guessed baseline or treating successful pairing as fresh-empty evidence.",
+          "Required source/native/HTTP/restricted-SQL matrix in the existing recovery contract passes: exact replay,1/3/late2 chosen handling, unsupported operation hold, lost ACK/restart, rollback, tenant/device/station denial, real concurrency and restore.",
+          "New protocol remains unsupported publicly until its complete acceptance boundary is met; operational promotion and grant/retention prerequisites are separately satisfied, not inferred from fixtures."
+        ],
+        "missingEvidenceOrDecision": "Actual service pairing continuity is accepted at b15f4b8. HTTP pairing continuity and full protocol/client/recovery integration are not closed; independent original-review provenance is not supplied by pairing.",
+        "executableNowWithinGitHub": "Reconcile each required recovery-contract row against existing evidence. Implement only the next missing row that advances SEQ-R1/R2/R3; the HTTP pairing extension is conditional on that mapping.",
+        "externalDependency": "Intended manual-adjustment/legacy disposition, trusted enrollment/recovery rules, FIELD005 and separately authorized operational adoption remain dependencies.",
+        "nextAction": "Produce one acceptance map for SEQ-R1/R2/R3 and existing pairing. Identify the precise missing implementation/proof; do not create another isolated issuer candidate or duplicate pairing flow.",
+        "dependsOn": [
+          "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+        ]
+      },
+      {
+        "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+        "titleArabic": "صلاحيات HTTP والخصوصية للجداول المتبقية",
+        "currentStatus": "OPEN",
+        "workClass": "SOURCE_MATRIX_PLUS_POLICY_AND_HOSTED_DEPENDENCIES",
+        "acceptedEvidence": "evidence/P0-0051-VERIFICATION-20261024.json",
+        "closureConditions": [
+          "Reconcile owner/assistant/merchant access for the existing eight residual tables and their actual HTTP/alternate producers/consumers, preserving legitimate operations and tenant isolation.",
+          "Resolve FIELD002-R1 response extra-key/unknown/malformed compatibility contract, R2 actual historical disposition, R3 supported versus compatibility-only producer scope.",
+          "Resolve FIELD003 cross-consumer view_logs/view_merchants policy and verify only behavior changed by the chosen rule.",
+          "Resolve F004-R1 intended lifecycle of dormant tables and F004-R2 authorized actual row/writer inventory; resolve FIELD005 through its existing retention gate.",
+          "Close only when every required field/actor cell has the required proof or an approved inapplicability decision; a literal scan absence does not prove inapplicability."
+        ],
+        "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
+        "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
+        "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
+        "nextAction": "Reconcile the finite FIELD002/003/004/005 remainders to this gate and reuse accepted cells. Do not rerun the whole matrix or implement unused CRUD/retired producers.",
+        "dependsOn": [
+          "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+        ]
+      },
+      {
+        "gate": "P0-OFFLINE-DEVICE-ACCEPTANCE",
+        "titleArabic": "الأجهزة الفعلية والعمل دون اتصال",
+        "currentStatus": "OPEN",
+        "workClass": "PHYSICAL_DEVICE_AND_SOURCE_ACCEPTANCE",
+        "acceptedEvidence": "P0-CASHIER-OFFLINE-ENTITLEMENT-TRUST-BOUNDARY-20261023.md",
+        "closureConditions": [
+          "Accept main/secondary station behavior, grace boundaries, operator/shift transitions and local queue preservation on the declared supported physical-device profiles.",
+          "Document OS clock/profile/storage trust limits and enforce the declared offline entitlement boundary; no claim that a client-controlled profile is independently trusted.",
+          "Required actual-device cases and real server ACK/replay are linked to the exact client/server version; synthetic fetch ACK/native-only evidence is not substituted."
+        ],
+        "missingEvidenceOrDecision": "Native8 and real HTTP/SQL proofs exist at their original layers; physical-device and complete combined acceptance missing.",
+        "executableNowWithinGitHub": "Prepare the exact remaining physical-device case sheet by subtracting existing evidence; source fixes only for a confirmed uncovered defect.",
+        "externalDependency": "Access to declared supported physical devices and an approved test environment; operational release key parity is separate.",
+        "nextAction": "Name the missing physical profile/case and expected observation. Mark execution blocked when the device/environment is unavailable; do not regenerate synthetic device proofs.",
+        "dependsOn": [
+          "P0-OFFLINE-KEY-RELEASE",
+          "CASHIER-SYNC-SEQUENCE-001"
+        ]
+      },
+      {
+        "gate": "P0-RECEIPT-OWNERSHIP-POLICY",
+        "titleArabic": "ملكية الإيصالات والاستعادة اليدوية",
+        "currentStatus": "OPEN",
+        "workClass": "POLICY_THEN_IMPLEMENTATION",
+        "acceptedEvidence": "https://github.com/nora953/fawri-production-source/issues/523",
+        "closureConditions": [
+          "Approve who may resolve arbitrary missing-order/receipt ownership, admissible original evidence, conflict/refusal cases and immutable audit responsibilities.",
+          "Implement only the adopted bounded workflow; prove legitimate repair plus foreign/ambiguous/unauthorized denial and rollback/idempotency without fabricating financial identity.",
+          "Fixture mapping restoration is retained as fixture evidence and never relabeled supported operational repair."
+        ],
+        "missingEvidenceOrDecision": "No supported administrative recovery workflow or explicit approval for arbitrary ownership repair.",
+        "executableNowWithinGitHub": "Prepare a concrete decision record using issue523 and actual receipt resolver paths, with existing behavior and exact proposed change.",
+        "externalDependency": "Explicit owner/operator decision on repair authority and admissible evidence; hosted evidence if historical records are involved.",
+        "nextAction": "Present one source-grounded ownership/recovery proposal with approval scope and failure cases; no repair writes or new authority before that decision.",
+        "dependsOn": []
+      },
+      {
+        "gate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY",
+        "titleArabic": "الاحتفاظ المالي والحذف والخصوصية",
+        "currentStatus": "OPEN",
+        "workClass": "FIELD005_POLICY_AND_HOSTED_ACCEPTANCE",
+        "acceptedEvidence": "https://github.com/nora953/fawri-production-source/issues/523",
+        "closureConditions": [
+          "Approve F005-R1/R2 per-field/record purpose, permitted readers, retention trigger/duration, holds and final disposition, including review-ledger linkage and external originals.",
+          "Approve F005-R3 versioned emergency privacy/integrity treatment; preserve current deletion409 until an accepted replacement exists.",
+          "After approval, prove expiry boundaries/holds and valid/invalid readers with financial replay/deletion/peer integrity preserved.",
+          "Complete F005-R4/R5 original-evidence recovery and backup/media/export/restored-copy inventory and disposition at the authorized operational layer."
+        ],
+        "missingEvidenceOrDecision": "F005-R1/R2/R3 have no approved schedules/design. F005-R4/R5 hosted scope/evidence unavailable. Existing purge/reference-minimization tests do not approve indefinite retention.",
+        "executableNowWithinGitHub": "Consolidate existing field-specific decision forms; prepare reviewable choices. No invented duration, anonymous-hash claim or repeated purge tests.",
+        "externalDependency": "Explicit record-specific policy decisions; separately authorized hosted inventory/recovery for R4/R5.",
+        "nextAction": "Resolve R1/R2/R3 as concrete per-field decisions; keep R4/R5 attached to existing hosted recovery/storage gates. Implement only approved changed behavior.",
+        "dependsOn": [
+          "P0-HOSTED-RECOVERY",
+          "P0-HOSTED-STORAGE-DELETION"
+        ]
+      },
+      {
+        "gate": "P0-INCIDENT-REVIEW",
+        "titleArabic": "مراجعة الحادث وحسم نطاق التأثر",
+        "currentStatus": "OPEN",
+        "workClass": "INCIDENT_OPERATIONAL_REVIEW",
+        "acceptedEvidence": "P0-SOURCE-HOSTED-RECONCILIATION-20261023.md",
+        "closureConditions": [
+          "Build a timestamped incident/exposure timeline from original service/account/security evidence with affected revisions/identities and uncertainties explicitly recorded.",
+          "Review relevant account/service activity and credential exposure, record needed containment/rotation and verify it only under separately authorized scope.",
+          "Obtain responsible operational/security acceptance of the incident disposition; healthy samples alone do not close an incident."
+        ],
+        "missingEvidenceOrDecision": "Historical healthy samples exist; current exposure-window/account/service assessment and operational clearance are missing.",
+        "executableNowWithinGitHub": "Organize existing repository incident evidence into a finite gap list; do not infer uncompromised credentials or perform rotation.",
+        "externalDependency": "New explicit authorization and original operational/account evidence for external inspection, rotation and incident signoff.",
+        "nextAction": "List required original logs/identity/time windows and responsible review, preserving GitHub-only boundary. No broad rescan to simulate incident clearance.",
+        "dependsOn": []
+      },
+      {
+        "gate": "P0-ACCESS-HOSTED-IDENTITY",
+        "titleArabic": "هوية قاعدة البيانات الفعلية",
+        "currentStatus": "BLOCKED",
+        "workClass": "HOSTED_READ_ONLY",
+        "acceptedEvidence": "evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json",
+        "closureConditions": [
+          "Verify actual deployed revision, target database/branch, active runtime login and pooling from independent read-only operational evidence.",
+          "Link findings to the accepted source and record any mismatch; no credential disclosure in repository."
+        ],
+        "missingEvidenceOrDecision": "Current deployed identity not independently verified; old hosted observations do not accept current source.",
+        "executableNowWithinGitHub": "Prepare a read-only evidence checklist using existing hosted recovery evidence; no hosted call now.",
+        "externalDependency": "Explicit authorization for the specified hosted identity/target inspection.",
+        "nextAction": "After authorization, collect exact revision/DB/login/pooling evidence read-only; refuse to accept based on environment-variable names alone.",
+        "dependsOn": []
+      },
+      {
+        "gate": "P0-ACCESS-HOSTED-ROLLOUT",
+        "titleArabic": "تطابق المخطط والصلاحيات المستضافة",
+        "currentStatus": "BLOCKED",
+        "workClass": "HOSTED_READ_ONLY_THEN_SEPARATE_ROLLOUT",
+        "acceptedEvidence": "evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json",
+        "closureConditions": [
+          "Observe deployed migration journal/schema, function owners/definitions, grants/RLS and restricted role identities matching the accepted source manifest.",
+          "Verify missing/extra/unsafe state is refused by readiness and preserve a reviewed rollback/change plan for any needed correction.",
+          "Any rollout/grant/migration is independently authorized and verified; fixture roles/grants are not operational identities."
+        ],
+        "missingEvidenceOrDecision": "Current hosted catalog/journal/ACL parity unavailable.",
+        "executableNowWithinGitHub": "Reuse accepted read-only installation/readiness contracts to specify required outputs, without repeating candidate migrations.",
+        "externalDependency": "Hosted read-only authorization first; separate explicit authorization for any change.",
+        "nextAction": "Once identity is verified and scope authorized, compare actual catalog and full journal to accepted source; record discrepancies before proposing writes.",
+        "dependsOn": [
+          "P0-ACCESS-HOSTED-IDENTITY"
+        ]
+      },
+      {
+        "gate": "P0-OFFLINE-KEY-RELEASE",
+        "titleArabic": "مفاتيح توقيع الكاشير وإصدارها",
+        "currentStatus": "BLOCKED",
+        "workClass": "OPERATIONAL_KEY_AND_RELEASE",
+        "acceptedEvidence": "P0-CASHIER-OFFLINE-ENTITLEMENT-TRUST-BOUNDARY-20261023.md",
+        "closureConditions": [
+          "Verify operational signing key/public verifier parity for the exact client/server release and key identifiers without exporting private secrets.",
+          "Accept rotation/revocation/old-token handling and signed rollout/rollback under the documented trust boundary."
+        ],
+        "missingEvidenceOrDecision": "No operational key provisioning/parity/rotation or signed rollout acceptance.",
+        "executableNowWithinGitHub": "Prepare exact parity/rotation evidence requirements from existing key contract; no key/provider call.",
+        "externalDependency": "Explicit authorization for operational key inspection/provisioning/rotation/release as applicable.",
+        "nextAction": "Collect approved key-ID/public-key/release-manifest parity, then rehearse authorized rotation and rollback; do not substitute generated fixture keys.",
+        "dependsOn": []
+      },
+      {
+        "gate": "P0-HOSTED-PROVIDER-PAYMENT",
+        "titleArabic": "قبول مزود الدفع الفعلي",
+        "currentStatus": "BLOCKED",
+        "workClass": "AUTHORIZED_PROVIDER_INTEGRATION",
+        "acceptedEvidence": "https://github.com/nora953/fawri-production-source/issues/523",
+        "closureConditions": [
+          "Use the actual approved provider sandbox/contract for signature validation, exact amount/currency/order identity, settlement/status and duplicate/retry/failure outcomes.",
+          "Demonstrate one durable financial effect and tenant-safe reconciliation, tied to the exact accepted source and provider mode."
+        ],
+        "missingEvidenceOrDecision": "Fake signed gateway only; current source/provider integration not operationally accepted.",
+        "executableNowWithinGitHub": "Map already accepted fake-provider cases to the missing provider-specific outcomes; no credential request or provider call now.",
+        "externalDependency": "Explicit authorization, approved sandbox/account and provider credentials supplied through the proper secure channel.",
+        "nextAction": "After authorization, execute only the missing provider contract cases and retain redacted original evidence; fake fixtures remain labeled fake.",
+        "dependsOn": []
+      },
+      {
+        "gate": "P0-HOSTED-PROVIDER-META",
+        "titleArabic": "قبول Meta والذكاء الاصطناعي الفعلي",
+        "currentStatus": "BLOCKED",
+        "workClass": "AUTHORIZED_PROVIDER_INTEGRATION",
+        "acceptedEvidence": "https://github.com/nora953/fawri-production-source/issues/535",
+        "closureConditions": [
+          "Verify actual approved connected-page/account OAuth/webhook/Graph delivery and AI request behavior for the supported declared channels.",
+          "Accept provider retries/failure and quota/refund/privacy boundaries with real delivered outcomes and tenant isolation at the exact source."
+        ],
+        "missingEvidenceOrDecision": "Injected Graph/AI proofs retained; current actual credentials/page delivery/provider failures not accepted.",
+        "executableNowWithinGitHub": "Prepare the missing real-provider case list by reusing source/injected evidence; no new channel/product expansion.",
+        "externalDependency": "Explicit authorization for the selected provider accounts/pages/AI sandbox and secure credentials.",
+        "nextAction": "Execute a bounded approved real-provider scenario set and reconcile delivery/failure outputs; do not activate planned channels.",
+        "dependsOn": [
+          "P0-ACCESS-HOSTED-IDENTITY"
+        ]
+      },
+      {
+        "gate": "P0-HOSTED-STORAGE-DELETION",
+        "titleArabic": "تخزين الوسائط وحذف النسخ الفعلية",
+        "currentStatus": "BLOCKED",
+        "workClass": "AUTHORIZED_HOSTED_STORAGE",
+        "acceptedEvidence": "P0-SOURCE-HOSTED-RECONCILIATION-20261023.md",
+        "closureConditions": [
+          "Inventory the actual storage/media/object paths, copies/exports and relevant readers/access, linked to deployed version.",
+          "Prove authorized and unauthorized access, retry-safe durable deletion/cleanup and disposition of each in-scope copy according to approved retention.",
+          "Reconcile restored-copy reintroduction through the recovery gate; local filesystem cleanup is not object-store acceptance."
+        ],
+        "missingEvidenceOrDecision": "Actual object/media inventory and deletion/access proof missing.",
+        "executableNowWithinGitHub": "Prepare bounded inventory and observations needed; no object/storage connector now.",
+        "externalDependency": "Hosted/storage authorization and approved applicable retention/copy policy.",
+        "nextAction": "After authorization, establish actual copy/storage inventory before mutation, then test only the approved deletion/access path.",
+        "dependsOn": [
+          "P0-RETENTION-PRIVILEGED-DELETION-POLICY#approved-in-scope-retention-and-copy-policy"
+        ]
+      },
+      {
+        "gate": "P0-HOSTED-RECOVERY",
+        "titleArabic": "النسخ الاحتياطية والاستعادة التشغيلية",
+        "currentStatus": "BLOCKED",
+        "workClass": "AUTHORIZED_HOSTED_RECOVERY",
+        "acceptedEvidence": "P0-RECOVERY-RELEASE-STATUS-20261021.md",
+        "closureConditions": [
+          "Inventory actual backup/PITR/media/key/role dependencies and specify approved RPO/RTO targets.",
+          "Rehearse recovery in an authorized isolated operational environment, verifying exact source/schema/roles/key/media parity and financial/tenant/retention integrity.",
+          "Measure achieved RPO/RTO and accept retry/rollback plus treatment of restored deleted data; retain original historical unverifiability when no trusted original exists."
+        ],
+        "missingEvidenceOrDecision": "Owned offline dump/restore and six-role rotation proofs exist; actual operational backup/PITR/media inventory, targets and recovery signoff missing.",
+        "executableNowWithinGitHub": "Reuse existing recovery proofs, prepare exact operational delta/checklist; do not repeat identical offline restore to claim hosted readiness.",
+        "externalDependency": "Explicit authorization for inventory/rehearsal, actual backup/media/key/role evidence and responsible RPO/RTO decisions.",
+        "nextAction": "Inventory dependencies read-only under approved scope; define measurable targets before the separately authorized recovery rehearsal.",
+        "dependsOn": [
+          "P0-ACCESS-HOSTED-IDENTITY"
+        ]
+      },
+      {
+        "gate": "P0-HOSTED-BRANCH-DEPLOYMENT",
+        "titleArabic": "هوية النسخة المنشورة والتراجع",
+        "currentStatus": "BLOCKED",
+        "workClass": "AUTHORIZED_DEPLOYMENT_ACCEPTANCE",
+        "acceptedEvidence": "P0-SOURCE-HOSTED-RECONCILIATION-20261023.md",
+        "closureConditions": [
+          "Independently verify exact deployed branch/commit/image/config and readiness against the accepted source.",
+          "Accept reviewed deployment/rollback/release controls and post-change health under separately authorized operational scope.",
+          "No source CI pass, old main observation or draft PR is treated as deployment/merge authorization."
+        ],
+        "missingEvidenceOrDecision": "Current deployment unverified; last historic main/d38d2922 observation is not parity evidence.",
+        "executableNowWithinGitHub": "Prepare exact release manifest and operational evidence checklist from existing source; no deployment or main change.",
+        "externalDependency": "Explicit read-only deployment identity scope; separate authorization for deployment/rollback rehearsal/change.",
+        "nextAction": "Verify current artifact identity first; record parity gap and concrete reviewed rollout/rollback before requesting any change.",
+        "dependsOn": [
+          "P0-ACCESS-HOSTED-IDENTITY",
+          "P0-ACCESS-HOSTED-ROLLOUT"
+        ]
+      },
+      {
+        "gate": "P0-RELEASE-SIGNOFF",
+        "titleArabic": "الاعتماد المستقل لإغلاق P0",
+        "currentStatus": "BLOCKED",
+        "workClass": "DEPENDENT_OWNER_OPERATOR_SIGNOFF",
+        "acceptedEvidence": "AUDIT_EXECUTION_CONTROL_PLAN_V1_20261014.md",
+        "closureConditions": [
+          "Complete the P0 inventory reconciliation and satisfy every required P0 acceptance condition at its stated proof layer.",
+          "Resolve all remaining register blockers and obtain independent responsible owner/operator/security release-gate approval.",
+          "Record exact accepted source/evidence and any separately authorized operational acceptance; P0 acceptance alone does not start P1/P2 or authorize merge/deploy."
+        ],
+        "missingEvidenceOrDecision": "All other remaining acceptance gates and complete-inventory reconciliation still pending.",
+        "executableNowWithinGitHub": "Maintain the evidence/approval ledger only; cannot sign off now.",
+        "externalDependency": "All P0 blockers resolved and explicit independent signoff. No approval inferred from user agreement to this closure plan.",
+        "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision.",
+        "dependsOn": [
+          "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+          "CASHIER-SYNC-SEQUENCE-001",
+          "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+          "P0-OFFLINE-DEVICE-ACCEPTANCE",
+          "P0-RECEIPT-OWNERSHIP-POLICY",
+          "P0-RETENTION-PRIVILEGED-DELETION-POLICY",
+          "P0-INCIDENT-REVIEW",
+          "P0-ACCESS-HOSTED-IDENTITY",
+          "P0-ACCESS-HOSTED-ROLLOUT",
+          "P0-OFFLINE-KEY-RELEASE",
+          "P0-HOSTED-PROVIDER-PAYMENT",
+          "P0-HOSTED-PROVIDER-META",
+          "P0-HOSTED-STORAGE-DELETION",
+          "P0-HOSTED-RECOVERY",
+          "P0-HOSTED-BRANCH-DEPLOYMENT"
+        ]
+      }
+    ],
+    "dependencyInterpretation": "References identify required evidence/decision intersections, not a demand to close an entire cross-referenced gate first. Shared retention/storage/recovery subconditions can be satisfied and accepted together; no circular whole-gate scheduling rule is imposed."
+  }
 }
