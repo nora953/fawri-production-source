@@ -81,7 +81,7 @@ test('reviewed empty-device enrollment proposal has isolated authority and atomi
   await assert.rejects(apply({...p,evidenceSha256:'c'.repeat(64)}),e=>e.code==='23514');
   await assert.rejects(apply({...p,merchantId:peer.id,stationId:peer.station,deviceId:peer.device}),e=>e.code==='23514');
   await assert.rejects(apply(proof(a)),e=>e.code==='23514');assert.deepEqual(await snapshot(),after);
-  await assert.rejects(admin.query('UPDATE cashier_stream_enrollment_reviews SET evidence_sha256=$1 WHERE review_reference=$2',['c'.repeat(64),p.reviewReference]),e=>e.code==='23514');
+  await assert.rejects(admin.query('UPDATE cashier_stream_enrollment_reviews SET evidence_sha256=$1 WHERE stream_id=$2',['c'.repeat(64),result.stream_id]),e=>e.code==='23514');
   await admin.query("UPDATE cashier_device_streams SET state='retired',device_id=NULL,version=version+1 WHERE id=$1",[result.stream_id]);
   const retired=await snapshot();await assert.rejects(apply(p),e=>e.code==='23514');await assert.rejects(apply(proof(a)),e=>e.code==='23514','new review reference cannot reset an erased retired binding');assert.deepEqual(await snapshot(),retired);
  });

@@ -1665,5 +1665,22 @@
         }
       ]
     }
+  },
+  "reviewLedgerLifecycle": {
+    "status": "PREPARED_HASH_MINIMIZATION_AND_RESTORED_DELETION_CI_PENDING",
+    "source": null,
+    "proposalRevision": 2,
+    "proposalSql": "evidence/seq-d3-reviewed-empty-enrollment-proposal.sql",
+    "changedStoredFields": {
+      "review_reference": "review_reference_hash SHA256('cashier-enrollment-review-v1:' + reference)",
+      "reviewer_reference": "reviewer_reference_hash SHA256('cashier-enrollment-reviewer-v1:' + reference)"
+    },
+    "semantics": "Input manifest, stream identity and exact idempotency unchanged; stored original references removed before any canonical adoption. No migration/rewriting of existing hosted records.",
+    "limits": [
+      "Hashes are correlatable pseudonyms, not proof of anonymity or approved indefinite retention",
+      "FIELD005 purpose/readers/holds/duration/disposition remain unapproved",
+      "Deletion service proof only after isolated database restore; owner HTTP/hosted policy not certified",
+      "No canonical schema/provisioning/startup/HTTP/native activation"
+    ]
   }
 }

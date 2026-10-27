@@ -2,11 +2,11 @@
 -- Not a canonical migration, credential provisioning plan or hosted permission.
 CREATE ROLE fawri_cashier_enrollment_owner NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION;
 CREATE TABLE public.cashier_stream_enrollment_reviews (
- review_reference text PRIMARY KEY,
+ review_reference_hash text PRIMARY KEY CHECK(review_reference_hash ~ '^[0-9a-f]{64}$'),
  stream_id text NOT NULL UNIQUE,
  merchant_id text NOT NULL,
  manifest_hash text NOT NULL CHECK(manifest_hash ~ '^[0-9a-f]{64}$'),
- reviewer_reference text NOT NULL,
+ reviewer_reference_hash text NOT NULL CHECK(reviewer_reference_hash ~ '^[0-9a-f]{64}$'),
  evidence_sha256 text NOT NULL CHECK(evidence_sha256 ~ '^[0-9a-f]{64}$'),
  reviewed_at timestamptz NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now(),
@@ -28,7 +28,7 @@ CREATE FUNCTION public.fawri_enroll_reviewed_empty_cashier_stream(p_stream text,
 RETURNS TABLE(stream_id text,state text,last_sequence bigint,version integer,replayed boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE
- m text; d text; st text; r text; reviewer text; digest text; reviewed timestamptz;
+ m text; d text; st text; r text; reviewer text; digest text; review_key text; reviewer_key text; reviewed timestamptz;
  s public.cashier_device_streams%ROWTYPE;
  prior public.cashier_stream_enrollment_reviews%ROWTYPE;
 BEGIN
@@ -52,6 +52,12 @@ BEGIN
  IF EXISTS(SELECT 1 FROM unnest(ARRAY[m,d,st,r,reviewer]) v WHERE v IS NULL OR char_length(v) NOT BETWEEN 1 AND 200 OR v ~ '[[:cntrl:]]') THEN
   RAISE EXCEPTION 'review identity invalid' USING ERRCODE='23514';
  END IF;
+ -- Raw review/reviewer references exist only in the transient manifest.
+ -- Retain domain-separated correlation hashes, not caller-controlled free text.
+ -- Hashes are pseudonymous evidence anchors, not proof of anonymity or an
+ -- approved retention schedule. No original reference can be recovered here.
+ review_key:=encode(sha256(convert_to('cashier-enrollment-review-v1:'||r,'UTF8')),'hex');
+ reviewer_key:=encode(sha256(convert_to('cashier-enrollment-reviewer-v1:'||reviewer,'UTF8')),'hex');
  reviewed:=(p_manifest->>'reviewed_at')::timestamptz;
  IF reviewed IS NULL THEN RAISE EXCEPTION 'review time required' USING ERRCODE='23514';END IF;
  digest:=encode(sha256(convert_to(p_manifest::text,'UTF8')),'hex');
@@ -61,7 +67,7 @@ BEGIN
  PERFORM 1 FROM public.merchants WHERE id=m AND retention_status IS DISTINCT FROM 'deleted'
    AND status='approved' AND account_status='approved' FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'merchant unavailable for reviewed enrollment' USING ERRCODE='23514';END IF;
- SELECT * INTO prior FROM public.cashier_stream_enrollment_reviews e WHERE e.review_reference=r;
+ SELECT * INTO prior FROM public.cashier_stream_enrollment_reviews e WHERE e.review_reference_hash=review_key;
  IF FOUND THEN
   SELECT * INTO s FROM public.cashier_device_streams x WHERE x.id=prior.stream_id AND x.merchant_id=prior.merchant_id;
   IF prior.manifest_hash IS DISTINCT FROM digest OR prior.merchant_id IS DISTINCT FROM m
@@ -89,8 +95,8 @@ BEGIN
  END IF;
  INSERT INTO public.cashier_device_streams(id,merchant_id,device_id,state,enrollment_evidence_hash,enrolled_at)
  VALUES(p_stream,m,d,'active',digest,clock_timestamp()) RETURNING * INTO s;
- INSERT INTO public.cashier_stream_enrollment_reviews(review_reference,stream_id,merchant_id,manifest_hash,reviewer_reference,evidence_sha256,reviewed_at)
- VALUES(r,s.id,m,digest,reviewer,p_manifest->>'evidence_sha256',reviewed);
+ INSERT INTO public.cashier_stream_enrollment_reviews(review_reference_hash,stream_id,merchant_id,manifest_hash,reviewer_reference_hash,evidence_sha256,reviewed_at)
+ VALUES(review_key,s.id,m,digest,reviewer_key,p_manifest->>'evidence_sha256',reviewed);
  RETURN QUERY SELECT s.id,s.state,s.last_sequence,s.version,false;
 END $$;
 REVOKE ALL ON FUNCTION public.fawri_enroll_reviewed_empty_cashier_stream(text,jsonb) FROM PUBLIC;

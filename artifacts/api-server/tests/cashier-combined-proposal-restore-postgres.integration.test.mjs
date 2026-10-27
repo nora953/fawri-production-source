@@ -140,7 +140,7 @@ test('combined enrollment and financial receipt proposals survive owned offline 
       const member=await staff.createCashierStaffAuthoritative({merchantId:f.merchantId,displayName:'Synthetic restored manager',role:'manager',pin:'2468',permissions:['sale.create','sale.return','sale.void','sale.view_all']});
       const r=await fetch('http://127.0.0.1:'+server.address().port+'/api/cashier/operator/login',{method:'POST',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json','x-fawri-cashier-station-token':d.stationToken,'x-fawri-cashier-device-id':d.deviceId},body:JSON.stringify({staff_id:member.id,pin:'2468'})});
       const login=await r.json();assert.equal(r.status,200);
-      const review={merchantId:f.merchantId,stationId:d.stationId,deviceId:d.deviceId,reviewReference:'restore-review-'+randomUUID(),reviewerReference:'synthetic-independent-reviewer',evidenceSha256:'f'.repeat(64),reviewedAt:new Date().toISOString(),reviewedLocalCounter:0,reviewedPendingOperations:0};
+      const review={merchantId:f.merchantId,stationId:d.stationId,deviceId:d.deviceId,reviewReference:'restore-review-'+randomUUID()+':device='+d.deviceId,reviewerReference:'Synthetic Reviewer <reviewer-'+randomUUID()+'@example.invalid>',evidenceSha256:'f'.repeat(64),reviewedAt:new Date().toISOString(),reviewedLocalCounter:0,reviewedPendingOperations:0};
       const enrolled=await enrollReview(review);assert.equal(enrolled.last_sequence,'0');
       const at=(await pool.query('SELECT clock_timestamp() AS at')).rows[0].at.toISOString();
       return{f,review,streamId:enrolled.stream_id,context:login.context,body:saleBody(f,d,at)};
@@ -208,6 +208,7 @@ test('combined enrollment and financial receipt proposals survive owned offline 
   });
   if(phase==='seed')await t.test('metadata faults hold internal authority readiness and rollback preserves financial state',async faultT=>{
     const cases=[
+      ['legacy raw reference column reintroduced','ALTER TABLE cashier_stream_enrollment_reviews ADD COLUMN reviewer_reference text','LEDGER_FIELD_CONTRACT'],
       ['review ledger RLS disabled','ALTER TABLE cashier_stream_enrollment_reviews DISABLE ROW LEVEL SECURITY','PROPOSAL_TABLE_METADATA'],
       ['receipt owner LOGIN','ALTER ROLE fawri_cashier_receipt_owner LOGIN','OWNER_ROLE_FLAGS'],
       ['reviewer unsafe inheritance','ALTER ROLE '+manifest.reviewerRole+' INHERIT','CALLER_ROLE_FLAGS'],
@@ -226,7 +227,7 @@ test('combined enrollment and financial receipt proposals survive owned offline 
       ['review immutable trigger disabled','ALTER TABLE cashier_stream_enrollment_reviews DISABLE TRIGGER cashier_stream_enrollment_reviews_immutable','REVIEW_TRIGGER'],
       ['review immutable trigger rebound','DROP TRIGGER cashier_stream_enrollment_reviews_immutable ON cashier_stream_enrollment_reviews; CREATE TRIGGER cashier_stream_enrollment_reviews_immutable BEFORE UPDATE OR DELETE ON cashier_stream_enrollment_reviews FOR EACH ROW EXECUTE FUNCTION public.fawri_sequence_stream_guard()','REVIEW_TRIGGER'],
       ['receipt owner private issuer','GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO fawri_cashier_receipt_owner','OWNER_AUTHORITY_ACL'],
-      ['primary raw review column exposed','GRANT SELECT(reviewer_reference) ON cashier_stream_enrollment_reviews TO '+manifest.primaryRole,'CALLER_LEDGER_ACL'],
+      ['primary raw review column exposed','GRANT SELECT(reviewer_reference_hash) ON cashier_stream_enrollment_reviews TO '+manifest.primaryRole,'CALLER_LEDGER_ACL'],
       ['auth financial capability','GRANT EXECUTE ON FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb) TO '+manifest.authRole,'CALLER_FUNCTION_CAPABILITY'],
       ['reviewer financial capability','GRANT EXECUTE ON FUNCTION public.fawri_commit_cashier_financial_receipt(jsonb) TO '+manifest.reviewerRole,'CALLER_FUNCTION_CAPABILITY'],
       ['primary financial capability removed','REVOKE EXECUTE ON FUNCTION public.fawri_lock_cashier_financial_stream(text,text,text) FROM '+manifest.primaryRole,'CALLER_FUNCTION_CAPABILITY'],
@@ -239,6 +240,20 @@ test('combined enrollment and financial receipt proposals survive owned offline 
       await readonlyAuthority();assert.deepEqual(await data(),initial.data);
     });
     console.log('P0_COMBINED_AUTHORITY_READINESS '+JSON.stringify({readOnlyRestrictedPrimary:true,distinctAuthenticatedIdentities:true,metadataFaults:cases.length,rolledBackFaults:true,financialStatePreserved:true,operationalAdoption:false,productionStartupWired:false,hosted:false}));
+  });
+
+
+  await t.test('retained review ledger stores only correlation hashes before and after restore',async()=>{
+    const rows=(await data()).cashier_stream_enrollment_reviews;
+    for(const actor of manifest.actors){
+      const row=rows.find(x=>x.row.stream_id===actor.streamId).row;
+      assert.equal(row.review_reference_hash,createHash('sha256').update('cashier-enrollment-review-v1:'+actor.review.reviewReference).digest('hex'));
+      assert.equal(row.reviewer_reference_hash,createHash('sha256').update('cashier-enrollment-reviewer-v1:'+actor.review.reviewerReference).digest('hex'));
+      assert.equal(Object.hasOwn(row,'review_reference'),false);assert.equal(Object.hasOwn(row,'reviewer_reference'),false);
+      const retained=JSON.stringify(row);
+      for(const raw of [actor.review.reviewReference,actor.review.reviewerReference,actor.f.stations[0].deviceId])assert.equal(retained.includes(raw),false);
+    }
+    assert.deepEqual(await data(),initial.data);
   });
 
   await t.test('separate real LOGIN capabilities and trusted tenant reads remain isolated',async()=>{
@@ -296,6 +311,69 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     assert.equal((await sell(own,body)).replayed,true);const retry=await enrollReview(own.review);assert.equal(retry.last_sequence,'3');assert.equal(retry.version,4);
     assert.deepEqual(await data(),after);
   });
+
+  if(phase==='verify')await t.test('post-restore merchant deletion with hashed review ledger is atomic and cannot reset receipts',async deletionT=>{
+    const management=await import('../src/services/postgresMerchantManagementAuthority.ts');
+    const adminId='review-lifecycle-admin-'+randomUUID();
+    await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state) VALUES($1,'admin',$2,'synthetic','active')",[adminId,'+1997'+randomInt(100000000,999999999)]);
+    await pool.query("INSERT INTO admin_profiles(id,account_id,display_name,role,enabled,must_change_password) VALUES($1,$1,'Synthetic lifecycle owner','owner_admin',true,false)",[adminId]);
+    await pool.query("UPDATE merchants SET status='suspended',account_status='suspended' WHERE id=$1",[own.f.merchantId]);
+    const request=await management.createDeletionRequestPostgres({merchantId:own.f.merchantId,reason:'policy_violation',details:'Synthetic reviewed stream lifecycle',actorAdminId:adminId});
+    const lifecycleTables=[...selectedTables,'cashier_operator_sessions','cashier_station_credentials','merchant_cashier_stations','merchant_cashier_staff','cashier_shifts','cashier_station_seat_assignments','merchant_cashier_subscriptions','cashier_billing_orders','merchant_deletion_requests','audit_events','accounts','merchants'];
+    async function lifecycleState(){
+      const state={};
+      for(const table of lifecycleTables){
+        const column=['accounts','merchants'].includes(table)?'id':table==='merchant_deletion_requests'?'merchant_id_snapshot':'merchant_id';
+        state[table]=(await pool.query('SELECT to_jsonb(t) AS row FROM '+table+' t WHERE '+column+'=ANY($1::text[]) ORDER BY to_jsonb(t)::text',[ids])).rows;
+      }
+      return state;
+    }
+    const before=await lifecycleState(),receipts=before.cashier_operation_receipts,ledger=before.cashier_stream_enrollment_reviews;
+    const beforeStream=before.cashier_device_streams.find(x=>x.row.id===own.streamId).row;
+    assert.equal(Number(beforeStream.last_sequence),3);
+    const complete=()=>management.completeMerchantDeletionPostgres({merchantId:own.f.merchantId,deletionRequestId:request.id,actorAdminId:adminId});
+    await deletionT.test('fault after actual stream retirement rolls merchant financial and review state back',async()=>{
+      const name='zz_review_lifecycle_fault_'+randomUUID().replaceAll('-','');
+      await pool.query("CREATE FUNCTION public."+name+"() RETURNS trigger LANGUAGE plpgsql AS $lifecycle$ BEGIN IF NEW.id='"+own.f.merchantId+"' AND NEW.retention_status='deleted' THEN IF NOT EXISTS(SELECT 1 FROM public.cashier_device_streams WHERE id='"+own.streamId+"' AND state='retired' AND device_id IS NULL AND last_sequence=3) THEN RAISE EXCEPTION 'retirement barrier not reached'; END IF; RAISE EXCEPTION 'synthetic reviewed lifecycle rollback'; END IF; RETURN NEW; END $lifecycle$");
+      await pool.query('CREATE TRIGGER '+name+' AFTER UPDATE OF retention_status ON merchants FOR EACH ROW EXECUTE FUNCTION public.'+name+'()');
+      try{await assert.rejects(complete(),e=>e.code==='P0001'&&e.message.includes('synthetic reviewed lifecycle rollback'));}
+      finally{await pool.query('DROP TRIGGER '+name+' ON merchants');await pool.query('DROP FUNCTION public.'+name+'()');}
+      assert.deepEqual(await lifecycleState(),before);
+      await readonlyAuthority();
+    });
+    await deletionT.test('actual deletion retires binding while preserving immutable receipts and hashed provenance',async()=>{
+      assert.equal((await complete()).ok,true);
+      const after=await lifecycleState(),stream=after.cashier_device_streams.find(x=>x.row.id===own.streamId).row;
+      assert.equal(stream.state,'retired');assert.equal(stream.device_id,null);assert.equal(Number(stream.last_sequence),3);assert.equal(stream.version,beforeStream.version+1);assert.ok(Date.parse(stream.updated_at)>=Date.parse(beforeStream.updated_at));assert.equal(stream.enrolled_at,beforeStream.enrolled_at);
+      assert.equal(stream.enrollment_evidence_hash,beforeStream.enrollment_evidence_hash);
+      assert.deepEqual(after.cashier_operation_receipts,receipts);assert.deepEqual(after.cashier_stream_enrollment_reviews,ledger);
+      const merchant=after.merchants.find(x=>x.row.id===own.f.merchantId).row,account=after.accounts.find(x=>x.row.id===own.f.merchantId).row;
+      assert.equal(merchant.retention_status,'deleted');assert.equal(account.state,'closed');assert.equal(account.phone,null);
+      for(const table of ['cashier_operator_sessions','cashier_station_credentials','inventory_mutations'])assert.equal(after[table].filter(x=>x.row.merchant_id===own.f.merchantId).length,0,'existing deletion purges '+table);
+      for(const old of before.orders.filter(x=>x.row.merchant_id===own.f.merchantId)){
+        const retained=after.orders.find(x=>x.row.id===old.row.id).row;
+        const redacted=new Set(['conversation_id','customer_external_id','customer_name','customer_phone','customer_address','customer_area','notes','payment_rejection_reason','payment_conflict_resolution_note','metadata','updated_at']);
+        for(const key of Object.keys(old.row).filter(k=>!redacted.has(k)))assert.deepEqual(retained[key],old.row[key],'retained financial order field '+key);
+        assert.equal(retained.customer_name,'[deleted customer]');assert.deepEqual(retained.metadata,{});
+      }
+      for(const table of lifecycleTables){
+        const column=['accounts','merchants'].includes(table)?'id':table==='merchant_deletion_requests'?'merchant_id_snapshot':'merchant_id';
+        assert.deepEqual(after[table].filter(x=>x.row[column]===peer.f.merchantId),before[table].filter(x=>x.row[column]===peer.f.merchantId),'peer '+table);
+      }
+      const retained=JSON.stringify(after);
+      for(const raw of [own.review.reviewReference,own.review.reviewerReference,own.f.stations[0].deviceId])assert.equal(retained.includes(raw),false);
+      await readonlyAuthority();
+    });
+    await deletionT.test('retired deleted merchant cannot re-enroll replay or restart financial sequence',async()=>{
+      const after=await lifecycleState();
+      await assert.rejects(enrollReview(own.review),e=>e.code==='23514');
+      await assert.rejects(enrollReview({...own.review,reviewReference:'restart-'+randomUUID(),reviewedAt:new Date().toISOString()}),e=>e.code==='23514');
+      await assert.rejects(sell(own),e=>Number.isInteger(e.status)&&[403,404,409,410,423].includes(e.status));
+      assert.deepEqual(await lifecycleState(),after);
+    });
+    console.log('P0_REVIEW_LEDGER_DELETION_LIFECYCLE '+JSON.stringify({actualMerchantDeletionService:true,postRestore:true,retirementFaultRollback:true,immutableReceiptsAndReviewHashesPreserved:true,rawReviewReferencesAbsent:true,deviceBindingErased:true,noReenrollmentReset:true,peerMerchantPreserved:true,hashesArePseudonymousNotAnonymity:true,retentionScheduleApproved:false,ownerHttpOrHosted:false}));
+  });
+
   console.log('P0_COMBINED_CASHIER_PROPOSAL_RESTORE '+JSON.stringify({phase,fingerprint,canonicalMigrations:53,publicTablesIncludingProposal:98,proposalNotCanonical:true,realRestrictedLogins:true,independentEvidenceAssumed:true,rolesPreprovisionedSameOwnedCluster:true,exactReplayAndNoReset:true,restoredNextCanonicalSale:phase==='verify',hosted:false}));
   // Deliberately retain roles and fixture data for pg_dump/pg_restore. The
   // existing launcher destroys both owned containers and anonymous volumes.

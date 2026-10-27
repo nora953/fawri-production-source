@@ -702,5 +702,23 @@
     "implemented": false,
     "hostedInspected": false,
     "trustedPayloadRule": "A retained SHA256 digest is not a recovery copy of deleted chain_payload. Existing hashes cannot reconstruct missing original content. No reset, rehash or substitute payload is authorized by this checklist."
+  },
+  "enrollmentProposalRetention": {
+    "status": "PREPARED_PSEUDONYMOUS_REFERENCE_MINIMIZATION_DELETION_CI_PENDING",
+    "canonical": false,
+    "fieldsRetained": [
+      "review_reference_hash",
+      "reviewer_reference_hash",
+      "stream_id",
+      "merchant_id",
+      "manifest_hash",
+      "evidence_sha256",
+      "reviewed_at",
+      "created_at"
+    ],
+    "originalReferenceFieldsRetained": false,
+    "policyApproved": false,
+    "reason": "Free-text proposal reference fields can carry PII/device strings. Revision2 retains hashes only while preserving verifiable external correlation; lifecycle runtime is pending.",
+    "remaining": "Approve purpose/readers/hold/retention trigger/duration/disposition and complete copies/restore coverage under F005-R1/R2/R5; hashes alone are not anonymity."
   }
 }
