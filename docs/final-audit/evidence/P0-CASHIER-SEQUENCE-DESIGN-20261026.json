@@ -66,7 +66,7 @@
     "P0-CASHIER-NATIVE-OUTBOX-20261026.json",
     "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json"
   ],
-  "nextExactAction": "Choose the reviewer policy explicitly, then specify real session/policy revocation, trusted original evidence observation/custody/access, and the transaction-bound issuance/reuse contract before any application adapter or route. Keep the policy-neutral candidate unimported until those dependencies are resolved.",
+  "nextExactAction": "Verify the three new real pairing/sequence-preservation subcases in exact-source targeted and broader isolated CI, then define the remaining pairing-to-stream negotiation/recovery boundary using existing authority; never infer fresh-empty provenance or reset old counters from successful pairing.",
   "originalDesignBatchNewRuntimeExecuted": false,
   "readOnlyImplementationSource": "df273707c000588e9b4e0fe772ef05f4a132d579",
   "readOnlyImplementationEvidence": "P0-CASHIER-DEVICE-HISTORY-ASSESSMENT-20261026.json",
@@ -4158,7 +4158,8 @@
           "revocationProcedure": null
         },
         "effectOfApproval": "Authorizes the selected source-only policy/issuance design, not canonical promotion, operational credentials/grants, hosted action or public v2 activation.",
-        "availableTechnicalEvidence": "Separate NOLOGIN owners, restricted LOGIN capabilities, hashed review ledger and actual fresh/upgrade/restore checks are accepted only within isolated fixtures."
+        "availableTechnicalEvidence": "Separate NOLOGIN owners, restricted LOGIN capabilities, hashed review ledger and actual fresh/upgrade/restore checks are accepted only within isolated fixtures.",
+        "routinePairingScopeCorrection": "This record concerns proposed independent review/exceptional issuance, not the already implemented merchant-owned station pairing. Neither recommendation nor alternative is adopted; do not require a platform reviewer for routine pairing."
       },
       {
         "key": "operational_provisioning",
@@ -4340,8 +4341,14 @@
       }
     ],
     "decisionRecordingRule": "A continuation request, passing CI, prepared proposal or null field is not policy approval. Record the explicit choice, responsible approver, decision date and evidence; retain per-field approval scope. Do not propagate one approval to other records.",
-    "initialDecisionNeeded": "reviewer_authority.adoptedModel",
-    "nextAction": "Obtain the explicit reviewer-model choice for this concrete proposal, then prepare its source-only issuer/evidence-binding contract. Keep retention/provisioning/hosted approvals unset until separately decided; no repeated proof of accepted preflight without a source change or new failure."
+    "initialDecisionNeeded": "Define existing merchant pairing to stream lifecycle/recovery boundary; owner-only versus appointed reviewer is not a routine device-pairing prerequisite.",
+    "nextAction": "Verify the three new real pairing/sequence-preservation subcases in exact-source targeted and broader isolated CI, then define the remaining pairing-to-stream negotiation/recovery boundary using existing authority; never infer fresh-empty provenance or reset old counters from successful pairing.",
+    "routinePairingClarification": {
+      "date": "2026-10-27",
+      "evidence": "P0-CASHIER-PAIRING-CONTINUITY-20261027.json",
+      "modelChoicePromptForRoutinePairing": "SUPERSEDED_BY_EXISTING_MERCHANT_PAIRING_SOURCE_TRACE",
+      "exceptionalReviewerPolicyApproved": false
+    }
   },
   "policyNeutralIssuerCandidate": {
     "status": "SOURCE_ONLY_POLICY_NEUTRAL_ISSUER_CANDIDATE_LOCAL_SYNTHETIC_TESTED_NOT_ADOPTED",
@@ -4353,5 +4360,12 @@
     "adoptedModel": null,
     "operationalAdoption": false,
     "releaseAccepted": false
+  },
+  "existingPairingReconciliation": {
+    "status": "PAIRING_CONTINUITY_RUNTIME_PREPARED_PENDING_CI",
+    "evidence": "evidence/P0-CASHIER-PAIRING-CONTINUITY-20261027.json",
+    "ordinaryPairingAuthority": "EXISTING_AUTHENTICATED_MERCHANT_PAIRING",
+    "requiresRoutinePlatformOwnerApproval": false,
+    "noFreshEmptyInference": true
   }
 }

@@ -66,6 +66,7 @@ test(
     let merchantId = "";
     t.after(async () => {
       if (merchantId) {
+        await pool.query("DELETE FROM cashier_device_streams WHERE merchant_id = $1", [merchantId]);
         await pool
           .query("DELETE FROM accounts WHERE id = $1", [merchantId])
           .catch(() => undefined);
@@ -430,5 +431,109 @@ test(
         }
       },
     );
+
+    // Pairing is the existing merchant-controlled identity flow. A successful
+    // repair must not reset or certify an existing sequence history.
+    const streamId = "pairing-continuity-" + crypto.randomUUID();
+    await pool.query(
+      "INSERT INTO cashier_device_streams(id,merchant_id,device_id,state) VALUES($1,$2,$3,'review')",
+      [streamId, merchantId, deviceOne],
+    );
+    const protectedTables = [
+      "cashier_device_streams", "cashier_operation_receipts",
+      "cashier_device_operation_timeline", "cashier_operation_attribution",
+      "orders", "order_items", "inventory_mutations",
+    ];
+    async function protectedSnapshot() {
+      const rows: Record<string, unknown> = {};
+      for (const table of protectedTables) {
+        rows[table] = (await pool.query(
+          "SELECT to_jsonb(t) AS row FROM " + table +
+          " t WHERE merchant_id=$1 ORDER BY to_jsonb(t)::text",
+          [merchantId],
+        )).rows;
+      }
+      return rows;
+    }
+    const beforePairing = await protectedSnapshot();
+    assert.equal((beforePairing.cashier_device_operation_timeline as unknown[]).length, 1);
+    let repairedToken = "";
+    await t.test("same-device merchant pairing rotates credentials without changing stream or legacy history", async () => {
+      const pairing = await cashier.beginCashierStationPairingAuthoritative({
+        merchantId, stationId: stationOne.id,
+      });
+      const repaired = await cashier.redeemCashierStationPairingAuthoritative({
+        pairingCode: pairing.pairing_code, deviceId: deviceOne,
+      });
+      repairedToken = repaired.station_token;
+      const authenticated = await cashier.authenticateCashierStationAuthoritative({
+        stationToken: repairedToken, deviceId: deviceOne,
+      });
+      assert.equal(authenticated.merchant_id, merchantId);
+      assert.equal(authenticated.station_id, stationOne.id);
+      assert.equal(authenticated.device_id, deviceOne);
+      assert.deepEqual(await protectedSnapshot(), beforePairing);
+      const stream = (await pool.query(
+        "SELECT state,last_sequence::text,version,enrollment_evidence_hash FROM cashier_device_streams WHERE id=$1",
+        [streamId],
+      )).rows[0];
+      assert.deepEqual(stream, {state:"review",last_sequence:"0",version:1,enrollment_evidence_hash:null});
+    });
+
+    let usedPairingCode = "";
+    const replacementDevice = "replacement-" + crypto.randomUUID();
+    await t.test("replacement pairing keeps old device history and refuses the revoked old credential", async () => {
+      const pairing = await cashier.beginCashierStationPairingAuthoritative({
+        merchantId, stationId: stationOne.id,
+      });
+      usedPairingCode = pairing.pairing_code;
+      const replacement = await cashier.redeemCashierStationPairingAuthoritative({
+        pairingCode: usedPairingCode, deviceId: replacementDevice,
+      });
+      await assert.rejects(
+        () => cashier.authenticateCashierStationAuthoritative({
+          stationToken: repairedToken, deviceId: deviceOne,
+        }),
+        (error: unknown) => (error as {code?: string})?.code === "CASHIER_STATION_CREDENTIAL_INVALID",
+      );
+      const authenticated = await cashier.authenticateCashierStationAuthoritative({
+        stationToken: replacement.station_token, deviceId: replacementDevice,
+      });
+      assert.equal(authenticated.device_id, replacementDevice);
+      assert.deepEqual(await protectedSnapshot(), beforePairing);
+      assert.equal((await pool.query(
+        "SELECT device_id FROM cashier_device_streams WHERE id=$1", [streamId],
+      )).rows[0].device_id, deviceOne);
+      assert.equal((await pool.query(
+        "SELECT count(*)::int AS n FROM cashier_device_streams WHERE merchant_id=$1 AND device_id=$2",
+        [merchantId, replacementDevice],
+      )).rows[0].n, 0, "pairing must not silently enroll a replacement stream");
+    });
+
+    await t.test("used pairing code cannot transfer the station or alter preserved sequence history", async () => {
+      const stationBefore = (await pool.query(
+        "SELECT to_jsonb(t) AS row FROM merchant_cashier_stations t WHERE id=$1",
+        [stationOne.id],
+      )).rows;
+      const credentialsBefore = (await pool.query(
+        "SELECT to_jsonb(t) AS row FROM cashier_station_credentials t WHERE merchant_id=$1 ORDER BY id",
+        [merchantId],
+      )).rows;
+      await assert.rejects(
+        () => cashier.redeemCashierStationPairingAuthoritative({
+          pairingCode: usedPairingCode, deviceId: "unexpected-" + crypto.randomUUID(),
+        }),
+        (error: unknown) => (error as {code?: string})?.code === "CASHIER_PAIRING_INVALID",
+      );
+      assert.deepEqual((await pool.query(
+        "SELECT to_jsonb(t) AS row FROM merchant_cashier_stations t WHERE id=$1",
+        [stationOne.id],
+      )).rows, stationBefore);
+      assert.deepEqual((await pool.query(
+        "SELECT to_jsonb(t) AS row FROM cashier_station_credentials t WHERE merchant_id=$1 ORDER BY id",
+        [merchantId],
+      )).rows, credentialsBefore);
+      assert.deepEqual(await protectedSnapshot(), beforePairing);
+    });
   },
 );

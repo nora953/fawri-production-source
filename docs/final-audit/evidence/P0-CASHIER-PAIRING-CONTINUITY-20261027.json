@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "PAIRING_CONTINUITY_RUNTIME_PREPARED_PENDING_CI",
+  "basedOnCheckpoint": "bc0456d9a97b7cd11d76ec033a9bbfb90b13602a",
+  "release": "NO-GO",
+  "gateClosed": false,
+  "applicationChanged": false,
+  "testChanged": true,
+  "hostedInspected": false,
+  "existingFlow": {
+    "merchantIssuer": "Authenticated merchant -> POST /api/cashier/management/stations/:stationId/pairing",
+    "recipient": "POST /api/cashier/station/pair with pairing_code and local device_id",
+    "code": "Random secret, hash stored,10-minute expiry, one use; bearer authorizes the merchant station and binds the receiving device at redemption.",
+    "checks": [
+      "merchant operational access",
+      "active station owned by merchant",
+      "licensed seat with grace disallowed",
+      "station/challenge serialization",
+      "active unused unexpired challenge"
+    ],
+    "mutation": "Revoke old station runtime, increment credential_version, set paired_device_id, consume challenge, issue new station credential.",
+    "existingClientGuard": "pairCashierStation refuses pairing while its current local identity has pending envelopes; this is a client safeguard, not independent server proof of an empty queue.",
+    "sequenceBoundary": "Existing pairing neither writes cashier_device_streams nor proves fresh-empty enrollment. It must preserve old stream/timeline/receipt identities. New protocol integration remains open."
+  },
+  "correction": {
+    "priorMistake": "Owner-only versus appointed reviewer was presented as the next prerequisite for routine device pairing without first tracing the existing merchant pairing flow.",
+    "currentDirection": "Reuse existing merchant-managed pairing for ordinary device identity. Do not introduce a duplicate pairing system, mandatory platform-owner approval for every device, or mandatory OTP without reviewing existing auth/recovery policy.",
+    "userSteering": "User confirmed existing merchant-issued pairing code, requested verification, cautioned against repeating this mistake, and authorized continuation.",
+    "scope": "No approval inferred for exceptional recovery bypass, financial resets, independent-review provenance, retention, grants, hosted changes or public v2 activation.",
+    "oldIssuerCandidate": "69 synthetic local tests retained historically; unimported candidate is not the routine pairing mechanism and its model-choice prompt no longer blocks ordinary pairing reconciliation."
+  },
+  "sourceAnchors": [
+    "artifacts/fawri/src/pages/dashboard/CashierManagementPage.tsx#createPairing",
+    "artifacts/fawri/src/components/cashier/CashierOperatorGate.tsx#pair",
+    "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts#pairCashierStation",
+    "artifacts/api-server/src/routes/cashier-staff-operations.ts",
+    "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts#beginCashierStationPairingAuthoritative",
+    "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts#redeemCashierStationPairingAuthoritative",
+    "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql"
+  ],
+  "newRuntimeTest": {
+    "path": "artifacts/api-server/tests/cashier-full-lifecycle-postgres.integration.test.ts",
+    "newSubcases": 3,
+    "requiredEnvironment": "Owned offline disposable PostgreSQL; actual restricted authentication and primary LOGIN identities",
+    "scenarios": [
+      "same-device re-pair rotates credential, preserves pre-existing legacy sequence1 and canonical review stream0/version1/unset evidence",
+      "replacement device obtains station credential, old credential denied; old history stays bound to old device and no replacement stream silently created",
+      "used code reuse refused; station, credential rows and protected history snapshots unchanged"
+    ],
+    "protectedTables": [
+      "cashier_device_streams",
+      "cashier_operation_receipts",
+      "cashier_device_operation_timeline",
+      "cashier_operation_attribution",
+      "orders",
+      "order_items",
+      "inventory_mutations"
+    ],
+    "canonicalReviewStreamSeed": "Synthetic root-inserted review state only. No independent fresh-empty approval or receipt/financial-v2 creation is claimed.",
+    "coverageLimit": "Service/PostgreSQL test; not a new merchant HTTP/browser/physical-device or nonzero-v2-receipt checkpoint proof.",
+    "localSyntax": "PASS via node stripTypeScriptTypes transform; local database runtime NOT_RUN",
+    "ci": "PENDING"
+  },
+  "progressSnapshot": {
+    "knownRegisteredRows": 45,
+    "closedSource": 29,
+    "open": 7,
+    "blocked": 9,
+    "knownRowsClosedSourceRatioPercent": 64.4,
+    "overallP0Percentage": null,
+    "completeP0Inventory": false,
+    "meaning": "29/45 is the equal-weight fraction of currently registered rows closed at source scope only; it is not total P0 completion or release readiness."
+  },
+  "nextAction": "Verify the three new real pairing/sequence-preservation subcases in exact-source targeted and broader isolated CI, then define the remaining pairing-to-stream negotiation/recovery boundary using existing authority; never infer fresh-empty provenance or reset old counters from successful pairing."
+}

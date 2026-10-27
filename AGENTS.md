@@ -9,3 +9,5 @@ GitHub-only restriction: do not use Railway, Neon, hosted infrastructure, provid
 Communicate in Arabic. Clearly distinguish completed, tested, pending and blocked work. If a tool or session stalls, report the blocker and current checkpoint rather than silently looping.
 
 See the linked execution plan for complete P0/P1/P2, scale, recovery, pilot and commercial release criteria.
+
+Before proposing device approval, OTP or pairing changes, trace the existing merchant dashboard pairing issuer, cashier redemption route, station credential lifecycle and tests. Ordinary station pairing is already merchant-controlled; do not require a new platform-owner reviewer decision or build duplicate pairing. Distinguish authorization to pair from fresh-empty stream provenance and historical recovery. Reuse existing authority and preserve device sequence/history; exceptional policies are not approved by a continuation request.
