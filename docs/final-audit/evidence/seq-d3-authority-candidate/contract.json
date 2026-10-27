@@ -505,6 +505,18 @@
     {
       "path": "docs/final-audit/evidence/seq-d3-authority-candidate/policies.json",
       "sha256": "7e8bb7d32a552948b9de825aebb25f762bfaf5ee15972fc7c4dbc8efb7083d8b"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/generated/0053_cashier_stream_authority.sql",
+      "sha256": "4c003d0f021d814a6172f913b7cdbbb9dac2d13b997cd43405682978dd5583b4"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/generated/meta/0053_snapshot.json",
+      "sha256": "2dd0cfc14780375e6932c03c6cf909ebc99c2f82139b0abb4d493afd975754ab"
+    },
+    {
+      "path": "docs/final-audit/evidence/seq-d3-authority-candidate/generated/meta/_journal.json",
+      "sha256": "ea3cba70944a90e3baa99544b99e23a929238ba2f1dbf7418bcaf62f65affb52"
     }
   ],
   "bootstrapContract": {
@@ -528,13 +540,14 @@
     "proof": "artifacts/api-server/tests/cashier-combined-proposal-restore-postgres.integration.test.mjs"
   },
   "acceptanceBlockers": [
-    "Deterministic candidate generation and schema boundary exact-source CI pending",
+    "Accept exact committed artifact reproduction, then isolated fresh-install/upgrade and transaction rollback",
     "Prove candidate fresh-install and upgrade atomic rollback before canonical promotion",
     "Trusted real reviewer issuance and operational grant/bootstrap policy",
     "FIELD005 retention policy and independent hosted/KMS/PITR/media recovery"
   ],
-  "nextAction": "Accept deterministic candidate0053 artifacts, then prove fresh-install/upgrade and transaction fault rollback before canonical promotion.",
+  "nextAction": "Prove candidate fresh-install/upgrade and transaction fault rollback before canonical promotion; preserve trusted reviewer/grant/FIELD005/hosted prerequisites.",
   "sqlSha256": "4c003d0f021d814a6172f913b7cdbbb9dac2d13b997cd43405682978dd5583b4",
   "schemaBoundaryPrepared": true,
-  "generatedArtifactsAccepted": false
+  "generatedArtifactsPresent": true,
+  "generatedArtifactAcceptance": "Exact-source CI must reproduce every committed generated artifact byte-for-byte."
 }

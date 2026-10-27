@@ -688,12 +688,40 @@
         "nextAction": "Prepare the candidate Drizzle schema/preimage boundary and deterministic 0053 reviewed_sql generation in a separate candidate checkout; preserve all0000-0052 bytes, then prove fresh-install/upgrade rollback before canonical promotion."
       },
       "candidateSchemaBoundary": {
-        "status": "PREPARED_CI_PENDING",
+        "source": "e9fe939157a9e432f4869153f6b2a8ca61c0739e",
+        "tree": "8d4cdc68b7605ad0cc98b5889f1cc7221e0a339e",
+        "checkout": "21133491c55242c84fd05911698715788158b1fe",
+        "run": 40455722337,
+        "job": 122028471833,
+        "status": "GENERATED_COMMITTED_REPRODUCTION_PENDING",
+        "candidateOnly": true,
+        "historicalFilesUnchanged": 106,
+        "existingTableColumnsRlsUnchanged": true,
+        "generatedMigrationCount": 54,
+        "generatedPublicTables": 98,
+        "addedPolicies": 20,
+        "artifacts": [
+          {
+            "file": "0053_cashier_stream_authority.sql",
+            "sha256": "4c003d0f021d814a6172f913b7cdbbb9dac2d13b997cd43405682978dd5583b4",
+            "bytes": 19142
+          },
+          {
+            "file": "meta/0053_snapshot.json",
+            "sha256": "2dd0cfc14780375e6932c03c6cf909ebc99c2f82139b0abb4d493afd975754ab",
+            "bytes": 654210
+          },
+          {
+            "file": "meta/_journal.json",
+            "sha256": "ea3cba70944a90e3baa99544b99e23a929238ba2f1dbf7418bcaf62f65affb52",
+            "bytes": 8734
+          }
+        ],
+        "committedArtifactReproduction": "PENDING_NEXT_SOURCE_CI",
+        "operationalAdoption": false,
         "schemaFiles": 5,
         "preimageFiles": 5,
-        "addedPolicies": 20,
-        "canonicalPromoted": false,
-        "generatedSnapshotAccepted": false
+        "canonicalPromoted": false
       }
     },
     {
