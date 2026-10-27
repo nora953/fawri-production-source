@@ -16,6 +16,7 @@ Object.assign(process.env,{
 });
 
 test('full application management privacy preserves cutover ordering and current SQL authority',{timeout:120000},async t=>{
+  const bootstrapUrl=process.env.DATABASE_URL;
   const runtime=await createDisposableKnowledgeRuntime(),admin=runtime.admin;
   const ids=[],merchants=[],actors=[];
   const tables=['merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests','audit_events','emergency_access_requests','merchant_channels'];
@@ -921,6 +922,9 @@ test('full application management privacy preserves cutover ordering and current
   });
 
   await t.test('owner permission changes invalidate active assistant cookies and use current SQL grants',async permissionTest=>{
+    const {createDisposableMerchantDirectoryOperator}=await import('./helpers/disposable-subscription-directory-operator.mjs');
+    const directoryFixture=await createDisposableMerchantDirectoryOperator(admin,bootstrapUrl);
+    permissionTest.after(()=>directoryFixture.dispose());
     const target=await actor('admin','assistant_admin',['view_merchants']);
     const peer=await actor('admin','assistant_admin',['view_merchants']);
     async function trusted(account,deviceId){
@@ -959,8 +963,13 @@ test('full application management privacy preserves cutover ordering and current
         assert.deepEqual({...row,status:old.status,revoke_reason:old.revoke_reason,revoked_at:old.revoked_at},old);
       }
     }
+    async function run(name,fn){
+      let passed=false;
+      await permissionTest.test(name,async()=>{await fn();passed=true;});
+      if(!passed)throw Error('Dependent permission cases blocked after '+name);
+    }
     const business=await snapshot();
-    await permissionTest.test('invalid permission payloads preserve active sessions and current grants',async()=>{
+    await run('invalid permission payloads preserve active sessions and current grants',async()=>{
       assert.equal((await req('/api/auth/merchants',first)).status,200);assert.equal((await req('/api/auth/admin/logs',first)).status,403);
       const before=await state();
       for(const [body,code] of [[{permissions:'view_logs'},'INVALID_PERMISSIONS_VALUE'],[{permissions:['synthetic_unknown_permission']},'INVALID_ADMIN_PERMISSION']]){
@@ -970,7 +979,7 @@ test('full application management privacy preserves cutover ordering and current
       for(const session of [first,second,other])assert.equal((await req('/api/auth/merchants',session)).status,200);
       assert.deepEqual(await state(),before);
     });
-    await permissionTest.test('SQL insertion fault after grant deletion rolls back without invalidating active cookies',async()=>{
+    await run('SQL insertion fault after grant deletion rolls back without invalidating active cookies',async()=>{
       const fault='p0_admin_perm_'+randomUUID().replaceAll('-',''),before=await state();
       await admin.query('CREATE FUNCTION '+fault+"() RETURNS trigger LANGUAGE plpgsql AS $fault$ BEGIN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='synthetic permission write fault'; END $fault$");
       let installed=false;
@@ -989,7 +998,7 @@ test('full application management privacy preserves cutover ordering and current
       assert.equal((await req('/api/auth/admin/logs',first)).status,403);assert.equal((await req('/api/auth/admin/me',owner)).status,200);
       assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
     });
-    await permissionTest.test('owner replaces grants revokes both old devices and fresh session receives only current rights',async()=>{
+    await run('owner replaces grants revokes both old devices and fresh session receives only current rights',async()=>{
       const before=await state();
       const r=await req('/API/Auth/Admins/'+target.id+'/Permissions/?account_id='+peer.id,owner,'PATCH',{permissions:['view_logs'],adminId:peer.id,account_id:peer.id,actor_account_id:peer.id,role:'owner_admin'});
       assert.equal(r.status,200);assert.equal(r.body.account.id,target.id);
@@ -1003,7 +1012,7 @@ test('full application management privacy preserves cutover ordering and current
       assert.equal((await req('/api/auth/merchants',updated)).status,403);assert.equal((await req('/api/auth/admin/logs',updated)).status,200);
       assert.deepEqual(await snapshot(),business);
     });
-    await permissionTest.test('empty grant list revokes the active cookie and preserves authenticated own identity without business rights',async()=>{
+    await run('empty grant list revokes the active cookie and preserves authenticated own identity without business rights',async()=>{
       const before=await state(),r=await req(path,owner,'PATCH',{permissions:[],adminId:peer.id,account_id:peer.id});
       assert.equal(r.status,200);assert.deepEqual(r.body.admin_profile.permissions,[]);
       const after=await state();assertChanged(before,after,[updated.session.session.id],[]);
