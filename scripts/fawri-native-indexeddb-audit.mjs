@@ -45,12 +45,15 @@ async function evaluate(cdp, expression) {
   if (r.exceptionDetails) throw Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
   return r.result.value;
 }
+async function evaluateStatements(cdp, statements) {
+  return evaluate(cdp, '(async()=>{' + statements + '})()');
+}
 async function check(name, fn) {
   try { const details = await fn(); evidence.results.push({ name, status: 'PASS', details }); }
   catch (e) { evidence.results.push({ name, status: 'FAIL', error: e.message }); }
 }
 try {
-  const bundled = await build({ stdin: { contents: "export { IndexedDbCashierAuthority } from './artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts';", resolveDir: process.cwd() }, bundle: true, format: 'iife', globalName: 'FawriAudit', platform: 'browser', write: false });
+  const bundled = await build({ stdin: { contents: "export { IndexedDbCashierAuthority } from './artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts'; export { IndexedDbCashierCompensationAuthority } from './artifacts/fawri/src/lib/cashierCompensationAuthority.ts';", resolveDir: process.cwd() }, bundle: true, format: 'iife', globalName: 'FawriAudit', platform: 'browser', write: false });
   // Refuse an unexpected bundled HTTP dependency before launching any page.
   assert.ok(!/fetch\s*\(|XMLHttpRequest|WebSocket\s*\(/.test(bundled.outputFiles[0].text), 'Authority bundle unexpectedly includes network I/O');
   server = createServer((req, res) => {
@@ -108,6 +111,138 @@ try {
     assert.equal(r.accepted, false, 'Changed operation payload accepted: ' + JSON.stringify(r));
     return r;
   });
+
+  // SEQ-R3 prerequisite: real local stores, no server admission or transport.
+  await evaluateStatements(a, `
+    globalThis.recConfig=${JSON.stringify({...config,databaseName:config.databaseName+'-recovery'})};
+    globalThis.rec=new FawriAudit.IndexedDbCashierAuthority(recConfig);
+    globalThis.comp=new FawriAudit.IndexedDbCashierCompensationAuthority(recConfig);
+    globalThis.idbReq=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+    globalThis.idbDone=t=>new Promise((ok,no)=>{t.oncomplete=ok;t.onabort=()=>no(t.error);t.onerror=()=>no(t.error)});
+    globalThis.rawRecovery=async()=>{
+      const d=await idbReq(indexedDB.open(recConfig.databaseName));
+      try{const names=[...d.objectStoreNames].sort(),t=d.transaction(names,'readonly'),done=idbDone(t);
+      const rows=await Promise.all(names.map(n=>idbReq(t.objectStore(n).getAll())));await done;
+      return Object.fromEntries(names.map((n,i)=>[n,rows[i]]));}finally{d.close()}
+    };
+    globalThis.restoreRecovery=async rows=>{
+      const d=await idbReq(indexedDB.open(recConfig.databaseName));
+      try{const names=Object.keys(rows),t=d.transaction(names,'readwrite'),done=idbDone(t);
+      for(const n of names){const s=t.objectStore(n);s.clear();for(const row of rows[n])s.put(row)}await done;}finally{d.close()}
+    };
+    await rec.upsertCatalogSnapshot([${JSON.stringify({...item,stock_quantity:20})}],{preserveLocalInventory:false});
+    const first=await rec.commitSale(${JSON.stringify(sale('recovery-sale'))});
+    await comp.returnSale({operation_id:'recovery-return',sale_id:first.sale.sale_id,lines:[{original_line_id:first.sale.lines[0].line_id,quantity:1}]});
+    const second=await rec.commitSale(${JSON.stringify(sale('recovery-sale-2'))});
+    await comp.voidSale({operation_id:'recovery-void',sale_id:second.sale.sale_id});
+    globalThis.recOriginal=await rawRecovery();
+    true
+  `);
+  await check('recovery snapshot groups real sale return and void in one readonly transaction', async () => {
+    const before=await evaluate(a,'rawRecovery()');
+    const r=await evaluate(a,'rec.inspectLocalRecoverySnapshot()');
+    assert.equal(r.status,'INSPECTED');assert.equal(r.inspection_complete,true);
+    assert.equal(r.local_counter,4);assert.equal(r.inspected_envelopes,8);
+    assert.deepEqual(r.operations.map(x=>x.kind),['sale','return','sale','void']);
+    assert.deepEqual(r.operations.map(x=>x.envelope_count),[2,2,2,2]);
+    assert.equal(r.enrollment_authorized,false);assert.equal(r.server_history_verified,false);
+    assert.deepEqual(await evaluate(a,'rawRecovery()'),before);
+    return {counter:r.local_counter,operationGroups:r.operations.length,envelopes:r.inspected_envelopes,readOnly:true,serverProof:false};
+  });
+  await check('recovery partial primary and movement groups hold without repairing or ACKing', async () => {
+    const results=[];
+    for(const entity of ['sale','inventory_movement']){
+      await evaluateStatements(a,`const changed=structuredClone(recOriginal);changed.outbox=changed.outbox.filter(e=>!(e.operation_id==='recovery-sale'&&e.entity_type===${JSON.stringify(entity)}));await restoreRecovery(changed);true`);
+      try{
+        const before=await evaluate(a,'rawRecovery()'),r=await evaluate(a,'rec.inspectLocalRecoverySnapshot()');
+        assert.equal(r.status,'HOLD');assert.ok(r.reasons.includes(entity==='sale'?'UNSUPPORTED_OR_INCOMPLETE_OPERATION':'MOVEMENT_GROUP_INCOMPLETE'));
+        assert.deepEqual(await evaluate(a,'rawRecovery()'),before);results.push(r.reasons);
+      }finally{await evaluate(a,'restoreRecovery(recOriginal).then(()=>true)')}
+    }
+    return {partialGroups:results,unchanged:true};
+  });
+  await check('recovery bounded prefix and invalid bounds never appear complete', async () => {
+    for(const maxRecords of [1,0,1001,1.5]){
+      const r=await evaluateStatements(a,`return rec.inspectLocalRecoverySnapshot({maxRecords:${maxRecords}})`);
+      assert.equal(r.status,'HOLD');assert.equal(r.inspection_complete,false);assert.equal(r.operations.length,0);
+    }
+    const exact=await evaluate(a,'rec.inspectLocalRecoverySnapshot({maxRecords:8})');
+    assert.equal(exact.status,'INSPECTED');assert.equal(exact.operations.length,4);
+    assert.deepEqual(await evaluate(a,'rawRecovery()'),await evaluate(a,'Promise.resolve(recOriginal)'));
+    return {overflowAndInvalid:4,exactBound:8};
+  });
+  await check('recovery missing unsafe and nonnumeric counters hold without coercion', async () => {
+    for(const mode of ['missing','unsafe','string','behind']){
+      await evaluateStatements(a,`const rows=structuredClone(recOriginal);rows.meta=rows.meta.filter(r=>r.key!=='device_sequence');const mode=${JSON.stringify(mode)};if(mode!=='missing')rows.meta.push({key:'device_sequence',value:mode==='unsafe'?Number.MAX_SAFE_INTEGER+1:mode==='string'?'4':1});await restoreRecovery(rows);true`);
+      try{
+        const before=await evaluate(a,'rawRecovery()'),r=await evaluate(a,'rec.inspectLocalRecoverySnapshot()');
+        assert.equal(r.status,'HOLD');assert.ok(r.reasons.includes(mode==='behind'?'ENVELOPE_IDENTITY_OR_SEQUENCE_INVALID':'LOCAL_COUNTER_MISSING_OR_INVALID'));
+        assert.deepEqual(await evaluate(a,'rawRecovery()'),before);
+      }finally{await evaluate(a,'restoreRecovery(recOriginal).then(()=>true)')}
+    }
+    return {counterFaults:4,noReset:true};
+  });
+  await check('recovery rejects foreign device and merchant database interpretation', async () => {
+    for(const patch of [{deviceId:'foreign-device'},{localMerchantId:'foreign-merchant'}]){
+      const r=await evaluateStatements(a,`const foreign=new FawriAudit.IndexedDbCashierAuthority({...recConfig,...${JSON.stringify(patch)}});try{return await foreign.inspectLocalRecoverySnapshot()}finally{await foreign.close()}`);
+      assert.equal(r.status,'HOLD');assert.equal(r.enrollment_authorized,false);
+    }
+    assert.deepEqual(await evaluate(a,'rawRecovery()'),await evaluate(a,'Promise.resolve(recOriginal)'));
+    return {foreignInterpretations:2,originalPreserved:true};
+  });
+  await check('recovery retains movement-only stock operation as unsupported', async () => {
+    await evaluate(a,"rec.adjustInventory({operation_id:'recovery-adjust',product_id:'product',delta:2,reason:'manual_adjustment'}).then(()=>true)");
+    try{
+      const before=await evaluate(a,'rawRecovery()'),r=await evaluate(a,'rec.inspectLocalRecoverySnapshot()');
+      assert.equal(r.status,'HOLD');assert.ok(r.reasons.includes('UNSUPPORTED_OR_INCOMPLETE_OPERATION'));
+      assert.equal(r.local_counter,5);assert.ok(r.operations.some(x=>x.operation_id==='recovery-adjust'&&x.kind==='unsupported'));
+      assert.deepEqual(await evaluate(a,'rawRecovery()'),before);
+    }finally{await evaluate(a,'restoreRecovery(recOriginal).then(()=>true)')}
+    return {nonzeroAdjustmentRetained:true,noTombstone:true};
+  });
+  await check('recovery sequence collision and changed movement preserve original evidence', async () => {
+    for(const mode of ['sequence','movement']){
+      await evaluateStatements(a,`const rows=structuredClone(recOriginal);if(${JSON.stringify(mode)}==='sequence'){for(const e of rows.outbox)if(e.operation_id==='recovery-sale-2')e.device_sequence=1}else{rows.outbox.find(e=>e.entity_type==='inventory_movement').payload.delta=999}await restoreRecovery(rows);true`);
+      try{
+        const before=await evaluate(a,'rawRecovery()'),r=await evaluate(a,'rec.inspectLocalRecoverySnapshot()');
+        assert.equal(r.status,'HOLD');assert.ok(r.reasons.includes(mode==='sequence'?'SEQUENCE_IDENTITY_CONFLICT':'MOVEMENT_RECORD_MISMATCH'));
+        assert.deepEqual(await evaluate(a,'rawRecovery()'),before);
+      }finally{await evaluate(a,'restoreRecovery(recOriginal).then(()=>true)')}
+    }
+    return {conflicts:2,unchanged:true};
+  });
+  await check('recovery native transaction abort cannot return a successful prefix', async () => {
+    const before=await evaluate(a,'rawRecovery()');
+    const r=await evaluateStatements(a,`const original=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(...args){const tx=original.apply(this,args);queueMicrotask(()=>tx.abort());return tx};try{return await rec.inspectLocalRecoverySnapshot()}finally{IDBDatabase.prototype.transaction=original}`);
+    assert.equal(r.status,'HOLD');assert.equal(r.inspection_complete,false);
+    assert.ok(r.reasons.includes('LOCAL_RECOVERY_READ_FAILED'));assert.equal(r.operations.length,0);
+    assert.deepEqual(await evaluate(a,'rawRecovery()'),before);
+    return {nativeAbort:true,noPartialSuccess:true};
+  });
+  await check('recovery snapshot and overlapping writer cannot mix counter and queue', async () => {
+    const r=await evaluateStatements(a,`const writer=new FawriAudit.IndexedDbCashierAuthority(recConfig);try{const [snapshot]=await Promise.all([rec.inspectLocalRecoverySnapshot(),writer.commitSale(${JSON.stringify(sale('recovery-overlap'))})]);return snapshot}finally{await writer.close()}`);
+    assert.equal(r.status,'INSPECTED');
+    assert.ok((r.local_counter===4&&r.operations.length===4)||(r.local_counter===5&&r.operations.length===5));
+    const after=await evaluate(a,'rec.inspectLocalRecoverySnapshot()');
+    assert.equal(after.local_counter,5);assert.equal(after.operations.length,5);
+    await evaluate(a,'restoreRecovery(recOriginal).then(()=>true)');
+    return {counter:r.local_counter,groups:r.operations.length,coherent:true};
+  });
+  await check('recovery actual page reload preserves inspection and closed handle holds', async () => {
+    const before=await evaluate(a,'rec.inspectLocalRecoverySnapshot()');
+    const recoveryConfig=await evaluate(a,'Promise.resolve(recConfig)');
+    await evaluate(a,'Promise.all([authority.close(),rec.close(),comp.close()]).then(()=>true)');
+    await a('Page.reload',{ignoreCache:true});
+    await waitFor(()=>evaluate(a,'typeof FawriAudit!=="undefined"'));
+    await evaluateStatements(a,`globalThis.rec=new FawriAudit.IndexedDbCashierAuthority(${JSON.stringify(recoveryConfig)});globalThis.authority=new FawriAudit.IndexedDbCashierAuthority(${JSON.stringify(config)});true`);
+    assert.deepEqual(await evaluate(a,'rec.inspectLocalRecoverySnapshot()'),before);
+    await evaluate(a,'rec.close().then(()=>true)');
+    const closed=await evaluate(a,'rec.inspectLocalRecoverySnapshot()');
+    assert.equal(closed.status,'HOLD');assert.equal(closed.inspection_complete,false);
+    assert.ok(closed.reasons.includes('LOCAL_RECOVERY_READ_FAILED'));
+    return {actualPageReload:true,closedHandleHeld:true};
+  });
+
   await check('versionchange closes both old handles; pending data survives upgrade', async () => {
     const before = await evaluate(a, 'authority.listPendingSync()');
     const upgraded = await evaluate(b, `new Promise((ok,no)=>{const r=indexedDB.open(${JSON.stringify(config.databaseName)},3);r.onsuccess=()=>{globalThis.upgraded=r.result;ok(r.result.version)};r.onerror=()=>no(r.error);r.onblocked=()=>no(Error('upgrade blocked'))})`);
@@ -137,4 +272,4 @@ finally {
 }
 if (infrastructureError) evidence.infrastructureError = infrastructureError;
 console.log('AUDIT_NATIVE_INDEXEDDB_RESULT ' + JSON.stringify(evidence));
-if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 4) process.exitCode = 1;
+if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 14) process.exitCode = 1;
