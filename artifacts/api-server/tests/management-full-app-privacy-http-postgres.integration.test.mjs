@@ -1303,7 +1303,7 @@ test('full application management privacy preserves cutover ordering and current
           await admin.query(`INSERT INTO order_payment_decisions(id,merchant_id,order_id,operation,payment_channel,outcome,confirmation_source,
             previous_order_status,resulting_order_status,previous_payment_status,resulting_payment_status,actor_type,actor_account_id,
             actor_session_fingerprint,request_id,reason,expected_version,resulting_version,source_file,source_sha256,migration_batch_id,decided_at)
-            VALUES($1,$2,$3,$4,'electronic',$5,$6,'pending_confirmation',$7,'electronic_pending',$5,$8,$9,$10,$11,$12,$13::integer,$13::integer+1,$14,$15,$16,'2025-01-21T00:00:00Z')`,
+            VALUES($1,$2,$3,$4,'electronic',$5::text::payment_decision_outcome,$6,'pending_confirmation',$7,'electronic_pending',$5::text::payment_status,$8,$9,$10,$11,$12,$13::integer,$13::integer+1,$14,$15,$16,'2025-01-21T00:00:00Z')`,
             [id,order.merchant_id,order.id,operation,outcome,confirmation,outcome==='paid'?'confirmed':'cancelled',kind,account,
               'a'.repeat(64),request,reason,expectedVersion,operation==='legacy_import'?'owned-legacy-source-file':null,
               operation==='legacy_import'?'b'.repeat(64):null,operation==='legacy_import'?'owned-legacy-batch':null]);
