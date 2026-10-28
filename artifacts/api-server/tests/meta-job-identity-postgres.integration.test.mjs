@@ -186,54 +186,7 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     assert.equal(providerCalls,calls);assert.deepEqual(await domainSnapshot(),before);
     assert.deepEqual((await pool.query('SELECT to_jsonb(j) AS row FROM background_jobs j WHERE merchant_id=ANY($1::text[]) ORDER BY id',[merchants])).rows,jobsBefore);
     console.log('P0_META_CUSTOMER_NOTIFICATION_CALLER '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualRestrictedWorker:true,actualEncryptedJobs:true,actualApp:true,actualFrontendValidator:true,merchants:2,exactSqlFields:true,authenticatedMerchantLists:true,peerReadDenied:true,ownReadReplay:true,signedRedeliveryAndQueueDedup:true,providerCallsUnchanged:true,replyDebitUnchanged:true,existingIdentityDenialsReused:cases.length,externalProvider:false,browserRendering:false,hostedAccepted:false,wholeFieldCellAccepted:false}));
-  await t.test('legacy migrated event history cannot be admitted as a fresh Meta job',async t=>{
-    const {buildTransitionalMigrationReadiness}=await import('../../../scripts/lib/transitional-migration-readiness.mjs');
-    const {prepareInsert}=await import('../../../lib/db/scripts/lib/migration-write.mjs');
-    const {loadLatestSnapshot}=await import('../../../scripts/lib/postgresql-migration-plan.mjs');
-    const directory=fs.mkdtempSync(path.join(os.tmpdir(),'fawri-legacy-meta-identity-'));
-    const valid=bodyFor(0,'legacy-completed'),receivedAt='2026-08-06T12:00:00.000Z';
-    const write=(name,value)=>fs.writeFileSync(path.join(directory,name),JSON.stringify(value)+'\n');
-    let row;
-    try{
-      write('merchants.json',{merchants:[{id:merchants[0]}],subscriptions:[]});
-      write('fawri-runtime-db.json',{metaPagesByPageId:{[page]:{page_id:page,merchant_id:merchants[0],platform:'messenger',status:'connected'}}});
-      write('processed-meta-events.json',{events:{[valid.event]:receivedAt}});
-      write('reply-reservations.json',{reservations:{}});write('background-jobs.json',{version:1,jobs:[]});
-      const before=Object.fromEntries(fs.readdirSync(directory).map(name=>[name,createHash('sha256').update(fs.readFileSync(path.join(directory,name))).digest('hex')]));
-      const {report}=buildTransitionalMigrationReadiness({dataDirectory:directory});assert.equal(report.ok,true);assert.equal(report.target_rows.processed_channel_events.length,1);
-      const mapped=report.target_rows.processed_channel_events[0];
-      const channel=(await pool.query("SELECT id FROM merchant_channels WHERE merchant_id=$1 AND platform='messenger' AND page_id=$2",[merchants[0],page])).rows;
-      assert.equal(channel.length,1);
-      // Bootstrap only: reconcile the mapper's legacy channel anchor to this
-      // fixture's connected channel for the same merchant/page. This is not a
-      // full migration commit or proof of production channel reconciliation.
-      row={...mapped,channel_id:channel[0].id};
-      assert.equal(row.processing_status,'completed');
-      assert.equal(row.payload_hash,createHash('sha256').update(JSON.stringify({event_id:valid.event,received_at:receivedAt})).digest('hex'));
-      const insert=prepareInsert('processed_channel_events',row,loadLatestSnapshot().value);await pool.query(insert.sql,insert.values);
-      const after=Object.fromEntries(fs.readdirSync(directory).map(name=>[name,createHash('sha256').update(fs.readFileSync(path.join(directory,name))).digest('hex')]));assert.deepEqual(after,before);
-    }finally{fs.rmSync(directory,{recursive:true,force:true});}
-    const eventState=async()=>({
-      legacy:(await pool.query('SELECT to_jsonb(e) AS row FROM processed_channel_events e WHERE id=$1',[row.id])).rows,
-      jobs:(await pool.query('SELECT to_jsonb(j) AS row FROM background_jobs j WHERE merchant_id=$1 AND dedupe_key=$2',[merchants[0],valid.event])).rows,
-      inbound:(await pool.query('SELECT to_jsonb(e) AS row FROM channel_inbound_events e WHERE merchant_id=$1 AND external_event_id=$2',[merchants[0],valid.event])).rows,
-    });
-    const signed=async()=>{const body=JSON.stringify(valid.payload.webhook_body);const r=await fetch('http://127.0.0.1:'+worker.info.port+'/api/meta/webhook',{method:'POST',headers:{'Content-Type':'application/json','Connection':'close','X-Hub-Signature-256':'sha256='+createHmac('sha256',secret).update(body).digest('hex')},body});return {status:r.status,body:await r.json()};};
-    const cleanupJob=()=>pool.query('DELETE FROM background_jobs WHERE merchant_id=$1 AND dedupe_key=$2',[merchants[0],valid.event]);
-    try{
-      await t.test('signed completed legacy redelivery holds before enqueue and preserves legacy and domain state',async()=>{
-        const before=await eventState(),domain=await domainSnapshot(),calls=providerCalls;assert.equal(before.jobs.length,0);assert.equal(before.inbound.length,0);assert.equal(before.legacy.length,1);
-        try{
-          const response=await signed(),after=await eventState();
-          console.log('P0_LEGACY_META_ADMISSION_OBSERVATION '+JSON.stringify({status:response.status,legacyRows:after.legacy.length,currentJobs:after.jobs.length,currentInboundRows:after.inbound.length,providerCallsBefore:calls,providerCallsAfter:providerCalls,workerInvoked:false}));
-          assert.equal(response.status,503,'legacy-only history must not become a fresh job');assert.equal(response.body.code,'META_WEBHOOK_QUEUE_UNAVAILABLE');
-          assert.deepEqual(await eventState(),before);assert.deepEqual(await domainSnapshot(),domain);assert.equal(providerCalls,calls);
-          const again=await signed();assert.equal(again.status,503);assert.deepEqual(await eventState(),before);assert.equal(providerCalls,calls);
-        }finally{await cleanupJob();}
-      });
-    }finally{await cleanupJob();await pool.query('DELETE FROM processed_channel_events WHERE id=$1',[row.id]);}
   });
-});
 
 
   const gapActors=[];
@@ -298,5 +251,52 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
     console.log('P0_META_KNOWLEDGE_GAP_CALLER '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualRestrictedWorker:true,actualKnowledgeEngine:true,actualHandoff:true,ownedTrainingRequests:2,exactSqlFields:true,actualApp:true,actualFrontendValidator:true,peerNoticeReadDenied:true,readReplay:true,signedRedeliveryAndQueueDedup:true,externalProvider:false,browserRendering:false,crashRecovery:false,wholeFieldCellAccepted:false}));
   });
 
+  await t.test('legacy migrated event history cannot be admitted as a fresh Meta job',async t=>{
+    const {buildTransitionalMigrationReadiness}=await import('../../../scripts/lib/transitional-migration-readiness.mjs');
+    const {prepareInsert}=await import('../../../lib/db/scripts/lib/migration-write.mjs');
+    const {loadLatestSnapshot}=await import('../../../scripts/lib/postgresql-migration-plan.mjs');
+    const directory=fs.mkdtempSync(path.join(os.tmpdir(),'fawri-legacy-meta-identity-'));
+    const valid=bodyFor(0,'legacy-completed'),receivedAt='2026-08-06T12:00:00.000Z';
+    const write=(name,value)=>fs.writeFileSync(path.join(directory,name),JSON.stringify(value)+'\n');
+    let row;
+    try{
+      write('merchants.json',{merchants:[{id:merchants[0]}],subscriptions:[]});
+      write('fawri-runtime-db.json',{metaPagesByPageId:{[page]:{page_id:page,merchant_id:merchants[0],platform:'messenger',status:'connected'}}});
+      write('processed-meta-events.json',{events:{[valid.event]:receivedAt}});
+      write('reply-reservations.json',{reservations:{}});write('background-jobs.json',{version:1,jobs:[]});
+      const before=Object.fromEntries(fs.readdirSync(directory).map(name=>[name,createHash('sha256').update(fs.readFileSync(path.join(directory,name))).digest('hex')]));
+      const {report}=buildTransitionalMigrationReadiness({dataDirectory:directory});assert.equal(report.ok,true);assert.equal(report.target_rows.processed_channel_events.length,1);
+      const mapped=report.target_rows.processed_channel_events[0];
+      const channel=(await pool.query("SELECT id FROM merchant_channels WHERE merchant_id=$1 AND platform='messenger' AND page_id=$2",[merchants[0],page])).rows;
+      assert.equal(channel.length,1);
+      // Bootstrap only: reconcile the mapper's legacy channel anchor to this
+      // fixture's connected channel for the same merchant/page. This is not a
+      // full migration commit or proof of production channel reconciliation.
+      row={...mapped,channel_id:channel[0].id};
+      assert.equal(row.processing_status,'completed');
+      assert.equal(row.payload_hash,createHash('sha256').update(JSON.stringify({event_id:valid.event,received_at:receivedAt})).digest('hex'));
+      const insert=prepareInsert('processed_channel_events',row,loadLatestSnapshot().value);await pool.query(insert.sql,insert.values);
+      const after=Object.fromEntries(fs.readdirSync(directory).map(name=>[name,createHash('sha256').update(fs.readFileSync(path.join(directory,name))).digest('hex')]));assert.deepEqual(after,before);
+    }finally{fs.rmSync(directory,{recursive:true,force:true});}
+    const eventState=async()=>({
+      legacy:(await pool.query('SELECT to_jsonb(e) AS row FROM processed_channel_events e WHERE id=$1',[row.id])).rows,
+      jobs:(await pool.query('SELECT to_jsonb(j) AS row FROM background_jobs j WHERE merchant_id=$1 AND dedupe_key=$2',[merchants[0],valid.event])).rows,
+      inbound:(await pool.query('SELECT to_jsonb(e) AS row FROM channel_inbound_events e WHERE merchant_id=$1 AND external_event_id=$2',[merchants[0],valid.event])).rows,
+    });
+    const signed=async()=>{const body=JSON.stringify(valid.payload.webhook_body);const r=await fetch('http://127.0.0.1:'+worker.info.port+'/api/meta/webhook',{method:'POST',headers:{'Content-Type':'application/json','Connection':'close','X-Hub-Signature-256':'sha256='+createHmac('sha256',secret).update(body).digest('hex')},body});return {status:r.status,body:await r.json()};};
+    const cleanupJob=()=>pool.query('DELETE FROM background_jobs WHERE merchant_id=$1 AND dedupe_key=$2',[merchants[0],valid.event]);
+    try{
+      await t.test('signed completed legacy redelivery holds before enqueue and preserves legacy and domain state',async()=>{
+        const before=await eventState(),domain=await domainSnapshot(),calls=providerCalls;assert.equal(before.jobs.length,0);assert.equal(before.inbound.length,0);assert.equal(before.legacy.length,1);
+        try{
+          const response=await signed(),after=await eventState();
+          console.log('P0_LEGACY_META_ADMISSION_OBSERVATION '+JSON.stringify({status:response.status,legacyRows:after.legacy.length,currentJobs:after.jobs.length,currentInboundRows:after.inbound.length,providerCallsBefore:calls,providerCallsAfter:providerCalls,workerInvoked:false}));
+          assert.equal(response.status,503,'legacy-only history must not become a fresh job');assert.equal(response.body.code,'META_WEBHOOK_QUEUE_UNAVAILABLE');
+          assert.deepEqual(await eventState(),before);assert.deepEqual(await domainSnapshot(),domain);assert.equal(providerCalls,calls);
+          const again=await signed();assert.equal(again.status,503);assert.deepEqual(await eventState(),before);assert.equal(providerCalls,calls);
+        }finally{await cleanupJob();}
+      });
+    }finally{await cleanupJob();await pool.query('DELETE FROM processed_channel_events WHERE id=$1',[row.id]);}
+  });
 });
 
