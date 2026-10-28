@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Reconcile existing RESIDUAL-FIELD-004/F004-R1/R2 against current order_drafts and processed_channel_events SQL writers/readers, startup/migration/ingress paths and accepted Meta/new-order reachability evidence. Separate dormant-table intended lifecycle from legacy same-name stores and hosted actual-row inventory; identify only a concrete current unproved boundary before code/tests. Do not add CRUD routes, infer inapplicability from lexical absence, repeat accepted notification/early-warning/emergency tests or adopt FIELD002/FIELD003/SEQ-R2 policy.",
+    "nextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32554,6 +32554,19 @@
       "policyAdopted": false,
       "newRuntimeTests": 0,
       "newCiRuns": 0,
+      "parentGateClosed": false
+    },
+    "field004LifecycleReview20261028": {
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#currentLifecycleReconciliation20261028",
+      "sourceReviewed": "139b0c44398cfd67bf20feef3bb03c0f116a140c",
+      "status": "EXISTING_MIGRATION_WRITER_AND_LOCAL_PLAN_RECONCILED_CURRENT_REPLAY_COMPATIBILITY_UNPROVED",
+      "filesVerified": 958,
+      "additionalMetadataJsonVerified": 54,
+      "lexicalCandidateFiles": 24,
+      "newLocalPlannerProbes": 1,
+      "newSqlOrHttpRuntime": 0,
+      "newCiRuns": 0,
+      "userActionRequiredNow": false,
       "parentGateClosed": false
     }
   },

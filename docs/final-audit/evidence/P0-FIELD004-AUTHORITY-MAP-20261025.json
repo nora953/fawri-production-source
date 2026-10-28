@@ -7,7 +7,7 @@
   "release": "NO-GO",
   "fieldCellClosed": false,
   "applicationChanged": false,
-  "newRuntimeExecuted": false,
+  "newRuntimeExecuted": true,
   "observations": [
     {
       "authority": "order_drafts SQL",
@@ -55,7 +55,7 @@
     "No online conversational order creation or whole commercial journey acceptance"
   ],
   "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
-  "nextExactAction": "Continue FIELD005 source reconciliation of merchant_deletion_requests identity snapshots and audit-retention handling against the existing privileged-deletion/retention gate. Reuse accepted deletion execution tests; identify exact unresolved field/duration policy without inventing retention periods or changing hosted data. FIELD004 unresolved scope and hosted inventory stay explicit.",
+  "nextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
   "previousStatus": "BOUNDED_SOURCE_AUTHORITIES_MAPPED_HTTP_PROOF_PENDING",
   "reconciledAtSource": "8eb803e68dc8457a2914ecdf5072f00994e8f639",
   "checklist": [
@@ -89,7 +89,9 @@
       "id": "F004-R1",
       "status": "OPEN_INTENDED_AUTHORITY_CONTRACT",
       "requirement": "Confirm whether residual tables are supported dormant storage, migration compatibility or candidates for retirement",
-      "acceptance": "Document intended lifecycle and any supported writer/reader. Do not infer retirement, new CRUD requirement or online-order completeness from literal scan absence."
+      "acceptance": "Document intended lifecycle and any supported writer/reader. Do not infer retirement, new CRUD requirement or online-order completeness from literal scan absence.",
+      "currentReview": "currentLifecycleReconciliation20261028",
+      "narrowedRemainder": "Existing migration destination/writer is confirmed. Current-runtime historical event suppression and draft continuation/disposition remain unproved; no unused/retired inference."
     },
     {
       "id": "F004-R2",
@@ -99,5 +101,977 @@
       "authorization": "Unavailable under current GitHub-only restriction"
     }
   ],
-  "currentAcceptedExecutable": "86ac8610591659cee4a0e92d3386ba1e51736d41"
+  "currentAcceptedExecutable": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+  "currentLifecycleReconciliation20261028": {
+    "date": "2026-10-28",
+    "sourceReviewed": "139b0c44398cfd67bf20feef3bb03c0f116a140c",
+    "acceptedExecutable": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+    "gates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    ],
+    "status": "EXISTING_MIGRATION_WRITER_AND_LOCAL_PLAN_RECONCILED_CURRENT_REPLAY_COMPATIBILITY_UNPROVED",
+    "acceptanceCondition": "Resolve existing F004-R1 actual supported storage/lifecycle authorities and identify a concrete unproved boundary, distinguishing F004-R2 hosted inventory. This is a prerequisite, not gate closure.",
+    "applicationChanged": false,
+    "newTestFiles": 0,
+    "newCiRuns": 0,
+    "newLocalPlannerProbe": 1,
+    "newSqlOrHttpRuntime": 0,
+    "fieldCellClosed": false,
+    "userActionRequiredNow": false,
+    "sourceVerification": {
+      "filesVerified": 958,
+      "localMatchingBlobs": 954,
+      "exactRemoteOverrides": 4,
+      "roots": [
+        "artifacts/api-server/src/",
+        "artifacts/fawri/src/",
+        "src/",
+        "lib/",
+        "scripts/"
+      ],
+      "extensions": [
+        "JS/TS family",
+        "sql"
+      ],
+      "exclusions": [
+        "lib/db/migration-stages historical preimages/reviewed copies",
+        "docs/final-audit output and evidence",
+        "Drizzle meta JSON from lexical scan (separately verified)"
+      ],
+      "additionalSelections": [
+        "four selected existing API regression files",
+        "docs/postgresql-migration-inventory.md",
+        "docs/meta-webhook-durable-pipeline.md",
+        "docs/postgresql-cutover-runbook.md"
+      ],
+      "verification": "Git SHA1('blob '+byteLength+NUL+bytes) matched all958; all958 have same blob IDs at69a3ccc. Additional54 Drizzle metadata JSON blobs also verified against reviewed HEAD before local planner execution.",
+      "manifestSha256": "d4f2a61768bc45f8404b306342584cf1d83b5b9e5e94c497421e2a728516cd20",
+      "scanSha256": "5c1a005d66e491fdeb283d412ca7da4b5c25e8e8146f3eb390576633a348c092",
+      "digestEncoding": "Python json.dumps(data,sort_keys=True,separators=(',',':')).encode(); manifest objects{path,sha} in recursive Git tree order; scan objects{path,sha,hits:[{line,text}]}.",
+      "pattern": "order_drafts|processed_channel_events|orderDraftsByConversation|processedChannelEvents",
+      "candidateFiles": 24,
+      "candidateMatches": [
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+          "sha": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+          "hits": [
+            {
+              "line": 173,
+              "text": "orderDraftsByConversation: Record<string, OrderDraft>;"
+            },
+            {
+              "line": 235,
+              "text": "export const orderDraftsByConversation = new Map<string, OrderDraft>();"
+            },
+            {
+              "line": 247,
+              "text": "orderDraftsByConversation: {},"
+            },
+            {
+              "line": 338,
+              "text": "orderDraftsByConversation.clear();"
+            },
+            {
+              "line": 377,
+              "text": "db.orderDraftsByConversation || {},"
+            },
+            {
+              "line": 379,
+              "text": "orderDraftsByConversation.set(conversationId, draft);"
+            },
+            {
+              "line": 401,
+              "text": "orderDraftsByConversation: Object.fromEntries("
+            },
+            {
+              "line": 402,
+              "text": "orderDraftsByConversation.entries(),"
+            },
+            {
+              "line": 419,
+              "text": "const draftEntries = Array.from(orderDraftsByConversation.entries()).filter("
+            },
+            {
+              "line": 432,
+              "text": "orderDraftsByConversation.delete(conversationId);"
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "sha": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "hits": [
+            {
+              "line": 41,
+              "text": "import { DB_PATH, DRAFT_TTL_MINUTES, conversationsByMerchant, getParamString, getQueryString, makeId, metaPagesByPageId, orderDraftsByConversation, ordersByMerchant, readBotProductsForHttp, rejectCrossMerchantPath, router, saveRuntimeDb, sendLegacyProductAuthorityDisabled } from './indexModulePart1';"
+            },
+            {
+              "line": 46,
+              "text": "const draft = orderDraftsByConversation.get(conversationId);"
+            },
+            {
+              "line": 281,
+              "text": "orderDraftsByConversation.set(draft.conversation_id, {"
+            },
+            {
+              "line": 289,
+              "text": "orderDraftsByConversation.delete(conversationId);"
+            },
+            {
+              "line": 705,
+              "text": "drafts_count: Array.from(orderDraftsByConversation.values()).filter("
+            },
+            {
+              "line": 709,
+              "text": "Array.from(orderDraftsByConversation.entries()).filter("
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "sha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "hits": [
+            {
+              "line": 962,
+              "text": "await target.query(`DELETE FROM order_drafts WHERE merchant_id = $1`, [merchantId]);"
+            },
+            {
+              "line": 966,
+              "text": "await target.query(`DELETE FROM processed_channel_events WHERE merchant_id = $1`, [merchantId]);"
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "sha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "hits": [
+            {
+              "line": 12,
+              "text": "\"audit_events\", \"manual_reply_requests\", \"notifications\", \"order_drafts\", \"processed_channel_events\","
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/residual-business-privacy-rls-postgres.integration.test.mjs",
+          "sha": "bbbd9abb8f828ab6335ebea2af1889f96dfe5bc4",
+          "hits": [
+            {
+              "line": 9,
+              "text": "const tables=['audit_events','manual_reply_requests','merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests','notifications','order_drafts','processed_channel_events'];"
+            },
+            {
+              "line": 43,
+              "text": "await admin.query(\"INSERT INTO order_drafts(id,merchant_id,conversation_id,customer_external_id,awaiting_field,expires_at) VALUES($1,$2,$3,'synthetic-customer','synthetic',now()+interval '1 hour')\",[r.row,r.merchant,r.conversation]);"
+            },
+            {
+              "line": 44,
+              "text": "await admin.query(\"INSERT INTO processed_channel_events(id,merchant_id,channel_id,external_event_id,event_type,payload_hash,processing_status) VALUES($1,$2,$3,$1,'synthetic',$4,'received')\",[r.row,r.merchant,r.channel,'b'.repeat(64)]);"
+            },
+            {
+              "line": 50,
+              "text": "const scopedTables=['audit_events','manual_reply_requests','notifications','order_drafts','processed_channel_events'];"
+            },
+            {
+              "line": 91,
+              "text": "[\"INSERT INTO order_drafts(id,merchant_id,conversation_id,customer_external_id,awaiting_field,expires_at) VALUES($1,$2,$3,'synthetic','synthetic',now()+interval '1 hour') ON CONFLICT(conversation_id) DO UPDATE SET awaiting_field=EXCLUDED.awaiting_field\",[id,b.merchant,b.conversation]],"
+            },
+            {
+              "line": 92,
+              "text": "[\"INSERT INTO processed_channel_events(id,merchant_id,channel_id,external_event_id,event_type,payload_hash,processing_status) VALUES($1,$2,$3,$1,'synthetic',$4,'received')\",[id,b.merchant,b.channel,'d'.repeat(64)]],"
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/residual-merchant-privacy-authority-postgres.integration.test.mjs",
+          "sha": "7232daca947754572a4b0fbc314d1b09c8b22fd6",
+          "hits": [
+            {
+              "line": 9,
+              "text": "const tables=['audit_events','manual_reply_requests','merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests','notifications','order_drafts','processed_channel_events'];"
+            },
+            {
+              "line": 38,
+              "text": "await admin.query(\"INSERT INTO order_drafts(id,merchant_id,conversation_id,customer_external_id,awaiting_field,expires_at) VALUES($1,$2,$3,'synthetic-customer','synthetic',now()+interval '1 hour')\",[r.row,r.merchant,r.conversation]);"
+            },
+            {
+              "line": 39,
+              "text": "await admin.query(\"INSERT INTO processed_channel_events(id,merchant_id,channel_id,external_event_id,event_type,payload_hash,processing_status) VALUES($1,$2,$3,$1,'synthetic',$4,'received')\",[r.row,r.merchant,r.channel,'b'.repeat(64)]);"
+            }
+          ]
+        },
+        {
+          "path": "docs/meta-webhook-durable-pipeline.md",
+          "sha": "8886f88b27c9c92d0fa6f42f7163f56aea1116f9",
+          "hits": [
+            {
+              "line": 55,
+              "text": "| `processed-meta-events.json` | Event receive idempotency | `processed_channel_events` |"
+            }
+          ]
+        },
+        {
+          "path": "docs/postgresql-migration-inventory.md",
+          "sha": "2cb81027b77e49c1abfa918c5a3be0cc9f9acde7",
+          "hits": [
+            {
+              "line": 20,
+              "text": "| Legacy `bot-runtime.json` | older flat products, conversations, channels, orders and drafts | products, conversations, messages, merchant_channels, orders, order_items, order_drafts |"
+            },
+            {
+              "line": 21,
+              "text": "| Active `fawri-runtime-db.json` | map-based products, conversations, messages, Meta page connections, orders and order drafts | products, product_variants, conversations, messages, merchant_channels, orders, order_items, order_drafts |"
+            },
+            {
+              "line": 22,
+              "text": "| `processed-meta-events.json` | transitional Meta webhook idempotency identifiers and receive timestamps | processed_channel_events |"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+          "sha": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "hits": [
+            {
+              "line": 309,
+              "text": "CREATE TABLE \"processed_channel_events\" ("
+            },
+            {
+              "line": 322,
+              "text": "CREATE TABLE \"order_drafts\" ("
+            },
+            {
+              "line": 634,
+              "text": "ALTER TABLE \"processed_channel_events\" ADD CONSTRAINT \"processed_channel_events_merchant_id_merchants_id_fk\" FOREIGN KEY (\"merchant_id\") REFERENCES \"public\".\"merchants\"(\"id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 635,
+              "text": "ALTER TABLE \"processed_channel_events\" ADD CONSTRAINT \"processed_channel_events_channel_id_merchant_channels_id_fk\" FOREIGN KEY (\"channel_id\") REFERENCES \"public\".\"merchant_channels\"(\"id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 636,
+              "text": "ALTER TABLE \"order_drafts\" ADD CONSTRAINT \"order_drafts_merchant_id_merchants_id_fk\" FOREIGN KEY (\"merchant_id\") REFERENCES \"public\".\"merchants\"(\"id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 637,
+              "text": "ALTER TABLE \"order_drafts\" ADD CONSTRAINT \"order_drafts_conversation_id_conversations_id_fk\" FOREIGN KEY (\"conversation_id\") REFERENCES \"public\".\"conversations\"(\"id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 719,
+              "text": "CREATE UNIQUE INDEX \"processed_channel_events_channel_external_unique\" ON \"processed_channel_events\" USING btree (\"channel_id\",\"external_event_id\");--> statement-breakpoint"
+            },
+            {
+              "line": 720,
+              "text": "CREATE INDEX \"processed_channel_events_status_received_idx\" ON \"processed_channel_events\" USING btree (\"processing_status\",\"received_at\");--> statement-breakpoint"
+            },
+            {
+              "line": 721,
+              "text": "CREATE UNIQUE INDEX \"order_drafts_conversation_unique\" ON \"order_drafts\" USING btree (\"conversation_id\");--> statement-breakpoint"
+            },
+            {
+              "line": 722,
+              "text": "CREATE INDEX \"order_drafts_expiry_idx\" ON \"order_drafts\" USING btree (\"expires_at\");--> statement-breakpoint"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0001_military_proteus.sql",
+          "sha": "0631349cad0075d927bfcf67a96180111555a5a4",
+          "hits": [
+            {
+              "line": 207,
+              "text": "ALTER TABLE \"processed_channel_events\" DROP CONSTRAINT \"processed_channel_events_channel_id_merchant_channels_id_fk\";"
+            },
+            {
+              "line": 209,
+              "text": "ALTER TABLE \"order_drafts\" DROP CONSTRAINT \"order_drafts_conversation_id_conversations_id_fk\";"
+            },
+            {
+              "line": 262,
+              "text": "ALTER TABLE \"processed_channel_events\" ADD CONSTRAINT \"processed_channel_events_channel_merchant_fk\" FOREIGN KEY (\"channel_id\",\"merchant_id\") REFERENCES \"public\".\"merchant_channels\"(\"id\",\"merchant_id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 263,
+              "text": "ALTER TABLE \"order_drafts\" ADD CONSTRAINT \"order_drafts_conversation_merchant_fk\" FOREIGN KEY (\"conversation_id\",\"merchant_id\") REFERENCES \"public\".\"conversations\"(\"id\",\"merchant_id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 298,
+              "text": "ALTER TABLE \"processed_channel_events\" ADD CONSTRAINT \"processed_channel_events_completed_time_check\" CHECK (\"processed_channel_events\".\"completed_at\" IS NULL OR \"processed_channel_events\".\"completed_at\" >= \"processed_channel_events\".\"received_at\");--> statement-breakpoint"
+            },
+            {
+              "line": 299,
+              "text": "ALTER TABLE \"order_drafts\" ADD CONSTRAINT \"order_drafts_time_check\" CHECK (\"order_drafts\".\"updated_at\" >= \"order_drafts\".\"created_at\" AND \"order_drafts\".\"expires_at\" > \"order_drafts\".\"created_at\");--> statement-breakpoint"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+          "sha": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "hits": [
+            {
+              "line": 20,
+              "text": "ALTER TABLE public.\"order_drafts\" ENABLE ROW LEVEL SECURITY;"
+            },
+            {
+              "line": 22,
+              "text": "DROP POLICY IF EXISTS \"order_drafts_privacy_boundary\" ON public.\"order_drafts\";"
+            },
+            {
+              "line": 24,
+              "text": "CREATE POLICY \"order_drafts_privacy_boundary\" ON public.\"order_drafts\" AS PERMISSIVE FOR ALL TO public USING ((CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"order_drafts\".\"merchant_id\") END)) WITH CHECK ((CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"order_drafts\".\"merchant_id\") END));"
+            },
+            {
+              "line": 26,
+              "text": "ALTER TABLE public.\"processed_channel_events\" ENABLE ROW LEVEL SECURITY;"
+            },
+            {
+              "line": 28,
+              "text": "DROP POLICY IF EXISTS \"processed_channel_events_privacy_boundary\" ON public.\"processed_channel_events\";"
+            },
+            {
+              "line": 30,
+              "text": "CREATE POLICY \"processed_channel_events_privacy_boundary\" ON public.\"processed_channel_events\" AS PERMISSIVE FOR ALL TO public USING ((CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"processed_channel_events\".\"merchant_id\") END)) WITH CHECK ((CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"processed_channel_events\".\"merchant_id\") END));"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/conversations.ts",
+          "sha": "26a3b8c0921d77d1d3e9daca581b5d33a2edea5d",
+          "hits": [
+            {
+              "line": 151,
+              "text": "export const processedChannelEvents = pgTable("
+            },
+            {
+              "line": 152,
+              "text": "\"processed_channel_events\","
+            },
+            {
+              "line": 171,
+              "text": "name: \"processed_channel_events_channel_merchant_fk\","
+            },
+            {
+              "line": 176,
+              "text": "\"processed_channel_events_channel_external_unique\","
+            },
+            {
+              "line": 178,
+              "text": "statusReceivedIndex: index(\"processed_channel_events_status_received_idx\").on("
+            },
+            {
+              "line": 183,
+              "text": "\"processed_channel_events_completed_time_check\","
+            },
+            {
+              "line": 191,
+              "text": "export type ProcessedChannelEvent = typeof processedChannelEvents.$inferSelect;"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/orders.ts",
+          "sha": "1343264314a660311ef261c2c95eddb3bc70f490",
+          "hits": [
+            {
+              "line": 341,
+              "text": "\"order_drafts\","
+            },
+            {
+              "line": 354,
+              "text": "conversationTenantForeignKey: foreignKey({ name: \"order_drafts_conversation_merchant_fk\", columns: [table.conversationId, table.merchantId], foreignColumns: [conversations.id, conversations.merchantId] }).onDelete(\"cascade\"),"
+            },
+            {
+              "line": 355,
+              "text": "conversationUnique: uniqueIndex(\"order_drafts_conversation_unique\").on(table.conversationId),"
+            },
+            {
+              "line": 356,
+              "text": "expiryIndex: index(\"order_drafts_expiry_idx\").on(table.expiresAt),"
+            },
+            {
+              "line": 357,
+              "text": "timeCheck: check(\"order_drafts_time_check\", sql`${table.updatedAt} >= ${table.createdAt} AND ${table.expiresAt} > ${table.createdAt}`),"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "sha": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "hits": [
+            {
+              "line": 167,
+              "text": "import { processedChannelEvents } from \"./conversations\";"
+            },
+            {
+              "line": 171,
+              "text": "export const orderDraftsPrivacyPolicy = pgPolicy(\"order_drafts_privacy_boundary\", { as: \"permissive\", for: \"all\", to: \"public\", using: sql.raw(\"(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\\\"order_drafts\\\".\\\"merchant_id\\\") END)\"), withCheck: sql.raw(\"(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\\\"order_drafts\\\".\\\"merchant_id\\\") END)\") }).link(orderDrafts);"
+            },
+            {
+              "line": 172,
+              "text": "export const processedChannelEventsPrivacyPolicy = pgPolicy(\"processed_channel_events_privacy_boundary\", { as: \"permissive\", for: \"all\", to: \"public\", using: sql.raw(\"(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\\\"processed_channel_events\\\".\\\"merchant_id\\\") END)\"), withCheck: sql.raw(\"(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\\\"processed_channel_events\\\".\\\"merchant_id\\\") END)\") }).link(processedChannelEvents);"
+            }
+          ]
+        },
+        {
+          "path": "scripts/audit-fawri-json-data.mjs",
+          "sha": "32fa2970cbeebf17ed0b381f21d6e8391c836e84",
+          "hits": [
+            {
+              "line": 28,
+              "text": "\"order_drafts\","
+            },
+            {
+              "line": 255,
+              "text": "const drafts = asRecord(value?.orderDraftsByConversation);"
+            }
+          ]
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "sha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "hits": [
+            {
+              "line": 53,
+              "text": "order_drafts: \"runtime\","
+            },
+            {
+              "line": 67,
+              "text": "processed_channel_events: \"transitional_processedEvents\","
+            },
+            {
+              "line": 320,
+              "text": "processed_channel_events: \"transitional_processedEvents\","
+            },
+            {
+              "line": 431,
+              "text": "const drafts = asRecord(runtime.orderDraftsByConversation);"
+            },
+            {
+              "line": 446,
+              "text": "mergeRow(report, \"order_drafts\", row, \"transitional_runtime\", item, { replaceExisting: true });"
+            }
+          ]
+        },
+        {
+          "path": "scripts/lib/transitional-migration-readiness.mjs",
+          "sha": "531ba69304aa6651968f07ea449b538e65d73548",
+          "hits": [
+            {
+              "line": 280,
+              "text": "rows.processed_channel_events.push({"
+            },
+            {
+              "line": 287,
+              "text": "targetRows.processed_channel_events.push({"
+            },
+            {
+              "line": 566,
+              "text": "processed_channel_events: [],"
+            },
+            {
+              "line": 573,
+              "text": "processed_channel_events: [],"
+            }
+          ]
+        },
+        {
+          "path": "scripts/plan-postgresql-migration.mjs",
+          "sha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "hits": [
+            {
+              "line": 138,
+              "text": "\"order_drafts\","
+            },
+            {
+              "line": 337,
+              "text": "runtime.orderDrafts || runtime.order_drafts,"
+            },
+            {
+              "line": 338,
+              "text": "\"order_drafts\","
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/audit-fawri-data.test.mjs",
+          "sha": "6a2c2614a970c424be2bff4c3358d829d8308302",
+          "hits": [
+            {
+              "line": 43,
+              "text": "orderDraftsByConversation: {},"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/audit-transitional-migration-readiness.test.mjs",
+          "sha": "0383093f4f87bad41fd0f8c8b7f5549762eb0d7c",
+          "hits": [
+            {
+              "line": 172,
+              "text": "processed_channel_events: 1,"
+            },
+            {
+              "line": 179,
+              "text": "processed_channel_events: 1,"
+            },
+            {
+              "line": 184,
+              "text": "assert.deepEqual(report.rows.processed_channel_events[0], {"
+            },
+            {
+              "line": 200,
+              "text": "const processedEvent = report.target_rows.processed_channel_events[0];"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+          "sha": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+          "hits": [
+            {
+              "line": 68,
+              "text": "orderDraftsByConversation: {},"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/locked-migration-operational-safety.test.mjs",
+          "sha": "5cda1ef54d7d2840b137015f226d91892ec269f6",
+          "hits": [
+            {
+              "line": 45,
+              "text": "orderDraftsByConversation: {},"
+            },
+            {
+              "line": 184,
+              "text": "orderDraftsByConversation: {},"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/plan-postgresql-migration.test.mjs",
+          "sha": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "hits": [
+            {
+              "line": 351,
+              "text": "assert.equal(report.table_counts.order_drafts, 1);"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/validated-order-operations-gate.test.mjs",
+          "sha": "1d282aeb9c7044661b8a5bb7c33bcc013473b794",
+          "hits": [
+            {
+              "line": 45,
+              "text": "orderDraftsByConversation: {},"
+            }
+          ]
+        }
+      ],
+      "manualExpansion": "Followed actual import/dataflow into cross-lane reconciler, dynamic generic SQL writer, dry-run/rehearsal/guarded real runner and current Meta worker. Literal table matches alone miss generic INSERT writers and are not an absence theorem."
+    },
+    "inputPins": [
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/index.ts",
+        "gitBlobSha": "3fd350d160c59c6226989ac3348c20e64424ea4e",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+        "gitBlobSha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts",
+        "gitBlobSha": "e65c4bb6f81ee3709acbca2742e302a76e250371",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/metaWebhookSecurity.ts",
+        "gitBlobSha": "60942cf828703803277536198ea62888162ceec5",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresDurableJobQueue.ts",
+        "gitBlobSha": "05922f957a12bd09d6671082c52f8f5085ee0723",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "gitBlobSha": "9ea596dd997d4536f41402e65950d60cc12479a4",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaWebhookReplyTransport.ts",
+        "gitBlobSha": "c67b40e192b9a10da342ba1b107d50f3bf7efa06",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+        "gitBlobSha": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+        "gitBlobSha": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+        "gitBlobSha": "2704c0a99970c736e0de2a91ef7901f961614ec4",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts",
+        "gitBlobSha": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/src/schema/orders.ts",
+        "gitBlobSha": "1343264314a660311ef261c2c95eddb3bc70f490",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/src/schema/conversations.ts",
+        "gitBlobSha": "26a3b8c0921d77d1d3e9daca581b5d33a2edea5d",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+        "gitBlobSha": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+        "gitBlobSha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/lib/transitional-migration-readiness.mjs",
+        "gitBlobSha": "531ba69304aa6651968f07ea449b538e65d73548",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+        "gitBlobSha": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/plan-postgresql-migration.mjs",
+        "gitBlobSha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/run-postgresql-migration-cutover.mjs",
+        "gitBlobSha": "bfc5f1f286cfb4828906673784ece8cc8fb0dc8b",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/cutover-migration.mjs",
+        "gitBlobSha": "07877fb153f2167ec9bf04d47cfd5d55d1c1a30e",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/commit-migration.mjs",
+        "gitBlobSha": "e8c2c2e2bc52444547ccc968bc5bd6d990db502d",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/rollback-migration.mjs",
+        "gitBlobSha": "3da314e5a6bb507eb1114e88d0f13418a38738a2",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/lib/migration-write.mjs",
+        "gitBlobSha": "79da34fb56320055f3e1a92aea153c04fff39e72",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/run-complete-migration-with-operational-locks.mjs",
+        "gitBlobSha": "7b577beb842514f95864d413fd13861112b6475e",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/tests/fixtures/create-postgresql-migration-fixture.mjs",
+        "gitBlobSha": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+        "gitBlobSha": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "ec2522b2fa2309c3dfe6433ab9ecc9bf9c22227d",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/residual-business-privacy-rls-postgres.integration.test.mjs",
+        "gitBlobSha": "bbbd9abb8f828ab6335ebea2af1889f96dfe5bc4",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/residual-merchant-privacy-authority-postgres.integration.test.mjs",
+        "gitBlobSha": "7232daca947754572a4b0fbc314d1b09c8b22fd6",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/meta-job-identity-postgres.integration.test.mjs",
+        "gitBlobSha": "0440efa021c35395ee71150867fac3fc375416bb",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "docs/postgresql-migration-inventory.md",
+        "gitBlobSha": "2cb81027b77e49c1abfa918c5a3be0cc9f9acde7",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "docs/meta-webhook-durable-pipeline.md",
+        "gitBlobSha": "8886f88b27c9c92d0fa6f42f7163f56aea1116f9",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "docs/postgresql-cutover-runbook.md",
+        "gitBlobSha": "de8d97798760c831926e74e698673d05f441b16c",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/drizzle/meta/_journal.json",
+        "gitBlobSha": "dc3906bbe29d0b100a29bbdaaf026d8bb5696d1a",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/drizzle/meta/0052_snapshot.json",
+        "gitBlobSha": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535",
+        "unchangedFromAccepted": true
+      }
+    ],
+    "migrationAuthority": [
+      {
+        "source": "docs/postgresql-migration-inventory.md:20-22",
+        "finding": "Existing declared migration destinations: flat/map-based JSON drafts -> order_drafts; processed-meta-events identifiers/timestamps -> processed_channel_events. This is established migration mapping, not evidence that these tables drive current online conversation processing."
+      },
+      {
+        "source": "scripts/plan-postgresql-migration.mjs:336",
+        "finding": "Base planner maps legacy orderDrafts/order_drafts to rows.order_drafts; in-memory planning only."
+      },
+      {
+        "source": "scripts/lib/postgresql-migration-plan-complete.mjs:431-446",
+        "finding": "mergeOperationalRuntime maps orderDraftsByConversation into order_drafts with merchant/conversation/customer/awaiting_field/draft_data/expiry/timestamps and stable ID fallback. The top-level planner preserves nonempty target rows and lineage."
+      },
+      {
+        "source": "scripts/lib/transitional-migration-readiness.mjs:250-301",
+        "finding": "Maps event receive IDs/timestamps after page->merchant/channel checks into processed_channel_events completed rows. payload_hash is SHA256(JSON{event_id,received_at}), not the original webhook body hash."
+      },
+      {
+        "source": "scripts/lib/postgresql-migration-plan-complete.mjs:308-327",
+        "finding": "mergeTransitionalRows retains processed_channel_events and rewrites channel references to merged channel ID."
+      },
+      {
+        "source": "scripts/lib/postgresql-cross-lane-reconciliation.mjs:191-235,628-649",
+        "finding": "The cross-lane planner imports the complete planner, reconciles identity/channels/jobs/etc, ensures channel_inbound_events exists as an array but does not bridge legacy processed IDs into it in the traced path. It can mark a plan write_ready with retained legacy processed rows and no current inbound rows (local probe below)."
+      },
+      {
+        "source": "lib/db/scripts/lib/migration-write.mjs:107-127,233-256",
+        "finding": "prepareInsert constructs quoted, parameterized INSERT into a snapshot-validated table; insertValidatedRows iterates nonempty plan rows in FK order. No literal INSERT INTO order_drafts or processed_channel_events string is needed for these to be SQL write targets."
+      },
+      {
+        "source": "lib/db/scripts/commit-migration.mjs:24-101",
+        "finding": "Existing local fawri_ci-only opt-in rehearsal uses the validated cross-lane plan, generic writer, transaction, reconciliation, identity revalidation and second-pass idempotency. Not a production writer authorization."
+      },
+      {
+        "source": "scripts/run-postgresql-migration-cutover.mjs:19-26",
+        "finding": "Public wrapper --write deliberately throws REAL_CUTOVER_NOT_IMPLEMENTED; default dry-run does not use DB; explicit rehearsal modes use existing locked local writer. Existing runbook's statement about this wrapper is correct, not a newly confirmed documentation bug."
+      },
+      {
+        "source": "lib/db/scripts/cutover-migration.mjs:71-130,313-342,523-628",
+        "finding": "Separate guarded real cutover runner exists in source, requiring opt-in, target/environment/exact SHA, source locks, schema-present empty target, validated plan, transaction/reconciliation/revalidation and rollback. It also uses generic prepareInsert for supported plan rows. Presence is source reachability only; it was not invoked and current restrictions do not authorize it."
+      }
+    ],
+    "currentRuntimeAuthority": [
+      {
+        "source": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts:962-966",
+        "finding": "Current server's named residual-table mutations are tenant-scoped deletion in existing merchant purge. Existing deletion is not newly authorized or changed; retention/lifecycle gate remains separate."
+      },
+      {
+        "source": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts:12",
+        "finding": "Both residual tables remain in production RLS readiness inventory, not retired storage."
+      },
+      {
+        "source": "artifacts/api-server/src/middleware/metaWebhookSecurity.ts:110-139",
+        "finding": "Required mode neither writes processed-meta-events.json nor relies on its duplicate filter; legacy JSON marker is no-op in required mode."
+      },
+      {
+        "source": "artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts:78-152",
+        "finding": "Per-request processed Set; required-mode enqueues through enqueueDurableJobAuthoritative. It does not query residual processed_channel_events."
+      },
+      {
+        "source": "artifacts/api-server/src/services/postgresDurableJobQueue.ts:264-325",
+        "finding": "Current enqueue deduplicates by merchant/type/dedupe_key in background_jobs and writes encrypted payload. It does not certify imported residual history by itself."
+      },
+      {
+        "source": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts:112-180",
+        "finding": "Worker creates/reads channel_inbound_events and checks exact current webhook-body payload hash/channel. No bridge from metadata-only processed_channel_events established; direct substitution of hashes would misrepresent event provenance."
+      },
+      {
+        "source": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts:5-15",
+        "finding": "Required-mode debug disabled410 before legacy Map projection; existing accepted HTTP proof retained."
+      }
+    ],
+    "localPlannerProbe": {
+      "exactSourceSha256": "993f6167c44c569990c6b4c273855693e7fed3971c50ffce2a9095f7912233d6",
+      "resultFileSha256": "86b7c304c9d72ab2c85a38a473adaff71a556d850c881c84655c9c1abe552cf6",
+      "reproduction": "Run embedded source from repository parent as field004-plan-probe.mjs with checkout directory named fawri. Uses two existing synthetic fixture generators, adds one map-based draft and one processed legacy ID, calls actual cross-lane buildValidatedMigrationPlan(includeRows:true), verifies source fixture fingerprints unchanged, cleans generated fixture. No DB/HTTP/provider call. Probe result is a local planner observation, not an application regression PASS.",
+      "source": "import fs from 'node:fs';\nimport os from 'node:os';\nimport path from 'node:path';\nimport {spawnSync} from 'node:child_process';\nimport {createHash} from 'node:crypto';\nimport assert from 'node:assert/strict';\nimport {buildValidatedMigrationPlan} from './fawri/scripts/lib/postgresql-cross-lane-reconciliation.mjs';\nconst root=path.resolve('fawri'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'fawri-field004-probe-'));\nconst hash=s=>createHash('sha256').update(s).digest('hex');\nconst read=n=>JSON.parse(fs.readFileSync(path.join(dir,n),'utf8'));\nconst write=(n,v)=>fs.writeFileSync(path.join(dir,n),JSON.stringify(v,null,2)+'\\n');\nconst fingerprint=()=>Object.fromEntries(fs.readdirSync(dir).sort().map(n=>[n,hash(fs.readFileSync(path.join(dir,n)))]));\ntry {\n for(const name of ['create-postgresql-migration-fixture.mjs','create-transitional-migration-fixture.mjs']){\n  const r=spawnSync(process.execPath,[path.join(root,'scripts/tests/fixtures',name),dir],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);\n }\n const runtime=read('fawri-runtime-db.json');\n runtime.orderDraftsByConversation['conversation-1']={id:'field004-synthetic-draft',merchant_id:'merchant-1',customer_external_id:'customer-1',awaiting_field:'customer_phone',draft_data:{synthetic_marker:'field004-owned'},created_at:'2026-08-06T12:00:00.000Z',updated_at:'2026-08-06T12:00:00.000Z',expires_at:'2026-08-06T13:00:00.000Z'};\n write('fawri-runtime-db.json',runtime);\n write('processed-meta-events.json',{events:{'meta:page-1:field004-synthetic-event':'2026-08-06T12:00:00.000Z'}});\n const before=fingerprint();\n const {report,snapshot}=buildValidatedMigrationPlan({dataDirectory:dir,includeRows:true});\n assert.deepEqual(fingerprint(),before,'planner must preserve fixture files');\n const result={probe:'FIELD004_EXISTING_MIGRATION_DESTINATIONS_AND_CURRENT_LEDGER_RECONCILIATION',sourceOnly:false,layer:'LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER',toolVersion:report.tool_version,planOk:report.ok,writeReady:report.write_readiness?.ok,snapshot:snapshot.name,snapshotSha256:snapshot.sha256,errors:report.errors.map(x=>x.code),counts:{order_drafts:report.rows.order_drafts?.length||0,processed_channel_events:report.rows.processed_channel_events?.length||0,channel_inbound_events:report.rows.channel_inbound_events?.length||0},draftMapped:report.rows.order_drafts?.some(x=>x.id==='field004-synthetic-draft'&&x.draft_data?.synthetic_marker==='field004-owned'),eventMapped:report.rows.processed_channel_events?.some(x=>x.external_event_id==='meta:page-1:field004-synthetic-event'&&x.processing_status==='completed'),matchingCurrentInbound:report.rows.channel_inbound_events?.filter(x=>x.external_event_id==='meta:page-1:field004-synthetic-event').length||0,sourceFilesUnchanged:true,sourceFileFingerprints:before,writesPerformed:false,databaseConnectionUsed:false,interpretation:'Planner destination preservation only; no proof of historical-event suppression by current ingress/worker, live draft continuation, migration SQL commit or actual provider replay.'};\n fs.writeFileSync('field004-plan-probe-result.json',JSON.stringify(result,null,2)+'\\n');\n console.log(JSON.stringify(result));\n} finally {fs.rmSync(dir,{recursive:true,force:true});}\n",
+      "result": {
+        "probe": "FIELD004_EXISTING_MIGRATION_DESTINATIONS_AND_CURRENT_LEDGER_RECONCILIATION",
+        "sourceOnly": false,
+        "layer": "LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER",
+        "toolVersion": "7",
+        "planOk": true,
+        "writeReady": true,
+        "snapshot": "0052_snapshot.json",
+        "snapshotSha256": "993461e7bdccce8a2c7386054ce43e57b6eab73e7f80d87d13dc5e693651c9e4",
+        "errors": [],
+        "counts": {
+          "order_drafts": 2,
+          "processed_channel_events": 1,
+          "channel_inbound_events": 0
+        },
+        "draftMapped": true,
+        "eventMapped": true,
+        "matchingCurrentInbound": 0,
+        "sourceFilesUnchanged": true,
+        "sourceFileFingerprints": {
+          "background-jobs.json": "df7106e362a50c468ee11b6b4cee7522ef0a9e7e921e8aceb90670f146e54b71",
+          "bot-runtime.json": "e5e5c238a1a9aa01e3307289124ebf68a3ccb78082b7dff7d7bed88c7793397b",
+          "emergency-read-access.json": "243cbf5f198c3d60fbd13708c37a77c36766eb55fef03ec1b3f9d755e698adf1",
+          "fawri-runtime-db.json": "056b0c733980358758c092eb2dd018d7b3454a8902e55c20c5c5568d43ebb7de",
+          "learned-answers.json": "f9009c13ccfe170905da885f692b0d92c1d65f39e1bf9f6d845fd0e13a76fbc1",
+          "manual-conversation-operations.json": "cc1d7696d5d7b8b0a830d55a4866dbfc8369a09b4d26f4e7e7075421313cd8e9",
+          "merchant-settings.json": "3f09f51ef66a051ad53e0b2e186ff30883ab56c3496f0caa5d55fcdae2b4c560",
+          "merchants.json": "be2417c61d0e0e92e275d3b4c72c68c94742ace877c9e9689463e48f75ae6abf",
+          "order-operations.json": "182637d93abf5100c4b178221cc3f18e426c105c6e558e9a75befd95a269494b",
+          "processed-meta-events.json": "312c37dd065e5896e5c1b25f2703fa3a39c4ed021fb090bb0669e853df105bde",
+          "reply-reservations.json": "472848634486d08ed16020937115ed04f428ab97cdd87a28bf9ee714bf74db8e",
+          "saved-answers.json": "14355c07e6ae9d8b8dddd4e9b95a34cfc2fe2a38abe62fd7730fbb16e68e1405",
+          "support-preview-sessions.json": "4330c6285e686e7a20f99524691a9d43e5233af02323e2aafc0be503683bea00",
+          "training-requests.json": "d8ec91f20cd66f8a35d0299bd6e57802e941b862ead706716b1ad008bdc1d972"
+        },
+        "writesPerformed": false,
+        "databaseConnectionUsed": false,
+        "interpretation": "Planner destination preservation only; no proof of historical-event suppression by current ingress/worker, live draft continuation, migration SQL commit or actual provider replay."
+      },
+      "distinction": "2 draft rows = one pre-existing flat fixture draft + one added map-based draft. 1 legacy processed event,0 current inbound rows; report.ok/write_ready true. No SQL commit, signed webhook replay or downstream effect executed. Write-ready is planner structural validation, not a historical replay-safety certificate."
+    },
+    "reusedEvidence": {
+      "currentNotificationLane": {
+        "run": 40571069056,
+        "job": 122425088862,
+        "totalTap": 80,
+        "files": 6,
+        "relevant": [
+          {
+            "suite": "meta-job-identity-postgres.integration.test.mjs",
+            "auditBatch": "notification-privacy-http",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 26,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          },
+          {
+            "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+            "auditBatch": "notification-privacy-http",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 9,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "scope": "Existing current-event identity/redelivery and two retired-debug app cases only; no migration-to-current pipeline certification."
+      },
+      "currentBroaderLane": {
+        "run": 40571069527,
+        "job": 122425251636,
+        "totalTap": 829,
+        "invocations": 97,
+        "uniqueFiles": 94,
+        "relevant": [
+          {
+            "suite": "residual-business-privacy-rls-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 6,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          },
+          {
+            "suite": "residual-merchant-privacy-authority-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 4,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "scope": "SQL scoped own/foreign/unscoped/auth/directory boundaries for both tables retained. Does not prove imported-record consumption or current replay continuity."
+      },
+      "pointers": [
+        "evidence/P0-FIELD004-DEBUG-HTTP-20261025.json",
+        "evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+        "evidence/P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json",
+        "evidence/P0-0051-VERIFICATION-20261024.json"
+      ],
+      "newRuns": false,
+      "notAdditive": "Lane totals include parents and can overlap; do not sum into unique acceptance count."
+    },
+    "finiteRemainder": {
+      "F004_R1": {
+        "state": "OPEN_NARROWED_EXISTING_MIGRATION_MAPPING_CONFIRMED_RUNTIME_CONTINUATION_UNPROVED",
+        "established": "Existing code/documents support legacy migration storage; do not ask user to reinvent this mapping or declare tables unused/retired.",
+        "missing": "What preserves completed legacy event suppression when current required-mode ingress/worker resumes, and how retained draft state is resumed/disposed? The imported-row-to-current-runtime compatibility proof is absent from the reviewed accepted cases. No actual duplicate-send/financial defect claimed without the missing runtime reproduction.",
+        "nextMissingCase": "A completed legacy processed ID with no matching current job/inbound state, followed by an otherwise valid signed webhook in the existing owned fixture; admission/dedup and downstream state must be observed independently of current-event redelivery."
+      },
+      "F004_R2": {
+        "state": "BLOCKED_HOSTED_VERIFICATION",
+        "requirement": "Authorized revision-bound actual row/deployed writer inventory and migration consistency; remains unavailable under GitHub-only restriction."
+      }
+    },
+    "limits": [
+      "958-file pinned lexical/manual review plus54 metadata pins; not formal whole-program/external-writer absence proof.",
+      "No real cutover, generic SQL import/reconciliation rehearsal or current-ingress imported-history replay executed in this batch.",
+      "Local synthetic planner result does not prove a deployed duplicate, historical exposure, current draft completeness or actual provider delivery.",
+      "Existing schema/RLS protection and migration destination remain intact; no new lifecycle, deletion, preservation duration or event provenance policy adopted.",
+      "No new gate/count changes or FIELD002/FIELD003/SEQ-R2 approval inferred."
+    ],
+    "nextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption."
+  },
+  "previousNextExactAction": "Continue FIELD005 source reconciliation of merchant_deletion_requests identity snapshots and audit-retention handling against the existing privileged-deletion/retention gate. Reuse accepted deletion execution tests; identify exact unresolved field/duration policy without inventing retention periods or changing hosted data. FIELD004 unresolved scope and hosted inventory stay explicit.",
+  "currentReviewPointer": "currentLifecycleReconciliation20261028",
+  "previousNewRuntimeExecuted": false,
+  "newRuntimeLayer": "LOCAL_SYNTHETIC_READ_ONLY_PLANNER_ONLY_NO_SQL_HTTP_PROVIDER"
 }
