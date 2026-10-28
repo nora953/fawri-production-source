@@ -1065,7 +1065,7 @@ test('full application management privacy preserves cutover ordering and current
     const version=async()=>(await admin.query('SELECT version FROM merchant_settings WHERE merchant_id=$1',[x.id])).rows[0].version;
     const path='/API/SeTtInGs/?merchant_id='+y.id;
     const allowed={Origin:'https://management.example.invalid'};
-    const business=await snapshot();
+    const business=await snapshot();let completed=0;
     await st.test('full app keeps merchant-only fields and denies wrong actors devices combined roles and forged legacy cookies',async()=>{
       const before=await state();
       for(const actor of [undefined,owner,manager,denied])for(const method of ['GET','PATCH']){
@@ -1083,7 +1083,7 @@ test('full application management privacy preserves cutover ordering and current
         assert.equal(r.body.settings.payment.instructions,'private-payment-target');
         assert.doesNotMatch(JSON.stringify(r.body),/private-settings-peer|private-payment-peer|password_hash|token_hash/);
       }
-      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);completed++;
     });
     await st.test('current write uses server tenant and preserves peer while stale and undeclared nested fields cannot change state',async()=>{
       const peer=await state([y.id]),v=await version();
@@ -1100,26 +1100,31 @@ test('full application management privacy preserves cutover ordering and current
         assert.equal((await req(path,x,'PATCH',{expected_version:v+1,settings:patch},allowed)).status,400);
         assert.deepEqual(await state(),after);
       }
-      assert.deepEqual(await snapshot(),business);
+      assert.deepEqual(await snapshot(),business);completed++;
     });
     await st.test('rate INSERT failure after settings UPDATE and rate DELETE rolls the complete selected write back',async()=>{
       const name='settings_fault_'+randomUUID().replaceAll('-',''),before=await state(),v=await version();
       try{
+        await admin.query(`CREATE SEQUENCE ${name}`);
+        await admin.query(`GRANT USAGE ON SEQUENCE ${name} TO ${runtime.role}`);
         await admin.query(`CREATE FUNCTION ${name}() RETURNS trigger LANGUAGE plpgsql AS $settings_fault$
           BEGIN IF NEW.merchant_id=TG_ARGV[0] THEN
             IF NOT EXISTS(SELECT 1 FROM merchant_settings WHERE merchant_id=NEW.merchant_id AND version=TG_ARGV[1]::integer)
               OR EXISTS(SELECT 1 FROM merchant_delivery_area_rates WHERE merchant_id=NEW.merchant_id)
             THEN RAISE EXCEPTION 'settings fixture did not reach post-update post-delete boundary'; END IF;
+            PERFORM nextval(TG_ARGV[2]::regclass);
             RAISE EXCEPTION 'synthetic private settings area fault' USING ERRCODE='23514';
           END IF; RETURN NEW; END $settings_fault$`);
-        await admin.query(`CREATE TRIGGER ${name} BEFORE INSERT ON merchant_delivery_area_rates FOR EACH ROW EXECUTE FUNCTION ${name}('${x.id}','${v+1}')`);
+        await admin.query(`CREATE TRIGGER ${name} BEFORE INSERT ON merchant_delivery_area_rates FOR EACH ROW EXECUTE FUNCTION ${name}('${x.id}','${v+1}','public.${name}')`);
         const r=await req(path,x,'PATCH',{expected_version:v,settings:{auto_reply_enabled:true,delivery:{area_rates:[{area_name:'Synthetic replacement',fee_iqd:2500,enabled:true}]}}},allowed);
         assert.equal(r.status,500);assert.equal(r.body.code,'MERCHANT_SETTINGS_OPERATION_FAILED');assert.doesNotMatch(JSON.stringify(r.body),/synthetic private|settings_fault|23514/);
+        assert.deepEqual((await admin.query(`SELECT last_value::int AS value,is_called FROM ${name}`)).rows,[{value:1,is_called:true}],'nontransactional owned sequence proves the injected fault reached after the real UPDATE and DELETE');
       }finally{
         await admin.query(`DROP TRIGGER IF EXISTS ${name} ON merchant_delivery_area_rates`);
         await admin.query(`DROP FUNCTION IF EXISTS ${name}()`);
+        await admin.query(`DROP SEQUENCE IF EXISTS ${name}`);
       }
-      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);completed++;
     });
     await st.test('foreign Origin is rejected before a cookie-authenticated settings mutation',async()=>{
       const before=await state(),v=await version();
@@ -1127,9 +1132,9 @@ test('full application management privacy preserves cutover ordering and current
       const after=await state();
       console.log('P0_SETTINGS_ORIGIN_OBSERVATION '+JSON.stringify({status:r.status,code:r.body.code||null,selectedStateChanged:JSON.stringify(after)!==JSON.stringify(before)}));
       assert.equal(r.status,403);assert.equal(r.body.code,'AUTH_ORIGIN_FORBIDDEN');
-      assert.deepEqual(after,before);assert.deepEqual(await snapshot(),business);
+      assert.deepEqual(after,before);assert.deepEqual(await snapshot(),business);completed++;
     });
-    console.log('P0_SETTINGS_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,merchantOnly:true,serverTenantBound:true,ownProjection:true,foreignTenantAndPrivateFieldsPreserved:true,queuedJobsSuppressedForOwnOnly:true,invalidAndStalePreserved:true,postUpdatePostDeleteInsertFaultRollsBack:true,foreignOriginDenied:true,hosted:false}));
+    console.log('P0_SETTINGS_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:completed,allAssertionsPassed:completed===4,foreignOriginDenied:completed===4,hosted:false}));
   });
 
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
