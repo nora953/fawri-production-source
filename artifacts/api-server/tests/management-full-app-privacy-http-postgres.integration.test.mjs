@@ -18,7 +18,7 @@ Object.assign(process.env,{
 test('full application management privacy preserves cutover ordering and current SQL authority',{timeout:120000},async t=>{
   const bootstrapUrl=process.env.DATABASE_URL;
   const runtime=await createDisposableKnowledgeRuntime(),admin=runtime.admin;
-  const ids=[],merchants=[],actors=[];
+  const ids=[],merchants=[],actors=[],settingsJobIds=[];
   const tables=['merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests','audit_events','emergency_access_requests','merchant_channels'];
   let server,ownedIncidentLedger=false;
   t.after(()=>cleanupResources([
@@ -29,6 +29,7 @@ test('full application management privacy preserves cutover ordering and current
     ['notifications',()=>admin.query('DELETE FROM notifications WHERE merchant_id=ANY($1::text[]) OR account_id=ANY($2::text[])',[merchants,ids])],
     ['directory audits',()=>admin.query('DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])',[ids])],
     ['trusted devices',()=>admin.query('DELETE FROM trusted_devices WHERE account_id=ANY($1::text[])',[ids])],
+    ['owned settings jobs',()=>admin.query('DELETE FROM background_jobs WHERE id=ANY($1::text[])',[settingsJobIds])],
     ['accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
     ['runtime',()=>runtime.dispose()],
   ]));
@@ -1035,5 +1036,101 @@ test('full application management privacy preserves cutover ordering and current
     }));
   });
 
-  console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
+
+  await t.test('current merchant settings full-app fields tenant writes origin and rollback boundary',async st=>{
+    const x=await actor('merchant'),y=await actor('merchant');
+    for(const m of [x,y]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[m.id]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});
+      m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const settings=await import('../src/services/postgresMerchantSettingsAuthority.ts');
+    for(const [m,label] of [[x,'target'],[y,'peer']])await settings.updateMerchantOperationalSettingsAuthoritative({
+      merchantId:m.id,expectedVersion:1,patch:{reply_language:'ar',delivery:{pricing_mode:'per_area',area_rates:[
+        {area_name:'Synthetic area A',fee_iqd:1200,enabled:true},
+        {area_name:'Synthetic area B',fee_iqd:1800,enabled:false},
+      ],notes:'private-settings-'+label},payment:{instructions:'private-payment-'+label}},
+    });
+    for(const [m,status] of [[x,'queued'],[x,'retry'],[y,'queued']]){
+      const id='settings-job-'+randomUUID();settingsJobIds.push(id);
+      await admin.query("INSERT INTO background_jobs(id,type,dedupe_key,merchant_id,status) VALUES($1,'meta.webhook.reply',$1,$2,$3)",[id,m.id,status]);
+    }
+    const state=async(tenantIds=[x.id,y.id])=>{
+      const result={};
+      for(const table of ['merchant_settings','merchant_delivery_area_rates','background_jobs']){
+        result[table]=(await admin.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[tenantIds])).rows;
+      }
+      return result;
+    };
+    const version=async()=>(await admin.query('SELECT version FROM merchant_settings WHERE merchant_id=$1',[x.id])).rows[0].version;
+    const path='/API/SeTtInGs/?merchant_id='+y.id;
+    const allowed={Origin:'https://management.example.invalid'};
+    const business=await snapshot();
+    await st.test('full app keeps merchant-only fields and denies wrong actors devices combined roles and forged legacy cookies',async()=>{
+      const before=await state();
+      for(const actor of [undefined,owner,manager,denied])for(const method of ['GET','PATCH']){
+        const r=await req(path,actor,method,method==='PATCH'?{expected_version:2,settings:{reply_language:'en'}}:undefined,allowed);
+        assert.equal(r.status,401);assert.doesNotMatch(JSON.stringify(r.body),/private-settings-|private-payment-|password_hash|session_token/);
+      }
+      for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:`${x.cookie}; ${owner.cookie}`},{Cookie:'fawri_merchant_session=synthetic-invalid'}]){
+        for(const method of ['GET','PATCH'])assert.equal((await req(path,x,method,method==='PATCH'?{expected_version:2,settings:{reply_language:'en'}}:undefined,{...allowed,...headers})).status,401);
+      }
+      for(const route of ['/api/settings',path]){
+        const r=await req(route,x);assert.equal(r.status,200);assert.match(r.cache,/no-store/);
+        assert.deepEqual(Object.keys(r.body).sort(),['ok','settings']);
+        assert.deepEqual(Object.keys(r.body.settings).sort(),['auto_reply_enabled','created_at','delivery','inventory','merchant_id','payment','reply_language','updated_at','version']);
+        assert.equal(r.body.settings.merchant_id,x.id);assert.equal(r.body.settings.delivery.notes,'private-settings-target');
+        assert.equal(r.body.settings.payment.instructions,'private-payment-target');
+        assert.doesNotMatch(JSON.stringify(r.body),/private-settings-peer|private-payment-peer|password_hash|token_hash/);
+      }
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+    });
+    await st.test('current write uses server tenant and preserves peer while stale and undeclared nested fields cannot change state',async()=>{
+      const peer=await state([y.id]),v=await version();
+      const r=await req(path,x,'PATCH',{merchant_id:y.id,merchantId:y.id,account_id:y.id,expected_version:v,settings:{reply_language:'en',auto_reply_enabled:false,delivery:{notes:'private-settings-target-updated'}}},allowed);
+      assert.equal(r.status,200);assert.equal(r.body.settings.merchant_id,x.id);assert.equal(r.body.settings.version,v+1);
+      assert.deepEqual(r.body.effects,{queued_auto_reply_jobs_suppressed:2,processing_auto_reply_jobs_observed:0,credit_consumed:false});
+      assert.deepEqual(await state([y.id]),peer);
+      const jobs=(await admin.query('SELECT status,result FROM background_jobs WHERE merchant_id=$1 AND id=ANY($2::text[]) ORDER BY id',[x.id,settingsJobIds])).rows;
+      assert.equal(jobs.length,2);assert.ok(jobs.every(j=>j.status==='completed'&&j.result.suppression_code==='MERCHANT_AUTO_REPLY_DISABLED'&&j.result.credit_consumed===false));
+      const after=await state();
+      const stale=await req('/api/settings',x,'PATCH',{expected_version:v,settings:{reply_language:'ku'}},allowed);
+      assert.equal(stale.status,409);assert.equal(stale.body.code,'MERCHANT_SETTINGS_VERSION_CONFLICT');assert.equal(stale.body.current_settings.merchant_id,x.id);
+      for(const patch of [{merchant_id:y.id},{delivery:{merchant_id:y.id}},{payment:{merchant_id:y.id}},{inventory:{merchant_id:y.id}}]){
+        assert.equal((await req(path,x,'PATCH',{expected_version:v+1,settings:patch},allowed)).status,400);
+        assert.deepEqual(await state(),after);
+      }
+      assert.deepEqual(await snapshot(),business);
+    });
+    await st.test('rate INSERT failure after settings UPDATE and rate DELETE rolls the complete selected write back',async()=>{
+      const name='settings_fault_'+randomUUID().replaceAll('-',''),before=await state(),v=await version();
+      try{
+        await admin.query(`CREATE FUNCTION ${name}() RETURNS trigger LANGUAGE plpgsql AS $settings_fault$
+          BEGIN IF NEW.merchant_id=TG_ARGV[0] THEN
+            IF NOT EXISTS(SELECT 1 FROM merchant_settings WHERE merchant_id=NEW.merchant_id AND version=TG_ARGV[1]::integer)
+              OR EXISTS(SELECT 1 FROM merchant_delivery_area_rates WHERE merchant_id=NEW.merchant_id)
+            THEN RAISE EXCEPTION 'settings fixture did not reach post-update post-delete boundary'; END IF;
+            RAISE EXCEPTION 'synthetic private settings area fault' USING ERRCODE='23514';
+          END IF; RETURN NEW; END $settings_fault$`);
+        await admin.query(`CREATE TRIGGER ${name} BEFORE INSERT ON merchant_delivery_area_rates FOR EACH ROW EXECUTE FUNCTION ${name}('${x.id}','${v+1}')`);
+        const r=await req(path,x,'PATCH',{expected_version:v,settings:{auto_reply_enabled:true,delivery:{area_rates:[{area_name:'Synthetic replacement',fee_iqd:2500,enabled:true}]}}},allowed);
+        assert.equal(r.status,500);assert.equal(r.body.code,'MERCHANT_SETTINGS_OPERATION_FAILED');assert.doesNotMatch(JSON.stringify(r.body),/synthetic private|settings_fault|23514/);
+      }finally{
+        await admin.query(`DROP TRIGGER IF EXISTS ${name} ON merchant_delivery_area_rates`);
+        await admin.query(`DROP FUNCTION IF EXISTS ${name}()`);
+      }
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+    });
+    await st.test('foreign Origin is rejected before a cookie-authenticated settings mutation',async()=>{
+      const before=await state(),v=await version();
+      const r=await req(path,x,'PATCH',{expected_version:v,settings:{reply_language:'ku'}},{Origin:'https://foreign-origin.example.invalid'});
+      const after=await state();
+      console.log('P0_SETTINGS_ORIGIN_OBSERVATION '+JSON.stringify({status:r.status,code:r.body.code||null,selectedStateChanged:JSON.stringify(after)!==JSON.stringify(before)}));
+      assert.equal(r.status,403);assert.equal(r.body.code,'AUTH_ORIGIN_FORBIDDEN');
+      assert.deepEqual(after,before);assert.deepEqual(await snapshot(),business);
+    });
+    console.log('P0_SETTINGS_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,merchantOnly:true,serverTenantBound:true,ownProjection:true,foreignTenantAndPrivateFieldsPreserved:true,queuedJobsSuppressedForOwnOnly:true,invalidAndStalePreserved:true,postUpdatePostDeleteInsertFaultRollsBack:true,foreignOriginDenied:true,hosted:false}));
+  });
+
+  console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
