@@ -1,3 +1,9 @@
+## مطابقة متبقي حقول الإشعارات وقرار R1 الجاهز — 2026-10-28
+
+طوبقت12 مدخلاً للعقد و11 ملف دليل بالبايت مع snapshot المرشح، وبصمة اختبار المرشح مطابقة؛ أُعيد استخدام تقييمه المحلي6PASS ودليل الإشعارات الحالي80TAP/6 ملفات عند69a3ccc دون إعادة تشغيل أو تعديل تطبيق. [الاختيار وحدوده](P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.md)؛ [سجل المطابقة](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json#policyReconciliation20261028). R1 قرار جاهز غير معتمد: التوصية الاقتصار على الحقول المحددة لكل نوع في الردود مع حفظSQL، وأثر حذف extensions من الرد واضح؛ لا تطبيق بمجرد «أكمل». R2 محجوب بالجرد التاريخي المصرح به، وR3 نطاق8 callers/مساعد بلاcaller/3legacy غير محسوم. التالي اختيار R1 صراحة قبل التنفيذ؛ إذا تأجل، يستمر FIELD003 المستقل دون تكرار الاختبارات المقبولة.45 حالة كما هي؛ آخر مصدر مقبول69a3ccc ونتائجه58/58 محفوظة، لاCI جديد؛ completeP0Inventory=false،overallPercentage=null،NO-GO؛ SEQ-R2 يبقىUNAPPROVED؛ لا hosted/merge/deploy/P1/P2.
+
+---
+
 ## قبول تغيير صلاحيات المساعد أثناء الجلسات النشطة — 2026-10-28
 
 اكتمل قبول الدفعة الجارية عند المصدر **69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74** وشجرته **12151a5b50d7971b1fc15aa3caaadc3d299243b8**. نُفذت الفحوص2026-10-27 وطوبقت نتائجها ومصدرها2026-10-28 دون إعادة تشغيلها في الاستئناف. البوابة القائمة **P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX** تبقى OPEN. [الدليل في الخريطة الموجودة](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json)، boundary=activeAdminPermissionChange؛ وسجل الإدارة تحت manualReconciliation.adminFamilyRouteLedger20261027.

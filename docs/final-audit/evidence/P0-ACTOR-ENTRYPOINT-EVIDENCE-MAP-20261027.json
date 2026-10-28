@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Reconcile FIELD002-R1/R2/R3 in the existing P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json against accepted notification response contracts/current source. Classify explicit field-policy decisions versus missing executable assertions before new code. Reuse accepted admin and notification cases; do not automatically duplicate historical/aggregate cases or reopen the18-route admin family. Keep SEQ-R2 UNAPPROVED.",
+    "nextExactAction": "Obtain explicit FIELD002-R1 response-field choice from the concrete existing12-type table before enforcing projection. Keep R2 blocked and R3 scope unapproved. If choice deferred, retain R1 OPEN and continue independent existing FIELD003 cross-consumer metadata reconciliation without repeating accepted notification/admin tests. SEQ-R2 remains UNAPPROVED.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32518,6 +32518,18 @@
       ],
       "interpretation": "Distinct current full-app, current aggregate, historical and source-only cells; not18 newly closed gates or a denominator for P0. Do not automatically add tests to duplicate every historical cell.",
       "next": "Reconcile FIELD002-R1/R2/R3 in the existing P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json against accepted notification response contracts/current source. Classify explicit field-policy decisions versus missing executable assertions before new code. Reuse accepted admin and notification cases; do not automatically duplicate historical/aggregate cases or reopen the18-route admin family. Keep SEQ-R2 UNAPPROVED."
+    },
+    "field002PolicyReconciliation20261028": {
+      "evidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json#policyReconciliation20261028",
+      "sourceReviewed": "362530d048c86b09b91ee6ac625b964319bb6d8c",
+      "status": "CURRENT_FIELD002_REMAINDERS_CLASSIFIED_CONCRETE_POLICY_CHOICE_REQUIRED",
+      "contractInputsUnchanged": 12,
+      "evidenceFilesUnchanged": 11,
+      "reusedCurrentNotificationTap": 80,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "approval": "UNAPPROVED",
+      "parentGateClosed": false
     }
   },
   "componentScopes": {

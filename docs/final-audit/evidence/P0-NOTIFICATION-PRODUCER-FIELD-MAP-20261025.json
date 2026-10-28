@@ -1251,5 +1251,353 @@
       "Exact-source targeted and broader CI before any source acceptance"
     ],
     "nextExactAction": "Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope."
+  },
+  "policyReconciliation20261028": {
+    "date": "2026-10-28",
+    "status": "CURRENT_FIELD002_REMAINDERS_CLASSIFIED_CONCRETE_POLICY_CHOICE_REQUIRED",
+    "sourceReviewed": "362530d048c86b09b91ee6ac625b964319bb6d8c",
+    "applicationChanged": false,
+    "newRuntimeTests": 0,
+    "newCiRuns": 0,
+    "gateClosed": false,
+    "sourceContinuity": {
+      "comparedSnapshot": "f0bd2b0639f80da5c4dc98c75909d51c93e533df",
+      "contractInputCount": 12,
+      "contractInputsByteIdentical": 12,
+      "contractPins": [
+        {
+          "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "historicalBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "currentBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "recordedSha256": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+          "historicalBlob": "37a8125ca5dc3c3028b68ac286d22b656c2e9594",
+          "currentBlob": "37a8125ca5dc3c3028b68ac286d22b656c2e9594",
+          "recordedSha256": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "historicalBlob": "2d9c02c50a4735ea833e7d2d9f3b9f58f5a4d31e",
+          "currentBlob": "2d9c02c50a4735ea833e7d2d9f3b9f58f5a4d31e",
+          "recordedSha256": "9f432edc4161645e7d452f999c5bfd8f21f406b31f19c51679843881d17f09f5",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+          "historicalBlob": "edbb86a98b6075e7ba8e1afcebd6676432b5db01",
+          "currentBlob": "edbb86a98b6075e7ba8e1afcebd6676432b5db01",
+          "recordedSha256": "fa40e8d728cf33796e565b00f58dd839c893dd539da9d9786fb0c2dc3d11a6f8",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "historicalBlob": "08a4f4881d4887b850bb7b6a42ba171fccc064dd",
+          "currentBlob": "08a4f4881d4887b850bb7b6a42ba171fccc064dd",
+          "recordedSha256": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts",
+          "historicalBlob": "aa91e86d6fbc33823be22a325735b536b7f66384",
+          "currentBlob": "aa91e86d6fbc33823be22a325735b536b7f66384",
+          "recordedSha256": "af2012d752ffb85a1c02dba8a761066c8170c491b042606136152d5c14460c7f",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "historicalBlob": "df39aac960dba14d1a0cbe541a30a9cdd18990ee",
+          "currentBlob": "df39aac960dba14d1a0cbe541a30a9cdd18990ee",
+          "recordedSha256": "59ec43152b0ad63599cd91b2a1c4db23ab263c5f9ce2cd9c00138e20f6748008",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/tests/operational-notifications.test.ts",
+          "historicalBlob": "646d5b6e88e4f3d3780ca8212620ac4150745834",
+          "currentBlob": "646d5b6e88e4f3d3780ca8212620ac4150745834",
+          "recordedSha256": "0b31ef9d0dd42f3e83e3603e990e02670f6c2d162e321dd9579cd81e2a2136e3",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+          "historicalBlob": "b88f0bf028b889c760d141063bab416937562841",
+          "currentBlob": "b88f0bf028b889c760d141063bab416937562841",
+          "recordedSha256": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+          "historicalBlob": "787872fcdd2fff28120940ba0d062022505866c7",
+          "currentBlob": "787872fcdd2fff28120940ba0d062022505866c7",
+          "recordedSha256": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts",
+          "historicalBlob": "f6520e19a42af7430b2a6f4ec71f9a4def27e73f",
+          "currentBlob": "f6520e19a42af7430b2a6f4ec71f9a4def27e73f",
+          "recordedSha256": "e1deebab5c2cf4e7db1892758345a56e160b4f3ff1bd6b92fe33a02deb8c3cfd",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/fawri/src/hooks/useMerchantNotifications.ts",
+          "historicalBlob": "4f0b929d32bbb8956eba2ffed34121e434d80e3d",
+          "currentBlob": "4f0b929d32bbb8956eba2ffed34121e434d80e3d",
+          "recordedSha256": "972619c786d717afd385cba527da0974b3cc9e6e740eb0feaab35fb465c8730d",
+          "byteIdentical": true
+        }
+      ],
+      "acceptedEvidenceCount": 11,
+      "acceptedEvidenceByteIdentical": 11,
+      "evidencePins": [
+        {
+          "path": "docs/final-audit/evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+          "historicalBlob": "6612be1e67c4ad2fb8df17667df12e1223770cfc",
+          "currentBlob": "6612be1e67c4ad2fb8df17667df12e1223770cfc",
+          "acceptedSource": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
+          "historicalBlob": "1c63ebae4dbe95aa3926da5489df7fc447d750b4",
+          "currentBlob": "1c63ebae4dbe95aa3926da5489df7fc447d750b4",
+          "acceptedSource": "b0417241bd9b69dd8f460ce91e044004650266d9",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "b6a39f074e1fdbc3b56807b93c1a85c9fb6705fb",
+          "currentBlob": "b6a39f074e1fdbc3b56807b93c1a85c9fb6705fb",
+          "acceptedSource": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "877618a4f1cbcf0f5d4cb2c4f09063a349903e9e",
+          "currentBlob": "877618a4f1cbcf0f5d4cb2c4f09063a349903e9e",
+          "acceptedSource": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "a14282ce3279b96f8d0ccd6f61ababe386e23989",
+          "currentBlob": "a14282ce3279b96f8d0ccd6f61ababe386e23989",
+          "acceptedSource": "d86d7c11a9634f870acda08f863d2237dbbe5bbc",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "56f1a204d352948bbb9687342edd452d1bcca75f",
+          "currentBlob": "56f1a204d352948bbb9687342edd452d1bcca75f",
+          "acceptedSource": "ac1cd586a51dea417ace5b1e3ff818c8ec58f4ce",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "38ef1a7f259a9e16343f9ce5fd244a17293d813f",
+          "currentBlob": "38ef1a7f259a9e16343f9ce5fd244a17293d813f",
+          "acceptedSource": "06c045233853ad897b99ae2cd72582274e69e65c",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-SUPPORT-NOTIFICATION-ENDING-20261025.json",
+          "historicalBlob": "52fc096822796627d3774c01e420c129bff99ee5",
+          "currentBlob": "52fc096822796627d3774c01e420c129bff99ee5",
+          "acceptedSource": "6182678d76e97e315df428bd2739af284afea420",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json",
+          "historicalBlob": "4a5c21fa3934779187b9221c0f795ec9c10122b4",
+          "currentBlob": "4a5c21fa3934779187b9221c0f795ec9c10122b4",
+          "acceptedSource": "57b554a0ea1c2caf7fa258145a9ec38c19b68b8e",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-INSPECTION-CONCURRENT-CREATE-20261025.json",
+          "historicalBlob": "7d145b0719042195058c9b3d965a483f33585dd6",
+          "currentBlob": "7d145b0719042195058c9b3d965a483f33585dd6",
+          "acceptedSource": "31912d9fd33c9e12311351c189b937652496c6fb",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-NOTIFICATION-RESERVED-FIELDS-20261025.json",
+          "historicalBlob": "8e8a263cf75a6e5ce3dd54bab99b0f49840c0ddc",
+          "currentBlob": "8e8a263cf75a6e5ce3dd54bab99b0f49840c0ddc",
+          "acceptedSource": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+          "byteIdentical": true
+        }
+      ],
+      "candidateTest": "docs/final-audit/evidence/p0-notification-response-field-contract.test.mjs",
+      "candidateTestSha256": "af0d5ec9ab48abd6ab045119097de20967eaaa1a5280abe0c6dcc3cd285540aa",
+      "matchesExistingLocalValidationHash": true,
+      "priorLocalAssessmentReused": {
+        "passed": 6,
+        "failed": 0,
+        "syntheticClientOnly": true,
+        "notRerun": true
+      },
+      "interpretation": "Git blob equality verifies unchanged source/evidence bytes. Historical accepted layers retain scope; no new application execution claimed."
+    },
+    "currentRuntimeEvidenceReused": {
+      "source": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+      "run": 40571069056,
+      "job": 122425088862,
+      "conclusion": "success",
+      "passedTap": 80,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "files": 6,
+      "suites": [
+        {
+          "suite": "meta-job-identity-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 26,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        }
+      ],
+      "checkout": "5c1643399fbf9d69e2a6ed003a8ce88dc2b092e0",
+      "checkoutTree": "12151a5b50d7971b1fc15aa3caaadc3d299243b8",
+      "headDelta": "7 documentation files only since accepted executable; no app/test change.",
+      "newExecution": false,
+      "limits": "Existing actual notification SQL/HTTP tests reused. Local6 candidate cases remain synthetic, projection not enforced, not hosted/custom-consumer compatibility."
+    },
+    "r1Decision": {
+      "id": "FIELD002-R1-RESPONSE-FIELDS-20261028",
+      "status": "CONCRETE_REVIEWABLE_CHOICE_READY_NOT_ADOPTED",
+      "approval": "UNAPPROVED",
+      "selectedModel": null,
+      "recommendedModel": "PER_TYPE_RESPONSE_FIELDS_NO_EXTRAS",
+      "contractPointer": "responseFieldContract",
+      "knownTypes": 12,
+      "rule": "Return canonical id/type/created_at and optional read_at, plus only the exact required/optional fields listed for that type. Remove other keys from responses after existing canonical lifecycle enrichment. Preserve exact values and absence.",
+      "storage": "No stored JSON, historical row, source/ticket linkage, read state, tenant predicate, transaction, retention or financial value is changed.",
+      "unknownMalformed": "Keep rows/count/order/limit and current whole-response client rejection; no silent filtering, coercion, fabricated lifecycle or historical relinking.",
+      "compatibilityImpact": "Changes explicitly retained current extension behavior. Example: extra order_id on operational_customer_message is currently returned; candidate removes it because that type permits conversation_id/action_url only. The reserved-key proof's extra-key-preservation assertion would be explicitly superseded only at the response projection layer.",
+      "alternatives": [
+        {
+          "model": "PER_TYPE_RESPONSE_FIELDS_NO_EXTRAS",
+          "effect": "Recommended bounded response minimization. Requires explicit policy choice then actual two-merchant app/client positive/negative/replay/storage assertions and exact-source CI."
+        },
+        {
+          "model": "DEFER_KEEP_CURRENT_EXTENSION",
+          "effect": "Retain current product behavior and keep R1 OPEN. No privacy acceptance of arbitrary extra keys."
+        }
+      ],
+      "choiceDoesNotApprove": [
+        "R2 historical cleanup/quarantine/repair",
+        "R3 new canonical callers or retirement of compatibility types",
+        "hosted access, deployment or merge",
+        "SEQ-R2 product choice",
+        "complete FIELD002/P0 closure"
+      ],
+      "whyExplicitChoice": "AGENTS.md: Plan approval does not approve policies. Existing contract compatibilityDecision says NOT_ADOPTED; continuation does not select a changed response policy."
+    },
+    "remainderClassification": [
+      {
+        "id": "FIELD002-R1",
+        "kind": "EXPLICIT_RESPONSE_COMPATIBILITY_POLICY_THEN_IMPLEMENTATION",
+        "status": "OPEN_CONCRETE_CHOICE_READY",
+        "missing": "Policy choice for suppressing existing extension fields; after adoption enforce only reviewed projection and test changed real app behavior.",
+        "newDuplicateTestNeededNow": false
+      },
+      {
+        "id": "FIELD002-R2",
+        "kind": "AUTHORIZED_HOSTED_INVENTORY_AND_DISPOSITION",
+        "status": "BLOCKED_HOSTED_VERIFICATION_AND_DISPOSITION",
+        "missing": "Actual historical/alternate-writer rows and provenance plus separately approved preserve/quarantine/repair policy; unavailable within GitHub-only scope.",
+        "hostedAccessPerformed": false
+      },
+      {
+        "id": "FIELD002-R3",
+        "kind": "EXPLICIT_INTENDED_PRODUCER_SCOPE",
+        "status": "OPEN_PRODUCER_SCOPE_CONTRACT",
+        "canonicalCallerTypes": [
+          "subscription_expiry_reminder",
+          "subscription_expired",
+          "addon_expiry_reminder",
+          "operational_payment_conflict",
+          "operational_knowledge_gap",
+          "operational_customer_message",
+          "inspection_session_request",
+          "support_reply_reminder"
+        ],
+        "directHelperWithoutIdentifiedCaller": [
+          "operational_new_order"
+        ],
+        "legacyReadCompatibilityOnly": [
+          "subscription_balance_purchase",
+          "subscription_plan_event",
+          "subscription_emergency_activated"
+        ],
+        "supportedScopeApproved": false,
+        "missing": "Decide intended runtime versus compatibility-only support. Current8 callers/direct helper/3legacy facts do not authorize adding a caller, enabling retired paths or dropping compatibility."
+      }
+    ],
+    "nextExactAction": "Obtain explicit FIELD002-R1 response-field choice from the concrete existing12-type table before enforcing projection. Keep R2 blocked and R3 scope unapproved. If choice deferred, retain R1 OPEN and continue independent existing FIELD003 cross-consumer metadata reconciliation without repeating accepted notification/admin tests. SEQ-R2 remains UNAPPROVED."
   }
 }

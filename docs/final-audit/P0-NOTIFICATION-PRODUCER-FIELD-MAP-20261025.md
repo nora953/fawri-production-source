@@ -1,3 +1,31 @@
+## مطابقة FIELD002 وتجهيز اختيار سياسة الردود — 2026-10-28
+
+البوابتان القائمتان P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX وP0-RESIDUAL-MERCHANT-PRIVACY-001/http تبقيان OPEN. نقطة المراجعة **362530d048c86b09b91ee6ac625b964319bb6d8c**؛ آخر مصدر تنفيذي مقبول **69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74**. الدفعة مصدر/أدلة/قرار فقط، دون تغيير التطبيق أو تنفيذ اختبارات أو CI جديدة.
+
+طوبقت **12 مدخلاً للعقد** مع snapshot المرشح f0bd2b0639f80da5c4dc98c75909d51c93e533df ببصمات Git blob؛ كلها مطابقة بالبايت. طوبقت **11 ملفات دليل مقبولة** بالطريقة نفسها، وبصمة اختبار المرشح SHA256 هي af0d5ec9ab48abd6ab045119097de20967eaaa1a5280abe0c6dcc3cd285540aa المطابقة للسجل. أُعيد استخدام تقييم العميل المحلي6PASS باعتباره synthetic فقط، ولم يُعد تنفيذه.
+
+رُبط أيضًا دليل الإشعارات الحالي الموجود: [40571069056/job122425088862](https://github.com/nora953/fawri-production-source/actions/runs/40571069056)، **80TAP ناجحة في6 ملفات**،0 فشل/تخطٍّ/إلغاء، عند المصدر69a3ccc وcheckout5c164339 ذي الشجرة12151a5b المطابقة. الفرق إلى نقطة المراجعة7 ملفات توثيق فقط. هذه ليست80 حالة جديدة، ولا تطبيقًا للعقد المرشح أو قبولًا للمستهلكين التاريخيين/المخصصين. نتائج58/58 وSQL829 السابقة تبقى في نطاقها دون إعادة.
+
+| المتبقي | التصنيف الحالي | ما يلزمه |
+|---|---|---|
+| FIELD002-R1 | اختيار سياسة ردود جاهز للمراجعة، غير معتمد | اختيار صريح ثم تطبيق مرشح الحقول واختبارات التطبيق الفعلية للسلوك المتغير |
+| FIELD002-R2 | محجوب بجرد تاريخي وتصرف معتمد | جرد قراءة فقط مصرح به للصفوف والكتّاب الفعليين وربط المصدر/التاجر/الطلب؛ لا وصول hosted الآن |
+| FIELD002-R3 | نطاق منتجين غير محسوم | تحديد المقصود بالإنتاج مقابل توافق القراءة؛8 أنواع لها callers مثبتة، ومساعد new-order بلا caller محدد، و3 أنواع legacy فقط |
+
+### الاختيار المحدد — FIELD002-R1
+
+الحالة **CONCRETE_REVIEWABLE_CHOICE_READY_NOT_ADOPTED**؛ approval=UNAPPROVED وselectedModel=null. [السجل الآلي](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json#policyReconciliation20261028)، وresponseFieldContract الموجود وجدول12 نوعًا أدناه، واختبار المرشح الموجود؛ لم يُنشأ عقد أو ملف اختبار مكرر.
+
+**التوصية:** إرجاع id/type/created_at وread_at عند وجوده، والحقول المطلوبة/الاختيارية المحددة لكل نوع فقط، بعد إثراء دورة الفحص بالسلطة الحالية. تُحفظ القيم كما هي وغياب الاختياري كما هو. البيانات الأصلية فيSQL تبقى محفوظة؛ لا تغيير للأرصدة أو المنح أو الاحتفاظ أو read mutation أو ربط الطلبات. السجلات المجهولة/المشوهة تبقى بالعدد والترتيب والحد الحالي وبفشل التحقق الحالي للواجهة؛ لا تصفية صامتة أو قيم مصطنعة.
+
+**أثر التوافق الفعلي:** operational_customer_message يسمح في المرشح بـconversation_id/action_url؛ order_id الإضافي المصطنع الذي يحفظه الرد الحالي سيختفي من الرد المرشح، بينما يبقى مخزنًا. هذا يغيّر سلوك extension قائمًا اختبره دليل reserved-fields. إذا اختير المرشح، يُستبدل فقط توقع حفظ المفاتيح الإضافية في الرد بدليل جديد، وتبقى assertions الهوية/التاجر/التاريخ/الثبات كما هي. البديل هو تأجيل القرار مع إبقاء السلوك الحالي وR1 مفتوحة؛ لا شهادة خصوصية عامة للحقول الإضافية.
+
+الاختيار لا يعتمد تنظيفًا أوعزلًا أوإصلاحًا تاريخيًا لـR2، ولا callers أوتقاعد أنواع لـR3، ولا وصول hosted أوmerge/deploy أوSEQ-R2. [AGENTS.md](../../AGENTS.md) ينص: “Plan approval does not approve policies”. لهذا لا تُعد «أكمل» اختيارًا للسياسة الجديدة. بعد اختيار صريح، تُنفذ فقط إسقاطات الردود المتفق عليها مع ضوابط تاجرين والعميل الفعلي والإعادة وثباتSQL وCI الدقيق؛ لا إغلاق تلقائي للبوابة.
+
+إذا تأجل الاختيار، تستمر مطابقة FIELD003 المستقلة دون إعادة اختبارات الإشعارات المقبولة.45 حالة دون تغيير:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false،overallPercentage=null،**NO-GO**. SEQ-R2 يبقىUNAPPROVED؛ لا hosted/merge/deploy/P1/P2.
+
+---
+
 ## RESIDUAL-FIELD-002 response-field contract candidate assessed — 2026-10-25
 
 Recovered **f0bd2b06**, Draft PR550/base preserved. Prepared an explicit per-type response-field candidate for12client shapes, canonical common fields and current inspection lifecycle enrichment. Candidate permits **no extra keys** beyond each type's enumerated required/optional fields. Unknown/malformed records are retained as failures under the existing strict client contract; no silent row filtering, defaulted lifecycle, historical relinking or SQL rewrite.
