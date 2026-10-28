@@ -46,7 +46,7 @@
     "Financial/receipt and audit retention schedule with privileged access",
     "Backups/media/deployed historical data disposition under authorized hosted scope"
   ],
-  "nextExactAction": "Continue executable P0 work with the open CASHIER-SYNC-SEQUENCE-001 gate: reconcile its exact remaining acceptance criterion against existing evidence and live sequence admission/drain code before choosing a bounded regression. FIELD005-R1/R2/R3 require explicit policy/design decisions; R4/R5 remain blocked by hosted scope.",
+  "nextExactAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
   "sourceReviewed": "6e94a8ec65f2cc39022ff1a1245d1951ef4924c0",
   "acceptedExecutable": "acf6c8d68dda271f97d9275d9b24407d3343a60f",
   "originalSourceRevision": "ef7c4e7928ff081c106cfb69c76be865ef7d48a2",
@@ -730,5 +730,720 @@
   },
   "proposalSqlChanged": true,
   "canonicalSchemaChanged": false,
-  "canonicalDeletionServiceChanged": false
+  "canonicalDeletionServiceChanged": false,
+  "requesterSnapshotUseReconciliation20261028": {
+    "date": "2026-10-28",
+    "sourceReviewed": "5c8dcafd110f9f9ab5eabecdb89f6792290a1d14",
+    "acceptedExecutable": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+    "status": "CURRENT_REQUESTER_SNAPSHOT_PRODUCER_READERS_AND_COMPLETION_HANDLING_TRACED_RETENTION_POLICY_OPEN",
+    "gates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+    ],
+    "acceptanceCondition": "Classify F005-R1 current requesting-admin snapshot/reviewer writers, readers, UI use and deletion handling using current source and existing proof before requesting a retention choice. This batch completes source/evidence reconciliation only.",
+    "applicationChanged": false,
+    "newTests": 0,
+    "newCiRuns": 0,
+    "fieldCellClosed": false,
+    "policyAdopted": false,
+    "userActionRequiredNow": false,
+    "scopedScan": {
+      "filesVerified": 954,
+      "localMatchingBlobs": 945,
+      "remoteExactOverrides": 9,
+      "roots": [
+        "artifacts/api-server/src/",
+        "artifacts/fawri/src/",
+        "src/",
+        "lib/",
+        "scripts/"
+      ],
+      "extensions": [
+        "JS/TS family",
+        "sql"
+      ],
+      "excluded": "lib/db/migration-stages historical preimages/reviewed copies; docs/evidence and Drizzle metadata JSON not part of lexical scope",
+      "additionalApiTests": [
+        "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "management-full-app-privacy-http-postgres.integration.test.mjs"
+      ],
+      "verification": "Every954 file matched Git blob SHA1('blob '+byteLength+NUL+bytes) at reviewed HEAD. Nine stale local blobs replaced only in scratch analysis by exact GitHub content. All954 blob IDs also match accepted e3d7d721.",
+      "manifestSha256": "b3fe29a8ed749698f937176ad6a7769f89147e8ddbfe701afb749d782f7f65b3",
+      "scanSha256": "f4b5751d3ff9950260e7f805d03861f3ece6e1d80c7b8a14cd3b39839f25c658",
+      "digestEncoding": "Python json.dumps(data,sort_keys=True,separators=(',',':')).encode(); manifest ordered recursive Git tree objects{path,sha}; scan objects{path,sha,hits:[{line,text}]}",
+      "pattern": "merchant_deletion_requests|listDeletionRequestsPostgres|createDeletionRequestPostgres|requested_by_admin_(?:id|name|phone)(?:_snapshot)?|reviewed_by_admin_id|refreshDeletionRequestsFromApi|/admin/deletion-requests",
+      "candidateFiles": 26,
+      "candidatePins": [
+        {
+          "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "gitBlobSha": "cd6c904610ed95206d309f52efa11a96b744012e",
+          "lines": [
+            17,
+            21,
+            41,
+            42,
+            239,
+            265,
+            280,
+            296
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+          "gitBlobSha": "9198cf27912b3071f7eab59f74ab40dbb50d1f01",
+          "lines": [
+            81,
+            159,
+            160,
+            161,
+            184,
+            201,
+            310
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+          "gitBlobSha": "6b48bf08c5416e67e513e3b80ccbaedd0b4ece7b",
+          "lines": [
+            128,
+            129,
+            130,
+            135
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/emergency-owner-snapshot.ts",
+          "gitBlobSha": "318da1b944fe61f3ad741d053ebe80939f6d5640",
+          "lines": [
+            94,
+            106
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/emergency-read-access.ts",
+          "gitBlobSha": "2c7a58d4bc0c1bd80bde68322bad9baa25f6bfd9",
+          "lines": [
+            92,
+            211,
+            368,
+            369,
+            533,
+            565,
+            697
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/emergencyReadAccess.ts",
+          "gitBlobSha": "0aa24549768eba1bd24a08a9527aef96ad398470",
+          "lines": [
+            44,
+            45,
+            294,
+            317
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+          "gitBlobSha": "fbae7386f98795048494e41a84505157ee7d0ff1",
+          "lines": [
+            98,
+            152,
+            153,
+            191,
+            217,
+            347,
+            400
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "lines": [
+            60,
+            61,
+            62,
+            67,
+            127,
+            128,
+            129,
+            130,
+            134,
+            221,
+            222,
+            223,
+            228,
+            229,
+            515,
+            690,
+            696,
+            697,
+            698,
+            699,
+            700,
+            706,
+            753,
+            755,
+            756,
+            757,
+            797,
+            798,
+            799,
+            800,
+            801,
+            817,
+            818,
+            819,
+            820,
+            821,
+            838,
+            839,
+            854,
+            855,
+            856,
+            857,
+            858,
+            1201,
+            1202,
+            1203,
+            1204,
+            1205,
+            1306,
+            1314,
+            1316,
+            1336,
+            1337,
+            1338,
+            1339,
+            1340
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "gitBlobSha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "lines": [
+            72
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+          "gitBlobSha": "3f81b6eb1e2b56a1e0c3504c58f91bff9f3d7681",
+          "lines": [
+            22,
+            71,
+            72
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs",
+          "gitBlobSha": "6b1f4baeb0fb41306083e230c6a9945b2548c6c7",
+          "lines": [
+            19,
+            66,
+            67,
+            81,
+            83,
+            101,
+            115,
+            118,
+            119
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs",
+          "gitBlobSha": "85d9bd7dafabecdba0d98bd2d9186f3a48ddc00d",
+          "lines": [
+            20,
+            60,
+            80
+          ]
+        },
+        {
+          "path": "artifacts/fawri/src/components/DeleteMerchantDialog.tsx",
+          "gitBlobSha": "429272a511d8d881bffa6ba876bb04679467bcbf",
+          "lines": [
+            121,
+            337
+          ]
+        },
+        {
+          "path": "artifacts/fawri/src/lib/types.ts",
+          "gitBlobSha": "1577a7e6351fd6d4dc9c27bccd138c56693aa128",
+          "lines": [
+            42,
+            43,
+            44,
+            49
+          ]
+        },
+        {
+          "path": "artifacts/fawri/src/pages/AdminEmergencyAccessPage.tsx",
+          "gitBlobSha": "130478fc0b0f7313145e8bc7454655a6ccc648fe",
+          "lines": [
+            59,
+            60,
+            578,
+            596,
+            598
+          ]
+        },
+        {
+          "path": "artifacts/fawri/src/pages/admin/AdminPageView.tsx",
+          "gitBlobSha": "0884f03806d31ba027538ba5b53e7fa4d199a3c7",
+          "lines": [
+            167
+          ]
+        },
+        {
+          "path": "artifacts/fawri/src/pages/admin/useAdminPageController.tsx",
+          "gitBlobSha": "68d9a1d18e05964d48fda1d3a01811ca185ab7d9",
+          "lines": [
+            581,
+            588,
+            612,
+            620,
+            1657
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0009_merchant_management_lifecycle_authority.sql",
+          "gitBlobSha": "ac9709a33e1411a3fc5716db0b4bb8f672162e60",
+          "lines": [
+            22,
+            28,
+            29,
+            30,
+            31,
+            35,
+            39,
+            40,
+            41,
+            42,
+            51,
+            52,
+            53,
+            55,
+            56
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0050_merchant_management_privacy_authentication_authority.sql",
+          "gitBlobSha": "12b23279eed22a402110ce88a603349941c2c682",
+          "lines": [
+            14,
+            16,
+            18
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/merchant-management.ts",
+          "gitBlobSha": "7704b00167015462a824d0272de7aa2c73e02468",
+          "lines": [
+            91,
+            100,
+            104,
+            105,
+            106,
+            110,
+            122,
+            126,
+            131,
+            135,
+            139,
+            143
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "gitBlobSha": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "lines": [
+            159
+          ]
+        },
+        {
+          "path": "scripts/fawri-admin-parent-browser-audit.mjs",
+          "gitBlobSha": "2baacd7c65d78ca81d160f92f444da902cefa488",
+          "lines": [
+            120
+          ]
+        },
+        {
+          "path": "scripts/plan-postgresql-migration.mjs",
+          "gitBlobSha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "lines": [
+            498
+          ]
+        },
+        {
+          "path": "scripts/tests/fixtures/create-postgresql-migration-fixture.mjs",
+          "gitBlobSha": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3",
+          "lines": [
+            248
+          ]
+        },
+        {
+          "path": "scripts/tests/plan-postgresql-migration.test.mjs",
+          "gitBlobSha": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "lines": [
+            279
+          ]
+        },
+        {
+          "path": "scripts/tests/postgresql-migration-legacy-normalization.test.mjs",
+          "gitBlobSha": "3b49dd64b6d46828a751576e494e3fe72b28648f",
+          "lines": [
+            96
+          ]
+        }
+      ],
+      "limits": "Literal matches plus manual route/import/dataflow reconciliation; not a dynamic/external writer absence theorem."
+    },
+    "producerAndIdentity": [
+      {
+        "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+        "lines": [
+          273,
+          280,
+          282,
+          285
+        ],
+        "finding": "Request creation requires current secure administrator session,manage_merchant_status and assistant role; actorAdminId comes from current server context, not supplied requester fields."
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "lines": [
+          263,
+          269,
+          706,
+          734,
+          747,
+          753
+        ],
+        "finding": "adminSnapshot loads active enabled administrator's real account ID/phone and profile display name. Current merchant-auth transaction checks suspended merchant, reason/details and retention eligibility when applicable, then snapshots actor identity and merchant identity in separate columns. Pending duplicate constrained; request and audit written in same transaction."
+      },
+      {
+        "path": "lib/db/src/schema/merchant-management.ts",
+        "lines": [
+          86,
+          99,
+          104,
+          110,
+          122
+        ],
+        "finding": "Live requested_by_admin_id/reviewed_by_admin_id use admin-profile FK with ON DELETE SET NULL; requester snapshot ID/name/phone are separate NOT NULL strings and do not follow current profile edits automatically. Schema comment describes review trail and merchant snapshot scrubbing; it does not approve an indefinite per-field retention schedule."
+      }
+    ],
+    "actorMatrix": [
+      {
+        "actor": "Owner administrator",
+        "readList": "Allowed under current secure role; all returned statuses, no per-requester filter.",
+        "create": "Not the assistant-only request creator.",
+        "rejectAndComplete": "Owner-only; completion additionally validates owner password, identity/request binding and existing deletion guards.",
+        "evidence": "routes/auth-merchant-management-postgres-routes.ts:239,273,296,328"
+      },
+      {
+        "actor": "Assistant with manage_merchant_status",
+        "readList": "Allowed; can see requests created by others because current query is not requester-filtered.",
+        "create": "Allowed for eligible suspended merchant with server-derived own identity.",
+        "rejectAndComplete": "Denied; list permission does not confer review/delete.",
+        "evidence": "current PG route plus accepted11TAP router matrix"
+      },
+      {
+        "actor": "Assistant without manage_merchant_status",
+        "readList": "Denied403 by route; UI clears request state when role permission is unavailable.",
+        "create": "Denied403.",
+        "rejectAndComplete": "Denied.",
+        "evidence": "current PG route and accepted denied-actor matrix; view_logs or view_merchants alone is not this route's grant."
+      },
+      {
+        "actor": "Merchant or anonymous caller",
+        "readList": "Secure administrator authentication denies401.",
+        "create": "Denied401.",
+        "rejectAndComplete": "Denied401.",
+        "evidence": "existing real-router matrix and full-app mixed-case negative proof"
+      },
+      {
+        "actor": "Primary/directory SQL roles versus trusted authentication role",
+        "readList": "SQL table boundary remains trusted-auth scoped; HTTP role checks are separately required on the existing auth-pool query.",
+        "create": "No new grant or RLS change.",
+        "rejectAndComplete": "Unchanged existing authority.",
+        "evidence": "lib/db/drizzle/0050_merchant_management_privacy_authentication_authority.sql; lib/db/src/schema/tenant-security.ts:159; accepted residual SQL evidence"
+      }
+    ],
+    "fieldLifecycle": [
+      {
+        "stored": "requested_by_admin_id_snapshot",
+        "response": "requested_by_admin_id",
+        "producer": "Current server actor account ID at creation.",
+        "currentReader": "GET list; create/reject/complete returned request object.",
+        "uiUse": "No current first-party requester-ID display/decision use identified in reviewed deletion UI; raw record retained in state.",
+        "afterMerchantDeletion": "Unchanged by reviewed merchant snapshot scrub; live requested_by_admin_id is a separate FK.",
+        "acceptance": "Retention purpose/trigger/duration/disposition remain F005-R1 OPEN."
+      },
+      {
+        "stored": "requested_by_admin_name_snapshot",
+        "response": "requested_by_admin_name",
+        "producer": "Enabled administrator display_name from auth SQL at creation.",
+        "currentReader": "Same current list/returned-object mapper.",
+        "uiUse": "Owner review dialog displays requester name.",
+        "afterMerchantDeletion": "Unchanged by reviewed merchant snapshot scrub.",
+        "acceptance": "Active review use established; ongoing historical retention not approved from that use alone."
+      },
+      {
+        "stored": "requested_by_admin_phone_snapshot",
+        "response": "requested_by_admin_phone",
+        "producer": "Administrator account phone at creation, distinct from merchant_phone_snapshot.",
+        "currentReader": "Same current list/returned-object mapper.",
+        "uiUse": "Owner review dialog displays requester phone beside name.",
+        "afterMerchantDeletion": "Unchanged by reviewed merchant snapshot scrub.",
+        "acceptance": "Not treated as merchant contact or anonymous data; duration/purpose after review stays OPEN."
+      },
+      {
+        "stored": "reviewed_by_admin_id",
+        "response": "reviewed_by_admin_id (when present)",
+        "producer": "Current server owner identity at reject/complete.",
+        "currentReader": "Same mapper; not a snapshot of requester name/phone.",
+        "uiUse": "No current first-party reviewer-ID display identified in reviewed deletion UI.",
+        "afterMerchantDeletion": "Selected request gains completing owner ID/reviewed_at/completed_at; FK may become null on later profile removal.",
+        "acceptance": "Review accountability link established; no future deletion/archival or lifetime schedule inferred."
+      }
+    ],
+    "routeAndMapper": [
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "lines": [
+          327,
+          422,
+          424
+        ],
+        "finding": "Current PG auth router mounts before final required-mode legacy fallthrough retirement."
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "lines": [
+          61
+        ],
+        "finding": "Current merchant-management PG router owns the reviewed path."
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+        "lines": [
+          239,
+          245,
+          265
+        ],
+        "finding": "GET/admin/deletion-requests admits owner or current manage_merchant_status; review/delete separately owner-gated."
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "lines": [
+          215,
+          221,
+          222,
+          223,
+          228,
+          690,
+          700
+        ],
+        "finding": "Global authenticated list selects all current rows/statuses and maps snapshots directly to public aliases, preserving requester ID/name/phone and optional reviewer ID. No requester/active-status filter or expiry applied in this reviewed list. Source observation, not a new completed-row HTTP field execution."
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+        "lines": [
+          81,
+          86,
+          159,
+          201
+        ],
+        "finding": "Separate legacy JSON route has the same owner-or-manage_merchant_status read rule. Required mode uses earlier PG route/retirement, not this store. This reinforces that the permission is established behavior; it does not approve every retention duration."
+      }
+    ],
+    "firstPartyConsumers": [
+      {
+        "path": "artifacts/fawri/src/pages/admin/useAdminPageController.tsx",
+        "lines": [
+          300,
+          581,
+          588,
+          596,
+          777,
+          790,
+          1402,
+          1409,
+          1415,
+          1444,
+          1478,
+          1549,
+          1565
+        ],
+        "finding": "Owner and manage_merchant_status assistant load/store entire list. Manager uses merchant_id+pending status to choose request/pending action; owner can review pending requests and has dedicated deletion tab. Returned request is retained in state; after deletion pending state is marked completed while merchant removed. No claim that all already-delivered client bytes disappear."
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageView.tsx",
+        "lines": [
+          783,
+          787
+        ],
+        "finding": "Passes pending request to existing DeleteMerchantDialog."
+      },
+      {
+        "path": "artifacts/fawri/src/components/DeleteMerchantDialog.tsx",
+        "lines": [
+          104,
+          121,
+          175,
+          203,
+          330,
+          337,
+          344
+        ],
+        "finding": "Request success returns record to controller. Owner review explicitly displays requester name+phone and request reason/details. Complete call returns result but view callback removes merchant/marks request complete; dialog closes."
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "lines": [
+          42,
+          43,
+          44,
+          49
+        ],
+        "finding": "Compile-time required requester fields and optional reviewer ID do not strip HTTP JSON or establish retention policy."
+      },
+      {
+        "finding": "Completed/rejected records can still be transported by global list despite pending-only review UI. Absence of a currently displayed historical card is not API redaction or an external/custom-client absence proof."
+      }
+    ],
+    "deletionHandling": [
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "lines": [
+          1306,
+          1314,
+          1316,
+          1337
+        ],
+        "finding": "Completion scrubs merchant_name_snapshot to[deleted merchant], merchant_phone_snapshot to empty and details to[merchant data deleted] for matching merchant_id_snapshot; preserves requester ID/name/phone. Selected request becomes completed with owner review/time. Other requests/history for that merchant are also scrubbed by the merchant identity predicate."
+      },
+      {
+        "finding": "These requester snapshots identify the administrator who acted, while merchant snapshots identify the merchant being deleted. Different origin/identity ownership is established by source, not an approval to retain personal administrator data indefinitely."
+      },
+      {
+        "finding": "No requester-snapshot retention deadline or scrub job was identified in the reviewed schema/list/completion path and scoped matches. Whole-program/hosted archival/external cleanup absence is not asserted; the authoritative F005-R1 duration/disposition decision remains open."
+      }
+    ],
+    "falsePositiveClassification": {
+      "emergencyStorage": "emergency-owner-snapshot.ts,emergency-read-access.ts,emergencyReadAccess.ts,postgresEmergencyReadAccessAuthority.ts and AdminEmergencyAccessPage.tsx use similarly named requester fields for a different emergency-request authority; not additional merchant_deletion_requests readers.",
+      "migrationScripts": "The matched requested_by_admin_account_id in plan-postgresql-migration.mjs:498 and related fixtures/tests maps emergency_access_requests, not deletion requester snapshots.",
+      "browserFixture": "scripts/fawri-admin-parent-browser-audit.mjs:120 stubs an empty deletion_requests array. Not runtime proof of requester fields, retention or actual API authorization."
+    },
+    "reusedProof": {
+      "acceptedExecutable": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+      "run": 40632669335,
+      "job": 122632435031,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/40632669335/job/122632435031",
+      "managementTap": 81,
+      "files": 4,
+      "suites": [
+        {
+          "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "management-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 50,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "management-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+          "auditBatch": "management-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+          "auditBatch": "management-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 14,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        }
+      ],
+      "newRun": false,
+      "roleMatrix": {
+        "test": "artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs",
+        "lines": [
+          81,
+          90,
+          94,
+          95,
+          96,
+          97,
+          101,
+          115,
+          118
+        ],
+        "scope": "11TAP real mounted router: owner and authorized assistant list contains both request IDs; anonymous/merchant/unauthorized actors denied with stable snapshots; assistant cannot reject, owner rejection preserves peer."
+      },
+      "fullApp": {
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "lines": [
+          85,
+          95
+        ],
+        "scope": "50TAP whole file; relevant current actual-app mixed-case deletion-list negatives. Does not certify a missing completed-row field projection just because whole file passes."
+      },
+      "deletion": {
+        "test": "artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "lines": [
+          60,
+          80,
+          166,
+          167,
+          168,
+          169,
+          172
+        ],
+        "scope": "14TAP mounted router fixture: server-created requests, owner/password/foreign-request/pending-work/peer/local-media/completion/repeat and emergency interactions. It checks completed status and merchant/account redaction; it does not explicitly assert all requester snapshot values or post-completion GET fields."
+      },
+      "noNewCertificate": "No fresh HTTP/SQL/browser run. Source traces of exact preserved requester fields and all-status list are not promoted to runtime field acceptance or retention approval. Existing source test blobs unchanged."
+    },
+    "remaining": {
+      "F005_R1": "Current producer/active-review purpose/read grant classified. Per-field historical purpose, duration/trigger, readers after completion and final disposition remain explicit OPEN_POLICY. If rule is adopted, add only corresponding field/expiry/reader regressions while preserving pending owner review and legitimate assistant pending-request detection.",
+      "F005_R2": "Financial/receipt/audit-anchor schedule and consumer classification remain OPEN_POLICY.",
+      "F005_R3": "Emergency-chain versioned privacy/retention design remains OPEN; current409 preserved.",
+      "F005_R4_R5": "Authorized deployed-history/backup/media/external-copy inventory remains BLOCKED_HOSTED_VERIFICATION."
+    },
+    "limits": [
+      "No confirmed new unauthorized disclosure or application defect inferred from authorized requester identity retention alone.",
+      "No policy changes, arbitrary durations, legal advice, schema/grant change or unapproved identity erasure.",
+      "No universal alias/dynamic/external-consumer absence theorem; no hosted historical data examined.",
+      "Delivered JSON/state is not anonymized by TypeScript definitions or pending-only display.",
+      "Current owner deletion/cross-consumer proofs retain original layers and limits;45known gates unchanged."
+    ],
+    "nextExactAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment."
+  },
+  "previousNextExactAction": "Continue executable P0 work with the open CASHIER-SYNC-SEQUENCE-001 gate: reconcile its exact remaining acceptance criterion against existing evidence and live sequence admission/drain code before choosing a bounded regression. FIELD005-R1/R2/R3 require explicit policy/design decisions; R4/R5 remain blocked by hosted scope.",
+  "currentReviewPointer": "requesterSnapshotUseReconciliation20261028"
 }

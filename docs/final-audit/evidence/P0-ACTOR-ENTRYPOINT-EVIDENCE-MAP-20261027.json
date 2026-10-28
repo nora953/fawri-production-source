@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
+    "nextExactAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32583,6 +32583,19 @@
       "broaderTap": 834,
       "allCiSuccess": 58,
       "accepted": true
+    },
+    "field005RequesterSnapshotReview20261028": {
+      "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#requesterSnapshotUseReconciliation20261028",
+      "sourceReviewed": "5c8dcafd110f9f9ab5eabecdb89f6792290a1d14",
+      "status": "CURRENT_REQUESTER_SNAPSHOT_PRODUCER_READERS_AND_COMPLETION_HANDLING_TRACED_RETENTION_POLICY_OPEN",
+      "filesVerified": 954,
+      "candidateFiles": 26,
+      "reusedManagementTap": 81,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "policyAdopted": false,
+      "userActionRequiredNow": false,
+      "parentGateClosed": false
     }
   },
   "componentScopes": {
