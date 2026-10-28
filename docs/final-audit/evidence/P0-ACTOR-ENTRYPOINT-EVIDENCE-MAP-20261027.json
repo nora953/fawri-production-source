@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Obtain explicit FIELD002-R1 response-field choice from the concrete existing12-type table before enforcing projection. Keep R2 blocked and R3 scope unapproved. If choice deferred, retain R1 OPEN and continue independent existing FIELD003 cross-consumer metadata reconciliation without repeating accepted notification/admin tests. SEQ-R2 remains UNAPPROVED.",
+    "nextExactAction": "Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32529,6 +32529,18 @@
       "newRuntimeTests": 0,
       "newCiRuns": 0,
       "approval": "UNAPPROVED",
+      "parentGateClosed": false
+    },
+    "field002ConsumerUseReview20261028": {
+      "evidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json#consumerUseReconciliation20261028",
+      "sourceReviewed": "1452b81bc3a8bcb74ecd6542ef1f4342f550e97e",
+      "status": "BOUNDED_FIRST_PARTY_CONSUMERS_TRACED_EXISTING_EXTENSION_PRESERVATION_RETAINED",
+      "filesVerified": 839,
+      "consumerCandidates": 29,
+      "userActionRequiredNow": false,
+      "projectionPolicyAdopted": false,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
       "parentGateClosed": false
     }
   },

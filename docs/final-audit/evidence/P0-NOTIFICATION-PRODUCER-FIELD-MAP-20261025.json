@@ -415,7 +415,7 @@
   ],
   "nextExactBatch": {
     "types": [],
-    "acceptance": "Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
+    "acceptance": "Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved.",
     "gateRemainsOpen": true
   },
   "verification": {
@@ -1555,7 +1555,10 @@
         "SEQ-R2 product choice",
         "complete FIELD002/P0 closure"
       ],
-      "whyExplicitChoice": "AGENTS.md: Plan approval does not approve policies. Existing contract compatibilityDecision says NOT_ADOPTED; continuation does not select a changed response policy."
+      "whyExplicitChoice": "AGENTS.md: Plan approval does not approve policies. Existing contract compatibilityDecision says NOT_ADOPTED; continuation does not select a changed response policy.",
+      "requestStatus": "PREMATURE_IMMEDIATE_REQUEST_WITHDRAWN_PENDING_COMPATIBILITY_EVIDENCE",
+      "userActionRequiredNow": false,
+      "currentUseReview": "consumerUseReconciliation20261028"
     },
     "remainderClassification": [
       {
@@ -1598,6 +1601,1013 @@
         "missing": "Decide intended runtime versus compatibility-only support. Current8 callers/direct helper/3legacy facts do not authorize adding a caller, enabling retired paths or dropping compatibility."
       }
     ],
-    "nextExactAction": "Obtain explicit FIELD002-R1 response-field choice from the concrete existing12-type table before enforcing projection. Keep R2 blocked and R3 scope unapproved. If choice deferred, retain R1 OPEN and continue independent existing FIELD003 cross-consumer metadata reconciliation without repeating accepted notification/admin tests. SEQ-R2 remains UNAPPROVED."
+    "nextExactAction": "Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved.",
+    "previousNextExactAction": "Obtain explicit FIELD002-R1 response-field choice from the concrete existing12-type table before enforcing projection. Keep R2 blocked and R3 scope unapproved. If choice deferred, retain R1 OPEN and continue independent existing FIELD003 cross-consumer metadata reconciliation without repeating accepted notification/admin tests. SEQ-R2 remains UNAPPROVED."
+  },
+  "consumerUseReconciliation20261028": {
+    "date": "2026-10-28",
+    "status": "BOUNDED_FIRST_PARTY_CONSUMERS_TRACED_EXISTING_EXTENSION_PRESERVATION_RETAINED",
+    "existingGates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    ],
+    "sourceReviewed": "1452b81bc3a8bcb74ecd6542ef1f4342f550e97e",
+    "sourceValidation": {
+      "filesVerified": 839,
+      "frontendFiles": 354,
+      "apiFiles": 318,
+      "libFiles": 167,
+      "localExactGitBlobs": 836,
+      "remoteExactOverrides": 3,
+      "overridePaths": [
+        "artifacts/fawri/src/lib/cashierCompensationAuthority.ts",
+        "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+        "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts"
+      ],
+      "localRepositoryEdited": false,
+      "badBlobs": [],
+      "manifestSha256": "c90f3cc2832986d84711b4a3afc1d58b980d2be65aa18a4faf4af1b629920bab",
+      "scanReportSha256": "f5675f36b7280d909cba5c5eaa1f7c32e6ae9f35da15511ff92a12cec9113324",
+      "manifestEncoding": "Git recursive-tree order; json.dumps([{path,sha}],sort_keys=True,separators=(',',':')). UTF-8; blob hash SHA1('blob '+byteLength+NUL+bytes).",
+      "selectedPrefixes": [
+        "artifacts/fawri/src/",
+        "artifacts/api-server/src/",
+        "lib/"
+      ],
+      "extensionRegex": "\\.(?:[cm]?[jt]sx?)$",
+      "scanPatterns": {
+        "http_path": "(?:/api/auth)?/notifications(?:\\b|[/?])",
+        "client_authority": "merchantNotificationsAuthority|readMerchantNotificationsAuthority|markMerchantNotificationReadAuthority",
+        "count_hook": "useMerchantNotifications|useUnreadMerchantNotificationCount|notifyMerchantNotificationsChanged",
+        "realtime_count": "unread_notification_count|notifications_updated",
+        "notification_records": "\\bmerchant_notifications\\b|\\bMerchantNotificationRecord\\b|\\bMerchantNotification\\b|\\bMerchantOperationalNotification\\b",
+        "canonical_service": "listMerchantNotificationsPostgresCanonical|markMerchantNotificationReadPostgresCanonical|markAllMerchantNotificationsReadPostgresCanonical"
+      },
+      "reproduction": [
+        "Read exact sourceReviewed recursive Git tree, filter blob paths by selected prefixes/extensions in tree order.",
+        "Match every local byte buffer to expected Git blob; use exact remote bytes for mismatches without editing working repository.",
+        "Scan each verified UTF-8 source line with declared regex patterns; retain path/blob/line candidates, then trace matching imports/role/serializer and field readers manually."
+      ],
+      "candidateFiles": 29,
+      "classificationCounts": {
+        "frontendCurrent": 9,
+        "apiCurrentOrLegacy": 9,
+        "historicalMigrationPreimages": 9,
+        "schemaExportsOrImports": 2
+      },
+      "candidates": [
+        {
+          "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "blob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "matches": {
+            "http_path": [
+              {
+                "line": 468,
+                "text": "router.get(\"/notifications\", requireSecureMerchantSession, async (req, res) => {"
+              },
+              {
+                "line": 484,
+                "text": "\"/notifications/read-all\","
+              },
+              {
+                "line": 499,
+                "text": "\"/notifications/:id/read\","
+              }
+            ],
+            "canonical_service": [
+              {
+                "line": 44,
+                "text": "listMerchantNotificationsPostgresCanonical,"
+              },
+              {
+                "line": 45,
+                "text": "markAllMerchantNotificationsReadPostgresCanonical,"
+              },
+              {
+                "line": 46,
+                "text": "markMerchantNotificationReadPostgresCanonical,"
+              },
+              {
+                "line": 472,
+                "text": "const notifications = await listMerchantNotificationsPostgresCanonical({"
+              },
+              {
+                "line": 488,
+                "text": "const updated = await markAllMerchantNotificationsReadPostgresCanonical("
+              },
+              {
+                "line": 503,
+                "text": "const notification = await markMerchantNotificationReadPostgresCanonical({"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+          "blob": "9fb113d4938fb138e96f913cea367e7859048b5c",
+          "matches": {
+            "http_path": [
+              {
+                "line": 562,
+                "text": "router.get(\"/notifications\", requireMerchantSession, (req: Request, res: Response) => {"
+              },
+              {
+                "line": 619,
+                "text": "\"/notifications/:id/read\","
+              }
+            ],
+            "realtime_count": [
+              {
+                "line": 632,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              },
+              {
+                "line": 786,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              },
+              {
+                "line": 858,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 573,
+                "text": "const notifications = db.merchant_notifications"
+              },
+              {
+                "line": 625,
+                "text": "const notification = db.merchant_notifications.find("
+              },
+              {
+                "line": 772,
+                "text": "for (const notification of db.merchant_notifications) {"
+              },
+              {
+                "line": 846,
+                "text": "const inspectionNotification = db.merchant_notifications.find("
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+          "blob": "39f8bc60d040674732b182c0333cf55227b6bf8b",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 193,
+                "text": "emitMerchantRealtimeState(db, ticket.merchant_id, \"notifications_updated\");"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+          "blob": "6b48bf08c5416e67e513e3b80ccbaedd0b4ece7b",
+          "matches": {
+            "notification_records": [
+              {
+                "line": 465,
+                "text": "export type MerchantNotificationRecord ="
+              },
+              {
+                "line": 574,
+                "text": "merchant_notifications: MerchantNotificationRecord[];"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+          "blob": "37a8125ca5dc3c3028b68ac286d22b656c2e9594",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 902,
+                "text": "| \"notifications_updated\""
+              },
+              {
+                "line": 907,
+                "text": "unread_notification_count: number;"
+              },
+              {
+                "line": 1041,
+                "text": "unread_notification_count: db.merchant_notifications.filter("
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 55,
+                "text": "import type { AddonReplyBatch, AdminLogRecord, AuthDb, InspectionConsentDecision, InspectionSessionEndReason, InspectionSessionMode, InspectionSessionRequestRecord, InspectionSessionRequestStatus, Lang, Merchant, MerchantBalanceNotification"
+              },
+              {
+                "line": 60,
+                "text": "): value is MerchantNotificationRecord {"
+              },
+              {
+                "line": 176,
+                "text": "merchant_notifications: [],"
+              },
+              {
+                "line": 220,
+                "text": "merchant_notifications: Array.isArray(parsed.merchant_notifications)"
+              },
+              {
+                "line": 221,
+                "text": "? parsed.merchant_notifications.filter(isMerchantNotificationRecord)"
+              },
+              {
+                "line": 543,
+                "text": "export function appendMerchantNotificationRecord<T extends MerchantNotificationRecord>("
+              },
+              {
+                "line": 547,
+                "text": "db.merchant_notifications.unshift(notification);"
+              },
+              {
+                "line": 548,
+                "text": "const merchantNotificationIds = db.merchant_notifications"
+              },
+              {
+                "line": 554,
+                "text": "db.merchant_notifications = db.merchant_notifications.filter("
+              },
+              {
+                "line": 613,
+                "text": "db.merchant_notifications.unshift(notification);"
+              },
+              {
+                "line": 614,
+                "text": "const merchantNotificationIds = db.merchant_notifications"
+              },
+              {
+                "line": 620,
+                "text": "db.merchant_notifications = db.merchant_notifications.filter("
+              },
+              {
+                "line": 693,
+                "text": "db.merchant_notifications.unshift(notification);"
+              },
+              {
+                "line": 694,
+                "text": "const merchantNotificationIds = db.merchant_notifications"
+              },
+              {
+                "line": 700,
+                "text": "db.merchant_notifications = db.merchant_notifications.filter("
+              },
+              {
+                "line": 721,
+                "text": "db.merchant_notifications.unshift(notification);"
+              },
+              {
+                "line": 723,
+                "text": "const merchantNotificationIds = db.merchant_notifications"
+              },
+              {
+                "line": 729,
+                "text": "db.merchant_notifications = db.merchant_notifications.filter("
+              },
+              {
+                "line": 786,
+                "text": "const existingReminder = db.merchant_notifications.find("
+              },
+              {
+                "line": 823,
+                "text": "for (const notification of db.merchant_notifications) {"
+              },
+              {
+                "line": 1041,
+                "text": "unread_notification_count: db.merchant_notifications.filter("
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+          "blob": "5d2c161fb3e04dfbd5055149929f01bc160b48e9",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 334,
+                "text": "emitMerchantRealtimeState(db, notification.merchant_id, \"notifications_updated\");"
+              },
+              {
+                "line": 446,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              },
+              {
+                "line": 541,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 314,
+                "text": "const existing = db.merchant_notifications.find("
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "blob": "f22d0f89ab1899e9af7f32b9d7d2bca3f6861a36",
+          "matches": {
+            "http_path": [
+              {
+                "line": 45,
+                "text": "\"/notifications\","
+              },
+              {
+                "line": 68,
+                "text": "\"/notifications/:id/read\","
+              }
+            ],
+            "canonical_service": [
+              {
+                "line": 9,
+                "text": "listMerchantNotificationsPostgresCanonical,"
+              },
+              {
+                "line": 10,
+                "text": "markMerchantNotificationReadPostgresCanonical,"
+              },
+              {
+                "line": 54,
+                "text": "const notifications = await listMerchantNotificationsPostgresCanonical({"
+              },
+              {
+                "line": 72,
+                "text": "const notification = await markMerchantNotificationReadPostgresCanonical({"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-realtime-pg.ts",
+          "blob": "6ab8322e113e621e06837068b48400b77d17a4d8",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 89,
+                "text": "unread_notification_count: state.unreadNotificationCount,"
+              },
+              {
+                "line": 150,
+                "text": "writeSseEvent(res, \"notifications_updated\", payload);"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "blob": "2d9c02c50a4735ea833e7d2d9f3b9f58f5a4d31e",
+          "matches": {
+            "canonical_service": [
+              {
+                "line": 331,
+                "text": "export async function listMerchantNotificationsPostgresCanonical(input: {"
+              },
+              {
+                "line": 376,
+                "text": "export async function markMerchantNotificationReadPostgresCanonical(input: {"
+              },
+              {
+                "line": 401,
+                "text": "export async function markAllMerchantNotificationsReadPostgresCanonical("
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/App.tsx",
+          "blob": "e5ab25024945a4705cbea2b6bbaf21133481f782",
+          "matches": {
+            "http_path": [
+              {
+                "line": 160,
+                "text": "<Route path=\"/dashboard/notifications\">"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/components/layout/BottomNav.tsx",
+          "blob": "27dfa1a139252131a638cdc9ff498ad3600882fc",
+          "matches": {
+            "http_path": [
+              {
+                "line": 164,
+                "text": "href: \"/dashboard/notifications\","
+              }
+            ],
+            "count_hook": [
+              {
+                "line": 30,
+                "text": "useUnreadMerchantNotificationCount,"
+              },
+              {
+                "line": 32,
+                "text": "} from \"@/hooks/useMerchantNotifications\";"
+              },
+              {
+                "line": 98,
+                "text": "const unreadNotifications = useUnreadMerchantNotificationCount();"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/components/layout/Sidebar.tsx",
+          "blob": "216b722ec7d99b74ec90aa8fabec9f8d5786194c",
+          "matches": {
+            "http_path": [
+              {
+                "line": 94,
+                "text": "\"/dashboard/notifications\","
+              },
+              {
+                "line": 192,
+                "text": "href=\"/dashboard/notifications\""
+              }
+            ],
+            "count_hook": [
+              {
+                "line": 24,
+                "text": "useUnreadMerchantNotificationCount,"
+              },
+              {
+                "line": 26,
+                "text": "} from \"@/hooks/useMerchantNotifications\";"
+              },
+              {
+                "line": 90,
+                "text": "const unreadNotifications = useUnreadMerchantNotificationCount();"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/hooks/useMerchantNotifications.ts",
+          "blob": "4f0b929d32bbb8956eba2ffed34121e434d80e3d",
+          "matches": {
+            "http_path": [
+              {
+                "line": 24,
+                "text": "const response = await fetch('/api/auth/notifications?unread=1&limit=50', {"
+              }
+            ],
+            "count_hook": [
+              {
+                "line": 13,
+                "text": "export function notifyMerchantNotificationsChanged(): void {"
+              },
+              {
+                "line": 17,
+                "text": "export function useUnreadMerchantNotificationCount(): MerchantNotificationCountState {"
+              }
+            ],
+            "realtime_count": [
+              {
+                "line": 50,
+                "text": "if (typeof detail?.unread_notification_count === 'number') {"
+              },
+              {
+                "line": 52,
+                "text": "setCount(Math.max(0, detail.unread_notification_count));"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/hooks/useMerchantRealtime.ts",
+          "blob": "03a50d085c764fc7095fdf9216fa85ee977303f8",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 10,
+                "text": "| 'notifications_updated'"
+              },
+              {
+                "line": 16,
+                "text": "unread_notification_count: number;"
+              },
+              {
+                "line": 29,
+                "text": "'notifications_updated',"
+              },
+              {
+                "line": 51,
+                "text": "typeof payload.unread_notification_count !== 'number' ||"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+          "blob": "b88f0bf028b889c760d141063bab416937562841",
+          "matches": {
+            "http_path": [
+              {
+                "line": 250,
+                "text": "const response = await fetch(\"/api/auth/notifications?limit=50\", {"
+              },
+              {
+                "line": 271,
+                "text": "`/api/auth/notifications/${encodeURIComponent(notificationId)}/read`,"
+              }
+            ],
+            "client_authority": [
+              {
+                "line": 249,
+                "text": "export async function readMerchantNotificationsAuthority(): Promise<MerchantNotificationRecord[]> {"
+              },
+              {
+                "line": 267,
+                "text": "export async function markMerchantNotificationReadAuthority("
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 8,
+                "text": "MerchantNotification,"
+              },
+              {
+                "line": 9,
+                "text": "MerchantOperationalNotification,"
+              },
+              {
+                "line": 21,
+                "text": "export type MerchantNotificationRecord = WithoutMerchantId<MerchantNotification>;"
+              },
+              {
+                "line": 26,
+                "text": "export type MerchantOperationalNotificationRecord = WithoutMerchantId<MerchantOperationalNotification>;"
+              },
+              {
+                "line": 223,
+                "text": "export function isMerchantNotificationRecord(value: unknown): value is MerchantNotificationRecord {"
+              },
+              {
+                "line": 249,
+                "text": "export async function readMerchantNotificationsAuthority(): Promise<MerchantNotificationRecord[]> {"
+              },
+              {
+                "line": 269,
+                "text": "): Promise<MerchantNotificationRecord> {"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/lib/types.ts",
+          "blob": "1577a7e6351fd6d4dc9c27bccd138c56693aa128",
+          "matches": {
+            "notification_records": [
+              {
+                "line": 354,
+                "text": "export type MerchantOperationalNotification ="
+              },
+              {
+                "line": 360,
+                "text": "export type MerchantNotification ="
+              },
+              {
+                "line": 365,
+                "text": "| MerchantOperationalNotification;"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+          "blob": "787872fcdd2fff28120940ba0d062022505866c7",
+          "matches": {
+            "client_authority": [
+              {
+                "line": 8,
+                "text": "markMerchantNotificationReadAuthority,"
+              },
+              {
+                "line": 9,
+                "text": "readMerchantNotificationsAuthority,"
+              },
+              {
+                "line": 16,
+                "text": "} from '@/lib/merchantNotificationsAuthority';"
+              },
+              {
+                "line": 106,
+                "text": "const nextNotifications = await readMerchantNotificationsAuthority();"
+              },
+              {
+                "line": 164,
+                "text": "const currentNotification = await markMerchantNotificationReadAuthority(notificationId);"
+              }
+            ],
+            "count_hook": [
+              {
+                "line": 17,
+                "text": "import { notifyMerchantNotificationsChanged } from '@/hooks/useMerchantNotifications';"
+              },
+              {
+                "line": 170,
+                "text": "notifyMerchantNotificationsChanged();"
+              }
+            ],
+            "realtime_count": [
+              {
+                "line": 134,
+                "text": "detail?.event === 'notifications_updated'"
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 12,
+                "text": "type MerchantNotificationRecord,"
+              },
+              {
+                "line": 41,
+                "text": "notification: MerchantNotificationRecord,"
+              },
+              {
+                "line": 62,
+                "text": "const [notifications, setNotifications] = useState<MerchantNotificationRecord[]>([]);"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx",
+          "blob": "3fbf2e2390d61ef8d33a442aae6b37584f77132a",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 130,
+                "text": "if (detail?.event === 'notifications_updated') {"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0006/preimage/index.ts",
+          "blob": "c3b67921bc49f3a6089795f6edf8f9a0f530339d",
+          "matches": {
+            "http_path": [
+              {
+                "line": 13,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0009/preimage/index.ts",
+          "blob": "12179805734df329ba0f01f0d4d03d79fd4ce950",
+          "matches": {
+            "http_path": [
+              {
+                "line": 14,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0010/preimage/index.ts",
+          "blob": "ed57f6a794f338bdc5c5081fa80ff62bda0d2f48",
+          "matches": {
+            "http_path": [
+              {
+                "line": 15,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0011/preimage/index.ts",
+          "blob": "6483109590c54a587e2c644c5374c8f999669aa7",
+          "matches": {
+            "http_path": [
+              {
+                "line": 16,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0013/preimage/index.ts",
+          "blob": "e9d5e315796b028e865b53221b162b3513556369",
+          "matches": {
+            "http_path": [
+              {
+                "line": 17,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0014/preimage/index.ts",
+          "blob": "7079bbc7c98f74ee479ce2b1146bbf18b8a168b8",
+          "matches": {
+            "http_path": [
+              {
+                "line": 18,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0015/preimage/index.ts",
+          "blob": "f7d07bbdfdc22faa3eaa0764de676c54bac45ad4",
+          "matches": {
+            "http_path": [
+              {
+                "line": 19,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0017/preimage/index.ts",
+          "blob": "7dc66f6b166bd26849c825e4b04810cfc9b21429",
+          "matches": {
+            "http_path": [
+              {
+                "line": 20,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0027/preimage/index.ts",
+          "blob": "73d5c2c99145fa952c45d2912a4bbc70047313cc",
+          "matches": {
+            "http_path": [
+              {
+                "line": 22,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/src/schema/index.ts",
+          "blob": "b1303f845df2cb12efc017a35054f793cd430593",
+          "matches": {
+            "http_path": [
+              {
+                "line": 23,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "blob": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "matches": {
+            "http_path": [
+              {
+                "line": 165,
+                "text": "import { notifications } from \"./notifications\";"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "consumers": [
+      {
+        "path": "artifacts/fawri/src/App.tsx",
+        "gitBlob": "e5ab25024945a4705cbea2b6bbaf21133481f782",
+        "lines": [
+          160
+        ],
+        "role": "Navigation only",
+        "uses": "Mounts notification page, no per-record fields."
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+        "gitBlob": "787872fcdd2fff28120940ba0d062022505866c7",
+        "lines": [
+          106,
+          109,
+          134,
+          149,
+          164,
+          167,
+          187,
+          203,
+          231,
+          265,
+          434,
+          455,
+          459,
+          461,
+          518,
+          587
+        ],
+        "role": "Display, read-state, action navigation",
+        "uses": "Reads existing declared type/common fields; uses safe action_url and id/read_at for actions. Customer-message rendering does not read order_id; that field is read only in new-order/payment-conflict branches where declared.",
+        "passThrough": "Stores validated full records and replaces them with full read responses, preserving extras in state. This is transport/state compatibility, not use of arbitrary extras to render content.",
+        "genericFormatter": "Object.entries applies to explicit format values objects constructed by each branch, not a generic notification record."
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+        "gitBlob": "b88f0bf028b889c760d141063bab416937562841",
+        "lines": [
+          223,
+          249,
+          260,
+          264,
+          267,
+          282,
+          288
+        ],
+        "role": "Transport/shape validator",
+        "uses": "12 known type validators, canonical common fields and safe local URLs; returns original records, not a key-minimized clone. Existing extra-key pass-through is observable API behavior."
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "gitBlob": "1577a7e6351fd6d4dc9c27bccd138c56693aa128",
+        "lines": [
+          354,
+          360
+        ],
+        "role": "Static declared field definitions",
+        "uses": "Compile-time notification unions, not runtime field removal."
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/useMerchantNotifications.ts",
+        "gitBlob": "4f0b929d32bbb8956eba2ffed34121e434d80e3d",
+        "lines": [
+          17,
+          24,
+          36,
+          50,
+          52
+        ],
+        "role": "Unread count",
+        "uses": "HTTP notifications.length or numeric SSE unread_notification_count; no per-record extra variable read. Existing50 limit/count semantics unchanged."
+      },
+      {
+        "path": "artifacts/fawri/src/components/layout/Sidebar.tsx",
+        "gitBlob": "216b722ec7d99b74ec90aa8fabec9f8d5786194c",
+        "lines": [
+          24,
+          90,
+          204
+        ],
+        "role": "Badge/navigation",
+        "uses": "Consumes numeric/loading/unavailable count from existing hook, not record payload."
+      },
+      {
+        "path": "artifacts/fawri/src/components/layout/BottomNav.tsx",
+        "gitBlob": "27dfa1a139252131a638cdc9ff498ad3600882fc",
+        "lines": [
+          30,
+          98,
+          167,
+          266
+        ],
+        "role": "Badge/navigation",
+        "uses": "Consumes existing hook count, not record payload."
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/useMerchantRealtime.ts",
+        "gitBlob": "03a50d085c764fc7095fdf9216fa85ee977303f8",
+        "lines": [
+          13,
+          51,
+          58
+        ],
+        "role": "SSE event dispatch",
+        "uses": "Parses count/subscription/emitted_at payload and forwards event. This payload is separate from notifications.variables; no raw notification rows from current server."
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx",
+        "gitBlob": "3fbf2e2390d61ef8d33a442aae6b37584f77132a",
+        "lines": [
+          127,
+          129,
+          130,
+          131
+        ],
+        "role": "Update listener",
+        "uses": "Applies subscription and reloads stats on notifications_updated; no per-record notification field reads."
+      }
+    ],
+    "currentServerPath": {
+      "anchors": [
+        {
+          "path": "artifacts/api-server/src/app.ts",
+          "gitBlob": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+          "lines": [
+            327,
+            422
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-security.ts",
+          "gitBlob": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+          "lines": [
+            59,
+            60,
+            69
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "gitBlob": "f22d0f89ab1899e9af7f32b9d7d2bca3f6861a36",
+          "lines": [
+            42,
+            68
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "gitBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "lines": [
+            484
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "gitBlob": "2d9c02c50a4735ea833e7d2d9f3b9f58f5a4d31e",
+          "lines": [
+            254,
+            264,
+            268,
+            331,
+            346,
+            376,
+            386,
+            401
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-realtime-pg.ts",
+          "gitBlob": "6ab8322e113e621e06837068b48400b77d17a4d8",
+          "lines": [
+            72,
+            86,
+            89,
+            150
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+          "gitBlob": "5da7b9fd813d11b258b2270aa0353500f90e0283",
+          "lines": [
+            16,
+            27,
+            36
+          ]
+        }
+      ],
+      "interpretation": "app mounts auth-security; earlier merchant-notifications-pg handles current list/single-read, later support PG handles read-all. Same canonical authority, no alternate new mechanism. Canonical serializer retains non-reserved variables and protects id/type/time/read state. SSE uses count and no raw row.variables.",
+      "legacyInterpretation": "Five authRoutesPart1/2 and authRuntimePart1/3/4 lexical hits are compatibility JSON paths/helpers, distinguished from the PostgreSQL-required routes; final cutover guard blocks unresolved /api/auth legacy fallthrough. Nine migration preimages and two schema import/export hits are not additional current application consumers."
+    },
+    "result": {
+      "currentDisplayDependenceOnUndeclaredExtraKeysIdentified": false,
+      "retainedTransportStateCompatibility": true,
+      "existingPrivacyOrCrossTenantLeakProven": false,
+      "currentBehaviorChanged": false,
+      "policyEnforcementJustifiedByNewDefect": false,
+      "description": "No functional display/count/action dependency on undeclared extras identified in the traced current first-party consumers. Raw-record return/state and existing tests intentionally preserve extra keys. This does not prove all unknown historical/custom consumers safe or absent."
+    },
+    "workflowCorrection": {
+      "immediateApprovalRequest": "WITHDRAWN_AS_PREMATURE_NOT_A_CURRENT_USER_BLOCKER",
+      "userActionRequiredNow": false,
+      "userInstruction": "Verify actual existing mechanism/usages before a decision and avoid duplicating existing design; no policy adoption was supplied.",
+      "candidatePolicyApproval": "UNAPPROVED",
+      "selectedModel": null,
+      "productContractUnchanged": true,
+      "technicalDisposition": "Keep source behavior and candidate as separately documented. Do not interpret continuation as approval or automatically enforce the candidate. Continue independent known P0 work."
+    },
+    "priorEvidenceReused": {
+      "pointer": "policyReconciliation20261028.currentRuntimeEvidenceReused",
+      "notificationTap": 80,
+      "localCandidateCases": 6,
+      "newTests": 0,
+      "newCiRuns": 0,
+      "interpretation": "No existing80 HTTP or6 local candidate cases rerun/credited as new. This batch adds static consumer/source reconciliation only."
+    },
+    "limits": [
+      "Verified scoped lexical search plus manual tracing, not whole-program dynamic/alias analysis or a formal absence theorem.",
+      "Includes839 JS/TS files in named directories, not other languages, deployed artifacts, external/custom API consumers or hosted row/writer inventory.",
+      "No browser/HTTP/SQL/new execution; prior tests retain independent source/proof layers.",
+      "No evidence that hypothetical extra-field presence is a present data leak, and no complete privacy certification of arbitrary stored values.",
+      "FIELD002-R1/R2/R3 and parent gates remain open/blocked as recorded; no new gate or denominator."
+    ],
+    "nextExactAction": "Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved."
   }
 }

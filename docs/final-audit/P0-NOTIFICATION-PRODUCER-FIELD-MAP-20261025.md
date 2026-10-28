@@ -1,3 +1,41 @@
+## تتبّع الاستخدام الحالي وتصحيح نقطة القرار — 2026-10-28
+
+نقطة المراجعة **1452b81bc3a8bcb74ecd6542ef1f4342f550e97e**. هذه متابعة لمتطلب FIELD002-R1 القائم: التحقق من مستهلكي الحقول قبل اقتراح تغيير سلوك متوافق، وليست آلية إشعارات أو صلاحيات جديدة. [التفاصيل الآلية](evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json#consumerUseReconciliation20261028).
+
+**تصحيح مسار العمل:** طلب الاختيار الفوري السابق سُحب لكونه مبكرًا؛ userActionRequiredNow=false. لم يعتمد المستخدم تغيير سياسة الحقول، ولم يُنفذ المرشح. تحديد الحقول في المنتجين والأنواع والتحقق والحماية موجود أصلًا؛ إرجاع مفاتيح variables غير المحجوزة سلوك قائم يحتفظ به العميل والحالة والاختبارات. لا يُعد وجود حقل إضافي وحده خللًا مثبتًا.
+
+### فحص المصدر والتحقق من نسخته
+
+طوبقت **839 ملفات JS/TS** مع Git blobs لنقطة المراجعة:354 واجهة،318 API،167 مكتبات.836 ملفًا محليًا مطابقًا، و3 قرئت بالبايت من GitHub كـoverrides للتحليل فقط؛ لم تُعدل نسخة العمل أو التطبيق. جميع839 اجتازت مطابقة البصمة قبل البحث. بصمة manifest المرتب SHA256: c90f3cc2832986d84711b4a3afc1d58b980d2be65aa18a4faf4af1b629920bab؛ وبصمة تقرير البحث f5675f36b7280d909cba5c5eaa1f7c32e6ae9f35da15511ff92a12cec9113324. نمط الاختيار والبحث ومرتكزات الملفات محفوظة في الدليل؛ هذا تحقق مصدري لا اختبار runtime.
+
+أنتج البحث29 ملفًا مرشحًا:9 واجهة حالية،9 API حالية/توافقية،9 preimages ترحيل، و2 import/export للمخطط. لا تعني الأعداد29 مسارًا مكشوفًا أو839 متطلبP0. فُصلت ملفات الترحيل والتوافق عن المستهلكين الحاليين.
+
+### ما يستخدم البيانات فعلًا
+
+| المكوّن | الاستخدام المرصود |
+|---|---|
+| NotificationsPage | يعرض حقول الأنواع المعروفة، ويستخدمid/read_at/action_url للقراءة والتنقل. يحتفظ بالسجل الأصلي فيstate ويستبدله برد القراءة كاملًا. |
+| merchantNotificationsAuthority | يتحقق من12 نوعًا والحقول والروابط، ثم يعيد السجلات الأصلية دون تنقيح المفاتيح الإضافية. |
+| types.ts وApp | تعريفات الحقول وربط الصفحة؛ ليستا جهة تنقيح runtime. |
+| useMerchantNotifications | يستخدم طول مصفوفةHTTP أو عددSSE؛ لا يقرأ variables لكل إشعار. |
+| Sidebar وBottomNav | شارة عدد/loading/unavailable منhook القائم. |
+| useMerchantRealtime | يوزعpayload مختلفًا: اشتراك وعدد وطابع زمني؛ لا يتلقى صفوف variables من خادمSSE الحالي. |
+| OverviewPage | يطبق الاشتراك ويعيد جلب الإحصاءات عندحدثnotifications_updated؛ لا يقرأ سجل إشعار. |
+
+formatNotificationText يمر على كائن قيم صريح تنشئه كل حالة، وليس على كل مفاتيح سجل الإشعار. مثال الحقل الإضافيorder_id في إشعاررسالة عميل لا يدخل نصه الحالي؛ قراءةorder_id في الصفحة تخصnew-order/payment-conflict حيث هو معرّف أصلًا. هذا يميز عدم العثور على اعتماد وظيفي للعرض عن استمرار حفظ السجل الإضافي في النقل/state.
+
+مسارGET والقـراءة الفردية الفعلي يمر منapp.ts إلىauth-security ثمmerchant-notifications-pg قبلsupport PG؛ read-all يمر منsupport PG. جميعها تستخدم السلطةcanonical نفسها. mapper يزيل فقط مفاتيح الهوية/النوع/التواريخ المحجوزة ويحتفظ ببقيةvariables. مسارSSE يعيدcount لاصفوف الإشعارات. في وضعPostgreSQL-required يحجبcutover guard الوصول القديم غير المحسوم إلى/auth؛ ملفاتJSON التوافقية ليست بديلًا جديدًا مطلوب البناء.
+
+**النتيجة المحدودة:** لم يُعثر في المستهلكين الحاليين المتتبعين على قراءة وظيفية لحقول إضافية غير معرفة لتشغيل العرض/العداد/الإجراء. يوجد اعتماد متوافق على إعادة السجل كاملًا وحفظه، وتوجد اختبارات تتوقع بقاء الإضافات. هذا لا يثبت وجود كل المستهلكين الخارجيين أوسلامة كل الصفوف التاريخية؛ لا غيابًا رسميًا عامًا أوإثباتًا لثغرة حالية.
+
+لم يُعد أي من80TAP الإشعارات أو6 حالات المرشح المحلي؛ بقيت طبقاتها الأصلية. الفرق من آخر مصدر تنفيذي69a3ccc إلىنقطة المراجعة9 ملفات توثيق فقط، ونتائج58/58 السابقة محفوظة. لا تطبيق أوSQL أومتصفح أوCI جديد، ولا تغيير حقول أو صلاحيات أوبيانات مخزنة.
+
+FIELD002-R1 يبقى مفتوحًا بمرشح غير معتمد وحدود توافق صريحة، وR2 محجوب بالجرد التاريخي المصرح به، وR3 نطاق إنتاج غير معتمد. لا طلب قرار فوري من المستخدم ولا استنتاج اعتماد من «أكمل». التالي: Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved.
+
+45 حالة دون تغيير:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false،overallPercentage=null،**NO-GO**. لا hosted/merge/deploy/P1/P2؛ SEQ-R2 يبقىUNAPPROVED.
+
+---
+
 ## مطابقة FIELD002 وتجهيز اختيار سياسة الردود — 2026-10-28
 
 البوابتان القائمتان P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX وP0-RESIDUAL-MERCHANT-PRIVACY-001/http تبقيان OPEN. نقطة المراجعة **362530d048c86b09b91ee6ac625b964319bb6d8c**؛ آخر مصدر تنفيذي مقبول **69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74**. الدفعة مصدر/أدلة/قرار فقط، دون تغيير التطبيق أو تنفيذ اختبارات أو CI جديدة.
