@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+    "nextExactAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32292,6 +32292,34 @@
         "parentGateClosed": false,
         "hosted": false,
         "next": "Reconcile FIELD002-R1/R2/R3 in the existing P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json against accepted notification response contracts/current source. Classify explicit field-policy decisions versus missing executable assertions before new code. Reuse accepted admin and notification cases; do not automatically duplicate historical/aggregate cases or reopen the18-route admin family. Keep SEQ-R2 UNAPPROVED."
+      },
+      {
+        "boundary": "paidMerchantDeletionAndReceiptReplay",
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+        "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+        "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+        "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+        "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+        "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+        "filesVerified": 954,
+        "candidateFiles": 29,
+        "newFunctionalCases": 2,
+        "testFileTap": 22,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "run": 40654601845,
+        "job": 122702990398,
+        "allCiSuccess": 58,
+        "accepted": true,
+        "applicationChanged": false,
+        "schemaChanged": false,
+        "aclChanged": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "scope": "Actual canonical suspension/request/completion service with separate authentication role; then mounted receipt replay HTTP under current owner and manage_subscriptions assistant sessions. Two settled billing classes, repeated denial before provider I/O, exact retained financial and selected peer snapshots. Reuses separate owner deletion HTTP authority evidence."
       }
     ],
     "currentTestOverlay": {
@@ -32596,6 +32624,39 @@
       "policyAdopted": false,
       "userActionRequiredNow": false,
       "parentGateClosed": false
+    },
+    "field005BillingProviderReceiptProof20261028": {
+      "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+      "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+      "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+      "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+      "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+      "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+      "filesVerified": 954,
+      "candidateFiles": 29,
+      "newFunctionalCases": 2,
+      "testFileTap": 22,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "run": 40654601845,
+      "job": 122702990398,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationChanged": false,
+      "schemaChanged": false,
+      "aclChanged": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false,
+      "parentGateClosed": false,
+      "newGate": false
+    },
+    "currentReceiptTestOverlay": {
+      "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+      "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+      "gitBlob": "110362c2cd7d8b654823f82214995603f4133939",
+      "catalogueRegenerated": false,
+      "interpretation": "Dated AST/source catalogue remains historical; this overlay accepts only the appended canonical service deletion -> restricted operator replay HTTP boundary. Existing active positive/duplicate/fault/permission tests preserved. No entire actor/field inventory or retention policy acceptance."
     }
   },
   "componentScopes": {

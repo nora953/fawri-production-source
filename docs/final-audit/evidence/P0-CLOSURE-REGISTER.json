@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
-  "lastFullyAcceptedSource": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+  "sourceCandidate": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+  "lastFullyAcceptedSource": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
   "release": "NO-GO",
   "rows": [
     {
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+      "nextAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -309,6 +309,32 @@
         "policyAdopted": false,
         "userActionRequiredNow": false,
         "parentGateClosed": false
+      },
+      "field005BillingProviderReceiptProof20261028": {
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+        "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+        "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+        "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+        "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+        "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+        "filesVerified": 954,
+        "candidateFiles": 29,
+        "newFunctionalCases": 2,
+        "testFileTap": 22,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "run": 40654601845,
+        "job": 122702990398,
+        "allCiSuccess": 58,
+        "accepted": true,
+        "applicationChanged": false,
+        "schemaChanged": false,
+        "aclChanged": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "parentGateClosed": false,
+        "newGate": false
       }
     },
     {
@@ -2210,7 +2236,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+      "nextAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -2384,6 +2410,32 @@
         "policyAdopted": false,
         "userActionRequiredNow": false,
         "parentGateClosed": false
+      },
+      "field005BillingProviderReceiptProof20261028": {
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+        "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+        "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+        "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+        "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+        "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+        "filesVerified": 954,
+        "candidateFiles": 29,
+        "newFunctionalCases": 2,
+        "testFileTap": 22,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "run": 40654601845,
+        "job": 122702990398,
+        "allCiSuccess": 58,
+        "accepted": true,
+        "applicationChanged": false,
+        "schemaChanged": false,
+        "aclChanged": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "parentGateClosed": false,
+        "newGate": false
       }
     },
     {
@@ -2420,7 +2472,7 @@
       "evidence": "https://github.com/nora953/fawri-production-source/issues/523",
       "blocker": "Existing retention/deletion service proofs do not approve duration, privileged access or every field.",
       "retentionFieldEvidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json",
-      "nextAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+      "nextAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
       "retentionAuditInteractionStatus": "CONFIRMED_RUNTIME_INTERACTIONS_BOUNDED_MITIGATIONS_ACCEPTED_POLICY_HISTORY_OPEN",
       "deletionEmergencyChainEvidence": "evidence/P0-DELETION-EMERGENCY-CHAIN-20261025.json",
       "deletionEmergencyChainStatus": "PREEXISTING_LEDGER_AND_CONCURRENT_CREATION_MITIGATIONS_ACCEPTED_POLICY_HISTORY_OPEN",
@@ -2451,6 +2503,32 @@
         "policyAdopted": false,
         "userActionRequiredNow": false,
         "parentGateClosed": false
+      },
+      "field005BillingProviderReceiptProof20261028": {
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+        "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+        "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+        "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+        "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+        "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+        "filesVerified": 954,
+        "candidateFiles": 29,
+        "newFunctionalCases": 2,
+        "testFileTap": 22,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "run": 40654601845,
+        "job": 122702990398,
+        "allCiSuccess": 58,
+        "accepted": true,
+        "applicationChanged": false,
+        "schemaChanged": false,
+        "aclChanged": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "parentGateClosed": false,
+        "newGate": false
       }
     },
     {
@@ -2524,7 +2602,7 @@
       "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
     }
   ],
-  "previousFullyAcceptedSource": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+  "previousFullyAcceptedSource": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
   "lastUpdatedAt": "2026-10-28",
   "closurePlan": {
     "schemaVersion": 1,
@@ -2542,7 +2620,7 @@
     "release": "NO-GO",
     "noNewReleaseRequirementsAdded": true,
     "noExistingStatusChanged": true,
-    "acceptedSource": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+    "acceptedSource": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
     "executionRules": [
       "Select one existing gate and its exact unmet closure condition before new code/tests. State whether the batch closes it or only completes a named necessary prerequisite.",
       "Reuse accepted positive/negative/runtime evidence at its original layer and source. No repeated accepted test solely to increase totals; rerun only for a source change, failure or identified integration gap.",
@@ -2558,25 +2636,36 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "F005-R1 current requester snapshot producer/actor/readers/pending-review UI/completion handling reconciled from954 exact blobs and26 scoped matches. Existing81TAP management lane reused, with field-assertion limits explicit. Owner+manage_merchant_status list permission and owner-only review are existing behavior; no retention choice/adoption or new runtime.",
-        "nextNamedReview": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+        "completedPrerequisite": "F005-R2 billing/provider receipt source mapping plus actual deletion-service -> operator HTTP replay composition accepted at9bd0ca2. Two new cases/6 denied HTTP attempts, unchanged inbox/application/event/selected peers;22TAP file within836TAP broader,58/58 CI. No retention duration/allowlist/policy adoption or gate closure.",
+        "nextNamedReview": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
         "latestAcceptedBoundary": {
-          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
-          "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
-          "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
-          "newFunctionalCases": 4,
-          "newTapIncludingGroup": 5,
-          "targetedTap": 85,
-          "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
-          "newGate": false,
-          "parentGateClosed": false,
-          "userActionRequiredNow": false,
-          "broaderTap": 834,
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+          "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+          "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+          "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+          "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+          "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+          "filesVerified": 954,
+          "candidateFiles": 29,
+          "newFunctionalCases": 2,
+          "testFileTap": 22,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "run": 40654601845,
+          "job": 122702990398,
           "allCiSuccess": 58,
-          "accepted": true
+          "accepted": true,
+          "applicationChanged": false,
+          "schemaChanged": false,
+          "aclChanged": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false,
+          "parentGateClosed": false,
+          "newGate": false
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
-        "nextAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment."
+        "nextAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment."
       },
       {
         "order": 2,
@@ -2599,7 +2688,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment."
+        "nextAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment."
       },
       {
         "order": 4,
@@ -2625,7 +2714,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+        "nextAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -2782,6 +2871,32 @@
           "policyAdopted": false,
           "userActionRequiredNow": false,
           "parentGateClosed": false
+        },
+        "field005BillingProviderReceiptProof20261028": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+          "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+          "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+          "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+          "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+          "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+          "filesVerified": 954,
+          "candidateFiles": 29,
+          "newFunctionalCases": 2,
+          "testFileTap": 22,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "run": 40654601845,
+          "job": 122702990398,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationChanged": false,
+          "schemaChanged": false,
+          "aclChanged": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false,
+          "parentGateClosed": false,
+          "newGate": false
         }
       },
       {
@@ -2836,7 +2951,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+        "nextAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -2914,6 +3029,32 @@
           "policyAdopted": false,
           "userActionRequiredNow": false,
           "parentGateClosed": false
+        },
+        "field005BillingProviderReceiptProof20261028": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+          "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+          "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+          "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+          "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+          "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+          "filesVerified": 954,
+          "candidateFiles": 29,
+          "newFunctionalCases": 2,
+          "testFileTap": 22,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "run": 40654601845,
+          "job": 122702990398,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationChanged": false,
+          "schemaChanged": false,
+          "aclChanged": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false,
+          "parentGateClosed": false,
+          "newGate": false
         }
       },
       {
@@ -2968,7 +3109,7 @@
         "missingEvidenceOrDecision": "F005-R1/R2/R3 have no approved schedules/design. F005-R4/R5 hosted scope/evidence unavailable. Existing purge/reference-minimization tests do not approve indefinite retention.",
         "executableNowWithinGitHub": "Consolidate existing field-specific decision forms; prepare reviewable choices. No invented duration, anonymous-hash claim or repeated purge tests.",
         "externalDependency": "Explicit record-specific policy decisions; separately authorized hosted inventory/recovery for R4/R5.",
-        "nextAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+        "nextAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
         "dependsOn": [
           "P0-HOSTED-RECOVERY",
           "P0-HOSTED-STORAGE-DELETION"
@@ -2985,6 +3126,32 @@
           "policyAdopted": false,
           "userActionRequiredNow": false,
           "parentGateClosed": false
+        },
+        "field005BillingProviderReceiptProof20261028": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+          "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+          "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+          "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+          "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+          "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+          "filesVerified": 954,
+          "candidateFiles": 29,
+          "newFunctionalCases": 2,
+          "testFileTap": 22,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "run": 40654601845,
+          "job": 122702990398,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationChanged": false,
+          "schemaChanged": false,
+          "aclChanged": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false,
+          "parentGateClosed": false,
+          "newGate": false
         }
       },
       {
@@ -3244,7 +3411,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+      "nextExactAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -3334,6 +3501,32 @@
         "policyAdopted": false,
         "userActionRequiredNow": false,
         "parentGateClosed": false
+      },
+      "field005BillingProviderReceiptProof20261028": {
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+        "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+        "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+        "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+        "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+        "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+        "filesVerified": 954,
+        "candidateFiles": 29,
+        "newFunctionalCases": 2,
+        "testFileTap": 22,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "run": 40654601845,
+        "job": 122702990398,
+        "allCiSuccess": 58,
+        "accepted": true,
+        "applicationChanged": false,
+        "schemaChanged": false,
+        "aclChanged": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "parentGateClosed": false,
+        "newGate": false
       }
     },
     "field002PolicyReconciliation20261028": {
@@ -3410,6 +3603,32 @@
       "policyAdopted": false,
       "userActionRequiredNow": false,
       "parentGateClosed": false
+    },
+    "field005BillingProviderReceiptProof20261028": {
+      "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+      "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+      "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+      "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+      "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+      "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+      "filesVerified": 954,
+      "candidateFiles": 29,
+      "newFunctionalCases": 2,
+      "testFileTap": 22,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "run": 40654601845,
+      "job": 122702990398,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationChanged": false,
+      "schemaChanged": false,
+      "aclChanged": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false,
+      "parentGateClosed": false,
+      "newGate": false
     }
   }
 }

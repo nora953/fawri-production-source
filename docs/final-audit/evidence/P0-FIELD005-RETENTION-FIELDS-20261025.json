@@ -46,7 +46,7 @@
     "Financial/receipt and audit retention schedule with privileged access",
     "Backups/media/deployed historical data disposition under authorized hosted scope"
   ],
-  "nextExactAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+  "nextExactAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
   "sourceReviewed": "6e94a8ec65f2cc39022ff1a1245d1951ef4924c0",
   "acceptedExecutable": "acf6c8d68dda271f97d9275d9b24407d3343a60f",
   "originalSourceRevision": "ef7c4e7928ff081c106cfb69c76be865ef7d48a2",
@@ -649,7 +649,33 @@
           "Boundary tests before/at/after expiry plus active financial operation and replay protection",
           "No blanket assertion that retained identifiers or hashes are anonymous"
         ],
-        "currentBehavior": "Current purge retains financial/accounting rows while scrubbing selected fields; code comments are not a retention-policy approval."
+        "currentBehavior": "Current purge retains financial/accounting rows while scrubbing selected fields; code comments are not a retention-policy approval.",
+        "billingProviderSubsetReview": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028",
+          "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+          "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+          "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+          "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+          "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+          "filesVerified": 954,
+          "candidateFiles": 29,
+          "newFunctionalCases": 2,
+          "testFileTap": 22,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "run": 40654601845,
+          "job": 122702990398,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationChanged": false,
+          "schemaChanged": false,
+          "aclChanged": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false,
+          "parentGateClosed": false,
+          "newGate": false
+        }
       },
       {
         "id": "F005-R3",
@@ -1445,5 +1471,1011 @@
     "nextExactAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment."
   },
   "previousNextExactAction": "Continue executable P0 work with the open CASHIER-SYNC-SEQUENCE-001 gate: reconcile its exact remaining acceptance criterion against existing evidence and live sequence admission/drain code before choosing a bounded regression. FIELD005-R1/R2/R3 require explicit policy/design decisions; R4/R5 remain blocked by hosted scope.",
-  "currentReviewPointer": "requesterSnapshotUseReconciliation20261028"
+  "currentReviewPointer": "billingProviderReceiptUseReconciliation20261028",
+  "billingProviderReceiptUseReconciliation20261028": {
+    "date": "2026-10-28",
+    "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
+    "candidate": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+    "status": "BILLING_PROVIDER_RECEIPT_READERS_RECONCILED_POST_DELETION_OPERATOR_REPLAY_BOUNDARY_ACCEPTED_RETENTION_POLICY_OPEN",
+    "gates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+    ],
+    "existingCell": "RESIDUAL-FIELD-005/F005-R2",
+    "acceptanceCondition": "Classify named retained billing/provider-receipt fields, actual readers and active authority before any retention proposal. Runtime prerequisite: an already paid/applied bot/cashier order deleted through the canonical service cannot be replayed by currently authorized operators, preserving immutable evidence and selected peers. This is a prerequisite, not per-class retention/expiry policy acceptance.",
+    "applicationChanged": false,
+    "schemaChanged": false,
+    "aclChanged": false,
+    "testFilesChanged": 1,
+    "newFunctionalCases": 2,
+    "fieldCellClosed": false,
+    "parentGateClosed": false,
+    "policyAdopted": false,
+    "userActionRequiredNow": false,
+    "scopedScan": {
+      "filesVerified": 954,
+      "localMatchingBlobs": 945,
+      "remoteExactOverrides": 9,
+      "roots": [
+        "artifacts/api-server/src/",
+        "artifacts/fawri/src/",
+        "src/",
+        "lib/",
+        "scripts/"
+      ],
+      "extensions": [
+        "JS/TS family",
+        "sql"
+      ],
+      "excluded": "lib/db/migration-stages historical preimages/reviewed copies; docs/evidence and Drizzle metadata JSON not part of lexical scope",
+      "additionalApiTests": [
+        "merchant-owner-deletion-http-postgres.integration.test.mjs",
+        "merchant-management-privacy-http-postgres.integration.test.mjs",
+        "management-full-app-privacy-http-postgres.integration.test.mjs"
+      ],
+      "verification": "Reused existing954-file manifest; every current reviewed HEAD blob and local/override byte hash rechecked,0 mismatch. These source files also match e3d7d721. New executable test is separately pinned and is outside that original954-file manifest.",
+      "manifestSha256": "b3fe29a8ed749698f937176ad6a7769f89147e8ddbfe701afb749d782f7f65b3",
+      "scanSha256": "6a08ef223adffa53775d2d82f34daaf7d62a767701a1dec884d65d9b3aa9c2db",
+      "digestEncoding": "Python json.dumps(data,sort_keys=True,separators=(',',':')).encode(); manifest ordered recursive Git tree objects{path,sha}; scan objects{path,sha,hits:[{line,text}]}",
+      "pattern": "verified_provider_payment_receipts|fawri_(?:admit_verified_payment_receipt|read_verified_payment_receipts|review_verified_payment_receipt|authorize_verified_receipt_replay|resolve_confirmed_payment_order)|saas_(?:billing_orders|billing_events|entitlement_applications|billing_refunds)|cashier_(?:billing_orders|billing_events|entitlement_applications)",
+      "candidateFiles": 29,
+      "candidatePins": [
+        {
+          "path": "artifacts/api-server/src/services/cashierBillingAuthority.ts",
+          "gitBlobSha": "7fa5b6b810872188e82d68a749fd7c6a739e1c2d",
+          "lines": [
+            222,
+            497,
+            588,
+            590,
+            591,
+            617,
+            687,
+            731,
+            762,
+            957,
+            1078,
+            1116,
+            1176,
+            1183,
+            1217,
+            1248,
+            1270,
+            1321,
+            1348,
+            1370,
+            1380,
+            1406,
+            1425,
+            1454,
+            1477
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierHistoricalOperationAuthority.ts",
+          "gitBlobSha": "8015bef966dc67596149fb68b86e88071adefc9a",
+          "lines": [
+            159,
+            160
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/confirmedProviderBillingScope.ts",
+          "gitBlobSha": "65fce0148f3bed0ed3da1b52898d059666052f46",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/operatorDirectoryPostgresAuthority.ts",
+          "gitBlobSha": "4e1cb354a4581e54a50fc2bd2dda05ada2c0740d",
+          "lines": [
+            14,
+            15,
+            16
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "lines": [
+            879,
+            881,
+            883,
+            998,
+            1168
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "gitBlobSha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "lines": [
+            47,
+            48,
+            49,
+            50,
+            53,
+            54,
+            55,
+            71
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/saasBillingAuthority.ts",
+          "gitBlobSha": "8cc27d86fa25c4aedba45e6363609622dc846e64",
+          "lines": [
+            391,
+            512,
+            578,
+            579,
+            611,
+            670,
+            711,
+            739,
+            818,
+            894,
+            921,
+            956,
+            972,
+            991,
+            1020,
+            1051,
+            1090,
+            1115,
+            1140,
+            1159,
+            1165,
+            1191,
+            1207,
+            1238,
+            1261,
+            1262
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionServiceGuarantee.ts",
+          "gitBlobSha": "cc7a15d09e21fd0ba6d2fd8c27db0fa5e12651ce",
+          "lines": [
+            364,
+            368
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/superQiSandboxWebhook.ts",
+          "gitBlobSha": "d2761899cfc0a11ce02ac2aef21bfd48c928cb7a",
+          "lines": [
+            74,
+            75,
+            218
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/verifiedReceiptOperatorRead.ts",
+          "gitBlobSha": "c19821d089b6235fd7f4b991a17bfcab0785907f",
+          "lines": [
+            39
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/verifiedReceiptReplayExecution.ts",
+          "gitBlobSha": "015413646fe8436f73beeab7b31afc57eac9512f",
+          "lines": [
+            27
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/verifiedReceiptReplayReview.ts",
+          "gitBlobSha": "bcbc4a1e6a39ef3be726e1e0196e6bfa57c167ce",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0006_saas_billing_authority.sql",
+          "gitBlobSha": "74bd891659d23dc623e9b020a9005ed32fee845c",
+          "lines": [
+            1,
+            14,
+            15,
+            18,
+            19,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            48,
+            49,
+            60,
+            61,
+            64,
+            65,
+            77,
+            78,
+            79,
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            88,
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            111,
+            114,
+            121,
+            124,
+            125,
+            132,
+            135,
+            142,
+            145,
+            146,
+            153,
+            156,
+            163,
+            166,
+            167,
+            174,
+            177,
+            184
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0023_canonical_tenant_rls_schema_alignment.sql",
+          "gitBlobSha": "b6a0d4698efc47cb42084b7d7cf7af23b5d4b7e3",
+          "lines": [
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0025_tenant_rls_policy_predicate_cutover.sql",
+          "gitBlobSha": "043066bf39f144e537e91fee8b115ad03674a8b1",
+          "lines": [
+            22,
+            23,
+            24,
+            25
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0027_cashier_subscription_licensing.sql",
+          "gitBlobSha": "f4fa482d412664091b38fb980f25e399ff6b1847",
+          "lines": [
+            56,
+            82,
+            83,
+            84,
+            85,
+            86,
+            87,
+            88,
+            91,
+            93,
+            95,
+            97,
+            99,
+            102,
+            114,
+            115,
+            116,
+            117,
+            120,
+            122,
+            124,
+            127,
+            141,
+            142,
+            143,
+            144,
+            147,
+            149,
+            151,
+            153,
+            200,
+            215,
+            217,
+            219,
+            234,
+            235,
+            236,
+            238,
+            239,
+            240,
+            242,
+            243,
+            244
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0029_verified_provider_payment_receipts.sql",
+          "gitBlobSha": "028fd9b071c68ce74f34c43bd36ff5ef20cb45e3",
+          "lines": [
+            3,
+            12,
+            20,
+            22,
+            27,
+            37,
+            48,
+            52,
+            63
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0030_audited_verified_receipt_reads.sql",
+          "gitBlobSha": "285cdbc4e4de3094c0e6b826e40c82e211d64a46",
+          "lines": [
+            4,
+            50,
+            56
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0031_audited_receipt_replay_reviews.sql",
+          "gitBlobSha": "1cce7b8b6693aefb95157d045bfc372205327a89",
+          "lines": [
+            3,
+            10,
+            33,
+            37,
+            40,
+            47,
+            51,
+            66
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0032_authorized_receipt_replay_execution.sql",
+          "gitBlobSha": "b7eeda10d855bd0160367722b723ad3d0520f7de",
+          "lines": [
+            4,
+            19,
+            30,
+            32,
+            49
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0033_confirmed_provider_order_resolution.sql",
+          "gitBlobSha": "cbb92f1e1b3cc20828cd3f7069389ebc9838842c",
+          "lines": [
+            2,
+            16,
+            25,
+            27,
+            38,
+            40,
+            52
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0034_cross_authority_payment_identity_guard.sql",
+          "gitBlobSha": "ea5b17efb223310ef56a09ba43833e576e9dd85e",
+          "lines": [
+            39,
+            43,
+            45,
+            49,
+            63,
+            67
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/cashier-subscription.ts",
+          "gitBlobSha": "f6ee1ca8f6c716cd2df102cfa0f4001dfd88b8a0",
+          "lines": [
+            123,
+            157,
+            159,
+            163,
+            167,
+            170,
+            173,
+            179,
+            183,
+            187,
+            191,
+            195,
+            202,
+            220,
+            224,
+            228,
+            233,
+            237,
+            241,
+            248,
+            268,
+            273,
+            277,
+            278,
+            282,
+            287,
+            291
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/saas-billing.ts",
+          "gitBlobSha": "fabb50cbdb5702f808cd739f12dbca9470236532",
+          "lines": [
+            20,
+            52,
+            57,
+            60,
+            65,
+            69,
+            73,
+            78,
+            82,
+            86,
+            90,
+            94,
+            98,
+            105,
+            126,
+            130,
+            134,
+            139,
+            143,
+            150,
+            170,
+            175,
+            179,
+            183,
+            186,
+            189,
+            193,
+            197,
+            204,
+            223,
+            227,
+            231,
+            236,
+            240
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "gitBlobSha": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "lines": [
+            107,
+            108,
+            109,
+            110
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/verified-payment-receipts.ts",
+          "gitBlobSha": "7a2a0e32d63b24d7611b479d6d7e6ada2dc53e4f",
+          "lines": [
+            6
+          ]
+        },
+        {
+          "path": "scripts/tests/p0-provider-identity-guard-source-contract.test.mjs",
+          "gitBlobSha": "2860a31e200581aceaedaaca8c2f3665054619e6",
+          "lines": [
+            18
+          ]
+        },
+        {
+          "path": "scripts/tests/p0-receipt-replay-order-identity-contract.test.mjs",
+          "gitBlobSha": "a8e29871bf0b3a30c457082bc1bb0fb93997dbd9",
+          "lines": [
+            15,
+            27,
+            38,
+            47
+          ]
+        },
+        {
+          "path": "scripts/tests/saas-billing-migration-history.test.mjs",
+          "gitBlobSha": "8bf5617d715b3f6922e2bf6b490dc55a7e7c3178",
+          "lines": [
+            10,
+            11,
+            12,
+            13,
+            18,
+            19,
+            20
+          ]
+        }
+      ],
+      "limits": "Literal matches plus manual route/import/dataflow reconciliation; not a dynamic/external writer absence theorem.",
+      "expandedTracePins": [
+        {
+          "path": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts",
+          "gitBlobSha": "3e13c1291187dc254a1bbeee09dda6755f411e2d"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/saas-billing.ts",
+          "gitBlobSha": "3665c398beb2822853b4e83a158b714380a2410e"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/cashier-subscription-operations.ts",
+          "gitBlobSha": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-security.ts",
+          "gitBlobSha": "92e3ed37d13809d93c47d03794b05f7c0a30c74b"
+        },
+        {
+          "path": "artifacts/api-server/src/app.ts",
+          "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2"
+        },
+        {
+          "path": "artifacts/api-server/src/middleware/authSession.ts",
+          "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46"
+        },
+        {
+          "path": "artifacts/api-server/src/services/authPostgresSessionAuthority.ts",
+          "gitBlobSha": "1d51316e51a20783ea1e5ddbca23044ae129fd96"
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionPlanCycleAuthority.ts",
+          "gitBlobSha": "1082677dfb06c179ff53607d195249cb7d48dfd8"
+        },
+        {
+          "path": "artifacts/api-server/src/services/merchantDeletionProviderIdentifierRetirement.ts",
+          "gitBlobSha": "8fa7e00c730c7ec11d4b0f962c9e0704d9a6a995"
+        },
+        {
+          "path": "artifacts/fawri/src/components/admin/VerifiedReceiptReview.tsx",
+          "gitBlobSha": "cf00f72005e12209abf451308631ff96bc7be6c7"
+        },
+        {
+          "path": "artifacts/fawri/src/components/admin/ReceiptReplayControls.tsx",
+          "gitBlobSha": "d4038b02a95926f4a08fdca4806cd4320e35c0d5"
+        },
+        {
+          "path": "artifacts/fawri/src/lib/verifiedReceiptClient.ts",
+          "gitBlobSha": "4a817bfada7e72f771a37d6fee80558d81d453a2"
+        },
+        {
+          "path": "artifacts/fawri/src/lib/receiptReplayClient.ts",
+          "gitBlobSha": "0cbc33bde814001cfc03c601d396ec768be14a69"
+        }
+      ]
+    },
+    "observedSchemaFields": [
+      {
+        "table": "saas_billing_orders",
+        "fields": [
+          "id",
+          "merchant_id",
+          "operation",
+          "requested_plan",
+          "amount_iqd",
+          "currency",
+          "catalog_version",
+          "provider",
+          "status",
+          "idempotency_key",
+          "provider_checkout_ref",
+          "provider_payment_ref",
+          "request_expires_at",
+          "paid_at",
+          "failed_at",
+          "cancelled_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      {
+        "table": "saas_billing_events",
+        "fields": [
+          "id",
+          "order_id",
+          "merchant_id",
+          "provider",
+          "provider_event_id",
+          "event_type",
+          "signature_verified",
+          "payload_hash",
+          "status",
+          "occurred_at",
+          "applied_at",
+          "created_at"
+        ]
+      },
+      {
+        "table": "saas_entitlement_applications",
+        "fields": [
+          "id",
+          "order_id",
+          "merchant_id",
+          "subscription_id",
+          "operation",
+          "applied_plan",
+          "amount_iqd",
+          "catalog_version",
+          "provider",
+          "provider_payment_ref",
+          "applied_at"
+        ]
+      },
+      {
+        "table": "saas_billing_refunds",
+        "fields": [
+          "id",
+          "order_id",
+          "merchant_id",
+          "provider",
+          "provider_refund_ref",
+          "amount_iqd",
+          "status",
+          "reason_code",
+          "created_at",
+          "settled_at"
+        ]
+      },
+      {
+        "table": "merchant_cashier_subscriptions",
+        "fields": [
+          "id",
+          "merchant_id",
+          "status",
+          "licensed_seats",
+          "price_per_seat_iqd",
+          "billing_period_start",
+          "billing_period_end",
+          "grace_duration_seconds",
+          "scheduled_licensed_seats",
+          "scheduled_change_at",
+          "version",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      {
+        "table": "cashier_station_seat_assignments",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "station_id",
+          "status",
+          "assigned_at",
+          "release_effective_at",
+          "released_at",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      {
+        "table": "cashier_billing_orders",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "operation",
+          "current_seats",
+          "requested_seats",
+          "resulting_seats",
+          "unit_price_iqd",
+          "amount_iqd",
+          "currency",
+          "billing_period_start",
+          "billing_period_end",
+          "grace_duration_seconds",
+          "status",
+          "idempotency_key",
+          "provider",
+          "provider_checkout_ref",
+          "provider_payment_ref",
+          "request_expires_at",
+          "paid_at",
+          "applied_at",
+          "failed_at",
+          "metadata",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      {
+        "table": "cashier_billing_events",
+        "fields": [
+          "id",
+          "merchant_id",
+          "order_id",
+          "provider",
+          "provider_event_id",
+          "event_type",
+          "payload_hash",
+          "status",
+          "occurred_at",
+          "applied_at",
+          "created_at"
+        ]
+      },
+      {
+        "table": "cashier_entitlement_applications",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "order_id",
+          "operation",
+          "previous_seats",
+          "resulting_seats",
+          "previous_version",
+          "resulting_version",
+          "amount_iqd",
+          "provider",
+          "provider_payment_ref",
+          "applied_at"
+        ]
+      },
+      {
+        "table": "cashier_entitlement_audit_events",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "action",
+          "actor_type",
+          "actor_ref",
+          "from_seats",
+          "to_seats",
+          "from_version",
+          "to_version",
+          "metadata",
+          "created_at"
+        ]
+      },
+      {
+        "table": "cashier_device_operation_timeline",
+        "fields": [
+          "id",
+          "merchant_id",
+          "subscription_id",
+          "billing_order_id",
+          "station_id",
+          "device_id",
+          "operation_id",
+          "operation_kind",
+          "occurred_at",
+          "accepted_at"
+        ]
+      },
+      {
+        "table": "verified_provider_payment_receipts",
+        "fields": [
+          "provider",
+          "provider_event_id",
+          "payment_ref",
+          "request_ref",
+          "event_type",
+          "amount_iqd",
+          "payload_hash",
+          "first_received_at"
+        ]
+      }
+    ],
+    "schemaFieldInventoryLimit": "Observed current schema columns, not an approved retention allowlist. Eight billing/provider receipt classes plus four supporting entitlement/timeline classes. No promise these are the entire retained schema.",
+    "recordClasses": [
+      {
+        "tables": [
+          "saas_billing_orders",
+          "cashier_billing_orders"
+        ],
+        "purposeObserved": "Checkout identity/idempotency, settled amounts and subscription/seat cycle references; provider mapping and replay guards remain current consumers.",
+        "deletion": "Metadata becomes {}; cashier pending becomes cancelled. Other financial fields/IDs/provider references stay. Canonical deletion tombstones merchants/accounts; it does not physically delete merchant rows, so ON DELETE CASCADE does not erase this evidence.",
+        "readers": "Session-bound own merchant order routes, trusted provider resolver/application, authorized operator review/execution, subscription guarantee and cashier historical authority.",
+        "afterDeletion": "Closed account has no normal merchant session authority. Retained checkout_ref can still identify a candidate to the provider resolver, but erased metadata.provider_request_id fails identity binding. Operator review yields no matching reviewed row and execution rejects409 before provider I/O in the new bounded proof.",
+        "policy": "Per-field purpose/read privilege/trigger/duration/holds/expiry unapproved. Provider refs, merchant/order IDs and idempotency keys are linkable identifiers, not automatically anonymous."
+      },
+      {
+        "tables": [
+          "saas_billing_events",
+          "cashier_billing_events",
+          "saas_entitlement_applications",
+          "cashier_entitlement_applications"
+        ],
+        "purposeObserved": "Original event identity/hash, once-only admission, original timestamp and exact entitlement/payment allocation.",
+        "deletion": "No direct DELETE/UPDATE for these four classes in reviewed purge. Existing merchant/order/subscription anchors retained.",
+        "readers": "Billing duplicate/retry application; paid billing reference and guarantee readers; cashier historical operation authority.",
+        "afterDeletion": "Exact event/application rows of selected successfully settled bot/cashier orders preserved by new test. Normal merchant HTTP loses session authority and cashier historical sync requires a current active subscription; new proof covers the operator replay path. No universal assertion that every direct internal billing call is unreachable or rechecks account lifecycle.",
+        "policy": "No blanket expiry or payload-hash anonymity; expiry must preserve financial/replay invariants."
+      },
+      {
+        "tables": [
+          "saas_billing_refunds"
+        ],
+        "purposeObserved": "Provider refund uniqueness, amount/status/reason and settlement accounting.",
+        "deletion": "Quiescence rejects pending SaaS refund; existing nonpending rows not purged by direct statement.",
+        "readers": "SaaS verified refund application and accounting references in current billing authority.",
+        "afterDeletion": "Source-only classification in this batch; new test contains no refund fixture. No new settled-refund/late-refund runtime claim.",
+        "policy": "Retained refund references/reason codes require explicit schedule/readers/holds."
+      },
+      {
+        "tables": [
+          "verified_provider_payment_receipts"
+        ],
+        "purposeObserved": "Independent verified terminal payment evidence admitted before local ownership resolution; durable first-receipt time and collision prevention.",
+        "deletion": "No merchant_id column/FK; canonical merchant deletion leaves inbox unchanged. This is independent of whether a local checkout was ever assigned.",
+        "readers": "Trusted signature+gateway-confirmed webhook admission/resolver, audited bounded admin read, audited replay review and session/device-bound replay execution.",
+        "listFields": [
+          "provider",
+          "provider_event_id",
+          "event_type",
+          "amount_iqd",
+          "first_received_at",
+          "payment_ref_suffix",
+          "request_ref_suffix"
+        ],
+        "listProjection": "Payment/request refs longer than8 expose only their last8 characters; shorter/equal8 become NULL. Full eventID, type, amount and time remain. No raw payment_ref/request_ref/payload_hash in HTTP list.",
+        "privilege": "GET/review/replay existing manage_subscriptions permission (owner or currently granted assistant), with separate receiptRead/receiptReview/receiptExecution backend capability and durable audit. Not owner-only; no new grant.",
+        "ui": "VerifiedReceiptReview renders current list fields; ReceiptReplayControls selects authority/order and sends intent. HTTP review/execution responses contain status and event/order/authority IDs, not raw payment/request refs/hash.",
+        "afterDeletion": "Source list has no merchant exclusion join and may retain these bounded fields for deleted/unassigned payments; new test preserves exact raw inbox bytes and denies operator replay after actual service deletion. No new post-deletion GET/browser acceptance.",
+        "policy": "Raw refs/hash and visible suffixes/eventID remain linkable; retention needs an independent inbox rule, not a merchant cascade assumption."
+      },
+      {
+        "tables": [
+          "merchant_cashier_subscriptions",
+          "cashier_station_seat_assignments",
+          "cashier_entitlement_audit_events",
+          "cashier_device_operation_timeline"
+        ],
+        "purposeObserved": "Current seat authority plus historical cycle/licensing audit.",
+        "deletion": "Subscription cancelled/scheduled changes cleared/version incremented; active seats released; audit actor_ref NULL and metadata {}; timeline device_id replaced with per-row deletion marker.",
+        "readers": "Cashier current and historical operation authority; after deletion current active subscription and authentication authority is retired.",
+        "afterDeletion": "Existing cashier lifecycle proofs reused; full POS sale/return/financial receipt and immutable sequence-field readership remains next R2 scope.",
+        "policy": "IDs, time/amount/cycle linkage and retained audit fields need explicit purpose/access/schedule; comments saying non-PII are not approval."
+      }
+    ],
+    "sourceFlows": {
+      "normalMerchant": "app mounts auth-security billing and cashier subscription routers. GET own billing orders requires validated current merchant session; authPostgresSessionAuthority rejects account.state !== active. Deletion closes account, removes merchant sessions and increments versions.",
+      "provider": "superQiSandboxWebhook verifies signature and fresh provider state, admits verified inbox before resolver, then uses confirmed provider scope. SQL0033 checks exact receipt, cross-authority unique candidate and checkout/request/amount identity. SQL0034 serializes shared identities. Erased provider_request_id on retained paid rows fails exact mapping; this source observation is not new signed post-deletion webhook runtime acceptance.",
+      "operator": "SQL0030 current account/profile/permission check + audit, bounded projection. SQL0031 identity/authority/amount review. SQL0032 repeats review and current session/device/permission checks, existing assignment only. verifiedReceiptReplayExecution confirms provider outside locks then reauthorizes inside billing transaction. No ownership repair.",
+      "otherReaders": "subscriptionServiceGuarantee loads billing order ID through exact entitlement cycle; getPaidBillingReferenceForSubscription uses paid/refunded joins. cashierHistoricalOperationAuthority requires current active subscription and eligible device/seat/billing period. These dataflow readers are not automatically erased merely because normal merchant login stops.",
+      "auditDurationCaution": "database_admin_access_audits contains actor/optional merchant/reason/request_hash/transactionID/start/expiry. Receipt functions set expires_at now()+1minute for authority auditing; no row-retention duration or scheduled erasure is established by that value."
+    },
+    "newRuntimeProof": {
+      "test": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+      "before": "Existing20TAP exact accepted e3d file had active/duplicate/permission/session/provider/fault/race tests but no composition with actual merchant deletion.",
+      "addition": "Two subtests appended after all pre-existing assertions. Reuse already successfully paid/applied normal bot/cashier fixtures. Actual suspend/createDeletionRequest/completeMerchantDeletionPostgres via separate trusted auth role, then existing mounted receipt replay HTTP with real current owner/finance sessions and restricted execution role.",
+      "cases": [
+        "Assert completed request, closed account/NULL phone, deleted merchant marker",
+        "Paid/applied order preserves every field except metadata{} and updated_at; exact billing event/application and all original inbox records retained",
+        "Compare selected peer account/merchant/order/event/application/subscription/session/audit/request rows before and after deletion",
+        "Owner/finance/owner repeated replay returns409 RECEIPT_REPLAY_EXECUTION_CONFLICT, no raw refs in response, provider call delta0, no new grant or mutation of target/peers/receipts",
+        "Nested receipt review/execute audit failure transaction leaves exact owned operator audits unchanged"
+      ],
+      "acceptancePending": false,
+      "accepted": true,
+      "source": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+      "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939",
+      "ci": {
+        "run": 40654601845,
+        "job": 122702990398,
+        "conclusion": "success",
+        "fileTap": 22,
+        "newFunctionalCases": 2,
+        "operatorHttpAttempts": 6,
+        "providerCallsDelta": 0,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "runtime": "v24.22.1",
+        "allWorkflows": {
+          "total": 58,
+          "success": 58,
+          "failed": 0,
+          "pending": 0,
+          "cancelled": 0
+        },
+        "overlap": "The22TAP file is part of836TAP broader suite, not additional unique tests.",
+        "teardown": "All owned containers/anonymous volumes teardown step success.",
+        "quality": {
+          "run": 40654601991,
+          "jobs": [
+            {
+              "id": 122702873363,
+              "name": "full-typecheck",
+              "conclusion": "success"
+            },
+            {
+              "id": 122702873688,
+              "name": "quality-tool-tests",
+              "conclusion": "success"
+            },
+            {
+              "id": 122702873702,
+              "name": "translation-structure-audit",
+              "conclusion": "success"
+            },
+            {
+              "id": 122702873739,
+              "name": "full-build",
+              "conclusion": "success"
+            }
+          ]
+        },
+        "security": {
+          "run": 40654602110,
+          "repositoryJob": 122702990466,
+          "scannedFiles": 2543,
+          "scannedHistoricalBlobs": 10624,
+          "findings": 0,
+          "conclusion": "success"
+        }
+      },
+      "fixtureProvenance": "Unchanged owned fixture creates test_fake checkout, rebinds it through bootstrap inspection/setup to synthetic sandbox payment/request references and inserts a synthetic verified inbox record. Existing real replay application uses intercepted synthetic provider GET responses and actual SQL transactions. The appended boundary then uses actual canonical deletion services and operator HTTP. No real signed gateway event/hosted payment or new inbox-admission claim."
+    },
+    "priorCandidate": {
+      "source": "ce3de96f99b920ced7bd80b90b8c2c79973bfa9d",
+      "accepted": false,
+      "reason": "New test initially expected both billing classes to use status paid. Source review caught cashier's existing settled state applied; corrected that new assertion before accepting any runtime. No application fix or weakened existing assertion; superseded CI not counted as acceptance.",
+      "ciDisposition": "Superseded isolated audit run40654436069/job122701941904 concluded cancelled, not accepted and not counted as current success."
+    },
+    "reusedProof": {
+      "management": {
+        "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+        "run": 40632669335,
+        "job": 122632435031,
+        "tap": 81,
+        "files": 4,
+        "scope": "Current owner deletion/password/quiescence/peers and privacy matrix. New test invokes service deletion, not a new whole-app owner HTTP authority certificate."
+      },
+      "F005_A1_A2_A3": "Existing deletion/emergency-chain/concurrency proofs preserved; no removal of audit409.",
+      "billingBaseline": {
+        "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+        "run": 40632669293,
+        "job": 122632437920,
+        "receiptExecutionTap": 20,
+        "receiptReviewTap": 20,
+        "operatorReadTap": 11,
+        "verifiedInboxTap": 18,
+        "providerDiscoveryTap": 19,
+        "note": "Individual files within broader834TAP/97invocations/94unique; not additive independent totals."
+      }
+    },
+    "remaining": {
+      "F005_R1": "Historical requester snapshot purpose/readers/trigger/duration/disposition open.",
+      "F005_R2": "This bounded billing/provider subset is reconciled; order/payment/Meta reply/POS receipt and audit fields still need reader classification. No approved per-class retention allowlist, trigger/duration, hold/release or before/at/after expiry behavior.",
+      "F005_R3": "Versioned emergency privacy/chain treatment open; current409 preserved.",
+      "F005_R4_R5": "Deployed history, backups/media/exports/external writers and restore reintroduction remain blocked under GitHub-only scope."
+    },
+    "limits": [
+      "No new application defect or unauthorized disclosure inferred from retained financial identity alone.",
+      "Provider traffic in tests is intercepted synthetic status responses; no real provider or hosted access.",
+      "New evidence covers actual service deletion followed by mounted operator HTTP, not owner deletion HTTP authorization, a full app, new global GET/browser, signed late webhook, refund fixture or every worker/recovery path.",
+      "No retention policy/period/exception/financial repair/sequence compatibility choice adopted; known45 gate statuses unchanged."
+    ],
+    "nextExactAction": "Continue existing F005-R2 with retained order/payment and reply-ledger/inbound/outbound fields: trace actual post-deletion API/worker readers and reuse current cashier/provider-identifier/deletion proofs. Separate tombstoned accounting anchors from any live processing or exposed personal field before proposing an allowlist or duration. Preserve the new paid bot/cashier operator-replay denial proof; do not repeat accepted lanes absent source change/failure/named gap. F005-R1/R2/R3 policy and F005-R4/R5 hosted inventory remain open/blocked; no invented deadline, emergency409 bypass, policy adoption, hosted action, merge or deployment.",
+    "acceptedExecutable": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d",
+    "sourceTree": "d0775f722782035c71aa69266cd4baccc777880d",
+    "checkout": "f08abcfb66a6c647d217633aee762e7a0e52ebea",
+    "checkoutTree": "d0775f722782035c71aa69266cd4baccc777880d",
+    "identicalTree": true
+  },
+  "previousCurrentReviewPointer": "requesterSnapshotUseReconciliation20261028",
+  "latestAcceptedExecutable": "9bd0ca203a83d72a11ac8f8d342d63a76ee4413d"
 }
