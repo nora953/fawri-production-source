@@ -1137,5 +1137,106 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_SETTINGS_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:completed,allAssertionsPassed:completed===4,foreignOriginDenied:completed===4,hosted:false}));
   });
 
+
+  await t.test('current online report full-app actor tenant projection range and read failure boundary',async rt=>{
+    const x=await actor('merchant'),y=await actor('merchant');
+    for(const m of [x,y]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[m.id]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});
+      m.cookie=MERCHANT_SESSION_COOKIE+'='+m.session.token;
+      m.location='report-location-'+randomUUID();
+      await admin.query('INSERT INTO merchant_locations(id,merchant_id,name) VALUES($1,$2,$3)',[m.location,m.id,m===x?'Own report location':'Peer private report location']);
+    }
+    let completed=0;
+    async function order(m,label,{channel='online',status='delivered',created='2025-01-01',delivered='2025-01-10',cancelled=null,subtotal=10000,fee=1000,paid=false,units=1}={}){
+      const id='report-'+label+'-'+randomUUID();
+      await admin.query(`INSERT INTO orders(id,merchant_id,customer_name,customer_phone,customer_address,customer_external_id,
+        source_channel,status,created_at,delivered_at,cancelled_at,subtotal_iqd,delivery_fee_iqd,total_iqd,
+        fulfillment_location_id,payment_method,payment_status,payment_verified_at,notes,metadata)
+        VALUES($1,$2,$3,'private-report-phone','private-report-address','private-report-external',$4,$5,$6,$7,$8,$9,$10,$9+$10,$11,$12,$13,$14,'private-report-notes','{"private":"private-report-metadata"}'::jsonb)`,
+        [id,m.id,'private-report-customer-'+label,channel,status,created,delivered,cancelled,subtotal,fee,m.location,
+          paid?'superqi':'cash_on_delivery',paid?'paid':'cash_on_delivery',paid?'2025-01-13':null]);
+      await admin.query(`INSERT INTO order_items(id,merchant_id,order_id,product_name_snapshot,quantity,unit_price_iqd,line_total_iqd)
+        VALUES($1,$2,$3,$4,$5,$6,$7)`,['report-item-'+randomUUID(),m.id,id,'Report product '+label,units,subtotal/units,subtotal]);
+    }
+    await order(x,'own-first',{paid:true,units:2});
+    await order(x,'own-second',{channel:'instagram',created:'2025-01-15',delivered:'2025-01-20',subtotal:20000,fee:2000});
+    await order(x,'own-active',{status:'confirmed',created:'2025-01-11',delivered:null,subtotal:3000,fee:0});
+    await order(x,'own-cancelled',{status:'cancelled',created:'2025-01-02',delivered:null,cancelled:'2025-01-12',subtotal:4000,fee:0});
+    await order(x,'cashier-excluded',{channel:'CaShIeR',subtotal:900000,fee:0});
+    await order(y,'peer-private',{created:'2025-01-10',delivered:'2025-01-11',subtotal:777000,fee:0});
+    const state=async()=>Object.fromEntries(await Promise.all(['orders','order_items','merchant_locations'].map(async table=>[table,
+      (await admin.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[[x.id,y.id]])).rows])));
+    const before=await state(),business=await snapshot(),path='/API/RePoRtS/OnLiNe/?merchant_id='+y.id+'&merchantId='+y.id;
+    const noPrivate=body=>assert.doesNotMatch(JSON.stringify(body),/private-report-|peer-private|Peer private|cashier-excluded|password_hash|token_hash|customer_phone|customer_address|metadata/);
+    function checkReport(r,expected){
+      assert.equal(r.status,200);assert.equal(r.cache,'no-store');assert.deepEqual(Object.keys(r.body).sort(),['ok','report']);assert.equal(r.body.ok,true);
+      const report=r.body.report;
+      assert.deepEqual(Object.keys(report).sort(),[...Object.keys(expected),'generated_at'].sort());
+      assert.ok(Number.isFinite(Date.parse(report.generated_at)));assert.deepEqual({...report,generated_at:undefined},{...expected,generated_at:undefined});noPrivate(r.body);
+    }
+    const all={
+      received_order_count:4,active_order_count:1,delivered_order_count:2,cancelled_order_count:1,
+      delivered_sales_iqd:30000,delivered_delivery_fees_iqd:3000,delivered_order_value_iqd:33000,average_delivered_order_iqd:16500,paid_electronic_count:1,
+      by_channel:[
+        {source_channel:'instagram',order_count:1,active_order_count:0,delivered_order_count:1,delivered_sales_iqd:20000,delivered_order_value_iqd:22000},
+        {source_channel:'online',order_count:3,active_order_count:1,delivered_order_count:1,delivered_sales_iqd:10000,delivered_order_value_iqd:11000},
+      ],
+      by_location:[{location_id:x.location,location_name:'Own report location',delivered_order_count:2,delivered_sales_iqd:30000,delivered_order_value_iqd:33000}],
+      top_products:[{product_name:'Report product own-second',units:1,revenue_iqd:20000},{product_name:'Report product own-first',units:2,revenue_iqd:10000}],
+    };
+    try{
+      await rt.test('current secure merchant only projection ignores foreign tenant query and never exposes customer or peer fields',async()=>{
+        for(const actor of [undefined,owner,manager,denied]){const r=await req(path,actor);assert.equal(r.status,401);noPrivate(r.body);}
+        for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:x.cookie+'; '+owner.cookie},{Cookie:'fawri_merchant_session=synthetic-invalid'}]){
+          const r=await req(path,x,'GET',undefined,headers);assert.equal(r.status,401);noPrivate(r.body);
+        }
+        for(const route of ['/api/reports/online',path])checkReport(await req(route,x),all);
+        const peer=await req('/api/reports/online?merchant_id='+x.id,y);
+        assert.equal(peer.status,200);assert.equal(peer.body.report.delivered_sales_iqd,777000);
+        assert.deepEqual(peer.body.report.top_products,[{product_name:'Report product peer-private',units:1,revenue_iqd:777000}]);
+        assert.equal(peer.body.report.by_location[0].location_id,y.location);
+        assert.doesNotMatch(JSON.stringify(peer.body),/own-first|own-second|Own report location|private-report-/);
+        assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);completed++;
+      });
+      await rt.test('received delivered cancelled and payment measures use their own half-open event ranges and invalid range fails closed',async()=>{
+        checkReport(await req(path+'&from=2025-01-10T00%3A00%3A00Z&to=2025-01-20T00%3A00%3A00Z',x),{
+          from:'2025-01-10T00:00:00.000Z',to:'2025-01-20T00:00:00.000Z',
+          received_order_count:2,active_order_count:1,delivered_order_count:1,cancelled_order_count:1,
+          delivered_sales_iqd:10000,delivered_delivery_fees_iqd:1000,delivered_order_value_iqd:11000,average_delivered_order_iqd:11000,paid_electronic_count:1,
+          by_channel:[
+            {source_channel:'instagram',order_count:1,active_order_count:0,delivered_order_count:0,delivered_sales_iqd:0,delivered_order_value_iqd:0},
+            {source_channel:'online',order_count:1,active_order_count:1,delivered_order_count:1,delivered_sales_iqd:10000,delivered_order_value_iqd:11000},
+          ],
+          by_location:[{location_id:x.location,location_name:'Own report location',delivered_order_count:1,delivered_sales_iqd:10000,delivered_order_value_iqd:11000}],
+          top_products:[{product_name:'Report product own-first',units:2,revenue_iqd:10000}],
+        });
+        for(const query of ['from=not-a-date','from=2025-01-20&to=2025-01-10','from=2025-01-10&to=2025-01-10']){
+          const r=await req('/api/reports/online?'+query,x);assert.equal(r.status,400);assert.equal(r.body.code,'ONLINE_REPORT_RANGE_INVALID');assert.equal(r.cache,'no-store');noPrivate(r.body);
+        }
+        assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);completed++;
+      });
+      await rt.test('actual restricted-role SQL read denial returns a generic error and legitimate report recovers after restoring fixture privilege',async()=>{
+        checkReport(await req('/api/reports/online',x),all);
+        try{
+          await admin.query('REVOKE SELECT ON order_items FROM '+runtime.role);
+          assert.equal((await admin.query("SELECT has_table_privilege($1,'public.order_items','SELECT') AS allowed",[runtime.role])).rows[0].allowed,false);
+          await assert.rejects(runtime.runtimePool.query('SELECT 1 FROM order_items LIMIT 0'),e=>e.code==='42501');
+          const r=await req(path,x);assert.equal(r.status,500);assert.equal(r.cache,'no-store');
+          assert.deepEqual(r.body,{ok:false,code:'ONLINE_REPORT_OPERATION_FAILED',error:'online report operation failed'});
+          assert.doesNotMatch(JSON.stringify(r.body),/order_items|permission denied|42501|knowledge_app_|private-report-/);
+          assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+        }finally{await admin.query('GRANT SELECT ON order_items TO '+runtime.role);}
+        checkReport(await req('/api/reports/online',x),all);
+        assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);completed++;
+      });
+      console.log('P0_ONLINE_REPORT_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:completed,allAssertionsPassed:completed===3,hosted:false}));
+    }finally{
+      await admin.query('DELETE FROM order_items WHERE merchant_id=ANY($1::text[])',[[x.id,y.id]]);
+      await admin.query('DELETE FROM orders WHERE merchant_id=ANY($1::text[])',[[x.id,y.id]]);
+      await admin.query('DELETE FROM merchant_locations WHERE merchant_id=ANY($1::text[])',[[x.id,y.id]]);
+    }
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
