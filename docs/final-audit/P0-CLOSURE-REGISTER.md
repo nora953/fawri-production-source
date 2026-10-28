@@ -1,3 +1,32 @@
+## قبول تغيير صلاحيات المساعد أثناء الجلسات النشطة — 2026-10-28
+
+اكتمل قبول الدفعة الجارية عند المصدر **69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74** وشجرته **12151a5b50d7971b1fc15aa3caaadc3d299243b8**. نُفذت الفحوص2026-10-27 وطوبقت نتائجها ومصدرها2026-10-28 دون إعادة تشغيلها في الاستئناف. البوابة القائمة **P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX** تبقى OPEN. [الدليل في الخريطة الموجودة](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json)، boundary=activeAdminPermissionChange؛ وسجل الإدارة تحت manualReconciliation.adminFamilyRouteLedger20261027.
+
+طوبق النقص قبل الإضافة: رحلة admin-auth-router الحالية تمنح قبل إصدار جلسة المساعد، واختبار authentication-operator-pool يغير المنح دون كوكيز مساعد نشط؛ admin-permissions القديم يستخدم JSON. لذلك أضيفت4 حالات فقط إلى management-full-app الموجود، دون تغيير التطبيق أو المخطط أو السياسة:
+
+- مدخلات permissions غير الصالحة تعيد400 وتحفظ الحساب والملف والمنح والجلسات والأجهزة والأعمال المختارة، مع بقاء ضابط القراءة المشروع200.
+- trigger مملوك يرفع23514 عند INSERT بعد DELETE المنح القديمة. HTTP500 وmarker العطل المصطنع في وضع test يثبتان وقوع الحقن. تتراجع المعاملة بالكامل وتبقى الجلسات القديمة صالحة؛ يُحذف trigger/function فيfinally.
+- تغيير view_merchants إلىview_logs عبر المالك يزيد session/security versions بمقدار1، وينسب المنح إلى المالك رغم حقول النظير المزورة. تُلغى جلستا الجهازين بسببrole_changed، وتعود كوكيزهما401 على الهوية والمسارين القديم والجديد. تبقى بيانات الدخول والملف وثقة الأجهزة والنظراء سليمة.
+- بعد إصدار جلسة بالسلطة الحالية: الهوية200، دليل التجار403، السجلات200. إزالة المنح بقائمة فارغة تبطل الجلسة النشطة؛ جلسة جديدة بلا منح تحفظ الهوية200 وتُرفض المساران403. ليس ذلك رحلة login/OTP جديدة.
+
+[HTTP40571069042/job122425088861](https://github.com/nora953/fawri-production-source/actions/runs/40571069042): **81/81 TAP في4 ملفات**، منها50/50 في الملف المعدّل؛ الزيادة5 تشمل4 حالات والأب. [SQL40571069527/job122425251636](https://github.com/nora953/fawri-production-source/actions/runs/40571069527): **829TAP/97 استدعاء/94 ملفًا**،0 فشل/تخطٍّ/إلغاء. SQL الأوسع يستثني الملف المعدّل؛ لا يُجمع العددان كتغطية فريدة. checkout **5c1643399fbf9d69e2a6ed003a8ce88dc2b092e0** طابق شجرة المصدر في الحزمتين.
+
+**58/58 مسار CI ناجح** عند المصدر المذكور، دون معلّق أو فاشل أو ملغى عند القبول. البناء والأنواع والوحدات ناجحة في40571069517. الأمن40571069522/job122425446250 ناجح:2543 ملفًا و10564blob تاريخيًا دون findings.
+
+المحاولة الأولى **a48bc2f2816f54ce6e350b578a0ef1505402b281** غير مقبولة ومحفوظة في40570759488/job122423992542: الملف44PASS/6FAIL تشمل الآباء. ضابط دليل التجار المشروع أعاد500 لغياب صلاحية fawri_issue_admin_directory_audit في تهيئة الاختبار؛ تبعت ذلك حالات تابعة. أُعيد استخدام createDisposableMerchantDirectoryOperator الموجود في رحلة admin-auth، بدور directory مستقل وteardown للمجموعة، دون توسيع primary/auth أوCRUD لدفتر التدقيق أو تخفيف assertion. أُوقف تنفيذ الحالات التابعة بعد فشل سابق كي لا يظهر marker نجاح مضلل.
+
+تعثر منفصل في40571069763/job122425091912 قبل تشغيل المتصفح: browser=null وresults=[] ومهلة تجهيز المتصفح، بعد نجاح24 اختبار توقيع. أُعيدت الوظيفة وحدها مرة واحدة على المصدر نفسه؛ job122426726821 نجح معChrome155 و8 حالات متصفح و24 اختبار توقيع. لم يُعد هذا الاستئناف تشغيلها. synthetic ACK يبقى serverSync NOT_EXECUTED؛ لا قبول مزامنة مستضافة.
+
+سجل الإدارة المحدود يطابق **18 تسجيلًا** ثابت المصدر:14 من auth-admin-postgres و4 من auth-session. يميز القبول الحالي الكامل من نجاح aggregate ومن الدليل التاريخي والمراجعة المصدرية؛ حدود عضوية الجهاز المتداخل لا تُرقّى تلقائيًا إلى فحص كامل. هذه ليست18 بوابة جديدة أو18 إغلاقًا أو مقامًا لاكتمال P0.
+
+الحدود: لقطات الأعمدة المختارة تستثني heartbeat/activity/idle expiry وupdated_at المشروع؛6 جداول أعمال لا كامل المخطط. قراءات الدليل تضيف audits مشروعة خارج الثبات المختار. عطل INSERT يثبت تراجع معاملة المنح، لا أعطال revoke/audit اللاحقة بين المعاملات أو سباقات login/permission. marker500 في test ليس قبول خصوصية خطأproduction. الجلسات تهيئة بالسلطة الموجودة، وليس login/OTP أو hosted.
+
+التالي: Reconcile FIELD002-R1/R2/R3 in the existing P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json against accepted notification response contracts/current source. Classify explicit field-policy decisions versus missing executable assertions before new code. Reuse accepted admin and notification cases; do not automatically duplicate historical/aggregate cases or reopen the18-route admin family. Keep SEQ-R2 UNAPPROVED.
+
+45 حالة كما هي:29 CLOSED_SOURCE/7 OPEN/9 BLOCKED؛ completeP0Inventory=false،overallPercentage=null،**NO-GO**. SEQ-R2 يبقى UNAPPROVED؛ لا hosted/merge/deploy/P1/P2.
+
+---
+
 ## قبول حقول الإدارة وإعادة تعيين كلمة مرور المساعد — 2026-10-27
 
 البوابة القائمة **P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX**؛ النقص المحدد هو حقول directory/work-monitor وإعادة تعيين كلمة مرور المساعد على المسار الحالي بهوية SQL المقيّدة وauth منفصل. المصدر **323432be46368316bf0c6714d9c790cccde91414**، شجرته **207887ffaa1c796a48de17b95324d73ae6a1887d**. تغير ملف اختبار management-full-app الموجود فقط، دون تغيير التطبيق أو المخطط أو السياسة. [الدليل في الخريطة الموجودة](evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json) تحت manualReconciliation.namedBoundaryReconciliation، boundary=adminAccountProjectionAndOwnerPasswordReset؛ يتضمن6 خلايا مطابقة للمسارات وبصمات المصدر والاختبار.

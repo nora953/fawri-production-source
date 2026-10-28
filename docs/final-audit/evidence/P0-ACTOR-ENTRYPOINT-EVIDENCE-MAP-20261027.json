@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Reconcile the existing active-assistant permission-change requirement with current PostgreSQL route/service proofs before another test. The current admin-auth journey grants permissions before login, while authentication-operator-pool changes permissions without an active assistant cookie; legacy admin-permissions uses JSON. Reuse exact current evidence if available; otherwise add only the missing current owner PATCH permissions -> old-cookie denial/new-session granted-access case in the existing harness. Preserve accepted projection/reset/session/device cases, avoid blanket full-app duplication, and keep SEQ-R2 UNAPPROVED.",
+    "nextExactAction": "Reconcile FIELD002-R1/R2/R3 in the existing P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json against accepted notification response contracts/current source. Classify explicit field-policy decisions versus missing executable assertions before new code. Reuse accepted admin and notification cases; do not automatically duplicate historical/aggregate cases or reopen the18-route admin family. Keep SEQ-R2 UNAPPROVED.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -31773,19 +31773,756 @@
           "checkoutTreeMatches": true,
           "interpretation": "Existing admin-auth journey1 TAP and separate-auth authority63 TAP are included in829; they are reused, not64 new cases. Management full-app is excluded; do not add totals as unique tests."
         }
+      },
+      {
+        "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "boundary": "activeAdminPermissionChange",
+        "status": "BOUNDED_CURRENT_ACTIVE_ADMIN_PERMISSION_REPLACEMENT_REMOVAL_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
+        "acceptedOn": "2026-10-28",
+        "executionDate": "2026-10-27",
+        "sourceReviewed": "beca08d29e0df3d34ecdb498cb8b0842656f3301",
+        "acceptedSource": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+        "sourceTree": "12151a5b50d7971b1fc15aa3caaadc3d299243b8",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "route": [
+          "PATCH",
+          "/api/auth/admins/:adminId/permissions"
+        ],
+        "originalGap": "Current admin-auth journey grants before login; auth-pool service proof changes grants without an active assistant cookie. Legacy admin-permissions uses JSON. These do not establish current owner PATCH invalidation of active cookies.",
+        "newFunctionalCases": 4,
+        "newTapIncludingGroup": 5,
+        "assertions": [
+          "Nonarray/unknown permissions return400 without selected account/profile/grant/session/device/business mutation; original allowed access stays200.",
+          "Owned BEFORE INSERT trigger raises23514 after DELETE of old grants. Actual HTTP500 and synthetic test-mode error marker identify the fault; transaction restores old grants/versions and both active cookies keep original access.",
+          "Owner replaces view_merchants with view_logs using path target and current-session actor despite injected peer/role fields; security/session versions+1, no credential/profile/trust/peer change; old two-device cookies401 across identity/old/new business endpoints.",
+          "Fresh authority-issued current-grant cookie: own identity200, removed merchant directory403, newly granted logs200. Empty grant list revokes active cookie; freshly issued empty-grant cookie preserves own identity200 and denies both protected reads403."
+        ],
+        "sourcePolicy": "Existing secure owner guard and normalized grants -> authentication transaction locks account, deletes/inserts grants and increments versions -> account-scoped revokeAll(role_changed) -> audit. No application, schema or policy change.",
+        "testFixture": {
+          "restrictedPrimary": true,
+          "separateAuthenticationLogin": true,
+          "separateMerchantDirectoryLogin": true,
+          "directoryHelper": "artifacts/api-server/tests/helpers/disposable-subscription-directory-operator.mjs",
+          "setup": "Existing createDisposableMerchantDirectoryOperator with captured bootstrap URL and per-group teardown. Intended separate role gets audited directory capability without audit-table CRUD or widening primary/auth.",
+          "dependentCaseFailure": "Stop dependent children after a failed case; success marker cannot be printed after a child assertion failure."
+        },
+        "sourceAnchors": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlob": "d0b72e95a4957252e3dbe94b64056572f56018c2"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts",
+            "gitBlob": "f330455d224194cd12401b31752b1b1929f69e9e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+            "gitBlob": "cd6c904610ed95206d309f52efa11a96b744012e"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresAdminAccountAuthority.ts",
+            "gitBlob": "00b86f39ebcd28cc52ec3477f465c3eca1ddf1c2"
+          },
+          {
+            "path": "artifacts/api-server/src/services/authPostgresSessionAuthority.ts",
+            "gitBlob": "1d51316e51a20783ea1e5ddbca23044ae129fd96"
+          },
+          {
+            "path": "artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts",
+            "gitBlob": "303a309c7bc039c3d0b73365121e84fffca91e88"
+          },
+          {
+            "path": "artifacts/api-server/tests/authentication-operator-pool-postgres.integration.test.mjs",
+            "gitBlob": "45094b235091a55aaf7d4afb047c7644631662d3"
+          },
+          {
+            "path": "artifacts/api-server/tests/admin-permissions.integration.test.mjs",
+            "gitBlob": "663ebbacef01a23af972b61b480d19d2b0f13537"
+          },
+          {
+            "path": "artifacts/api-server/tests/helpers/disposable-subscription-directory-operator.mjs",
+            "gitBlob": "b0506581d3b446a9ca1512ecc862eecc82fa6082"
+          },
+          {
+            "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+            "gitBlob": "3f81b6eb1e2b56a1e0c3504c58f91bff9f3d7681"
+          }
+        ],
+        "targetEvidence": {
+          "run": 40571069042,
+          "job": 122425088861,
+          "conclusion": "success",
+          "passedTap": 81,
+          "files": 4,
+          "changedFilePassedTap": 50,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "auditBatch": "management-privacy-http",
+              "runtime": "v24.22.1",
+              "exit": 0,
+              "passed": 50,
+              "failed": 0,
+              "skipped": 0,
+              "cancelled": 0,
+              "summaryComplete": true
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "auditBatch": "management-privacy-http",
+              "runtime": "v24.22.1",
+              "exit": 0,
+              "passed": 11,
+              "failed": 0,
+              "skipped": 0,
+              "cancelled": 0,
+              "summaryComplete": true
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "auditBatch": "management-privacy-http",
+              "runtime": "v24.22.1",
+              "exit": 0,
+              "passed": 6,
+              "failed": 0,
+              "skipped": 0,
+              "cancelled": 0,
+              "summaryComplete": true
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "auditBatch": "management-privacy-http",
+              "runtime": "v24.22.1",
+              "exit": 0,
+              "passed": 14,
+              "failed": 0,
+              "skipped": 0,
+              "cancelled": 0,
+              "summaryComplete": true
+            }
+          ],
+          "checkout": "5c1643399fbf9d69e2a6ed003a8ce88dc2b092e0",
+          "checkoutTree": "12151a5b50d7971b1fc15aa3caaadc3d299243b8",
+          "checkoutTreeMatches": true,
+          "summaryMarker": "P0_ADMIN_ACTIVE_PERMISSION_HTTP"
+        },
+        "broaderEvidence": {
+          "run": 40571069527,
+          "job": 122425251636,
+          "conclusion": "success",
+          "passedTap": 829,
+          "invocations": 97,
+          "files": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "changedFileIncluded": false,
+          "checkout": "5c1643399fbf9d69e2a6ed003a8ce88dc2b092e0",
+          "checkoutTree": "12151a5b50d7971b1fc15aa3caaadc3d299243b8",
+          "checkoutTreeMatches": true,
+          "interpretation": "Broader suite excludes management-full-app; do not add totals as unique tests."
+        },
+        "failedAttempt": {
+          "source": "a48bc2f2816f54ce6e350b578a0ef1505402b281",
+          "run": 40570759488,
+          "job": 122423992542,
+          "conclusion": "failure",
+          "changedFilePassedTap": 44,
+          "changedFileFailedTap": 6,
+          "notAccepted": true,
+          "cause": "Legitimate merchant-directory control returned500/permission denied for fawri_issue_admin_directory_audit: new test lacked existing separate directory fixture. Subsequent dependent failures followed. Reused intended helper; no assertion weakening, primary/auth privilege widening or app defect accepted."
+        },
+        "validation": {
+          "sourceDiff": {
+            "base": "beca08d29e0df3d34ecdb498cb8b0842656f3301",
+            "files": [
+              "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs"
+            ],
+            "applicationChanged": false
+          },
+          "quality": {
+            "run": 40571069517,
+            "conclusion": "success",
+            "fullBuild": true,
+            "fullTypecheck": true
+          },
+          "security": {
+            "run": 40571069522,
+            "job": 122425446250,
+            "conclusion": "success",
+            "trackedFiles": 2543,
+            "historicalBlobs": 10564,
+            "trackedFindings": 0,
+            "historyFindings": 0
+          },
+          "allSourceWorkflows": {
+            "head": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+            "count": 58,
+            "success": 58,
+            "pending": 0,
+            "failed": 0,
+            "cancelled": 0,
+            "runs": [
+              {
+                "id": 40571069616,
+                "name": "Isolated Neon preflight static safety",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069463,
+                "name": "Merchant access security",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571068942,
+                "name": "Location routing engine",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069404,
+                "name": "Billing provider readiness",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069448,
+                "name": "Order operations",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069248,
+                "name": "Browser storage authority audit",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069302,
+                "name": "Merchant deletion promotions lifecycle",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069447,
+                "name": "Commerce cashier closeout",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069216,
+                "name": "Backup and restore drill",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069257,
+                "name": "Complete migration safety",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069477,
+                "name": "Bot logic adversarial matrix",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069415,
+                "name": "Merchant deletion cashier lifecycle",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069622,
+                "name": "AWS KMS production adapter readiness",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069435,
+                "name": "Cashier subscription lifecycle",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069296,
+                "name": "Catalog variant signature schema contract",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069256,
+                "name": "P0 Support privacy authority diagnostic",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069566,
+                "name": "Staging container contract",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069151,
+                "name": "Merchant regional PostgreSQL authority",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069413,
+                "name": "PostgreSQL outage recovery proof",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069544,
+                "name": "Merchant deletion audit PII",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571068895,
+                "name": "Merchant settings",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069585,
+                "name": "Meta OAuth operational cutoff",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069587,
+                "name": "Auth OTP contract continuity",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069297,
+                "name": "Global subscription golden journey",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069650,
+                "name": "Product catalog UI cutover",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069042,
+                "name": "P0 management privacy HTTP matrix",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069550,
+                "name": "Merchant deletion physical media lifecycle",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069056,
+                "name": "P0 notification privacy HTTP matrix",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069648,
+                "name": "Cashier native IndexedDB engineering audit",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069323,
+                "name": "Cashier operational cutoff",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069609,
+                "name": "Pre-release performance smoke gate",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069367,
+                "name": "Knowledge embedding readiness",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069546,
+                "name": "Dashboard channel coherence",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069478,
+                "name": "Cashier dashboard surface regression",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069408,
+                "name": "Location inventory authority",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069356,
+                "name": "Complete schema candidate",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069656,
+                "name": "Merchant deletion provider identifiers",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069140,
+                "name": "P0 conversation privacy HTTP matrix",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069401,
+                "name": "Global Merchant PostgreSQL HTTP Journey",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069422,
+                "name": "Observability mounted routes",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069423,
+                "name": "Meta webhook PostgreSQL ingress cutover",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069602,
+                "name": "Merchant account security UI",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069333,
+                "name": "Subscription service guarantee validation",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069763,
+                "name": "P0 signed cashier offline authority",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069730,
+                "name": "PostgreSQL migration candidate",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069487,
+                "name": "Auth PostgreSQL concurrency proof",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069117,
+                "name": "Meta webhook pipeline",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069672,
+                "name": "Global admin golden journey",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069389,
+                "name": "Clean deployment golden gate",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069381,
+                "name": "Global merchant golden journey",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069517,
+                "name": "Final quality gates",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069201,
+                "name": "P0 dependency security upgrade candidate",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069013,
+                "name": "SEQ D2 canonical storage acceptance",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571070133,
+                "name": "PostgreSQL schema validation",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069780,
+                "name": "Foundation integration final gate",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069614,
+                "name": "P0 cashier IndexedDB browser regression",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069527,
+                "name": "Isolated PostgreSQL engineering audit",
+                "conclusion": "success"
+              },
+              {
+                "id": 40571069522,
+                "name": "Final security and supply chain",
+                "conclusion": "success"
+              }
+            ]
+          },
+          "browserInfrastructureRetry": {
+            "run": 40571069763,
+            "initialJob": 122425091912,
+            "initialConclusion": "failure",
+            "initialMarker": {
+              "browser": null,
+              "results": [],
+              "infrastructureError": "Browser prerequisite timed out"
+            },
+            "signingTestsPassed": 24,
+            "retryJob": 122426726821,
+            "retryConclusion": "success",
+            "browser": "Chrome/155.0.8059.39",
+            "passedBrowserCases": 8,
+            "sameSource": true,
+            "singleJobRetryOnly": true,
+            "noSourceChange": true,
+            "notNewAdminCases": true,
+            "limits": "Existing synthetic ACK has serverSync NOT_EXECUTED; not hosted full synchronization."
+          }
+        },
+        "limits": [
+          "Owned offline loopback HTTP/SQL fixture, not hosted acceptance or interactive relogin/OTP/browser cookie order.",
+          "Selected snapshots exclude session heartbeat/activity/idle expiry and account/profile updated_at; six business tables, not schema-wide immutability.",
+          "Directory reads legitimately add database_admin_access_audits outside immutable snapshots.",
+          "INSERT fault proves grant-transaction rollback, not later revoke/audit cross-transaction faults or concurrent login/permission races.",
+          "Test-mode500 body marker identifies the injection; no production error-envelope privacy acceptance.",
+          "Prior actor negatives and aggregate/historical proofs reused; no whole inventory or parent gate closure."
+        ],
+        "applicationCodeChanged": false,
+        "newGate": false,
+        "parentGateClosed": false,
+        "hosted": false,
+        "next": "Reconcile FIELD002-R1/R2/R3 in the existing P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json against accepted notification response contracts/current source. Classify explicit field-policy decisions versus missing executable assertions before new code. Reuse accepted admin and notification cases; do not automatically duplicate historical/aggregate cases or reopen the18-route admin family. Keep SEQ-R2 UNAPPROVED."
       }
     ],
     "currentTestOverlay": {
-      "source": "323432be46368316bf0c6714d9c790cccde91414",
+      "source": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "1d34d293c7dcd656d1bacd22fa3898e0cdba7b50",
+      "gitBlob": "3f81b6eb1e2b56a1e0c3504c58f91bff9f3d7681",
       "catalogueRegenerated": false,
-      "interpretation": "Dated AST source/test hashes and reference counts remain historical catalogue data. Current self-session, owner-delegated/device and account-projection/reset runtime overlays retain independent exact source/test pins; catalogue execution=false does not deny those manual runtime proofs."
+      "interpretation": "Dated AST counts/input hashes remain historical source-reference data. Manual runtime overlays and18-route ledger have independent current source/test pins; no automatic acceptance of catalogue rows."
+    },
+    "adminFamilyRouteLedger20261027": {
+      "acceptedOn": "2026-10-28",
+      "status": "BOUNDED18_ROUTE_EVIDENCE_LAYERS_RECONCILED_NOT_COMPLETE_P0",
+      "sourceReviewed": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+      "counts": {
+        "registeredRows": 18,
+        "adminPostgresRows": 14,
+        "selfSessionRows": 4,
+        "newReleaseGates": 0
+      },
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/admins",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:124",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_PROJECTION_OR_RESET",
+          "proofs": [
+            "adminAccountProjectionAndOwnerPasswordReset"
+          ],
+          "limits": "No free-form historical-value completeness, failed-login stub accuracy or reset fault-atomicity acceptance."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:139",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "CURRENT_AGGREGATE_POSITIVE_PLUS_FULL_APP_DENIALS",
+          "proofs": [
+            "adminAccountProjectionAndOwnerPasswordReset",
+            "artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "Not blanket full-app creation/collision/concurrency or enabled-input acceptance."
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/admins/:adminId/enabled",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:192",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "CURRENT_AGGREGATE_POSITIVE_PLUS_FULL_APP_DENIALS",
+          "proofs": [
+            "adminAccountProjectionAndOwnerPasswordReset",
+            "artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "Not blanket full-app creation/collision/concurrency or enabled-input acceptance."
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/admins/:adminId/permissions",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:232",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_ACTIVE_PERMISSION_AND_SQL_FAULT",
+          "proofs": [
+            "activeAdminPermissionChange",
+            "adminAccountProjectionAndOwnerPasswordReset"
+          ],
+          "limits": "Later cross-transaction failures/concurrent login excluded."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/logout-all",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:279",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "proofs": [
+            "ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance."
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/admins/:adminId/password",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:302",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_PROJECTION_OR_RESET",
+          "proofs": [
+            "adminAccountProjectionAndOwnerPasswordReset"
+          ],
+          "limits": "No free-form historical-value completeness, failed-login stub accuracy or reset fault-atomicity acceptance."
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admins/:adminId/work-monitor",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:355",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_PROJECTION_OR_RESET",
+          "proofs": [
+            "adminAccountProjectionAndOwnerPasswordReset"
+          ],
+          "limits": "No free-form historical-value completeness, failed-login stub accuracy or reset fault-atomicity acceptance."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/devices/:deviceRecordId/trust",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:413",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "CURRENT_AGGREGATE_POSITIVE_HISTORICAL_CAP_SOURCE_MEMBERSHIP",
+          "proofs": [
+            "artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts",
+            "docs/final-audit/evidence/seq321-admin-lifecycle-results.json"
+          ],
+          "limits": "No new full-app nested foreign-device/password-negative matrix."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/devices/:deviceRecordId/revoke",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:418",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "CURRENT_AGGREGATE_POSITIVE_HISTORICAL_CAP_SOURCE_MEMBERSHIP",
+          "proofs": [
+            "artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts",
+            "docs/final-audit/evidence/seq321-admin-lifecycle-results.json"
+          ],
+          "limits": "No new full-app nested foreign-device/password-negative matrix."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/sessions/:sessionId/revoke",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:482",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "proofs": [
+            "ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/sessions/revoke-all",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:512",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "proofs": [
+            "ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance."
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/devices",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:536",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "proofs": [
+            "ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/devices/:deviceRecordId/trust",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:545",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "proofs": [
+            "ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/devices/:deviceRecordId/revoke",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:550",
+          "sourceBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "proofs": [
+            "ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/logout",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-session-routes.ts:33",
+          "sourceBlob": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_SELF_SESSION",
+          "proofs": [
+            "currentAdminSelfSessions"
+          ],
+          "limits": "Existing optional cookie-scoped logout policy and own device_hash DTO retained; no whole login/OTP/rotation/browser acceptance."
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/logout-all",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-session-routes.ts:53",
+          "sourceBlob": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_SELF_SESSION",
+          "proofs": [
+            "currentAdminSelfSessions"
+          ],
+          "limits": "Existing optional cookie-scoped logout policy and own device_hash DTO retained; no whole login/OTP/rotation/browser acceptance."
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/sessions",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-session-routes.ts:77",
+          "sourceBlob": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_SELF_SESSION",
+          "proofs": [
+            "currentAdminSelfSessions"
+          ],
+          "limits": "Existing optional cookie-scoped logout policy and own device_hash DTO retained; no whole login/OTP/rotation/browser acceptance."
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/auth/admin/sessions/:sessionId",
+          "sourceAnchor": "artifacts/api-server/src/routes/auth-session-routes.ts:103",
+          "sourceBlob": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+          "proofClass": "BOUNDED_CURRENT_FULL_APP_SELF_SESSION",
+          "proofs": [
+            "currentAdminSelfSessions"
+          ],
+          "limits": "Existing optional cookie-scoped logout policy and own device_hash DTO retained; no whole login/OTP/rotation/browser acceptance."
+        }
+      ],
+      "interpretation": "Distinct current full-app, current aggregate, historical and source-only cells; not18 newly closed gates or a denominator for P0. Do not automatically add tests to duplicate every historical cell.",
+      "next": "Reconcile FIELD002-R1/R2/R3 in the existing P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json against accepted notification response contracts/current source. Classify explicit field-policy decisions versus missing executable assertions before new code. Reuse accepted admin and notification cases; do not automatically duplicate historical/aggregate cases or reopen the18-route admin family. Keep SEQ-R2 UNAPPROVED."
     }
   },
   "componentScopes": {
     "automatedCatalogue": "Read-only AST/source-reference generation with the corrected slash-bearing text filter; all applicationExecuted/newRuntimeTestsExecuted/newCiClaimed flags remain false.",
-    "runtimeProof": "Provider-cost, background-job, observability, admin self-session, owner-delegated/global-device and admin directory/work-monitor/reset evidence retain independent exact-source bounded acceptance. Existing current aggregate create/grant/disable/self-password and separate-auth service proof reused; no source catalogue row automatically accepted.",
+    "runtimeProof": "Existing bounded proofs plus current active admin permission overlay retain independent exact-source acceptance. The18-route ledger distinguishes aggregate/historical/source-only cells; full inventory remains incomplete.",
     "historicalInputs": "Prior catalogue counts and old manifests remain historical, not scope or acceptance denominators."
   },
   "referenceFilterCorrection20261027": {

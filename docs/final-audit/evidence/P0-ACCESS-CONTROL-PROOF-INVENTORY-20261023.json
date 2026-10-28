@@ -4511,5 +4511,20 @@
     "newTapIncludingGroup": 5,
     "newGate": false,
     "parentGateClosed": false
+  },
+  "currentActiveAdminPermissionChangeProof": {
+    "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=activeAdminPermissionChange]",
+    "status": "BOUNDED_CURRENT_ACTIVE_ADMIN_PERMISSION_REPLACEMENT_REMOVAL_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
+    "source": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+    "newFunctionalCases": 4,
+    "newTapIncludingGroup": 5,
+    "newGate": false,
+    "parentGateClosed": false
+  },
+  "currentBoundedAdminFamilyLedger": {
+    "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.adminFamilyRouteLedger20261027",
+    "registeredRows": 18,
+    "fullP0InventoryAccepted": false,
+    "newGates": 0
   }
 }
