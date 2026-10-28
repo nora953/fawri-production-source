@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
+    "nextExactAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32568,6 +32568,21 @@
       "newCiRuns": 0,
       "userActionRequiredNow": false,
       "parentGateClosed": false
+    },
+    "legacyMetaHistoryReplayProof": {
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
+      "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+      "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+      "newFunctionalCases": 4,
+      "newTapIncludingGroup": 5,
+      "targetedTap": 85,
+      "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
+      "newGate": false,
+      "parentGateClosed": false,
+      "userActionRequiredNow": false,
+      "broaderTap": 834,
+      "allCiSuccess": 58,
+      "accepted": true
     }
   },
   "componentScopes": {

@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
-  "lastFullyAcceptedSource": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+  "sourceCandidate": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+  "lastFullyAcceptedSource": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
   "release": "NO-GO",
   "rows": [
     {
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
+      "nextAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -281,6 +281,21 @@
         "newCiRuns": 0,
         "userActionRequiredNow": false,
         "parentGateClosed": false
+      },
+      "legacyMetaHistoryReplayProof": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
+        "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+        "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+        "newFunctionalCases": 4,
+        "newTapIncludingGroup": 5,
+        "targetedTap": 85,
+        "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
+        "newGate": false,
+        "parentGateClosed": false,
+        "userActionRequiredNow": false,
+        "broaderTap": 834,
+        "allCiSuccess": 58,
+        "accepted": true
       }
     },
     {
@@ -2182,7 +2197,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
+      "nextAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -2328,6 +2343,21 @@
         "newCiRuns": 0,
         "userActionRequiredNow": false,
         "parentGateClosed": false
+      },
+      "legacyMetaHistoryReplayProof": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
+        "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+        "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+        "newFunctionalCases": 4,
+        "newTapIncludingGroup": 5,
+        "targetedTap": 85,
+        "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
+        "newGate": false,
+        "parentGateClosed": false,
+        "userActionRequiredNow": false,
+        "broaderTap": 834,
+        "allCiSuccess": 58,
+        "accepted": true
       }
     },
     {
@@ -2455,7 +2485,7 @@
       "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
     }
   ],
-  "previousFullyAcceptedSource": "323432be46368316bf0c6714d9c790cccde91414",
+  "previousFullyAcceptedSource": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
   "lastUpdatedAt": "2026-10-28",
   "closurePlan": {
     "schemaVersion": 1,
@@ -2473,7 +2503,7 @@
     "release": "NO-GO",
     "noNewReleaseRequirementsAdded": true,
     "noExistingStatusChanged": true,
-    "acceptedSource": "711fd97d989b3733e68af7e1a094fe92dfb08d74",
+    "acceptedSource": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
     "executionRules": [
       "Select one existing gate and its exact unmet closure condition before new code/tests. State whether the batch closes it or only completes a named necessary prerequisite.",
       "Reuse accepted positive/negative/runtime evidence at its original layer and source. No repeated accepted test solely to increase totals; rerun only for a source change, failure or identified integration gap.",
@@ -2489,19 +2519,25 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "FIELD004 traced958 exact source/script/SQL blobs plus54 schema metadata blobs. Existing migration mappings and dynamic writer identified, one read-only synthetic planner probe returned2drafts/1legacy processed/0current inbound, structurally write-ready. Historical-to-current-runtime continuity remains unproved; no dormant-table retirement or current-event duplicate-send claim.",
-        "nextNamedReview": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
+        "completedPrerequisite": "Accepted e3d7d721:4 new actual-app/restricted-SQL legacy Meta history cases;85TAP/6files targeted,834TAP/97invocations/94files broader (overlapping),58/58CI;0fail/skip/cancel. Prevents new admission and pre-existing reply preparation on unresolved legacy history, blocks automatic requeue without changing domain/peer/history. No migration repair, product-policy adoption or parent-gate closure.",
+        "nextNamedReview": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
         "latestAcceptedBoundary": {
-          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=activeAdminPermissionChange]",
-          "status": "BOUNDED_CURRENT_ACTIVE_ADMIN_PERMISSION_REPLACEMENT_REMOVAL_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
-          "source": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
+          "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+          "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
           "newFunctionalCases": 4,
           "newTapIncludingGroup": 5,
+          "targetedTap": 85,
+          "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
           "newGate": false,
-          "parentGateClosed": false
+          "parentGateClosed": false,
+          "userActionRequiredNow": false,
+          "broaderTap": 834,
+          "allCiSuccess": 58,
+          "accepted": true
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
-        "nextAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption."
+        "nextAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions."
       },
       {
         "order": 2,
@@ -2524,7 +2560,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption."
+        "nextAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions."
       },
       {
         "order": 4,
@@ -2550,7 +2586,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
+        "nextAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -2679,6 +2715,21 @@
           "newCiRuns": 0,
           "userActionRequiredNow": false,
           "parentGateClosed": false
+        },
+        "legacyMetaHistoryReplayProof": {
+          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
+          "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+          "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+          "newFunctionalCases": 4,
+          "newTapIncludingGroup": 5,
+          "targetedTap": 85,
+          "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
+          "newGate": false,
+          "parentGateClosed": false,
+          "userActionRequiredNow": false,
+          "broaderTap": 834,
+          "allCiSuccess": 58,
+          "accepted": true
         }
       },
       {
@@ -2733,7 +2784,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
+        "nextAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -2783,6 +2834,21 @@
           "newCiRuns": 0,
           "userActionRequiredNow": false,
           "parentGateClosed": false
+        },
+        "legacyMetaHistoryReplayProof": {
+          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
+          "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+          "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+          "newFunctionalCases": 4,
+          "newTapIncludingGroup": 5,
+          "targetedTap": 85,
+          "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
+          "newGate": false,
+          "parentGateClosed": false,
+          "userActionRequiredNow": false,
+          "broaderTap": 834,
+          "allCiSuccess": 58,
+          "accepted": true
         }
       },
       {
@@ -3100,7 +3166,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
+      "nextExactAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -3162,6 +3228,21 @@
         "newCiRuns": 0,
         "userActionRequiredNow": false,
         "parentGateClosed": false
+      },
+      "legacyMetaHistoryReplayProof": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
+        "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+        "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+        "newFunctionalCases": 4,
+        "newTapIncludingGroup": 5,
+        "targetedTap": 85,
+        "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
+        "newGate": false,
+        "parentGateClosed": false,
+        "userActionRequiredNow": false,
+        "broaderTap": 834,
+        "allCiSuccess": 58,
+        "accepted": true
       }
     },
     "field002PolicyReconciliation20261028": {
@@ -3210,6 +3291,21 @@
       "newCiRuns": 0,
       "userActionRequiredNow": false,
       "parentGateClosed": false
+    },
+    "legacyMetaHistoryReplayProof": {
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#legacyReplayAdmissionAcceptance20261028",
+      "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+      "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+      "newFunctionalCases": 4,
+      "newTapIncludingGroup": 5,
+      "targetedTap": 85,
+      "scope": "Existing F004-R1 legacy-history intake/reply safety hold; not legacy repair/disposition or field/gate closure.",
+      "newGate": false,
+      "parentGateClosed": false,
+      "userActionRequiredNow": false,
+      "broaderTap": 834,
+      "allCiSuccess": 58,
+      "accepted": true
     }
   }
 }
