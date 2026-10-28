@@ -213,10 +213,13 @@ test(
         merchantId,
         inboundId,
         reservationId,
-        `reply-intent-${proof}`,
+        `auto:${rawProviderEventId}`,
         rawProviderMessageId,
       ],
     );
+
+    const deliveryBefore = (await pool.query("SELECT * FROM outbound_deliveries WHERE id = $1", [deliveryId])).rows[0];
+    assert.equal(deliveryBefore.reply_intent_id, `auto:${rawProviderEventId}`);
 
     await merchantManagement.updateMerchantStatusPostgres({
       merchantId,
@@ -284,6 +287,11 @@ test(
       [deliveryId],
     );
     assert.equal(delivery.rows[0]?.provider_message_id, null);
+    const deliveryAfter = (await pool.query("SELECT * FROM outbound_deliveries WHERE id = $1", [deliveryId])).rows[0];
+    assert.deepEqual(deliveryAfter, { ...deliveryBefore,
+      provider_message_id: null,
+      reply_intent_id: `deleted:delivery:${deliveryId}`,
+    }, "terminal accounting linkage/outcome/timestamps stay intact while provider-derived intent is retired");
 
     const channel = await pool.query<{
       page_id: string | null;
