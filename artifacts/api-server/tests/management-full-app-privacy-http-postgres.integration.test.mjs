@@ -1153,7 +1153,7 @@ test('full application management privacy preserves cutover ordering and current
       await admin.query(`INSERT INTO orders(id,merchant_id,customer_name,customer_phone,customer_address,customer_external_id,
         source_channel,status,created_at,delivered_at,cancelled_at,subtotal_iqd,delivery_fee_iqd,total_iqd,
         fulfillment_location_id,payment_method,payment_status,payment_verified_at,notes,metadata)
-        VALUES($1,$2,$3,'private-report-phone','private-report-address','private-report-external',$4,$5,$6,$7,$8,$9,$10,$9+$10,$11,$12,$13,$14,'private-report-notes','{"private":"private-report-metadata"}'::jsonb)`,
+        VALUES($1,$2,$3,'private-report-phone','private-report-address','private-report-external',$4,$5,$6,$7,$8,$9,$10,$9::integer+$10::integer,$11,$12,$13,$14,'private-report-notes','{"private":"private-report-metadata"}'::jsonb)`,
         [id,m.id,'private-report-customer-'+label,channel,status,created,delivered,cancelled,subtotal,fee,m.location,
           paid?'superqi':'cash_on_delivery',paid?'paid':'cash_on_delivery',paid?'2025-01-13':null]);
       await admin.query(`INSERT INTO order_items(id,merchant_id,order_id,product_name_snapshot,quantity,unit_price_iqd,line_total_iqd)
