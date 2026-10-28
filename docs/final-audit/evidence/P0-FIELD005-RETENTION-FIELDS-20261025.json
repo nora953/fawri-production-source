@@ -46,7 +46,7 @@
     "Financial/receipt and audit retention schedule with privileged access",
     "Backups/media/deployed historical data disposition under authorized hosted scope"
   ],
-  "nextExactAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+  "nextExactAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
   "sourceReviewed": "6e94a8ec65f2cc39022ff1a1245d1951ef4924c0",
   "acceptedExecutable": "acf6c8d68dda271f97d9275d9b24407d3343a60f",
   "originalSourceRevision": "ef7c4e7928ff081c106cfb69c76be865ef7d48a2",
@@ -707,6 +707,22 @@
           "policyAdopted": false,
           "parentGateClosed": false,
           "newGate": false,
+          "userActionRequiredNow": false
+        },
+        "posAuditReaderConsolidation": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+          "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+          "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+          "filesVerified": 954,
+          "candidateFiles": 74,
+          "currentSchemaClasses": 8,
+          "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "policyAdopted": false,
+          "parentGateClosed": false,
           "userActionRequiredNow": false
         }
       },
@@ -1504,7 +1520,7 @@
     "nextExactAction": "Continue existing F005-R2 by reconciling retained financial/receipt identifiers and their actual post-deletion API/worker readers with the accepted deletion, cashier, provider-identity and receipt evidence. Distinguish retained accounting anchors from active processing and exposed personal fields before any fix or retention proposal. Reuse F005-A1/A2/A3 and the current81TAP management lane; test only an identified unproved current boundary. No guessed duration/legal requirement, historical repair, emergency409 bypass, policy adoption, hosted action, merge or deployment."
   },
   "previousNextExactAction": "Continue executable P0 work with the open CASHIER-SYNC-SEQUENCE-001 gate: reconcile its exact remaining acceptance criterion against existing evidence and live sequence admission/drain code before choosing a bounded regression. FIELD005-R1/R2/R3 require explicit policy/design decisions; R4/R5 remain blocked by hosted scope.",
-  "currentReviewPointer": "orderReplyFieldReconciliationAndIntentRetirement20261028",
+  "currentReviewPointer": "posAuditUseReconciliation20261028",
   "billingProviderReceiptUseReconciliation20261028": {
     "date": "2026-10-28",
     "sourceReviewed": "2cc4b0248822017e4e316091ee255330605fdd2f",
@@ -2509,7 +2525,7 @@
     "checkoutTree": "d0775f722782035c71aa69266cd4baccc777880d",
     "identicalTree": true
   },
-  "previousCurrentReviewPointer": "billingProviderReceiptUseReconciliation20261028",
+  "previousCurrentReviewPointer": "orderReplyFieldReconciliationAndIntentRetirement20261028",
   "latestAcceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
   "orderReplyFieldReconciliationAndIntentRetirement20261028": {
     "date": "2026-10-28",
@@ -3716,5 +3732,1178 @@
     "newRuntimeExecuted": true,
     "newTestFiles": 0,
     "expandedExistingSqlTests": 1
+  },
+  "posAuditUseReconciliation20261028": {
+    "date": "2026-10-28",
+    "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+    "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+    "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+    "existingCell": "RESIDUAL-FIELD-005/F005-R2",
+    "gates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+    ],
+    "acceptanceCondition": "Finish the named retained POS/sequence receipt/ordinary audit reader classification and consolidate existing per-class decision requirements using accepted proofs. Identify exact kept/scrubbed fields, actual read/write/activation layers and unproved deletion-financial semantics before a retention choice. Necessary source/evidence prerequisite, not parent-gate or complete inventory closure.",
+    "applicationChanged": false,
+    "testCodeChanged": false,
+    "schemaChanged": false,
+    "aclChanged": false,
+    "newRuntimeTests": 0,
+    "newCiRuns": 0,
+    "fieldCellClosed": false,
+    "parentGateClosed": false,
+    "newGate": false,
+    "policyAdopted": false,
+    "userActionRequiredNow": false,
+    "scopedScan": {
+      "filesVerified": 954,
+      "localMatchingBlobs": 944,
+      "exactRemoteOverrides": 10,
+      "verification": "All954 files match current reviewed Git tree and Git blob byte hashes using the accepted9409077 manifest; no source delta. Materialized exact pinned scratch view used for manual reads so stale local cashier sources are not treated as current.",
+      "manifestSha256": "f608319ddb48aba41cffc7d99e4863e3b85914b5bec976ce92e295b6eb058190",
+      "scanSha256": "c07d325ef2311999352d2ad428ef45d93334df0ca5f57899a5760f8770f168d2",
+      "pattern": "\\b(?:cashier_device_streams|cashier_operation_receipts|cashier_stream_enrollment_reviews|cashier_operation_attribution|cashier_shifts|cashier_sale|audit_events|database_admin_access_audits)\\b",
+      "candidateFiles": 74,
+      "candidatePins": [
+        {
+          "path": "artifacts/api-server/src/routes/emergency-read-access.ts",
+          "gitBlobSha": "2c7a58d4bc0c1bd80bde68322bad9baa25f6bfd9",
+          "lines": [
+            218,
+            220,
+            755
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/authOtpSecurity.ts",
+          "gitBlobSha": "c0e8ebc7deca2bfd37b68dbb0fdfa0c3ca71ba72",
+          "lines": [
+            47,
+            49
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/authSecurityDataStore.ts",
+          "gitBlobSha": "0ace9b5261ba602f860b5dc896db5fcc591f3f0a",
+          "lines": [
+            8,
+            32,
+            58
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/authSecurityTypes.ts",
+          "gitBlobSha": "3e78667eca54eac43ed5f74b38b1b68a8132a930",
+          "lines": [
+            36
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierDeviceHistoryAssessment.ts",
+          "gitBlobSha": "0c4bf333767fdcf039015723b8a6f405ca784140",
+          "lines": [
+            131,
+            133
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierHistoricalOperationAuthority.ts",
+          "gitBlobSha": "8015bef966dc67596149fb68b86e88071adefc9a",
+          "lines": [
+            268
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts",
+          "gitBlobSha": "6e806a12a9b11b71bff47d67e3645215eebfbb31",
+          "lines": [
+            218,
+            420,
+            447
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierOperatorSaleScope.ts",
+          "gitBlobSha": "4133b06c663f347fdecebb3e586d9003a5897de0",
+          "lines": [
+            97
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierOperatorShiftCloseAuthority.ts",
+          "gitBlobSha": "0eeb53907eeb740d434edf064c7ab764382b0009",
+          "lines": [
+            112,
+            242
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierStreamAdmissionAuthority.ts",
+          "gitBlobSha": "046359c729a90fb7d6ed2b7b9da6fc665ebb6f30",
+          "lines": [
+            44,
+            58,
+            76
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierStreamAuthorityReadiness.ts",
+          "gitBlobSha": "5fe730d92a1761dcec2cc3606c0aa0656315505c",
+          "lines": [
+            11,
+            22,
+            29,
+            36,
+            43,
+            57,
+            99,
+            106,
+            113,
+            120,
+            141,
+            164,
+            165,
+            170,
+            172,
+            178,
+            179,
+            183,
+            204,
+            234,
+            253
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+          "gitBlobSha": "83348cd92bf39448e00ae647bf24246b02119945",
+          "lines": [
+            109,
+            221,
+            254
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/emergencyReadAccess.ts",
+          "gitBlobSha": "0aa24549768eba1bd24a08a9527aef96ad398470",
+          "lines": [
+            113,
+            121,
+            138,
+            166,
+            190,
+            198,
+            199
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresCashierCentralActivityAuthority.ts",
+          "gitBlobSha": "b01f8a4aafa1bdfa252cd0d0f827efd41e5529a9",
+          "lines": [
+            217,
+            237,
+            255,
+            297
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresCashierCentralReportAuthority.ts",
+          "gitBlobSha": "71e7922fd08605482bf3e9910377965b35065f9e",
+          "lines": [
+            1192
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresCashierOperatorReportAuthority.ts",
+          "gitBlobSha": "8f5e2fcf9cffd1668eca2eaeae73ffd980c9ed79",
+          "lines": [
+            126
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts",
+          "gitBlobSha": "d7212e7b4c8055f7bfeda3430fbb6ace843ebcbb",
+          "lines": [
+            489,
+            515,
+            1481,
+            1500,
+            1518,
+            1599,
+            1698
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+          "gitBlobSha": "fbae7386f98795048494e41a84505157ee7d0ff1",
+          "lines": [
+            283,
+            314,
+            1260
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantAdminLogAuthority.ts",
+          "gitBlobSha": "6c71edce9e9c5f8e399200c66d945130cf6caa41",
+          "lines": [
+            62
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "lines": [
+            291,
+            1049,
+            1057,
+            1170,
+            1237,
+            1378,
+            1489
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts",
+          "gitBlobSha": "ed53377e3139f77a2c933bbc59a71746b6611930",
+          "lines": [
+            792
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "gitBlobSha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "lines": [
+            11,
+            12,
+            16,
+            18,
+            86
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts",
+          "gitBlobSha": "b8be9d7f029b806eb5a206ca2e6465d59369fde1",
+          "lines": [
+            1112
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "gitBlobSha": "df39aac960dba14d1a0cbe541a30a9cdd18990ee",
+          "lines": [
+            79
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionPlanCycleAuthority.ts",
+          "gitBlobSha": "1082677dfb06c179ff53607d195249cb7d48dfd8",
+          "lines": [
+            309
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionServiceGuarantee.ts",
+          "gitBlobSha": "cc7a15d09e21fd0ba6d2fd8c27db0fa5e12651ce",
+          "lines": [
+            970,
+            988
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+          "gitBlobSha": "3f81b6eb1e2b56a1e0c3504c58f91bff9f3d7681",
+          "lines": [
+            22,
+            27,
+            30,
+            332,
+            336,
+            354,
+            396
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs",
+          "gitBlobSha": "6b1f4baeb0fb41306083e230c6a9945b2548c6c7",
+          "lines": [
+            19,
+            25,
+            124
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs",
+          "gitBlobSha": "85d9bd7dafabecdba0d98bd2d9186f3a48ddc00d",
+          "lines": [
+            19,
+            22,
+            79,
+            108,
+            172,
+            186
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+          "gitBlobSha": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "lines": [
+            533,
+            670,
+            671,
+            748,
+            749,
+            750,
+            751
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0002_cross_lane_stage.sql",
+          "gitBlobSha": "3355d8cd9324b085961236bbb7afe3553d789313",
+          "lines": [
+            295,
+            303,
+            304,
+            471,
+            496,
+            497,
+            569,
+            579,
+            590,
+            600,
+            611,
+            621,
+            632,
+            642,
+            653,
+            663,
+            674,
+            684,
+            695,
+            705,
+            716,
+            726,
+            737,
+            747,
+            758,
+            768,
+            779,
+            789,
+            800,
+            810,
+            821,
+            831,
+            842,
+            852,
+            863,
+            873,
+            884,
+            894,
+            905,
+            915,
+            926,
+            936,
+            947,
+            957,
+            968,
+            978,
+            989,
+            999,
+            1010,
+            1020,
+            1031,
+            1041,
+            1052,
+            1062,
+            1073,
+            1083,
+            1094,
+            1104,
+            1115,
+            1125,
+            1136,
+            1146
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0003_cross_lane_cleanup.sql",
+          "gitBlobSha": "38d71170941615f60d097c398041352e43d297f6",
+          "lines": [
+            137,
+            147,
+            158,
+            168,
+            179,
+            189,
+            200,
+            210,
+            221,
+            231,
+            242,
+            252,
+            263,
+            273,
+            284,
+            294,
+            305,
+            315,
+            326,
+            336,
+            347,
+            357,
+            368,
+            378,
+            389,
+            399,
+            410,
+            420,
+            431,
+            441,
+            452,
+            462,
+            473,
+            483,
+            494,
+            504,
+            515,
+            525,
+            536,
+            546,
+            557,
+            567,
+            578,
+            588,
+            599,
+            609,
+            620,
+            630,
+            641,
+            651,
+            662,
+            672,
+            683,
+            693,
+            704,
+            714
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0005_delivery_fee_per_area.sql",
+          "gitBlobSha": "ff4e02df7d0f311e1d24fa66fb7f01cfe24912a4",
+          "lines": [
+            26,
+            36
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0006_saas_billing_authority.sql",
+          "gitBlobSha": "74bd891659d23dc623e9b020a9005ed32fee845c",
+          "lines": [
+            106,
+            116,
+            127,
+            137,
+            148,
+            158,
+            169,
+            179
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0007_merchant_customer_payment_confirmation_authority.sql",
+          "gitBlobSha": "678454cad18cfaccaa8df7fc16493e32a6317335",
+          "lines": [
+            53,
+            63
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0011_commerce_promotions_timezone_authority.sql",
+          "gitBlobSha": "64f7465a3bc99fda9a1dac14702c8d288c63cb0e",
+          "lines": [
+            76,
+            86
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0013_cashier_staff_station_authority.sql",
+          "gitBlobSha": "ae99c5011c1194af22c946a32bfd1d3a91dce638",
+          "lines": [
+            137,
+            151,
+            153,
+            155,
+            157,
+            159,
+            161,
+            187
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0014_cashier_operation_attribution.sql",
+          "gitBlobSha": "2d0549996343373309c2759d42b5e59a74f6a468",
+          "lines": [
+            1,
+            20,
+            22,
+            24,
+            26,
+            28
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0017_multi_location_inventory_foundation.sql",
+          "gitBlobSha": "8597608339ddde6197a635243d3455215d2038ae",
+          "lines": [
+            79,
+            87,
+            95,
+            102,
+            112,
+            124,
+            134
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0019_location_delivery_area_routing.sql",
+          "gitBlobSha": "30fdfbcb409695b7faad31bf53937ffaa0f65f82",
+          "lines": [
+            22,
+            32
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0020_cashier_operation_location_backfill.sql",
+          "gitBlobSha": "671e8b62d4c1d38693613dbff6bd76c466bb39d1",
+          "lines": [
+            1
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0022_location_rls_schema_alignment.sql",
+          "gitBlobSha": "664959150e888c606712c233d08d404295a35eca",
+          "lines": [
+            8,
+            18,
+            34,
+            44
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0024_tenant_rls_security_definer_predicate.sql",
+          "gitBlobSha": "87e49d2124975030203b9a33f1b086f8c3191575",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0030_audited_verified_receipt_reads.sql",
+          "gitBlobSha": "285cdbc4e4de3094c0e6b826e40c82e211d64a46",
+          "lines": [
+            43
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0031_audited_receipt_replay_reviews.sql",
+          "gitBlobSha": "1cce7b8b6693aefb95157d045bfc372205327a89",
+          "lines": [
+            31
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0032_authorized_receipt_replay_execution.sql",
+          "gitBlobSha": "b7eeda10d855bd0160367722b723ad3d0520f7de",
+          "lines": [
+            42
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0036_audited_admin_active_state_guard.sql",
+          "gitBlobSha": "57d672d725ba18a50bba6f18709b7db7e1751af9",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0037_audited_admin_transaction_binding.sql",
+          "gitBlobSha": "948f406c789378bcbd0b04f97d953f7849689373",
+          "lines": [
+            5,
+            8,
+            23
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0038_role_bound_admin_directory_issuer.sql",
+          "gitBlobSha": "1ab287e78d7c61e721860e8591fae1b40b8adf64",
+          "lines": [
+            43,
+            68
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0039_role_bound_authentication_runtime.sql",
+          "gitBlobSha": "3275129afee9ba454ba1e69ea619f538a94e1c14",
+          "lines": [
+            29
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0041_private_tenant_predicate_cutover.sql",
+          "gitBlobSha": "ad9c6ad522a32268aeb6f585829f270c451fb2c2",
+          "lines": [
+            24
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0043_cashier_identity_tenant_rls.sql",
+          "gitBlobSha": "9eb2fd52a3ea8bd797bdcbd736a943b5b98b8004",
+          "lines": [
+            21,
+            23
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0044_cashier_discount_attribution_tenant_rls.sql",
+          "gitBlobSha": "4146a005ab8a6ddf7b6ff924099ff320a83b29ea",
+          "lines": [
+            13,
+            15
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+          "gitBlobSha": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "lines": [
+            2,
+            4,
+            6
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql",
+          "gitBlobSha": "429661188ba00a9adbc89c7e4464f054775ba127",
+          "lines": [
+            2,
+            25,
+            49,
+            52,
+            54,
+            55,
+            56,
+            57,
+            59,
+            60,
+            78,
+            84,
+            86,
+            89,
+            95,
+            98,
+            103,
+            112,
+            120,
+            139,
+            140,
+            141,
+            142
+          ]
+        },
+        {
+          "path": "lib/db/scripts/cashier-staff-authority-readiness.mjs",
+          "gitBlobSha": "30350b4618e07483a59d9e1fadd118140c04001a",
+          "lines": [
+            14,
+            16,
+            25,
+            27
+          ]
+        },
+        {
+          "path": "lib/db/scripts/cross-lane-acceptance.mjs",
+          "gitBlobSha": "327d8c004ab0650245f57dfd38b01cbc99b5203b",
+          "lines": [
+            122
+          ]
+        },
+        {
+          "path": "lib/db/scripts/fawri-runtime-consistency-audit.mjs",
+          "gitBlobSha": "5008b8b79c357e61d7d124c53945b3544a520349",
+          "lines": [
+            94,
+            111
+          ]
+        },
+        {
+          "path": "lib/db/scripts/lib/cashier-stream-storage-candidate-readiness.mjs",
+          "gitBlobSha": "d854bcea033479d586e76b4a6420a7e4b91b44c5",
+          "lines": [
+            12,
+            33,
+            46,
+            48
+          ]
+        },
+        {
+          "path": "lib/db/scripts/lib/cross-lane-transactions-base.mjs",
+          "gitBlobSha": "fb9cb2abcee5c10575832e54daaae756a855ea12",
+          "lines": [
+            23
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/audit.ts",
+          "gitBlobSha": "99beccd64aa0f0d26f536c5d8ba4db2b1796d893",
+          "lines": [
+            13
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/cashier-operation-attribution.ts",
+          "gitBlobSha": "73d289e2190796620fbdb1491bb8af0da30c086e",
+          "lines": [
+            16
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/cashier-staff.ts",
+          "gitBlobSha": "73fbe3bf78045e1f327aae4ae8ca27d0433cf778",
+          "lines": [
+            322,
+            455,
+            484
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "gitBlobSha": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "lines": [
+            31,
+            168
+          ]
+        },
+        {
+          "path": "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+          "gitBlobSha": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf",
+          "lines": [
+            590
+          ]
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "gitBlobSha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "lines": [
+            66
+          ]
+        },
+        {
+          "path": "scripts/plan-postgresql-migration.mjs",
+          "gitBlobSha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "lines": [
+            151,
+            562,
+            563
+          ]
+        },
+        {
+          "path": "scripts/prepare-seq-d2-canonical-candidate.mjs",
+          "gitBlobSha": "f68c2029018567df507fe5178a89c90040c20241",
+          "lines": [
+            48
+          ]
+        },
+        {
+          "path": "scripts/prepare-seq-d3-authority-candidate.mjs",
+          "gitBlobSha": "89ba11e5aad524e7e502ea2a1fc1a46b09a1b240",
+          "lines": [
+            56
+          ]
+        },
+        {
+          "path": "scripts/tests/cashier-operation-location-backfill-migration-history.test.mjs",
+          "gitBlobSha": "b59c2ba24c7c53e925a6f03f72f6e7a10554a866",
+          "lines": [
+            24
+          ]
+        },
+        {
+          "path": "scripts/tests/fixtures/create-postgresql-migration-fixture.mjs",
+          "gitBlobSha": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3",
+          "lines": [
+            284
+          ]
+        },
+        {
+          "path": "scripts/tests/multi-location-inventory-foundation.test.mjs",
+          "gitBlobSha": "41f9bc3ce84f4b0467e93fc8ef804b9740907ae8",
+          "lines": [
+            128,
+            132
+          ]
+        },
+        {
+          "path": "scripts/tests/plan-postgresql-migration.test.mjs",
+          "gitBlobSha": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "lines": [
+            310,
+            364
+          ]
+        },
+        {
+          "path": "scripts/tests/run-postgresql-migration-plan.test.mjs",
+          "gitBlobSha": "a55f0d3fc3768cce016647a63ee3d707849d7bdd",
+          "lines": [
+            166
+          ]
+        }
+      ],
+      "expandedTracePins": [
+        {
+          "path": "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts",
+          "gitBlobSha": "54f3a7ccfc72ed6d5b69073b4161b2bae6618eb2"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresCashierCompensationSyncAuthority.ts",
+          "gitBlobSha": "db6aef356b0714886e670132a57ada64003378b2"
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierStreamEnrollmentAuthority.ts",
+          "gitBlobSha": "10294e8f52d7760c36e3ad0fa4770c9ec0121b22"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/cashier-sync-operations.ts",
+          "gitBlobSha": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+          "gitBlobSha": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/cashier-staff-operations.ts",
+          "gitBlobSha": "287eaa5d9af35eb31afe32c172e35007c0ad244b"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "gitBlobSha": "cd6c904610ed95206d309f52efa11a96b744012e"
+        },
+        {
+          "path": "artifacts/api-server/src/services/cashierReceiptProfileAuthority.ts",
+          "gitBlobSha": "eeafaacd1e18720cac96297a0cb010e6462f7004"
+        },
+        {
+          "path": "artifacts/fawri/src/lib/cashierReceiptPrinting.ts",
+          "gitBlobSha": "5f5709aa183eaed18c815e649f53b17c54f4bf44"
+        },
+        {
+          "path": "artifacts/fawri/src/lib/cashierReceiptProfileClient.ts",
+          "gitBlobSha": "1b121770fbc079c78114094d685bf8ff869d8a06"
+        }
+      ],
+      "additionalExactGitHubInputs": [
+        {
+          "path": "docs/final-audit/evidence/seq-d3-reviewed-empty-enrollment-proposal.sql",
+          "gitBlobSha": "6dbe23d414d63b0d5c038e7e5b32778094761b46"
+        },
+        {
+          "path": "docs/final-audit/evidence/seq-d3-financial-receipt-proposal.sql",
+          "gitBlobSha": "deca85d121012037005effc1e9c30811c0740a69"
+        },
+        {
+          "path": "artifacts/api-server/tests/merchant-deletion-cashier-lifecycle-postgres.integration.test.ts",
+          "gitBlobSha": "3229f27cd0595b9bc3e58bc6c6b2a3a7a0b74006"
+        },
+        {
+          "path": "artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs",
+          "gitBlobSha": "b9aaf0100ad75b08bb812d7da58b5ae988391d1e"
+        },
+        {
+          "path": "artifacts/api-server/tests/cashier-historical-compensation-http-postgres.integration.test.mjs",
+          "gitBlobSha": "f8d6a6f2180bcdb703e103a10434a1f9d408c614"
+        }
+      ],
+      "digestEncoding": "Python json.dumps(data,sort_keys=True,separators=(',',':')).encode(); ordered manifest{path,sha}; scan{path,sha,hits:[{line,text}]}.",
+      "classification": "Current runtime readers/writers versus canonical schema/catalog readiness, migration/legacy/import helpers, tests and proposal-only authority. A lexical match in a readiness checker is not a new row reader. Literal matches plus manual tracing, not all dynamic/external writer absence or complete P0 inventory."
+    },
+    "observedCurrentSchemaFields": [
+      {
+        "table": "merchant_cashier_staff",
+        "fields": [
+          "id",
+          "merchant_id",
+          "display_name",
+          "role",
+          "status",
+          "pin_hash",
+          "pin_version",
+          "failed_pin_attempts",
+          "pin_locked_until",
+          "pin_changed_at",
+          "version",
+          "revoked_at",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      {
+        "table": "merchant_cashier_stations",
+        "fields": [
+          "id",
+          "merchant_id",
+          "name",
+          "branch_key",
+          "branch_label",
+          "location_id",
+          "status",
+          "paired_device_id",
+          "offline_inventory_authority",
+          "credential_version",
+          "paired_at",
+          "last_seen_at",
+          "revoked_at",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      {
+        "table": "cashier_shifts",
+        "fields": [
+          "id",
+          "merchant_id",
+          "station_id",
+          "staff_id",
+          "status",
+          "started_at",
+          "ended_at",
+          "close_reason"
+        ]
+      },
+      {
+        "table": "cashier_device_streams",
+        "fields": [
+          "id",
+          "merchant_id",
+          "device_id",
+          "protocol_version",
+          "state",
+          "last_sequence",
+          "version",
+          "enrollment_evidence_hash",
+          "enrolled_at",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      {
+        "table": "cashier_operation_receipts",
+        "fields": [
+          "id",
+          "stream_id",
+          "merchant_id",
+          "device_sequence",
+          "operation_id",
+          "operation_kind",
+          "canonical_version",
+          "request_hash",
+          "result_id",
+          "station_id",
+          "location_id",
+          "staff_id",
+          "shift_id",
+          "occurred_at",
+          "created_at"
+        ]
+      },
+      {
+        "table": "cashier_operation_attribution",
+        "fields": [
+          "id",
+          "merchant_id",
+          "operation_id",
+          "sale_id",
+          "operation_kind",
+          "station_id",
+          "location_id",
+          "staff_id",
+          "shift_id",
+          "device_id",
+          "station_credential_id",
+          "operator_session_id",
+          "occurred_at",
+          "created_at"
+        ]
+      },
+      {
+        "table": "audit_events",
+        "fields": [
+          "id",
+          "actor_kind",
+          "actor_account_id",
+          "merchant_id",
+          "action_type",
+          "entity_type",
+          "entity_id",
+          "reason_code",
+          "details",
+          "metadata",
+          "ip_address",
+          "user_agent",
+          "request_id",
+          "previous_hash",
+          "event_hash",
+          "created_at"
+        ]
+      },
+      {
+        "table": "database_admin_access_audits",
+        "fields": [
+          "id",
+          "admin_account_id",
+          "merchant_id",
+          "reason_code",
+          "request_hash",
+          "authority_transaction_id",
+          "started_at",
+          "expires_at"
+        ]
+      }
+    ],
+    "observedSchemaLimit": "Eight current schema classes. Original request/order/billing/reply fields already recorded in the two prior R2 reviews. Column presence is not an approved retention allowlist.",
+    "posBusinessEvidence": {
+      "storage": "Current sync inserts orders/source_channel=cashier and order_items. metadata.cashier_sync contains request/operation/device/sequence/location, sale_snapshot, currency/amount/discount/cash/change data; return/void operations append compensation snapshots with refund amounts/currency to that JSON. Generic delivered order lifecycle is not rewritten for compensation.",
+      "readers": [
+        "postgresCashierCentralReportAuthority parses sale/compensation snapshots for currency/profit/discount/return reports",
+        "postgresCashierCentralActivityAuthority reads attribution plus orders.cashier_sync.sale_snapshot.total_minor/currency and matching compensation.snapshot.refund_total_minor/currency",
+        "postgresCashierOperatorReportAuthority selects scoped sale attribution and report permissions before parsing snapshots; raw cost display remains separately bounded",
+        "Legacy idempotency/replay and cashierDeviceHistoryAssessment inspect operation/device/request references in JSON",
+        "Internal versioned financial writer compares canonical business hash/result and current same-transaction evidence"
+      ],
+      "deletion": "orders.metadata={} and order_items.variant_snapshot={} are existing purge behavior. Customer/product free text is scrubbed; base order totals/status and line quantity/unit price/line total plus attribution IDs remain. JSON sale/compensation detail, refund amount/currency breakdown and cost/discount snapshots can be removed, rather than preserved by the bare order anchor.",
+      "consequence": "Retained base order rows must not be described as full sale/return financial history. Immutable sequence receipt has no amount/currency/full sale snapshot and cannot reconstruct those deleted values from request_hash. No evidence that every sold/returned detail is preserved after deletion.",
+      "policyDecisionNeeded": "Select explicit financial-only retained fields/provenance and authorized post-deletion access, with trigger/duration/hold/expiry, or explicitly accept current final erasure. No current instruction approves keeping raw JSON, inventing refund facts or restoring erased details. No code change is made from this source observation alone.",
+      "notNewDefectClaim": "Existing retention-policy gap is now concrete; the desired accounting retention contract has not been approved, so no newly reproduced application violation or hosted data-loss incident is claimed."
+    },
+    "operationalIdentity": {
+      "tables": [
+        "merchant_cashier_staff",
+        "merchant_cashier_stations",
+        "cashier_shifts",
+        "cashier_operation_attribution",
+        "cashier_device_operation_timeline"
+      ],
+      "handling": "Staff names/PIN authority retired, station names/branch labels/device binding retired, credentials/operator sessions/pairing challenges/permissions removed, subscription cancelled/seats released. Shifts closed with merchant_deleted reason. Attribution device/credential/session strings replaced, but merchant/station/location/staff/shift/sale/operation IDs and times remain; timeline device field replaced by per-row deletion marker.",
+      "readers": "Merchant report/activity routes use current secure merchant context. Operator report/receipt routes require station/operator identity and sale/report permissions, including explicit restricted-mode exceptions that do not recreate deleted credentials. Historical sync requires active current subscription and valid device/time/seat authority.",
+      "limits": "Erased display/device columns do not anonymize all retained joins. Existing identity retirement proof does not certify deletion of a real POS return's financial snapshot."
+    },
+    "sequenceReceiptLayers": {
+      "canonical": "Committed0052/current cashier-staff schema define cashier_device_streams and immutable cashier_operation_receipts. Stream retirement sets state retired/device_idNULL/version+1 after merchant deletion; checkpoint/hash/receipt rows remain. Insert/append to deleted/retired stream denied and receipt/checkpoint constraints enforce ordering.",
+      "receiptFields": "id,stream_id,merchant_id,device_sequence,operation_id,operation_kind,canonical_version,request_hash,result_id,station_id,location_id,staff_id,shift_id,occurred_at,created_at. No raw device column or complete financial payload in receipt.",
+      "actualReaders": "cashierStreamAdmissionAuthority reads exact receipt identity and uses canonical result/hash/context to accept replay; cashierDeviceHistoryAssessment sees retained history; storage/readiness tools inspect metadata. Normal current routes do not populate versionedStream context and continue rejecting publicv2 markers.",
+      "internalWriter": "Existing internal argument-only proposal writes receipt/checkpoint with canonical financial transaction using scoped definer capability. Writer/enrollment roles/capabilities and cashier_stream_enrollment_reviews are proposal/candidate installation scope, not new canonical/live provisioning approval.",
+      "reviewLedgerFields": [
+        "review_reference_hash",
+        "stream_id",
+        "merchant_id",
+        "manifest_hash",
+        "reviewer_reference_hash",
+        "evidence_sha256",
+        "reviewed_at",
+        "created_at"
+      ],
+      "reviewLedgerHandling": "Reviewed proposal stores fingerprinted references, not their raw text, and immutable rows survive bounded restored-service deletion proof. They remain correlatable and need an approved policy. No enrolment authority invented from merchant pairing, empty client history or a supplied hash.",
+      "notApproved": [
+        "Publicv2 activation",
+        "SEQ-R2 operation compatibility choice",
+        "Operational reviewer issuer/model/grants",
+        "Retention duration/disposition",
+        "Hosted adoption"
+      ]
+    },
+    "ordinaryAudit": {
+      "fieldsKept": "audit_events IDs, actor_kind/account, merchant/entity IDs/types, action, reason_code, request_id, previous_hash/event_hash and created_at remain for existing merchant-linked rows; details/ip/user_agent NULL and metadata{} for selected rows.",
+      "postPurgeWriter": "Canonical completion appends a new merchant_deleted audit after scrub, with actor identity, deletion_request_id and irreversible_tombstone metadata. Therefore not all audit metadata is permanently empty after deletion.",
+      "readers": "Existing admin/logs needs current view_logs; mapper joins current accounts/admin_profiles/merchants and may return admin name/phone/role and redacted merchant name plus action/reason/meta. Emergency audit inclusion stays owner-only. The global view_logs versus merchant-detail permission decision remains FIELD003, not silently changed here.",
+      "privilegedAudit": "database_admin_access_audits keeps current actor/reason/request_hash/transaction identity/start/expiry; issuer and reader functions use transaction/LOGIN/current-actor bounds. One-minute expiry in receipt read/review/execution is an authority/audit validity value, not evidence of row erasure or approved retention period.",
+      "guard": "Emergency ledger payload has separate immutable chain/identity needs. Existing merchant deletion409 remains; no field stripping, rehash or valid=true repair approved."
+    },
+    "localReceiptCopies": {
+      "source": "cashierReceiptProfileClient caches store_name/cached_at in localStorage under a device-derived key; reader validates date but does not infer a purge deadline. cashierReceiptPrinting uses current input or cached store name and local sale snapshots.",
+      "limit": "Server tombstone/credential retirement does not prove clearing already delivered JSON, IndexedDB sales/outbox, localStorage receipt profile, print/export files or backups. No destructive local cleanup or new synchronization feature added. Operational copies/restore inventory remains F005-R5 blocked; source-known local copy is recorded separately from hosted proof."
+    },
+    "reusedEvidence": {
+      "acceptedSource": "94090776025da649cede64f253fea58a1dff15f2",
+      "allCiSuccess": 58,
+      "broader": {
+        "run": 40657885831,
+        "job": 122713784974,
+        "tap": 836,
+        "invocations": 97,
+        "uniqueFiles": 94,
+        "selectedFiles": [
+          {
+            "suite": "cashier-stream-storage-proposal-postgres.integration.test.mjs",
+            "tap": 8,
+            "scope": "Canonical storage fixture; actual deletion service retires streams, later fault rollback and exact synthetic receipt/peer preservation. Not full real financial result provenance."
+          },
+          {
+            "suite": "cashier-historical-compensation-http-postgres.integration.test.mjs",
+            "tap": 28,
+            "scope": "Legacy/HTTP refusal and internal proposal financial/replay/fault/handoff boundaries. No publicv2 success or complete post-deletion POS snapshot-preservation assertion."
+          },
+          {
+            "suite": "cashier-stream-enrollment-proposal-postgres.integration.test.mjs",
+            "tap": 7,
+            "scope": "Explicit owned proposal enrollment/identity bounds, not live issuer policy."
+          },
+          {
+            "suite": "cashier-stream-storage-readiness-postgres.integration.test.mjs",
+            "tap": 16,
+            "scope": "Catalog/readiness failure boundaries, not row-level privacy or expiry policy."
+          }
+        ]
+      },
+      "management": {
+        "run": 40657885565,
+        "job": 122713274178,
+        "tap": 81,
+        "files": 4,
+        "scope": "Existing actual owner deletion/password/session/quiescence/emergency/peer matrix; no new full retained financial field or expiry certificate."
+      },
+      "cashierDeletion": {
+        "test": "artifacts/api-server/tests/merchant-deletion-cashier-lifecycle-postgres.integration.test.ts",
+        "gitBlobSha": "3229f27cd0595b9bc3e58bc6c6b2a3a7a0b74006",
+        "scope": "Existing SQL case checks current staff/station/auth/shift/attribution/subscription/tombstone behavior. Its sale_id attribution fixture does not itself create a real sale/return amount snapshot; do not promote it to financial snapshot preservation proof."
+      },
+      "canonicalStorageEvidence": "P0-CASHIER-CANONICAL-0052-ACCEPTANCE-20261026.json",
+      "reviewLifecycle": "P0-CASHIER-SEQUENCE-DESIGN-20261026.json#reviewLedgerLifecycle",
+      "financialPrototype": "P0-CASHIER-SEQUENCE-DESIGN-20261026.json#financialReceiptProposal",
+      "priorR2": "billingProviderReceiptUseReconciliation20261028 and orderReplyFieldReconciliationAndIntentRetirement20261028 preserved with their actual acceptance and limits.",
+      "noNewRun": true,
+      "noUniqueAggregate": "Selected file TAPs are subsets/overlap of accepted lanes and are not summed as new tests."
+    },
+    "decisionRecord": {
+      "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+      "status": "CURRENT_FIELD_CLASS_AND_READER_PACKET_CONSOLIDATED_NOT_APPROVED",
+      "duration": null,
+      "trigger": null,
+      "hold": null,
+      "holdRelease": null,
+      "expiryDisposition": null,
+      "approvedBy": null,
+      "approvalEvidence": null,
+      "allProposedChoicesUnadopted": true,
+      "scope": "Complete for this bounded F005 checklist only; not an exhaustive entire-system retention inventory or legal schedule."
+    },
+    "remaining": {
+      "F005_R1": "Historical requester identity per-field purpose/readers/trigger/duration/disposition unapproved.",
+      "F005_R2": "Named current billing/order/reply/POS/sequence/audit reader subsets and missing financial-history semantics consolidated. Actual retention allowlist, authorized post-deletion readers, duration/trigger/holds/expiry remain unapproved; selected future behavior needs before/at/after expiry and active-finance/replay tests, not arbitrary tests now.",
+      "F005_R3": "Versioned emergency privacy/chain design unapproved;409 retained.",
+      "F005_R4_R5": "Authorized hosted history/originals/copies/backup/media/export/restore inventory remains blocked."
+    },
+    "limits": [
+      "No new app/test/schema/ACL change, CI execution or parent-gate closure.",
+      "Retained IDs/hashes and minimal row schemas are not proof of anonymity or preserved full financial detail.",
+      "Source mapping of fields is not runtime validation of every post-deletion consumer.",
+      "No automatic erasure/repair/reenrollment/protocol activation/legal retention period or approval inferred from continuation."
+    ],
+    "nextExactAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2."
   }
 }

@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+      "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -367,6 +367,22 @@
         "policyAdopted": false,
         "parentGateClosed": false,
         "newGate": false,
+        "userActionRequiredNow": false
+      },
+      "field005PosAuditReview20261028": {
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+        "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+        "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "filesVerified": 954,
+        "candidateFiles": 74,
+        "currentSchemaClasses": 8,
+        "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "policyAdopted": false,
+        "parentGateClosed": false,
         "userActionRequiredNow": false
       }
     },
@@ -2269,7 +2285,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+      "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -2502,6 +2518,22 @@
         "parentGateClosed": false,
         "newGate": false,
         "userActionRequiredNow": false
+      },
+      "field005PosAuditReview20261028": {
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+        "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+        "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "filesVerified": 954,
+        "candidateFiles": 74,
+        "currentSchemaClasses": 8,
+        "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "policyAdopted": false,
+        "parentGateClosed": false,
+        "userActionRequiredNow": false
       }
     },
     {
@@ -2538,7 +2570,7 @@
       "evidence": "https://github.com/nora953/fawri-production-source/issues/523",
       "blocker": "Existing retention/deletion service proofs do not approve duration, privileged access or every field.",
       "retentionFieldEvidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json",
-      "nextAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+      "nextAction": "Use the consolidated current class/field/reader decision packet before selecting any retention implementation. Per-class purpose, post-deletion readers, trigger/duration, holds/release and final disposition remain unapproved; selected behavior then needs bounded expiry/financial/replay proof. Continue independent known F004-R1 work now; no choice inferred from continuation.",
       "retentionAuditInteractionStatus": "CONFIRMED_RUNTIME_INTERACTIONS_BOUNDED_MITIGATIONS_ACCEPTED_POLICY_HISTORY_OPEN",
       "deletionEmergencyChainEvidence": "evidence/P0-DELETION-EMERGENCY-CHAIN-20261025.json",
       "deletionEmergencyChainStatus": "PREEXISTING_LEDGER_AND_CONCURRENT_CREATION_MITIGATIONS_ACCEPTED_POLICY_HISTORY_OPEN",
@@ -2627,6 +2659,22 @@
         "policyAdopted": false,
         "parentGateClosed": false,
         "newGate": false,
+        "userActionRequiredNow": false
+      },
+      "field005PosAuditReview20261028": {
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+        "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+        "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "filesVerified": 954,
+        "candidateFiles": 74,
+        "currentSchemaClasses": 8,
+        "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "policyAdopted": false,
+        "parentGateClosed": false,
         "userActionRequiredNow": false
       }
     },
@@ -2735,8 +2783,8 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "F005-R2 nine order/payment/reply classes traced. Runtime057baa6 exposed raw Meta event retention in delivery intent; existing helper fixed at9409077. Strengthened same SQL test preserves complete terminal delivery except identity and six peer tables. Source contract1/SQL1,836 broader TAP and58/58 CI success; target legacy bootstrap warning explicitly limits schema claim. No policy or parent gate closure.",
-        "nextNamedReview": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+        "completedPrerequisite": "Bounded F005-R2 current billing/order/reply/POS/sequence/audit reader inventory and consolidated field-class decision record complete as source reconciliation. POS JSON financial detail erasure versus immutable hash/result-only receipts explicitly distinguished.954 pinned files/74 current matches; current accepted836TAP/58CI and bounded receipt/deletion evidence reused, no new run or policy/gate closure.",
+        "nextNamedReview": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
         "latestAcceptedBoundary": {
           "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#orderReplyFieldReconciliationAndIntentRetirement20261028",
           "status": "ORDER_REPLY_FIELD_READERS_RECONCILED_RAW_PROVIDER_INTENT_RETIREMENT_SOURCE_ACCEPTED_POLICY_OPEN",
@@ -2771,7 +2819,23 @@
           "userActionRequiredNow": false
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
-        "nextAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy."
+        "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+        "latestSourceReview": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+          "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+          "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+          "filesVerified": 954,
+          "candidateFiles": 74,
+          "currentSchemaClasses": 8,
+          "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "policyAdopted": false,
+          "parentGateClosed": false,
+          "userActionRequiredNow": false
+        }
       },
       {
         "order": 2,
@@ -2794,7 +2858,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy."
+        "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2."
       },
       {
         "order": 4,
@@ -2820,7 +2884,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+        "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -3036,6 +3100,22 @@
           "parentGateClosed": false,
           "newGate": false,
           "userActionRequiredNow": false
+        },
+        "field005PosAuditReview20261028": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+          "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+          "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+          "filesVerified": 954,
+          "candidateFiles": 74,
+          "currentSchemaClasses": 8,
+          "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "policyAdopted": false,
+          "parentGateClosed": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -3090,7 +3170,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+        "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -3227,6 +3307,22 @@
           "parentGateClosed": false,
           "newGate": false,
           "userActionRequiredNow": false
+        },
+        "field005PosAuditReview20261028": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+          "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+          "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+          "filesVerified": 954,
+          "candidateFiles": 74,
+          "currentSchemaClasses": 8,
+          "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "policyAdopted": false,
+          "parentGateClosed": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -3281,7 +3377,7 @@
         "missingEvidenceOrDecision": "F005-R1/R2/R3 have no approved schedules/design. F005-R4/R5 hosted scope/evidence unavailable. Existing purge/reference-minimization tests do not approve indefinite retention.",
         "executableNowWithinGitHub": "Consolidate existing field-specific decision forms; prepare reviewable choices. No invented duration, anonymous-hash claim or repeated purge tests.",
         "externalDependency": "Explicit record-specific policy decisions; separately authorized hosted inventory/recovery for R4/R5.",
-        "nextAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+        "nextAction": "Use the consolidated current class/field/reader decision packet before selecting any retention implementation. Per-class purpose, post-deletion readers, trigger/duration, holds/release and final disposition remain unapproved; selected behavior then needs bounded expiry/financial/replay proof. Continue independent known F004-R1 work now; no choice inferred from continuation.",
         "dependsOn": [
           "P0-HOSTED-RECOVERY",
           "P0-HOSTED-STORAGE-DELETION"
@@ -3356,6 +3452,22 @@
           "policyAdopted": false,
           "parentGateClosed": false,
           "newGate": false,
+          "userActionRequiredNow": false
+        },
+        "field005PosAuditReview20261028": {
+          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+          "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+          "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+          "filesVerified": 954,
+          "candidateFiles": 74,
+          "currentSchemaClasses": 8,
+          "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "policyAdopted": false,
+          "parentGateClosed": false,
           "userActionRequiredNow": false
         }
       },
@@ -3616,7 +3728,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+      "nextExactAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -3765,6 +3877,22 @@
         "parentGateClosed": false,
         "newGate": false,
         "userActionRequiredNow": false
+      },
+      "field005PosAuditReview20261028": {
+        "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+        "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+        "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "filesVerified": 954,
+        "candidateFiles": 74,
+        "currentSchemaClasses": 8,
+        "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "policyAdopted": false,
+        "parentGateClosed": false,
+        "userActionRequiredNow": false
       }
     },
     "field002PolicyReconciliation20261028": {
@@ -3899,6 +4027,22 @@
       "policyAdopted": false,
       "parentGateClosed": false,
       "newGate": false,
+      "userActionRequiredNow": false
+    },
+    "field005PosAuditReview20261028": {
+      "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+      "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+      "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+      "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+      "filesVerified": 954,
+      "candidateFiles": 74,
+      "currentSchemaClasses": 8,
+      "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "policyAdopted": false,
+      "parentGateClosed": false,
       "userActionRequiredNow": false
     }
   }

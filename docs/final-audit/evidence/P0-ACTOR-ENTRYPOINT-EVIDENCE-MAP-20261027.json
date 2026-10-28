@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Finish existing F005-R2 with retained POS sale/return/operation and immutable sequence receipt fields plus ordinary audit anchors; reconcile actual readers and accepted cashier/sequence/deletion proofs, then consolidate the existing per-class decision record. Reuse the accepted billing replay and provider-intent retirement proofs. Do not add a duration/allowlist/hold/disposition or treat retained hashes/IDs as anonymous without explicit policy; do not remove emergency409, rewrite history, activate sequence protocol, access hosted systems, merge or deploy.",
+    "nextExactAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32732,6 +32732,22 @@
       "gitBlob": "221db6ed98acb6d6c8a4c0bbdc51d6768a3d34ee",
       "catalogueRegenerated": false,
       "interpretation": "Historical catalogue counts remain reference data. This current overlay accepts canonical service deletion of the producer-derived intent and selected peer preservation under the existing legacy SQL fixture; not HTTP authorization, whole canonical schema or retention-policy acceptance."
+    },
+    "field005PosAuditReview20261028": {
+      "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
+      "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
+      "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+      "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+      "filesVerified": 954,
+      "candidateFiles": 74,
+      "currentSchemaClasses": 8,
+      "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "policyAdopted": false,
+      "parentGateClosed": false,
+      "userActionRequiredNow": false
     }
   },
   "componentScopes": {
