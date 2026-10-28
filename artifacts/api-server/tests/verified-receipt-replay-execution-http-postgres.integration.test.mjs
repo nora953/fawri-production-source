@@ -49,6 +49,8 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
     ['owned receipts',()=>admin?.query('DELETE FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[])',[events])],
     ['owned read audits',()=>admin?.query('DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])',[ids])],
     ['owned devices',()=>admin?.query('DELETE FROM trusted_devices WHERE account_id=ANY($1::text[])',[ids])],
+    ['owned deletion requests',()=>admin?.query('DELETE FROM merchant_deletion_requests WHERE merchant_id_snapshot=ANY($1::text[])',[ids])],
+    ['owned merchant audits',()=>admin?.query('DELETE FROM audit_events WHERE merchant_id=ANY($1::text[])',[ids])],
     ['owned accounts',()=>admin?.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
     ['role grants',()=>roleCreated?admin.query(`DROP OWNED BY ${role}`):undefined],
     ['role',()=>roleCreated?admin.query(`DROP ROLE ${role}`):undefined],
@@ -208,5 +210,57 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
     await assert.rejects(()=>pool.query('SELECT * FROM verified_provider_payment_receipts'),{code:'42501'});
     assert.equal((await pool.query('SELECT * FROM saas_billing_orders')).rows.length,0);
     console.log('VERIFIED_RECEIPT_REPLAY_EXECUTION_HTTP_PROOF '+JSON.stringify({restrictedRole:true,realAdminSession:true,freshProvider:true,durableAudit:true,permissionAndSessionRechecked:true,permissionHeldThroughGrant:true,onceOnlySaasAndCashier:true,sqlFailureRecovery:true,receiptUnchanged:true,tenantPrivate:true,entitlementGrants:5}));
+  });
+  // F005-R2: compose the already-proved payment and deletion services instead
+  // of simulating deletion with a metadata UPDATE. This is service deletion,
+  // followed by real operator HTTP; owner deletion HTTP authority is separate.
+  const management=await import('../src/services/postgresMerchantManagementAuthority.ts');
+  const merchantIds=originalOrders.map(order=>order.merchant_id);
+  async function retainedSnapshot(tenantIds) {
+    const result={};
+    for(const table of ['accounts','merchants','saas_billing_orders','cashier_billing_orders',
+      'saas_billing_events','cashier_billing_events','saas_entitlement_applications',
+      'cashier_entitlement_applications','subscriptions','merchant_cashier_subscriptions',
+      'account_sessions','audit_events']) {
+      const column=['accounts','merchants'].includes(table)?'id':table==='account_sessions'?'account_id':'merchant_id';
+      result[table]=(await admin.query(`SELECT to_jsonb(t) AS row FROM ${table} t WHERE ${column}=ANY($1::text[]) ORDER BY to_jsonb(t)::text`,[tenantIds])).rows;
+    }
+    result.requests=(await admin.query('SELECT to_jsonb(t) AS row FROM merchant_deletion_requests t WHERE merchant_id_snapshot=ANY($1::text[]) ORDER BY id',[tenantIds])).rows;
+    return result;
+  }
+  for(const f of fixtures.filter(f=>f.scenario==='normal'))await t.test(`${f.kind}: actual merchant deletion retains paid evidence and blocks repeated operator replay before provider I/O`,async()=>{
+    const merchantId=originalOrders.find(order=>order.id===f.order.id).merchant_id;
+    const peers=merchantIds.filter(id=>id!==merchantId),peerBefore=await retainedSnapshot(peers);
+    const orderBefore=(await admin.query(`SELECT * FROM ${f.table} WHERE id=$1`,[f.order.id])).rows[0];
+    const appBefore=await applications(f);
+    const eventTable=f.kind==='saas'?'saas_billing_events':'cashier_billing_events';
+    const eventRows=async()=>(await admin.query(`SELECT * FROM ${eventTable} WHERE order_id=$1 ORDER BY id`,[f.order.id])).rows;
+    const eventsBefore=await eventRows();
+    assert.equal(orderBefore.status,'paid');assert.equal(appBefore.length,1);assert.equal(eventsBefore.length,1);
+    assert.equal(orderBefore.metadata.provider_request_id,f.payload.requestId);
+    await management.updateMerchantStatusPostgres({merchantId,status:'suspended',reason:'Synthetic paid deletion boundary',actorAdminId:owner.id});
+    const deletion=await management.createDeletionRequestPostgres({merchantId,actorAdminId:finance.id,reason:'policy_violation',details:'Synthetic paid deletion boundary'});
+    const completed=await management.completeMerchantDeletionPostgres({merchantId,deletionRequestId:deletion.id,actorAdminId:owner.id});
+    assert.equal(completed.deletionRequest.status,'completed');
+    assert.deepEqual((await admin.query('SELECT state,phone FROM accounts WHERE id=$1',[merchantId])).rows,[{state:'closed',phone:null}]);
+    assert.deepEqual((await admin.query('SELECT retention_status FROM merchants WHERE id=$1',[merchantId])).rows,[{retention_status:'deleted'}]);
+    const orderAfter=(await admin.query(`SELECT * FROM ${f.table} WHERE id=$1`,[f.order.id])).rows[0];
+    assert.deepEqual(orderAfter,{...orderBefore,metadata:{},updated_at:orderAfter.updated_at});
+    assert.deepEqual(await applications(f),appBefore);assert.deepEqual(await eventRows(),eventsBefore);
+    assert.deepEqual(await receiptSnapshot(),originalReceipts);
+    assert.deepEqual(await retainedSnapshot(peers),peerBefore,'deletion must preserve selected peer business rows');
+    const operatorAudits=async()=>(await admin.query('SELECT to_jsonb(t) AS row FROM database_admin_access_audits t WHERE admin_account_id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+    const after=await retainedSnapshot(merchantIds),calls=providerCalls,auditBefore=await operatorAudits();
+    for(const actor of [owner,finance,owner]) {
+      const deniedReplay=await request(actor,f);
+      assert.equal(deniedReplay.response.status,409);
+      assert.equal(deniedReplay.body.code,'RECEIPT_REPLAY_EXECUTION_CONFLICT');
+      for(const ref of references)assert.equal(JSON.stringify(deniedReplay.body).includes(ref),false);
+    }
+    assert.equal(providerCalls,calls,'deleted mapping must reject before any provider request');
+    assert.deepEqual(await retainedSnapshot(merchantIds),after,'replay denial must preserve target and peers');
+    assert.deepEqual(await operatorAudits(),auditBefore,'failed execution must roll back its nested audit');
+    assert.deepEqual(await receiptSnapshot(),originalReceipts);assert.deepEqual(await applications(f),appBefore);
+    console.log('DELETED_MERCHANT_RECEIPT_REPLAY_PROOF '+JSON.stringify({authority:f.body.authority,actualDeletionService:true,operatorHttpAttempts:3,status:409,providerCallsDelta:providerCalls-calls,paidEvidencePreserved:true,receiptUnchanged:true,selectedPeersUnchanged:true,retentionPolicyAccepted:false}));
   });
 });
