@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -383,6 +383,29 @@
         "applicationChanged": false,
         "policyAdopted": false,
         "parentGateClosed": false,
+        "userActionRequiredNow": false
+      },
+      "field004DraftContinuityReview20261028": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+        "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+        "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "sourceFilesVerified": 954,
+        "metadataJsonVerified": 54,
+        "candidateFiles": 17,
+        "newLocalPlannerProbes": 1,
+        "newSqlOrHttpRuntime": 0,
+        "newCiRuns": 0,
+        "observedPlanOk": false,
+        "observedWriteReady": false,
+        "missingColumns": [
+          "customer_external_id",
+          "awaiting_field",
+          "expires_at"
+        ],
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
         "userActionRequiredNow": false
       }
     },
@@ -2285,7 +2308,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -2533,6 +2556,29 @@
         "applicationChanged": false,
         "policyAdopted": false,
         "parentGateClosed": false,
+        "userActionRequiredNow": false
+      },
+      "field004DraftContinuityReview20261028": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+        "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+        "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "sourceFilesVerified": 954,
+        "metadataJsonVerified": 54,
+        "candidateFiles": 17,
+        "newLocalPlannerProbes": 1,
+        "newSqlOrHttpRuntime": 0,
+        "newCiRuns": 0,
+        "observedPlanOk": false,
+        "observedWriteReady": false,
+        "missingColumns": [
+          "customer_external_id",
+          "awaiting_field",
+          "expires_at"
+        ],
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
         "userActionRequiredNow": false
       }
     },
@@ -2783,8 +2829,8 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "Bounded F005-R2 current billing/order/reply/POS/sequence/audit reader inventory and consolidated field-class decision record complete as source reconciliation. POS JSON financial detail erasure versus immutable hash/result-only receipts explicitly distinguished.954 pinned files/74 current matches; current accepted836TAP/58CI and bounded receipt/deletion evidence reused, no new run or policy/gate closure.",
-        "nextNamedReview": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+        "completedPrerequisite": "Current F004-R1 legacy draft producer->migration->consumer gap classified. One actual-layout synthetic read-only planner probe fails closed with3missing columns, retaining source bytes and payload.954source+54metadata pins,17scoped matches. Previous SQL-shaped success not treated as actual layout acceptance. No SQL/HTTP/CI/app change or parent gate closure.",
+        "nextNamedReview": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
         "latestAcceptedBoundary": {
           "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#orderReplyFieldReconciliationAndIntentRetirement20261028",
           "status": "ORDER_REPLY_FIELD_READERS_RECONCILED_RAW_PROVIDER_INTENT_RETIREMENT_SOURCE_ACCEPTED_POLICY_OPEN",
@@ -2819,21 +2865,28 @@
           "userActionRequiredNow": false
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
-        "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
         "latestSourceReview": {
-          "evidence": "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#posAuditUseReconciliation20261028",
-          "status": "BOUNDED_POS_SEQUENCE_RECEIPT_AND_AUDIT_READERS_RECONCILED_DECISION_RECORD_CONSOLIDATED_POLICY_OPEN",
-          "sourceReviewed": "bec6e34ef929fae060d7af37040d66e8886c8bf9",
+          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+          "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+          "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
           "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
-          "filesVerified": 954,
-          "candidateFiles": 74,
-          "currentSchemaClasses": 8,
-          "report": "P0-FIELD005-RETENTION-DECISIONS-20261026.md",
-          "newRuntimeTests": 0,
+          "sourceFilesVerified": 954,
+          "metadataJsonVerified": 54,
+          "candidateFiles": 17,
+          "newLocalPlannerProbes": 1,
+          "newSqlOrHttpRuntime": 0,
           "newCiRuns": 0,
+          "observedPlanOk": false,
+          "observedWriteReady": false,
+          "missingColumns": [
+            "customer_external_id",
+            "awaiting_field",
+            "expires_at"
+          ],
           "applicationChanged": false,
-          "policyAdopted": false,
           "parentGateClosed": false,
+          "newGate": false,
           "userActionRequiredNow": false
         }
       },
@@ -2858,7 +2911,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2."
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies."
       },
       {
         "order": 4,
@@ -2884,7 +2937,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -3116,6 +3169,29 @@
           "policyAdopted": false,
           "parentGateClosed": false,
           "userActionRequiredNow": false
+        },
+        "field004DraftContinuityReview20261028": {
+          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+          "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+          "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+          "sourceFilesVerified": 954,
+          "metadataJsonVerified": 54,
+          "candidateFiles": 17,
+          "newLocalPlannerProbes": 1,
+          "newSqlOrHttpRuntime": 0,
+          "newCiRuns": 0,
+          "observedPlanOk": false,
+          "observedWriteReady": false,
+          "missingColumns": [
+            "customer_external_id",
+            "awaiting_field",
+            "expires_at"
+          ],
+          "applicationChanged": false,
+          "parentGateClosed": false,
+          "newGate": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -3170,7 +3246,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -3322,6 +3398,29 @@
           "applicationChanged": false,
           "policyAdopted": false,
           "parentGateClosed": false,
+          "userActionRequiredNow": false
+        },
+        "field004DraftContinuityReview20261028": {
+          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+          "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+          "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+          "sourceFilesVerified": 954,
+          "metadataJsonVerified": 54,
+          "candidateFiles": 17,
+          "newLocalPlannerProbes": 1,
+          "newSqlOrHttpRuntime": 0,
+          "newCiRuns": 0,
+          "observedPlanOk": false,
+          "observedWriteReady": false,
+          "missingColumns": [
+            "customer_external_id",
+            "awaiting_field",
+            "expires_at"
+          ],
+          "applicationChanged": false,
+          "parentGateClosed": false,
+          "newGate": false,
           "userActionRequiredNow": false
         }
       },
@@ -3728,7 +3827,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+      "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -3893,6 +3992,29 @@
         "policyAdopted": false,
         "parentGateClosed": false,
         "userActionRequiredNow": false
+      },
+      "field004DraftContinuityReview20261028": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+        "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+        "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "sourceFilesVerified": 954,
+        "metadataJsonVerified": 54,
+        "candidateFiles": 17,
+        "newLocalPlannerProbes": 1,
+        "newSqlOrHttpRuntime": 0,
+        "newCiRuns": 0,
+        "observedPlanOk": false,
+        "observedWriteReady": false,
+        "missingColumns": [
+          "customer_external_id",
+          "awaiting_field",
+          "expires_at"
+        ],
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": false
       }
     },
     "field002PolicyReconciliation20261028": {
@@ -4043,6 +4165,29 @@
       "applicationChanged": false,
       "policyAdopted": false,
       "parentGateClosed": false,
+      "userActionRequiredNow": false
+    },
+    "field004DraftContinuityReview20261028": {
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+      "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+      "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+      "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+      "sourceFilesVerified": 954,
+      "metadataJsonVerified": 54,
+      "candidateFiles": 17,
+      "newLocalPlannerProbes": 1,
+      "newSqlOrHttpRuntime": 0,
+      "newCiRuns": 0,
+      "observedPlanOk": false,
+      "observedWriteReady": false,
+      "missingColumns": [
+        "customer_external_id",
+        "awaiting_field",
+        "expires_at"
+      ],
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
       "userActionRequiredNow": false
     }
   }

@@ -55,7 +55,7 @@
     "No online conversational order creation or whole commercial journey acceptance"
   ],
   "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
-  "nextExactAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
+  "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
   "previousStatus": "BOUNDED_SOURCE_AUTHORITIES_MAPPED_HTTP_PROOF_PENDING",
   "reconciledAtSource": "8eb803e68dc8457a2914ecdf5072f00994e8f639",
   "checklist": [
@@ -90,8 +90,31 @@
       "status": "OPEN_INTENDED_AUTHORITY_CONTRACT",
       "requirement": "Confirm whether residual tables are supported dormant storage, migration compatibility or candidates for retirement",
       "acceptance": "Document intended lifecycle and any supported writer/reader. Do not infer retirement, new CRUD requirement or online-order completeness from literal scan absence.",
-      "currentReview": "legacyReplayAdmissionAcceptance20261028",
-      "narrowedRemainder": "Existing migration storage/writer and bounded legacy-history safety hold verified. Trusted disposition/release from hold, retained draft continuation and authorized actual historical inventory remain unresolved. No inferred delivery, automatic repair, retirement or new CRUD."
+      "currentReview": "draftContinuityReconciliation20261028",
+      "narrowedRemainder": "Actual Map draft layout rejects in current planner with three missing columns, while its full payload remains preserved in draft_data and source files unchanged. Field normalization, trusted expiry/time configuration and intended current consumer/disposition remain open; existing SQL-shaped probe and legacy event hold are retained within their original scope. No migration, guessed TTL, silent retirement or runtime bridge accepted.",
+      "draftContinuityReview": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+        "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+        "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "sourceFilesVerified": 954,
+        "metadataJsonVerified": 54,
+        "candidateFiles": 17,
+        "newLocalPlannerProbes": 1,
+        "newSqlOrHttpRuntime": 0,
+        "newCiRuns": 0,
+        "observedPlanOk": false,
+        "observedWriteReady": false,
+        "missingColumns": [
+          "customer_external_id",
+          "awaiting_field",
+          "expires_at"
+        ],
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": false
+      }
     },
     {
       "id": "F004-R2",
@@ -101,7 +124,7 @@
       "authorization": "Unavailable under current GitHub-only restriction"
     }
   ],
-  "currentAcceptedExecutable": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+  "currentAcceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
   "currentLifecycleReconciliation20261028": {
     "date": "2026-10-28",
     "sourceReviewed": "139b0c44398cfd67bf20feef3bb03c0f116a140c",
@@ -1071,7 +1094,7 @@
     "nextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption."
   },
   "previousNextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
-  "currentReviewPointer": "legacyReplayAdmissionAcceptance20261028",
+  "currentReviewPointer": "draftContinuityReconciliation20261028",
   "previousNewRuntimeExecuted": false,
   "newRuntimeLayer": "OWNED_OFFLINE_POSTGRES_ACTUAL_SIGNED_HTTP_AND_ORIGINAL_RESTRICTED_WORKER",
   "legacyReplayAdmissionAcceptance20261028": {
@@ -2750,6 +2773,429 @@
     },
     "acceptedAt": "2026-10-28"
   },
-  "currentApplicationChanged": true,
-  "previousApplicationChanged": false
+  "currentApplicationChanged": false,
+  "previousApplicationChanged": false,
+  "draftContinuityReconciliation20261028": {
+    "date": "2026-10-28",
+    "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+    "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+    "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+    "gates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    ],
+    "existingCell": "RESIDUAL-FIELD-004/F004-R1",
+    "acceptanceCondition": "Reconcile actual old draft producer shape with migration schema and current required-mode consumer before declaring legacy draft continuity, retirement or new CRUD necessary. A named read-only planner gap may be probed without SQL/provider/hosted mutation. Source/migration prerequisite only; no parent-gate closure.",
+    "applicationChanged": false,
+    "testCodeChanged": false,
+    "newCiRuns": 0,
+    "newSqlOrHttpRuntime": 0,
+    "newLocalPlannerProbes": 1,
+    "fieldCellClosed": false,
+    "parentGateClosed": false,
+    "newGate": false,
+    "userActionRequiredNow": false,
+    "policyAdopted": false,
+    "sourceVerification": {
+      "filesVerified": 954,
+      "metadataJsonVerified": 54,
+      "totalInputs": 1008,
+      "localSourceView": "Exact current Git-pinned bytes materialized for analysis; no stale local source substituted. All source and metadata pins rechecked against current HEAD and Git blob bytes,0 mismatch.",
+      "sourceManifestSha256": "f608319ddb48aba41cffc7d99e4863e3b85914b5bec976ce92e295b6eb058190",
+      "scanSha256": "4ef1749f67cde059fa606c76856573b5146664f5516c2d16ba916a34287d9045",
+      "pattern": "order_drafts|orderDraftsByConversation|getActiveOrderDraft|setOrderDraft|DRAFT_TTL_MINUTES",
+      "candidateFiles": 17,
+      "candidatePins": [
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+          "gitBlobSha": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+          "lines": [
+            55,
+            173,
+            235,
+            247,
+            338,
+            377,
+            379,
+            401,
+            402,
+            419,
+            432
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "gitBlobSha": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "lines": [
+            41,
+            45,
+            46,
+            51,
+            280,
+            281,
+            289,
+            311,
+            364,
+            482,
+            705,
+            709
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "lines": [
+            962
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "gitBlobSha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+          "gitBlobSha": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "lines": [
+            322,
+            636,
+            637,
+            721,
+            722
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0001_military_proteus.sql",
+          "gitBlobSha": "0631349cad0075d927bfcf67a96180111555a5a4",
+          "lines": [
+            209,
+            263,
+            299
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+          "gitBlobSha": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "lines": [
+            20,
+            22,
+            24
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/orders.ts",
+          "gitBlobSha": "1343264314a660311ef261c2c95eddb3bc70f490",
+          "lines": [
+            341,
+            354,
+            355,
+            356,
+            357
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "gitBlobSha": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "lines": [
+            171
+          ]
+        },
+        {
+          "path": "scripts/audit-fawri-json-data.mjs",
+          "gitBlobSha": "32fa2970cbeebf17ed0b381f21d6e8391c836e84",
+          "lines": [
+            28,
+            255
+          ]
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "gitBlobSha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "lines": [
+            53,
+            431,
+            446
+          ]
+        },
+        {
+          "path": "scripts/plan-postgresql-migration.mjs",
+          "gitBlobSha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "lines": [
+            138,
+            337,
+            338
+          ]
+        },
+        {
+          "path": "scripts/tests/audit-fawri-data.test.mjs",
+          "gitBlobSha": "6a2c2614a970c424be2bff4c3358d829d8308302",
+          "lines": [
+            43
+          ]
+        },
+        {
+          "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+          "gitBlobSha": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+          "lines": [
+            68
+          ]
+        },
+        {
+          "path": "scripts/tests/locked-migration-operational-safety.test.mjs",
+          "gitBlobSha": "5cda1ef54d7d2840b137015f226d91892ec269f6",
+          "lines": [
+            45,
+            184
+          ]
+        },
+        {
+          "path": "scripts/tests/plan-postgresql-migration.test.mjs",
+          "gitBlobSha": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "lines": [
+            351
+          ]
+        },
+        {
+          "path": "scripts/tests/validated-order-operations-gate.test.mjs",
+          "gitBlobSha": "1d282aeb9c7044661b8a5bb7c33bcc013473b794",
+          "lines": [
+            45
+          ]
+        }
+      ],
+      "expandedTracePins": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+          "gitBlobSha": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2"
+        },
+        {
+          "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+          "gitBlobSha": "5b3c856cae817b625e52eda978bf994283775505"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts",
+          "gitBlobSha": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+          "gitBlobSha": "7083e4a5038dfa8f9b9586a490ae272b119c17fb"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "gitBlobSha": "96edbe04ad56360e8fa53c9f66df71c0add5464d"
+        },
+        {
+          "path": "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+          "gitBlobSha": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf"
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "gitBlobSha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee"
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-safe.mjs",
+          "gitBlobSha": "73bb96d8398239e555f42294f6a7d54fd4b97b84"
+        },
+        {
+          "path": "scripts/tests/fixtures/create-postgresql-migration-fixture.mjs",
+          "gitBlobSha": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3"
+        },
+        {
+          "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+          "gitBlobSha": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5"
+        },
+        {
+          "path": "lib/db/src/schema/orders.ts",
+          "gitBlobSha": "1343264314a660311ef261c2c95eddb3bc70f490"
+        },
+        {
+          "path": "lib/db/drizzle/meta/0052_snapshot.json",
+          "gitBlobSha": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535"
+        }
+      ],
+      "limits": "Literal catalogue plus manual dataflow; not a dynamic/external-consumer absence theorem or complete P0 inventory."
+    },
+    "actualProducer": {
+      "type": "routes/indexModulePart1.ts OrderDraft",
+      "fields": [
+        "merchant_id",
+        "conversation_id",
+        "customer_id",
+        "awaiting",
+        "product_id?",
+        "product_name?",
+        "unit_price?",
+        "quantity?",
+        "started_at",
+        "updated_at"
+      ],
+      "awaitingValues": [
+        "product",
+        "customer_info"
+      ],
+      "constructor": "routes/indexModulePart3.ts setOrderDraft/productReply/order_create. Map keyed by conversation; saves full runtime JSON and updates updated_at.",
+      "expiry": "getActiveOrderDraft reads updated_at||started_at against current DRAFT_TTL_MINUTES; default60 from BOT_DRAFT_TTL_MINUTES. Producer does not persist explicit expires_at or the effective configured TTL. Do not infer actual historical environment configuration or convert invalid/missing time to a guessed deadline.",
+      "oldConsumer": "Legacy handleBotMessage/getActiveOrderDraft uses the Map. Required-mode retired debug aliases do not thereby become a public SQL draft continuation endpoint."
+    },
+    "migration": {
+      "source": "postgresql-migration-plan-complete.mjs apply runtime overlay",
+      "fields": "customer_external_id <- item.customer_external_id; awaiting_field <- item.awaiting_field; expires_at <- item.expires_at||NULL; draft_data <- item.draft_data||item; created_at <- item.created_at||NULL; updated_at <- item.updated_at||item.created_at||NULL",
+      "difference": "Actual customer_id/awaiting/started_at are not those destination inputs. No intervening alias/expiry conversion found in reviewed plan chain. Original full legacy object remains inside draft_data; the planning failure is not erasure of source state.",
+      "target": "order_drafts canonical required customer_external_id/awaiting_field/expires_at, tenant/conversation FK, unique conversation and SQL time checks. No SQL commit tested by local probe.",
+      "writer": "Existing generic prepareInsert/validated migration writer remains the supported mapping writer; no assertion the table is unused/empty or ready for deletion."
+    },
+    "currentRequiredMode": {
+      "meta": "Existing current worker selects channel_inbound_events, conversation/message SQL and decideMetaKnowledgeReply. No direct order_drafts SQL read/consumer identified. Matching message history is not an established draft continuation decoder.",
+      "safety": "Accepted e3d legacy processed-event history admission/queued-reply guard remains in current source. That guard is not a new SQL draft hold or continuity implementation.",
+      "privacy": "Current residual-table RLS/readiness and tenant-specific purge stay intact. Existing debug410 acceptance and bounded0051 SQL denial are reused within original scope.",
+      "notClaimed": [
+        "Current SQL-shaped drafts are automatically resumed or automatically blocked by a new guard",
+        "New order creation/online-order completeness",
+        "Supported expiry/disposition/repair policy",
+        "Real deployed legacy draft count or state"
+      ]
+    },
+    "localProbe": {
+      "layer": "ONE_LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER",
+      "scriptSha256": "c8f07ca537d9721a8c824d45c8e77f8d1235f25f413562a8454c22c7a8a7d718",
+      "resultSha256": "420c9d721710b68c74514b0f71d73f64b531d7038ca93ab7da078c8bddec9f9d",
+      "reproduction": "Materialize pinned current repository sources/metadata as field005-current. Run this exact Node script from its parent directory. It builds existing canonical+transitional fixture files, removes only fixture canonical orderDrafts arrays to isolate one actual-producer-shaped transitional row, calls current buildValidatedMigrationPlan and checks complete before/after fixture fingerprints; disposable fixture directory is removed in finally.",
+      "source": "import fs from 'node:fs';\nimport os from 'node:os';\nimport path from 'node:path';\nimport {spawnSync} from 'node:child_process';\nimport {createHash} from 'node:crypto';\nimport assert from 'node:assert/strict';\nimport {buildValidatedMigrationPlan} from './field005-current/scripts/lib/postgresql-cross-lane-reconciliation.mjs';\nconst root=path.resolve('field005-current'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'fawri-field004-probe-'));\nconst hash=s=>createHash('sha256').update(s).digest('hex');\nconst read=n=>JSON.parse(fs.readFileSync(path.join(dir,n),'utf8'));\nconst write=(n,v)=>fs.writeFileSync(path.join(dir,n),JSON.stringify(v,null,2)+'\\n');\nconst fingerprint=()=>Object.fromEntries(fs.readdirSync(dir).sort().map(n=>[n,hash(fs.readFileSync(path.join(dir,n)))]));\ntry {\n for(const name of ['create-postgresql-migration-fixture.mjs','create-transitional-migration-fixture.mjs']){\n  const r=spawnSync(process.execPath,[path.join(root,'scripts/tests/fixtures',name),dir],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);\n }\n const canonical=read('bot-runtime.json');canonical.orderDrafts=[];canonical.order_drafts=[];write('bot-runtime.json',canonical);\n const runtime=read('fawri-runtime-db.json');\n runtime.orderDraftsByConversation['conversation-1']={merchant_id:'merchant-1',conversation_id:'conversation-1',customer_id:'customer-1',awaiting:'customer_info',product_id:'product-1',product_name:'Synthetic Product',unit_price:10000,quantity:1,started_at:'2026-08-06T12:00:00.000Z',updated_at:'2026-08-06T12:00:00.000Z'};\n write('fawri-runtime-db.json',runtime);\n const before=fingerprint();\n const {report,snapshot}=buildValidatedMigrationPlan({dataDirectory:dir,includeRows:true});\n assert.deepEqual(fingerprint(),before,'planner must preserve fixture files');\n const result={probe:'FIELD004_ACTUAL_LEGACY_DRAFT_SHAPE',layer:'LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER',planOk:report.ok,writeReady:report.write_readiness?.ok,snapshot:snapshot.name,snapshotSha256:snapshot.sha256,errors:report.errors,counts:{order_drafts:report.rows.order_drafts?.length||0},draftRows:report.rows.order_drafts,sourceFilesUnchanged:true,sourceFileFingerprints:before,databaseConnectionUsed:false};\n fs.writeFileSync('field004-legacy-draft-shape-result.json',JSON.stringify(result,null,2)+'\\n');\n console.log(JSON.stringify(result));\n} finally {fs.rmSync(dir,{recursive:true,force:true});}\n",
+      "result": {
+        "probe": "FIELD004_ACTUAL_LEGACY_DRAFT_SHAPE",
+        "layer": "LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER",
+        "planOk": false,
+        "writeReady": false,
+        "snapshot": "0052_snapshot.json",
+        "snapshotSha256": "993461e7bdccce8a2c7386054ce43e57b6eab73e7f80d87d13dc5e693651c9e4",
+        "errors": [
+          {
+            "code": "REQUIRED_TARGET_VALUE_MISSING",
+            "table": "order_drafts",
+            "record_id": "runtime-order-draft:413055e0cb3a7c6d79b6b446a98e0ad1",
+            "column": "customer_external_id"
+          },
+          {
+            "code": "REQUIRED_TARGET_VALUE_MISSING",
+            "table": "order_drafts",
+            "record_id": "runtime-order-draft:413055e0cb3a7c6d79b6b446a98e0ad1",
+            "column": "awaiting_field"
+          },
+          {
+            "code": "REQUIRED_TARGET_VALUE_MISSING",
+            "table": "order_drafts",
+            "record_id": "runtime-order-draft:413055e0cb3a7c6d79b6b446a98e0ad1",
+            "column": "expires_at"
+          }
+        ],
+        "counts": {
+          "order_drafts": 1
+        },
+        "draftRows": [
+          {
+            "id": "runtime-order-draft:413055e0cb3a7c6d79b6b446a98e0ad1",
+            "merchant_id": "merchant-1",
+            "conversation_id": "conversation-1",
+            "customer_external_id": "",
+            "awaiting_field": "",
+            "draft_data": {
+              "merchant_id": "merchant-1",
+              "conversation_id": "conversation-1",
+              "customer_id": "customer-1",
+              "awaiting": "customer_info",
+              "product_id": "product-1",
+              "product_name": "Synthetic Product",
+              "unit_price": 10000,
+              "quantity": 1,
+              "started_at": "2026-08-06T12:00:00.000Z",
+              "updated_at": "2026-08-06T12:00:00.000Z"
+            },
+            "expires_at": null,
+            "created_at": null,
+            "updated_at": "2026-08-06T12:00:00.000Z"
+          }
+        ],
+        "sourceFilesUnchanged": true,
+        "sourceFileFingerprints": {
+          "background-jobs.json": "df7106e362a50c468ee11b6b4cee7522ef0a9e7e921e8aceb90670f146e54b71",
+          "bot-runtime.json": "e7dfd5d99b7103d9dcf53608715fec00a8906108c6970d89ac422352420a5efa",
+          "emergency-read-access.json": "243cbf5f198c3d60fbd13708c37a77c36766eb55fef03ec1b3f9d755e698adf1",
+          "fawri-runtime-db.json": "356f84fe341c1e37365cf323ea7553d204161a4c5aa28fed2ab79ae37b332daa",
+          "learned-answers.json": "f9009c13ccfe170905da885f692b0d92c1d65f39e1bf9f6d845fd0e13a76fbc1",
+          "manual-conversation-operations.json": "cc1d7696d5d7b8b0a830d55a4866dbfc8369a09b4d26f4e7e7075421313cd8e9",
+          "merchant-settings.json": "3f09f51ef66a051ad53e0b2e186ff30883ab56c3496f0caa5d55fcdae2b4c560",
+          "merchants.json": "be2417c61d0e0e92e275d3b4c72c68c94742ace877c9e9689463e48f75ae6abf",
+          "order-operations.json": "182637d93abf5100c4b178221cc3f18e426c105c6e558e9a75befd95a269494b",
+          "processed-meta-events.json": "12f27eb128c401b4099d2bf574f6fb9228f535e2bad53798493701f784372d7c",
+          "reply-reservations.json": "472848634486d08ed16020937115ed04f428ab97cdd87a28bf9ee714bf74db8e",
+          "saved-answers.json": "14355c07e6ae9d8b8dddd4e9b95a34cfc2fe2a38abe62fd7730fbb16e68e1405",
+          "support-preview-sessions.json": "4330c6285e686e7a20f99524691a9d43e5233af02323e2aafc0be503683bea00",
+          "training-requests.json": "d8ec91f20cd66f8a35d0299bd6e57802e941b862ead706716b1ad008bdc1d972"
+        },
+        "databaseConnectionUsed": false
+      },
+      "interpretation": "Observed planOk=false/writeReady=false with exactly3 REQUIRED_TARGET_VALUE_MISSING columns customer_external_id,awaiting_field,expires_at. One mapped draft retains original shape in draft_data. All14 synthetic source fingerprints unchanged by planner; no SQL/HTTP/provider connection. Node command succeeded because this was an observation probe, not an assertion that migration succeeded.",
+      "priorProbeCorrection": "Previous currentLifecycleReconciliation20261028.localPlannerProbe supplied SQL-shaped customer_external_id/awaiting_field/expires_at and verified destination preservation. Its earlier successful plan is retained, but never promoted to acceptance of the actual Map producer layout. This new counterexample narrows that evidence explicitly."
+    },
+    "finiteRemainder": {
+      "F004_R1": {
+        "status": "OPEN_INTENDED_AUTHORITY_CONTRACT",
+        "namedMissingConditions": [
+          {
+            "id": "draft-field-normalization",
+            "state": "UNRESOLVED_SOURCE_CONTRACT",
+            "need": "Declared mapping of customer_id/awaiting/started_at and any duplicate canonical/transitional ownership; preserve source state and fail closed on ambiguity."
+          },
+          {
+            "id": "draft-expiry-provenance",
+            "state": "UNRESOLVED_ACTUAL_CONFIGURATION_AND_TIME_CONTRACT",
+            "need": "Trusted expiry/time contract for actual old drafts. Current default60 is not evidence of the effective deployed historical TTL. No automatic fresh deadline, NOW-based revival or silently dropping expired/unknown drafts."
+          },
+          {
+            "id": "draft-current-consumer",
+            "state": "UNRESOLVED_LIFECYCLE_DECISION",
+            "need": "Explicit intended supported storage/continuation/manual disposition and corresponding current consumer/ownership/expiry proof before implementing any runtime bridge; no CRUD invented from scan absence."
+          }
+        ],
+        "notNewReleaseGates": true
+      },
+      "F004_R2": {
+        "status": "BLOCKED_HOSTED_VERIFICATION",
+        "need": "Authorized revision-bound actual row/external writer/effective configuration and migration consistency inventory. No hosted permissions granted."
+      }
+    },
+    "reusedEvidence": {
+      "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+      "allCiSuccess": 58,
+      "broader": {
+        "run": 40657885831,
+        "job": 122713784974,
+        "tap": 836,
+        "invocations": 97,
+        "uniqueFiles": 94
+      },
+      "notification": {
+        "run": 40657885295,
+        "job": 122713272897,
+        "tap": 85,
+        "files": 6,
+        "metaIdentityFileTap": 31
+      },
+      "legacyMetaSafety": "legacyReplayAdmissionAcceptance20261028 remains bounded accepted, not historical release/repair policy.",
+      "debug": "P0-FIELD004-DEBUG-HTTP-20261025.json retired aliases and scoped snapshots; not actual legacy-draft continuation.",
+      "sqlBoundary": "P0-0051-VERIFICATION-20261024.json original bounded RLS authority evidence; no new run.",
+      "noNewCiClaim": true,
+      "noUniqueTapSum": true
+    },
+    "limits": [
+      "A representative fixture of the actual producer field layout was passed to the real planner; legacy bot producer/HTTP or SQL migration was not executed.",
+      "Fail-closed unsupported migration is not a confirmed data-loss or unauthorized-disclosure incident.",
+      "No alias repair, TTL guessing, new CRUD/bridge/guard, expiry cleanup or historical row rewrite performed.",
+      "No new denominator/status change, retention/SEQ-R2 policy, pairing/OTP, hosted, merge or deployment approval."
+    ],
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies."
+  },
+  "previousCurrentReviewPointer": "legacyReplayAdmissionAcceptance20261028"
 }

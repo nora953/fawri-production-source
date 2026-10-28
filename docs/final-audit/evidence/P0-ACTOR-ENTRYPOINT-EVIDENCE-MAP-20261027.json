@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing F004-R1 draft-continuity remainder: reconcile actual migrated order_drafts fields and writers with current SQL/new-order consumers and accepted evidence. Preserve accepted legacy Meta admission/queued-reply safety hold; do not infer unused/empty data, fabricate body hashes, create duplicate CRUD or silently repair history. F005 bounded reader/decision inventory is consolidated; its per-class policy/expiry approval and hosted R4/R5 remain open/blocked, not inferred from continuation. No hosted action, merge/deployment or P1/P2.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32747,6 +32747,29 @@
       "applicationChanged": false,
       "policyAdopted": false,
       "parentGateClosed": false,
+      "userActionRequiredNow": false
+    },
+    "field004DraftContinuityReview20261028": {
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+      "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+      "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+      "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+      "sourceFilesVerified": 954,
+      "metadataJsonVerified": 54,
+      "candidateFiles": 17,
+      "newLocalPlannerProbes": 1,
+      "newSqlOrHttpRuntime": 0,
+      "newCiRuns": 0,
+      "observedPlanOk": false,
+      "observedWriteReady": false,
+      "missingColumns": [
+        "customer_external_id",
+        "awaiting_field",
+        "expires_at"
+      ],
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
       "userActionRequiredNow": false
     }
   },
