@@ -1288,6 +1288,95 @@ test('full application management privacy preserves cutover ordering and current
       });
       console.log('P0_ONLINE_REPORT_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:completed,allAssertionsPassed:completed===3,hosted:false}));
 
+
+      let optionalPassed=false,optionalFaultPassed=false;
+      await rt.test('optional merchant decision rejection and reconciliation fields keep linked tenant authority and sanitize lookup failure',async()=>{
+        const rows=(await admin.query('SELECT id,merchant_id,customer_name FROM orders WHERE merchant_id=ANY($1::text[])',[[x.id,y.id]])).rows;
+        const byName=name=>{const row=rows.find(o=>o.customer_name==='private-report-customer-'+name);assert.ok(row);return row;};
+        const first=byName('own-first'),rejected=byName('own-active'),adminOrder=byName('own-second'),legacy=byName('own-cancelled'),peer=byName('peer-private');
+        const decisions=[];let revoked=false;
+        const stable=async()=>Object.fromEntries(await Promise.all(['orders','order_items','merchant_locations','order_payment_decisions','order_terminal_decision_links'].map(async table=>[table,
+          (await admin.query(`SELECT to_jsonb(o) AS row FROM ${table} o WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(o)::text`,[[x.id,y.id]])).rows])));
+        async function decision(order,tag,{kind='merchant',operation='confirm',outcome='paid',account=order.merchant_id,link=true,expectedVersion=1}={}){
+          const id='optional-decision-'+randomUUID();decisions.push(id);
+          const confirmation=outcome==='paid'?'merchant_confirmed':null,reason='owned-optional-reason-'+tag,request='owned-optional-request-'+tag;
+          await admin.query(`INSERT INTO order_payment_decisions(id,merchant_id,order_id,operation,payment_channel,outcome,confirmation_source,
+            previous_order_status,resulting_order_status,previous_payment_status,resulting_payment_status,actor_type,actor_account_id,
+            actor_session_fingerprint,request_id,reason,expected_version,resulting_version,source_file,source_sha256,migration_batch_id,decided_at)
+            VALUES($1,$2,$3,$4,'electronic',$5,$6,'pending_confirmation',$7,'electronic_pending',$5,$8,$9,$10,$11,$12,$13::integer,$13::integer+1,$14,$15,$16,'2025-01-21T00:00:00Z')`,
+            [id,order.merchant_id,order.id,operation,outcome,confirmation,outcome==='paid'?'confirmed':'cancelled',kind,account,
+              'a'.repeat(64),request,reason,expectedVersion,operation==='legacy_import'?'owned-legacy-source-file':null,
+              operation==='legacy_import'?'b'.repeat(64):null,operation==='legacy_import'?'owned-legacy-batch':null]);
+          if(link)await admin.query('INSERT INTO order_terminal_decision_links(merchant_id,order_id,decision_id) VALUES($1,$2,$3)',[order.merchant_id,order.id,id]);
+          return {id,merchant_id:order.merchant_id,order_id:order.id,operation,payment_channel:'electronic',outcome,
+            ...(confirmation?{confirmation_source:confirmation}:{}),previous_payment_status:'electronic_pending',resulting_payment_status:outcome,
+            previous_order_status:'pending_confirmation',resulting_order_status:outcome==='paid'?'confirmed':'cancelled',
+            actor_type:'merchant',actor_id:account,request_id:request,reason,expected_version:expectedVersion,resulting_version:expectedVersion+1,
+            decided_at:'2025-01-21T00:00:00.000Z'};
+        }
+        async function own(order){const r=await req('/api/order/'+encodeURIComponent(order.id),x);assert.equal(r.status,200);assert.equal(r.cache,'no-store');assert.deepEqual(Object.keys(r.body).sort(),['ok','order']);return r.body.order;}
+        async function list(){const r=await req('/api/orders?merchant_id='+y.id,x);assert.equal(r.status,200);assert.equal(r.cache,'no-store');assert.equal(r.body.count,4);return r.body.orders;}
+        try{
+          // Read projection only: these owned SQL fixtures do not claim new
+          // confirmation/rejection/provider-ingress or fulfillment execution.
+          await admin.query(`UPDATE orders SET version=2,payment_verified_by_account_id=$2,payment_confirmation_source='merchant_confirmed',
+            payment_reconciliation_status='reconciliation_required',payment_conflict_code='MERCHANT_PAID_PROVIDER_FAILED',
+            payment_conflict_at='2025-01-22T00:00:00Z' WHERE id=$1`,[first.id,x.id]);
+          for(const order of [rejected,legacy])await admin.query(`UPDATE orders SET version=2,status='cancelled',cancelled_at='2025-01-21T00:00:00Z',
+            payment_method='superqi',payment_status='failed',payment_rejection_reason=$2 WHERE id=$1`,[order.id,'owned-rejection-'+order.id]);
+          for(const order of [adminOrder,peer])await admin.query(`UPDATE orders SET version=2,payment_method='superqi',payment_status='paid',
+            payment_verified_at='2025-01-21T00:00:00Z',payment_verified_by_account_id=$2,payment_confirmation_source='merchant_confirmed' WHERE id=$1`,[order.id,order.merchant_id]);
+          const confirmedDecision=await decision(first,'confirm'),rejectedDecision=await decision(rejected,'reject',{operation:'reject',outcome:'failed'});
+          await decision(adminOrder,'admin',{kind:'admin',account:owner.id});
+          await decision(legacy,'legacy',{kind:'system',operation:'legacy_import',outcome:'failed',account:null});
+          const peerDecision=await decision(peer,'peer');
+          const unlinked=await decision(first,'unlinked',{operation:'reject',outcome:'failed',link:false,expectedVersion:2});
+          let before=await stable();
+          const firstRead=await own(first),rejectRead=await own(rejected),adminRead=await own(adminOrder),legacyRead=await own(legacy);
+          assert.deepEqual(firstRead.last_payment_decision,confirmedDecision);
+          assert.deepEqual(rejectRead.last_payment_decision,rejectedDecision);
+          assert.notEqual(firstRead.last_payment_decision.id,unlinked.id);
+          assert.equal(firstRead.payment_verified_by,x.id);assert.equal(firstRead.payment_reconciliation_status,'reconciliation_required');
+          assert.equal(firstRead.payment_conflict_code,'MERCHANT_PAID_PROVIDER_FAILED');assert.equal(firstRead.payment_conflict_at,'2025-01-22T00:00:00.000Z');
+          assert.equal(firstRead.payment_conflict_resolved_at,undefined);assert.equal(firstRead.payment_rejection_reason,undefined);
+          assert.equal(rejectRead.payment_rejection_reason,'owned-rejection-'+rejected.id);assert.equal(rejectRead.payment_verified_at,undefined);assert.equal(rejectRead.payment_verified_by,undefined);
+          assert.equal(adminRead.last_payment_decision,undefined);assert.equal(legacyRead.last_payment_decision,undefined);
+          const all=await list();
+          for(const order of [firstRead,rejectRead,adminRead,legacyRead])assert.deepEqual(all.find(o=>o.id===order.id),order);
+          assert.doesNotMatch(JSON.stringify(all),/actor_session_fingerprint|source_file|source_sha256|migration_batch_id|owned-legacy-source-file|owned-legacy-batch|owned-optional-reason-unlinked|unprojected-order-extension/);
+          const other=await req('/api/orders?merchant_id='+x.id,y);assert.equal(other.status,200);assert.equal(other.body.count,1);
+          assert.deepEqual(other.body.orders[0].last_payment_decision,peerDecision);
+          assert.doesNotMatch(JSON.stringify(other.body),/owned-optional-reason-confirm|owned-optional-reason-reject|MERCHANT_PAID_PROVIDER_FAILED/);
+          const denied=await req('/api/order/'+encodeURIComponent(first.id),y);assert.equal(denied.status,404);assert.equal(denied.body.code,'ORDER_NOT_FOUND');
+          assert.deepEqual(await stable(),before);
+          await admin.query(`UPDATE orders SET payment_reconciliation_status='resolved',payment_conflict_resolved_at='2025-01-23T00:00:00Z',
+            payment_conflict_resolved_by_account_id=$2,payment_conflict_resolution_note='owned-reconciliation-resolution' WHERE id=$1`,[first.id,x.id]);
+          before=await stable();
+          const resolved=await own(first);assert.equal(resolved.payment_reconciliation_status,'resolved');
+          assert.equal(resolved.payment_conflict_resolved_at,'2025-01-23T00:00:00.000Z');assert.equal(resolved.payment_conflict_resolved_by,x.id);
+          assert.equal(resolved.payment_conflict_resolution_note,'owned-reconciliation-resolution');assert.equal(resolved.payment_conflict_code,'MERCHANT_PAID_PROVIDER_FAILED');
+          assert.deepEqual(resolved.last_payment_decision,confirmedDecision);assert.deepEqual((await list()).find(o=>o.id===first.id),resolved);
+          assert.deepEqual(await stable(),before);
+          await admin.query('REVOKE SELECT ON order_payment_decisions FROM '+runtime.role);revoked=true;
+          assert.equal((await admin.query("SELECT has_table_privilege($1,'public.order_payment_decisions','SELECT') AS allowed",[runtime.role])).rows[0].allowed,false);
+          await assert.rejects(runtime.runtimePool.query('SELECT 1 FROM order_payment_decisions LIMIT 0'),e=>e.code==='42501');
+          for(const path of ['/api/orders','/api/order/'+encodeURIComponent(first.id)]){
+            const failed=await req(path,x);assert.equal(failed.status,500);assert.equal(failed.cache,'no-store');
+            assert.deepEqual(failed.body,{ok:false,code:'ORDER_OPERATION_FAILED',error:'order operation failed'});
+          }
+          assert.deepEqual(await stable(),before);
+          await admin.query('GRANT SELECT ON order_payment_decisions TO '+runtime.role);revoked=false;
+          assert.deepEqual(await own(first),resolved);assert.deepEqual((await list()).find(o=>o.id===first.id),resolved);
+          assert.deepEqual(await stable(),before);optionalFaultPassed=true;optionalPassed=true;
+        }finally{
+          if(revoked)await admin.query('GRANT SELECT ON order_payment_decisions TO '+runtime.role);
+          await admin.query('DELETE FROM order_terminal_decision_links WHERE decision_id=ANY($1::text[])',[decisions]);
+          await admin.query('DELETE FROM order_payment_decisions WHERE id=ANY($1::text[])',[decisions]);
+        }
+      });
+      console.log('P0_ORDER_OPTIONAL_PAYMENT_FIELDS_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,
+        passedCases:optionalPassed?1:0,allAssertionsPassed:optionalPassed,decisionSqlReadFaultAndRecovery:optionalFaultPassed,
+        linkedMerchantDecision:optionalPassed,adminAndLegacyDecisionExcluded:optionalPassed,hosted:false}));
       console.log('P0_ORDERS_LIST_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,
         passedCases:orderCasePassed?1:0,allAssertionsPassed:orderCasePassed,sqlReadFaultAndRecoveryAccepted:completed===3,hosted:false}));
     }finally{
