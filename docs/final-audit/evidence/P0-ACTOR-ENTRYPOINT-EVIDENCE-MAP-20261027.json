@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved.",
+    "nextExactAction": "Reconcile existing RESIDUAL-FIELD-004/F004-R1/R2 against current order_drafts and processed_channel_events SQL writers/readers, startup/migration/ingress paths and accepted Meta/new-order reachability evidence. Separate dormant-table intended lifecycle from legacy same-name stores and hosted actual-row inventory; identify only a concrete current unproved boundary before code/tests. Do not add CRUD routes, infer inapplicability from lexical absence, repeat accepted notification/early-warning/emergency tests or adopt FIELD002/FIELD003/SEQ-R2 policy.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -32539,6 +32539,19 @@
       "consumerCandidates": 29,
       "userActionRequiredNow": false,
       "projectionPolicyAdopted": false,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "parentGateClosed": false
+    },
+    "field003CurrentUseReview20261028": {
+      "evidence": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#currentUseReconciliation20261028",
+      "sourceReviewed": "efa54d518b096fe75cc646568a4c730ed7dfa776",
+      "status": "CURRENT_CROSS_CONSUMER_BEHAVIOR_TRACED_POLICY_BOUNDARY_REMAINS_OPEN",
+      "filesVerified": 854,
+      "lexicalCandidateFiles": 15,
+      "currentManagementTapReused": 81,
+      "userActionRequiredNow": false,
+      "policyAdopted": false,
       "newRuntimeTests": 0,
       "newCiRuns": 0,
       "parentGateClosed": false

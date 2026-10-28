@@ -30,7 +30,11 @@
       "Retain ordinary merchant audit references but additionally gate merchant early-warning incident rows by view_merchants",
       "Explicitly allow incident audit metadata under view_logs while documenting the endpoint-specific distinction"
     ],
-    "notInferred": "No new confirmed vulnerability, intentionality theorem or authorization-policy adoption from source alone."
+    "notInferred": "No new confirmed vulnerability, intentionality theorem or authorization-policy adoption from source alone.",
+    "currentReview": "currentUseReconciliation20261028",
+    "userActionRequiredNow": false,
+    "approval": "UNAPPROVED",
+    "requestStatus": "SOURCE_BEHAVIOR_CLASSIFIED_NO_IMMEDIATE_CHOICE_REQUEST"
   },
   "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
   "inheritedCi": {
@@ -39,5 +43,421 @@
     "broaderTap": 721,
     "newRun": false
   },
-  "nextExactAction": "Continue RESIDUAL-FIELD-004: trace current order_drafts and processed_channel_events SQL writers/readers versus legacy debug/in-memory order and durable ingress consumers, reusing accepted Meta/new-order reachability evidence. Identify one missing live authority/field boundary; do not add CRUD routes or repeat accepted notification/early-warning proofs."
+  "nextExactAction": "Reconcile existing RESIDUAL-FIELD-004/F004-R1/R2 against current order_drafts and processed_channel_events SQL writers/readers, startup/migration/ingress paths and accepted Meta/new-order reachability evidence. Separate dormant-table intended lifecycle from legacy same-name stores and hosted actual-row inventory; identify only a concrete current unproved boundary before code/tests. Do not add CRUD routes, infer inapplicability from lexical absence, repeat accepted notification/early-warning/emergency tests or adopt FIELD002/FIELD003/SEQ-R2 policy.",
+  "currentUseReconciliation20261028": {
+    "date": "2026-10-28",
+    "sourceReviewed": "efa54d518b096fe75cc646568a4c730ed7dfa776",
+    "status": "CURRENT_CROSS_CONSUMER_BEHAVIOR_TRACED_POLICY_BOUNDARY_REMAINS_OPEN",
+    "gates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    ],
+    "acceptanceCondition": "Reconcile actual actors/routes/fields and accepted runtime proof for FIELD003. This batch completes source/evidence classification, not product-policy adoption or gate closure.",
+    "applicationChanged": false,
+    "newRuntimeTests": 0,
+    "newCiRuns": 0,
+    "fieldCellClosed": false,
+    "userActionRequiredNow": false,
+    "scopedScan": {
+      "filesVerified": 854,
+      "sourceScopes": {
+        "artifacts/fawri/src": 354,
+        "artifacts/api-server/src": 318,
+        "lib": 167
+      },
+      "additionalApiTests": 13,
+      "policyDocs": 2,
+      "sourceExtensionRegex": "\\.[cm]?[jt]sx?$",
+      "additionalTestSelection": "artifacts/api-server/tests paths containing early-warning, management or residual",
+      "localMatchingBlobs": 850,
+      "exactRemoteOverrides": 4,
+      "verification": "Git blob SHA1('blob '+byteLength+NUL+bytes), matched all854 at reviewed HEAD. All854 have identical Git blob IDs at accepted executable69a3ccc.",
+      "manifestSha256": "c318cad22299119ccca0ea2bf2fbc116ed69c11ef6f682ee6af5122f497d7dc5",
+      "scanSha256": "479bf4789ee56a2af842efa25c6a77a0d8e2c097592c1e8c65bad06a69abdad3",
+      "digestEncoding": "Python json.dumps(data,sort_keys=True,separators=(',',':')).encode(); manifest ordered recursive Git tree, objects{path,sha}; scan objects{path,sha,hits:[{line,text}]} retained as reproducible scratch analysis.",
+      "pattern": "/admin/logs|early_warning_incident|listAdminLogsPostgres|syncEarlyWarningIncidentHistory|incident_history|/admin/early-warning",
+      "lexicalCandidateFiles": 15,
+      "manualExpansion": "Traced controller -> AdminPageView/AdminPageSections LogsTab and AdminLog types; startup index -> incident monitor; auth-security/app composition and required-mode fallback. Lexical candidates alone are not a whole-program theorem."
+    },
+    "inputPins": [
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/index.ts",
+        "gitBlobSha": "3fd350d160c59c6226989ac3348c20e64424ea4e",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "gitBlobSha": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+        "gitBlobSha": "e5387972b31ef272418158e8b1be52bc81dd6b75",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+        "gitBlobSha": "cd6c904610ed95206d309f52efa11a96b744012e",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+        "gitBlobSha": "39f8bc60d040674732b182c0333cf55227b6bf8b",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/authPolicy.ts",
+        "gitBlobSha": "56e92a0fd8c964d9d29afd9bb19af425332e6fc0",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+        "gitBlobSha": "83348cd92bf39448e00ae647bf24246b02119945",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningIncidentMonitor.ts",
+        "gitBlobSha": "aa50ceedad1a331655064a845b78cf4e1947dbd6",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/authSession.ts",
+        "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+        "gitBlobSha": "5da7b9fd813d11b258b2270aa0353500f90e0283",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "3f81b6eb1e2b56a1e0c3504c58f91bff9f3d7681",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "6b1f4baeb0fb41306083e230c6a9945b2548c6c7",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/useAdminPageController.tsx",
+        "gitBlobSha": "68d9a1d18e05964d48fda1d3a01811ca185ab7d9",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageView.tsx",
+        "gitBlobSha": "0884f03806d31ba027538ba5b53e7fa4d199a3c7",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageSections.tsx",
+        "gitBlobSha": "8b9ee7658b233d211cfb6dfcecbea661a70f5182",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminEarlyWarningWorkspacePage.tsx",
+        "gitBlobSha": "8f085960cb92fa525dceec9edcbc5fbd9da65030",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "gitBlobSha": "1577a7e6351fd6d4dc9c27bccd138c56693aa128",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "docs/operations-observability.md",
+        "gitBlobSha": "9ddec88257808b70f5fc0338f0b45f15795bee57",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "docs/security-auth-session-hardening.md",
+        "gitBlobSha": "f931909aa35c1cb4bf42a3e4795a0dec35b8353f",
+        "unchangedFromAccepted": true
+      }
+    ],
+    "routeComposition": [
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "lines": [
+          327,
+          422,
+          424
+        ],
+        "finding": "authSecurityRouter owns /api/auth before compatibility router; unresolved required-mode auth fallthrough retired."
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "lines": [
+          61,
+          64
+        ],
+        "finding": "merchantManagementPostgresRoutes then earlyWarningPostgresRoutes; distinct live readers."
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+        "lines": [
+          405,
+          406,
+          411,
+          412
+        ],
+        "finding": "GET/admin/logs requires current secure admin session and view_logs; owner-only includeEmergencyAudit derives from server profile, not query. No view_merchants check."
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+        "lines": [
+          56,
+          62,
+          97,
+          125,
+          142,
+          161,
+          165,
+          198
+        ],
+        "finding": "view_logs admission, additional current view_merchants for merchant-specific rows/history/cost/usage/AI rows. All incidents synchronized before response filtering; cache does not itself confer permission."
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+        "lines": [
+          979,
+          986
+        ],
+        "finding": "Legacy GET/admin/logs reads db.admin_logs, not audit_events. Shadowed by current PG route/retirement in required mode; compatibility behavior retained outside that mode."
+      }
+    ],
+    "producerAndStorage": [
+      {
+        "path": "artifacts/api-server/src/index.ts",
+        "lines": [
+          81
+        ],
+        "finding": "Production startup starts existing incident monitor; source reachability, no new monitor runtime claim."
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningIncidentMonitor.ts",
+        "lines": [
+          29,
+          39,
+          46
+        ],
+        "finding": "Current background snapshot/evaluation sync uses same ledger as HTTP reader; incident existence is not dependent solely on a privileged viewer opening UI."
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+        "lines": [
+          74,
+          87,
+          109,
+          118,
+          124,
+          215
+        ],
+        "finding": "System actor writes lifecycle events to audit_events; merchant scope sets real merchant_id; event metadata contains severity,area,code,value,runbook,scope,merchant_id,merchant_name. Dedicated history normalizes these keys; no duplicate producer added."
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "lines": [
+          1461,
+          1492,
+          1497,
+          1517,
+          1521,
+          1523
+        ],
+        "finding": "Generic reader selects merchant-linked events and joined merchant names, excludes emergency for non-owner, maps entire nonempty metadata to meta without incident-specific normalization/view_merchants filtering. Merchant incident rows satisfy merchant_id predicate if within1000-row route limit; system incident rows with null merchant_id do not satisfy this predicate."
+      }
+    ],
+    "consumers": [
+      {
+        "path": "artifacts/fawri/src/pages/admin/useAdminPageController.tsx",
+        "lines": [
+          146,
+          515,
+          524,
+          532,
+          1475,
+          1554
+        ],
+        "finding": "view_logs controls load/tab; stores response logs directly as AdminLog[]; type cast strips no fields. No additional view_merchants requirement for audit references."
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageView.tsx",
+        "lines": [
+          365,
+          366
+        ],
+        "finding": "Passes current logs to LogsTab."
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageSections.tsx",
+        "lines": [
+          386,
+          457,
+          460,
+          540,
+          557,
+          622,
+          628,
+          637
+        ],
+        "finding": "LogsTab searches merchant name/id and renders merchant_name,action_type,details,reason,actor/time. Selected metadata supports established subscription/channel formatting. Early-warning actions take default details; no identified severity/value/runbook rendering or arbitrary meta iteration. Hidden UI fields remain observable through API/state."
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "lines": [
+          535,
+          544,
+          554
+        ],
+        "finding": "AdminLogMeta's six optional formatting fields are compile-time definitions; they do not minimize received JSON."
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminEarlyWarningWorkspacePage.tsx",
+        "lines": [
+          529,
+          536,
+          622,
+          755
+        ],
+        "finding": "Uses dedicated endpoint, stores snapshot, displays returned incident history and merchant identity in allowed projections; does not read general-log metadata."
+      }
+    ],
+    "establishedPermissionModel": {
+      "sourceDocs": [
+        "docs/operations-observability.md:14",
+        "docs/security-auth-session-hardening.md:123",
+        "artifacts/api-server/src/services/authPolicy.ts:81"
+      ],
+      "existingBehavior": "Independent view_logs and view_merchants. Existing audit references intentionally remain under view_logs in accepted ordinary-log regression; endpoint-specific early-warning restriction is explicit. Emergency has explicit owner-only alternate-reader exclusion.",
+      "notEstablished": "No current doc/test explicitly chooses whether early-warning merchant incident health/value metadata must follow the dedicated endpoint's view_merchants restriction in generic audit history. Neither broad audit access nor endpoint-specific policy alone settles that cross-consumer decision.",
+      "confirmedNewPolicyViolation": false,
+      "policyAdopted": false,
+      "compatibilityImpact": "Removing entire incident rows changes visible audit chronology and searchable merchant references; minimizing incident-only meta preserves current first-party visible incident card fields but changes observable API/state values and may affect unknown consumers. No change made."
+    },
+    "reusedEvidence": {
+      "acceptedExecutable": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+      "currentRun": 40571069042,
+      "currentJob": 122425088861,
+      "checkout": "5c1643399fbf9d69e2a6ed003a8ce88dc2b092e0",
+      "summary": [
+        {
+          "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "management-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 50,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "management-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+          "auditBatch": "management-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+          "auditBatch": "management-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 14,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        }
+      ],
+      "managementTap": 81,
+      "currentFullAppFileTap": 50,
+      "newRun": false,
+      "exactTests": [
+        {
+          "lines": [
+            335,
+            361
+          ],
+          "name": "actual early-warning owner path creates canonical scoped history and normalizes metadata with authorized merchant view",
+          "proves": "Authorized merchant history and field normalization, injected extra metadata absent only from dedicated early-warning response."
+        },
+        {
+          "lines": [
+            362,
+            376
+          ],
+          "name": "view_logs-only early-warning response omits merchant identity in every nested projection while retaining system history and aggregates",
+          "proves": "Dedicated endpoint excludes merchant rows/AI/history, including forged query hints; not generic-log incident policy."
+        },
+        {
+          "lines": [
+            377,
+            388
+          ],
+          "name": "current SQL permissions override cached early-warning data and denied actors cannot mutate incident history",
+          "proves": "Current permissions/denials/selected stable ledger snapshots at dedicated endpoint."
+        },
+        {
+          "lines": [
+            408,
+            424
+          ],
+          "name": "general log endpoint cannot bypass owner-only emergency audit through alternate projection",
+          "proves": "Explicit emergency exclusion for assistants, preserved owner and ordinary logs; not all incident types."
+        },
+        {
+          "lines": [
+            425,
+            439
+          ],
+          "name": "ordinary log metadata actor identity and current SQL permission checks survive emergency filtering",
+          "proves": "view_logs-only may read ordinary merchant-linked log, selected metadata attribution; no IP/user_agent/request_id top-level. Does not assert incident value/runbook/meta."
+        }
+      ],
+      "historicalEvidence": [
+        "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+        "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json"
+      ],
+      "missingAssertion": "Existing actual-app fixture creates merchant incident rows before later GET/admin/logs requests but asserts emergency and ordinary rows only. It does not assert inclusion/exclusion or exact keys for those merchant incident rows in the generic response; PASS for those tests is not incident-specific privacy certification.",
+      "noAutomaticRerun": "Code/test blob pins unchanged; no new test needed merely to reconfirm accepted dedicated/ordinary/emergency boundaries. Implement only the precise changed-rule positive/negative field regression if a cross-consumer rule is explicitly adopted."
+    },
+    "limits": [
+      "Bounded source/lexical/manual dataflow review, no formal absence theorem or external/deployed-client inventory.",
+      "Generic incident exposure is a source-derived behavior; no new incident-specific HTTP runtime observation was executed.",
+      "UI absence of a field is not API redaction; whole JSON remains transport-visible.",
+      "No new confirmed vulnerability inferred where intended cross-consumer field policy is unspecified.",
+      "No arbitrary historical audit metadata/scope inventory, hosted least-privilege proof or original dataset certification.",
+      "No approval inferred from continuation. FIELD002 projection/SEQ-R2 remain unapproved; gates/counts unchanged."
+    ],
+    "nextExactAction": "Reconcile existing RESIDUAL-FIELD-004/F004-R1/R2 against current order_drafts and processed_channel_events SQL writers/readers, startup/migration/ingress paths and accepted Meta/new-order reachability evidence. Separate dormant-table intended lifecycle from legacy same-name stores and hosted actual-row inventory; identify only a concrete current unproved boundary before code/tests. Do not add CRUD routes, infer inapplicability from lexical absence, repeat accepted notification/early-warning/emergency tests or adopt FIELD002/FIELD003/SEQ-R2 policy."
+  },
+  "previousNextExactAction": "Continue RESIDUAL-FIELD-004: trace current order_drafts and processed_channel_events SQL writers/readers versus legacy debug/in-memory order and durable ingress consumers, reusing accepted Meta/new-order reachability evidence. Identify one missing live authority/field boundary; do not add CRUD routes or repeat accepted notification/early-warning proofs."
 }
