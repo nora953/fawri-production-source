@@ -236,7 +236,7 @@ test('real HTTP replay execution applies exactly once under tenant RLS and curre
     const eventTable=f.kind==='saas'?'saas_billing_events':'cashier_billing_events';
     const eventRows=async()=>(await admin.query(`SELECT * FROM ${eventTable} WHERE order_id=$1 ORDER BY id`,[f.order.id])).rows;
     const eventsBefore=await eventRows();
-    assert.equal(orderBefore.status,'paid');assert.equal(appBefore.length,1);assert.equal(eventsBefore.length,1);
+    assert.equal(orderBefore.status,f.kind==='saas'?'paid':'applied');assert.equal(appBefore.length,1);assert.equal(eventsBefore.length,1);
     assert.equal(orderBefore.metadata.provider_request_id,f.payload.requestId);
     await management.updateMerchantStatusPostgres({merchantId,status:'suspended',reason:'Synthetic paid deletion boundary',actorAdminId:owner.id});
     const deletion=await management.createDeletionRequestPostgres({merchantId,actorAdminId:finance.id,reason:'policy_violation',details:'Synthetic paid deletion boundary'});
