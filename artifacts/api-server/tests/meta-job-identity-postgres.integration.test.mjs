@@ -294,7 +294,45 @@ test('original encrypted Meta jobs reject tenant and event identity conflicts be
           assert.equal(response.status,503,'legacy-only history must not become a fresh job');assert.equal(response.body.code,'META_WEBHOOK_QUEUE_UNAVAILABLE');
           assert.deepEqual(await eventState(),before);assert.deepEqual(await domainSnapshot(),domain);assert.equal(providerCalls,calls);
           const again=await signed();assert.equal(again.status,503);assert.deepEqual(await eventState(),before);assert.equal(providerCalls,calls);
+          await assert.rejects(queue.enqueueDurableJobAuthoritative({type:'meta.webhook.reply',merchantId:merchants[0],dedupeKey:valid.event,maxAttempts:1,payload:valid.payload}),{code:'META_LEGACY_EVENT_HISTORY_UNRECONCILED'});
+          assert.deepEqual(await eventState(),before);assert.deepEqual(await domainSnapshot(),domain);
         }finally{await cleanupJob();}
+      });
+      await t.test('pre-existing queued legacy event holds in the original worker before domain writes and cannot be requeued',async()=>{
+        await pool.query('DELETE FROM processed_channel_events WHERE id=$1',[row.id]);
+        let enqueued;
+        try{enqueued=await queue.enqueueDurableJobAuthoritative({type:'meta.webhook.reply',merchantId:merchants[0],dedupeKey:valid.event,maxAttempts:1,payload:valid.payload});}
+        finally{const insert=prepareInsert('processed_channel_events',row,loadLatestSnapshot().value);await pool.query(insert.sql,insert.values);}
+        const before=await domainSnapshot(),legacy=(await eventState()).legacy,calls=providerCalls;
+        try{
+          assert.equal((await worker.command('run')).ran,true);
+          const state=(await pool.query('SELECT status,last_error_code,result FROM background_jobs WHERE id=$1',[enqueued.job.id])).rows[0];
+          assert.equal(state.status,'dead_letter');assert.equal(state.last_error_code,'META_LEGACY_EVENT_HISTORY_UNRECONCILED');assert.equal(state.result._fawri_requeue_policy,'blocked');
+          await assert.rejects(queue.requeueDeadLetterJobAuthoritative(enqueued.job.id),{code:'DURABLE_JOB_REQUEUE_BLOCKED'});
+          assert.deepEqual(await domainSnapshot(),before);assert.deepEqual((await eventState()).legacy,legacy);assert.equal(providerCalls,calls);
+        }finally{await cleanupJob();}
+      });
+      await t.test('foreign legacy history does not suppress current merchant enqueue and preserves peer history',async()=>{
+        await pool.query('DELETE FROM processed_channel_events WHERE id=$1',[row.id]);
+        const peerChannel=(await pool.query("SELECT id FROM merchant_channels WHERE merchant_id=$1 AND platform='messenger' AND page_id=$2",[merchants[1],page+'-foreign'])).rows[0];
+        const peerRow={...row,merchant_id:merchants[1],channel_id:peerChannel.id};
+        const insert=prepareInsert('processed_channel_events',peerRow,loadLatestSnapshot().value);await pool.query(insert.sql,insert.values);
+        const legacy=(await eventState()).legacy,before=await domainSnapshot(),calls=providerCalls;
+        try{
+          const response=await signed();assert.equal(response.status,200);assert.equal(response.body.enqueued,1);
+          const state=await eventState();assert.equal(state.jobs.length,1);assert.equal(state.jobs[0].row.merchant_id,merchants[0]);assert.equal(state.jobs[0].row.status,'queued');assert.equal(state.inbound.length,0);
+          assert.deepEqual(state.legacy,legacy);assert.deepEqual(await domainSnapshot(),before);assert.equal(providerCalls,calls);
+        }finally{await cleanupJob();await pool.query('DELETE FROM processed_channel_events WHERE id=$1',[row.id]);const restore=prepareInsert('processed_channel_events',row,loadLatestSnapshot().value);await pool.query(restore.sql,restore.values);}
+      });
+      await t.test('legacy history lookup SQL denial fails closed without queue payload or business writes',async()=>{
+        await pool.query('DELETE FROM processed_channel_events WHERE id=$1',[row.id]);
+        const before=await eventState(),domain=await domainSnapshot(),calls=providerCalls;
+        await pool.query(`REVOKE SELECT ON processed_channel_events FROM ${role}`);
+        try{
+          assert.equal((await pool.query("SELECT has_table_privilege($1, 'processed_channel_events', 'SELECT') AS allowed",[role])).rows[0].allowed,false);
+          const response=await signed();assert.equal(response.status,503);assert.equal(response.body.code,'META_WEBHOOK_QUEUE_UNAVAILABLE');
+          assert.deepEqual(await eventState(),before);assert.deepEqual(await domainSnapshot(),domain);assert.equal(providerCalls,calls);
+        }finally{await pool.query(`GRANT SELECT ON processed_channel_events TO ${role}`);await cleanupJob();const restore=prepareInsert('processed_channel_events',row,loadLatestSnapshot().value);await pool.query(restore.sql,restore.values);}
       });
     }finally{await cleanupJob();await pool.query('DELETE FROM processed_channel_events WHERE id=$1',[row.id]);}
   });
