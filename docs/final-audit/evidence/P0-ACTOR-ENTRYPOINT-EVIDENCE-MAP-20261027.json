@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue MATRIX-C02 by reconciling current admin device OTP ownership/fingerprint negative runtime coverage. Reuse the accepted admin-auth aggregate journey and unchanged existing owner recovery positives plus accepted stage refusal. The two admin-device-otp-postgres-security tests are source contracts, not negative HTTP proof. Trace current resend/verify lookup, OTP-consumption and trust/session ordering against existing runtime assertions before selecting one truly missing condition; do not create a new OTP/pairing protocol, recovery policy, gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "Consolidate MATRIX-C02 against the current43 distinct authentication method/path keys and existing18-route admin ledger: mark the accepted incomplete-cutover, admin/self-session, merchant-session/password-recovery, owner-recovery and device-OTP ownership subconditions with their original proof layers, then identify the finite remaining public-auth/fallback actor/field conditions from existing source/tests before any new test. Do not automatically add cookie tamper, SQL fault, OTP redesign or duplicate pairing; no policy, new gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -43098,6 +43098,98 @@
           "retries": 0
         },
         "nextExactAction": "Continue MATRIX-C02 by reconciling current admin device OTP ownership/fingerprint negative runtime coverage. Reuse the accepted admin-auth aggregate journey and unchanged existing owner recovery positives plus accepted stage refusal. The two admin-device-otp-postgres-security tests are source contracts, not negative HTTP proof. Trace current resend/verify lookup, OTP-consumption and trust/session ordering against existing runtime assertions before selecting one truly missing condition; do not create a new OTP/pairing protocol, recovery policy, gate, hosted/provider, merge or deployment."
+      },
+      {
+        "boundary": "currentAdminDeviceOtpOwnershipAggregateRuntime",
+        "date": "2026-10-29",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02",
+        "status": "BOUNDED_ADMIN_DEVICE_OTP_EXISTING_RECORD_ACCOUNT_AND_FINGERPRINT_NEGATIVE_AGGREGATE_RUNTIME_ACCEPTED",
+        "source": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+        "sourceTree": "2433367768f590a1547045d43d99df11fba32932",
+        "sourceReconciliation": {
+          "route": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts",
+          "service": "artifacts/api-server/src/services/postgresAdminSecurityAuthority.ts",
+          "existingContractTests": "artifacts/api-server/tests/admin-device-otp-postgres-security.test.ts",
+          "existingContractLayer": "Two source-contract tests, not negative HTTP proof.",
+          "lookup": "Record ID + account ID + admin kind + fingerprint; context lookup before OTP issuance/verification; verified OTP before trust then session.",
+          "runtimeGap": "Existing admin journey had legitimate device verification but lacked these negative lookup conditions."
+        },
+        "test": {
+          "path": "artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts",
+          "blob": "fdadcc44bf1cbaad5bd2fe8285cb90cbbf4ff68c",
+          "existingJourneyExpanded": true,
+          "tap": 1,
+          "newTapCases": 0,
+          "newFunctionalCondition": 1,
+          "negativeObservations": 8,
+          "scenarios": [
+            "missing record ID",
+            "nonexistent record ID",
+            "different fingerprint",
+            "pre-existing device owned by another account"
+          ],
+          "endpoints": [
+            "resend",
+            "verify"
+          ],
+          "fixture": "Second disposable account and cloned pending device preserve matching fingerprint so the other-account case isolates the ownership predicate.",
+          "assertions": [
+            "Each response400 OWNER_DEVICE_VERIFICATION_INVALID.",
+            "No Set-Cookie, devCode or new challenge_id.",
+            "Full rows for both accounts, their devices/sessions/OTP challenges unchanged after each request.",
+            "Original valid challenge/code then succeeds and existing legitimate admin journey remains functional.",
+            "Existing named legacy auth file absence preserved."
+          ],
+          "layer": "AGGREGATE_AUTH_SECURITY_ROUTER_EXISTING_DISPOSABLE_RUNTIME_FIXTURES_SYNTHETIC_DEV_OTP"
+        },
+        "target": {
+          "run": 40945749001,
+          "job": 123700518299,
+          "tap": 104,
+          "files": 6,
+          "fullAppTap": 71,
+          "canonicalMigrations": 53,
+          "runtime": "v24.22.2",
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "checkout": "3744bb388e326a8741716ba85aba4b5b1f3e0be5",
+          "checkoutTreeMatched": true
+        },
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "ciFilesChanged": 2,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "limits": [
+          "Raw HTTP aggregate router, not full-app/device/browser or real OTP delivery.",
+          "Existing test uses its original runtime/operator fixtures; no claim of a new separately authenticated restricted LOGIN.",
+          "No SQL fault/concurrency/all OTP lifecycle or field acceptance.",
+          "The admin journey also runs in the broader tenant batch; invocations overlap, not unique new cases.",
+          "No application, schema, ACL, recovery policy or cashier pairing changes."
+        ],
+        "nextExactAction": "Consolidate MATRIX-C02 against the current43 distinct authentication method/path keys and existing18-route admin ledger: mark the accepted incomplete-cutover, admin/self-session, merchant-session/password-recovery, owner-recovery and device-OTP ownership subconditions with their original proof layers, then identify the finite remaining public-auth/fallback actor/field conditions from existing source/tests before any new test. Do not automatically add cookie tamper, SQL fault, OTP redesign or duplicate pairing; no policy, new gate, hosted/provider, merge or deployment.",
+        "accepted": true,
+        "broader": {
+          "run": 40945748482,
+          "job": 123700516351,
+          "tap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "checkoutTreeMatched": true,
+          "ownershipMarkerObserved": true
+        },
+        "allCi": {
+          "success": 58,
+          "total": 58,
+          "attempt": 1,
+          "retries": 0
+        }
       }
     ],
     "currentTestOverlay": {
@@ -45948,9 +46040,9 @@
           "groups": [
             "currentAuthAdmin"
           ],
-          "status": "PARTIAL_OWNER_RECOVERY_STAGE_REFUSAL_AGGREGATE_ACCEPTED_DEVICE_OTP_RECONCILIATION_REMAINS",
+          "status": "PARTIAL_DEVICE_OTP_OWNERSHIP_AGGREGATE_ACCEPTED_RECONCILE_FINITE_PUBLIC_AUTH_REMAINDER",
           "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
-          "next": "Continue MATRIX-C02 by reconciling current admin device OTP ownership/fingerprint negative runtime coverage. Reuse the accepted admin-auth aggregate journey and unchanged existing owner recovery positives plus accepted stage refusal. The two admin-device-otp-postgres-security tests are source contracts, not negative HTTP proof. Trace current resend/verify lookup, OTP-consumption and trust/session ordering against existing runtime assertions before selecting one truly missing condition; do not create a new OTP/pairing protocol, recovery policy, gate, hosted/provider, merge or deployment.",
+          "next": "Consolidate MATRIX-C02 against the current43 distinct authentication method/path keys and existing18-route admin ledger: mark the accepted incomplete-cutover, admin/self-session, merchant-session/password-recovery, owner-recovery and device-OTP ownership subconditions with their original proof layers, then identify the finite remaining public-auth/fallback actor/field conditions from existing source/tests before any new test. Do not automatically add cookie tamper, SQL fault, OTP redesign or duplicate pairing; no policy, new gate, hosted/provider, merge or deployment.",
           "newGate": false,
           "initialStatus": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
           "acceptedBoundedProof": {
@@ -46050,6 +46142,36 @@
             "accepted": true,
             "applicationFilesChanged": 1,
             "testFilesChanged": 1,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "adminDeviceOtpOwnershipProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminDeviceOtpOwnershipAggregateRuntime]",
+            "status": "BOUNDED_ADMIN_DEVICE_OTP_EXISTING_RECORD_ACCOUNT_AND_FINGERPRINT_NEGATIVE_AGGREGATE_RUNTIME_ACCEPTED",
+            "source": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+            "sourceTree": "2433367768f590a1547045d43d99df11fba32932",
+            "newFunctionalCondition": 1,
+            "newTapCases": 0,
+            "existingAggregateJourneyExpanded": true,
+            "negativeHttpObservations": 8,
+            "targetedTap": 104,
+            "targetFiles": 6,
+            "fullAppTap": 71,
+            "adminJourneyTap": 1,
+            "targetRun": 40945749001,
+            "targetJob": 123700518299,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "broaderRun": 40945748482,
+            "broaderJob": 123700516351,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "applicationFilesChanged": 0,
+            "testFilesChanged": 1,
+            "ciFilesChanged": 2,
             "parentGateClosed": false,
             "newGate": false,
             "policyAdopted": false,
@@ -46264,7 +46386,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Continue MATRIX-C02 by reconciling current admin device OTP ownership/fingerprint negative runtime coverage. Reuse the accepted admin-auth aggregate journey and unchanged existing owner recovery positives plus accepted stage refusal. The two admin-device-otp-postgres-security tests are source contracts, not negative HTTP proof. Trace current resend/verify lookup, OTP-consumption and trust/session ordering against existing runtime assertions before selecting one truly missing condition; do not create a new OTP/pairing protocol, recovery policy, gate, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "Consolidate MATRIX-C02 against the current43 distinct authentication method/path keys and existing18-route admin ledger: mark the accepted incomplete-cutover, admin/self-session, merchant-session/password-recovery, owner-recovery and device-OTP ownership subconditions with their original proof layers, then identify the finite remaining public-auth/fallback actor/field conditions from existing source/tests before any new test. Do not automatically add cookie tamper, SQL fault, OTP redesign or duplicate pairing; no policy, new gate, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -46447,6 +46569,44 @@
       "sha": "c6345928e0cc8496f7795a119eb904b16b565bdc",
       "previousSha": "cb1757ffe32980bab6ecc05e7782e64c039b6815",
       "proofLayer": "AGGREGATE_AUTH_ROUTER_BOOTSTRAP_POOL_DEV_OTP",
+      "tap": 1,
+      "newTapCases": 0
+    },
+    "currentAdminDeviceOtpOwnershipProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminDeviceOtpOwnershipAggregateRuntime]",
+      "status": "BOUNDED_ADMIN_DEVICE_OTP_EXISTING_RECORD_ACCOUNT_AND_FINGERPRINT_NEGATIVE_AGGREGATE_RUNTIME_ACCEPTED",
+      "source": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+      "sourceTree": "2433367768f590a1547045d43d99df11fba32932",
+      "newFunctionalCondition": 1,
+      "newTapCases": 0,
+      "existingAggregateJourneyExpanded": true,
+      "negativeHttpObservations": 8,
+      "targetedTap": 104,
+      "targetFiles": 6,
+      "fullAppTap": 71,
+      "adminJourneyTap": 1,
+      "targetRun": 40945749001,
+      "targetJob": 123700518299,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40945748482,
+      "broaderJob": 123700516351,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "ciFilesChanged": 2,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentAdminAuthTestOverlay": {
+      "source": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+      "path": "artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts",
+      "sha": "fdadcc44bf1cbaad5bd2fe8285cb90cbbf4ff68c",
+      "layer": "AGGREGATE_AUTH_SECURITY_ROUTER_EXISTING_DISPOSABLE_RUNTIME_FIXTURES_SYNTHETIC_DEV_OTP",
       "tap": 1,
       "newTapCases": 0
     }
