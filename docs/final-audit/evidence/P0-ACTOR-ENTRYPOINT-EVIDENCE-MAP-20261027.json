@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/channels: reconcile actual secure merchant router/service and channel connection/credential projection against the existing literal test reference, current provider/channel service tests and accepted runtime evidence before selecting a missing cell. Reuse conversation and message-metadata source maps; no automatic test or metadata restriction, policy adoption, gate/count growth, hosted action, merge or deployment. Historical/unknown metadata provenance remains unverified within GitHub-only scope.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -40073,6 +40073,284 @@
           "Full actor/field/P0 inventory and parent gate remain open. Known45statuses29/7/9,completeP0Inventory=false,overallPercentage=null,releaseNO-GO unchanged; other FIELD/SEQ-R2 decisions retained."
         ],
         "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits."
+      },
+      {
+        "boundary": "currentMessageMetadataProducerReaderReconciliation",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "sourceReviewed": "3b4706bbdbf5caf86d630020fddf2a408c73a0a3",
+        "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+        "acceptedExecutableTree": "9e6a0323f2348d874e73416157d08a983e9046f2",
+        "status": "BOUNDED_CURRENT_MESSAGE_METADATA_PRODUCERS_AND_READERS_TRACED_EXISTING_PROJECTION_PRESERVED_POLICY_OPEN",
+        "sourceReconciliationComplete": true,
+        "newRuntimeAcceptanceClaimed": false,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 0,
+        "newFunctionalCases": 0,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "sourceVerification": {
+          "expandedPins": [
+            {
+              "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+              "sha": "97ce5223f61ae36011ec3889256215e23e16a28e"
+            },
+            {
+              "path": "artifacts/api-server/src/services/merchantCorrectionReview.ts",
+              "sha": "053d17b15c34309ecb5787ebb64f06d3420ac3e4"
+            },
+            {
+              "path": "artifacts/api-server/src/services/metaVideoReplyGrounding.ts",
+              "sha": "ddf47b4dacbb731430a20d61ab1ad2ea6c62a3fa"
+            },
+            {
+              "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+              "sha": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2"
+            },
+            {
+              "path": "artifacts/api-server/src/services/postgresMetaWebhookReplyTransport.ts",
+              "sha": "c67b40e192b9a10da342ba1b107d50f3bf7efa06"
+            },
+            {
+              "path": "artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts",
+              "sha": "7d2e42eb1149c769c57733944b9fbefb1f795b7b"
+            },
+            {
+              "path": "artifacts/api-server/src/services/manualConversationRuntime.ts",
+              "sha": "66e3d91047fb4d93e4e7157ce68ff04be863fbf9"
+            },
+            {
+              "path": "artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx",
+              "sha": "67f4b711e57c5a3b826127f97c6cc5584cce8de6"
+            },
+            {
+              "path": "artifacts/fawri/src/lib/conversationSavedAnswer.ts",
+              "sha": "ff7a5b9db3b3db3a3c708523e072bc10a36924cc"
+            },
+            {
+              "path": "artifacts/fawri/src/lib/types.ts",
+              "sha": "1577a7e6351fd6d4dc9c27bccd138c56693aa128"
+            },
+            {
+              "path": "scripts/plan-postgresql-migration.mjs",
+              "sha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80"
+            },
+            {
+              "path": "lib/db/src/schema/conversations.ts",
+              "sha": "26a3b8c0921d77d1d3e9daca581b5d33a2edea5d"
+            },
+            {
+              "path": "artifacts/api-server/tests/meta-live-reply-postgres.integration.test.ts",
+              "sha": "5a6931ac3948ef758873a9388d568536212734be"
+            },
+            {
+              "path": "artifacts/api-server/tests/meta-full-app-restricted-postgres.integration.test.mjs",
+              "sha": "d9122a09802e650a93b807c5885379d32aac4a2f"
+            },
+            {
+              "path": "artifacts/api-server/tests/manual-conversation-privacy-http-postgres.integration.test.mjs",
+              "sha": "455bca3b70bf016884e2050818876dc426174287"
+            },
+            {
+              "path": "artifacts/api-server/tests/conversation-correction-approval-http-postgres.integration.test.mjs",
+              "sha": "6f41bb1cd155e5cc1cd879e041426d1d0a9c8fd3"
+            },
+            {
+              "path": "artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs",
+              "sha": "ec2522b2fa2309c3dfe6433ab9ecc9bf9c22227d"
+            }
+          ],
+          "expandedPinCount": 17,
+          "mismatches": 0,
+          "scope": "Current direct SQL message writers in320API source files, their concrete metadata expressions and named reader/helper/compatibility/migration candidates; not all historical/generic imports or hosted row inventory.",
+          "directMessageSqlCandidateFiles": 5,
+          "metadataMutatorFilesAfterSemanticReview": 4,
+          "catalogueRegenerated": false
+        },
+        "families": [
+          {
+            "producer": "postgresMetaAutoReplyIntent.ts customer INSERT",
+            "root": [
+              "media?",
+              "reply_to_external_message_id?"
+            ],
+            "nestedMedia": [
+              "content_kind",
+              "attachment_count",
+              "has_attachment",
+              "content_identity_hash"
+            ],
+            "role": "Parsed inbound content identity/reply context; metadata is constructed, not copied as a complete arbitrary inbound metadata object."
+          },
+          {
+            "producer": "postgresMetaAutoReplyIntent.ts audio enrichment",
+            "root": [
+              "media"
+            ],
+            "nestedMedia": [
+              "audio_transcript",
+              "audio_sha256",
+              "transcription_provider_id",
+              "transcription_model"
+            ],
+            "role": "Identity/provenance checked before merging persisted transcript; same-message retries read it. Derived text can contain customer information; this is not a PII-free claim."
+          },
+          {
+            "producer": "postgresMetaAutoReplyIntent.ts image enrichment",
+            "root": [
+              "matched_record_id?",
+              "media"
+            ],
+            "nestedMedia": [
+              "image_sha256",
+              "vision_provider_id",
+              "vision_model",
+              "visual_alternatives",
+              "match_confidence"
+            ],
+            "alternativeFields": [
+              "product_id",
+              "variant_id?",
+              "confidence"
+            ],
+            "role": "Trusted exact match/alternative provenance; read/revalidated for retries and later context. Conditional branches do not emit every field together."
+          },
+          {
+            "producer": "metaVideoReplyGrounding.ts",
+            "root": [
+              "matched_record_id?",
+              "media"
+            ],
+            "nestedMedia": [
+              "video_observation",
+              "video_sha256",
+              "video_frame_count",
+              "video_vision_provider_id",
+              "video_vision_model",
+              "video_visual_alternatives?"
+            ],
+            "role": "Identity-checked merge; persisted observation/provenance read and validated before provider reuse."
+          },
+          {
+            "producer": "postgresMetaAutoReplyIntent.ts fawri INSERT",
+            "root": [
+              "knowledge_stage",
+              "knowledge_source",
+              "reason_code",
+              "confidence",
+              "matched_record_id",
+              "grounding_record_ids",
+              "source_customer_message_id",
+              "training_request_id",
+              "handoff_after_reply"
+            ],
+            "role": "Knowledge/reply provenance and training/handoff linkage. Backend manual completion reads stage/training/handoff/source links; fields are not solely UI decoration."
+          },
+          {
+            "producer": "postgresManualConversationAuthority.ts merchant INSERT and learning merge",
+            "root": [
+              "correction_review?",
+              "manual_reply_learning",
+              "learned_training_request_id",
+              "learned_answer_id"
+            ],
+            "correctionFields": [
+              "status",
+              "customer_message_id",
+              "fawri_message_id",
+              "source_stage",
+              "matched_record_id",
+              "created_at"
+            ],
+            "role": "Correction context is built from own prior customer/fawri messages; post-completion learning merges reason/ids. Manual inbound INSERT uses metadata default and is not a new media-enrichment writer."
+          },
+          {
+            "producer": "merchantCorrectionReview.ts jsonb_set",
+            "root": [
+              "correction_review"
+            ],
+            "correctionFields": [
+              "reviewed_at",
+              "knowledge_id",
+              "apply_mode",
+              "status"
+            ],
+            "role": "Own message/context and stage checks precede review transition; replace review object while retaining sibling metadata. Approval/dismissal/replay are already covered at their actual proof layer."
+          }
+        ],
+        "nonMutatorsAndSeparation": [
+          {
+            "path": "postgresMetaWebhookReplyTransport.ts",
+            "finding": "Direct messages UPDATEs change delivery status/external ids/counters/failure fields, not message metadata. Provider outcome handling must not be counted as a fifth metadata writer."
+          },
+          {
+            "path": "scripts/plan-postgresql-migration.mjs",
+            "finding": "Inspected runtime.conversations mapping writes conversations.metadata={legacy:item}; the later raw metadata assignment is audit_events. Neither is evidence of a messages.metadata importer. Generic/historical import/restore inventory remains outside this bounded claim. Current conversation read selects/maps no conversations.metadata field, so that legacy conversation column must not be conflated with messages.metadata projection."
+          },
+          {
+            "path": "manualConversationRuntime.ts",
+            "finding": "Compatibility RuntimeMessage metadata type exists; not the required-PG SQL authority accepted here."
+          }
+        ],
+        "readers": {
+          "http": "postgresManualConversationAuthority.mapMessage forwards any object non-array metadata unchanged. No current metadata allowlist is enforced by this review.",
+          "ui": "ConversationsPage directly reads metadata.correction_review.status. Message.metadata type remains Record<string,unknown>; source helpers are not permission decisions.",
+          "savedAnswerHelper": "conversationSavedAnswer builds question/answer seed from same-conversation customer/merchant text and identifiers, not from metadata. Do not invent a metadata dependency for this helper.",
+          "backend": "Auto-reply context/retry reads media hashes/provider/model/transcript/observations/matches; manual completion uses training_request_id, knowledge_stage, handoff_after_reply and matched_record_id; correction review verifies referenced messages and source stage.",
+          "retention": "Metadata mergers preserve prior top-level/nested siblings using object spreads/jsonb_set; existing fixture tests explicitly preserve sibling correction/learning/media metadata."
+        },
+        "evidenceReuse": {
+          "existingRuntime": [
+            {
+              "suite": "meta-full-app-restricted-postgres.integration.test.mjs",
+              "auditBatch": "meta-bot",
+              "runtime": "v24.22.1",
+              "exit": 0,
+              "passed": 13,
+              "failed": 0,
+              "skipped": 0,
+              "cancelled": 0,
+              "summaryComplete": true
+            },
+            {
+              "suite": "meta-live-reply-postgres.integration.test.ts",
+              "auditBatch": "meta-bot",
+              "runtime": "v24.22.1",
+              "exit": 0,
+              "passed": 54,
+              "failed": 0,
+              "skipped": 0,
+              "cancelled": 0,
+              "summaryComplete": true
+            }
+          ],
+          "run": 40719122971,
+          "job": 122925351104,
+          "checkout": "ced45deb8ad2e894bad71b497910fe05639f8021",
+          "treeMatched": true,
+          "interpretation": "Existing54TAP Meta lifecycle with injected providers plus13TAP full-app restricted proof are already within accepted broader836. Source branch/keys traced here; not new execution or certification of every metadata producer value.",
+          "metadataRouterProof": "P0-CONVERSATION-METADATA-HTTP-20261024.json and current run40719123225/manual16TAP preserve6populated fixtures; image fixtures do not become all audio/video/historical producer acceptance."
+        },
+        "policyDisposition": {
+          "currentBehavior": "PRESERVED_UNCHANGED_OBJECT_PROJECTION",
+          "newProjectionRestriction": "NOT_ADOPTED",
+          "reason": "UI usage alone does not establish which API fields may be removed; backend storage/reuse and existing correction/media/learning compatibility have concrete dependencies. Current canonical expressions do not prove every historical row or extension is safe.",
+          "noNewDefectAsserted": true,
+          "notCertified": "No arbitrary metadata/PII allowlist or source/history-completeness approval; no claim that all emitted text is non-sensitive.",
+          "unverified": "Actual hosted historical metadata rows, generic imports/restores/third-party clients and unknown extensions are not inventoried under GitHub-only authorization.",
+          "userActionRequiredNow": false
+        },
+        "remainingLimits": [
+          "This is a bounded current source producer/reader map; no new SQL/HTTP/provider/browser execution or hosted inventory.",
+          "Source canonical field construction does not close arbitrary metadata provenance/privacy policy, certify every value, or authorize dropping unknown fields.",
+          "No code/test/schema/ACL/pairing/policy change; known45statuses29/7/9, inventoryfalse/percentnull/NO-GO maintained.",
+          "Do not repeat the accepted conversation route/metadata cases; proceed with independent current channel projection reconciliation while retaining policy/history limits."
+        ],
+        "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/channels: reconcile actual secure merchant router/service and channel connection/credential projection against the existing literal test reference, current provider/channel service tests and accepted runtime evidence before selecting a missing cell. Reuse conversation and message-metadata source maps; no automatic test or metadata restriction, policy adoption, gate/count growth, hosted action, merge or deployment. Historical/unknown metadata provenance remains unverified within GitHub-only scope."
       }
     ],
     "currentTestOverlay": {
@@ -40645,6 +40923,24 @@
       "reusedAcceptedSourceCiSuccess": 58,
       "applicationChanged": false,
       "metadataPolicyAdopted": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": false
+    },
+    "currentMessageMetadataProducerReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMessageMetadataProducerReaderReconciliation]",
+      "status": "BOUNDED_CURRENT_MESSAGE_METADATA_PRODUCERS_AND_READERS_TRACED_EXISTING_PROJECTION_PRESERVED_POLICY_OPEN",
+      "sourceReviewed": "3b4706bbdbf5caf86d630020fddf2a408c73a0a3",
+      "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+      "reviewComplete": true,
+      "expandedPins": 17,
+      "directMessageSqlCandidates": 5,
+      "actualMetadataMutators": 4,
+      "newFunctionalCases": 0,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "policyAdopted": false,
       "parentGateClosed": false,
       "newGate": false,
       "userActionRequiredNow": false
