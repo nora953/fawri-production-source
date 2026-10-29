@@ -2088,5 +2088,36 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_KNOWLEDGE_RETIREMENT_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,allAssertionsPassed:passed,legacyMethods:9,initialPathVariants:18,currentAuthorityPositive:true,hosted:false}));
   });
 
+  await t.test('MATRIX-C02 incomplete admin authority refuses case variants before current or legacy handlers',async()=>{
+    const opName='FAWRI_OPERATIONAL_POSTGRES_AUTHORITY',sessionName='FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY';
+    const originalOp=process.env[opName],originalSession=process.env[sessionName];
+    const mode=await import('../src/services/adminAuthPostgresCutover.ts');
+    const paths=await import('../src/lib/dataPaths.ts');
+    const legacyNames=['auth-accounts.json','auth-security.json','merchants.json'];
+    const files=()=>legacyNames.map(name=>{const file=paths.getFawriDataFilePath(name);return fs.existsSync(file)?fs.readFileSync(file,'utf8'):null;});
+    const before=await snapshot(),beforeFiles=files(),observed=[];
+    const restore=()=>{if(originalOp===undefined)delete process.env[opName];else process.env[opName]=originalOp;if(originalSession===undefined)delete process.env[sessionName];else process.env[sessionName]=originalSession;};
+    const endpoints=[['GET','/api/auth/admins'],['POST','/api/auth/admin/login'],['POST','/api/auth/admin/device-otp/resend'],['GET','/api/auth/admin/owner-recovery/status']];
+    let passed=false;
+    try{
+      for(const [operational,session] of [['required','off'],['off','required']]){
+        process.env[opName]=operational;process.env[sessionName]=session;assert.equal(mode.adminAuthPostgresCutoverMode(),'incomplete');
+        for(const [method,path] of endpoints)for(const variant of [path,path.replace('/api/auth/admin','/API/AuTh/AdMiN')+'/?cursor=AbC']){
+          const r=await req(variant,undefined,method,method==='POST'?{}:undefined,{Origin:'https://management.example.invalid'});
+          observed.push({operational,session,status:r.status,code:r.body.code});
+        }
+      }
+      console.log('P0_ADMIN_INCOMPLETE_CUTOVER_OBSERVED '+JSON.stringify({statuses:observed.map(r=>r.status),codes:observed.map(r=>r.code),legacyFilesUnchanged:JSON.stringify(files())===JSON.stringify(beforeFiles)}));
+      assert.deepEqual(observed.map(r=>r.status),Array(16).fill(503));
+      for(const r of observed)assert.equal(r.code,'AUTH_POSTGRES_CUTOVER_INCOMPLETE');
+      assert.deepEqual(files(),beforeFiles);assert.deepEqual(await snapshot(),before);
+      restore();assert.equal(mode.adminAuthPostgresCutoverMode(),'postgres');
+      assert.equal((await req('/api/auth/admins',owner)).status,200);assert.equal((await req('/API/AuTh/AdMiNs/',owner)).status,200);
+      assert.equal((await req('/api/auth/admins')).status,401);assert.equal((await req('/API/AuTh/AdMiNs/')).status,401);
+      assert.deepEqual(files(),beforeFiles);assert.deepEqual(await snapshot(),before);passed=true;
+    }finally{restore();}
+    console.log('P0_ADMIN_INCOMPLETE_CUTOVER_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,allAssertionsPassed:passed,halfConfiguredProfiles:2,requests:16,noOtpDelivery:true,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
