@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/context and GET /api/catalog/promotions: reconcile actual secure compatibility/session chain, normalized currency context, promotion field/ownership projection and existing catalog/promotion SQL/HTTP/consumer evidence before selecting any missing cell. Reuse accepted regional and catalog list/detail proofs; no automatic repeat test or policy/Origin redesign. No new gate/count growth, hosted/provider action, merge or deployment.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/media/images: reconcile compatibility/session authority, storage_key ownership resolution and physical read adapter, response headers/errors and existing local media/cross-tenant SQL/source tests before selecting any missing cell. Reuse accepted catalog context/promotion/list/detail and regional proofs; no automatic write/Origin change, new policy/gate/count, provider/hosted object access, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -41151,14 +41151,257 @@
           "finalSourceRetries": 0,
           "localSyntax": "node --check catalog-full-app-candidate.mjs PASS"
         }
+      },
+      {
+        "boundary": "currentCatalogContextPromotionReadFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "status": "BOUNDED_CURRENT_CATALOG_CONTEXT_PROMOTION_READ_ACTOR_TENANT_FIELDS_AND_SQL_FAILURE_FULL_APP_ACCEPTED",
+        "sourceReviewed": "f6a71d6def0ca8f6b50b77ead56d7c4c87b636d6",
+        "source": "4dbc428834d152a618c753a253476122dca7f43a",
+        "sourceTree": "9b3f7a4dde5a2534412cd47d8e117ba423a3c6ef",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "58cf93f8fce7bbae46bfc32c4d650b96f408a92e",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+            "gitBlobSha": "a96246c760be858132e43db49c1b2ff52776c879",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth.ts",
+            "gitBlobSha": "61958ff03a7412661783c9e0210b94ba00ae10cb",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authCutoverCompatibility.ts",
+            "gitBlobSha": "e81efa86b6c2874727e796a8adbdbc9747de7cf2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMerchantRegionalAuthority.ts",
+            "gitBlobSha": "b070764002bbc42f574a90eb4a04561e51b5aab5",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresCommercePromotionAuthority.ts",
+            "gitBlobSha": "780b3fddc5b600e34161795622d6c072e954abc3",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/commercePromotionRuntime.ts",
+            "gitBlobSha": "f566d6b72d9df32a40e53bf1872689aa30100db0",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/merchantRegionalRuntime.ts",
+            "gitBlobSha": "f6f1062707d91d16649db903867bdfecc75d37ba",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/catalog-variant-promotion-survival-postgres.integration.test.ts",
+            "gitBlobSha": "51e6b7cbb6a382b7af275b9812b5f84ca09c0af4",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/cashier-merchant-catalog-isolation.test.mjs",
+            "gitBlobSha": "76aa6e1c9db696fe32fabbbc1e80cac25459071f",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/fawri/src/lib/catalogPromotionUiApi.ts",
+            "gitBlobSha": "3ab929ef2fda66822905291b806691439f146200",
+            "localBlobMatched": true
+          }
+        ],
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "applicationExecuted": true,
+        "schemaChanged": false,
+        "productionGrantsChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "acceptanceCondition": "Existing actor/privacy matrix current catalog/context alias and promotions list lacked bounded actual-full-app actor/tenant/exact-field and SQL read-failure/recovery evidence. Does not reopen accepted currency mutation/catalog read proofs or close parent matrix.",
+        "sourceReconciliation": {
+          "routes": "GET /catalog/context and /catalog/promotions use same routes/auth secure-context compatibility chain as accepted product reads; server local merchantId only, no query override.",
+          "context": "getMerchantCommerceContextAuthoritative is reused from accepted regional path. Four fields country_code/timezone/currency_code/currency_fraction_digits via merchant-bound transaction.",
+          "promotions": "listCommercePromotionsAuthoritative requires PostgreSQL, validates merchant region then selects commerce_promotions WHERE merchant_id=$1, ORDER BY starts_at DESC,id ASC. Explicit rowToRule/viewOf excludes metadata and creation/update timestamps.",
+          "requiredFields": [
+            "id",
+            "merchant_id",
+            "name",
+            "scope",
+            "effect",
+            "currency_code",
+            "starts_at",
+            "ends_at",
+            "schedule_timezone",
+            "priority",
+            "enabled",
+            "version",
+            "lifecycle",
+            "starts_local",
+            "ends_local"
+          ],
+          "optionalFields": [
+            "product_id",
+            "variant_id",
+            "percentage_bps",
+            "amount_minor",
+            "minimum_subtotal_minor"
+          ],
+          "metadata": "SELECT reads internal metadata, but projection excludes it, including create_request_hash and unknown extension.",
+          "consumer": "Pinned catalogPromotionUiApi reads same context/list routes. Source reference only, not browser execution.",
+          "priorTestClassification": "catalog-variant-promotion-survival PostgreSQL source proves its service-level fixture/target preservation; cashier-merchant-catalog-isolation is source-contract checks. Neither is mislabelled current HTTP endpoint acceptance; no literal endpoint hit by itself is treated as defect."
+        },
+        "fixture": {
+          "additionalMerchants": 2,
+          "additionalPromotions": 2,
+          "scope": "delivery",
+          "effect": "free_delivery",
+          "enabled": false,
+          "stableLifecycle": "disabled independent of CI wall clock",
+          "merchantProfiles": [
+            {
+              "country": "IQ",
+              "timezone": "Asia/Baghdad",
+              "currency": "IQD"
+            },
+            {
+              "country": "AE",
+              "timezone": "Asia/Dubai",
+              "currency": "AED"
+            }
+          ],
+          "seed": "Existing createCommercePromotionAuthoritative with server-authoritative local schedule; direct owned SQL adds unknown metadata extension. No promotion write-route/idempotency/discount-application acceptance claimed.",
+          "dates": "2030-01-01/02 local09:00; expected own UTC06:00 and peerUTC05:00, returned local seconds09:00:00. Fixed schedules with disabled state avoid time-dependent lifecycle assertion.",
+          "cleanup": "Owned promotion rows deleted in finally; table SELECT restored if temporary restriction remains; root helpers clean accounts/roles."
+        },
+        "assertions": [
+          "Full actual app canonical and case/trailing-slash context/list; no-store; foreign query ignored; exact four-field context for both tenants.",
+          "Exact whole promotion DTO per merchant, own/peer minimum subtotal, currency and local/UTC schedule; internal metadata/create_request_hash/created_at/updated_at absent.",
+          "Missing session/admin owner/viewer/channel manager, wrong device, combined merchant/admin cookies and forged legacy cookie denied401 without context or private promotion leakage.",
+          "Selected existing business snapshot plus complete owned promotion rows unchanged across successful reads, denials, fault, recovery and session revocation; no claim about all tables or retention updated_at watermark.",
+          "Revoke SELECT commerce_promotions from actual disposable primary, confirm effective privilege false and actual query42501; canonical/mixed HTTP list returns fixed generic500 CATALOG_OPERATION_FAILED, no-store.",
+          "Context endpoint still returns exact own context during isolated promotions-read failure, distinguishing shared region/session authority from table fault.",
+          "Restore original SELECT, both merchant promotion lists recover exact expected bodies. Revoke target merchant session, context/list401 while peer list remains200 and selected rows unchanged."
+        ],
+        "limits": [
+          "Bounded disabled delivery/free-delivery fixture; not all catalog product/variant percentage/fixed-price promotion fields, active/expired lifecycle, calculation or financial application matrix.",
+          "Read-only endpoint acceptance, not mutation Origin/permission/idempotency contract; no new policy or duplicated currency tests.",
+          "Synthetic local HTTP+PostgreSQL only, no browser/device/hosted/provider/media/storage or complete inventory acceptance."
+        ],
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/media/images: reconcile compatibility/session authority, storage_key ownership resolution and physical read adapter, response headers/errors and existing local media/cross-tenant SQL/source tests before selecting any missing cell. Reuse accepted catalog context/promotion/list/detail and regional proofs; no automatic write/Origin change, new policy/gate/count, provider/hosted object access, merge or deployment.",
+        "targeted": {
+          "run": 40854202612,
+          "job": 123380958355,
+          "checkout": "09dd73649cda0e05e93856dcea98840d343c5542",
+          "tree": "9b3f7a4dde5a2534412cd47d8e117ba423a3c6ef",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 96,
+          "fullAppTap": 65,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 65
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "marker": {
+            "actualFullApp": true,
+            "restrictedPrimary": true,
+            "separateAuthLogin": true,
+            "passedCases": 1,
+            "allAssertionsPassed": true,
+            "promotionSqlReadFaultAndRecovery": true,
+            "hosted": false
+          }
+        },
+        "initialInfrastructureFailure": {
+          "run": 40854202247,
+          "job": 123380954688,
+          "checkout": "09dd73649cda0e05e93856dcea98840d343c5542",
+          "conclusion": "failure",
+          "result": {
+            "browser": null,
+            "results": [],
+            "infrastructureError": "Browser prerequisite timed out"
+          },
+          "classification": "Browser prerequisite infrastructure timeout before any native browser case. No native assertion failures; retry only failed job on exact same source, preserve first failure."
+        },
+        "targetedFirstAttemptPassed": true,
+        "infrastructureRetry": {
+          "run": 40854202247,
+          "job": 123380954688,
+          "checkout": "09dd73649cda0e05e93856dcea98840d343c5542",
+          "conclusion": "failure",
+          "result": {
+            "browser": null,
+            "results": [],
+            "infrastructureError": "Browser prerequisite timed out"
+          },
+          "classification": "Browser prerequisite infrastructure timeout before any native browser case. No native assertion failures; retry only failed job on exact same source, preserve first failure.",
+          "retryJob": 123382453137,
+          "retryConclusion": "success",
+          "retryCheckout": "09dd73649cda0e05e93856dcea98840d343c5542",
+          "browser": "Chrome/156.0.8078.47",
+          "passedNativeBrowserCases": 8,
+          "failedNativeBrowserCases": 0,
+          "sourceChanged": false,
+          "scope": "Existing bounded native offline regression only, not new physical/full offline P0 acceptance. Synthetic ack server sync not executed."
+        },
+        "accepted": true,
+        "broader": {
+          "run": 40854202559,
+          "job": 123380956870,
+          "checkout": "09dd73649cda0e05e93856dcea98840d343c5542",
+          "tree": "9b3f7a4dde5a2534412cd47d8e117ba423a3c6ef",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "4dbc428834d152a618c753a253476122dca7f43a",
+          "checkout": "09dd73649cda0e05e93856dcea98840d343c5542",
+          "checkoutTreeMatched": true,
+          "targetedFirstAttemptPassed": true,
+          "sourceAssertionRetries": 0,
+          "infrastructureFailedJobRetries": 1,
+          "localSyntax": "node --check promotions-full-app-candidate.mjs PASS"
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "d77cf9e0027e52507cb57c10261f32cc410e0c8b",
+      "source": "4dbc428834d152a618c753a253476122dca7f43a",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "b64f7b8551d8144ec16727842e83a8b374737d16",
+      "gitBlob": "58cf93f8fce7bbae46bfc32c4d650b96f408a92e",
       "catalogueRegenerated": false,
-      "interpretation": "Historical catalogue counts/hashes remain historical. Catalog read full-app overlay adds1case after original63TAP; two owned merchants, products/variants and synthetic image references, exact private-cost/nested projection, actor/tenant denials and actual archive-metadata SQL42501 after core success, generic error and recovery. Existing accepted boundaries retained; no application change or blanket field/inventory acceptance."
+      "interpretation": "Historical catalogue hashes/counts remain historical. Context/promotion actual-app overlay adds1case after original64TAP; two owned merchants/profiles and disabled delivery promotions, exact context/promotion DTO, actor/tenant denials, real SQL42501 generic error and recovery while context remains available. Existing accepted boundaries retained; no application change or whole inventory/promotion lifecycle acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -41872,6 +42115,40 @@
       "gitBlob": "32abf6ec9c9819fb5aacd535737a1272542e70ae",
       "catalogueRegenerated": false,
       "interpretation": "Historical catalogue hashes/counts remain historical. Regional full-app overlay adds1case after original62TAP, two owned merchants and catalog fixture, exact context, actor/tenant guard, existing Origin guard fix and real SQL failure/post-update rollback. Compare all merchant fields except proven global-retention updated_at watermark; no policy or full inventory acceptance."
+    },
+    "currentCatalogContextPromotionReadFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogContextPromotionReadFullApp]",
+      "status": "BOUNDED_CURRENT_CATALOG_CONTEXT_PROMOTION_READ_ACTOR_TENANT_FIELDS_AND_SQL_FAILURE_FULL_APP_ACCEPTED",
+      "source": "4dbc428834d152a618c753a253476122dca7f43a",
+      "sourceTree": "9b3f7a4dde5a2534412cd47d8e117ba423a3c6ef",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 96,
+      "fullAppTap": 65,
+      "targetRun": 40854202612,
+      "targetJob": 123380958355,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40854202559,
+      "broaderJob": 123380956870,
+      "allCiSuccess": 58,
+      "infrastructureFailedJobRetries": 1,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeCatalogPromotions20261029": {
+      "source": "d77cf9e0027e52507cb57c10261f32cc410e0c8b",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "b64f7b8551d8144ec16727842e83a8b374737d16",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical catalogue counts/hashes remain historical. Catalog read full-app overlay adds1case after original63TAP; two owned merchants, products/variants and synthetic image references, exact private-cost/nested projection, actor/tenant denials and actual archive-metadata SQL42501 after core success, generic error and recovery. Existing accepted boundaries retained; no application change or blanket field/inventory acceptance."
     }
   },
   "componentScopes": {
