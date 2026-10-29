@@ -2,6 +2,12 @@ name: P0 management privacy HTTP matrix
 on:
   pull_request:
     paths:
+      - 'artifacts/api-server/tests/owner-break-glass-recovery.integration.test.ts'
+      - 'artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts'
+      - 'artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts'
+      - 'artifacts/api-server/src/middleware/ownerRecoveryReauth.ts'
+      - 'artifacts/api-server/src/services/ownerBreakGlassRecoveryAuthority.ts'
+      - 'artifacts/api-server/src/services/postgresAdminSecurityAuthority.ts'
       - 'artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs'
       - 'artifacts/api-server/tests/merchant-owner-import-http-postgres.integration.test.mjs'
       - 'artifacts/api-server/tests/merchant-owner-deletion-http-postgres.integration.test.mjs'
