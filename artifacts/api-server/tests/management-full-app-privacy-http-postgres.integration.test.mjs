@@ -1456,5 +1456,89 @@ test('full application management privacy preserves cutover ordering and current
       passedCases:passed?1:0,allAssertionsPassed:passed,authSqlReadFaultAndRecovery:faultPassed,exactCredentialFreeProjection:passed,hosted:false}));
   });
 
+  await t.test('current regional full-app actor tenant currency origin and SQL rollback boundary',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant');
+    for(const [m,country,zone,currency] of [[x,'IQ','Asia/Baghdad','IQD'],[y,'AE','Asia/Dubai','AED']]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',country_code=$2,timezone=$3,currency_code=$4 WHERE id=$1",[m.id,country,zone,currency]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});
+      m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const path='/API/MeRcHaNt/ReGiOnAl/?merchant_id='+y.id;
+    const allowed={Origin:'https://management.example.invalid'};
+    const contextX={country_code:'IQ',timezone:'Asia/Baghdad',currency_code:'IQD',currency_fraction_digits:0};
+    const contextY={country_code:'AE',timezone:'Asia/Dubai',currency_code:'AED',currency_fraction_digits:2};
+    const state=async()=>({business:await snapshot(),merchants:(await admin.query('SELECT to_jsonb(m) AS row FROM merchants m WHERE id=ANY($1::text[]) ORDER BY id',[[x.id,y.id]])).rows});
+    const original=await state();
+    let passed=false,readFault=false,rollback=false,revoked=false,triggerCreated=false,functionCreated=false,sequenceCreated=false;
+    const fault='regional_fault_'+randomUUID().replaceAll('-',''),product='regional-product-'+randomUUID();
+    try{
+      for(const who of [undefined,owner,viewer,channelManager])for(const method of ['GET','PATCH']){
+        const r=await req(path,who,method,method==='PATCH'?{currency_code:'USD'}:undefined,allowed);assert.equal(r.status,401);
+        assert.doesNotMatch(JSON.stringify(r.body),/Asia\/Baghdad|Asia\/Dubai|currency_fraction_digits|password_hash/);
+      }
+      for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:`${x.cookie}; ${owner.cookie}`},{Cookie:'fawri_merchant_session=synthetic-invalid'}]){
+        for(const method of ['GET','PATCH'])assert.equal((await req(path,x,method,method==='PATCH'?{currency_code:'USD'}:undefined,{...allowed,...headers})).status,401);
+      }
+      for(const route of ['/api/merchant/regional',path]){
+        const r=await req(route,x);assert.equal(r.status,200);assert.equal(r.cache,'no-store');assert.deepEqual(r.body,{ok:true,context:contextX});
+      }
+      assert.deepEqual((await req('/api/merchant/regional?merchant_id='+x.id,y)).body,{ok:true,context:contextY});
+      assert.deepEqual(await state(),original);
+      const foreign=await req(path,x,'PATCH',{currency_code:'USD'},{Origin:'https://foreign.example.invalid'});
+      const afterForeign=await state();
+      console.log('P0_REGIONAL_ORIGIN_OBSERVED '+JSON.stringify({status:foreign.status,currencyChanged:afterForeign.merchants.find(m=>m.row.id===x.id).row.currency_code!=='IQD'}));
+      assert.equal(foreign.status,403);assert.equal(foreign.body.code,'AUTH_ORIGIN_FORBIDDEN');assert.deepEqual(afterForeign,original);
+      const changed=await req(path,x,'PATCH',{merchant_id:y.id,country_code:'US',timezone:'America/New_York',currency_code:'USD'},allowed);
+      assert.equal(changed.status,200);assert.equal(changed.cache,'no-store');
+      const usd={...contextX,currency_code:'USD',currency_fraction_digits:2};
+      assert.deepEqual(changed.body,{ok:true,context:usd,changed:true});
+      const changedState=await state();assert.deepEqual(changedState.business,original.business);
+      const oldRow=original.merchants.find(m=>m.row.id===x.id).row,newRow=changedState.merchants.find(m=>m.row.id===x.id).row;
+      assert.deepEqual({...newRow,currency_code:oldRow.currency_code,updated_at:oldRow.updated_at},oldRow);
+      assert.deepEqual(changedState.merchants.find(m=>m.row.id===y.id),original.merchants.find(m=>m.row.id===y.id));
+      const replay=await req(path,x,'PATCH',{currency_code:'USD'});assert.equal(replay.status,200);assert.deepEqual(replay.body,{ok:true,context:usd,changed:false});
+      assert.deepEqual(await state(),changedState);
+      const invalid=await req(path,x,'PATCH',{currency_code:'not-a-currency'},allowed);assert.equal(invalid.status,400);assert.deepEqual(await state(),changedState);
+      await admin.query("INSERT INTO products(id,merchant_id,name,current_price_iqd,original_price_iqd) VALUES($1,$2,'Synthetic regional guard',100,100)",[product,x.id]);
+      const money=(await admin.query('SELECT to_jsonb(p) AS row FROM products p WHERE id=$1',[product])).rows;
+      const blocked=await req(path,x,'PATCH',{currency_code:'EUR'},allowed);assert.equal(blocked.status,409);
+      assert.deepEqual(blocked.body,{ok:false,code:'MERCHANT_CURRENCY_CHANGE_BLOCKED',error:'currency cannot be changed after monetary operational data exists; no automatic FX conversion is performed',current_currency_code:'USD',requested_currency_code:'EUR',blockers:['catalog']});
+      assert.deepEqual(await state(),changedState);assert.deepEqual((await admin.query('SELECT to_jsonb(p) AS row FROM products p WHERE id=$1',[product])).rows,money);
+      await admin.query('DELETE FROM products WHERE id=$1',[product]);
+      await admin.query('REVOKE SELECT ON products FROM '+runtime.role);revoked=true;
+      assert.equal((await admin.query("SELECT has_table_privilege($1,'public.products','SELECT') AS allowed",[runtime.role])).rows[0].allowed,false);
+      await assert.rejects(runtime.runtimePool.query('SELECT 1 FROM products LIMIT 0'),e=>e.code==='42501');
+      const unavailable=await req(path,x,'PATCH',{currency_code:'EUR'},allowed);assert.equal(unavailable.status,500);assert.equal(unavailable.cache,'no-store');
+      assert.deepEqual(unavailable.body,{ok:false,code:'MERCHANT_REGIONAL_OPERATION_FAILED',error:'merchant regional operation failed'});
+      assert.deepEqual(await state(),changedState);readFault=true;
+      await admin.query('GRANT SELECT ON products TO '+runtime.role);revoked=false;
+      await admin.query(`CREATE SEQUENCE ${fault}`);sequenceCreated=true;
+      await admin.query(`GRANT USAGE ON SEQUENCE ${fault} TO ${runtime.role}`);
+      await admin.query(`CREATE FUNCTION ${fault}() RETURNS trigger LANGUAGE plpgsql AS $regional_fault$
+        BEGIN IF NEW.id=TG_ARGV[0] THEN PERFORM nextval(TG_ARGV[1]::regclass); RAISE EXCEPTION 'synthetic regional post-update rollback fault'; END IF; RETURN NEW; END $regional_fault$`);functionCreated=true;
+      await admin.query(`CREATE TRIGGER ${fault} AFTER UPDATE OF currency_code ON merchants FOR EACH ROW EXECUTE FUNCTION ${fault}('${x.id}','${fault}')`);triggerCreated=true;
+      const failed=await req(path,x,'PATCH',{currency_code:'EUR'},allowed);assert.equal(failed.status,500);
+      assert.deepEqual(failed.body,{ok:false,code:'MERCHANT_REGIONAL_OPERATION_FAILED',error:'merchant regional operation failed'});
+      const reached=(await admin.query(`SELECT last_value::int AS value,is_called FROM ${fault}`)).rows[0];assert.deepEqual(reached,{value:1,is_called:true});
+      assert.deepEqual(await state(),changedState);rollback=true;
+      await admin.query(`DROP TRIGGER ${fault} ON merchants`);triggerCreated=false;
+      const recovered=await req(path,x,'PATCH',{currency_code:'EUR'},allowed);assert.equal(recovered.status,200);
+      assert.deepEqual(recovered.body,{ok:true,context:{...contextX,currency_code:'EUR',currency_fraction_digits:2},changed:true});
+      assert.deepEqual((await req('/api/merchant/regional',y)).body,{ok:true,context:contextY});
+      const recoveredState=await state();
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      for(const method of ['GET','PATCH'])assert.equal((await req(path,x,method,method==='PATCH'?{currency_code:'JPY'}:undefined,allowed)).status,401);
+      assert.deepEqual(await state(),recoveredState);passed=true;
+    }finally{
+      if(revoked)await admin.query('GRANT SELECT ON products TO '+runtime.role);
+      if(triggerCreated)await admin.query(`DROP TRIGGER ${fault} ON merchants`);
+      if(functionCreated)await admin.query(`DROP FUNCTION ${fault}()`);
+      if(sequenceCreated)await admin.query(`DROP SEQUENCE ${fault}`);
+      await admin.query('DELETE FROM products WHERE id=$1',[product]);
+    }
+    console.log('P0_REGIONAL_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,
+      allAssertionsPassed:passed,sqlGuardReadFault:readFault,postUpdateRollback:rollback,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
