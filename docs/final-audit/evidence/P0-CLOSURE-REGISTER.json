@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
-  "lastFullyAcceptedSource": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+  "sourceCandidate": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+  "lastFullyAcceptedSource": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
   "release": "NO-GO",
   "rows": [
     {
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment.",
+      "nextAction": "Continue MATRIX-C02-R2: reconcile GET /me, GET /lifecycle, POST /change-password and POST /logout current PostgreSQL proof layers against existing tests before any new runtime assertion. Preserve lifecycle access purpose (session/account/version validation with account-status reporting); do not impose business-active policy or reuse the old JSON-fixture merchant-session journey as canonical PG acceptance. MATRIX-C02-R3 owner recovery status projection remains source/evidence reconciliation. Reuse accepted R1 resend, signup/login, admin/device/recovery and restricted session proofs; no OTP/pairing redesign, new gate, policy, hosted/provider, merge or deployment.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -978,6 +978,31 @@
         "applicationChanged": false,
         "parentGateClosed": false,
         "newGate": false,
+        "userActionRequiredNow": false
+      },
+      "currentMerchantIneligibleOtpResendProof": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantIneligibleOtpResendFullApp]",
+        "status": "BOUNDED_MERCHANT_INELIGIBLE_OTP_RESEND_STATE_AND_BOOTSTRAP_FULL_APP_ACCEPTED",
+        "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+        "sourceTree": "fc7cd08f421523d4261976cd4ba7496138dd295e",
+        "newFunctionalCondition": 1,
+        "newTapCases": 0,
+        "existingActualAppJourneyExpanded": true,
+        "negativeHttpObservations": 3,
+        "targetBootstrapTap": 1,
+        "run": 40948785125,
+        "job": 123711812658,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "allCiSuccess": 58,
+        "accepted": true,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "ciFilesChanged": 0,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
         "userActionRequiredNow": false
       }
     },
@@ -3367,7 +3392,7 @@
       "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
     }
   ],
-  "previousFullyAcceptedSource": "7b3f4a451451baa5fc420f392dd7231498459c11",
+  "previousFullyAcceptedSource": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
   "lastUpdatedAt": "2026-10-29",
   "closurePlan": {
     "schemaVersion": 1,
@@ -3385,7 +3410,7 @@
     "release": "NO-GO",
     "noNewReleaseRequirementsAdded": true,
     "noExistingStatusChanged": true,
-    "acceptedSource": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+    "acceptedSource": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
     "executionRules": [
       "Select one existing gate and its exact unmet closure condition before new code/tests. State whether the batch closes it or only completes a named necessary prerequisite.",
       "Reuse accepted positive/negative/runtime evidence at its original layer and source. No repeated accepted test solely to increase totals; rerun only for a source change, failure or identified integration gap.",
@@ -4039,7 +4064,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment.",
+        "nextAction": "Continue MATRIX-C02-R2: reconcile GET /me, GET /lifecycle, POST /change-password and POST /logout current PostgreSQL proof layers against existing tests before any new runtime assertion. Preserve lifecycle access purpose (session/account/version validation with account-status reporting); do not impose business-active policy or reuse the old JSON-fixture merchant-session journey as canonical PG acceptance. MATRIX-C02-R3 owner recovery status projection remains source/evidence reconciliation. Reuse accepted R1 resend, signup/login, admin/device/recovery and restricted session proofs; no OTP/pairing redesign, new gate, policy, hosted/provider, merge or deployment.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -4822,6 +4847,31 @@
           "applicationChanged": false,
           "parentGateClosed": false,
           "newGate": false,
+          "userActionRequiredNow": false
+        },
+        "currentMerchantIneligibleOtpResendProof": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantIneligibleOtpResendFullApp]",
+          "status": "BOUNDED_MERCHANT_INELIGIBLE_OTP_RESEND_STATE_AND_BOOTSTRAP_FULL_APP_ACCEPTED",
+          "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+          "sourceTree": "fc7cd08f421523d4261976cd4ba7496138dd295e",
+          "newFunctionalCondition": 1,
+          "newTapCases": 0,
+          "existingActualAppJourneyExpanded": true,
+          "negativeHttpObservations": 3,
+          "targetBootstrapTap": 1,
+          "run": 40948785125,
+          "job": 123711812658,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationFilesChanged": 0,
+          "testFilesChanged": 1,
+          "ciFilesChanged": 0,
+          "parentGateClosed": false,
+          "newGate": false,
+          "policyAdopted": false,
           "userActionRequiredNow": false
         }
       },
@@ -6716,6 +6766,31 @@
       "applicationChanged": false,
       "parentGateClosed": false,
       "newGate": false,
+      "userActionRequiredNow": false
+    },
+    "currentMerchantIneligibleOtpResendProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantIneligibleOtpResendFullApp]",
+      "status": "BOUNDED_MERCHANT_INELIGIBLE_OTP_RESEND_STATE_AND_BOOTSTRAP_FULL_APP_ACCEPTED",
+      "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+      "sourceTree": "fc7cd08f421523d4261976cd4ba7496138dd295e",
+      "newFunctionalCondition": 1,
+      "newTapCases": 0,
+      "existingActualAppJourneyExpanded": true,
+      "negativeHttpObservations": 3,
+      "targetBootstrapTap": 1,
+      "run": 40948785125,
+      "job": 123711812658,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "ciFilesChanged": 0,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
       "userActionRequiredNow": false
     }
   }

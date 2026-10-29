@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment.",
+    "nextExactAction": "Continue MATRIX-C02-R2: reconcile GET /me, GET /lifecycle, POST /change-password and POST /logout current PostgreSQL proof layers against existing tests before any new runtime assertion. Preserve lifecycle access purpose (session/account/version validation with account-status reporting); do not impose business-active policy or reuse the old JSON-fixture merchant-session journey as canonical PG acceptance. MATRIX-C02-R3 owner recovery status projection remains source/evidence reconciliation. Reuse accepted R1 resend, signup/login, admin/device/recovery and restricted session proofs; no OTP/pairing redesign, new gate, policy, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -43845,6 +43845,97 @@
         "parentGateClosed": false,
         "newGate": false,
         "nextExactAction": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment."
+      },
+      {
+        "boundary": "currentMerchantIneligibleOtpResendFullApp",
+        "date": "2026-10-29",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02-R1",
+        "status": "BOUNDED_MERCHANT_INELIGIBLE_OTP_RESEND_STATE_AND_BOOTSTRAP_FULL_APP_ACCEPTED",
+        "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+        "sourceTree": "fc7cd08f421523d4261976cd4ba7496138dd295e",
+        "test": {
+          "path": "artifacts/api-server/tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs",
+          "blob": "c95c3228a21159f560c534392b22c05c11768566",
+          "existingJourneyExpanded": true,
+          "newTapCases": 0,
+          "newFunctionalCondition": 1,
+          "negativeObservations": 3,
+          "actualBuiltServer": true,
+          "scenarios": [
+            "unknown account/signup",
+            "unknown account/password_reset",
+            "verified account/signup"
+          ],
+          "comparison": [
+            "Full account rows for fixture and collision-checked absent phone",
+            "All OTP challenge rows in the disposable database",
+            "Sessions and devices belonging to those phone identities"
+          ],
+          "positivePreserved": [
+            "Signup201 with persisted scrypt hash and region",
+            "OTP verification200 with persisted verified phone and secure session cookie",
+            "Login200 with secure merchant session cookie"
+          ]
+        },
+        "sourceTrace": {
+          "publicRoute": "Find merchant before issueOtp; unknown account and verified signup account return202 before issuance.",
+          "genericRecoveryContract": "Password_reset unknown account returns synthetic UUID/expiry/retry metadata via authPolicy.buildGenericOtpResponse; not a durable challenge. Test requires row absence and unchanged full challenge snapshot; no application contract change.",
+          "issueOrder": "Authoritative challenge issuance then dev/injected delivery; failed delivery revokes issued challenge."
+        },
+        "testDevelopment": {
+          "initialSource": "8997841f4eb59eeea3c609ec44baa23c658b1d27",
+          "initialAssumption": "Initial draft expected no challenge_id metadata for unknown password_reset. Source contract review corrected test before acceptance.",
+          "initialRun": {
+            "id": 40948534386,
+            "status": "completed",
+            "conclusion": "cancelled"
+          },
+          "applicationDefectClaimed": false,
+          "initialSourceAccepted": false
+        },
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "ciFilesChanged": 0,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "limits": [
+          "Raw HTTP actual built app in disposable database, synthetic OTP; no browser/device or real delivery.",
+          "Not eligible resend replacement/cooldown, all OTP faults, concurrency or enumeration policy acceptance.",
+          "Same bootstrap test is the targeted result inside the broader audit; counts overlap, not a second independent run."
+        ],
+        "nextExactAction": "Continue MATRIX-C02-R2: reconcile GET /me, GET /lifecycle, POST /change-password and POST /logout current PostgreSQL proof layers against existing tests before any new runtime assertion. Preserve lifecycle access purpose (session/account/version validation with account-status reporting); do not impose business-active policy or reuse the old JSON-fixture merchant-session journey as canonical PG acceptance. MATRIX-C02-R3 owner recovery status projection remains source/evidence reconciliation. Reuse accepted R1 resend, signup/login, admin/device/recovery and restricted session proofs; no OTP/pairing redesign, new gate, policy, hosted/provider, merge or deployment.",
+        "accepted": true,
+        "runtime": {
+          "run": 40948785125,
+          "job": 123711812658,
+          "targetBootstrapTap": 1,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "runtime": "v24.22.2",
+          "checkout": "8cea63da5614e871ecb26b993a7d46f5b6ef3784",
+          "checkoutTreeMatched": true,
+          "observedStatuses": [
+            202,
+            202,
+            202
+          ],
+          "unchangedState": true,
+          "durableChallengesCreated": 0,
+          "sessionsIssued": 0,
+          "syntheticResponseChallengeNotPersisted": true
+        },
+        "allCi": {
+          "success": 58,
+          "total": 58,
+          "attempt": 1,
+          "retries": 0
+        }
       }
     ],
     "currentTestOverlay": {
@@ -46695,9 +46786,9 @@
           "groups": [
             "currentAuthAdmin"
           ],
-          "status": "PARTIAL_43_AUTH_KEYS_RECONCILED_THREE_CONDITIONS_REMAIN",
+          "status": "PARTIAL_R1_INELIGIBLE_RESEND_ACCEPTED_R2_R3_RECONCILIATION_REMAINS",
           "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
-          "next": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment.",
+          "next": "Continue MATRIX-C02-R2: reconcile GET /me, GET /lifecycle, POST /change-password and POST /logout current PostgreSQL proof layers against existing tests before any new runtime assertion. Preserve lifecycle access purpose (session/account/version validation with account-status reporting); do not impose business-active policy or reuse the old JSON-fixture merchant-session journey as canonical PG acceptance. MATRIX-C02-R3 owner recovery status projection remains source/evidence reconciliation. Reuse accepted R1 resend, signup/login, admin/device/recovery and restricted session proofs; no OTP/pairing redesign, new gate, policy, hosted/provider, merge or deployment.",
           "newGate": false,
           "initialStatus": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
           "acceptedBoundedProof": {
@@ -46852,15 +46943,6 @@
           },
           "remainingConditions": [
             {
-              "id": "MATRIX-C02-R1",
-              "kind": "EXISTING_RUNTIME_CONDITION_GAP",
-              "routes": [
-                "POST /otp/resend"
-              ],
-              "condition": "Current actual-app resend eligibility and non-issuance for ineligible/already verified signup accounts; reuse valid bootstrap journey.",
-              "selectedNext": true
-            },
-            {
               "id": "MATRIX-C02-R2",
               "kind": "PROOF_LAYER_RECONCILIATION",
               "routes": [
@@ -46880,6 +46962,62 @@
               ],
               "condition": "Bind legitimate status field projection and wrong-actor rejection to existing evidence; owner recovery journey covers five other paths and incomplete-cutover probe503 is not legitimate status acceptance.",
               "automaticNewTest": false
+            }
+          ],
+          "merchantIneligibleOtpResendProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantIneligibleOtpResendFullApp]",
+            "status": "BOUNDED_MERCHANT_INELIGIBLE_OTP_RESEND_STATE_AND_BOOTSTRAP_FULL_APP_ACCEPTED",
+            "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+            "sourceTree": "fc7cd08f421523d4261976cd4ba7496138dd295e",
+            "newFunctionalCondition": 1,
+            "newTapCases": 0,
+            "existingActualAppJourneyExpanded": true,
+            "negativeHttpObservations": 3,
+            "targetBootstrapTap": 1,
+            "run": 40948785125,
+            "job": 123711812658,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "applicationFilesChanged": 0,
+            "testFilesChanged": 1,
+            "ciFilesChanged": 0,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "completedFollowupConditions": [
+            {
+              "id": "MATRIX-C02-R1",
+              "scope": "Bounded ineligible resend condition accepted; not all eligible/cooldown/fault permutations.",
+              "proof": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantIneligibleOtpResendFullApp]",
+                "status": "BOUNDED_MERCHANT_INELIGIBLE_OTP_RESEND_STATE_AND_BOOTSTRAP_FULL_APP_ACCEPTED",
+                "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+                "sourceTree": "fc7cd08f421523d4261976cd4ba7496138dd295e",
+                "newFunctionalCondition": 1,
+                "newTapCases": 0,
+                "existingActualAppJourneyExpanded": true,
+                "negativeHttpObservations": 3,
+                "targetBootstrapTap": 1,
+                "run": 40948785125,
+                "job": 123711812658,
+                "broaderTap": 836,
+                "broaderInvocations": 97,
+                "broaderUniqueFiles": 94,
+                "allCiSuccess": 58,
+                "accepted": true,
+                "applicationFilesChanged": 0,
+                "testFilesChanged": 1,
+                "ciFilesChanged": 0,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             }
           ]
         },
@@ -47091,7 +47229,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment.",
+      "nextCurrentAction": "Continue MATRIX-C02-R2: reconcile GET /me, GET /lifecycle, POST /change-password and POST /logout current PostgreSQL proof layers against existing tests before any new runtime assertion. Preserve lifecycle access purpose (session/account/version validation with account-status reporting); do not impose business-active policy or reuse the old JSON-fixture merchant-session journey as canonical PG acceptance. MATRIX-C02-R3 owner recovery status projection remains source/evidence reconciliation. Reuse accepted R1 resend, signup/login, admin/device/recovery and restricted session proofs; no OTP/pairing redesign, new gate, policy, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -47332,6 +47470,39 @@
       "parentGateClosed": false,
       "newGate": false,
       "userActionRequiredNow": false
+    },
+    "currentMerchantIneligibleOtpResendProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantIneligibleOtpResendFullApp]",
+      "status": "BOUNDED_MERCHANT_INELIGIBLE_OTP_RESEND_STATE_AND_BOOTSTRAP_FULL_APP_ACCEPTED",
+      "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+      "sourceTree": "fc7cd08f421523d4261976cd4ba7496138dd295e",
+      "newFunctionalCondition": 1,
+      "newTapCases": 0,
+      "existingActualAppJourneyExpanded": true,
+      "negativeHttpObservations": 3,
+      "targetBootstrapTap": 1,
+      "run": 40948785125,
+      "job": 123711812658,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "ciFilesChanged": 0,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentMerchantBootstrapTestOverlay": {
+      "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+      "path": "artifacts/api-server/tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs",
+      "sha": "c95c3228a21159f560c534392b22c05c11768566",
+      "layer": "ACTUAL_BUILT_APP_DISPOSABLE_POSTGRES_DEV_OTP",
+      "tap": 1,
+      "newTapCases": 0
     }
   },
   "componentScopes": {
