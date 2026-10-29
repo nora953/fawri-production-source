@@ -2030,5 +2030,63 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_PRODUCT_WRITE_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,allAssertionsPassed:passed,importAndInventoryPostWriteRollback:rollback,hosted:false}));
   });
 
+  await t.test('MATRIX-C01 full-app legacy knowledge retirement is case-consistent and current authority survives',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant'),tenantIds=[x.id,y.id];
+    for(const m of [x,y]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[m.id]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const paths=await import('../src/lib/dataPaths.ts'),names=['saved-answers.json','training-requests.json','learned-answers.json'];
+    const files=names.map(name=>paths.getFawriDataFilePath(name)),ownedFiles=[];
+    const tables=['knowledge_embeddings','knowledge_audit_events','learned_answers','saved_answers','training_requests'];
+    const state=async()=>({business:await snapshot(),knowledge:Object.fromEntries(await Promise.all(tables.map(async table=>[table,(await admin.query(`SELECT to_jsonb(k) AS row FROM ${table} k WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(k)::text`,[tenantIds])).rows])))});
+    const fileState=()=>files.map(file=>fs.existsSync(file)?fs.readFileSync(file,'utf8'):null);
+    const savedId='Legacy-Saved-'+randomUUID(),trainingId='Legacy-Training-'+randomUUID(),stamp='2030-01-01T00:00:00.000Z';
+    let passed=false;
+    try{
+      for(const file of files)assert.equal(fs.existsSync(file),false,'requires absent owned legacy fixture file');
+      const fixtures=[{answers:[x,y].map((m,i)=>({id:i===0?savedId:'Peer-'+savedId,merchant_id:m.id,category:'custom',question_pattern:'Synthetic legacy question',answer_text:'Private legacy answer '+i,language:'en',approved:true,active:true,created_at:stamp}))},
+        {requests:[x,y].map((m,i)=>({id:i===0?trainingId:'Peer-'+trainingId,merchantId:m.id,customerId:'Synthetic-Customer-'+i,customerMessage:'Private legacy training '+i,normalizedMessage:'legacy training',detectedIntent:'custom',detectedLanguage:'en',reason:'synthetic',status:'pending_merchant_reply',createdAt:stamp,updatedAt:stamp}))},{answers:[]}];
+      files.forEach((file,i)=>{fs.writeFileSync(file,JSON.stringify(fixtures[i]));ownedFiles.push(file);});
+      const current='/api/knowledge/saved-answers',allowed={Origin:'https://management.example.invalid'},created=[];
+      for(const [m,i] of [[x,0],[y,1]]){
+        const r=await req(current,m,'POST',{questionPattern:'Current authority question '+i,answerText:'Current SQL answer '+i,language:'en',category:'custom',active:false},allowed);
+        assert.equal(r.status,201);assert.equal(r.body.answer.merchantId,m.id);created.push(r.body.answer);
+      }
+      const before=await state(),beforeFiles=fileState();
+      const payload={question_pattern:'Synthetic retired write',answer_text:'Retired write must not persist',language:'en',idealReply:'Synthetic retired approval',merchantId:y.id,merchant_id:y.id};
+      const routes=[['GET','/api/saved-answers'],['POST','/api/saved-answers'],['PUT','/api/saved-answers/'+savedId],['DELETE','/api/saved-answers/'+savedId],
+        ['GET','/api/bot-training/requests'],['POST','/api/bot-training/requests/'+trainingId+'/approve'],['PUT','/api/bot-training/requests/'+trainingId+'/reply'],['PATCH','/api/bot-training/requests/'+trainingId+'/reply'],['POST','/api/bot-training/requests/'+trainingId+'/reject']];
+      const observations=[];
+      for(const [method,path] of routes)for(const variant of [path,path.replace('/api/saved-answers','/API/SaVeD-AnSwErS').replace('/api/bot-training','/API/BoT-TrAiNiNg')+'/?merchant_id='+y.id]){
+        const r=await req(variant,x,method,method==='GET'?undefined:payload,allowed);observations.push({status:r.status,code:r.body.code,cache:r.cache,privateBody:/Private legacy/.test(JSON.stringify(r.body))});
+      }
+      const afterFiles=fileState();
+      console.log('P0_KNOWLEDGE_RETIREMENT_OBSERVED '+JSON.stringify({statuses:observations.map(r=>r.status),legacyFilesUnchanged:JSON.stringify(afterFiles)===JSON.stringify(beforeFiles),legacyContentReturned:observations.some(r=>r.privateBody)}));
+      assert.deepEqual(observations.map(r=>r.status),Array(18).fill(410));
+      for(const r of observations){assert.equal(r.code,'LEGACY_KNOWLEDGE_AUTHORITY_DISABLED');assert.equal(r.cache,'no-store');assert.equal(r.privateBody,false);}
+      assert.deepEqual(afterFiles,beforeFiles);assert.deepEqual(await state(),before);
+      for(const m of [x,y])for(const [method,path] of routes){
+        const foreignPath=path.toUpperCase()+'/?merchant_id='+x.id;
+        const r=await req(foreignPath,m,method,method==='GET'?undefined:payload,allowed);assert.equal(r.status,410);assert.equal(r.body.code,'LEGACY_KNOWLEDGE_AUTHORITY_DISABLED');
+      }
+      for(const who of [undefined,owner,viewer])assert.equal((await req('/api/knowledge/runtime',who)).status,401);
+      for(const [m,i] of [[x,0],[y,1]]){
+        const runtime=await req('/API/KnOwLeDgE/RuNtImE/',m);assert.equal(runtime.status,200);assert.equal(runtime.body.engine.legacyFallbackEnabled,false);
+        const read=await req(current+'?merchant_id='+tenantIds[1-i],m);assert.equal(read.status,200);assert.deepEqual(read.body.answers,[created[i]]);assert.doesNotMatch(JSON.stringify(read.body),/Private legacy/);
+        assert.deepEqual((await admin.query('SELECT answer_text FROM saved_answers WHERE merchant_id=$1',[m.id])).rows,[{answer_text:'Current SQL answer '+i}]);
+      }
+      assert.deepEqual(fileState(),beforeFiles);assert.deepEqual(await state(),before);
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);assert.equal((await req(current,x)).status,401);assert.equal((await req(current,y)).status,200);
+      assert.deepEqual(fileState(),beforeFiles);assert.deepEqual(await state(),before);passed=true;
+    }finally{
+      await cleanupResources([
+        ...ownedFiles.map(file=>['owned synthetic legacy knowledge file',()=>fs.rmSync(file)]),
+        ...tables.map(table=>['owned current knowledge rows '+table,()=>admin.query(`DELETE FROM ${table} WHERE merchant_id=ANY($1::text[])`,[tenantIds])]),
+      ]);
+    }
+    console.log('P0_KNOWLEDGE_RETIREMENT_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,allAssertionsPassed:passed,legacyMethods:9,initialPathVariants:18,currentAuthorityPositive:true,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
