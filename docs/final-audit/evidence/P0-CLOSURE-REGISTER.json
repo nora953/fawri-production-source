@@ -6385,6 +6385,20 @@
       "parentGateClosed": false,
       "policyAdopted": false,
       "userActionRequiredNow": false
+    },
+    "currentOwnerRecoveryDeviceOtpSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryDeviceOtpEvidenceReconciliation]",
+      "status": "CURRENT_OWNER_RECOVERY_AND_DEVICE_OTP_SOURCE_TEST_LAYER_RECONCILED_EXISTING_RUNTIME_NOT_CURRENTLY_ACCEPTED",
+      "sourceReviewed": "edf1dca020ca522c0632e9be764c639c845b4748",
+      "acceptedExecutable": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+      "sourcePins": 10,
+      "reviewComplete": true,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": false
     }
   }
 }

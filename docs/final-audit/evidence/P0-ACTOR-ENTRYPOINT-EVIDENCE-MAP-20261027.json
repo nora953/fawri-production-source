@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "Run the existing owner-break-glass-recovery.integration.test.ts, unchanged initially, through the current disposable canonical-migration CI executor. Preserve its aggregate-auth-router/bootstrap-connection/dev-OTP proof layer; do not label it full-app, actual restricted LOGIN, real OTP delivery or hosted recovery acceptance. Inspect failures before fixes; then select only demonstrably missing actor/device/stage/fault assertions. Do not redesign OTP/pairing or adopt recovery policies.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -42814,6 +42814,86 @@
             "summaryComplete": true
           }
         ]
+      },
+      {
+        "boundary": "currentOwnerRecoveryDeviceOtpEvidenceReconciliation",
+        "date": "2026-10-29",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02",
+        "status": "CURRENT_OWNER_RECOVERY_AND_DEVICE_OTP_SOURCE_TEST_LAYER_RECONCILED_EXISTING_RUNTIME_NOT_CURRENTLY_ACCEPTED",
+        "sourceReviewed": "edf1dca020ca522c0632e9be764c639c845b4748",
+        "acceptedExecutable": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+        "sourcePins": [
+          {
+            "path": ".github/workflows/owner-break-glass-recovery.yml",
+            "sha": "67d02addec069885a30dd6fcfbdf9442fda21807"
+          },
+          {
+            "path": "artifacts/api-server/tests/owner-break-glass-recovery.integration.test.ts",
+            "sha": "cb1757ffe32980bab6ecc05e7782e64c039b6815"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+            "sha": "188eeaa89b4fdd4cdb8cae44ab0997da24bee572"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts",
+            "sha": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-security.ts",
+            "sha": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e"
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/ownerRecoveryReauth.ts",
+            "sha": "f11864369842188a812df28d41091224e8b6ee8e"
+          },
+          {
+            "path": "artifacts/api-server/src/services/ownerBreakGlassRecoveryAuthority.ts",
+            "sha": "9ad921156ccbba7eacd625b5504e2b7c27ecd063"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresAdminSecurityAuthority.ts",
+            "sha": "fb41f7b324f9c2144b9135bb5ea6dc1ab89dedf4"
+          },
+          {
+            "path": "scripts/run-isolated-postgres-audit.sh",
+            "sha": "06b83f62da28dcda64de378b8ce715e500cce023"
+          },
+          {
+            "path": "scripts/execute-disposable-postgres-audit.mjs",
+            "sha": "de413c96eb2edaf9b2688fee5e5162d87855adc6"
+          }
+        ],
+        "reviewComplete": true,
+        "findings": [
+          "Owner recovery setup is guarded by secure admin session, owner role and password reauthentication before the PostgreSQL recovery router.",
+          "Device OTP lookup requires existing record ID, owner account ID, admin kind and device fingerprint; resend/verify do not register a new device.",
+          "Recovery proof is AES-256-GCM encrypted, stage/recovery-ID/expiry bound; authority checks generation, current owner phone and owner role. Completion locks owner and updates phone/password versions, consumes keys, revokes sessions/devices and writes audit within authentication transaction.",
+          "Existing integration file contains one aggregate journey: missing setup password, hashed key storage, wrong first key, phone recovery, replay refusal, password-reset recovery, old password rejection and session/device counts. These source assertions are not newly executed acceptance.",
+          "Current executor suite lists do not include this integration file. Its separate workflow targets parallel/integration-coordinator and prepares schema with push-force. The current 58 successful workflows do not establish current execution of this file."
+        ],
+        "historicalEvidenceLookup": {
+          "recentRunsPageInspected": 100,
+          "ownerWorkflowOnPage": false,
+          "completeHistoricalSearch": false,
+          "workflowSpecificLookup": "UNAVAILABLE_THROUGH_FETCH_ENDPOINT",
+          "noHistoricalAbsenceClaim": true
+        },
+        "limits": [
+          "Aggregate router only, not actual full application.",
+          "Bootstrap pool; not proof of a separate restricted LOGIN.",
+          "Synthetic/dev OTP; no external delivery.",
+          "Stage-order/tampered-cookie/SQL rollback negatives are not explicitly asserted by this existing journey. Source guards are not runtime proof.",
+          "No new policy, gate, test, CI run or executable change."
+        ],
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "nextExactAction": "Run the existing owner-break-glass-recovery.integration.test.ts, unchanged initially, through the current disposable canonical-migration CI executor. Preserve its aggregate-auth-router/bootstrap-connection/dev-OTP proof layer; do not label it full-app, actual restricted LOGIN, real OTP delivery or hosted recovery acceptance. Inspect failures before fixes; then select only demonstrably missing actor/device/stage/fault assertions. Do not redesign OTP/pairing or adopt recovery policies."
       }
     ],
     "currentTestOverlay": {
@@ -45666,7 +45746,7 @@
           ],
           "status": "PARTIAL_CURRENT_RUNTIME_INCOMPLETE_CUTOVER_CELL_ACCEPTED_OWNER_RECOVERY_PROOF_REMAINDER",
           "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
-          "next": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+          "next": "Run the existing owner-break-glass-recovery.integration.test.ts, unchanged initially, through the current disposable canonical-migration CI executor. Preserve its aggregate-auth-router/bootstrap-connection/dev-OTP proof layer; do not label it full-app, actual restricted LOGIN, real OTP delivery or hosted recovery acceptance. Inspect failures before fixes; then select only demonstrably missing actor/device/stage/fault assertions. Do not redesign OTP/pairing or adopt recovery policies.",
           "newGate": false,
           "initialStatus": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
           "acceptedBoundedProof": {
@@ -45698,7 +45778,21 @@
             "policyAdopted": false,
             "userActionRequiredNow": false
           },
-          "previousNext": "Reuse current18-route admin ledger and original auth-router/session/recovery tests; identify an actual unmatched condition before adding tests. Historical failed-login stubs/reset later-fault limits do not automatically become new release gates."
+          "previousNext": "Reuse current18-route admin ledger and original auth-router/session/recovery tests; identify an actual unmatched condition before adding tests. Historical failed-login stubs/reset later-fault limits do not automatically become new release gates.",
+          "ownerRecoverySourceReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryDeviceOtpEvidenceReconciliation]",
+            "status": "CURRENT_OWNER_RECOVERY_AND_DEVICE_OTP_SOURCE_TEST_LAYER_RECONCILED_EXISTING_RUNTIME_NOT_CURRENTLY_ACCEPTED",
+            "sourceReviewed": "edf1dca020ca522c0632e9be764c639c845b4748",
+            "acceptedExecutable": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+            "sourcePins": 10,
+            "reviewComplete": true,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "applicationChanged": false,
+            "parentGateClosed": false,
+            "newGate": false,
+            "userActionRequiredNow": false
+          }
         },
         {
           "id": "MATRIX-C03",
@@ -45908,7 +46002,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "Run the existing owner-break-glass-recovery.integration.test.ts, unchanged initially, through the current disposable canonical-migration CI executor. Preserve its aggregate-auth-router/bootstrap-connection/dev-OTP proof layer; do not label it full-app, actual restricted LOGIN, real OTP delivery or hosted recovery acceptance. Inspect failures before fixes; then select only demonstrably missing actor/device/stage/fault assertions. Do not redesign OTP/pairing or adopt recovery policies.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -46011,6 +46105,20 @@
       "newGate": false,
       "parentGateClosed": false,
       "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentOwnerRecoveryDeviceOtpSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryDeviceOtpEvidenceReconciliation]",
+      "status": "CURRENT_OWNER_RECOVERY_AND_DEVICE_OTP_SOURCE_TEST_LAYER_RECONCILED_EXISTING_RUNTIME_NOT_CURRENTLY_ACCEPTED",
+      "sourceReviewed": "edf1dca020ca522c0632e9be764c639c845b4748",
+      "acceptedExecutable": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+      "sourcePins": 10,
+      "reviewComplete": true,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
       "userActionRequiredNow": false
     }
   },
