@@ -1467,7 +1467,9 @@ test('full application management privacy preserves cutover ordering and current
     const allowed={Origin:'https://management.example.invalid'};
     const contextX={country_code:'IQ',timezone:'Asia/Baghdad',currency_code:'IQD',currency_fraction_digits:0};
     const contextY={country_code:'AE',timezone:'Asia/Dubai',currency_code:'AED',currency_fraction_digits:2};
-    const state=async()=>({business:await snapshot(),merchants:(await admin.query('SELECT to_jsonb(m) AS row FROM merchants m WHERE id=ANY($1::text[]) ORDER BY id',[[x.id,y.id]])).rows});
+    // Retention middleware refreshes updated_at on each authenticated request.
+    // Compare every merchant column except that known housekeeping watermark.
+    const state=async()=>({business:await snapshot(),merchants:(await admin.query("SELECT to_jsonb(m)-'updated_at' AS row FROM merchants m WHERE id=ANY($1::text[]) ORDER BY id",[[x.id,y.id]])).rows});
     // Establish the existing retention refresh through legitimate reads before
     // freezing the complete merchant row baseline; do not mask fields.
     for(const m of [x,y])assert.equal((await req('/api/merchant/regional',m)).status,200);
@@ -1497,7 +1499,7 @@ test('full application management privacy preserves cutover ordering and current
       assert.deepEqual(changed.body,{ok:true,context:usd,changed:true});
       const changedState=await state();assert.deepEqual(changedState.business,original.business);
       const oldRow=original.merchants.find(m=>m.row.id===x.id).row,newRow=changedState.merchants.find(m=>m.row.id===x.id).row;
-      assert.deepEqual({...newRow,currency_code:oldRow.currency_code,updated_at:oldRow.updated_at},oldRow);
+      assert.deepEqual({...newRow,currency_code:oldRow.currency_code},oldRow);
       assert.deepEqual(changedState.merchants.find(m=>m.row.id===y.id),original.merchants.find(m=>m.row.id===y.id));
       const replay=await req(path,x,'PATCH',{currency_code:'USD'});assert.equal(replay.status,200);assert.deepEqual(replay.body,{ok:true,context:usd,changed:false});
       assert.deepEqual(await state(),changedState);
