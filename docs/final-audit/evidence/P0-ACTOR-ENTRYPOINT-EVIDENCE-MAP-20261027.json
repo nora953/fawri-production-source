@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -40570,14 +40570,255 @@
           "cancelled": 0,
           "automaticExistingWorkflow": true
         }
+      },
+      {
+        "boundary": "currentMerchantRegionalFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "status": "BOUNDED_CURRENT_REGIONAL_ACTOR_TENANT_ORIGIN_CURRENCY_GUARD_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
+        "sourceReviewed": "ee98f1269b742ff8304651911bb02e9929ddadae",
+        "source": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+        "sourceTree": "eff2ebd56b2981251cf72d3d1f9c84769bd0d2f8",
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "32abf6ec9c9819fb5aacd535737a1272542e70ae",
+        "route": "artifacts/api-server/src/routes/merchant-regional.ts",
+        "routeBlob": "5f4f7b594cb6f31ad3ba806cb861858473f12607",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/merchant-regional.ts",
+            "gitBlobSha": "7b1fac506cfecb816e639a9d7beb64e833555432",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMerchantRegionalAuthority.ts",
+            "gitBlobSha": "b070764002bbc42f574a90eb4a04561e51b5aab5",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMerchantCurrencyAuthority.ts",
+            "gitBlobSha": "fcb1f78ed80fffa4860e8c8682539872d53959d7",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authSession.ts",
+            "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-regional-postgres-http.integration.test.ts",
+            "gitBlobSha": "28049c098a9f696cefc3bf6547c99fc1ace3fe72",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/helpers/disposable-knowledge-runtime.mjs",
+            "gitBlobSha": "4b0c9cb1b33a6dc41369b3af1bdf133a5e1de032",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/fawri/src/lib/merchantRegionalUiApi.ts",
+            "gitBlobSha": "6b103eb256ea55976eeb6b28866c556c59aa9045",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/merchantRetentionAccess.ts",
+            "gitBlobSha": "fd88a637ba6e89bd0528f9df8765847bb0b6f9f0",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMerchantRetentionAuthority.ts",
+            "gitBlobSha": "953606e08a82728bc412e16509565dc772465387",
+            "localBlobMatched": true
+          }
+        ],
+        "sourceReconciliation": {
+          "mount": "app.use('/api',merchantRegionalRouter); GET/PATCH /merchant/regional import secure merchant guard directly from middleware/authSession.",
+          "tenant": "Both route handlers obtain merchantId exclusively from session. Context/currency authority uses withMerchantOperationalTransaction and merchant-bound SQL; currency change locks merchant FOR UPDATE.",
+          "fields": [
+            "country_code",
+            "timezone",
+            "currency_code",
+            "currency_fraction_digits"
+          ],
+          "mutation": "PATCH consumes only currency_code. Country/timezone/body merchant identity are not mutable through this route.",
+          "guardClasses": [
+            "catalog",
+            "orders",
+            "promotions",
+            "delivery_settings",
+            "delivery_area_rates"
+          ],
+          "runtimeGuardLimit": "New full-app case and existing router proof use catalog blocker; source lists other guards but this is not acceptance of every blocker combination or concurrent producer race.",
+          "errorProjection": "Typed regional/currency/money errors retain their declared status/code/details; unexpected error produces generic500 MERCHANT_REGIONAL_OPERATION_FAILED.",
+          "currentConsumer": "Pinned merchantRegionalUiApi reads context, writes only currency_code and includes session credentials; this is source tracing, not browser execution.",
+          "housekeeping": "Global retention middleware before route refreshes retention state and merchant updated_at on every authenticated request. Establish protected state by legitimate reads, then compare all merchant columns except this proven volatile timestamp plus entire selected business snapshot; no claim of unchanged housekeeping timestamp."
+        },
+        "previousEvidence": {
+          "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+          "run": 40806066315,
+          "job": 123225197941,
+          "suite": "merchant-regional-postgres-http.integration.test.ts",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "layer": "Direct router with restricted primary/separate auth, not actual app",
+          "scope": "Own IQD/AED context, empty currency changes/no-op, catalog-blocker409, foreign body identity ignored, peer preservation, no legacy JSON."
+        },
+        "fixtureAttempts": [
+          {
+            "source": "8cd8623b7f896ea9a4f74fd4a9b7dbe468a3d193",
+            "tree": "e1ac170591e050181ebd2e9233b8bfcd88b98c62",
+            "run": 40814484607,
+            "job": 123252252995,
+            "fullAppTap": 63,
+            "passed": 61,
+            "failed": 2,
+            "classification": "Fixture baseline captured before legitimate middleware retention refresh. null retention_status became protected and updated_at changed on first GET. No foreign-Origin check reached; no product defect inferred. Corrected by legitimate warmup reads before full-row baseline, no fields removed from assertions."
+          },
+          {
+            "source": "3901e85fd553f424f2b1d77b113acfee2f416cae",
+            "tree": "2a953252b9184648be105700e5de6aaaf5966a3f",
+            "run": 40814811848,
+            "job": 123253292177,
+            "passed": 61,
+            "failed": 2,
+            "classification": "Fixture warmup established retention_status but global retention authority deliberately writes updated_at on every authenticated request, not only initial refresh. Still no foreign-Origin check reached. Explicitly compare all other merchant columns plus business state; exclude only proven volatile housekeeping watermark. No application code changed."
+          }
+        ],
+        "confirmedReproduction": {
+          "source": "9f80f1f60be67e478fa8d71c2139563c4fc2fa6d",
+          "tree": "a7b5b90b66e6adbe85d40f2371e876510b5dd65a",
+          "run": 40815098523,
+          "job": 123254195202,
+          "fullAppTap": 63,
+          "passed": 61,
+          "failed": 2,
+          "skipped": 0,
+          "cancelled": 0,
+          "observed": {
+            "status": 200,
+            "currencyChanged": true
+          },
+          "expected403": true,
+          "claim": "Synthetic direct HTTP supplied valid merchant cookie and explicit foreign Origin; server accepted currency mutation. Not a browser-CSRF demonstration, hosted finding or credential compromise."
+        },
+        "fix": "Two-line application change: import existing enforceAuthOrigin and apply it after existing secure merchant guard on PATCH only. Retains allowlisted and omitted-Origin behavior and existing tenant, money guard, transaction and error contracts. No new policy/grant/schema/provider/role.",
+        "assertions": [
+          "Actual full app canonical and case/trailing-slash reads return exact four-field context and no-store; foreign query ignored; peer independently reads own country/timezone/currency.",
+          "Missing session/admin owner/viewer/channel manager denied401 on GET/PATCH; wrong device, mixed roles and forged cookie denied401.",
+          "Explicit foreign Origin rejected403 before currency mutation; trusted configured Origin can mutate; foreign body merchant/country/timezone ignored; peer and all non-watermark merchant columns remain unchanged apart from intended currency.",
+          "Omitted-Origin same-currency replay changed=false; invalid currency400 with unchanged state; existing owned catalog product blocks currency409 and monetary product row unchanged.",
+          "Actual restricted primary products SELECT revoked and confirmed42501; PATCH returns sanitized generic500 and currency/domain unchanged; grant restored in finally.",
+          "AFTER UPDATE OF currency_code trigger increments granted nontransactional sequence then raises synthetic error; counter confirms post-write boundary reached; currency and all other compared fields roll back. Drop trigger then successful EUR update proves recovery.",
+          "Revoke target merchant session; GET/PATCH401 preserve current regional/domain state."
+        ],
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "applicationExecuted": true,
+        "userActionRequiredNow": false,
+        "limits": [
+          "No new retention policy; updated_at excluded only as proven global middleware watermark, all other merchant/domain columns compared.",
+          "One catalog blocker fixture, not all money guard classes/combinations/concurrency/full actor or complete P0 inventory.",
+          "No browser/device/hosted/provider/FX conversion proof; existing literal catalogues remain historical."
+        ],
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+        "targeted": {
+          "run": 40815398567,
+          "job": 123255141630,
+          "checkout": "b3bc4f1629153fdd8efae929116655f905e090f9",
+          "tree": "eff2ebd56b2981251cf72d3d1f9c84769bd0d2f8",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 94,
+          "fullAppTap": 63,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 63
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "originObserved": {
+            "status": 403,
+            "currencyChanged": false
+          },
+          "marker": {
+            "actualFullApp": true,
+            "restrictedPrimary": true,
+            "separateAuthLogin": true,
+            "passedCases": 1,
+            "allAssertionsPassed": true,
+            "sqlGuardReadFault": true,
+            "postUpdateRollback": true,
+            "hosted": false
+          }
+        },
+        "accepted": true,
+        "acceptanceCondition": "Close existing missing actual-full-app regional actor/field/currency mutation Origin, financial guard and SQL failure/rollback cell; does not close full actor matrix.",
+        "broader": {
+          "run": 40815398744,
+          "job": 123255571919,
+          "checkout": "b3bc4f1629153fdd8efae929116655f905e090f9",
+          "tree": "eff2ebd56b2981251cf72d3d1f9c84769bd0d2f8",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+          "checkout": "b3bc4f1629153fdd8efae929116655f905e090f9",
+          "checkoutTreeMatched": true,
+          "finalSourceRetries": 0,
+          "localSyntax": "node --check regional-full-app-candidate.mjs PASS"
+        },
+        "regionalRegression": {
+          "run": 40815398499,
+          "job": 123255141426,
+          "suite": "merchant-regional-postgres-http.integration.test.ts",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "automaticExistingWorkflow": true
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+      "source": "2485efbc3a19805d62291bdd267bc26db95d5cda",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "4c9351ce4b992aadbd8c94ff7dba033e5dd3a6f2",
+      "gitBlob": "32abf6ec9c9819fb5aacd535737a1272542e70ae",
       "catalogueRegenerated": false,
-      "interpretation": "Historical catalogue counts/hashes remain historical. Current channel full-app overlay adds1case after original61TAP; two owned merchants and fake encrypted credentials, no provider calls. Route GET error handling fixed; source actor/tenant authority unchanged. Existing accepted boundaries retained."
+      "interpretation": "Historical catalogue hashes/counts remain historical. Regional full-app overlay adds1case after original62TAP, two owned merchants and catalog fixture, exact context, actor/tenant guard, existing Origin guard fix and real SQL failure/post-update rollback. Compare all merchant fields except proven global-retention updated_at watermark; no policy or full inventory acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -41210,6 +41451,39 @@
       "gitBlob": "947d0a5f596b9f705f449dc29668077760748658",
       "catalogueRegenerated": false,
       "interpretation": "Historical catalogue counts/hashes remain historical. New manual optional order-payment read field overlay adds1case after original60TAP; no new merchant/order fixture or blanket catalogue/field acceptance. Existing settings/report/order boundaries retained."
+    },
+    "currentMerchantRegionalFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRegionalFullApp]",
+      "status": "BOUNDED_CURRENT_REGIONAL_ACTOR_TENANT_ORIGIN_CURRENCY_GUARD_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
+      "source": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+      "sourceTree": "eff2ebd56b2981251cf72d3d1f9c84769bd0d2f8",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 94,
+      "fullAppTap": 63,
+      "targetRun": 40815398567,
+      "targetJob": 123255141630,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40815398744,
+      "broaderJob": 123255571919,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeRegional20261029": {
+      "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "4c9351ce4b992aadbd8c94ff7dba033e5dd3a6f2",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical catalogue counts/hashes remain historical. Current channel full-app overlay adds1case after original61TAP; two owned merchants and fake encrypted credentials, no provider calls. Route GET error handling fixed; source actor/tenant authority unchanged. Existing accepted boundaries retained."
     }
   },
   "componentScopes": {
