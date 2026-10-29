@@ -274,6 +274,7 @@ router.get(
 router.post(
   "/catalog/promotions",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -299,6 +300,7 @@ router.post(
 router.patch(
   "/catalog/promotions/:promotionId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
@@ -320,6 +322,7 @@ router.patch(
 router.delete(
   "/catalog/promotions/:promotionId",
   requireMerchantSession,
+  enforceAuthOrigin,
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);

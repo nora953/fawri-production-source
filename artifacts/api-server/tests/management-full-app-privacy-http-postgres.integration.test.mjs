@@ -1891,6 +1891,7 @@ test('full application management privacy preserves cutover ordering and current
       assert.equal(replay.status,200);assert.equal(replay.headers.get('Idempotent-Replay'),'true');assert.deepEqual(await replay.json(),{ok:true,replayed:true,promotion:own});assert.deepEqual(await stable(),replayBefore);
       await unchanged(base,x,'POST',{promotion:{...draft,name:'Changed retry'}},{...allowed,'Idempotency-Key':key},409,'COMMERCE_PROMOTION_IDEMPOTENCY_CONFLICT');
       const peer=await req(base,y,'POST',{promotion:draft},{'Idempotency-Key':key});assert.equal(peer.status,201);assert.equal(peer.body.promotion.merchant_id,y.id);assert.notEqual(peer.body.promotion.id,own.id);
+      const peerRows=(await admin.query('SELECT to_jsonb(p) AS row FROM commerce_promotions p WHERE merchant_id=$1 ORDER BY id',[y.id])).rows;
       for(const method of ['PATCH','DELETE'])await unchanged(base+'/'+peer.body.promotion.id,x,method,method==='PATCH'?{expected_version:1,promotion:{name:'Foreign id'}}:{expected_version:1},allowed,404,'COMMERCE_PROMOTION_NOT_FOUND');
       for(const field of ['merchant_id','currency_code','schedule_timezone','starts_at','ends_at'])await unchanged(base,x,'POST',{promotion:{...draft,[field]:field==='merchant_id'?x.id:'synthetic-authority-override'}},{...allowed,'Idempotency-Key':randomUUID()},400,'COMMERCE_PROMOTION_AUTHORITY_OVERRIDE_FORBIDDEN');
       await unchanged(base,x,'POST',{promotion:draft},allowed,400,'COMMERCE_PROMOTION_IDEMPOTENCY_KEY_REQUIRED');
@@ -1926,7 +1927,8 @@ test('full application management privacy preserves cutover ordering and current
       await unchanged(ownPath+'?expected_version=3',x,'DELETE',undefined,allowed,404,'COMMERCE_PROMOTION_NOT_FOUND');
       assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
       for(const [path,method,body] of endpoints)await unchanged(path,x,method,body,{...allowed,'Idempotency-Key':key},401);
-      assert.equal((await req(base,y)).body.promotions.some(p=>p.id===peer.body.promotion.id),true);passed=true;
+      assert.equal((await req(base,y)).body.promotions.some(p=>p.id===peer.body.promotion.id),true);
+      assert.deepEqual((await admin.query('SELECT to_jsonb(p) AS row FROM commerce_promotions p WHERE merchant_id=$1 ORDER BY id',[y.id])).rows,peerRows);passed=true;
     }finally{
       await cleanupResources([
         ['promotion fault trigger',()=>trigger?admin.query(`DROP TRIGGER ${fault} ON commerce_promotions`):undefined],
