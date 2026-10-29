@@ -1778,5 +1778,73 @@ test('full application management privacy preserves cutover ordering and current
       allAssertionsPassed:passed,physicalReadFaultAndRecovery:faultPassed,filesystemOnly:true,hosted:false}));
   });
 
+  await t.test('current catalog upload full-app actor origin binary parser and physical write failure boundary',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant');
+    for(const m of [x,y]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[m.id]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});
+      m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const media=await import('../src/services/catalogMediaStorage.ts'),{getFawriDataDir}=await import('../src/lib/dataPaths.ts');
+    const path=await import('node:path'),{createHash}=await import('node:crypto');
+    const oldProvider=process.env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER;process.env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER='filesystem';
+    const prefix=m=>'merchant/'+createHash('sha256').update(m.id).digest('hex').slice(0,32)+'/';
+    const root=path.join(getFawriDataDir(),'catalog-media'),ownRoot=path.resolve(root,prefix(x)),backup=ownRoot+'.owned-upload-backup';
+    const bytes=Buffer.concat([Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]),Buffer.from('synthetic-upload-bytes')]);
+    const url='/API/CaTaLoG/MeDiA/ImAgEs/?merchant_id='+y.id,allowed={Origin:'https://management.example.invalid'};
+    async function upload(who,body=bytes,headers={}){
+      const r=await fetch(origin+url,{method:'POST',headers:{'Content-Type':'image/png',...(who?{Cookie:who.cookie,'X-Fawri-Device-Id':who.device}:{}),...headers},body});
+      return {status:r.status,body:await r.json(),cache:r.headers.get('cache-control')};
+    }
+    const files=()=>Object.fromEntries([x,y].map(m=>{const dir=path.join(root,prefix(m));return [m.id,fs.existsSync(dir)?fs.readdirSync(dir).sort().map(name=>({name,sha:createHash('sha256').update(fs.readFileSync(path.join(dir,name))).digest('hex')})):[]];}));
+    const restore=()=>{if(fs.existsSync(backup)){fs.rmSync(ownRoot,{recursive:true,force:true});fs.renameSync(backup,ownRoot);}};
+    async function success(who,headers){
+      const r=await upload(who,bytes,headers);assert.equal(r.status,201);assert.equal(r.cache,'no-store');assert.deepEqual(Object.keys(r.body).sort(),['asset','ok']);assert.equal(r.body.ok,true);
+      const a=r.body.asset;assert.deepEqual(Object.keys(a).sort(),['mime_type','preview_url','sha256','size_bytes','storage_key']);
+      assert.ok(a.storage_key.startsWith(prefix(who)));assert.match(a.storage_key,/\/[0-9a-f-]{36}\.png$/);
+      assert.equal(a.preview_url,'/api/catalog/media/images?storage_key='+encodeURIComponent(a.storage_key));assert.equal(a.mime_type,'image/png');
+      assert.equal(a.size_bytes,bytes.length);assert.equal(a.sha256,createHash('sha256').update(bytes).digest('hex'));
+      assert.deepEqual(fs.readFileSync(path.join(root,a.storage_key)),bytes);
+      const preview=await fetch(origin+a.preview_url,{headers:{Cookie:who.cookie,'X-Fawri-Device-Id':who.device}});assert.equal(preview.status,200);assert.deepEqual(Buffer.from(await preview.arrayBuffer()),bytes);
+      return a;
+    }
+    let passed=false,writeFault=false;
+    try{
+      const business=await snapshot(),empty=files();
+      for(const who of [undefined,owner,viewer,channelManager])assert.equal((await upload(who)).status,401);
+      for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:`${x.cookie}; ${owner.cookie}`},{Cookie:'fawri_merchant_session=synthetic-invalid'}])assert.equal((await upload(x,bytes,{...allowed,...headers})).status,401);
+      assert.deepEqual(files(),empty);assert.deepEqual(await snapshot(),business);
+      const foreign=await upload(x,bytes,{Origin:'https://foreign.example.invalid'}),afterForeign=files();
+      console.log('P0_CATALOG_UPLOAD_ORIGIN_OBSERVED '+JSON.stringify({status:foreign.status,filesCreated:afterForeign[x.id].length-empty[x.id].length}));
+      assert.equal(foreign.status,403);assert.equal(foreign.body.code,'AUTH_ORIGIN_FORBIDDEN');assert.deepEqual(afterForeign,empty);
+      const first=await success(x,allowed),peer=await success(y,{}),stored=files();
+      assert.equal(stored[x.id].length,1);assert.equal(stored[y.id].length,1);
+      for(const [body,type,status,code] of [[bytes,'image/jpeg',415,'CATALOG_IMAGE_TYPE_MISMATCH'],[Buffer.from('invalid magic'),'image/png',415,'CATALOG_IMAGE_TYPE_MISMATCH'],[Buffer.alloc(0),'image/png',400,'CATALOG_IMAGE_REQUIRED'],[Buffer.from('{}'),'application/json',400,'CATALOG_IMAGE_REQUIRED']]){
+        const rejected=await upload(x,body,{...allowed,'Content-Type':type});assert.equal(rejected.status,status);assert.equal(rejected.body.code,code);assert.equal(rejected.cache,'no-store');assert.deepEqual(files(),stored);
+      }
+      const large=Buffer.alloc(media.CATALOG_IMAGE_MAX_BYTES+1);bytes.copy(large);
+      const oversized=await upload(x,large,allowed);assert.equal(oversized.status,413);assert.equal(oversized.body.code,'CATALOG_IMAGE_TOO_LARGE');assert.equal(oversized.body.max_bytes,media.CATALOG_IMAGE_MAX_BYTES);assert.deepEqual(files(),stored);
+      process.env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER='synthetic-unavailable';
+      const unavailable=await upload(x,bytes,allowed);assert.equal(unavailable.status,503);assert.equal(unavailable.body.code,'CATALOG_MEDIA_STORAGE_PROVIDER_UNAVAILABLE');assert.deepEqual(files(),stored);
+      process.env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER='filesystem';
+      fs.renameSync(ownRoot,backup);fs.writeFileSync(ownRoot,'synthetic-owned-write-blocker');
+      const failed=await upload(x,bytes,allowed);assert.equal(failed.status,500);assert.equal(failed.cache,'no-store');
+      assert.deepEqual(failed.body,{ok:false,code:'CATALOG_OPERATION_FAILED',error:'catalog operation failed'});
+      assert.deepEqual(fs.readFileSync(path.join(root,peer.storage_key)),bytes);assert.deepEqual(await snapshot(),business);
+      restore();assert.deepEqual(files(),stored);assert.deepEqual(fs.readFileSync(path.join(root,first.storage_key)),bytes);
+      await success(x,allowed);assert.equal(files()[x.id].length,2);assert.deepEqual(files()[y.id],stored[y.id]);writeFault=true;
+      const beforeRevoke=files();assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      assert.equal((await upload(x,bytes,allowed)).status,401);assert.deepEqual(files(),beforeRevoke);assert.deepEqual(await snapshot(),business);passed=true;
+    }finally{
+      await cleanupResources([
+        ['owned upload backup',restore],
+        ...[x,y].map(m=>['owned catalog upload prefix',()=>media.removeCatalogMerchantMedia({storageProvider:'filesystem',merchantId:m.id})]),
+        ['catalog upload provider env',()=>{if(oldProvider===undefined)delete process.env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER;else process.env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER=oldProvider;}],
+      ]);
+    }
+    console.log('P0_CATALOG_UPLOAD_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,
+      allAssertionsPassed:passed,physicalWriteFaultAndRecovery:writeFault,filesystemOnly:true,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
