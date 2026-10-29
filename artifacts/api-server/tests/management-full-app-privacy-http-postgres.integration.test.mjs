@@ -1468,6 +1468,9 @@ test('full application management privacy preserves cutover ordering and current
     const contextX={country_code:'IQ',timezone:'Asia/Baghdad',currency_code:'IQD',currency_fraction_digits:0};
     const contextY={country_code:'AE',timezone:'Asia/Dubai',currency_code:'AED',currency_fraction_digits:2};
     const state=async()=>({business:await snapshot(),merchants:(await admin.query('SELECT to_jsonb(m) AS row FROM merchants m WHERE id=ANY($1::text[]) ORDER BY id',[[x.id,y.id]])).rows});
+    // Establish the existing retention refresh through legitimate reads before
+    // freezing the complete merchant row baseline; do not mask fields.
+    for(const m of [x,y])assert.equal((await req('/api/merchant/regional',m)).status,200);
     const original=await state();
     let passed=false,readFault=false,rollback=false,revoked=false,triggerCreated=false,functionCreated=false,sequenceCreated=false;
     const fault='regional_fault_'+randomUUID().replaceAll('-',''),product='regional-product-'+randomUUID();
