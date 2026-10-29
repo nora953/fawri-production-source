@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX by reconciling current catalog product and inventory write family (POST products/import, PATCH/DELETE product, inventory set/adjust): trace existing secure-session/Origin wiring, tenant targets, idempotency/version and financial/stock mutation authorities against accepted current HTTP/service evidence before selecting only missing cells. Reuse accepted catalogue reads, media upload and promotion writes. No new feature/policy/gate, hosted/provider action, merge or deployment.",
+    "nextExactAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -41997,14 +41997,234 @@
           "finalSourceRetries": 0,
           "localSyntax": "node --check promotion-write-full-app-candidate.mjs PASS"
         }
+      },
+      {
+        "boundary": "currentCatalogProductInventoryWriteFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "status": "BOUNDED_CURRENT_CATALOG_PRODUCT_INVENTORY_WRITES_ORIGIN_ACTOR_TENANT_REPLAY_VERSION_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
+        "sourceReviewed": "7a2c14d0218043293b9b0d4ba85d1cb934de109b",
+        "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+        "sourceTree": "68c49844790c3dae9449dfa2215872d07374d048",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "route": "artifacts/api-server/src/routes/catalog-operations.ts",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authCutoverCompatibility.ts",
+            "gitBlobSha": "e81efa86b6c2874727e796a8adbdbc9747de7cf2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth.ts",
+            "gitBlobSha": "61958ff03a7412661783c9e0210b94ba00ae10cb",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authSession.ts",
+            "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresCatalogAuthority.ts",
+            "gitBlobSha": "26143567d89c3cc85830515b41685924b0b0ecd2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresCatalogAuthorityCore.ts",
+            "gitBlobSha": "78dc4fbd84b248f3d5ad2754d58b649ba2e94527",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/catalogInventoryRuntime.ts",
+            "gitBlobSha": "18d2afbff1a14d738d5a3c77af6ab75ad4d9c884",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/catalog-inventory.test.ts",
+            "gitBlobSha": "793edf74214fedfeea50825511c5277c0b831424",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/global-merchant-postgres-http-journey.integration.test.ts",
+            "gitBlobSha": "fcb8599be27018d19c66f8ce530133e5073faa9e",
+            "localBlobMatched": true
+          },
+          {
+            "path": "scripts/audit-catalog-operations.test.mjs",
+            "gitBlobSha": "32f4fee7af562c994f8fac83502b50ed96ed13ff",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/fawri/src/lib/catalogUiApi.ts",
+            "gitBlobSha": "f592b73fb7d3a74a17f81efd047b1453bc53f576",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+            "gitBlobSha": "6feb28da7cd9ba0e5006de0e274aa5606f0c3296",
+            "remoteBlobRead": true
+          }
+        ],
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "applicationExecuted": true,
+        "schemaChanged": false,
+        "productionGrantsChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "accepted": true,
+        "acceptanceCondition": "Current actor/privacy/write matrix lacked named actual-app six catalog/product/inventory mutations, explicit Origin effects and import/stock-ledger atomic rollback evidence. Existing successful HTTP product creation, JSON runtime tests and service SQL/history cases do not cover this entire middleware cell.",
+        "sourceReconciliation": {
+          "auth": "Reuse accepted secure compatibility bridge/transitional guard trace; /api/auth Origin mount does not cover /api/catalog or /api/inventory; six mutations lacked route guard. Six application lines add existing enforceAuthOrigin after requireMerchantSession. No global parser/auth redesign.",
+          "tenant": "Route uses getMerchantIdFromSession and rejects selected differing root/nested body merchant override. Query tenant does not choose authority. PostgreSQL loads graph scoped to merchant and nondeleted products; product and variant resolution occurs inside that graph.",
+          "idempotency": "Create/import/adjust use operation + merchant + key with canonical request hash and scoped catalog_idempotency_keys. Replay returns current stored product graph; adjusted replay is checked before version conflict. Inventory set derives a mutation key from request but uses version check rather than replay response; do not impose new set replay policy.",
+          "mutation": "Core create/import/update and stock graph/ledger writes run in existing merchant transaction. DELETE is soft-delete plus identifier/idempotency cleanup, increments database product version and returns prior deleted_version. Inventory set/adjust update graph then ledger; adjust also saves replay record. Wrapper update preserves archived variants and marks them in a separate call; no blanket assertion of archive multi-transaction atomicity.",
+          "consumer": "catalogUiApi sends JSON with credentials, stable create/import/adjust keys, version body for edits/deletion/stock, optional variant/reason. Frontend client source only, not browser execution.",
+          "priorEvidence": "global-merchant-postgres-http-journey creates product via actual HTTP without Origin, proves peer list absent and stock after sale. catalog-inventory.test.ts uses JSON/filesystem runtime, audit-catalog-operations tests planner JSON. Existing SQL variant/history proofs remain service-specific. No relabeling as full-app six-route acceptance."
+        },
+        "reproduction": {
+          "source": "8ae35da035392fccf4406df79054c367615e6043",
+          "tree": "54b055c19a2b94eeb6e5bb38cc5c2e41c58b587e",
+          "checkout": "96215c9447d007b76fbd7377cb381679ec80bd22",
+          "run": 40878692011,
+          "job": 123464091215,
+          "fullAppTap": 69,
+          "passed": 67,
+          "failed": 2,
+          "skipped": 0,
+          "cancelled": 0,
+          "observed": {
+            "statuses": [
+              201,
+              201,
+              200,
+              200,
+              200,
+              200
+            ],
+            "rowsUnchanged": false
+          },
+          "expected": {
+            "statuses": [
+              403,
+              403,
+              403,
+              403,
+              403,
+              403
+            ],
+            "rowsUnchanged": true
+          },
+          "classification": "Six independent routes observed before assertion; foreign create/import/PATCH/DELETE/set/adjust all mutated owned database state. New child and parent failed, prior67TAP and other3files passed. Synthetic valid-cookie HTTP, not browser-CSRF/hosted exploit. Owned fixtures cleaned; no retry masking."
+        },
+        "fixture": {
+          "additionalMerchants": 2,
+          "seeds": "Four own and one peer no-variant product via existing authority, then legitimate HTTP create/import/edit/soft-delete/set/adjust; disabled external providers.",
+          "snapshot": "Whole rows of products, product_variants, catalog_variant_options, catalog_image_references, catalog_identifiers, catalog_idempotency_keys, inventory_mutations for two owned merchants plus prior selected business tables. Not whole DB/retention timestamp stability.",
+          "cleanup": "cleanupResources removes temporary triggers/function/sequence before only owned tenant rows; existing parent fixture cleanup unchanged."
+        },
+        "assertions": [
+          "All six explicit foreign-Origin writes403 without graph/business changes; admin/no-session/wrong-device/mixed-cookie/forged-legacy/revoked-session401 and explicit foreign body tenant403 without mutation.",
+          "Allowlisted nested product create201 targets session merchant despite foreign query; omitted-Origin exact replay200/Idempotent-Replay:true identical product/no write; changed key input409. Same key under peer merchant independently creates peer product.",
+          "Two-item import201/count2 with exact IDs; omitted-Origin identical replay200/no graph mutation; empty import400. This does not certify every import bound or identifier collision.",
+          "Foreign product PATCH/DELETE/set/adjust404 with stable graph. Mixed-case/trailing-slash PATCH changes only owned product name/version; stale PATCH409.",
+          "Set5->8 version1->2, adjust8->5 version2->3, exact adjust replay no additional mutation; changed adjustment409, stale set409, negative stock409. Direct ledger rows prove quantities, versions and server merchant attribution.",
+          "Temporary AFTER INSERT products trigger observes first import insert then raises on second; AFTER INSERT inventory_mutations trigger raises after set/adjust product write. Sequence4 proves two product insert attempts and two ledger writes; all HTTP500 generic/no-store and full graph/business snapshots unchanged.",
+          "After dropping triggers, same failed import key creates2/replayedfalse, same set request succeeds3->4 quantity10, failed adjust key succeeds at corrected current version4->5 quantity11. Adjust recovery payload version changes, not an exact replay claim.",
+          "Stale DELETE409; omitted-Origin query-version DELETE soft-deletes and returns deleted_version2 while stored version3/deleted_at set; repeated delete404.",
+          "Complete peer graph unchanged after its legitimate create; selected business snapshot unchanged through legitimate operations and failures."
+        ],
+        "limits": [
+          "Synthetic disposable PostgreSQL actual app only; no browser cross-origin/preflight/real provider or hosted acceptance.",
+          "No all product field/variant/image/service type/archive/multi-location/financial-pricing/import-size/concurrency certification. Existing accepted reads and history proofs reused only in their stated scope.",
+          "SQL failures prove import multi-product and inventory graph+ledger rollback, not every possible PATCH/delete/archive failure stage.",
+          "No new set-replay, tombstone/key-reuse, retention, pairing, stock or access policy; parent gate and P0 inventory remain incomplete."
+        ],
+        "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+        "gitBlobSha": "a9eb81d470a18f80c8c66c52e6d6dd0577567f8a",
+        "routeBlob": "f9912a5218dc68a1482fae1695c32d096da78bc4",
+        "targeted": {
+          "run": 40879071925,
+          "job": 123465420731,
+          "checkout": "5e3a0719d229a19bda5c3e25e2cc6e93cc3015e5",
+          "tree": "68c49844790c3dae9449dfa2215872d07374d048",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 100,
+          "fullAppTap": 69,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 69
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "originObserved": {
+            "statuses": [
+              403,
+              403,
+              403,
+              403,
+              403,
+              403
+            ],
+            "rowsUnchanged": true
+          },
+          "importAndInventoryPostWriteRollback": true
+        },
+        "broader": {
+          "run": 40879071994,
+          "job": 123465781569,
+          "checkout": "5e3a0719d229a19bda5c3e25e2cc6e93cc3015e5",
+          "tree": "68c49844790c3dae9449dfa2215872d07374d048",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+          "checkout": "5e3a0719d229a19bda5c3e25e2cc6e93cc3015e5",
+          "checkoutTreeMatched": true,
+          "finalSourceRetries": 0,
+          "localSyntax": "node --check product-write-full-app-candidate.mjs PASS"
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "ebd1783e7466bbc40241832f0e934447818c2dc2",
+      "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "bf8bc4073014b3153d76a78d8f6def519a874a87",
+      "gitBlob": "a9eb81d470a18f80c8c66c52e6d6dd0577567f8a",
       "catalogueRegenerated": false,
-      "interpretation": "Historical source/test catalogue remains historical. One current full-app child adds promotion POST/PATCH/DELETE Origin, actors/tenant/idempotency/version/target and actual AFTER-write rollback/recovery evidence after67TAP. Accepted existing GET fields/service/client proofs reused; no all-effects/pricing/concurrency/browser/hosted/full-inventory acceptance."
+      "interpretation": "Historical catalogue remains historical. Current full-app overlay adds one case after68TAP for six catalog/product/inventory mutations, explicit Origin, actor/tenant/idempotency/version and multi-product import plus inventory graph/ledger rollback. Current catalog family overlay links15route methods to bounded proofs; not whole field/actor/lifecycle/concurrency/hosted acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -42857,6 +43077,155 @@
       "broaderUniqueFiles": 94,
       "broaderRun": 40870146059,
       "broaderJob": 123435074757,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeProductInventoryWrites20261029": {
+      "source": "ebd1783e7466bbc40241832f0e934447818c2dc2",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "bf8bc4073014b3153d76a78d8f6def519a874a87",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical source/test catalogue remains historical. One current full-app child adds promotion POST/PATCH/DELETE Origin, actors/tenant/idempotency/version/target and actual AFTER-write rollback/recovery evidence after67TAP. Accepted existing GET fields/service/client proofs reused; no all-effects/pricing/concurrency/browser/hosted/full-inventory acceptance."
+    },
+    "currentCatalogFamilyRouteOverlay": {
+      "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+      "route": "artifacts/api-server/src/routes/catalog-operations.ts",
+      "routeBlob": "f9912a5218dc68a1482fae1695c32d096da78bc4",
+      "historicalCatalogueRegenerated": false,
+      "boundedRouteMethods": 15,
+      "allActorFieldConditionsAccepted": false,
+      "parentGateClosed": false,
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/api/catalog/media/images",
+          "boundary": "currentCatalogMediaUploadFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogMediaUploadFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/media/images",
+          "boundary": "currentCatalogMediaReadFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogMediaReadFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/context",
+          "boundary": "currentCatalogContextPromotionReadFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogContextPromotionReadFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/promotions",
+          "boundary": "currentCatalogContextPromotionReadFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogContextPromotionReadFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/promotions",
+          "boundary": "currentCatalogPromotionWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogPromotionWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/catalog/promotions/:promotionId",
+          "boundary": "currentCatalogPromotionWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogPromotionWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/catalog/promotions/:promotionId",
+          "boundary": "currentCatalogPromotionWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogPromotionWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/products",
+          "boundary": "currentCatalogReadFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/products/:productId",
+          "boundary": "currentCatalogReadFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/products",
+          "boundary": "currentCatalogProductInventoryWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogProductInventoryWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/products/import",
+          "boundary": "currentCatalogProductInventoryWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogProductInventoryWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/catalog/products/:productId",
+          "boundary": "currentCatalogProductInventoryWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogProductInventoryWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/catalog/products/:productId",
+          "boundary": "currentCatalogProductInventoryWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogProductInventoryWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "POST",
+          "path": "/api/inventory/products/:productId/set",
+          "boundary": "currentCatalogProductInventoryWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogProductInventoryWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        },
+        {
+          "method": "POST",
+          "path": "/api/inventory/products/:productId/adjust",
+          "boundary": "currentCatalogProductInventoryWriteFullApp",
+          "evidenceSection": "manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogProductInventoryWriteFullApp]",
+          "scope": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits."
+        }
+      ]
+    },
+    "currentCatalogProductInventoryWriteFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogProductInventoryWriteFullApp]",
+      "status": "BOUNDED_CURRENT_CATALOG_PRODUCT_INVENTORY_WRITES_ORIGIN_ACTOR_TENANT_REPLAY_VERSION_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
+      "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+      "sourceTree": "68c49844790c3dae9449dfa2215872d07374d048",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 100,
+      "fullAppTap": 69,
+      "targetRun": 40879071925,
+      "targetJob": 123465420731,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40879071994,
+      "broaderJob": 123465781569,
       "allCiSuccess": 58,
       "accepted": true,
       "applicationFilesChanged": 1,
