@@ -1633,5 +1633,67 @@ test('full application management privacy preserves cutover ordering and current
       allAssertionsPassed:passed,archiveSqlReadFaultAfterCoreSuccess:faultPassed,hosted:false}));
   });
 
+  await t.test('current catalog context and promotion list full-app actor tenant field and SQL failure boundary',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant');
+    for(const [m,country,zone,currency] of [[x,'IQ','Asia/Baghdad','IQD'],[y,'AE','Asia/Dubai','AED']]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected',country_code=$2,timezone=$3,currency_code=$4 WHERE id=$1",[m.id,country,zone,currency]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});
+      m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const promotion=await import('../src/services/postgresCommercePromotionAuthority.ts');
+    const tenantIds=[x.id,y.id],contexts=[{country_code:'IQ',timezone:'Asia/Baghdad',currency_code:'IQD',currency_fraction_digits:0},
+      {country_code:'AE',timezone:'Asia/Dubai',currency_code:'AED',currency_fraction_digits:2}];
+    const expected=[];let revoked=false,passed=false,faultPassed=false;
+    try{
+      for(const [m,index] of [[x,0],[y,1]]){
+        const name=index===0?'Owned private delivery promotion':'Peer private delivery promotion';
+        const created=await promotion.createCommercePromotionAuthoritative({merchantId:m.id,idempotencyKey:'promotion-http-'+randomUUID(),input:{
+          name,scope:'delivery',effect:'free_delivery',minimum_subtotal_minor:index===0?10000:2500,
+          starts_local:'2030-01-01T09:00',ends_local:'2030-01-02T09:00',priority:10,enabled:false,
+        }});
+        expected.push({id:created.promotion.id,merchant_id:m.id,name,scope:'delivery',effect:'free_delivery',currency_code:contexts[index].currency_code,
+          minimum_subtotal_minor:index===0?10000:2500,starts_at:index===0?'2030-01-01T06:00:00.000Z':'2030-01-01T05:00:00.000Z',
+          ends_at:index===0?'2030-01-02T06:00:00.000Z':'2030-01-02T05:00:00.000Z',schedule_timezone:contexts[index].timezone,
+          priority:10,enabled:false,version:1,lifecycle:'disabled',starts_local:'2030-01-01T09:00:00',ends_local:'2030-01-02T09:00:00'});
+      }
+      await admin.query("UPDATE commerce_promotions SET metadata=metadata||'{\"private_extension\":\"unprojected-promotion-metadata\"}'::jsonb WHERE merchant_id=ANY($1::text[])",[tenantIds]);
+      const stable=async()=>({business:await snapshot(),promotions:(await admin.query('SELECT to_jsonb(p) AS row FROM commerce_promotions p WHERE merchant_id=ANY($1::text[]) ORDER BY id',[tenantIds])).rows});
+      const before=await stable(),contextPath='/api/catalog/context',listPath='/api/catalog/promotions';
+      for(const path of [contextPath,listPath,'/API/CaTaLoG/CoNtExT/?merchant_id='+y.id,'/API/CaTaLoG/PrOmOtIoNs/?merchant_id='+y.id]){
+        for(const who of [undefined,owner,viewer,channelManager]){
+          const r=await req(path,who);assert.equal(r.status,401);assert.doesNotMatch(JSON.stringify(r.body),/private delivery promotion|minimum_subtotal_minor|Asia\/Baghdad|unprojected-promotion-metadata/);
+        }
+        for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:`${x.cookie}; ${owner.cookie}`},{Cookie:'fawri_merchant_session=synthetic-invalid'}])assert.equal((await req(path,x,'GET',undefined,headers)).status,401);
+        const r=await req(path,x);assert.equal(r.status,200);assert.equal(r.cache,'no-store');
+        assert.deepEqual(r.body,path.toLowerCase().includes('/context')?{ok:true,context:contexts[0]}:{ok:true,merchant_id:x.id,count:1,promotions:[expected[0]]});
+        assert.doesNotMatch(JSON.stringify(r.body),/private_extension|unprojected-promotion-metadata|create_request_hash|created_at|updated_at/);
+      }
+      assert.deepEqual((await req(contextPath+'?merchant_id='+x.id,y)).body,{ok:true,context:contexts[1]});
+      assert.deepEqual((await req(listPath+'?merchant_id='+x.id,y)).body,{ok:true,merchant_id:y.id,count:1,promotions:[expected[1]]});
+      assert.deepEqual(await stable(),before);
+      await admin.query('REVOKE SELECT ON commerce_promotions FROM '+runtime.role);revoked=true;
+      assert.equal((await admin.query("SELECT has_table_privilege($1,'public.commerce_promotions','SELECT') AS allowed",[runtime.role])).rows[0].allowed,false);
+      await assert.rejects(runtime.runtimePool.query('SELECT 1 FROM commerce_promotions LIMIT 0'),e=>e.code==='42501');
+      for(const path of [listPath,'/API/CaTaLoG/PrOmOtIoNs/?merchant_id='+y.id]){
+        const failed=await req(path,x);assert.equal(failed.status,500);assert.equal(failed.cache,'no-store');
+        assert.deepEqual(failed.body,{ok:false,code:'CATALOG_OPERATION_FAILED',error:'catalog operation failed'});
+      }
+      assert.deepEqual((await req(contextPath,x)).body,{ok:true,context:contexts[0]});
+      assert.deepEqual(await stable(),before);
+      await admin.query('GRANT SELECT ON commerce_promotions TO '+runtime.role);revoked=false;
+      for(const [m,index] of [[x,0],[y,1]])assert.deepEqual((await req(listPath,m)).body,{ok:true,merchant_id:m.id,count:1,promotions:[expected[index]]});
+      assert.deepEqual(await stable(),before);faultPassed=true;
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      for(const path of [contextPath,listPath])assert.equal((await req(path,x)).status,401);
+      assert.deepEqual((await req(listPath,y)).body,{ok:true,merchant_id:y.id,count:1,promotions:[expected[1]]});
+      assert.deepEqual(await stable(),before);passed=true;
+    }finally{
+      if(revoked)await admin.query('GRANT SELECT ON commerce_promotions TO '+runtime.role);
+      await admin.query('DELETE FROM commerce_promotions WHERE merchant_id=ANY($1::text[])',[tenantIds]);
+    }
+    console.log('P0_CATALOG_CONTEXT_PROMOTIONS_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,
+      allAssertionsPassed:passed,promotionSqlReadFaultAndRecovery:faultPassed,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
