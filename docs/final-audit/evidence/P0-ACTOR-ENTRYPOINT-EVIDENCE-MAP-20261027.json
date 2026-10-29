@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX, add one bounded case to the current management full-app PostgreSQL test for catalog promotion POST/PATCH/DELETE, reusing actors and accepted read/DTO proofs. First observe valid-cookie explicit-foreign-Origin writes against exact current source with full-row owned/peer promotion snapshots; only fix a confirmed gap with existing enforceAuthOrigin after merchant guard. Cover allowlisted/omitted-Origin legitimate create/replay/conflict, update/stale-version, delete/stale/foreign ID, explicit tenant overrides, owned target/foreign target and real SQL mutation rollback/recovery. Preserve source failure and exact-commit targeted/broader CI before acceptance. No discount-pricing/concurrency/all-effects certification, new policy/gate, hosted, merge or deployment.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX by reconciling current catalog product and inventory write family (POST products/import, PATCH/DELETE product, inventory set/adjust): trace existing secure-session/Origin wiring, tenant targets, idempotency/version and financial/stock mutation authorities against accepted current HTTP/service evidence before selecting only missing cells. Reuse accepted catalogue reads, media upload and promotion writes. No new feature/policy/gate, hosted/provider action, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -41855,14 +41855,156 @@
           "P0 inventory remains incomplete; 45known/29CLOSED_SOURCE/7OPEN/9BLOCKED; NO-GO."
         ],
         "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX, add one bounded case to the current management full-app PostgreSQL test for catalog promotion POST/PATCH/DELETE, reusing actors and accepted read/DTO proofs. First observe valid-cookie explicit-foreign-Origin writes against exact current source with full-row owned/peer promotion snapshots; only fix a confirmed gap with existing enforceAuthOrigin after merchant guard. Cover allowlisted/omitted-Origin legitimate create/replay/conflict, update/stale-version, delete/stale/foreign ID, explicit tenant overrides, owned target/foreign target and real SQL mutation rollback/recovery. Preserve source failure and exact-commit targeted/broader CI before acceptance. No discount-pricing/concurrency/all-effects certification, new policy/gate, hosted, merge or deployment."
+      },
+      {
+        "boundary": "currentCatalogPromotionWriteFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "status": "BOUNDED_CURRENT_CATALOG_PROMOTION_WRITES_ORIGIN_ACTOR_TENANT_VERSION_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
+        "sourceReviewed": "e66c3bb5a6f2d6bffdf67041020444b7b72c7ec2",
+        "source": "ebd1783e7466bbc40241832f0e934447818c2dc2",
+        "sourceTree": "05d7dc2a12e11317b0d92d752b9b2a6d3492df32",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "route": "artifacts/api-server/src/routes/catalog-operations.ts",
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "applicationExecuted": true,
+        "schemaChanged": false,
+        "productionGrantsChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "acceptanceCondition": "Existing promotion mutation actor/privacy/isolation/version cell lacked actual full-app POST/PATCH/DELETE and explicit Origin plus physical SQL mutation rollback evidence; does not close parent matrix.",
+        "sourceReconciliation": "Reuses twelve-pin source review currentCatalogPromotionWriteEvidenceReconciliation and accepted context/list DTO proof. Three application lines add existing enforceAuthOrigin after requireMerchantSession for POST/PATCH/DELETE only. No SQL, DTO, pricing or auth-policy rewrite.",
+        "reproduction": {
+          "source": "3f47b100e12bd8763f4964941e7885d88277b299",
+          "tree": "1141990f5bd78592c449bb1480743c1b3f587dce",
+          "checkout": "f474a95788abda6e28cada0cd4713cd715582ce1",
+          "run": 40869798925,
+          "job": 123433643375,
+          "fullAppTap": 68,
+          "passed": 66,
+          "failed": 2,
+          "skipped": 0,
+          "cancelled": 0,
+          "observed": {
+            "statuses": [
+              201,
+              200,
+              200
+            ],
+            "rowsUnchanged": false
+          },
+          "expected": {
+            "statuses": [
+              403,
+              403,
+              403
+            ],
+            "rowsUnchanged": true
+          },
+          "classification": "All three verbs observed before assertion. New child and parent failed; existing66TAP passed, three other lane files passed. Direct synthetic valid-cookie HTTP demonstrated database mutation; not browser-CSRF or hosted exploit. Owned fixtures cleaned in finally; no masked rerun."
+        },
+        "fixture": {
+          "additionalMerchants": 2,
+          "initialPromotions": "Two target merchant disabled delivery seeds for independent PATCH/DELETE probes, one peer; service-created before foreign HTTP probes.",
+          "legitimateWrites": "HTTP create and peer same-key create, own replay/conflict, PATCH/DELETE query/body versions, own catalog target promotion.",
+          "catalogTargets": "Two service-created products with one variant each; owned and foreign references checked.",
+          "snapshot": "Whole promotion/product/variant row JSON for two merchants plus selected prior business tables, not every DB table or mutable retention timestamp.",
+          "cleanup": "Only owned tenant rows; trigger/function/sequence cleaned before rows with cleanupResources."
+        },
+        "assertions": [
+          "Foreign explicit Origin403 for all three verbs with whole snapshot unchanged; role/device/mixed/forged session401 and explicit foreign body tenant403 without mutation.",
+          "Configured allowlisted creation201 and omitted-Origin peer creation201 with same idempotency key produce distinct merchant-bound IDs; exact retry200 with Idempotent-Replay:true and identical DTO/no row change; changed retry409.",
+          "Server-derived merchant/currency/timezone/UTC schedule and absence of raw metadata/create_request_hash/timestamps. Accepted GET DTO proof reused, not all effect DTO permutations newly certified.",
+          "Foreign promotion path404 for PATCH/DELETE, authority override fields400, missing idempotency400 and missing version400 with unchanged rows.",
+          "Mixed-case PATCH plus trailing slash ignores foreign query tenant, changes own name and version1->2; stale PATCH/DELETE409; successful omitted-Origin PATCH2->3 then query-version DELETE; repeated DELETE404.",
+          "Foreign product/variant catalog target404 and invalid percentage10001 rejected400; own product/variant percentage1000 promotion accepted201.",
+          "Real AFTER INSERT/UPDATE/DELETE trigger for own merchant calls sequence then raises. Each HTTP500 generic CATALOG_OPERATION_FAILED/no-store and all snapshot rows unchanged; sequence3 proves three writes reached. Remove trigger, same failed create key creates201/replayedfalse, update/delete recover.",
+          "Revoked target session401 on all three verbs, peer still available, complete peer promotion rows unchanged since legitimate peer creation."
+        ],
+        "limits": [
+          "Synthetic disposable PostgreSQL actual-app HTTP only; not browser cross-origin exploit/preflight or hosted/real provider acceptance.",
+          "One bounded disabled delivery + catalog percentage case, not all effects/lifecycle/overlap/concurrency or discount calculation/application acceptance.",
+          "No new idempotency lifetime/delete-tombstone/recreate policy, cache/auth redesign, financial repair, schema or production privilege changes."
+        ],
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX by reconciling current catalog product and inventory write family (POST products/import, PATCH/DELETE product, inventory set/adjust): trace existing secure-session/Origin wiring, tenant targets, idempotency/version and financial/stock mutation authorities against accepted current HTTP/service evidence before selecting only missing cells. Reuse accepted catalogue reads, media upload and promotion writes. No new feature/policy/gate, hosted/provider action, merge or deployment.",
+        "accepted": true,
+        "gitBlobSha": "bf8bc4073014b3153d76a78d8f6def519a874a87",
+        "routeBlob": "6feb28da7cd9ba0e5006de0e274aa5606f0c3296",
+        "targeted": {
+          "run": 40870146651,
+          "job": 123434815480,
+          "checkout": "433260454880487d68683b57cc9b4b53b5e8ecc9",
+          "tree": "05d7dc2a12e11317b0d92d752b9b2a6d3492df32",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 99,
+          "fullAppTap": 68,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 68
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "originObserved": {
+            "statuses": [
+              403,
+              403,
+              403
+            ],
+            "rowsUnchanged": true
+          },
+          "postWriteRollbackAllThreeVerbs": true
+        },
+        "broader": {
+          "run": 40870146059,
+          "job": 123435074757,
+          "checkout": "433260454880487d68683b57cc9b4b53b5e8ecc9",
+          "tree": "05d7dc2a12e11317b0d92d752b9b2a6d3492df32",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "ebd1783e7466bbc40241832f0e934447818c2dc2",
+          "checkout": "433260454880487d68683b57cc9b4b53b5e8ecc9",
+          "checkoutTreeMatched": true,
+          "finalSourceRetries": 0,
+          "localSyntax": "node --check promotion-write-full-app-candidate.mjs PASS"
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
+      "source": "ebd1783e7466bbc40241832f0e934447818c2dc2",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "c4526901a79ad1df9fc08871246912d10ba961fe",
+      "gitBlob": "bf8bc4073014b3153d76a78d8f6def519a874a87",
       "catalogueRegenerated": false,
-      "interpretation": "Historical catalogue counts/hashes remain historical. Upload actual-app overlay adds1case after original66TAP; explicit foreign-Origin physical-write repro fixed with existing guard before image raw parser. Own/peer legitimate upload, exact asset/file/preview, declared MIME/empty/JSON/oversize, real filesystem write error and recovery/revocation accepted. No global parser/auth redesign, new ownership/cache/attachment policy, browser/hosted/full-inventory acceptance."
+      "interpretation": "Historical source/test catalogue remains historical. One current full-app child adds promotion POST/PATCH/DELETE Origin, actors/tenant/idempotency/version/target and actual AFTER-write rollback/recovery evidence after67TAP. Accepted existing GET fields/service/client proofs reused; no all-effects/pricing/concurrency/browser/hosted/full-inventory acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -42689,6 +42831,39 @@
       "applicationChanged": false,
       "parentGateClosed": false,
       "newGate": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforePromotionWrites20261029": {
+      "source": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "c4526901a79ad1df9fc08871246912d10ba961fe",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical catalogue counts/hashes remain historical. Upload actual-app overlay adds1case after original66TAP; explicit foreign-Origin physical-write repro fixed with existing guard before image raw parser. Own/peer legitimate upload, exact asset/file/preview, declared MIME/empty/JSON/oversize, real filesystem write error and recovery/revocation accepted. No global parser/auth redesign, new ownership/cache/attachment policy, browser/hosted/full-inventory acceptance."
+    },
+    "currentCatalogPromotionWriteFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogPromotionWriteFullApp]",
+      "status": "BOUNDED_CURRENT_CATALOG_PROMOTION_WRITES_ORIGIN_ACTOR_TENANT_VERSION_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
+      "source": "ebd1783e7466bbc40241832f0e934447818c2dc2",
+      "sourceTree": "05d7dc2a12e11317b0d92d752b9b2a6d3492df32",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 99,
+      "fullAppTap": 68,
+      "targetRun": 40870146651,
+      "targetJob": 123434815480,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40870146059,
+      "broaderJob": 123435074757,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
       "userActionRequiredNow": false
     }
   },
