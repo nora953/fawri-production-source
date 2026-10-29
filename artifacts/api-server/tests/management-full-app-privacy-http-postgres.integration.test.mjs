@@ -1386,5 +1386,75 @@ test('full application management privacy preserves cutover ordering and current
     }
   });
 
+  await t.test('current channel list full-app tenant actor credential projection and auth SQL failure boundary',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant');
+    for(const m of [x,y]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[m.id]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});
+      m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const channels=await import('../src/services/postgresMetaChannelAuthority.ts');
+    const {authenticationDatabasePool}=await import('../src/services/authenticationPostgresAuthority.ts');
+    const authPool=await authenticationDatabasePool();
+    assert.equal((await authPool.query('SELECT current_user::text AS role')).rows[0].role,runtime.authRole);
+    const key={id:'synthetic-full-app-channel-key',key:Buffer.alloc(32,41)};
+    const keyProvider={current:()=>key,resolve:id=>id===key.id?key:null};
+    const pageX='owned-channel-'+randomUUID(),pageY='peer-channel-'+randomUUID();
+    const first=await channels.connectMetaChannelAuthoritative({merchantId:x.id,platform:'instagram',pageId:pageX,pageName:'Owned page',
+      instagramAccountId:'owned-instagram-account',instagramUsername:'owned-instagram-user',accessToken:'synthetic-channel-secret-target',webhookSubscribed:true,keyProvider});
+    const peer=await channels.connectMetaChannelAuthoritative({merchantId:y.id,platform:'messenger',pageId:pageY,pageName:'Peer page',
+      accessToken:'synthetic-channel-secret-peer',webhookSubscribed:false,keyProvider});
+    const stamp='2025-02-03T04:05:06.000Z';
+    await admin.query(`UPDATE merchant_channels SET created_at=$2,updated_at=$2,connected_at=$2,
+      webhook_subscribed_at=$2,disconnected_at=$2,metadata=$3::jsonb WHERE id=$1`,
+      [first.id,stamp,JSON.stringify({disconnect_requested_at:stamp,operation:'unprojected-operation',private_extension:'unprojected-channel-metadata'})]);
+    await admin.query("UPDATE merchant_channels SET status='error',created_at=$2,updated_at=$2,connected_at=$2,last_error_code='SYNTHETIC_CHANNEL_ERROR' WHERE id=$1",[peer.id,stamp]);
+    const expectedX={id:first.id,merchant_id:x.id,platform:'instagram',page_id:pageX,page_name:'Owned page',
+      instagram_account_id:'owned-instagram-account',instagram_username:'owned-instagram-user',status:'active',webhook_subscribed:true,
+      connection_version:1,connected_at:stamp,disconnect_requested_at:stamp,disconnected_at:stamp,created_at:stamp,updated_at:stamp,credential_configured:true};
+    const expectedY={id:peer.id,merchant_id:y.id,platform:'messenger',page_id:pageY,page_name:'Peer page',status:'error',webhook_subscribed:false,
+      connection_version:1,connected_at:stamp,last_error_code:'SYNTHETIC_CHANNEL_ERROR',created_at:stamp,updated_at:stamp,credential_configured:true};
+    const stable=async()=>({business:await snapshot(),channels:(await admin.query('SELECT to_jsonb(c) AS row FROM merchant_channels c WHERE merchant_id=ANY($1::text[]) ORDER BY id',[[x.id,y.id]])).rows});
+    const before=await stable();
+    let passed=false,faultPassed=false,revoked=false;
+    try{
+      for(const path of ['/api/channels','/API/ChAnNeLs/?merchant_id='+y.id]){
+        for(const who of [undefined,owner,viewer,channelManager]){
+          const r=await req(path,who);assert.equal(r.status,401);assert.doesNotMatch(JSON.stringify(r.body),/owned-channel-|peer-channel-|synthetic-channel-secret|credential_ciphertext/);
+        }
+        for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:`${x.cookie}; ${owner.cookie}`},{Cookie:'fawri_merchant_session=synthetic-invalid'}]){
+          assert.equal((await req(path,x,'GET',undefined,headers)).status,401);
+        }
+        const r=await req(path,x);assert.equal(r.status,200);assert.equal(r.cache,'no-store');
+        assert.deepEqual(r.body,{ok:true,channels:[expectedX]});
+        assert.doesNotMatch(JSON.stringify(r.body),/synthetic-channel-secret|credential_ciphertext|credential_nonce|credential_auth_tag|credential_key_id|credential_algorithm|unprojected-channel-metadata|unprojected-operation/);
+      }
+      const other=await req('/api/channels?merchant_id='+x.id,y);assert.equal(other.status,200);assert.deepEqual(other.body,{ok:true,channels:[expectedY]});
+      assert.deepEqual(await stable(),before);
+      await admin.query('REVOKE SELECT ON merchant_channels FROM '+runtime.authRole);revoked=true;
+      assert.equal((await admin.query("SELECT has_table_privilege($1,'public.merchant_channels','SELECT') AS allowed",[runtime.authRole])).rows[0].allowed,false);
+      await assert.rejects(authPool.query('SELECT credential_ciphertext FROM merchant_channels LIMIT 0'),e=>e.code==='42501');
+      const failed=await fetch(origin+'/api/channels',{headers:{Cookie:x.cookie,'X-Fawri-Device-Id':x.device}});
+      const failureText=await failed.text();
+      assert.equal(failed.status,503,'channel read authority failure must use the bounded JSON unavailable response');
+      assert.equal(failed.headers.get('cache-control'),'no-store');
+      assert.deepEqual(JSON.parse(failureText),{ok:false,code:'META_CHANNEL_LIST_UNAVAILABLE',error:'Meta channel list is unavailable'});
+      assert.doesNotMatch(failureText,/merchant_channels|42501|permission denied|credential_ciphertext|at .*\.ts/);
+      assert.deepEqual(await stable(),before);
+      await admin.query('GRANT SELECT ON merchant_channels TO '+runtime.authRole);revoked=false;
+      assert.deepEqual((await req('/api/channels',x)).body,{ok:true,channels:[expectedX]});
+      assert.deepEqual((await req('/api/channels',y)).body,{ok:true,channels:[expectedY]});
+      assert.deepEqual(await stable(),before);faultPassed=true;
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      assert.equal((await req('/api/channels',x)).status,401);
+      assert.deepEqual((await req('/api/channels',y)).body,{ok:true,channels:[expectedY]});
+      assert.deepEqual(await stable(),before);passed=true;
+    }finally{
+      if(revoked)await admin.query('GRANT SELECT ON merchant_channels TO '+runtime.authRole);
+    }
+    console.log('P0_CHANNELS_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,
+      passedCases:passed?1:0,allAssertionsPassed:passed,authSqlReadFaultAndRecovery:faultPassed,exactCredentialFreeProjection:passed,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
