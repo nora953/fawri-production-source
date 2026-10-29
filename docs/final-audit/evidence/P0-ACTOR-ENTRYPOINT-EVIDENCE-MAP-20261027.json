@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
+    "nextExactAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -42217,14 +42217,247 @@
           "finalSourceRetries": 0,
           "localSyntax": "node --check product-write-full-app-candidate.mjs PASS"
         }
+      },
+      {
+        "boundary": "currentLegacyKnowledgeRetirementFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C01",
+        "date": "2026-10-29",
+        "status": "BOUNDED_LEGACY_KNOWLEDGE_RETIREMENT_CASE_MATCHING_FILE_IMMUTABILITY_AND_CURRENT_AUTHORITY_FULL_APP_ACCEPTED",
+        "sourceReviewed": "1405439268c00b90e8a2ba63c16604e2ead9ba0d",
+        "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+        "sourceTree": "5607c977d1f066eb0f2c9fabfefef2f7cde6ca5e",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "applicationFile": "artifacts/api-server/src/app.ts",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/saved-answers.ts",
+            "gitBlobSha": "1c87b80710b19b987c32cc9229702295f25a185f",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/bot-training.ts",
+            "gitBlobSha": "0811211beabba018181c711e54bb5647ebbc59f0",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/knowledge-operations.ts",
+            "gitBlobSha": "1b655329d08ada28c531d0277338c4913d9fe137",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/saved-answer-operations.ts",
+            "gitBlobSha": "7b862281e94507455f20a91535acd15fdc5c5c47",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/lib/dataPaths.ts",
+            "gitBlobSha": "4a12047647e3dc5ba7ebf5dfa627c26a4ad9a02c",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-session.integration.test.mjs",
+            "gitBlobSha": "422a8b6919a3597b908d0a50fbaffeba5f1aca1b",
+            "localBlobMatched": true
+          }
+        ],
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "applicationExecuted": true,
+        "schemaChanged": false,
+        "productionGrantsChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "accepted": true,
+        "acceptanceCondition": "Existing required-mode retired Knowledge authority must not be reachable through a case variant accepted by Express. MATRIX-C01 source predicate observation lacked mounted actual-app proof with owned legacy file immutability and current-authority positive.",
+        "sourceReconciliation": {
+          "prior": "Seven source/test pins verified. Existing merchant-session compatibility assertion covers canonical legacy endpoints only. Current app maps retirement via raw req.path case-sensitive comparisons; legacy routers match case-insensitively and retain real JSON read/write handlers.",
+          "fix": "Add a local lower-case pathname and compare four existing equality/prefix expressions against it. Actual req.path/originalUrl/resource identifiers unchanged; same410 JSON/no-store contract and same two retired prefixes. No global case rewrite, route removal, auth/financial/schema/role policy change.",
+          "positive": "Current /api/knowledge uses secure merchant authority and PostgreSQL saved answers; inactive synthetic answers deliberately avoid embedding/live provider calls. Runtime reports legacyFallbackEnabled:false."
+        },
+        "reproduction": {
+          "source": "0c84638b7feb6e977f572b0199fef86d6f2bb10f",
+          "tree": "cce71e73321b5423ba18d6c0c63bba3ede2c58d3",
+          "checkout": "78081d014fd331ba47bc62ff522c4c45181d0515",
+          "run": 40928420629,
+          "job": 123640063178,
+          "fullAppTap": 70,
+          "passed": 68,
+          "failed": 2,
+          "skipped": 0,
+          "cancelled": 0,
+          "observed": {
+            "statuses": [
+              410,
+              200,
+              410,
+              201,
+              410,
+              200,
+              410,
+              200,
+              410,
+              200,
+              410,
+              200,
+              410,
+              200,
+              410,
+              200,
+              410,
+              200
+            ],
+            "legacyFilesUnchanged": false,
+            "legacyContentReturned": true
+          },
+          "expected": {
+            "statuses": [
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410
+            ],
+            "legacyFilesUnchanged": true,
+            "legacyContentReturned": false
+          },
+          "classification": "Nine canonical/mixed-case pairs observed before assertion. Canonical retired endpoints410; mixed-case handlers returned legacy content or successful mutation statuses, changed owned JSON files. New child and parent failed; existing68TAP and other3files passed; owned files/SQL fixtures cleaned. Confirmed synthetic runtime legacy authority reachability, not a hosted incident, cross-merchant exposure or browser exploit claim."
+        },
+        "fixture": {
+          "additionalMerchants": 2,
+          "legacyFiles": [
+            "saved-answers.json",
+            "training-requests.json",
+            "learned-answers.json"
+          ],
+          "ownership": "Requires each fixture file absent; records only newly created owned files for cleanup. Two private saved answers and training requests with synthetic IDs/content, empty learned answers.",
+          "currentAuthority": "Two inactive answers created via legitimate current API, one per merchant; direct SQL rows checked. No AI/embedding/provider execution.",
+          "snapshot": "Exact3owned file contents plus whole rows in knowledge_embeddings,knowledge_audit_events,learned_answers,saved_answers,training_requests for two merchants and selected prior business tables; not allDB/retention timestamps.",
+          "cleanup": "cleanupResources removes only newly created synthetic legacy files and owned tenant knowledge rows, then existing parent teardown."
+        },
+        "assertions": [
+          "Nine legacy methods over saved-answer list/create/update/delete and training list/approve/reply/reject: initial18canonical/mixed-case variants410 LEGACY_KNOWLEDGE_AUTHORITY_DISABLED/no-store without private content, file or SQL mutations.",
+          "Uppercase method paths with trailing slash/query also410 for each of two valid merchants. Whole-path test transformation changes synthetic legacy IDs too, but guard refuses before resource lookup; no claim of legacy identifier normalization.",
+          "Current authority creates two inactive PostgreSQL saved answers and reports legacyFallbackEnabled:false. Current mixed-case runtimeGET200; saved-answer lists return exact own answer despite foreign merchant query, never legacy content. Direct saved_answers SQL answer values match.",
+          "Anonymous/admin current Knowledge runtime requests401. Revoked own session denies current read401 while peer200. Owned legacy file bytes and selected business/knowledge rows remain unchanged after denied/legitimate reads.",
+          "Existing canonical retirement behavior, supported current authority and all prior full-app tests preserved."
+        ],
+        "limits": [
+          "Owned synthetic local HTTP/filesystem/PostgreSQL only. No real legacy data, hosted exposure window, historical data disposition or retention/repair approval.",
+          "One guard/case boundary, not entire Knowledge DTO, AI/embedding, all path-encoding/Unicode, browser, importer, background or financial acceptance.",
+          "MATRIX-C01 legacy Knowledge cell bounded acceptance does not close parent actor/privacy matrix or current auth cutover/session/recovery cells; those continue under MATRIX-C02."
+        ],
+        "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment.",
+        "gitBlobSha": "8ecc4acb618a7653c448a782c25ade5bfe784af3",
+        "applicationBlob": "173c5c0a96c273d04bc0977ec9eb667b6fd6e0dd",
+        "targeted": {
+          "run": 40928860814,
+          "job": 123641622092,
+          "checkout": "3cddaf7ee37e741d38f17de4ac4f365f79552f4c",
+          "tree": "5607c977d1f066eb0f2c9fabfefef2f7cde6ca5e",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 101,
+          "fullAppTap": 70,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 70
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "observed": {
+            "statuses": [
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410,
+              410
+            ],
+            "legacyFilesUnchanged": true,
+            "legacyContentReturned": false
+          },
+          "currentAuthorityPositive": true
+        },
+        "broader": {
+          "run": 40928861789,
+          "job": 123641930643,
+          "checkout": "3cddaf7ee37e741d38f17de4ac4f365f79552f4c",
+          "tree": "5607c977d1f066eb0f2c9fabfefef2f7cde6ca5e",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+          "checkout": "3cddaf7ee37e741d38f17de4ac4f365f79552f4c",
+          "checkoutTreeMatched": true,
+          "finalSourceRetries": 0,
+          "localSyntax": "node --check knowledge-retirement-full-app-candidate.mjs PASS"
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+      "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "a9eb81d470a18f80c8c66c52e6d6dd0577567f8a",
+      "gitBlob": "8ecc4acb618a7653c448a782c25ade5bfe784af3",
       "catalogueRegenerated": false,
-      "interpretation": "Historical catalogue remains historical. Current full-app overlay adds one case after68TAP for six catalog/product/inventory mutations, explicit Origin, actor/tenant/idempotency/version and multi-product import plus inventory graph/ledger rollback. Current catalog family overlay links15route methods to bounded proofs; not whole field/actor/lifecycle/concurrency/hosted acceptance."
+      "interpretation": "Current full-app overlay adds one MATRIX-C01 legacy Knowledge retirement case after69TAP. Canonical/mixed/uppercase nine-method variants denied without owned legacy file/SQL changes; current PG inactive saved-answer positive/tenant/runtime/session proof retained. Local pathname guard normalization only. Not full Knowledge/auth/field/hosted or all encoding acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -45024,14 +45257,42 @@
             "currentAuthAdmin",
             "legacyAuthFallback"
           ],
-          "status": "SOURCE_CANDIDATE_RUNTIME_OBSERVATION_PENDING",
+          "status": "BOUNDED_LEGACY_KNOWLEDGE_CONDITION_ACCEPTED_AUTH_CUTOVER_REFERRED_TO_C02",
           "condition": "Required-mode retirement/cutover predicates must agree with effective Express path matching and retain canonical supported routes. Reuse accepted auth410/role-confusion proofs; verify the unproved mixed-case legacy Knowledge predicate through actual app before any fix.",
-          "next": "Add one bounded actual-app retirement case using synthetic merchant/admin contexts, canonical and mixed-case legacy Knowledge paths, unchanged owned legacy files/SQL business state, and a current-authority positive. First observe current source; fix only confirmed guard mismatch and keep exact-source CI.",
+          "next": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment.",
           "evidence": [
             "artifacts/api-server/src/app.ts#enforceLegacyKnowledgeCutoverGate",
             "artifacts/api-server/tests/merchant-session.integration.test.mjs#legacy knowledge authority stays disabled"
           ],
-          "newGate": false
+          "newGate": false,
+          "initialStatus": "SOURCE_CANDIDATE_RUNTIME_OBSERVATION_PENDING",
+          "acceptedBoundedProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
+            "status": "BOUNDED_LEGACY_KNOWLEDGE_RETIREMENT_CASE_MATCHING_FILE_IMMUTABILITY_AND_CURRENT_AUTHORITY_FULL_APP_ACCEPTED",
+            "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+            "sourceTree": "5607c977d1f066eb0f2c9fabfefef2f7cde6ca5e",
+            "newFunctionalCases": 1,
+            "newTapCases": 1,
+            "newGroup": false,
+            "targetedTap": 101,
+            "fullAppTap": 70,
+            "targetRun": 40928860814,
+            "targetJob": 123641622092,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "broaderRun": 40928861789,
+            "broaderJob": 123641930643,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "applicationFilesChanged": 1,
+            "testFilesChanged": 1,
+            "newGate": false,
+            "parentGateClosed": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "previousNext": "Add one bounded actual-app retirement case using synthetic merchant/admin contexts, canonical and mixed-case legacy Knowledge paths, unchanged owned legacy files/SQL business state, and a current-authority positive. First observe current source; fix only confirmed guard mismatch and keep exact-source CI."
         },
         {
           "id": "MATRIX-C02",
@@ -45163,7 +45424,33 @@
         "runtimeReproductionExecuted": false,
         "confirmedExploit": false,
         "case": "MATRIX-C01",
-        "currentKnowledgeAuthority": "/api/knowledge is mounted earlier with secure merchant guard; legacy file mutation/refusal and current positive must be independently observed before remediation."
+        "currentKnowledgeAuthority": "/api/knowledge is mounted earlier with secure merchant guard; legacy file mutation/refusal and current positive must be independently observed before remediation.",
+        "runtimeResolution": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
+          "status": "BOUNDED_LEGACY_KNOWLEDGE_RETIREMENT_CASE_MATCHING_FILE_IMMUTABILITY_AND_CURRENT_AUTHORITY_FULL_APP_ACCEPTED",
+          "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+          "sourceTree": "5607c977d1f066eb0f2c9fabfefef2f7cde6ca5e",
+          "newFunctionalCases": 1,
+          "newTapCases": 1,
+          "newGroup": false,
+          "targetedTap": 101,
+          "fullAppTap": 70,
+          "targetRun": 40928860814,
+          "targetJob": 123641622092,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "broaderRun": 40928861789,
+          "broaderJob": 123641930643,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationFilesChanged": 1,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
+        }
       },
       "dependencies": {
         "knownRegisterRows": 45,
@@ -45194,7 +45481,72 @@
       "nextExactAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
       "userActionRequiredNow": false,
       "parentGateClosed": false,
-      "newGate": false
+      "newGate": false,
+      "followupAtSource": {
+        "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+        "proof": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
+          "status": "BOUNDED_LEGACY_KNOWLEDGE_RETIREMENT_CASE_MATCHING_FILE_IMMUTABILITY_AND_CURRENT_AUTHORITY_FULL_APP_ACCEPTED",
+          "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+          "sourceTree": "5607c977d1f066eb0f2c9fabfefef2f7cde6ca5e",
+          "newFunctionalCases": 1,
+          "newTapCases": 1,
+          "newGroup": false,
+          "targetedTap": 101,
+          "fullAppTap": 70,
+          "targetRun": 40928860814,
+          "targetJob": 123641622092,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "broaderRun": 40928861789,
+          "broaderJob": 123641930643,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationFilesChanged": 1,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
+        },
+        "originalSourceOnlySnapshotPreserved": true,
+        "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
+      },
+      "nextCurrentAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
+    },
+    "previousTestOverlayBeforeLegacyKnowledgeRetirement20261029": {
+      "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "a9eb81d470a18f80c8c66c52e6d6dd0577567f8a",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical catalogue remains historical. Current full-app overlay adds one case after68TAP for six catalog/product/inventory mutations, explicit Origin, actor/tenant/idempotency/version and multi-product import plus inventory graph/ledger rollback. Current catalog family overlay links15route methods to bounded proofs; not whole field/actor/lifecycle/concurrency/hosted acceptance."
+    },
+    "currentLegacyKnowledgeRetirementFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
+      "status": "BOUNDED_LEGACY_KNOWLEDGE_RETIREMENT_CASE_MATCHING_FILE_IMMUTABILITY_AND_CURRENT_AUTHORITY_FULL_APP_ACCEPTED",
+      "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+      "sourceTree": "5607c977d1f066eb0f2c9fabfefef2f7cde6ca5e",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 101,
+      "fullAppTap": 70,
+      "targetRun": 40928860814,
+      "targetJob": 123641622092,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40928861789,
+      "broaderJob": 123641930643,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
     }
   },
   "componentScopes": {
