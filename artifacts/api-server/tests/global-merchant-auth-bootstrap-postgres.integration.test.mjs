@@ -171,11 +171,20 @@ test(
       assert.equal(denied.response.status, 202);
       assert.equal(denied.body?.ok, true);
       assert.equal(cookieByName(denied.response, "fawri_merchant_session_v2"), "");
-      for (const key of ["challenge_id", "devCode", "expires_at", "retry_after_seconds", "account", "merchant"]) {
+      for (const key of ["devCode", "account", "merchant"]) {
         assert.equal(denied.body?.[key], undefined);
       }
+      if (purpose === "password_reset") {
+        assert.match(String(denied.body?.challenge_id || ""), /^[0-9a-f-]{36}$/i);
+        assert.equal(denied.body?.retry_after_seconds, 60);
+        assert.ok(Number.isFinite(Date.parse(denied.body?.expires_at)));
+        assert.equal((await pool.query("SELECT id FROM auth_otp_challenges WHERE id = $1", [denied.body.challenge_id])).rowCount, 0,
+          "generic recovery response challenge must remain synthetic");
+      } else {
+        for (const key of ["challenge_id", "expires_at", "retry_after_seconds"]) assert.equal(denied.body?.[key], undefined);
+      }
       assert.deepEqual(await snapshot(), before, "ineligible resend must not issue OTP/session or mutate account/device rows");
-      resendObservations.push({ label, purpose, status: denied.response.status, unchangedState: true, challengeIssued: false, sessionIssued: false });
+      resendObservations.push({ label, purpose, status: denied.response.status, unchangedState: true, durableChallengeCreated: false, sessionIssued: false });
     }
     await ineligibleResend(unknownPhone, "signup", "unknown-account");
     await ineligibleResend(unknownPhone, "password_reset", "unknown-account");
