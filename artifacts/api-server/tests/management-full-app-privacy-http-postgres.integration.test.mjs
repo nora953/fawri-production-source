@@ -1545,5 +1545,93 @@ test('full application management privacy preserves cutover ordering and current
       allAssertionsPassed:passed,sqlGuardReadFault:readFault,postUpdateRollback:rollback,hosted:false}));
   });
 
+  await t.test('current catalog full-app private nested fields tenant actors and archive SQL read failure boundary',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant');
+    for(const m of [x,y]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[m.id]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});
+      m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const catalog=await import('../src/services/postgresCatalogAuthority.ts');
+    const core=await import('../src/services/postgresCatalogAuthorityCore.ts');
+    const firstId='catalog-http-'+randomUUID(),peerId='catalog-http-'+randomUUID();
+    const variantId='catalog-variant-'+randomUUID(),archivedId='catalog-variant-'+randomUUID(),peerVariantId='catalog-variant-'+randomUUID();
+    const tenantIds=[x.id,y.id],catalogTables=['catalog_image_references','catalog_variant_options','product_variants','catalog_idempotency_keys','products'];
+    const coreColumns='id,product_id,merchant_id,name,sku,barcode,quantity,price_override_iqd,weight_g,length_mm,width_mm,height_mm,created_at,updated_at';
+    let grantsChanged=false,passed=false,faultPassed=false;
+    async function restoreGrants(){
+      await admin.query('GRANT SELECT ON product_variants TO '+runtime.role);
+      await admin.query('REVOKE SELECT('+coreColumns+') ON product_variants FROM '+runtime.role);
+      grantsChanged=false;
+    }
+    try{
+      const first=(await catalog.createCatalogProductAuthoritative({merchantId:x.id,idempotencyKey:'catalog-http-create-'+firstId,input:{
+        id:firstId,name:'Owned private catalog product',price_iqd:1000,cost_iqd:88,low_stock_threshold:1,status:'available',allow_fawri_reply:true,track_inventory:true,
+        image_refs:[{url:'https://images.example.invalid/owned-root',storage_key:'synthetic/owned-root',alt:'Owned image'}],
+        variants:[{id:variantId,name:'Blue',price_iqd:1100,cost_iqd:77,stock_quantity:3,options:{Color:'Blue'},
+          image_refs:[{url:'https://images.example.invalid/owned-blue',storage_key:'synthetic/owned-blue',alt:'Owned blue image'}]},
+          {id:archivedId,name:'Archived red',cost_iqd:66,stock_quantity:4,options:{Color:'Red'}}],
+      }})).product;
+      const peer=(await catalog.createCatalogProductAuthoritative({merchantId:y.id,idempotencyKey:'catalog-http-create-'+peerId,input:{
+        id:peerId,name:'Peer private catalog product',price_iqd:2000,cost_iqd:55,low_stock_threshold:1,status:'available',allow_fawri_reply:true,track_inventory:true,
+        variants:[{id:peerVariantId,name:'Green',cost_iqd:44,stock_quantity:2,options:{Color:'Green'}}],
+      }})).product;
+      await admin.query("UPDATE products SET metadata=metadata||'{\"private_extension\":\"unprojected-catalog-metadata\"}'::jsonb WHERE id=$1",[firstId]);
+      await admin.query("UPDATE product_variants SET metadata=COALESCE(metadata,'{}'::jsonb)||'{\"catalog_archived\":true}'::jsonb WHERE id=$1",[archivedId]);
+      const ownVariant=first.variants.find(v=>v.id===variantId),otherVariant=peer.variants.find(v=>v.id===peerVariantId);
+      const expected={id:firstId,merchant_id:x.id,name:'Owned private catalog product',price_iqd:1000,stock_quantity:7,low_stock_threshold:1,
+        status:'available',allow_fawri_reply:true,created_at:first.created_at,updated_at:first.updated_at,version:1,item_type:'product',track_inventory:true,cost_iqd:88,
+        image_refs:[{id:first.image_refs[0].id,url:'https://images.example.invalid/owned-root',storage_key:'synthetic/owned-root',alt:'Owned image'}],
+        variants:[{id:variantId,name:'Blue',price_iqd:1100,cost_iqd:77,stock_quantity:3,options:{Color:'Blue'},created_at:ownVariant.created_at,updated_at:ownVariant.updated_at,
+          image_refs:[{id:ownVariant.image_refs[0].id,url:'https://images.example.invalid/owned-blue',storage_key:'synthetic/owned-blue',alt:'Owned blue image'}]}]};
+      const expectedPeer={id:peerId,merchant_id:y.id,name:'Peer private catalog product',price_iqd:2000,stock_quantity:2,low_stock_threshold:1,
+        status:'available',allow_fawri_reply:true,created_at:peer.created_at,updated_at:peer.updated_at,version:1,item_type:'product',track_inventory:true,cost_iqd:55,image_refs:[],
+        variants:[{id:peerVariantId,name:'Green',cost_iqd:44,stock_quantity:2,options:{Color:'Green'},created_at:otherVariant.created_at,updated_at:otherVariant.updated_at,image_refs:[]}]};
+      const stable=async()=>({business:await snapshot(),catalog:Object.fromEntries(await Promise.all(catalogTables.map(async table=>[table,
+        (await admin.query(`SELECT to_jsonb(c) AS row FROM ${table} c WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(c)::text`,[tenantIds])).rows])))});
+      const before=await stable(),listPath='/api/catalog/products',detailPath=listPath+'/'+encodeURIComponent(firstId);
+      for(const path of [listPath,detailPath,'/API/CaTaLoG/PrOdUcTs/?merchant_id='+y.id,'/API/CaTaLoG/PrOdUcTs/'+encodeURIComponent(firstId)+'/?merchant_id='+y.id]){
+        for(const who of [undefined,owner,viewer,channelManager]){
+          const r=await req(path,who);assert.equal(r.status,401);assert.doesNotMatch(JSON.stringify(r.body),/private catalog product|synthetic\/owned|unprojected-catalog-metadata|cost_iqd/);
+        }
+        for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:`${x.cookie}; ${owner.cookie}`},{Cookie:'fawri_merchant_session=synthetic-invalid'}])assert.equal((await req(path,x,'GET',undefined,headers)).status,401);
+        const r=await req(path,x);assert.equal(r.status,200);assert.equal(r.cache,'no-store');
+        assert.deepEqual(r.body,path.toLowerCase().includes(firstId.toLowerCase())?{ok:true,product:expected}:{ok:true,merchant_id:x.id,count:1,products:[expected]});
+        assert.doesNotMatch(JSON.stringify(r.body),/unprojected-catalog-metadata|private_extension|fawri_catalog_v2|variant_costs_iqd|Archived red/);
+      }
+      assert.deepEqual((await req(listPath+'?merchant_id='+x.id,y)).body,{ok:true,merchant_id:y.id,count:1,products:[expectedPeer]});
+      const foreign=await req(detailPath,y);assert.equal(foreign.status,404);assert.equal(foreign.body.code,'CATALOG_PRODUCT_NOT_FOUND');
+      assert.deepEqual(await stable(),before);
+      assert.equal((await admin.query("SELECT has_table_privilege($1,'public.product_variants','SELECT') AS allowed",[runtime.role])).rows[0].allowed,true);
+      await admin.query('REVOKE SELECT ON product_variants FROM '+runtime.role);grantsChanged=true;
+      await admin.query('GRANT SELECT('+coreColumns+') ON product_variants TO '+runtime.role);
+      assert.equal((await admin.query("SELECT has_column_privilege($1,'public.product_variants','metadata','SELECT') AS allowed",[runtime.role])).rows[0].allowed,false);
+      await assert.rejects(runtime.runtimePool.query('SELECT metadata FROM product_variants LIMIT 0'),e=>e.code==='42501');
+      // The original core graph SELECTs still complete. Only the wrapper's
+      // later archive-metadata query is unavailable under these owned grants.
+      assert.equal((await core.getCatalogProductAuthoritative(x.id,firstId)).variants.length,2);
+      assert.equal((await core.listCatalogProductsAuthoritative(y.id)).length,1);
+      await assert.rejects(catalog.getCatalogProductAuthoritative(x.id,firstId),e=>e.code==='42501');
+      for(const path of [listPath,detailPath]){
+        const failed=await req(path,x);assert.equal(failed.status,500);assert.equal(failed.cache,'no-store');
+        assert.deepEqual(failed.body,{ok:false,code:'CATALOG_OPERATION_FAILED',error:'catalog operation failed'});
+      }
+      assert.deepEqual(await stable(),before);
+      await restoreGrants();
+      assert.deepEqual((await req(detailPath,x)).body,{ok:true,product:expected});
+      assert.deepEqual((await req(listPath,y)).body,{ok:true,merchant_id:y.id,count:1,products:[expectedPeer]});
+      assert.deepEqual(await stable(),before);faultPassed=true;
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      for(const path of [listPath,detailPath])assert.equal((await req(path,x)).status,401);
+      assert.deepEqual((await req(listPath,y)).body,{ok:true,merchant_id:y.id,count:1,products:[expectedPeer]});
+      assert.deepEqual(await stable(),before);passed=true;
+    }finally{
+      if(grantsChanged)await restoreGrants();
+      for(const table of catalogTables)await admin.query(`DELETE FROM ${table} WHERE merchant_id=ANY($1::text[])`,[tenantIds]);
+    }
+    console.log('P0_CATALOG_READ_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,
+      allAssertionsPassed:passed,archiveSqlReadFaultAfterCoreSuccess:faultPassed,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
