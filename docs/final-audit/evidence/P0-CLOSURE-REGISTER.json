@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+      "nextAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -612,6 +612,21 @@
         "newGate": false,
         "parentGateClosed": false,
         "policyAdopted": false,
+        "userActionRequiredNow": false
+      },
+      "currentCatalogReadSourceReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadEvidenceReconciliation]",
+        "status": "CURRENT_CATALOG_READ_AUTHORITY_AND_FIELD_MAP_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
+        "sourceReviewed": "87def2555bcb6fca77f456954f0a03e331eccf19",
+        "acceptedExecutable": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+        "reviewComplete": true,
+        "expandedPins": 16,
+        "newFunctionalCases": 0,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
         "userActionRequiredNow": false
       }
     },
@@ -2514,7 +2529,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+      "nextAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -3035,8 +3050,8 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "Current GET/PATCH regional source/consumer/router evidence reconciled with10matched pins, then one actual-full-app case added after62TAP. Two fixture baseline attempts classified against proven retention refresh/watermark; third reproduced explicit foreign-Origin200 currency mutation. Existing guard applied PATCH after secure session in2lines. Final actor/tenant/exact context/legitimate mutation/catalog409/actual42501 generic500/post-UPDATE trigger rollback/recovery/session-revoke pass: target94/full-app63, broader836, all58CI. Parent gate/counts unchanged.",
-        "nextNamedReview": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+        "completedPrerequisite": "Catalog list/detail source/secure compatibility bridge and field map reconciled with16matched pins. Existing actual-app merchant HTTP journey reused at Node24/22 within accepted836. Merchant-private costs and normalized commerce metadata/image/option/archive filtering traced; no new runtime or defect. Specific full-app nested projection/actor/archive-read fault cell selected for next implementation; no parent closure.",
+        "nextNamedReview": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
         "latestAcceptedBoundary": {
           "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRegionalFullApp]",
           "status": "BOUNDED_CURRENT_REGIONAL_ACTOR_TENANT_ORIGIN_CURRENCY_GUARD_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
@@ -3064,14 +3079,15 @@
           "userActionRequiredNow": false
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
-        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+        "nextAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
         "latestSourceReview": {
-          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListEvidenceReconciliation]",
-          "status": "CURRENT_CHANNEL_SUMMARY_SOURCE_AND_ROUTER_HTTP_EVIDENCE_RECONCILED_FULL_APP_CELL_PENDING",
-          "sourceReviewed": "a138997fb3a1031dc892bd21cdf24e158b4762b5",
-          "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadEvidenceReconciliation]",
+          "status": "CURRENT_CATALOG_READ_AUTHORITY_AND_FIELD_MAP_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
+          "sourceReviewed": "87def2555bcb6fca77f456954f0a03e331eccf19",
+          "acceptedExecutable": "2485efbc3a19805d62291bdd267bc26db95d5cda",
           "reviewComplete": true,
-          "expandedPins": 8,
+          "expandedPins": 16,
+          "newFunctionalCases": 0,
           "newRuntimeTests": 0,
           "newCiRuns": 0,
           "applicationChanged": false,
@@ -3408,7 +3424,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment."
+        "nextAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment."
       },
       {
         "order": 4,
@@ -3434,7 +3450,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+        "nextAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -3935,7 +3951,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+        "nextAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -4516,7 +4532,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+      "nextExactAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -5160,12 +5176,13 @@
       "userActionRequiredNow": false
     },
     "latestSourceReview": {
-      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListEvidenceReconciliation]",
-      "status": "CURRENT_CHANNEL_SUMMARY_SOURCE_AND_ROUTER_HTTP_EVIDENCE_RECONCILED_FULL_APP_CELL_PENDING",
-      "sourceReviewed": "a138997fb3a1031dc892bd21cdf24e158b4762b5",
-      "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadEvidenceReconciliation]",
+      "status": "CURRENT_CATALOG_READ_AUTHORITY_AND_FIELD_MAP_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
+      "sourceReviewed": "87def2555bcb6fca77f456954f0a03e331eccf19",
+      "acceptedExecutable": "2485efbc3a19805d62291bdd267bc26db95d5cda",
       "reviewComplete": true,
-      "expandedPins": 8,
+      "expandedPins": 16,
+      "newFunctionalCases": 0,
       "newRuntimeTests": 0,
       "newCiRuns": 0,
       "applicationChanged": false,

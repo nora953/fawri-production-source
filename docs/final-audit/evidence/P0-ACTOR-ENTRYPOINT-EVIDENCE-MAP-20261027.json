@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/products and GET /api/catalog/products/:productId: reconcile actual mounted compatibility/session guard, list/detail field projection, media/inventory nested fields and accepted catalog PostgreSQL/HTTP actor evidence and current consumers before selecting any missing cell. Reuse accepted settings/channel/regional proofs, do not automatically add another test or origin guard. No policy adoption, new gate/count growth, hosted/provider action, merge or deployment.",
+    "nextExactAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -40811,6 +40811,223 @@
           "cancelled": 0,
           "automaticExistingWorkflow": true
         }
+      },
+      {
+        "boundary": "currentCatalogReadEvidenceReconciliation",
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadEvidenceReconciliation]",
+        "status": "CURRENT_CATALOG_READ_AUTHORITY_AND_FIELD_MAP_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
+        "sourceReviewed": "87def2555bcb6fca77f456954f0a03e331eccf19",
+        "acceptedExecutable": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+        "reviewComplete": true,
+        "expandedPins": 16,
+        "newFunctionalCases": 0,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": false,
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+            "gitBlobSha": "a96246c760be858132e43db49c1b2ff52776c879",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth.ts",
+            "gitBlobSha": "61958ff03a7412661783c9e0210b94ba00ae10cb",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntime.ts",
+            "gitBlobSha": "38d3e4a88696bf90eec37f7d33e4ff93cad6384e",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authCutoverCompatibility.ts",
+            "gitBlobSha": "e81efa86b6c2874727e796a8adbdbc9747de7cf2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authSession.ts",
+            "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresCatalogAuthority.ts",
+            "gitBlobSha": "26143567d89c3cc85830515b41685924b0b0ecd2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresCatalogAuthorityCore.ts",
+            "gitBlobSha": "78dc4fbd84b248f3d5ad2754d58b649ba2e94527",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/catalogCommerceMetadata.ts",
+            "gitBlobSha": "faa1cef34d4985d22fba8f5a1bf1a9a084c1f76a",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/global-merchant-postgres-http-journey.integration.test.ts",
+            "gitBlobSha": "fcb8599be27018d19c66f8ce530133e5073faa9e",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/auth-cutover-contract.test.mjs",
+            "gitBlobSha": "5fc76bb138346a9bfcb5b04377568154741001e7",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/catalog-variant-row-preservation-postgres.integration.test.ts",
+            "gitBlobSha": "c0e7dfb5fe2a90930cdf9c0f1f83184a3b588e65",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/postgres-catalog-reporting-cost-disclosure.test.ts",
+            "gitBlobSha": "1ad58b6c9fd5725623957bbd552aa5fc8235c304",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/fawri/src/lib/catalogUiApi.ts",
+            "gitBlobSha": "f592b73fb7d3a74a17f81efd047b1453bc53f576",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntimePart2.ts",
+            "gitBlobSha": "b31cc89d479006bcf0d128d7360178c34f1f46da",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+            "gitBlobSha": "5d2c161fb3e04dfbd5055149929f01bc160b48e9",
+            "localBlobMatched": true
+          }
+        ],
+        "authority": [
+          "app mounts enforceAuthCutoverCompatibility before catalog router; catalog imports routes/auth transitional guard, not middleware/authSession directly.",
+          "Bridge discards client legacy merchant cookies, isolates device authority, rejects mixed secure merchant/admin cookies; secure merchant session yields server context and internal compatibility cookie. Admin context does not create merchant context.",
+          "routes/auth reuses secure merchant context as res.locals.merchantId; exported getter from authRuntimePart2 reads that local. No secure context falls back to existing legacy guard; do not treat router-only legacy-cookie fixtures as actual full-app authority proof.",
+          "Current GET list/detail take tenant from server local, never query; wrapper calls core under merchant-bound operational transaction. Core predicates all four tables by merchant_id; base products also deleted_at IS NULL. Detail loads own tenant list then requires requested ID; foreign product not part of it.",
+          "Wrapper performs separate merchant-bound archived-ID read from product_variants.metadata catalog_archived and filters variants. Separate transaction/query is not a concurrent-snapshot guarantee; no such guarantee adopted."
+        ],
+        "projection": {
+          "listRoot": [
+            "ok",
+            "merchant_id",
+            "count",
+            "products"
+          ],
+          "detailRoot": [
+            "ok",
+            "product"
+          ],
+          "productRequired": [
+            "id",
+            "merchant_id",
+            "name",
+            "price_iqd",
+            "stock_quantity",
+            "low_stock_threshold",
+            "status",
+            "allow_fawri_reply",
+            "image_refs",
+            "variants",
+            "created_at",
+            "updated_at",
+            "version",
+            "item_type",
+            "track_inventory"
+          ],
+          "productOptional": [
+            "external_ref",
+            "description",
+            "category",
+            "sku",
+            "barcode",
+            "compare_at_price_iqd",
+            "weight_g",
+            "length_mm",
+            "width_mm",
+            "height_mm",
+            "cost_iqd",
+            "service_details"
+          ],
+          "variantRequired": [
+            "id",
+            "name",
+            "stock_quantity",
+            "options",
+            "image_refs",
+            "created_at",
+            "updated_at"
+          ],
+          "variantOptional": [
+            "sku",
+            "barcode",
+            "price_iqd",
+            "weight_g",
+            "length_mm",
+            "width_mm",
+            "height_mm",
+            "cost_iqd"
+          ],
+          "imageFields": [
+            "id",
+            "url?",
+            "storage_key?",
+            "alt?"
+          ],
+          "serviceFields": [
+            "duration_minutes?",
+            "buffer_minutes",
+            "booking_required",
+            "price_type",
+            "location_mode",
+            "location_modes"
+          ],
+          "metadata": "Raw product metadata is not returned. Only fawri_catalog_v2 normalized commerce fields are applied. Merchant-private root cost_iqd and signature-associated per-variant cost_iqd intentionally survive merchant projection; variant_costs_iqd map itself is not returned. Options are stored option-name/value pairs; URL/storage_key remain merchant image-reference fields.",
+          "sourceOnlyLimits": "Mapping does not approve arbitrary historical image/option/cost provenance, all conditional fields, new customer disclosures, or blanket privacy acceptance."
+        },
+        "existingRuntime": {
+          "source": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+          "run": 40815398744,
+          "job": 123255571919,
+          "checkout": "b3bc4f1629153fdd8efae929116655f905e090f9",
+          "tree": "eff2ebd56b2981251cf72d3d1f9c84769bd0d2f8",
+          "suite": "global-merchant-postgres-http-journey.integration.test.ts",
+          "invocations": [
+            {
+              "runtime": "v24.22.2",
+              "batch": "priority",
+              "passed": 1
+            },
+            {
+              "runtime": "v22.23.4",
+              "batch": "node22-http",
+              "passed": 1
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "scope": "Actual imported app with restricted primary/separate auth: merchantA creates stock5 product, B list excludes A product, A detail after cashier sale reads stock4/version unchanged. Whole journey includes many other operations; two invocations are not two unique catalog acceptance cases.",
+          "limit": "Not exact nested merchant-cost/image/variant role matrix or selected archive-query SQL failure. Existing bootstrap golden workflow40815398582/job123255142027 runs different two files; it is not mislabelled as this HTTP journey."
+        },
+        "sourceTestReferences": {
+          "variantRowPreservation": "Source inspected only for legitimate fixture and SQL history-preservation assertions; this batch does not newly certify its current CI execution.",
+          "costDisclosure": "postgres-catalog-reporting-cost-disclosure.test.ts uses an injected SQL executor for customer fact reply; source-only reference here, not proof of current actual HTTP merchant cost/actor matrix.",
+          "client": "catalogUiApi.ts list/detail use same relative API and return product objects; source trace only, no browser proof."
+        },
+        "errorContract": "Catalog route sendError preserves declared typed errors; unexpected SQL42501 is generic500 CATALOG_OPERATION_FAILED. No defect asserted by this source review.",
+        "nextAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -41484,6 +41701,21 @@
       "gitBlob": "4c9351ce4b992aadbd8c94ff7dba033e5dd3a6f2",
       "catalogueRegenerated": false,
       "interpretation": "Historical catalogue counts/hashes remain historical. Current channel full-app overlay adds1case after original61TAP; two owned merchants and fake encrypted credentials, no provider calls. Route GET error handling fixed; source actor/tenant authority unchanged. Existing accepted boundaries retained."
+    },
+    "currentCatalogReadSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadEvidenceReconciliation]",
+      "status": "CURRENT_CATALOG_READ_AUTHORITY_AND_FIELD_MAP_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
+      "sourceReviewed": "87def2555bcb6fca77f456954f0a03e331eccf19",
+      "acceptedExecutable": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+      "reviewComplete": true,
+      "expandedPins": 16,
+      "newFunctionalCases": 0,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": false
     }
   },
   "componentScopes": {
