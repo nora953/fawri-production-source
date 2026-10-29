@@ -206,11 +206,12 @@ function enforceLegacyKnowledgeCutoverGate(
   res: Response,
   next: NextFunction,
 ): void {
+  const pathname = req.path.toLowerCase();
   const isLegacyKnowledgePath =
-    req.path === "/api/saved-answers" ||
-    req.path.startsWith("/api/saved-answers/") ||
-    req.path === "/api/bot-training" ||
-    req.path.startsWith("/api/bot-training/");
+    pathname === "/api/saved-answers" ||
+    pathname.startsWith("/api/saved-answers/") ||
+    pathname === "/api/bot-training" ||
+    pathname.startsWith("/api/bot-training/");
 
   if (!isLegacyKnowledgePath) {
     next();
