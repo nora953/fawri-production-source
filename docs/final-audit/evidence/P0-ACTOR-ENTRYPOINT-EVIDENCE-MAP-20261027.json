@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -40443,14 +40443,141 @@
           ]
         },
         "nextAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment."
+      },
+      {
+        "boundary": "currentChannelListFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "status": "BOUNDED_CURRENT_CHANNEL_LIST_ACTOR_TENANT_CREDENTIAL_PROJECTION_AND_AUTH_READ_FAILURE_FULL_APP_ACCEPTED",
+        "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+        "sourceTree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+        "sourceReviewed": "acc4e136060973d6adf8e4692f8af3519d738d78",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "4c9351ce4b992aadbd8c94ff7dba033e5dd3a6f2",
+        "route": "artifacts/api-server/src/routes/channel-operations.ts",
+        "routeBlob": "71d4d35550cedfdbb64fdba18f40b17362c42fe0",
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "reproduction": {
+          "source": "3fbccd57c98ea8c903b00d5a3b4cf0d3088c9a7b",
+          "tree": "04591f96bd8b5fc1e9da1514493677302ffa6623",
+          "run": 40805818979,
+          "job": 123224402401,
+          "fullAppTests": 62,
+          "passed": 60,
+          "failed": 2,
+          "skipped": 0,
+          "cancelled": 0,
+          "failure": "New child expected bounded503 unavailable response under actual authentication-role SELECT denial, observed default500; one child and its parent counted as two TAP failures. Prior 60 TAP passed. Assertions retained; no retry masking or test weakening.",
+          "claimLimit": "Observed under NODE_ENV=test. No claim of confirmed production credential/stack exposure, credential theft, or provider compromise."
+        },
+        "fix": "Wrap only existing GET channel operational eligibility and summary read in bounded error handling; return503 META_CHANNEL_LIST_UNAVAILABLE with fixed generic message and no-store. No changes to secure session, tenant SQL predicate, auth grants, credential encryption/provider semantics or disconnect writes.",
+        "targeted": {
+          "run": 40806066352,
+          "job": 123225197561,
+          "checkout": "70b31dde339a182cd00e232d84644ff162aa52a3",
+          "tree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+          "runtime": "v24.22.2",
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 62
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "tapIncludingParents": 93,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "marker": {
+            "actualFullApp": true,
+            "restrictedPrimary": true,
+            "separateAuthLogin": true,
+            "passedCases": 1,
+            "allAssertionsPassed": true,
+            "authSqlReadFaultAndRecovery": true,
+            "exactCredentialFreeProjection": true,
+            "hosted": false
+          }
+        },
+        "assertions": [
+          "Actual app source/mount handles canonical and mixed-case/trailing-slash GET, no-store.",
+          "Two additional owned merchants approved with actual secure sessions and existing actor helper; owner/viewer/channel manager/no-session denied401; wrong device, mixed merchant/admin cookie and forged cookie denied401.",
+          "Synthetic injected encryption key provider only; connect authority seeds owned Instagram and peer Messenger. Exact whole response equality checks optional Instagram fields/timestamps, credential-configured boolean, webhook subscription and error status/code; foreign merchant query ignored.",
+          "Encrypted envelope/raw metadata/private extension/plaintext synthetic token absent from explicit HTTP summary. Trusted auth SELECT still reads envelope to compute presence; no decryption-validity or provider-readiness certification.",
+          "Actual effective authentication LOGIN equals disposable authRole. Revoke SELECT merchant_channels on this role, confirm has_table_privilege=false and actual facade query42501; session authentication remains usable; GET returns fixed503 JSON without SQL details; all selected business/channel rows unchanged.",
+          "Restore owned grant in finally, verify both merchants recover same projections. Revoke target merchant session, target401 while peer remains200; no channel/business row mutation."
+        ],
+        "limits": [
+          "Bounded source/actual local HTTP PostgreSQL proof; not browser/hosted/provider/send/full historical error-code audit or complete all-platform/conditional-status matrix.",
+          "No new product/credential/field policy or gate; parent privacy matrix remains OPEN; completeP0Inventory=false; release NO-GO.",
+          "Existing router-only disconnect proof reused, not rerun solely to inflate totals; broad CI can execute overlapping suites at its own layer."
+        ],
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "accepted": true,
+        "date": "2026-10-29",
+        "applicationExecuted": true,
+        "acceptanceCondition": "Existing P0 actor/field matrix missing actual-full-app channel list role/device/session, exact credential-free projection and authentication SQL denial/recovery cell; closes this bounded cell only.",
+        "broader": {
+          "run": 40806066688,
+          "job": 123225474233,
+          "checkout": "70b31dde339a182cd00e232d84644ff162aa52a3",
+          "tree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true,
+          "sourceMatched": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+          "sourceTree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+          "ciMergeCheckout": "70b31dde339a182cd00e232d84644ff162aa52a3",
+          "checkoutTreeMatched": true,
+          "newRuntimeFunctionalCases": 1,
+          "localSyntax": "node --check channels-full-app-candidate.mjs PASS",
+          "finalSourceRetries": 0
+        },
+        "channelRegression": {
+          "run": 40806065980,
+          "job": 123225362445,
+          "suite": "merchant-channels-postgres-http.integration.test.ts",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "automaticExistingWorkflow": true
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+      "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "947d0a5f596b9f705f449dc29668077760748658",
+      "gitBlob": "4c9351ce4b992aadbd8c94ff7dba033e5dd3a6f2",
       "catalogueRegenerated": false,
-      "interpretation": "Historical catalogue counts/hashes remain historical. New manual optional order-payment read field overlay adds1case after original60TAP; no new merchant/order fixture or blanket catalogue/field acceptance. Existing settings/report/order boundaries retained."
+      "interpretation": "Historical catalogue counts/hashes remain historical. Current channel full-app overlay adds1case after original61TAP; two owned merchants and fake encrypted credentials, no provider calls. Route GET error handling fixed; source actor/tenant authority unchanged. Existing accepted boundaries retained."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -41050,6 +41177,39 @@
       "parentGateClosed": false,
       "newGate": false,
       "userActionRequiredNow": false
+    },
+    "currentChannelListFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListFullApp]",
+      "status": "BOUNDED_CURRENT_CHANNEL_LIST_ACTOR_TENANT_CREDENTIAL_PROJECTION_AND_AUTH_READ_FAILURE_FULL_APP_ACCEPTED",
+      "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+      "sourceTree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 93,
+      "fullAppTap": 62,
+      "targetRun": 40806066352,
+      "targetJob": 123225197561,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40806066688,
+      "broaderJob": 123225474233,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeChannelList20261029": {
+      "source": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "947d0a5f596b9f705f449dc29668077760748658",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical catalogue counts/hashes remain historical. New manual optional order-payment read field overlay adds1case after original60TAP; no new merchant/order fixture or blanket catalogue/field acceptance. Existing settings/report/order boundaries retained."
     }
   },
   "componentScopes": {

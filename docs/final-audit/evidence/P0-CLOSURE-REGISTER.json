@@ -5,8 +5,8 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
-  "lastFullyAcceptedSource": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+  "sourceCandidate": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+  "lastFullyAcceptedSource": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
   "release": "NO-GO",
   "rows": [
     {
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
+      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -560,6 +560,32 @@
         "applicationChanged": false,
         "parentGateClosed": false,
         "newGate": false,
+        "userActionRequiredNow": false
+      },
+      "currentChannelListFullAppProof": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListFullApp]",
+        "status": "BOUNDED_CURRENT_CHANNEL_LIST_ACTOR_TENANT_CREDENTIAL_PROJECTION_AND_AUTH_READ_FAILURE_FULL_APP_ACCEPTED",
+        "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+        "sourceTree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "targetedTap": 93,
+        "fullAppTap": 62,
+        "targetRun": 40806066352,
+        "targetJob": 123225197561,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "broaderRun": 40806066688,
+        "broaderJob": 123225474233,
+        "allCiSuccess": 58,
+        "accepted": true,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
         "userActionRequiredNow": false
       }
     },
@@ -2462,7 +2488,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
+      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -2949,7 +2975,7 @@
       "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
     }
   ],
-  "previousFullyAcceptedSource": "7ca048ba15ab891b6417405fd56fddca64230854",
+  "previousFullyAcceptedSource": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
   "lastUpdatedAt": "2026-10-29",
   "closurePlan": {
     "schemaVersion": 1,
@@ -2967,7 +2993,7 @@
     "release": "NO-GO",
     "noNewReleaseRequirementsAdded": true,
     "noExistingStatusChanged": true,
-    "acceptedSource": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+    "acceptedSource": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
     "executionRules": [
       "Select one existing gate and its exact unmet closure condition before new code/tests. State whether the batch closes it or only completes a named necessary prerequisite.",
       "Reuse accepted positive/negative/runtime evidence at its original layer and source. No repeated accepted test solely to increase totals; rerun only for a source change, failure or identified integration gap.",
@@ -2983,28 +3009,28 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "Current channel list source/credential projection reconciled with accepted router-only PostgreSQL proof. Eight Git blob pins matched. Missing actual-full-app actor/projection/auth-role fault cell identified without asserting a product defect; next action is its bounded implementation in existing harness.",
-        "nextNamedReview": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
+        "completedPrerequisite": "Channel source reconciliation followed by one actual-full-app regression: secure actor/device/session denial, two-merchant exact credential-free projection, actual authentication-role SQL42501 fault, generic503 response, grant recovery, revoked-session/peer preservation. Default500 reproduced then fixed in existing GET only. Final target93TAP/full-app62, broader836 and all58CI accepted. Parent gate/counts unchanged; next current regional source/evidence reconciliation.",
+        "nextNamedReview": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
         "latestAcceptedBoundary": {
-          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOrderOptionalPaymentReadFields]",
-          "status": "BOUNDED_CURRENT_OPTIONAL_ORDER_PAYMENT_READ_FIELDS_FULL_APP_ACCEPTED",
-          "source": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
-          "sourceTree": "9e6a0323f2348d874e73416157d08a983e9046f2",
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListFullApp]",
+          "status": "BOUNDED_CURRENT_CHANNEL_LIST_ACTOR_TENANT_CREDENTIAL_PROJECTION_AND_AUTH_READ_FAILURE_FULL_APP_ACCEPTED",
+          "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+          "sourceTree": "bcec6462088f9872a76a75b643d4e96892b646c0",
           "newFunctionalCases": 1,
           "newTapCases": 1,
           "newGroup": false,
-          "targetedTap": 92,
-          "fullAppTap": 61,
-          "targetRun": 40719124292,
-          "targetJob": 122925231328,
+          "targetedTap": 93,
+          "fullAppTap": 62,
+          "targetRun": 40806066352,
+          "targetJob": 123225197561,
           "broaderTap": 836,
           "broaderInvocations": 97,
           "broaderUniqueFiles": 94,
-          "broaderRun": 40719122971,
-          "broaderJob": 122925351104,
+          "broaderRun": 40806066688,
+          "broaderJob": 123225474233,
           "allCiSuccess": 58,
           "accepted": true,
-          "applicationFilesChanged": 0,
+          "applicationFilesChanged": 1,
           "testFilesChanged": 1,
           "newGate": false,
           "parentGateClosed": false,
@@ -3012,7 +3038,7 @@
           "userActionRequiredNow": false
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
-        "nextAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
         "latestSourceReview": {
           "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListEvidenceReconciliation]",
           "status": "CURRENT_CHANNEL_SUMMARY_SOURCE_AND_ROUTER_HTTP_EVIDENCE_RECONCILED_FULL_APP_CELL_PENDING",
@@ -3281,6 +3307,32 @@
           "parentGateClosed": false,
           "newGate": false,
           "userActionRequiredNow": false
+        },
+        "currentChannelListFullAppProof": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListFullApp]",
+          "status": "BOUNDED_CURRENT_CHANNEL_LIST_ACTOR_TENANT_CREDENTIAL_PROJECTION_AND_AUTH_READ_FAILURE_FULL_APP_ACCEPTED",
+          "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+          "sourceTree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+          "newFunctionalCases": 1,
+          "newTapCases": 1,
+          "newGroup": false,
+          "targetedTap": 93,
+          "fullAppTap": 62,
+          "targetRun": 40806066352,
+          "targetJob": 123225197561,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "broaderRun": 40806066688,
+          "broaderJob": 123225474233,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationFilesChanged": 1,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -3304,7 +3356,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment."
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment."
       },
       {
         "order": 4,
@@ -3330,7 +3382,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -3725,6 +3777,32 @@
           "parentGateClosed": false,
           "newGate": false,
           "userActionRequiredNow": false
+        },
+        "currentChannelListFullAppProof": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListFullApp]",
+          "status": "BOUNDED_CURRENT_CHANNEL_LIST_ACTOR_TENANT_CREDENTIAL_PROJECTION_AND_AUTH_READ_FAILURE_FULL_APP_ACCEPTED",
+          "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+          "sourceTree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+          "newFunctionalCases": 1,
+          "newTapCases": 1,
+          "newGroup": false,
+          "targetedTap": 93,
+          "fullAppTap": 62,
+          "targetRun": 40806066352,
+          "targetJob": 123225197561,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "broaderRun": 40806066688,
+          "broaderJob": 123225474233,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "applicationFilesChanged": 1,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -3779,7 +3857,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -4360,7 +4438,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
+      "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET/PATCH /api/merchant/regional: reconcile secure session mount, currency/context field projection, legitimate currency-update guards and existing regional PostgreSQL/HTTP proof and callers before selecting any missing cell. Reuse accepted channel full-app case and router-only disconnect proof; do not repeat them. No new gate, policy adoption, provider/hosted access, merge or deployment.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -5015,6 +5093,32 @@
       "applicationChanged": false,
       "parentGateClosed": false,
       "newGate": false,
+      "userActionRequiredNow": false
+    },
+    "currentChannelListFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListFullApp]",
+      "status": "BOUNDED_CURRENT_CHANNEL_LIST_ACTOR_TENANT_CREDENTIAL_PROJECTION_AND_AUTH_READ_FAILURE_FULL_APP_ACCEPTED",
+      "source": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+      "sourceTree": "bcec6462088f9872a76a75b643d4e96892b646c0",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 93,
+      "fullAppTap": 62,
+      "targetRun": 40806066352,
+      "targetJob": 123225197561,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40806066688,
+      "broaderJob": 123225474233,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
       "userActionRequiredNow": false
     }
   }
