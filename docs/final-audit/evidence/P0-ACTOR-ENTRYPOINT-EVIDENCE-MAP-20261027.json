@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Consolidate MATRIX-C02 against the current43 distinct authentication method/path keys and existing18-route admin ledger: mark the accepted incomplete-cutover, admin/self-session, merchant-session/password-recovery, owner-recovery and device-OTP ownership subconditions with their original proof layers, then identify the finite remaining public-auth/fallback actor/field conditions from existing source/tests before any new test. Do not automatically add cookie tamper, SQL fault, OTP redesign or duplicate pairing; no policy, new gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -43190,6 +43190,661 @@
           "attempt": 1,
           "retries": 0
         }
+      },
+      {
+        "boundary": "currentAuthFiniteConditionConsolidation",
+        "date": "2026-10-29",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02",
+        "status": "CURRENT_AUTH_43_KEY_PROOF_LAYERS_RECONCILED_THREE_FINITE_FOLLOWUP_CONDITIONS",
+        "sourceReviewed": "af32ae1a887da5d641ae6726aef19349525058dc",
+        "acceptedExecutable": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+        "reviewComplete": true,
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "sha": "173c5c0a96c273d04bc0977ec9eb667b6fd6e0dd"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-security.ts",
+            "sha": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-public-routes.ts",
+            "sha": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-session-routes.ts",
+            "sha": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts",
+            "sha": "f330455d224194cd12401b31752b1b1929f69e9e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-admin-routes.ts",
+            "sha": "f246443540cebae8266b9aa7dd0d7fe8c3942958"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+            "sha": "14f545ca14ab14f409714a7aae06a36bc4d649e1"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts",
+            "sha": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37"
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authCutoverCompatibility.ts",
+            "sha": "e81efa86b6c2874727e796a8adbdbc9747de7cf2"
+          },
+          {
+            "path": "artifacts/api-server/tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs",
+            "sha": "d092b464736cb2b298b3075589225c8408614801"
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-password-recovery-postgres.integration.test.ts",
+            "sha": "261066699c4fe767b29389ca9e6c14c5e07c3fcb"
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-session-restricted-http-postgres.integration.test.mjs",
+            "sha": "06d1618b883fca6f77dc4707b08ca28f2751acca"
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-session.integration.test.mjs",
+            "sha": "422a8b6919a3597b908d0a50fbaffeba5f1aca1b"
+          },
+          {
+            "path": "artifacts/api-server/tests/global-merchant-postgres-http-journey.integration.test.ts",
+            "sha": "fcb8599be27018d19c66f8ce530133e5073faa9e"
+          },
+          {
+            "path": "artifacts/api-server/tests/global-merchant-golden-journey.integration.test.mjs",
+            "sha": "9121b873002494059980bce3eeb2f6a590c32456"
+          },
+          {
+            "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+            "sha": "0c9076cbf71178a729a2264cc24e67d3c08f2a78"
+          },
+          {
+            "path": "artifacts/api-server/tests/auth-cutover-contract.test.mjs",
+            "sha": "5fc76bb138346a9bfcb5b04377568154741001e7"
+          },
+          {
+            "path": "artifacts/api-server/tests/auth-cutover-path-case.test.ts",
+            "sha": "af6dd8a3e0312ae8bc98dfc1396cede9e65ea25d"
+          }
+        ],
+        "counts": {
+          "registrationRows": 60,
+          "sourceFiles": 7,
+          "distinctMethodPathKeys": 43,
+          "groups": 7,
+          "followupConditions": 3,
+          "countsAreAcceptanceDenominator": false
+        },
+        "routeCells": [
+          {
+            "method": "POST",
+            "path": "/signup",
+            "registrations": [
+              "auth-public-routes.ts"
+            ],
+            "group": "merchantPublic",
+            "proofLayer": "FULL_APP_BOOTSTRAP_THREE_PATHS_PLUS_AGGREGATE_PASSWORD_RECOVERY_THREE_PATHS_RESEND_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/otp/resend",
+            "registrations": [
+              "auth-public-routes.ts"
+            ],
+            "group": "merchantPublic",
+            "proofLayer": "FULL_APP_BOOTSTRAP_THREE_PATHS_PLUS_AGGREGATE_PASSWORD_RECOVERY_THREE_PATHS_RESEND_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/verify-otp",
+            "registrations": [
+              "auth-public-routes.ts"
+            ],
+            "group": "merchantPublic",
+            "proofLayer": "FULL_APP_BOOTSTRAP_THREE_PATHS_PLUS_AGGREGATE_PASSWORD_RECOVERY_THREE_PATHS_RESEND_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/login",
+            "registrations": [
+              "auth-public-routes.ts"
+            ],
+            "group": "merchantPublic",
+            "proofLayer": "FULL_APP_BOOTSTRAP_THREE_PATHS_PLUS_AGGREGATE_PASSWORD_RECOVERY_THREE_PATHS_RESEND_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/login",
+            "registrations": [
+              "auth-public-routes.ts"
+            ],
+            "group": "adminLogin",
+            "proofLayer": "EXISTING_ADMIN_AGGREGATE_AND_INCOMPLETE_CUTOVER_FULL_APP",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/device-otp/resend",
+            "registrations": [
+              "auth-public-routes.ts",
+              "auth-admin-device-otp-pg-routes.ts"
+            ],
+            "group": "adminDeviceOtp",
+            "proofLayer": "ACCEPTED_AGGREGATE_LOOKUP_OWNERSHIP_AND_POSITIVE_LOGIN",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/device-otp/verify",
+            "registrations": [
+              "auth-public-routes.ts",
+              "auth-admin-device-otp-pg-routes.ts"
+            ],
+            "group": "adminDeviceOtp",
+            "proofLayer": "ACCEPTED_AGGREGATE_LOOKUP_OWNERSHIP_AND_POSITIVE_LOGIN",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/password-reset/request",
+            "registrations": [
+              "auth-public-routes.ts"
+            ],
+            "group": "merchantPublic",
+            "proofLayer": "FULL_APP_BOOTSTRAP_THREE_PATHS_PLUS_AGGREGATE_PASSWORD_RECOVERY_THREE_PATHS_RESEND_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/password-reset/verify",
+            "registrations": [
+              "auth-public-routes.ts"
+            ],
+            "group": "merchantPublic",
+            "proofLayer": "FULL_APP_BOOTSTRAP_THREE_PATHS_PLUS_AGGREGATE_PASSWORD_RECOVERY_THREE_PATHS_RESEND_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/password-reset/confirm",
+            "registrations": [
+              "auth-public-routes.ts"
+            ],
+            "group": "merchantPublic",
+            "proofLayer": "FULL_APP_BOOTSTRAP_THREE_PATHS_PLUS_AGGREGATE_PASSWORD_RECOVERY_THREE_PATHS_RESEND_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/logout",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "merchantSelf",
+            "proofLayer": "RESTRICTED_ROUTER_SESSION_PROOF_OTHER_SELF_PATHS_REQUIRE_CURRENT_LAYER_RECONCILIATION",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/logout",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "adminSelf",
+            "proofLayer": "REUSE_EXISTING_FULL_APP_ADMIN_LEDGER_AND_AGGREGATE",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/logout-all",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "merchantSelf",
+            "proofLayer": "RESTRICTED_ROUTER_SESSION_PROOF_OTHER_SELF_PATHS_REQUIRE_CURRENT_LAYER_RECONCILIATION",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/logout-all",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "adminSelf",
+            "proofLayer": "REUSE_EXISTING_FULL_APP_ADMIN_LEDGER_AND_AGGREGATE",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/sessions",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "merchantSelf",
+            "proofLayer": "RESTRICTED_ROUTER_SESSION_PROOF_OTHER_SELF_PATHS_REQUIRE_CURRENT_LAYER_RECONCILIATION",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/admin/sessions",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "adminSelf",
+            "proofLayer": "REUSE_EXISTING_FULL_APP_ADMIN_LEDGER_AND_AGGREGATE",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "DELETE",
+            "path": "/sessions/:sessionId",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "merchantSelf",
+            "proofLayer": "RESTRICTED_ROUTER_SESSION_PROOF_OTHER_SELF_PATHS_REQUIRE_CURRENT_LAYER_RECONCILIATION",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "DELETE",
+            "path": "/admin/sessions/:sessionId",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "adminSelf",
+            "proofLayer": "REUSE_EXISTING_FULL_APP_ADMIN_LEDGER_AND_AGGREGATE",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/change-password",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "merchantSelf",
+            "proofLayer": "RESTRICTED_ROUTER_SESSION_PROOF_OTHER_SELF_PATHS_REQUIRE_CURRENT_LAYER_RECONCILIATION",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/change-password",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "adminSelf",
+            "proofLayer": "REUSE_EXISTING_FULL_APP_ADMIN_LEDGER_AND_AGGREGATE",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/lifecycle",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "merchantSelf",
+            "proofLayer": "RESTRICTED_ROUTER_SESSION_PROOF_OTHER_SELF_PATHS_REQUIRE_CURRENT_LAYER_RECONCILIATION",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/me",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "merchantSelf",
+            "proofLayer": "RESTRICTED_ROUTER_SESSION_PROOF_OTHER_SELF_PATHS_REQUIRE_CURRENT_LAYER_RECONCILIATION",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/admin/me",
+            "registrations": [
+              "auth-session-routes.ts"
+            ],
+            "group": "adminSelf",
+            "proofLayer": "REUSE_EXISTING_FULL_APP_ADMIN_LEDGER_AND_AGGREGATE",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/admins",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admins",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "PATCH",
+            "path": "/admins/:adminId/enabled",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "PATCH",
+            "path": "/admins/:adminId/permissions",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admins/:adminId/logout-all",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "PATCH",
+            "path": "/admins/:adminId/password",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/admins/:adminId/work-monitor",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admins/:adminId/devices/:deviceRecordId/trust",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admins/:adminId/devices/:deviceRecordId/revoke",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admins/:adminId/sessions/:sessionId/revoke",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admins/:adminId/sessions/revoke-all",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/admin/devices",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/devices/:deviceRecordId/trust",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/devices/:deviceRecordId/revoke",
+            "registrations": [
+              "auth-admin-postgres-routes.ts",
+              "auth-admin-routes.ts"
+            ],
+            "group": "adminManagement",
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "GET",
+            "path": "/admin/owner-recovery/status",
+            "registrations": [
+              "auth-owner-recovery-postgres-routes.ts"
+            ],
+            "group": "ownerRecovery",
+            "proofLayer": "FIVE_AGGREGATE_JOURNEY_PATHS_AND_STAGE_REFUSAL_STATUS_PROJECTION_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/admin/owner-recovery/generate",
+            "registrations": [
+              "auth-owner-recovery-postgres-routes.ts",
+              "auth-security.ts"
+            ],
+            "group": "ownerRecovery",
+            "proofLayer": "FIVE_AGGREGATE_JOURNEY_PATHS_AND_STAGE_REFUSAL_STATUS_PROJECTION_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/owner-recovery/:recoveryId/start",
+            "registrations": [
+              "auth-owner-recovery-postgres-routes.ts"
+            ],
+            "group": "ownerRecovery",
+            "proofLayer": "FIVE_AGGREGATE_JOURNEY_PATHS_AND_STAGE_REFUSAL_STATUS_PROJECTION_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/owner-recovery/:recoveryId/otp/request",
+            "registrations": [
+              "auth-owner-recovery-postgres-routes.ts"
+            ],
+            "group": "ownerRecovery",
+            "proofLayer": "FIVE_AGGREGATE_JOURNEY_PATHS_AND_STAGE_REFUSAL_STATUS_PROJECTION_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/owner-recovery/:recoveryId/otp/verify",
+            "registrations": [
+              "auth-owner-recovery-postgres-routes.ts"
+            ],
+            "group": "ownerRecovery",
+            "proofLayer": "FIVE_AGGREGATE_JOURNEY_PATHS_AND_STAGE_REFUSAL_STATUS_PROJECTION_PENDING",
+            "wholeRouteAccepted": false
+          },
+          {
+            "method": "POST",
+            "path": "/owner-recovery/:recoveryId/complete",
+            "registrations": [
+              "auth-owner-recovery-postgres-routes.ts"
+            ],
+            "group": "ownerRecovery",
+            "proofLayer": "FIVE_AGGREGATE_JOURNEY_PATHS_AND_STAGE_REFUSAL_STATUS_PROJECTION_PENDING",
+            "wholeRouteAccepted": false
+          }
+        ],
+        "groups": [
+          {
+            "id": "merchantPublic",
+            "keys": 7,
+            "proofLayer": "FULL_APP_BOOTSTRAP_THREE_PATHS_PLUS_AGGREGATE_PASSWORD_RECOVERY_THREE_PATHS_RESEND_PENDING"
+          },
+          {
+            "id": "adminLogin",
+            "keys": 1,
+            "proofLayer": "EXISTING_ADMIN_AGGREGATE_AND_INCOMPLETE_CUTOVER_FULL_APP"
+          },
+          {
+            "id": "adminDeviceOtp",
+            "keys": 2,
+            "proofLayer": "ACCEPTED_AGGREGATE_LOOKUP_OWNERSHIP_AND_POSITIVE_LOGIN"
+          },
+          {
+            "id": "ownerRecovery",
+            "keys": 6,
+            "proofLayer": "FIVE_AGGREGATE_JOURNEY_PATHS_AND_STAGE_REFUSAL_STATUS_PROJECTION_PENDING"
+          },
+          {
+            "id": "merchantSelf",
+            "keys": 7,
+            "proofLayer": "RESTRICTED_ROUTER_SESSION_PROOF_OTHER_SELF_PATHS_REQUIRE_CURRENT_LAYER_RECONCILIATION"
+          },
+          {
+            "id": "adminSelf",
+            "keys": 6,
+            "proofLayer": "REUSE_EXISTING_FULL_APP_ADMIN_LEDGER_AND_AGGREGATE"
+          },
+          {
+            "id": "adminManagement",
+            "keys": 14,
+            "proofLayer": "REUSE_FOURTEEN_PG_KEYS_AND_MATCHING_FALLBACK_REGISTRATIONS_EXISTING_ADMIN_LEDGER"
+          }
+        ],
+        "sourceInterpretation": [
+          "Actual app mounts auth-security before compatibility bridge. The bridge is for later legacy business handlers, not a replacement public signup authority.",
+          "Fourteen PostgreSQL admin registrations precede fourteen matching fallback registrations. Two PG device OTP registrations precede public-route duplicates. Owner generate has a password middleware registration plus its handler.",
+          "Legacy helper registerDevice exists in auth-public-routes fallback but is not the effective required-mode PG device handler; accepted PG ownership proof retained.",
+          "Current /lifecycle intentionally validates session/account/version before reporting account lifecycle. Do not impose active-business access policy on this endpoint without tracing purpose.",
+          "Original merchant-session integration owns a temporary JSON merchant fixture and is not automatically canonical PostgreSQL HTTP acceptance."
+        ],
+        "reusedCurrentRuntime": {
+          "source": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+          "run": 40945748482,
+          "job": 123700516351,
+          "bootstrapTap": 1,
+          "merchantRecoveryAggregateTap": 1,
+          "merchantRestrictedSessionTap": 5,
+          "adminAggregateTap": 1,
+          "authCutoverContractTap": 11,
+          "authenticationOperatorTap": 63,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "allCiSuccess": 58,
+          "newExecution": false
+        },
+        "acceptedBoundaryReferences": [
+          "currentAdminSelfSessions",
+          "ownerDelegatedSessionAndGlobalAdminDevice",
+          "adminAccountProjectionAndOwnerPasswordReset",
+          "activeAdminPermissionChange",
+          "currentAdminIncompleteCutoverFullApp",
+          "currentOwnerRecoveryCanonicalAggregateRuntime",
+          "currentOwnerRecoveryStageRefusalAggregateRuntime",
+          "currentAdminDeviceOtpOwnershipAggregateRuntime"
+        ],
+        "followupConditions": [
+          {
+            "id": "MATRIX-C02-R1",
+            "kind": "EXISTING_RUNTIME_CONDITION_GAP",
+            "routes": [
+              "POST /otp/resend"
+            ],
+            "condition": "Current actual-app resend eligibility and non-issuance for ineligible/already verified signup accounts; reuse valid bootstrap journey.",
+            "selectedNext": true
+          },
+          {
+            "id": "MATRIX-C02-R2",
+            "kind": "PROOF_LAYER_RECONCILIATION",
+            "routes": [
+              "GET /me",
+              "GET /lifecycle",
+              "POST /change-password",
+              "POST /logout"
+            ],
+            "condition": "Bind current canonical PG self identity/lifecycle/password/logout assertions to original evidence. Existing restricted-session proof covers session listing/revocation/logout-all; old JSON-fixture journey must retain its original layer.",
+            "automaticNewTest": false
+          },
+          {
+            "id": "MATRIX-C02-R3",
+            "kind": "OWNER_STATUS_PROJECTION_RECONCILIATION",
+            "routes": [
+              "GET /admin/owner-recovery/status"
+            ],
+            "condition": "Bind legitimate status field projection and wrong-actor rejection to existing evidence; owner recovery journey covers five other paths and incomplete-cutover probe503 is not legitimate status acceptance.",
+            "automaticNewTest": false
+          }
+        ],
+        "limits": [
+          "Three followups are conditions within existing gate, not three new release gates or exhaustive test permutations.",
+          "Route key/source counts are reconciliation metadata, not whole-route or full P0 acceptance.",
+          "Bounded search of named source/test proofs does not assert no historical evidence elsewhere.",
+          "No new code, runtime test, CI run, policy or gate closure."
+        ],
+        "applicationChanged": false,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "parentGateClosed": false,
+        "newGate": false,
+        "nextExactAction": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -46040,9 +46695,9 @@
           "groups": [
             "currentAuthAdmin"
           ],
-          "status": "PARTIAL_DEVICE_OTP_OWNERSHIP_AGGREGATE_ACCEPTED_RECONCILE_FINITE_PUBLIC_AUTH_REMAINDER",
+          "status": "PARTIAL_43_AUTH_KEYS_RECONCILED_THREE_CONDITIONS_REMAIN",
           "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
-          "next": "Consolidate MATRIX-C02 against the current43 distinct authentication method/path keys and existing18-route admin ledger: mark the accepted incomplete-cutover, admin/self-session, merchant-session/password-recovery, owner-recovery and device-OTP ownership subconditions with their original proof layers, then identify the finite remaining public-auth/fallback actor/field conditions from existing source/tests before any new test. Do not automatically add cookie tamper, SQL fault, OTP redesign or duplicate pairing; no policy, new gate, hosted/provider, merge or deployment.",
+          "next": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment.",
           "newGate": false,
           "initialStatus": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
           "acceptedBoundedProof": {
@@ -46176,7 +46831,57 @@
             "newGate": false,
             "policyAdopted": false,
             "userActionRequiredNow": false
-          }
+          },
+          "finiteConditionReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAuthFiniteConditionConsolidation]",
+            "status": "CURRENT_AUTH_43_KEY_PROOF_LAYERS_RECONCILED_THREE_FINITE_FOLLOWUP_CONDITIONS",
+            "sourceReviewed": "af32ae1a887da5d641ae6726aef19349525058dc",
+            "acceptedExecutable": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+            "reviewComplete": true,
+            "sourcePins": 18,
+            "registrationRows": 60,
+            "distinctMethodPathKeys": 43,
+            "groups": 7,
+            "followupConditions": 3,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "applicationChanged": false,
+            "parentGateClosed": false,
+            "newGate": false,
+            "userActionRequiredNow": false
+          },
+          "remainingConditions": [
+            {
+              "id": "MATRIX-C02-R1",
+              "kind": "EXISTING_RUNTIME_CONDITION_GAP",
+              "routes": [
+                "POST /otp/resend"
+              ],
+              "condition": "Current actual-app resend eligibility and non-issuance for ineligible/already verified signup accounts; reuse valid bootstrap journey.",
+              "selectedNext": true
+            },
+            {
+              "id": "MATRIX-C02-R2",
+              "kind": "PROOF_LAYER_RECONCILIATION",
+              "routes": [
+                "GET /me",
+                "GET /lifecycle",
+                "POST /change-password",
+                "POST /logout"
+              ],
+              "condition": "Bind current canonical PG self identity/lifecycle/password/logout assertions to original evidence. Existing restricted-session proof covers session listing/revocation/logout-all; old JSON-fixture journey must retain its original layer.",
+              "automaticNewTest": false
+            },
+            {
+              "id": "MATRIX-C02-R3",
+              "kind": "OWNER_STATUS_PROJECTION_RECONCILIATION",
+              "routes": [
+                "GET /admin/owner-recovery/status"
+              ],
+              "condition": "Bind legitimate status field projection and wrong-actor rejection to existing evidence; owner recovery journey covers five other paths and incomplete-cutover probe503 is not legitimate status acceptance.",
+              "automaticNewTest": false
+            }
+          ]
         },
         {
           "id": "MATRIX-C03",
@@ -46386,7 +47091,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Consolidate MATRIX-C02 against the current43 distinct authentication method/path keys and existing18-route admin ledger: mark the accepted incomplete-cutover, admin/self-session, merchant-session/password-recovery, owner-recovery and device-OTP ownership subconditions with their original proof layers, then identify the finite remaining public-auth/fallback actor/field conditions from existing source/tests before any new test. Do not automatically add cookie tamper, SQL fault, OTP redesign or duplicate pairing; no policy, new gate, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "Within MATRIX-C02-R1, extend the existing actual-app global-merchant-auth-bootstrap-postgres integration journey only for the unproved /otp/resend state condition. First trace signup/password_reset eligibility and resend invalidation/delivery modes; assert ineligible/verified-account requests do not issue challenges or sessions and preserve the legitimate signup/OTP/login path. Reuse existing recovery and device proofs; do not redesign OTP, add pairing authority or silently adopt enumeration/retention/recovery policy. R2/R3 remain reconciliation items, not automatic tests. No hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -46609,6 +47314,24 @@
       "layer": "AGGREGATE_AUTH_SECURITY_ROUTER_EXISTING_DISPOSABLE_RUNTIME_FIXTURES_SYNTHETIC_DEV_OTP",
       "tap": 1,
       "newTapCases": 0
+    },
+    "currentAuthFiniteConditionReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAuthFiniteConditionConsolidation]",
+      "status": "CURRENT_AUTH_43_KEY_PROOF_LAYERS_RECONCILED_THREE_FINITE_FOLLOWUP_CONDITIONS",
+      "sourceReviewed": "af32ae1a887da5d641ae6726aef19349525058dc",
+      "acceptedExecutable": "0ed828e142401fd578d4ac4fbe32fa71d79b1ee1",
+      "reviewComplete": true,
+      "sourcePins": 18,
+      "registrationRows": 60,
+      "distinctMethodPathKeys": 43,
+      "groups": 7,
+      "followupConditions": 3,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": false
     }
   },
   "componentScopes": {
