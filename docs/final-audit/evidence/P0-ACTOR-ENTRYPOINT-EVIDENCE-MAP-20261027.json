@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current catalog promotion write family POST /api/catalog/promotions, PATCH/DELETE /api/catalog/promotions/:promotionId: reconcile actual secure compatibility/session and existing mutation-Origin ordering, path/body tenant targeting, idempotency/expected-version/financial target guards and accepted service/HTTP evidence before selecting missing cells. Reuse accepted context/list/catalog/media proofs; no automatic product policy, global auth redesign, new gate/count, hosted/provider action, merge or deployment.",
+    "nextExactAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX, add one bounded case to the current management full-app PostgreSQL test for catalog promotion POST/PATCH/DELETE, reusing actors and accepted read/DTO proofs. First observe valid-cookie explicit-foreign-Origin writes against exact current source with full-row owned/peer promotion snapshots; only fix a confirmed gap with existing enforceAuthOrigin after merchant guard. Cover allowlisted/omitted-Origin legitimate create/replay/conflict, update/stale-version, delete/stale/foreign ID, explicit tenant overrides, owned target/foreign target and real SQL mutation rollback/recovery. Preserve source failure and exact-commit targeted/broader CI before acceptance. No discount-pricing/concurrency/all-effects certification, new policy/gate, hosted, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -41734,6 +41734,127 @@
           "finalSourceRetries": 0,
           "localSyntax": "node --check upload-full-app-candidate.mjs PASS"
         }
+      },
+      {
+        "boundary": "currentCatalogPromotionWriteEvidenceReconciliation",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "status": "CURRENT_CATALOG_PROMOTION_WRITE_AUTHORITY_AND_EXISTING_EVIDENCE_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
+        "sourceReviewed": "bc03e03288bafed3604e583a7305a1fbd21c31a3",
+        "acceptedExecutable": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth.ts",
+            "gitBlobSha": "61958ff03a7412661783c9e0210b94ba00ae10cb",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authSession.ts",
+            "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresCommercePromotionAuthority.ts",
+            "gitBlobSha": "780b3fddc5b600e34161795622d6c072e954abc3",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/commercePromotionRuntime.ts",
+            "gitBlobSha": "f566d6b72d9df32a40e53bf1872689aa30100db0",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/catalog-variant-promotion-survival-postgres.integration.test.ts",
+            "gitBlobSha": "51e6b7cbb6a382b7af275b9812b5f84ca09c0af4",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/global-merchant-postgres-http-journey.integration.test.ts",
+            "gitBlobSha": "fcb8599be27018d19c66f8ce530133e5073faa9e",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/fawri/src/lib/catalogPromotionUiApi.ts",
+            "gitBlobSha": "3ab929ef2fda66822905291b806691439f146200",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+            "gitBlobSha": "370d94ec9933fe863c825a607f8d6722b928cc6e",
+            "remoteBlobRead": true
+          },
+          {
+            "path": "artifacts/fawri/tests/catalog-promotion-ui.test.ts",
+            "gitBlobSha": "0fa92c942e95198f2864cdd05550053a12b02262",
+            "remoteBlobRead": true
+          },
+          {
+            "path": "artifacts/fawri/tests/merchant-dashboard-products-promotions-authority.test.mjs",
+            "gitBlobSha": "7126b5f07988707a4398d8b0db67f00e55bda9c0",
+            "remoteBlobRead": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authCutoverCompatibility.ts",
+            "gitBlobSha": "e81efa86b6c2874727e796a8adbdbc9747de7cf2",
+            "remoteBlobRead": true
+          }
+        ],
+        "reviewComplete": true,
+        "applicationChanged": false,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "unmetClosureCondition": "Current actor/privacy/mutation entrypoint matrix lacks named actual-app POST/PATCH/DELETE promotion evidence. Existing service survival, UI fake-fetch/source-contract and accepted promotion GET evidence do not establish mutation middleware, tenant/path/version or rollback behavior.",
+        "sourceReconciliation": {
+          "authority": "Global secure v2 compatibility bridge validates account sessions, rejects mixed cookies and discards supplied legacy merchant cookie; transitional route guard consumes server-derived merchant context. Auth Origin mount is /api/auth; catalog router is mounted at /api. Bridge itself has no Origin check. Existing CORS callback is response permission, not a mutation rejection guarantee.",
+          "origin": "All three promotion mutations have requireMerchantSession but no enforceAuthOrigin; upload alone in this router already has it. This is a source gap candidate, not newly executed HTTP reproduction or browser-CSRF claim.",
+          "tenant": "Route rejects differing nonempty body merchant_id at root/product/promotion selected by nullish precedence, not query. Service input explicitly forbids own merchant_id/currency_code/schedule_timezone/starts_at/ends_at properties including same merchant_id. Do not assume every override shape returns403: nested same-tenant authority override returns400; DELETE does not normalize promotion body.",
+          "idempotency": "POST chooses header Idempotency-Key or root body fallback; service text normalization and min8; merchant+NUL+key determines hash-based ID. Normalized create input hash stored in metadata; same ID/hash replays200 with Idempotent-Replay:true, changed input409. Initial create201.",
+          "version": "PATCH reads expected_version only from root body, merges partial promotion with existing rule and increments version. DELETE uses body expected_version or query fallback; matching merchant/id/version DELETE returning id; absent own row404, own stale version409. Both require positive safe integer. Merchant row locked FOR UPDATE in all mutations; not new concurrency proof.",
+          "target": "catalog_item target product must be own merchant and not deleted; optional variant must be same merchant/product/id. Enabled overlapping same target/scope/priority checked against own locked rows. Currency and local-time normalization derive from merchant; rule validator handles effect/scope/amount/schedule. No approval of all combinations.",
+          "consumer": "UI sends credentials include, JSON nested promotion, stable create key, PATCH root expected_version, DELETE query expected_version. Explicit undefined values serialize null to clear targeting. Existing client tests use fake fetch and are not real endpoint proof."
+        },
+        "evidenceReuse": [
+          {
+            "path": "artifacts/api-server/tests/catalog-variant-promotion-survival-postgres.integration.test.ts",
+            "kind": "service PostgreSQL",
+            "proves": "create percentage variant promotion and preserve its identity/version through ordinary catalog rebuild",
+            "doesNotProve": "HTTP mutation guards, PATCH/DELETE promotion or all pricing behavior"
+          },
+          {
+            "path": "artifacts/fawri/tests/catalog-promotion-ui.test.ts",
+            "kind": "fake-fetch/client unit",
+            "proves": "money conversion and POST/PATCH payload serialization",
+            "doesNotProve": "database or actual app authentication"
+          },
+          {
+            "path": "artifacts/fawri/tests/merchant-dashboard-products-promotions-authority.test.mjs",
+            "kind": "source-contract",
+            "proves": "UI stale authority controls source assertions",
+            "doesNotProve": "HTTP runtime"
+          },
+          {
+            "boundary": "currentCatalogContextPromotionReadFullApp",
+            "kind": "accepted bounded full-app GET",
+            "source": "4dbc428834d152a618c753a253476122dca7f43a",
+            "proves": "context/list DTO, actors, tenant, SELECT fault/recovery",
+            "doesNotProve": "POST/PATCH/DELETE; fixture created through service"
+          }
+        ],
+        "limits": [
+          "No application/test/schema/grant change or new runtime/CI evidence in this review.",
+          "Reviewed current catalog-specific test candidates and accepted map; not proof of absence of every dynamically constructed endpoint in the repository.",
+          "P0 inventory remains incomplete; 45known/29CLOSED_SOURCE/7OPEN/9BLOCKED; NO-GO."
+        ],
+        "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX, add one bounded case to the current management full-app PostgreSQL test for catalog promotion POST/PATCH/DELETE, reusing actors and accepted read/DTO proofs. First observe valid-cookie explicit-foreign-Origin writes against exact current source with full-row owned/peer promotion snapshots; only fix a confirmed gap with existing enforceAuthOrigin after merchant guard. Cover allowlisted/omitted-Origin legitimate create/replay/conflict, update/stale-version, delete/stale/foreign ID, explicit tenant overrides, owned target/foreign target and real SQL mutation rollback/recovery. Preserve source failure and exact-commit targeted/broader CI before acceptance. No discount-pricing/concurrency/all-effects certification, new policy/gate, hosted, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -42555,6 +42676,20 @@
       "gitBlob": "8b91cdbec4c5e36772c7616635b74aea099b5722",
       "catalogueRegenerated": false,
       "interpretation": "Historical catalogue hashes/counts remain historical. Media image actual-app overlay adds1case after original65TAP; two owned local media prefixes, exact bytes/headers, actor/tenant denial, missing/corrupt/real filesystem read error/provider-unavailable and recovery. Existing ownership-before-product-attachment and private cache behavior retained; no app change, browser/hosted/upload/policy/full-inventory acceptance."
+    },
+    "currentCatalogPromotionWriteSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogPromotionWriteEvidenceReconciliation]",
+      "status": "CURRENT_CATALOG_PROMOTION_WRITE_AUTHORITY_AND_EXISTING_EVIDENCE_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
+      "sourceReviewed": "bc03e03288bafed3604e583a7305a1fbd21c31a3",
+      "acceptedExecutable": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
+      "reviewComplete": true,
+      "expandedPins": 12,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": false
     }
   },
   "componentScopes": {
