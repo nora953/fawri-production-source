@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits.",
+      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -509,6 +509,25 @@
         "newGate": false,
         "parentGateClosed": false,
         "policyAdopted": false,
+        "userActionRequiredNow": false
+      },
+      "currentConversationReadSourceReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentConversationListEvidenceReconciliation]",
+        "status": "CURRENT_CONVERSATION_READ_SOURCE_AND_ACCEPTED_HTTP_PROOFS_RECONCILED_METADATA_PROVENANCE_POLICY_OPEN",
+        "sourceReviewed": "d66b9480f592a4efd95b299f5b01b61ab2afb308",
+        "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+        "reviewComplete": true,
+        "expandedPins": 17,
+        "newFunctionalCases": 0,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "reusedConversationLaneTap": 23,
+        "reusedConsumerFileTap": 9,
+        "reusedAcceptedSourceCiSuccess": 58,
+        "applicationChanged": false,
+        "metadataPolicyAdopted": false,
+        "parentGateClosed": false,
+        "newGate": false,
         "userActionRequiredNow": false
       }
     },
@@ -2411,7 +2430,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits.",
+      "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -2899,7 +2918,7 @@
     }
   ],
   "previousFullyAcceptedSource": "7ca048ba15ab891b6417405fd56fddca64230854",
-  "lastUpdatedAt": "2026-10-28",
+  "lastUpdatedAt": "2026-10-29",
   "closurePlan": {
     "schemaVersion": 1,
     "date": "2026-10-27",
@@ -2932,8 +2951,8 @@
         "order": 1,
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
-        "completedPrerequisite": "Optional order decision/rejection/reconciliation read cells reconciled with existing11TAP domain payment proof and actual UI consumer. One new full-app case reuses2merchants/6orders, verifies exact linked merchant decision/list-detail/peer scope, suppression of admin/import/unlinked provenance, resolved fields and actual decision-table SELECT denial/recovery. Original60TAP retained; full-app61, management92, broader836/97invocations/94files, all58exact-source CI pass. First42P08 fixture typing failure/correction preserved, no weakened assertion/application/schema/production grant change or parent closure.",
-        "nextNamedReview": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits.",
+        "completedPrerequisite": "Current conversations2registrations/8literal references reconciled against actual direct secure-session router/SQL projection/UI and existing full-app/router proofs.17pins unchanged; source b26b4c7 and checkout tree match, latest accepted CI58green. Reused conversation23TAP and consumer9TAP within notification85; no new code/tests/runtime/CI or parent closure. Metadata producer/provenance policy remains open; do not repeat accepted route/session/metadata fixtures or invent a projection allowlist.",
+        "nextNamedReview": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
         "latestAcceptedBoundary": {
           "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOrderOptionalPaymentReadFields]",
           "status": "BOUNDED_CURRENT_OPTIONAL_ORDER_PAYMENT_READ_FIELDS_FULL_APP_ACCEPTED",
@@ -2961,26 +2980,22 @@
           "userActionRequiredNow": false
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
-        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
         "latestSourceReview": {
-          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
-          "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
-          "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
-          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
-          "sourceFilesVerified": 954,
-          "metadataJsonVerified": 54,
-          "candidateFiles": 17,
-          "newLocalPlannerProbes": 1,
-          "newSqlOrHttpRuntime": 0,
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentConversationListEvidenceReconciliation]",
+          "status": "CURRENT_CONVERSATION_READ_SOURCE_AND_ACCEPTED_HTTP_PROOFS_RECONCILED_METADATA_PROVENANCE_POLICY_OPEN",
+          "sourceReviewed": "d66b9480f592a4efd95b299f5b01b61ab2afb308",
+          "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+          "reviewComplete": true,
+          "expandedPins": 17,
+          "newFunctionalCases": 0,
+          "newRuntimeTests": 0,
           "newCiRuns": 0,
-          "observedPlanOk": false,
-          "observedWriteReady": false,
-          "missingColumns": [
-            "customer_external_id",
-            "awaiting_field",
-            "expires_at"
-          ],
+          "reusedConversationLaneTap": 23,
+          "reusedConsumerFileTap": 9,
+          "reusedAcceptedSourceCiSuccess": 58,
           "applicationChanged": false,
+          "metadataPolicyAdopted": false,
           "parentGateClosed": false,
           "newGate": false,
           "userActionRequiredNow": false
@@ -3197,6 +3212,29 @@
           "parentGateClosed": false,
           "policyAdopted": false,
           "userActionRequiredNow": false
+        },
+        "previousSourceReviewBeforeConversations20261029": {
+          "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+          "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+          "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+          "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+          "sourceFilesVerified": 954,
+          "metadataJsonVerified": 54,
+          "candidateFiles": 17,
+          "newLocalPlannerProbes": 1,
+          "newSqlOrHttpRuntime": 0,
+          "newCiRuns": 0,
+          "observedPlanOk": false,
+          "observedWriteReady": false,
+          "missingColumns": [
+            "customer_external_id",
+            "awaiting_field",
+            "expires_at"
+          ],
+          "applicationChanged": false,
+          "parentGateClosed": false,
+          "newGate": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -3220,7 +3258,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits."
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits."
       },
       {
         "order": 4,
@@ -3246,7 +3284,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -3604,6 +3642,25 @@
           "parentGateClosed": false,
           "policyAdopted": false,
           "userActionRequiredNow": false
+        },
+        "currentConversationReadSourceReview": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentConversationListEvidenceReconciliation]",
+          "status": "CURRENT_CONVERSATION_READ_SOURCE_AND_ACCEPTED_HTTP_PROOFS_RECONCILED_METADATA_PROVENANCE_POLICY_OPEN",
+          "sourceReviewed": "d66b9480f592a4efd95b299f5b01b61ab2afb308",
+          "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+          "reviewComplete": true,
+          "expandedPins": 17,
+          "newFunctionalCases": 0,
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "reusedConversationLaneTap": 23,
+          "reusedConsumerFileTap": 9,
+          "reusedAcceptedSourceCiSuccess": 58,
+          "applicationChanged": false,
+          "metadataPolicyAdopted": false,
+          "parentGateClosed": false,
+          "newGate": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -3658,7 +3715,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits.",
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -4239,7 +4296,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits.",
+      "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -4530,6 +4587,25 @@
         "parentGateClosed": false,
         "policyAdopted": false,
         "userActionRequiredNow": false
+      },
+      "currentConversationReadSourceReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentConversationListEvidenceReconciliation]",
+        "status": "CURRENT_CONVERSATION_READ_SOURCE_AND_ACCEPTED_HTTP_PROOFS_RECONCILED_METADATA_PROVENANCE_POLICY_OPEN",
+        "sourceReviewed": "d66b9480f592a4efd95b299f5b01b61ab2afb308",
+        "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+        "reviewComplete": true,
+        "expandedPins": 17,
+        "newFunctionalCases": 0,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "reusedConversationLaneTap": 23,
+        "reusedConsumerFileTap": 9,
+        "reusedAcceptedSourceCiSuccess": 58,
+        "applicationChanged": false,
+        "metadataPolicyAdopted": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": false
       }
     },
     "field002PolicyReconciliation20261028": {
@@ -4806,6 +4882,25 @@
       "newGate": false,
       "parentGateClosed": false,
       "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentConversationReadSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentConversationListEvidenceReconciliation]",
+      "status": "CURRENT_CONVERSATION_READ_SOURCE_AND_ACCEPTED_HTTP_PROOFS_RECONCILED_METADATA_PROVENANCE_POLICY_OPEN",
+      "sourceReviewed": "d66b9480f592a4efd95b299f5b01b61ab2afb308",
+      "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+      "reviewComplete": true,
+      "expandedPins": 17,
+      "newFunctionalCases": 0,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "reusedConversationLaneTap": 23,
+      "reusedConsumerFileTap": 9,
+      "reusedAcceptedSourceCiSuccess": 58,
+      "applicationChanged": false,
+      "metadataPolicyAdopted": false,
+      "parentGateClosed": false,
+      "newGate": false,
       "userActionRequiredNow": false
     }
   }

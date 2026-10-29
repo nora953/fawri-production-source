@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/conversations: reconcile the2catalogue registrations and8existing test-reference files with actual mount precedence, merchant scope, customer/message/handoff field projection and accepted SQL/HTTP assertions before selecting any missing runtime cell. Reuse accepted order-list and optional payment field boundaries; no automatic endpoint test, new gate, policy adoption, hosted action, merge or deployment. Preserve FIELD002/003/004/005 and SEQ-R2 limits.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -39746,6 +39746,333 @@
             }
           ]
         }
+      },
+      {
+        "boundary": "currentConversationListEvidenceReconciliation",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "sourceReviewed": "d66b9480f592a4efd95b299f5b01b61ab2afb308",
+        "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+        "acceptedExecutableTree": "9e6a0323f2348d874e73416157d08a983e9046f2",
+        "status": "CURRENT_CONVERSATION_READ_SOURCE_AND_ACCEPTED_HTTP_PROOFS_RECONCILED_METADATA_PROVENANCE_POLICY_OPEN",
+        "sourceReconciliationComplete": true,
+        "newRuntimeAcceptanceClaimed": false,
+        "existingRuntimeProofsReused": true,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 0,
+        "newFunctionalCases": 0,
+        "newTapCases": 0,
+        "newCiRuns": 0,
+        "newLocalRuntimeTests": 0,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "acceptanceCondition": "Reconcile2GET /api/conversations registrations and8literal-reference files against actual secure current SQL projection, UI reader and accepted runtime assertions. Reuse already accepted list/detail/session/handoff/metadata evidence; do not fabricate a missing test merely from catalogue status or close arbitrary metadata/PII policy.",
+        "sourceVerification": {
+          "expandedPins": [
+            {
+              "path": "artifacts/api-server/src/app.ts",
+              "sha": "d0b72e95a4957252e3dbe94b64056572f56018c2"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/conversation-operations.ts",
+              "sha": "38b54a24b735c0c7b0e2df66f86e624beed6156d"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+              "sha": "96edbe04ad56360e8fa53c9f66df71c0add5464d"
+            },
+            {
+              "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+              "sha": "97ce5223f61ae36011ec3889256215e23e16a28e"
+            },
+            {
+              "path": "artifacts/api-server/src/middleware/authSession.ts",
+              "sha": "da07602cf12dc9b80091eac77bf869d88255cc46"
+            },
+            {
+              "path": "artifacts/api-server/src/middleware/authCutoverCompatibility.ts",
+              "sha": "e81efa86b6c2874727e796a8adbdbc9747de7cf2"
+            },
+            {
+              "path": "artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs",
+              "sha": "ec2522b2fa2309c3dfe6433ab9ecc9bf9c22227d"
+            },
+            {
+              "path": "artifacts/api-server/tests/manual-conversation-privacy-http-postgres.integration.test.mjs",
+              "sha": "455bca3b70bf016884e2050818876dc426174287"
+            },
+            {
+              "path": "artifacts/api-server/tests/conversation-correction-approval-http-postgres.integration.test.mjs",
+              "sha": "6f41bb1cd155e5cc1cd879e041426d1d0a9c8fd3"
+            },
+            {
+              "path": "artifacts/api-server/tests/global-merchant-golden-journey.integration.test.mjs",
+              "sha": "9121b873002494059980bce3eeb2f6a590c32456"
+            },
+            {
+              "path": "artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs",
+              "sha": "2113133ced4c7a3b6da441b0775d581e6ae42d73"
+            },
+            {
+              "path": "artifacts/api-server/tests/merchant-session.integration.test.mjs",
+              "sha": "422a8b6919a3597b908d0a50fbaffeba5f1aca1b"
+            },
+            {
+              "path": "artifacts/api-server/tests/merchant-status-access.integration.test.mjs",
+              "sha": "2863539698c0ae0af9ddeb1564fee7bbbd24e97a"
+            },
+            {
+              "path": "artifacts/api-server/tests/auth-policy.test.ts",
+              "sha": "63cb05311585ba0fb677f523f193c8937156b902"
+            },
+            {
+              "path": "artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx",
+              "sha": "67f4b711e57c5a3b826127f97c6cc5584cce8de6"
+            },
+            {
+              "path": "artifacts/fawri/src/lib/types.ts",
+              "sha": "1577a7e6351fd6d4dc9c27bccd138c56693aa128"
+            },
+            {
+              "path": "artifacts/fawri/src/lib/conversationSavedAnswer.ts",
+              "sha": "ff7a5b9db3b3db3a3c708523e072bc10a36924cc"
+            }
+          ],
+          "expandedPinCount": 17,
+          "mismatches": 0,
+          "acceptedExecutableUnchanged": true,
+          "currentVsAcceptedOnly6AuditDocsDiffer": true,
+          "checkoutTreeMatched": true,
+          "all58ExistingAcceptedSourceCiSuccess": true,
+          "catalogueRegenerated": false
+        },
+        "mountAndAuthority": {
+          "current": "app.ts mounts /api conversationOperationsRouter before final legacy /api router. Current list/detail handlers send success/error without next; legacy in-memory registration is not a separate accepted production read authority.",
+          "session": "Current router imports middleware/authSession requireMerchantSession directly. Current SQL merchant profile/device/session authority controls access, after shared cutover. Tenant identity is server res.locals; foreign query merchant_id is ignored; explicit foreign path aliases403 and foreign detail404.",
+          "sql": "withMerchantOperationalTransaction; conversation WHERE c.merchant_id=$1 and optional c.id=$2; channel JOIN binds ch.id and merchant_id; messages WHERE merchant_id=$1 AND conversation_id=$2. A defensive conversation.merchant_id comparison fails503 on mismatch. No request-internal table joined into read DTO.",
+          "legacy": "Non-required service fallback and final JSON/in-memory router traced as compatibility authority only; no new legacy/hosted acceptance."
+        },
+        "fieldContract": {
+          "listRoot": [
+            "ok",
+            "merchant_id",
+            "count",
+            "conversations"
+          ],
+          "conversation": [
+            "id",
+            "merchant_id",
+            "platform",
+            "page_id?",
+            "customer_name",
+            "customer_handle",
+            "status",
+            "assigned_to_human",
+            "needs_training",
+            "updated_at",
+            "messages"
+          ],
+          "message": [
+            "id",
+            "external_message_id?",
+            "conversation_id",
+            "sender",
+            "text",
+            "created_at",
+            "counted_as_auto_reply",
+            "reply_type?",
+            "status?",
+            "metadata?"
+          ],
+          "conditionalSourceRules": [
+            "customer_handle falls back to customer_external_id; customer_name defaults empty.",
+            "system sender maps to fawri; reply_type system omitted; queued status omitted; object non-array metadata forwarded intact.",
+            "Timestamp helper uses ISO or current-time fallback; historical malformed values are not accepted by this review."
+          ],
+          "privateRequestFieldsExcluded": [
+            "manual_reply_requests.id",
+            "idempotency_key",
+            "text_sha256",
+            "page_access_token",
+            "pageAccessToken"
+          ],
+          "metadataLimit": "Forwarding object metadata is actual current behavior. Accepted image/correction/learning fixture preservation is not an allowlist or arbitrary PII/provenance-policy approval."
+        },
+        "referenceReconciliation": [
+          {
+            "path": "artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs",
+            "layer": "ACTUAL_FULL_APP_RESTRICTED_PRIMARY_SEPARATE_AUTH",
+            "scope": "Own list/detail/case/trailing aliases and exact mixed-case identities; foreign query hints ignored; own customer and exact image metadata; anonymous/admin/wrong-device/combined-role denial; foreign list/detail/mutation denial; takeover/return peer preservation; revoked session denied.8functional cases/9TAP whole file include notification/debug work, not9conversation cases."
+          },
+          {
+            "path": "artifacts/api-server/tests/manual-conversation-privacy-http-postgres.integration.test.mjs",
+            "layer": "ACTUAL_ROUTER_RESTRICTED_PRIMARY_SEPARATE_AUTH",
+            "scope": "List/path/detail own/foreign bounds; no request internals; pending/uncertain return blocking and failed/sent recovery;6populated customer/fawri/merchant image/correction/learning metadata fixtures,5metadata cases; exact metadata retained, cross-correction denied, dismissal replay and revoked-session denial.15functional cases/16TAP."
+          },
+          {
+            "path": "artifacts/api-server/tests/conversation-correction-approval-http-postgres.integration.test.mjs",
+            "layer": "ACTUAL_ROUTER_RESTRICTED_SQL",
+            "scope": "Successful correction approval/create/update isolation, replay/conflict and message-review-write failure recovery;6functional cases/7TAP. Mutation /conversations/... reference is not another GET list assertion."
+          },
+          {
+            "path": "artifacts/api-server/tests/global-merchant-golden-journey.integration.test.mjs",
+            "layer": "EXISTING_REQUIRED_SQL_JOURNEY",
+            "scope": "Secure dashboard empty list read; not populated field proof."
+          },
+          {
+            "path": "artifacts/api-server/tests/auth-policy.test.ts",
+            "layer": "STATIC_POLICY_UNIT",
+            "scope": "Pending operational path decisions, not HTTP projection."
+          },
+          {
+            "paths": [
+              "artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs",
+              "artifacts/api-server/tests/merchant-session.integration.test.mjs",
+              "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
+            ],
+            "layer": "JSON_SEEDED_COMPATIBILITY_HTTP_FIXTURES",
+            "scope": "Existing compatibility/session/status/manual operations assertions; not equated with current required-PG full-app proof.",
+            "newExecutionClaimed": false
+          }
+        ],
+        "reusedEvidence": {
+          "conversationLane": {
+            "run": 40719123225,
+            "job": 122925660214,
+            "checkout": "ced45deb8ad2e894bad71b497910fe05639f8021",
+            "rows": [
+              {
+                "suite": "manual-conversation-privacy-http-postgres.integration.test.mjs",
+                "auditBatch": "conversation-privacy-http",
+                "runtime": "v24.22.1",
+                "exit": 0,
+                "passed": 16,
+                "failed": 0,
+                "skipped": 0,
+                "cancelled": 0,
+                "summaryComplete": true
+              },
+              {
+                "suite": "conversation-correction-approval-http-postgres.integration.test.mjs",
+                "auditBatch": "conversation-privacy-http",
+                "runtime": "v24.22.1",
+                "exit": 0,
+                "passed": 7,
+                "failed": 0,
+                "skipped": 0,
+                "cancelled": 0,
+                "summaryComplete": true
+              }
+            ],
+            "markers": [
+              "2026-10-28T15:48:49.5003566Z # P0_CONVERSATION_PRIVACY_HTTP {\"syntheticMerchants\":2,\"actualRouter\":true,\"restrictedSqlSessions\":true,\"foreignDenials\":12,\"populatedMetadataFixtures\":6,\"populatedMetadataCases\":5,\"authorizedCorrectionDismissReplay\":true,\"foreignCorrectionDenials\":4,\"pendingAndUncertainReturnDenied\":true,\"failedAndSentReturnAccepted\":true,\"deliveredHttpReplay\":true,\"privateRequestProjectionAbsent\":true,\"revokedSessionDenied\":true,\"providerSendExecuted\":false,\"wholeAppAccepted\":false,\"fullEightTableMatrix\":false,\"hostedAccepted\":false}"
+            ],
+            "tree": "9e6a0323f2348d874e73416157d08a983e9046f2",
+            "treeMatched": true,
+            "totalTap": 23,
+            "files": 2
+          },
+          "consumerWithinNotificationLane": {
+            "run": 40719124178,
+            "job": 122925229875,
+            "checkout": "ced45deb8ad2e894bad71b497910fe05639f8021",
+            "rows": [
+              {
+                "suite": "meta-job-identity-postgres.integration.test.mjs",
+                "auditBatch": "notification-privacy-http",
+                "runtime": "v24.22.1",
+                "exit": 0,
+                "passed": 31,
+                "failed": 0,
+                "skipped": 0,
+                "cancelled": 0,
+                "summaryComplete": true
+              },
+              {
+                "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+                "auditBatch": "notification-privacy-http",
+                "runtime": "v24.22.1",
+                "exit": 0,
+                "passed": 5,
+                "failed": 0,
+                "skipped": 0,
+                "cancelled": 0,
+                "summaryComplete": true
+              },
+              {
+                "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+                "auditBatch": "notification-privacy-http",
+                "runtime": "v24.22.1",
+                "exit": 0,
+                "passed": 27,
+                "failed": 0,
+                "skipped": 0,
+                "cancelled": 0,
+                "summaryComplete": true
+              },
+              {
+                "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+                "auditBatch": "notification-privacy-http",
+                "runtime": "v24.22.1",
+                "exit": 0,
+                "passed": 6,
+                "failed": 0,
+                "skipped": 0,
+                "cancelled": 0,
+                "summaryComplete": true
+              },
+              {
+                "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+                "auditBatch": "notification-privacy-http",
+                "runtime": "v24.22.1",
+                "exit": 0,
+                "passed": 9,
+                "failed": 0,
+                "skipped": 0,
+                "cancelled": 0,
+                "summaryComplete": true
+              },
+              {
+                "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+                "auditBatch": "notification-privacy-http",
+                "runtime": "v24.22.1",
+                "exit": 0,
+                "passed": 7,
+                "failed": 0,
+                "skipped": 0,
+                "cancelled": 0,
+                "summaryComplete": true
+              }
+            ],
+            "markers": [
+              "2026-10-28T15:47:32.1231341Z # P0_CONSUMER_FULL_APP_HTTP {\"actualApp\":true,\"syntheticMerchants\":2,\"restrictedPrimaryLogin\":true,\"separateAuthenticationLogin\":true,\"notificationsAndConversationAliases\":true,\"mixedCaseIdentities\":true,\"foreignFieldsDenied\":true,\"requestInternalsAbsent\":true,\"ownerAndSessionConfusionDenied\":true,\"ownMutationsPeerPreserved\":true,\"legacyRootJson\":false,\"providerSending\":false,\"fullEightTableMatrix\":false,\"hostedAccepted\":false}"
+            ],
+            "tree": "9e6a0323f2348d874e73416157d08a983e9046f2",
+            "treeMatched": true,
+            "totalLaneTap": 85,
+            "files": 6,
+            "relevantConsumerFileTap": 9
+          },
+          "interpretation": "These are already completed2026-10-28 runs on unchanged accepted source, read again2026-10-29; no new execution, new tests, grand unique TAP sum or new gate closure."
+        },
+        "priorEvidence": [
+          "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+          "evidence/P0-CONVERSATION-METADATA-HTTP-20261024.json",
+          "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json"
+        ],
+        "consumer": {
+          "path": "artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx",
+          "scope": "Fetches /api/conversations with same-origin credentials/no-store; checks ok+array then consumes Conversation DTO, customer/text/status/human state and correction_review status; saved-answer helper consumes message context. Source trace only, no new browser/visual test."
+        },
+        "remainingLimits": [
+          "Actual producer provenance for all message metadata keys and arbitrary metadata/PII projection policy remain open. Do not drop existing correction/media/learning data by inference.",
+          "No new generic read-SQL-fault, malformed timestamp/conditional mapper branch, browser, real provider/media producer, live send, hosted ACL or scale acceptance.",
+          "Router23 and full-app consumer9 have distinct scopes and overlap broader lanes; never present them as new cases or all unique conversation proofs.",
+          "Full actor/field/P0 inventory and parent gate remain open. Known45statuses29/7/9,completeP0Inventory=false,overallPercentage=null,releaseNO-GO unchanged; other FIELD/SEQ-R2 decisions retained."
+        ],
+        "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with messages.metadata provenance: reconcile actual current SQL/Meta/manual/correction/media/learning producer keys and first-party ConversationsPage/helper readers against existing accepted metadata fixtures and recorded policy limits before proposing any projection restriction or selecting a missing runtime cell. Preserve currently supported correction/media/learning data; no automatic metadata allowlist, new endpoint/test, gate/count growth, hosted action, merge or deployment. FIELD002/003/004/005 and SEQ-R2 remain unapproved/open at their recorded limits."
       }
     ],
     "currentTestOverlay": {
@@ -40302,6 +40629,25 @@
       "gitBlob": "ff51de920e265956bed07436b02b1cbf7eb2a89c",
       "catalogueRegenerated": false,
       "interpretation": "Historical catalogue counts and source/test hashes remain historical references. Current manual order-list overlay adds only1functional case and extends existing SQL read-fault case. Earlier settings/report proofs retained; no blanket route/field acceptance."
+    },
+    "currentConversationReadSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentConversationListEvidenceReconciliation]",
+      "status": "CURRENT_CONVERSATION_READ_SOURCE_AND_ACCEPTED_HTTP_PROOFS_RECONCILED_METADATA_PROVENANCE_POLICY_OPEN",
+      "sourceReviewed": "d66b9480f592a4efd95b299f5b01b61ab2afb308",
+      "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+      "reviewComplete": true,
+      "expandedPins": 17,
+      "newFunctionalCases": 0,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "reusedConversationLaneTap": 23,
+      "reusedConsumerFileTap": 9,
+      "reusedAcceptedSourceCiSuccess": 58,
+      "applicationChanged": false,
+      "metadataPolicyAdopted": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": false
     }
   },
   "componentScopes": {
