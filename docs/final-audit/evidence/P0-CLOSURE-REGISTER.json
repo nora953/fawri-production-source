@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+      "nextAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -798,6 +798,25 @@
         "newGate": false,
         "parentGateClosed": false,
         "policyAdopted": false,
+        "userActionRequiredNow": false
+      },
+      "actorRouteEvidenceConsolidation20261029": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.actorRouteEvidenceConsolidation20261029",
+        "status": "CURRENT_ROUTE_FAMILY_AND_BOUNDED_PROOF_LEDGER_RECONCILED_FINITE_CONDITION_QUEUE_NOT_COMPLETE_ACCEPTANCE",
+        "sourceReviewed": "4db70d73b69dfcfa901ebd3e483215309a4abc75",
+        "acceptedExecutable": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+        "reviewComplete": true,
+        "sourcePins": 9,
+        "registeredRows": 362,
+        "sourceFiles": 54,
+        "groups": 16,
+        "explicitLinkedMethodPathKeys": 48,
+        "workItems": 8,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
         "userActionRequiredNow": false
       }
     },
@@ -2700,7 +2719,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+      "nextAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -3222,7 +3241,7 @@
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
         "completedPrerequisite": "POST catalog image source/client/parser reconciled with6matched pins. One actual-full-app case after66TAP reproduced foreign-Origin201 plus1physical file; existing guard applied after merchant auth and before raw parser in2application lines. Final403/no files, allowed/omitted-Origin own/peer upload, exact asset/file/preview, MIME/empty/JSON/oversize denials, provider and real filesystem write error/recovery/session-revoke pass: target98/full-app67, broader836, all58CI. No schema/production grants/ownership policies or parent/count change. Next reconcile promotion write family source/evidence.",
-        "nextNamedReview": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+        "nextNamedReview": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
         "latestAcceptedBoundary": {
           "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogProductInventoryWriteFullApp]",
           "status": "BOUNDED_CURRENT_CATALOG_PRODUCT_INVENTORY_WRITES_ORIGIN_ACTOR_TENANT_REPLAY_VERSION_AND_SQL_ROLLBACK_FULL_APP_ACCEPTED",
@@ -3250,15 +3269,19 @@
           "userActionRequiredNow": false
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
-        "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+        "nextAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
         "latestSourceReview": {
-          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadEvidenceReconciliation]",
-          "status": "CURRENT_CATALOG_READ_AUTHORITY_AND_FIELD_MAP_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
-          "sourceReviewed": "87def2555bcb6fca77f456954f0a03e331eccf19",
-          "acceptedExecutable": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.actorRouteEvidenceConsolidation20261029",
+          "status": "CURRENT_ROUTE_FAMILY_AND_BOUNDED_PROOF_LEDGER_RECONCILED_FINITE_CONDITION_QUEUE_NOT_COMPLETE_ACCEPTANCE",
+          "sourceReviewed": "4db70d73b69dfcfa901ebd3e483215309a4abc75",
+          "acceptedExecutable": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
           "reviewComplete": true,
-          "expandedPins": 16,
-          "newFunctionalCases": 0,
+          "sourcePins": 9,
+          "registeredRows": 362,
+          "sourceFiles": 54,
+          "groups": 16,
+          "explicitLinkedMethodPathKeys": 48,
+          "workItems": 8,
           "newRuntimeTests": 0,
           "newCiRuns": 0,
           "applicationChanged": false,
@@ -3729,6 +3752,25 @@
           "parentGateClosed": false,
           "policyAdopted": false,
           "userActionRequiredNow": false
+        },
+        "actorRouteEvidenceConsolidation20261029": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.actorRouteEvidenceConsolidation20261029",
+          "status": "CURRENT_ROUTE_FAMILY_AND_BOUNDED_PROOF_LEDGER_RECONCILED_FINITE_CONDITION_QUEUE_NOT_COMPLETE_ACCEPTANCE",
+          "sourceReviewed": "4db70d73b69dfcfa901ebd3e483215309a4abc75",
+          "acceptedExecutable": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+          "reviewComplete": true,
+          "sourcePins": 9,
+          "registeredRows": 362,
+          "sourceFiles": 54,
+          "groups": 16,
+          "explicitLinkedMethodPathKeys": 48,
+          "workItems": 8,
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "parentGateClosed": false,
+          "newGate": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -3752,7 +3794,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment."
+        "nextAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment."
       },
       {
         "order": 4,
@@ -3778,7 +3820,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+        "nextAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -4382,6 +4424,25 @@
           "parentGateClosed": false,
           "policyAdopted": false,
           "userActionRequiredNow": false
+        },
+        "actorRouteEvidenceConsolidation20261029": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.actorRouteEvidenceConsolidation20261029",
+          "status": "CURRENT_ROUTE_FAMILY_AND_BOUNDED_PROOF_LEDGER_RECONCILED_FINITE_CONDITION_QUEUE_NOT_COMPLETE_ACCEPTANCE",
+          "sourceReviewed": "4db70d73b69dfcfa901ebd3e483215309a4abc75",
+          "acceptedExecutable": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+          "reviewComplete": true,
+          "sourcePins": 9,
+          "registeredRows": 362,
+          "sourceFiles": 54,
+          "groups": 16,
+          "explicitLinkedMethodPathKeys": 48,
+          "workItems": 8,
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "parentGateClosed": false,
+          "newGate": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -4436,7 +4497,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+        "nextAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -5017,7 +5078,7 @@
       "auditToolChanged": true,
       "localValidation": "Syntax + full pinned before/after generation and route/reference invariants PASS",
       "newRuntime": false,
-      "nextExactAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+      "nextExactAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
       "adminSelfSessionHttpProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminSelfSessions]",
         "status": "BOUNDED_CURRENT_ADMIN_SELF_SESSION_FULL_APP_HTTP_SQL_ACCEPTED",
@@ -5397,6 +5458,25 @@
         "parentGateClosed": false,
         "policyAdopted": false,
         "userActionRequiredNow": false
+      },
+      "actorRouteEvidenceConsolidation20261029": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.actorRouteEvidenceConsolidation20261029",
+        "status": "CURRENT_ROUTE_FAMILY_AND_BOUNDED_PROOF_LEDGER_RECONCILED_FINITE_CONDITION_QUEUE_NOT_COMPLETE_ACCEPTANCE",
+        "sourceReviewed": "4db70d73b69dfcfa901ebd3e483215309a4abc75",
+        "acceptedExecutable": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+        "reviewComplete": true,
+        "sourcePins": 9,
+        "registeredRows": 362,
+        "sourceFiles": 54,
+        "groups": 16,
+        "explicitLinkedMethodPathKeys": 48,
+        "workItems": 8,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": false
       }
     },
     "field002PolicyReconciliation20261028": {
@@ -5713,12 +5793,17 @@
       "userActionRequiredNow": false
     },
     "latestSourceReview": {
-      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogPromotionWriteEvidenceReconciliation]",
-      "status": "CURRENT_CATALOG_PROMOTION_WRITE_AUTHORITY_AND_EXISTING_EVIDENCE_RECONCILED_BOUNDED_FULL_APP_CELL_SELECTED",
-      "sourceReviewed": "bc03e03288bafed3604e583a7305a1fbd21c31a3",
-      "acceptedExecutable": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.actorRouteEvidenceConsolidation20261029",
+      "status": "CURRENT_ROUTE_FAMILY_AND_BOUNDED_PROOF_LEDGER_RECONCILED_FINITE_CONDITION_QUEUE_NOT_COMPLETE_ACCEPTANCE",
+      "sourceReviewed": "4db70d73b69dfcfa901ebd3e483215309a4abc75",
+      "acceptedExecutable": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
       "reviewComplete": true,
-      "expandedPins": 12,
+      "sourcePins": 9,
+      "registeredRows": 362,
+      "sourceFiles": 54,
+      "groups": 16,
+      "explicitLinkedMethodPathKeys": 48,
+      "workItems": 8,
       "newRuntimeTests": 0,
       "newCiRuns": 0,
       "applicationChanged": false,
@@ -5947,6 +6032,25 @@
       "newGate": false,
       "parentGateClosed": false,
       "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "actorRouteEvidenceConsolidation20261029": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.actorRouteEvidenceConsolidation20261029",
+      "status": "CURRENT_ROUTE_FAMILY_AND_BOUNDED_PROOF_LEDGER_RECONCILED_FINITE_CONDITION_QUEUE_NOT_COMPLETE_ACCEPTANCE",
+      "sourceReviewed": "4db70d73b69dfcfa901ebd3e483215309a4abc75",
+      "acceptedExecutable": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+      "reviewComplete": true,
+      "sourcePins": 9,
+      "registeredRows": 362,
+      "sourceFiles": 54,
+      "groups": 16,
+      "explicitLinkedMethodPathKeys": 48,
+      "workItems": 8,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
       "userActionRequiredNow": false
     }
   }

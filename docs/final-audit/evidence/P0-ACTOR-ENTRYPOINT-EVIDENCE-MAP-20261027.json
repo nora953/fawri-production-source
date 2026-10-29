@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Within existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX reconcile the accumulated named boundary proofs/current overlays to the historical actor-entrypoint route ledger before adding another test. Classify existing effective-route families and actor/field/failure conditions as bounded accepted, partially proved, source-only or policy/hosted blocked, reusing accepted catalog/media/promotion, settings/regional, order/conversation, admin/support/emergency and cashier proofs. Save a finite named remainder queue with exact unmet closure conditions; historical route counts are not a complete P0 denominator, and a source row does not demand a new runtime case. No policy adoption, new gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -43234,6 +43234,1967 @@
       "parentGateClosed": false,
       "policyAdopted": false,
       "userActionRequiredNow": false
+    },
+    "actorRouteEvidenceConsolidation20261029": {
+      "schemaVersion": 1,
+      "date": "2026-10-29",
+      "sourceReviewed": "4db70d73b69dfcfa901ebd3e483215309a4abc75",
+      "acceptedExecutable": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+      "status": "CURRENT_ROUTE_FAMILY_AND_BOUNDED_PROOF_LEDGER_RECONCILED_FINITE_CONDITION_QUEUE_NOT_COMPLETE_ACCEPTANCE",
+      "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "reviewComplete": true,
+      "classificationIsRuntimeAcceptance": false,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "sourcePins": [
+        {
+          "path": "artifacts/api-server/src/app.ts",
+          "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+          "localBlobMatched": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-security.ts",
+          "gitBlobSha": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+          "localBlobMatched": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts",
+          "gitBlobSha": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "localBlobMatched": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-admin-routes.ts",
+          "gitBlobSha": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+          "localBlobMatched": true
+        },
+        {
+          "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+          "gitBlobSha": "5da7b9fd813d11b258b2270aa0353500f90e0283",
+          "localBlobMatched": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/knowledge-operations.ts",
+          "gitBlobSha": "1b655329d08ada28c531d0277338c4913d9fe137",
+          "localBlobMatched": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/index.ts",
+          "gitBlobSha": "a0d029e0c19bacd2fd15fb2048d2c03b7af9d723",
+          "localBlobMatched": true
+        },
+        {
+          "path": "artifacts/api-server/tests/merchant-session.integration.test.mjs",
+          "gitBlobSha": "422a8b6919a3597b908d0a50fbaffeba5f1aca1b",
+          "localBlobMatched": true
+        },
+        {
+          "path": "artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+          "gitBlobSha": "b453a43b9a6590fa55da629ae20e34e91a5802d4",
+          "localBlobMatched": true
+        }
+      ],
+      "counts": {
+        "historicalRegistrationRows": 362,
+        "historicalSourceFiles": 54,
+        "historicalDistinctMethodPaths": 236,
+        "reviewGroups": 16,
+        "explicitLinkedMethodPathKeys": 48,
+        "existingNamedBoundaryRecords": 27,
+        "currentRouteBlobDrifts": 4,
+        "workItems": 8,
+        "newReleaseGates": 0
+      },
+      "scope": "Finite classification of existing static catalogue and accumulated proof layers at this checkpoint. Family references identify reusable evidence, not per-route/actor/field acceptance. Unknown dynamic/background/consumer surface remains a named completeness condition, not hidden acceptance.",
+      "families": [
+        {
+          "file": "artifacts/api-server/src/app.ts",
+          "group": "observability",
+          "classification": "BOUNDED_RUNTIME_AND_SHARED_ROUTER_REMAINDER",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+          "currentBlob": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:mountedObservability"
+          ],
+          "limits": "Existing probes/metrics authorization retained; legacy /api/health registration is not automatically the same handler.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/observability/router.ts",
+          "group": "observability",
+          "classification": "BOUNDED_RUNTIME_AND_SHARED_ROUTER_REMAINDER",
+          "registrationRows": 3,
+          "distinctMethodPaths": 3,
+          "historicalBlob": "974716b7df074a6d59ab0ad42dd4d907b91df93e",
+          "currentBlob": "974716b7df074a6d59ab0ad42dd4d907b91df93e",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:mountedObservability"
+          ],
+          "limits": "Existing probes/metrics authorization retained; legacy /api/health registration is not automatically the same handler.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts",
+          "group": "currentAuthAdmin",
+          "classification": "PARTIAL_CURRENT_FULL_APP_AGGREGATE_AND_SOURCE",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37",
+          "currentBlob": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "manual:adminFamilyRouteLedger20261027",
+            "boundary:currentAdminSelfSessions",
+            "boundary:ownerDelegatedSessionAndGlobalAdminDevice",
+            "boundary:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary:activeAdminPermissionChange",
+            "test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "14 PG admin declarations precede14 matching compatibility declarations when required+admin-PG enabled. Incomplete cutover gate is separate; do not count overlap as28 independently supported admin methods. Public auth/recovery/OTP and other session cells need original assertion/authority review.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts",
+          "group": "currentAuthAdmin",
+          "classification": "PARTIAL_CURRENT_FULL_APP_AGGREGATE_AND_SOURCE",
+          "registrationRows": 14,
+          "distinctMethodPaths": 14,
+          "historicalBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "currentBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "manual:adminFamilyRouteLedger20261027",
+            "boundary:currentAdminSelfSessions",
+            "boundary:ownerDelegatedSessionAndGlobalAdminDevice",
+            "boundary:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary:activeAdminPermissionChange",
+            "test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "14 PG admin declarations precede14 matching compatibility declarations when required+admin-PG enabled. Incomplete cutover gate is separate; do not count overlap as28 independently supported admin methods. Public auth/recovery/OTP and other session cells need original assertion/authority review.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-admin-routes.ts",
+          "group": "currentAuthAdmin",
+          "classification": "PARTIAL_CURRENT_FULL_APP_AGGREGATE_AND_SOURCE",
+          "registrationRows": 14,
+          "distinctMethodPaths": 14,
+          "historicalBlob": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+          "currentBlob": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "manual:adminFamilyRouteLedger20261027",
+            "boundary:currentAdminSelfSessions",
+            "boundary:ownerDelegatedSessionAndGlobalAdminDevice",
+            "boundary:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary:activeAdminPermissionChange",
+            "test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "14 PG admin declarations precede14 matching compatibility declarations when required+admin-PG enabled. Incomplete cutover gate is separate; do not count overlap as28 independently supported admin methods. Public auth/recovery/OTP and other session cells need original assertion/authority review.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+          "group": "emergencyAndAudit",
+          "classification": "BOUNDED_RUNTIME_WITH_ALTERNATE_PROJECTION_POLICY_REMAINDER",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "e5387972b31ef272418158e8b1be52bc81dd6b75",
+          "currentBlob": "e5387972b31ef272418158e8b1be52bc81dd6b75",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+            "evidence:docs/final-audit/evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+            "manual:field003CurrentUseReview20261028"
+          ],
+          "limits": "PG emergency routes precede required-mode blocked legacy mounts. Preserve owner-only internal authority and existing merchant notice projection; cross-consumer metadata policy remains open.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts",
+          "group": "emergencyAndAudit",
+          "classification": "BOUNDED_RUNTIME_WITH_ALTERNATE_PROJECTION_POLICY_REMAINDER",
+          "registrationRows": 11,
+          "distinctMethodPaths": 11,
+          "historicalBlob": "b4b51261b6eda63d4ca03f81491c609bb7883171",
+          "currentBlob": "b4b51261b6eda63d4ca03f81491c609bb7883171",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+            "evidence:docs/final-audit/evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+            "manual:field003CurrentUseReview20261028"
+          ],
+          "limits": "PG emergency routes precede required-mode blocked legacy mounts. Preserve owner-only internal authority and existing merchant notice projection; cross-consumer metadata policy remains open.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "group": "merchantManagement",
+          "classification": "BOUNDED_RUNTIME_WITH_FIELD_POLICY_REMAINDER",
+          "registrationRows": 13,
+          "distinctMethodPaths": 13,
+          "historicalBlob": "cd6c904610ed95206d309f52efa11a96b744012e",
+          "currentBlob": "cd6c904610ed95206d309f52efa11a96b744012e",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "evidence:docs/final-audit/evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-OWNER-IMPORT-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-OWNER-DELETION-HTTP-20261024.json",
+            "boundary:paidMerchantDeletionAndReceiptReplay",
+            "boundary:merchantDeletionProviderDerivedReplyIntent"
+          ],
+          "limits": "Source/HTTP/SQL/local media proofs retained. Full retention/repair/hosted policies not accepted by local purge or fake receipt replay.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+          "group": "currentAuthAdmin",
+          "classification": "PARTIAL_CURRENT_FULL_APP_AGGREGATE_AND_SOURCE",
+          "registrationRows": 6,
+          "distinctMethodPaths": 6,
+          "historicalBlob": "188eeaa89b4fdd4cdb8cae44ab0997da24bee572",
+          "currentBlob": "188eeaa89b4fdd4cdb8cae44ab0997da24bee572",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "manual:adminFamilyRouteLedger20261027",
+            "boundary:currentAdminSelfSessions",
+            "boundary:ownerDelegatedSessionAndGlobalAdminDevice",
+            "boundary:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary:activeAdminPermissionChange",
+            "test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "14 PG admin declarations precede14 matching compatibility declarations when required+admin-PG enabled. Incomplete cutover gate is separate; do not count overlap as28 independently supported admin methods. Public auth/recovery/OTP and other session cells need original assertion/authority review.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-provider-cost-postgres-routes.ts",
+          "group": "providerCostAndJobs",
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "registrationRows": 3,
+          "distinctMethodPaths": 3,
+          "historicalBlob": "d54287ef80755bd70765e72925d805c2b7398003",
+          "currentBlob": "d54287ef80755bd70765e72925d805c2b7398003",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:providerCostConfiguration",
+            "boundary:channelDurableJobAdmin"
+          ],
+          "limits": "Named owner/admin DTO/authorization/SQL-fault proofs exist. No automatic replay/provider production acceptance.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-public-routes.ts",
+          "group": "currentAuthAdmin",
+          "classification": "PARTIAL_CURRENT_FULL_APP_AGGREGATE_AND_SOURCE",
+          "registrationRows": 10,
+          "distinctMethodPaths": 10,
+          "historicalBlob": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+          "currentBlob": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "manual:adminFamilyRouteLedger20261027",
+            "boundary:currentAdminSelfSessions",
+            "boundary:ownerDelegatedSessionAndGlobalAdminDevice",
+            "boundary:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary:activeAdminPermissionChange",
+            "test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "14 PG admin declarations precede14 matching compatibility declarations when required+admin-PG enabled. Incomplete cutover gate is separate; do not count overlap as28 independently supported admin methods. Public auth/recovery/OTP and other session cells need original assertion/authority review.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-security.ts",
+          "group": "currentAuthAdmin",
+          "classification": "PARTIAL_CURRENT_FULL_APP_AGGREGATE_AND_SOURCE",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+          "currentBlob": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "manual:adminFamilyRouteLedger20261027",
+            "boundary:currentAdminSelfSessions",
+            "boundary:ownerDelegatedSessionAndGlobalAdminDevice",
+            "boundary:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary:activeAdminPermissionChange",
+            "test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "14 PG admin declarations precede14 matching compatibility declarations when required+admin-PG enabled. Incomplete cutover gate is separate; do not count overlap as28 independently supported admin methods. Public auth/recovery/OTP and other session cells need original assertion/authority review.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-session-routes.ts",
+          "group": "currentAuthAdmin",
+          "classification": "PARTIAL_CURRENT_FULL_APP_AGGREGATE_AND_SOURCE",
+          "registrationRows": 13,
+          "distinctMethodPaths": 13,
+          "historicalBlob": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+          "currentBlob": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "manual:adminFamilyRouteLedger20261027",
+            "boundary:currentAdminSelfSessions",
+            "boundary:ownerDelegatedSessionAndGlobalAdminDevice",
+            "boundary:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary:activeAdminPermissionChange",
+            "test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "14 PG admin declarations precede14 matching compatibility declarations when required+admin-PG enabled. Incomplete cutover gate is separate; do not count overlap as28 independently supported admin methods. Public auth/recovery/OTP and other session cells need original assertion/authority review.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-support-admin-lifecycle-postgres-routes.ts",
+          "group": "supportCurrentAndLegacy",
+          "classification": "BOUNDED_SQL_ROUTER_AND_REQUIRED_MODE_RETIREMENT_PARTIAL_FIELDS",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "a1806154af21c4b4436f76b0086de11293d9b050",
+          "currentBlob": "a1806154af21c4b4436f76b0086de11293d9b050",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+            "evidence:docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json"
+          ],
+          "limits": "Current PG interception and source legacy support fallback guards are distinct. Bounded five-table/native/image proofs do not establish all nested field/inspection actor cells.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-support-image-alias-postgres-routes.ts",
+          "group": "supportCurrentAndLegacy",
+          "classification": "BOUNDED_SQL_ROUTER_AND_REQUIRED_MODE_RETIREMENT_PARTIAL_FIELDS",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "b6a5df901b2a25b31c43e7d0f8e145baae587d6b",
+          "currentBlob": "b6a5df901b2a25b31c43e7d0f8e145baae587d6b",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+            "evidence:docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json"
+          ],
+          "limits": "Current PG interception and source legacy support fallback guards are distinct. Bounded five-table/native/image proofs do not establish all nested field/inspection actor cells.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-support-inspection-decision-postgres-routes.ts",
+          "group": "supportCurrentAndLegacy",
+          "classification": "BOUNDED_SQL_ROUTER_AND_REQUIRED_MODE_RETIREMENT_PARTIAL_FIELDS",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "53944a0016eb7ea29e13417641f30dd173457308",
+          "currentBlob": "53944a0016eb7ea29e13417641f30dd173457308",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+            "evidence:docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json"
+          ],
+          "limits": "Current PG interception and source legacy support fallback guards are distinct. Bounded five-table/native/image proofs do not establish all nested field/inspection actor cells.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-support-message-postgres-routes.ts",
+          "group": "supportCurrentAndLegacy",
+          "classification": "BOUNDED_SQL_ROUTER_AND_REQUIRED_MODE_RETIREMENT_PARTIAL_FIELDS",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "691335f4844f04129166f0fb3472879ce4f58234",
+          "currentBlob": "691335f4844f04129166f0fb3472879ce4f58234",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+            "evidence:docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json"
+          ],
+          "limits": "Current PG interception and source legacy support fallback guards are distinct. Bounded five-table/native/image proofs do not establish all nested field/inspection actor cells.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "group": "supportCurrentAndLegacy",
+          "classification": "BOUNDED_SQL_ROUTER_AND_REQUIRED_MODE_RETIREMENT_PARTIAL_FIELDS",
+          "registrationRows": 20,
+          "distinctMethodPaths": 20,
+          "historicalBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "currentBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+            "evidence:docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json"
+          ],
+          "limits": "Current PG interception and source legacy support fallback guards are distinct. Bounded five-table/native/image proofs do not establish all nested field/inspection actor cells.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts",
+          "group": "billingAndVerifiedReceipts",
+          "classification": "BOUNDED_FAKE_PROVIDER_SQL_HTTP_POLICY_HOSTED_REMAINDER",
+          "registrationRows": 3,
+          "distinctMethodPaths": 3,
+          "historicalBlob": "3e13c1291187dc254a1bbeee09dda6755f411e2d",
+          "currentBlob": "3e13c1291187dc254a1bbeee09dda6755f411e2d",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-BILLING-ORPHAN-RECEIPT",
+            "boundary:paidMerchantDeletionAndReceiptReplay",
+            "manual:field005BillingProviderReceiptProof20261028"
+          ],
+          "limits": "Fake provider/orphan/operator receipts retain original layers; arbitrary missing-order repair and real provider contracts remain policy/hosted dependencies.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+          "group": "legacyAuthFallback",
+          "classification": "SOURCE_RETIRED_REQUIRED_MODE_WITH_BOUNDED_RUNTIME_GUARD",
+          "registrationRows": 23,
+          "distinctMethodPaths": 23,
+          "historicalBlob": "9fb113d4938fb138e96f913cea367e7859048b5c",
+          "currentBlob": "9fb113d4938fb138e96f913cea367e7859048b5c",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:currentAdminSelfSessions",
+            "evidence:docs/final-audit/evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json"
+          ],
+          "limits": "Final required-mode /api/auth fallthrough retirement is case-normalized. These registrations are not a request to rebuild JSON auth.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+          "group": "legacyAuthFallback",
+          "classification": "SOURCE_RETIRED_REQUIRED_MODE_WITH_BOUNDED_RUNTIME_GUARD",
+          "registrationRows": 24,
+          "distinctMethodPaths": 24,
+          "historicalBlob": "39f8bc60d040674732b182c0333cf55227b6bf8b",
+          "currentBlob": "39f8bc60d040674732b182c0333cf55227b6bf8b",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:currentAdminSelfSessions",
+            "evidence:docs/final-audit/evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json"
+          ],
+          "limits": "Final required-mode /api/auth fallthrough retirement is case-normalized. These registrations are not a request to rebuild JSON auth.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+          "group": "legacyAuthFallback",
+          "classification": "SOURCE_RETIRED_REQUIRED_MODE_WITH_BOUNDED_RUNTIME_GUARD",
+          "registrationRows": 11,
+          "distinctMethodPaths": 11,
+          "historicalBlob": "9198cf27912b3071f7eab59f74ab40dbb50d1f01",
+          "currentBlob": "9198cf27912b3071f7eab59f74ab40dbb50d1f01",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:currentAdminSelfSessions",
+            "evidence:docs/final-audit/evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json"
+          ],
+          "limits": "Final required-mode /api/auth fallthrough retirement is case-normalized. These registrations are not a request to rebuild JSON auth.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/bot-training.ts",
+          "group": "knowledgeCurrentAndLegacy",
+          "classification": "PARTIAL_SOURCE_DOMAIN_RUNTIME_RETIREMENT_CASE_PREDICATE_UNPROVED",
+          "registrationRows": 5,
+          "distinctMethodPaths": 5,
+          "historicalBlob": "0811211beabba018181c711e54bb5647ebbc59f0",
+          "currentBlob": "0811211beabba018181c711e54bb5647ebbc59f0",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "test:artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+            "test:artifacts/api-server/tests/merchant-session.integration.test.mjs"
+          ],
+          "limits": "Current /api/knowledge guard and domain SQL cycle differ from old JSON endpoints. Canonical legacy retirement asserted; app.ts legacy knowledge predicate is case-sensitive while Express route matching is not. Alternate-case effective behavior unexecuted here; candidate, not confirmed runtime bypass.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts",
+          "group": "cashier",
+          "classification": "BOUNDED_NATIVE_SQL_ROUTER_PROOFS_PROTOCOL_POLICY_AND_DEVICE_REMAINDER",
+          "registrationRows": 4,
+          "distinctMethodPaths": 4,
+          "historicalBlob": "11f699c7af92a14aea653c6557287aa3ca5f324f",
+          "currentBlob": "11f699c7af92a14aea653c6557287aa3ca5f324f",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-CASHIER-IDENTITY-RLS",
+            "inventory:P0-ACCESS-APPROVAL-AUTHORITY",
+            "inventory:P0-ACCESS-PERMISSION-SESSION",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json"
+          ],
+          "limits": "Preserve native/HTTP/SQL proof layers and shared router mounts. Existing merchant pairing accepted in its scope. No duplicate OTP/owner approval; SEQ-R2, original provenance and physical/release acceptance remain separate existing gates.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+          "group": "cashier",
+          "classification": "BOUNDED_NATIVE_SQL_ROUTER_PROOFS_PROTOCOL_POLICY_AND_DEVICE_REMAINDER",
+          "registrationRows": 16,
+          "distinctMethodPaths": 8,
+          "historicalBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+          "currentBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-CASHIER-IDENTITY-RLS",
+            "inventory:P0-ACCESS-APPROVAL-AUTHORITY",
+            "inventory:P0-ACCESS-PERMISSION-SESSION",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json"
+          ],
+          "limits": "Preserve native/HTTP/SQL proof layers and shared router mounts. Existing merchant pairing accepted in its scope. No duplicate OTP/owner approval; SEQ-R2, original provenance and physical/release acceptance remain separate existing gates.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/cashier-staff-operations.ts",
+          "group": "cashier",
+          "classification": "BOUNDED_NATIVE_SQL_ROUTER_PROOFS_PROTOCOL_POLICY_AND_DEVICE_REMAINDER",
+          "registrationRows": 32,
+          "distinctMethodPaths": 16,
+          "historicalBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+          "currentBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-CASHIER-IDENTITY-RLS",
+            "inventory:P0-ACCESS-APPROVAL-AUTHORITY",
+            "inventory:P0-ACCESS-PERMISSION-SESSION",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json"
+          ],
+          "limits": "Preserve native/HTTP/SQL proof layers and shared router mounts. Existing merchant pairing accepted in its scope. No duplicate OTP/owner approval; SEQ-R2, original provenance and physical/release acceptance remain separate existing gates.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/cashier-subscription-operations.ts",
+          "group": "cashier",
+          "classification": "BOUNDED_NATIVE_SQL_ROUTER_PROOFS_PROTOCOL_POLICY_AND_DEVICE_REMAINDER",
+          "registrationRows": 10,
+          "distinctMethodPaths": 10,
+          "historicalBlob": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f",
+          "currentBlob": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-CASHIER-IDENTITY-RLS",
+            "inventory:P0-ACCESS-APPROVAL-AUTHORITY",
+            "inventory:P0-ACCESS-PERMISSION-SESSION",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json"
+          ],
+          "limits": "Preserve native/HTTP/SQL proof layers and shared router mounts. Existing merchant pairing accepted in its scope. No duplicate OTP/owner approval; SEQ-R2, original provenance and physical/release acceptance remain separate existing gates.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/cashier-sync-operations.ts",
+          "group": "cashier",
+          "classification": "BOUNDED_NATIVE_SQL_ROUTER_PROOFS_PROTOCOL_POLICY_AND_DEVICE_REMAINDER",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf",
+          "currentBlob": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-CASHIER-IDENTITY-RLS",
+            "inventory:P0-ACCESS-APPROVAL-AUTHORITY",
+            "inventory:P0-ACCESS-PERMISSION-SESSION",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json"
+          ],
+          "limits": "Preserve native/HTTP/SQL proof layers and shared router mounts. Existing merchant pairing accepted in its scope. No duplicate OTP/owner approval; SEQ-R2, original provenance and physical/release acceptance remain separate existing gates.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/catalog-operations.ts",
+          "group": "catalog",
+          "classification": "BOUNDED_NAMED_RUNTIME_ALL15_REGISTRATION_METHODS_LINKED",
+          "registrationRows": 15,
+          "distinctMethodPaths": 15,
+          "historicalBlob": "a96246c760be858132e43db49c1b2ff52776c879",
+          "currentBlob": "f9912a5218dc68a1482fae1695c32d096da78bc4",
+          "sourceDrift": true,
+          "evidenceRefs": [
+            "manual:currentCatalogFamilyRouteOverlay"
+          ],
+          "limits": "15 method/path registrations link to accepted bounded read/context/media/promotion/product-inventory proofs. Not all effects/fields/variants/archive/concurrency acceptance.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/channel-durable-job-admin.ts",
+          "group": "providerCostAndJobs",
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "c62f7e42d66b85265f85184678cd8222f02e4501",
+          "currentBlob": "c62f7e42d66b85265f85184678cd8222f02e4501",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:providerCostConfiguration",
+            "boundary:channelDurableJobAdmin"
+          ],
+          "limits": "Named owner/admin DTO/authorization/SQL-fault proofs exist. No automatic replay/provider production acceptance.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/channel-operations.ts",
+          "group": "merchantSettingsRegionalChannelsReports",
+          "classification": "BOUNDED_NAMED_RUNTIME_WITH_SIBLING_REMAINDER",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "fa466ea2bd55771ebf51f01abec4bd172086ccb2",
+          "currentBlob": "71d4d35550cedfdbb64fdba18f40b17362c42fe0",
+          "sourceDrift": true,
+          "evidenceRefs": [
+            "boundary:currentMerchantSettings",
+            "boundary:currentMerchantRegionalFullApp",
+            "boundary:currentChannelListFullApp",
+            "boundary:currentOnlineReport"
+          ],
+          "limits": "Settings has4 registration rows for2 unique methods; named list/regional/report cells accepted. Channel disconnect and provider activation retain original separate proofs, not automatic inheritance from GET.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/conversation-operations.ts",
+          "group": "ordersAndConversations",
+          "classification": "BOUNDED_READ_AND_ROUTER_MUTATION_RUNTIME_PARTIAL",
+          "registrationRows": 7,
+          "distinctMethodPaths": 7,
+          "historicalBlob": "38b54a24b735c0c7b0e2df66f86e624beed6156d",
+          "currentBlob": "38b54a24b735c0c7b0e2df66f86e624beed6156d",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:currentMerchantOrderList",
+            "boundary:currentOrderOptionalPaymentReadFields",
+            "boundary:currentConversationListEvidenceReconciliation",
+            "boundary:currentMessageMetadataProducerReaderReconciliation",
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json"
+          ],
+          "limits": "Conversation aliases/takeover/return and order read/payment DTO proofs retained. Do not infer all order mutation/financial/provider actor acceptance or metadata policy from list proof.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/emergency-merchant-notices.ts",
+          "group": "emergencyAndAudit",
+          "classification": "BOUNDED_RUNTIME_WITH_ALTERNATE_PROJECTION_POLICY_REMAINDER",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "6751ad597496ee8605f59d2605a89689bd1c49c1",
+          "currentBlob": "6751ad597496ee8605f59d2605a89689bd1c49c1",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+            "evidence:docs/final-audit/evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+            "manual:field003CurrentUseReview20261028"
+          ],
+          "limits": "PG emergency routes precede required-mode blocked legacy mounts. Preserve owner-only internal authority and existing merchant notice projection; cross-consumer metadata policy remains open.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/emergency-owner-snapshot.ts",
+          "group": "emergencyAndAudit",
+          "classification": "BOUNDED_RUNTIME_WITH_ALTERNATE_PROJECTION_POLICY_REMAINDER",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "318da1b944fe61f3ad741d053ebe80939f6d5640",
+          "currentBlob": "318da1b944fe61f3ad741d053ebe80939f6d5640",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+            "evidence:docs/final-audit/evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+            "manual:field003CurrentUseReview20261028"
+          ],
+          "limits": "PG emergency routes precede required-mode blocked legacy mounts. Preserve owner-only internal authority and existing merchant notice projection; cross-consumer metadata policy remains open.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/emergency-read-access.ts",
+          "group": "emergencyAndAudit",
+          "classification": "BOUNDED_RUNTIME_WITH_ALTERNATE_PROJECTION_POLICY_REMAINDER",
+          "registrationRows": 8,
+          "distinctMethodPaths": 8,
+          "historicalBlob": "2c7a58d4bc0c1bd80bde68322bad9baa25f6bfd9",
+          "currentBlob": "2c7a58d4bc0c1bd80bde68322bad9baa25f6bfd9",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+            "evidence:docs/final-audit/evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+            "manual:field003CurrentUseReview20261028"
+          ],
+          "limits": "PG emergency routes precede required-mode blocked legacy mounts. Preserve owner-only internal authority and existing merchant notice projection; cross-consumer metadata policy remains open.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/emergency-read-directory.ts",
+          "group": "emergencyAndAudit",
+          "classification": "BOUNDED_RUNTIME_WITH_ALTERNATE_PROJECTION_POLICY_REMAINDER",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "685dd77044243ca39e398e3986cd74f12c2d4496",
+          "currentBlob": "685dd77044243ca39e398e3986cd74f12c2d4496",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+            "evidence:docs/final-audit/evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+            "manual:field003CurrentUseReview20261028"
+          ],
+          "limits": "PG emergency routes precede required-mode blocked legacy mounts. Preserve owner-only internal authority and existing merchant notice projection; cross-consumer metadata policy remains open.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/health.ts",
+          "group": "observability",
+          "classification": "BOUNDED_RUNTIME_AND_SHARED_ROUTER_REMAINDER",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "3d68d7d33e0d0a237792697d7c3c7d4bc72bcc8a",
+          "currentBlob": "3d68d7d33e0d0a237792697d7c3c7d4bc72bcc8a",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:mountedObservability"
+          ],
+          "limits": "Existing probes/metrics authorization retained; legacy /api/health registration is not automatically the same handler.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "group": "sharedLegacyAndMeta",
+          "classification": "MIXED_ALIASES_SOURCE_RUNTIME_AND_PROVIDER_ACTIVATION_REMAINDER",
+          "registrationRows": 14,
+          "distinctMethodPaths": 14,
+          "historicalBlob": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "currentBlob": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "boundary:currentConversationListEvidenceReconciliation",
+            "boundary:currentMerchantOrderList"
+          ],
+          "limits": "Shared router mixes current aliases, debug/product compatibility and Meta webhook/OAuth registrations. Source row alone does not decide effective middleware or provider activation. Reuse fake ingress/identity proofs; no live provider action.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/indexModulePart4.ts",
+          "group": "sharedLegacyAndMeta",
+          "classification": "MIXED_ALIASES_SOURCE_RUNTIME_AND_PROVIDER_ACTIVATION_REMAINDER",
+          "registrationRows": 3,
+          "distinctMethodPaths": 3,
+          "historicalBlob": "2704c0a99970c736e0de2a91ef7901f961614ec4",
+          "currentBlob": "2704c0a99970c736e0de2a91ef7901f961614ec4",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "boundary:currentConversationListEvidenceReconciliation",
+            "boundary:currentMerchantOrderList"
+          ],
+          "limits": "Shared router mixes current aliases, debug/product compatibility and Meta webhook/OAuth registrations. Source row alone does not decide effective middleware or provider activation. Reuse fake ingress/identity proofs; no live provider action.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/knowledge-operations.ts",
+          "group": "knowledgeCurrentAndLegacy",
+          "classification": "PARTIAL_SOURCE_DOMAIN_RUNTIME_RETIREMENT_CASE_PREDICATE_UNPROVED",
+          "registrationRows": 6,
+          "distinctMethodPaths": 6,
+          "historicalBlob": "1b655329d08ada28c531d0277338c4913d9fe137",
+          "currentBlob": "1b655329d08ada28c531d0277338c4913d9fe137",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "test:artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+            "test:artifacts/api-server/tests/merchant-session.integration.test.mjs"
+          ],
+          "limits": "Current /api/knowledge guard and domain SQL cycle differ from old JSON endpoints. Canonical legacy retirement asserted; app.ts legacy knowledge predicate is case-sensitive while Express route matching is not. Alternate-case effective behavior unexecuted here; candidate, not confirmed runtime bypass.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "group": "notificationsAndRealtime",
+          "classification": "BOUNDED_NOTIFICATION_RUNTIME_REALTIME_AND_POLICY_REMAINDER",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "f22d0f89ab1899e9af7f32b9d7d2bca3f6861a36",
+          "currentBlob": "f22d0f89ab1899e9af7f32b9d7d2bca3f6861a36",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json"
+          ],
+          "limits": "FIELD001 and bounded notifications/producers accepted. SSE lifetime/revalidation is a distinct condition; reserved/extension/history policy not silently accepted.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/merchant-realtime-pg.ts",
+          "group": "notificationsAndRealtime",
+          "classification": "BOUNDED_NOTIFICATION_RUNTIME_REALTIME_AND_POLICY_REMAINDER",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "6ab8322e113e621e06837068b48400b77d17a4d8",
+          "currentBlob": "6ab8322e113e621e06837068b48400b77d17a4d8",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json"
+          ],
+          "limits": "FIELD001 and bounded notifications/producers accepted. SSE lifetime/revalidation is a distinct condition; reserved/extension/history policy not silently accepted.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/merchant-regional.ts",
+          "group": "merchantSettingsRegionalChannelsReports",
+          "classification": "BOUNDED_NAMED_RUNTIME_WITH_SIBLING_REMAINDER",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "7b1fac506cfecb816e639a9d7beb64e833555432",
+          "currentBlob": "5f4f7b594cb6f31ad3ba806cb861858473f12607",
+          "sourceDrift": true,
+          "evidenceRefs": [
+            "boundary:currentMerchantSettings",
+            "boundary:currentMerchantRegionalFullApp",
+            "boundary:currentChannelListFullApp",
+            "boundary:currentOnlineReport"
+          ],
+          "limits": "Settings has4 registration rows for2 unique methods; named list/regional/report cells accepted. Channel disconnect and provider activation retain original separate proofs, not automatic inheritance from GET.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/merchant-settings.ts",
+          "group": "merchantSettingsRegionalChannelsReports",
+          "classification": "BOUNDED_NAMED_RUNTIME_WITH_SIBLING_REMAINDER",
+          "registrationRows": 4,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "eac167a6892b348fa811d6622c1c2a5633846720",
+          "currentBlob": "9a9ff086fc88e1fabd8be3940d084b53e928f55c",
+          "sourceDrift": true,
+          "evidenceRefs": [
+            "boundary:currentMerchantSettings",
+            "boundary:currentMerchantRegionalFullApp",
+            "boundary:currentChannelListFullApp",
+            "boundary:currentOnlineReport"
+          ],
+          "limits": "Settings has4 registration rows for2 unique methods; named list/regional/report cells accepted. Channel disconnect and provider activation retain original separate proofs, not automatic inheritance from GET.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/order-operations.ts",
+          "group": "ordersAndConversations",
+          "classification": "BOUNDED_READ_AND_ROUTER_MUTATION_RUNTIME_PARTIAL",
+          "registrationRows": 8,
+          "distinctMethodPaths": 8,
+          "historicalBlob": "20e26c8a1b0cf5705084bbe563349e4b5c3f89ae",
+          "currentBlob": "20e26c8a1b0cf5705084bbe563349e4b5c3f89ae",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:currentMerchantOrderList",
+            "boundary:currentOrderOptionalPaymentReadFields",
+            "boundary:currentConversationListEvidenceReconciliation",
+            "boundary:currentMessageMetadataProducerReaderReconciliation",
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json"
+          ],
+          "limits": "Conversation aliases/takeover/return and order read/payment DTO proofs retained. Do not infer all order mutation/financial/provider actor acceptance or metadata policy from list proof.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/reports-operations.ts",
+          "group": "merchantSettingsRegionalChannelsReports",
+          "classification": "BOUNDED_NAMED_RUNTIME_WITH_SIBLING_REMAINDER",
+          "registrationRows": 1,
+          "distinctMethodPaths": 1,
+          "historicalBlob": "c77c0f1cb1d43e73dbcdafb5b687d4a4199f3f95",
+          "currentBlob": "c77c0f1cb1d43e73dbcdafb5b687d4a4199f3f95",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "boundary:currentMerchantSettings",
+            "boundary:currentMerchantRegionalFullApp",
+            "boundary:currentChannelListFullApp",
+            "boundary:currentOnlineReport"
+          ],
+          "limits": "Settings has4 registration rows for2 unique methods; named list/regional/report cells accepted. Channel disconnect and provider activation retain original separate proofs, not automatic inheritance from GET.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/retention-guard.ts",
+          "group": "retention",
+          "classification": "BOUNDED_SQL_LIFECYCLE_POLICY_HOSTED_REMAINDER",
+          "registrationRows": 2,
+          "distinctMethodPaths": 2,
+          "historicalBlob": "400af5f17b1f386602c10a6554dc40ce8ad72b1e",
+          "currentBlob": "400af5f17b1f386602c10a6554dc40ce8ad72b1e",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-LIFECYCLE-RETENTION-BOUNDARY",
+            "inventory:P0-LIFECYCLE-TENANT-DELETION",
+            "manual:field005RequesterSnapshotReview20261028",
+            "manual:field005PosAuditReview20261028"
+          ],
+          "limits": "Existing paid protection/purge boundary not every per-record schedule, backup deletion or hosted recovery. Existing retention watermark changes are not business mutation failures.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/saas-billing.ts",
+          "group": "billingAndVerifiedReceipts",
+          "classification": "BOUNDED_FAKE_PROVIDER_SQL_HTTP_POLICY_HOSTED_REMAINDER",
+          "registrationRows": 4,
+          "distinctMethodPaths": 4,
+          "historicalBlob": "3665c398beb2822853b4e83a158b714380a2410e",
+          "currentBlob": "3665c398beb2822853b4e83a158b714380a2410e",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-BILLING-ORPHAN-RECEIPT",
+            "boundary:paidMerchantDeletionAndReceiptReplay",
+            "manual:field005BillingProviderReceiptProof20261028"
+          ],
+          "limits": "Fake provider/orphan/operator receipts retain original layers; arbitrary missing-order repair and real provider contracts remain policy/hosted dependencies.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/saved-answer-operations.ts",
+          "group": "knowledgeCurrentAndLegacy",
+          "classification": "PARTIAL_SOURCE_DOMAIN_RUNTIME_RETIREMENT_CASE_PREDICATE_UNPROVED",
+          "registrationRows": 4,
+          "distinctMethodPaths": 4,
+          "historicalBlob": "7b862281e94507455f20a91535acd15fdc5c5c47",
+          "currentBlob": "7b862281e94507455f20a91535acd15fdc5c5c47",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "test:artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+            "test:artifacts/api-server/tests/merchant-session.integration.test.mjs"
+          ],
+          "limits": "Current /api/knowledge guard and domain SQL cycle differ from old JSON endpoints. Canonical legacy retirement asserted; app.ts legacy knowledge predicate is case-sensitive while Express route matching is not. Alternate-case effective behavior unexecuted here; candidate, not confirmed runtime bypass.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/saved-answers.ts",
+          "group": "knowledgeCurrentAndLegacy",
+          "classification": "PARTIAL_SOURCE_DOMAIN_RUNTIME_RETIREMENT_CASE_PREDICATE_UNPROVED",
+          "registrationRows": 4,
+          "distinctMethodPaths": 4,
+          "historicalBlob": "1c87b80710b19b987c32cc9229702295f25a185f",
+          "currentBlob": "1c87b80710b19b987c32cc9229702295f25a185f",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "test:artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+            "test:artifacts/api-server/tests/merchant-session.integration.test.mjs"
+          ],
+          "limits": "Current /api/knowledge guard and domain SQL cycle differ from old JSON endpoints. Canonical legacy retirement asserted; app.ts legacy knowledge predicate is case-sensitive while Express route matching is not. Alternate-case effective behavior unexecuted here; candidate, not confirmed runtime bypass.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/subscription-entitlement-pg.ts",
+          "group": "billingAndVerifiedReceipts",
+          "classification": "BOUNDED_FAKE_PROVIDER_SQL_HTTP_POLICY_HOSTED_REMAINDER",
+          "registrationRows": 7,
+          "distinctMethodPaths": 7,
+          "historicalBlob": "86c85847b2e0b4d0abc49f9703ecc6433c8b89ff",
+          "currentBlob": "86c85847b2e0b4d0abc49f9703ecc6433c8b89ff",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-BILLING-ORPHAN-RECEIPT",
+            "boundary:paidMerchantDeletionAndReceiptReplay",
+            "manual:field005BillingProviderReceiptProof20261028"
+          ],
+          "limits": "Fake provider/orphan/operator receipts retain original layers; arbitrary missing-order repair and real provider contracts remain policy/hosted dependencies.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/support-images.ts",
+          "group": "supportCurrentAndLegacy",
+          "classification": "BOUNDED_SQL_ROUTER_AND_REQUIRED_MODE_RETIREMENT_PARTIAL_FIELDS",
+          "registrationRows": 3,
+          "distinctMethodPaths": 3,
+          "historicalBlob": "290efb7be74e9e52bad541e15f2df5df9d9259e4",
+          "currentBlob": "290efb7be74e9e52bad541e15f2df5df9d9259e4",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+            "evidence:docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json"
+          ],
+          "limits": "Current PG interception and source legacy support fallback guards are distinct. Bounded five-table/native/image proofs do not establish all nested field/inspection actor cells.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/support-preview.ts",
+          "group": "supportCurrentAndLegacy",
+          "classification": "BOUNDED_SQL_ROUTER_AND_REQUIRED_MODE_RETIREMENT_PARTIAL_FIELDS",
+          "registrationRows": 4,
+          "distinctMethodPaths": 4,
+          "historicalBlob": "31680e06afc432e43727f576eb6a039b68d36c51",
+          "currentBlob": "31680e06afc432e43727f576eb6a039b68d36c51",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+            "evidence:docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json"
+          ],
+          "limits": "Current PG interception and source legacy support fallback guards are distinct. Bounded five-table/native/image proofs do not establish all nested field/inspection actor cells.",
+          "perRouteFullAcceptanceClaimed": false
+        },
+        {
+          "file": "artifacts/api-server/src/routes/training-operations.ts",
+          "group": "knowledgeCurrentAndLegacy",
+          "classification": "PARTIAL_SOURCE_DOMAIN_RUNTIME_RETIREMENT_CASE_PREDICATE_UNPROVED",
+          "registrationRows": 6,
+          "distinctMethodPaths": 6,
+          "historicalBlob": "4476518b3b5af45c0f3839f1db0ea7352068d88f",
+          "currentBlob": "4476518b3b5af45c0f3839f1db0ea7352068d88f",
+          "sourceDrift": false,
+          "evidenceRefs": [
+            "test:artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+            "test:artifacts/api-server/tests/merchant-session.integration.test.mjs"
+          ],
+          "limits": "Current /api/knowledge guard and domain SQL cycle differ from old JSON endpoints. Canonical legacy retirement asserted; app.ts legacy knowledge predicate is case-sensitive while Express route matching is not. Alternate-case effective behavior unexecuted here; candidate, not confirmed runtime bypass.",
+          "perRouteFullAcceptanceClaimed": false
+        }
+      ],
+      "groups": [
+        {
+          "id": "observability",
+          "classification": "BOUNDED_RUNTIME_AND_SHARED_ROUTER_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/app.ts",
+            "artifacts/api-server/src/observability/router.ts",
+            "artifacts/api-server/src/routes/health.ts"
+          ],
+          "registrationRows": 5,
+          "evidenceRefs": [
+            "boundary:mountedObservability"
+          ],
+          "limits": "Existing probes/metrics authorization retained; legacy /api/health registration is not automatically the same handler."
+        },
+        {
+          "id": "currentAuthAdmin",
+          "classification": "PARTIAL_CURRENT_FULL_APP_AGGREGATE_AND_SOURCE",
+          "files": [
+            "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts",
+            "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts",
+            "artifacts/api-server/src/routes/auth-admin-routes.ts",
+            "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+            "artifacts/api-server/src/routes/auth-public-routes.ts",
+            "artifacts/api-server/src/routes/auth-security.ts",
+            "artifacts/api-server/src/routes/auth-session-routes.ts"
+          ],
+          "registrationRows": 60,
+          "evidenceRefs": [
+            "manual:adminFamilyRouteLedger20261027",
+            "boundary:currentAdminSelfSessions",
+            "boundary:ownerDelegatedSessionAndGlobalAdminDevice",
+            "boundary:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary:activeAdminPermissionChange",
+            "test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "limits": "14 PG admin declarations precede14 matching compatibility declarations when required+admin-PG enabled. Incomplete cutover gate is separate; do not count overlap as28 independently supported admin methods. Public auth/recovery/OTP and other session cells need original assertion/authority review."
+        },
+        {
+          "id": "legacyAuthFallback",
+          "classification": "SOURCE_RETIRED_REQUIRED_MODE_WITH_BOUNDED_RUNTIME_GUARD",
+          "files": [
+            "artifacts/api-server/src/routes/authRoutesPart1.ts",
+            "artifacts/api-server/src/routes/authRoutesPart2.ts",
+            "artifacts/api-server/src/routes/authRoutesPart3.ts"
+          ],
+          "registrationRows": 58,
+          "evidenceRefs": [
+            "boundary:currentAdminSelfSessions",
+            "evidence:docs/final-audit/evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json"
+          ],
+          "limits": "Final required-mode /api/auth fallthrough retirement is case-normalized. These registrations are not a request to rebuild JSON auth."
+        },
+        {
+          "id": "merchantManagement",
+          "classification": "BOUNDED_RUNTIME_WITH_FIELD_POLICY_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts"
+          ],
+          "registrationRows": 13,
+          "evidenceRefs": [
+            "evidence:docs/final-audit/evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-OWNER-IMPORT-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-OWNER-DELETION-HTTP-20261024.json",
+            "boundary:paidMerchantDeletionAndReceiptReplay",
+            "boundary:merchantDeletionProviderDerivedReplyIntent"
+          ],
+          "limits": "Source/HTTP/SQL/local media proofs retained. Full retention/repair/hosted policies not accepted by local purge or fake receipt replay."
+        },
+        {
+          "id": "supportCurrentAndLegacy",
+          "classification": "BOUNDED_SQL_ROUTER_AND_REQUIRED_MODE_RETIREMENT_PARTIAL_FIELDS",
+          "files": [
+            "artifacts/api-server/src/routes/auth-support-admin-lifecycle-postgres-routes.ts",
+            "artifacts/api-server/src/routes/auth-support-image-alias-postgres-routes.ts",
+            "artifacts/api-server/src/routes/auth-support-inspection-decision-postgres-routes.ts",
+            "artifacts/api-server/src/routes/auth-support-message-postgres-routes.ts",
+            "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+            "artifacts/api-server/src/routes/support-images.ts",
+            "artifacts/api-server/src/routes/support-preview.ts"
+          ],
+          "registrationRows": 33,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-SUPPORT-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+            "evidence:docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json"
+          ],
+          "limits": "Current PG interception and source legacy support fallback guards are distinct. Bounded five-table/native/image proofs do not establish all nested field/inspection actor cells."
+        },
+        {
+          "id": "emergencyAndAudit",
+          "classification": "BOUNDED_RUNTIME_WITH_ALTERNATE_PROJECTION_POLICY_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+            "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts",
+            "artifacts/api-server/src/routes/emergency-merchant-notices.ts",
+            "artifacts/api-server/src/routes/emergency-owner-snapshot.ts",
+            "artifacts/api-server/src/routes/emergency-read-access.ts",
+            "artifacts/api-server/src/routes/emergency-read-directory.ts"
+          ],
+          "registrationRows": 24,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-EMERGENCY-PRIVACY-AUTHORITY",
+            "evidence:docs/final-audit/evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+            "evidence:docs/final-audit/evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+            "manual:field003CurrentUseReview20261028"
+          ],
+          "limits": "PG emergency routes precede required-mode blocked legacy mounts. Preserve owner-only internal authority and existing merchant notice projection; cross-consumer metadata policy remains open."
+        },
+        {
+          "id": "providerCostAndJobs",
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "files": [
+            "artifacts/api-server/src/routes/auth-provider-cost-postgres-routes.ts",
+            "artifacts/api-server/src/routes/channel-durable-job-admin.ts"
+          ],
+          "registrationRows": 5,
+          "evidenceRefs": [
+            "boundary:providerCostConfiguration",
+            "boundary:channelDurableJobAdmin"
+          ],
+          "limits": "Named owner/admin DTO/authorization/SQL-fault proofs exist. No automatic replay/provider production acceptance."
+        },
+        {
+          "id": "catalog",
+          "classification": "BOUNDED_NAMED_RUNTIME_ALL15_REGISTRATION_METHODS_LINKED",
+          "files": [
+            "artifacts/api-server/src/routes/catalog-operations.ts"
+          ],
+          "registrationRows": 15,
+          "evidenceRefs": [
+            "manual:currentCatalogFamilyRouteOverlay"
+          ],
+          "limits": "15 method/path registrations link to accepted bounded read/context/media/promotion/product-inventory proofs. Not all effects/fields/variants/archive/concurrency acceptance."
+        },
+        {
+          "id": "merchantSettingsRegionalChannelsReports",
+          "classification": "BOUNDED_NAMED_RUNTIME_WITH_SIBLING_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/routes/channel-operations.ts",
+            "artifacts/api-server/src/routes/merchant-regional.ts",
+            "artifacts/api-server/src/routes/merchant-settings.ts",
+            "artifacts/api-server/src/routes/reports-operations.ts"
+          ],
+          "registrationRows": 9,
+          "evidenceRefs": [
+            "boundary:currentMerchantSettings",
+            "boundary:currentMerchantRegionalFullApp",
+            "boundary:currentChannelListFullApp",
+            "boundary:currentOnlineReport"
+          ],
+          "limits": "Settings has4 registration rows for2 unique methods; named list/regional/report cells accepted. Channel disconnect and provider activation retain original separate proofs, not automatic inheritance from GET."
+        },
+        {
+          "id": "ordersAndConversations",
+          "classification": "BOUNDED_READ_AND_ROUTER_MUTATION_RUNTIME_PARTIAL",
+          "files": [
+            "artifacts/api-server/src/routes/conversation-operations.ts",
+            "artifacts/api-server/src/routes/order-operations.ts"
+          ],
+          "registrationRows": 15,
+          "evidenceRefs": [
+            "boundary:currentMerchantOrderList",
+            "boundary:currentOrderOptionalPaymentReadFields",
+            "boundary:currentConversationListEvidenceReconciliation",
+            "boundary:currentMessageMetadataProducerReaderReconciliation",
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json"
+          ],
+          "limits": "Conversation aliases/takeover/return and order read/payment DTO proofs retained. Do not infer all order mutation/financial/provider actor acceptance or metadata policy from list proof."
+        },
+        {
+          "id": "knowledgeCurrentAndLegacy",
+          "classification": "PARTIAL_SOURCE_DOMAIN_RUNTIME_RETIREMENT_CASE_PREDICATE_UNPROVED",
+          "files": [
+            "artifacts/api-server/src/routes/bot-training.ts",
+            "artifacts/api-server/src/routes/knowledge-operations.ts",
+            "artifacts/api-server/src/routes/saved-answer-operations.ts",
+            "artifacts/api-server/src/routes/saved-answers.ts",
+            "artifacts/api-server/src/routes/training-operations.ts"
+          ],
+          "registrationRows": 25,
+          "evidenceRefs": [
+            "test:artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+            "test:artifacts/api-server/tests/merchant-session.integration.test.mjs"
+          ],
+          "limits": "Current /api/knowledge guard and domain SQL cycle differ from old JSON endpoints. Canonical legacy retirement asserted; app.ts legacy knowledge predicate is case-sensitive while Express route matching is not. Alternate-case effective behavior unexecuted here; candidate, not confirmed runtime bypass."
+        },
+        {
+          "id": "cashier",
+          "classification": "BOUNDED_NATIVE_SQL_ROUTER_PROOFS_PROTOCOL_POLICY_AND_DEVICE_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts",
+            "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+            "artifacts/api-server/src/routes/cashier-staff-operations.ts",
+            "artifacts/api-server/src/routes/cashier-subscription-operations.ts",
+            "artifacts/api-server/src/routes/cashier-sync-operations.ts"
+          ],
+          "registrationRows": 64,
+          "evidenceRefs": [
+            "inventory:P0-ACCESS-CASHIER-IDENTITY-RLS",
+            "inventory:P0-ACCESS-APPROVAL-AUTHORITY",
+            "inventory:P0-ACCESS-PERMISSION-SESSION",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+            "evidence:docs/final-audit/evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json"
+          ],
+          "limits": "Preserve native/HTTP/SQL proof layers and shared router mounts. Existing merchant pairing accepted in its scope. No duplicate OTP/owner approval; SEQ-R2, original provenance and physical/release acceptance remain separate existing gates."
+        },
+        {
+          "id": "billingAndVerifiedReceipts",
+          "classification": "BOUNDED_FAKE_PROVIDER_SQL_HTTP_POLICY_HOSTED_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts",
+            "artifacts/api-server/src/routes/saas-billing.ts",
+            "artifacts/api-server/src/routes/subscription-entitlement-pg.ts"
+          ],
+          "registrationRows": 14,
+          "evidenceRefs": [
+            "inventory:P0-BILLING-ORPHAN-RECEIPT",
+            "boundary:paidMerchantDeletionAndReceiptReplay",
+            "manual:field005BillingProviderReceiptProof20261028"
+          ],
+          "limits": "Fake provider/orphan/operator receipts retain original layers; arbitrary missing-order repair and real provider contracts remain policy/hosted dependencies."
+        },
+        {
+          "id": "notificationsAndRealtime",
+          "classification": "BOUNDED_NOTIFICATION_RUNTIME_REALTIME_AND_POLICY_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+            "artifacts/api-server/src/routes/merchant-realtime-pg.ts"
+          ],
+          "registrationRows": 3,
+          "evidenceRefs": [
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json",
+            "evidence:docs/final-audit/evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json"
+          ],
+          "limits": "FIELD001 and bounded notifications/producers accepted. SSE lifetime/revalidation is a distinct condition; reserved/extension/history policy not silently accepted."
+        },
+        {
+          "id": "retention",
+          "classification": "BOUNDED_SQL_LIFECYCLE_POLICY_HOSTED_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/routes/retention-guard.ts"
+          ],
+          "registrationRows": 2,
+          "evidenceRefs": [
+            "inventory:P0-LIFECYCLE-RETENTION-BOUNDARY",
+            "inventory:P0-LIFECYCLE-TENANT-DELETION",
+            "manual:field005RequesterSnapshotReview20261028",
+            "manual:field005PosAuditReview20261028"
+          ],
+          "limits": "Existing paid protection/purge boundary not every per-record schedule, backup deletion or hosted recovery. Existing retention watermark changes are not business mutation failures."
+        },
+        {
+          "id": "sharedLegacyAndMeta",
+          "classification": "MIXED_ALIASES_SOURCE_RUNTIME_AND_PROVIDER_ACTIVATION_REMAINDER",
+          "files": [
+            "artifacts/api-server/src/routes/indexModulePart3.ts",
+            "artifacts/api-server/src/routes/indexModulePart4.ts"
+          ],
+          "registrationRows": 17,
+          "evidenceRefs": [
+            "evidence:docs/final-audit/evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+            "boundary:currentConversationListEvidenceReconciliation",
+            "boundary:currentMerchantOrderList"
+          ],
+          "limits": "Shared router mixes current aliases, debug/product compatibility and Meta webhook/OAuth registrations. Source row alone does not decide effective middleware or provider activation. Reuse fake ingress/identity proofs; no live provider action."
+        }
+      ],
+      "exactBoundedRouteCells": [
+        {
+          "method": "GET",
+          "path": "/api/auth/admins",
+          "proofRefs": [
+            "boundary-or-test:adminAccountProjectionAndOwnerPasswordReset"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_PROJECTION_OR_RESET",
+          "limits": "No free-form historical-value completeness, failed-login stub accuracy or reset fault-atomicity acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins",
+          "proofRefs": [
+            "boundary-or-test:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary-or-test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "classification": "CURRENT_AGGREGATE_POSITIVE_PLUS_FULL_APP_DENIALS",
+          "limits": "Not blanket full-app creation/collision/concurrency or enabled-input acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/admins/:adminId/enabled",
+          "proofRefs": [
+            "boundary-or-test:adminAccountProjectionAndOwnerPasswordReset",
+            "boundary-or-test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts"
+          ],
+          "classification": "CURRENT_AGGREGATE_POSITIVE_PLUS_FULL_APP_DENIALS",
+          "limits": "Not blanket full-app creation/collision/concurrency or enabled-input acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/admins/:adminId/permissions",
+          "proofRefs": [
+            "boundary-or-test:activeAdminPermissionChange",
+            "boundary-or-test:adminAccountProjectionAndOwnerPasswordReset"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_ACTIVE_PERMISSION_AND_SQL_FAULT",
+          "limits": "Later cross-transaction failures/concurrent login excluded.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/logout-all",
+          "proofRefs": [
+            "boundary-or-test:ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/admins/:adminId/password",
+          "proofRefs": [
+            "boundary-or-test:adminAccountProjectionAndOwnerPasswordReset"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_PROJECTION_OR_RESET",
+          "limits": "No free-form historical-value completeness, failed-login stub accuracy or reset fault-atomicity acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admins/:adminId/work-monitor",
+          "proofRefs": [
+            "boundary-or-test:adminAccountProjectionAndOwnerPasswordReset"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_PROJECTION_OR_RESET",
+          "limits": "No free-form historical-value completeness, failed-login stub accuracy or reset fault-atomicity acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/devices/:deviceRecordId/trust",
+          "proofRefs": [
+            "boundary-or-test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts",
+            "boundary-or-test:docs/final-audit/evidence/seq321-admin-lifecycle-results.json"
+          ],
+          "classification": "CURRENT_AGGREGATE_POSITIVE_HISTORICAL_CAP_SOURCE_MEMBERSHIP",
+          "limits": "No new full-app nested foreign-device/password-negative matrix.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/devices/:deviceRecordId/revoke",
+          "proofRefs": [
+            "boundary-or-test:artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts",
+            "boundary-or-test:docs/final-audit/evidence/seq321-admin-lifecycle-results.json"
+          ],
+          "classification": "CURRENT_AGGREGATE_POSITIVE_HISTORICAL_CAP_SOURCE_MEMBERSHIP",
+          "limits": "No new full-app nested foreign-device/password-negative matrix.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/sessions/:sessionId/revoke",
+          "proofRefs": [
+            "boundary-or-test:ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admins/:adminId/sessions/revoke-all",
+          "proofRefs": [
+            "boundary-or-test:ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/devices",
+          "proofRefs": [
+            "boundary-or-test:ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/devices/:deviceRecordId/trust",
+          "proofRefs": [
+            "boundary-or-test:ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/devices/:deviceRecordId/revoke",
+          "proofRefs": [
+            "boundary-or-test:ownerDelegatedSessionAndGlobalAdminDevice"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_OWNER_DELEGATED_OR_GLOBAL_DEVICE",
+          "limits": "Existing owner/password policies retained by route; no later cross-transaction fault/whole-field acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/logout",
+          "proofRefs": [
+            "boundary-or-test:currentAdminSelfSessions"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_SELF_SESSION",
+          "limits": "Existing optional cookie-scoped logout policy and own device_hash DTO retained; no whole login/OTP/rotation/browser acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/logout-all",
+          "proofRefs": [
+            "boundary-or-test:currentAdminSelfSessions"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_SELF_SESSION",
+          "limits": "Existing optional cookie-scoped logout policy and own device_hash DTO retained; no whole login/OTP/rotation/browser acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/sessions",
+          "proofRefs": [
+            "boundary-or-test:currentAdminSelfSessions"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_SELF_SESSION",
+          "limits": "Existing optional cookie-scoped logout policy and own device_hash DTO retained; no whole login/OTP/rotation/browser acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/auth/admin/sessions/:sessionId",
+          "proofRefs": [
+            "boundary-or-test:currentAdminSelfSessions"
+          ],
+          "classification": "BOUNDED_CURRENT_FULL_APP_SELF_SESSION",
+          "limits": "Existing optional cookie-scoped logout policy and own device_hash DTO retained; no whole login/OTP/rotation/browser acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/media/images",
+          "proofRefs": [
+            "boundary:currentCatalogMediaUploadFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/media/images",
+          "proofRefs": [
+            "boundary:currentCatalogMediaReadFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/context",
+          "proofRefs": [
+            "boundary:currentCatalogContextPromotionReadFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/promotions",
+          "proofRefs": [
+            "boundary:currentCatalogContextPromotionReadFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/promotions",
+          "proofRefs": [
+            "boundary:currentCatalogPromotionWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/catalog/promotions/:promotionId",
+          "proofRefs": [
+            "boundary:currentCatalogPromotionWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/catalog/promotions/:promotionId",
+          "proofRefs": [
+            "boundary:currentCatalogPromotionWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/products",
+          "proofRefs": [
+            "boundary:currentCatalogReadFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/catalog/products/:productId",
+          "proofRefs": [
+            "boundary:currentCatalogReadFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/products",
+          "proofRefs": [
+            "boundary:currentCatalogProductInventoryWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/catalog/products/import",
+          "proofRefs": [
+            "boundary:currentCatalogProductInventoryWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/catalog/products/:productId",
+          "proofRefs": [
+            "boundary:currentCatalogProductInventoryWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/catalog/products/:productId",
+          "proofRefs": [
+            "boundary:currentCatalogProductInventoryWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/inventory/products/:productId/set",
+          "proofRefs": [
+            "boundary:currentCatalogProductInventoryWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/inventory/products/:productId/adjust",
+          "proofRefs": [
+            "boundary:currentCatalogProductInventoryWriteFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Bounded named case only; effective middleware/actors/fields/failure conditions retain original proof limits.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/provider-costs",
+          "proofRefs": [
+            "boundary:providerCostConfiguration"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PUT",
+          "path": "/api/auth/admin/provider-costs/rates/:meterKey",
+          "proofRefs": [
+            "boundary:providerCostConfiguration"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/admin/provider-costs/settings",
+          "proofRefs": [
+            "boundary:providerCostConfiguration"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/background-jobs",
+          "proofRefs": [
+            "boundary:channelDurableJobAdmin"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/background-jobs/:jobId/requeue",
+          "proofRefs": [
+            "boundary:channelDurableJobAdmin"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/healthz",
+          "proofRefs": [
+            "boundary:mountedObservability"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/ops/health",
+          "proofRefs": [
+            "boundary:mountedObservability"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/ops/readiness",
+          "proofRefs": [
+            "boundary:mountedObservability"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/ops/metrics",
+          "proofRefs": [
+            "boundary:mountedObservability"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Original named proof limits retained; not whole field/actor/provider acceptance.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/settings",
+          "proofRefs": [
+            "boundary:currentMerchantSettings"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Accepted exact named cells only, not all currencies/fields/timeouts/financial scenarios.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/settings",
+          "proofRefs": [
+            "boundary:currentMerchantSettings"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Accepted exact named cells only, not all currencies/fields/timeouts/financial scenarios.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/merchant/regional",
+          "proofRefs": [
+            "boundary:currentMerchantRegionalFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Accepted exact named cells only, not all currencies/fields/timeouts/financial scenarios.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/merchant/regional",
+          "proofRefs": [
+            "boundary:currentMerchantRegionalFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Accepted exact named cells only, not all currencies/fields/timeouts/financial scenarios.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/reports/online",
+          "proofRefs": [
+            "boundary:currentOnlineReport"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Accepted exact named cells only, not all currencies/fields/timeouts/financial scenarios.",
+          "wholeConditionMatrixAccepted": false
+        },
+        {
+          "method": "GET",
+          "path": "/api/channels",
+          "proofRefs": [
+            "boundary:currentChannelListFullApp"
+          ],
+          "classification": "BOUNDED_NAMED_RUNTIME",
+          "limits": "Summary/actor/tenant/auth read fault accepted; no inherited disconnect/provider readiness proof.",
+          "wholeConditionMatrixAccepted": false
+        }
+      ],
+      "workQueue": [
+        {
+          "id": "MATRIX-C01",
+          "kind": "EXISTING_GATE_EXECUTABLE_PROOF_GAP",
+          "groups": [
+            "knowledgeCurrentAndLegacy",
+            "currentAuthAdmin",
+            "legacyAuthFallback"
+          ],
+          "status": "SOURCE_CANDIDATE_RUNTIME_OBSERVATION_PENDING",
+          "condition": "Required-mode retirement/cutover predicates must agree with effective Express path matching and retain canonical supported routes. Reuse accepted auth410/role-confusion proofs; verify the unproved mixed-case legacy Knowledge predicate through actual app before any fix.",
+          "next": "Add one bounded actual-app retirement case using synthetic merchant/admin contexts, canonical and mixed-case legacy Knowledge paths, unchanged owned legacy files/SQL business state, and a current-authority positive. First observe current source; fix only confirmed guard mismatch and keep exact-source CI.",
+          "evidence": [
+            "artifacts/api-server/src/app.ts#enforceLegacyKnowledgeCutoverGate",
+            "artifacts/api-server/tests/merchant-session.integration.test.mjs#legacy knowledge authority stays disabled"
+          ],
+          "newGate": false
+        },
+        {
+          "id": "MATRIX-C02",
+          "kind": "EVIDENCE_RECONCILIATION",
+          "groups": [
+            "currentAuthAdmin"
+          ],
+          "status": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
+          "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
+          "next": "Reuse current18-route admin ledger and original auth-router/session/recovery tests; identify an actual unmatched condition before adding tests. Historical failed-login stubs/reset later-fault limits do not automatically become new release gates.",
+          "newGate": false
+        },
+        {
+          "id": "MATRIX-C03",
+          "kind": "EVIDENCE_RECONCILIATION_WITH_POLICY_DEPENDENCIES",
+          "groups": [
+            "supportCurrentAndLegacy",
+            "emergencyAndAudit",
+            "merchantManagement"
+          ],
+          "status": "BOUNDED_SQL_ROUTER_FULL_APP_PROOFS_PARTIAL_FIELDS",
+          "condition": "Link current support/inspection/image/emergency/management actors and nested field consumers to accepted SQL, router and full-app layers; retain policy/alternate-projection exceptions explicitly.",
+          "next": "Reuse five-table Support, emergency remediation, owner import/deletion and current full-app management proofs. Reconcile only remaining sensitive projection/actor conditions; do not re-run purge or create another emergency authority.",
+          "newGate": false
+        },
+        {
+          "id": "MATRIX-C04",
+          "kind": "EVIDENCE_RECONCILIATION_WITH_EXISTING_SEQUENCE_DEVICE_GATES",
+          "groups": [
+            "cashier"
+          ],
+          "status": "BOUNDED_NATIVE_SQL_HTTP_PROOFS_POLICY_DEVICE_REMAINDER",
+          "condition": "Separate staff/discount/subscription/operator/sync authority proof layers and shared mounts. Existing merchant pairing and accepted public v2 refusal must not be reopened as new OTP/owner approval work.",
+          "next": "Map original accepted access inventory/native/operator cases to current handlers; link unresolved sequence provenance/SEQ-R2 and physical device/release requirements to existing gates, not new route tests.",
+          "dependencies": [
+            "CASHIER-SYNC-SEQUENCE-001",
+            "P0-OFFLINE-DEVICE-ACCEPTANCE",
+            "P0-OFFLINE-KEY-RELEASE"
+          ],
+          "newGate": false
+        },
+        {
+          "id": "MATRIX-C05",
+          "kind": "EVIDENCE_RECONCILIATION",
+          "groups": [
+            "ordersAndConversations",
+            "knowledgeCurrentAndLegacy",
+            "merchantSettingsRegionalChannelsReports",
+            "notificationsAndRealtime",
+            "catalog"
+          ],
+          "status": "NAMED_CELLS_ACCEPTED_SIBLING_AND_FIELD_CONDITIONS_PARTIAL",
+          "condition": "Current named read/mutation/Origin/idempotency/version/failure proofs retain their exact bounds. Sibling order/Knowledge/realtime/other field conditions require existing assertion review before deciding a missing runtime cell.",
+          "next": "Use catalog15-method overlay and current settings/regional/report/order/conversation/notification proofs as no-repeat baseline; inspect only effective sibling authority and sensitive fields. Product variants/archive/concurrency limits are not automatically a mandatory new case per limit.",
+          "newGate": false
+        },
+        {
+          "id": "MATRIX-C06",
+          "kind": "MIXED_FAKE_RUNTIME_SOURCE_AND_HOSTED_DEPENDENCIES",
+          "groups": [
+            "billingAndVerifiedReceipts",
+            "sharedLegacyAndMeta",
+            "providerCostAndJobs"
+          ],
+          "status": "BOUNDED_RUNTIME_PROVIDER_ACTIVATION_AND_ALIASES_PARTIAL",
+          "condition": "Resolve shared-router alias/webhook/debug/compatibility registrations and fake billing/receipt/provider boundaries to effective middleware and preserved ownership. Real provider or live OAuth acceptance remains outside current GitHub authority.",
+          "next": "Reuse existing fake ingress/identity/receipt/background-job/provider-cost proofs, classify activation paths without contacting a provider. Map any missing ownership/hosted acceptance to current register rows.",
+          "dependencies": [
+            "P0-RECEIPT-OWNERSHIP-POLICY",
+            "P0-HOSTED-PROVIDER-PAYMENT",
+            "P0-HOSTED-PROVIDER-META"
+          ],
+          "newGate": false
+        },
+        {
+          "id": "MATRIX-C07",
+          "kind": "EXISTING_FIELD_POLICY_AND_SOURCE_COMPATIBILITY_REMAINDER",
+          "groups": [
+            "retention",
+            "notificationsAndRealtime",
+            "emergencyAndAudit",
+            "merchantManagement"
+          ],
+          "status": "FIELD002_003_004_005_UNADOPTED_OR_SOURCE_COMPATIBILITY_OPEN",
+          "condition": "Bounded eight-table/86-column evidence is not full privacy acceptance. Reserved/extension/history semantics, cross-consumer audit projection, legacy draft compatibility and record-specific retention require their existing explicit decisions or source contracts.",
+          "next": "Reuse current FIELD002/003/004/005 packets and consumer/provenance reviews; preserve SQL-vs-legacy distinctions. No silent field stripping, indefinite retention, repair or schedule adoption from continuation.",
+          "dependencies": [
+            "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+            "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+          ],
+          "newGate": false
+        },
+        {
+          "id": "MATRIX-C08",
+          "kind": "PARENT_GATE_COMPLETENESS_RECONCILIATION",
+          "groups": [
+            "observability",
+            "retention",
+            "supportCurrentAndLegacy",
+            "sharedLegacyAndMeta"
+          ],
+          "status": "CURRENT_CATALOGUE_CLASSIFIED_COMPLETENESS_NOT_ESTABLISHED",
+          "condition": "Every relevant P0 actor/field/background/alternate producer or consumer must have evidence or a named unmet condition. Static362 registrations/54 files/236 method-path keys are neither the current complete runtime surface nor a P0 denominator.",
+          "next": "After C01-C07 reconciliation, reconcile startup/background and sensitive export/consumer candidates to actual effective authority. Unknown surfaces remain explicit. Any newly confirmed critical addition needs source/evidence and count impact; never silently expand the45 known release rows or demand one test per registration.",
+          "newGate": false
+        }
+      ],
+      "supersession": [
+        {
+          "sourceReview": "currentChannelListEvidenceReconciliation",
+          "supersededRuntimeConditionBy": "currentChannelListFullApp",
+          "preserve": "Original source review and limits retained; do not repeat GET actor/read-fault test."
+        },
+        {
+          "sourceReview": "currentCatalogReadEvidenceReconciliation",
+          "supersededRuntimeConditionBy": "currentCatalogReadFullApp",
+          "preserve": "Read nested DTO/archive-read fault cell accepted, not every product lifecycle."
+        },
+        {
+          "sourceReview": "currentCatalogPromotionWriteEvidenceReconciliation",
+          "supersededRuntimeConditionBy": "currentCatalogPromotionWriteFullApp",
+          "preserve": "Origin/version/three-verb fault cell accepted; not all discount pricing."
+        }
+      ],
+      "sourceObservation": {
+        "path": "artifacts/api-server/src/app.ts#enforceLegacyKnowledgeCutoverGate",
+        "test": "artifacts/api-server/tests/merchant-session.integration.test.mjs#legacy knowledge authority stays disabled",
+        "observation": "Literal req.path equality/startsWith checks use case-sensitive /api/saved-answers and /api/bot-training, while Express registered legacy route matching is case-insensitive. Existing reviewed assertion uses canonical lower-case paths only.",
+        "runtimeReproductionExecuted": false,
+        "confirmedExploit": false,
+        "case": "MATRIX-C01",
+        "currentKnowledgeAuthority": "/api/knowledge is mounted earlier with secure merchant guard; legacy file mutation/refusal and current positive must be independently observed before remediation."
+      },
+      "dependencies": {
+        "knownRegisterRows": 45,
+        "closedSource": 29,
+        "open": 7,
+        "blocked": 9,
+        "completeP0Inventory": false,
+        "overallPercentage": null,
+        "release": "NO-GO",
+        "policyAndHostedGatesUnchanged": true
+      },
+      "validation": {
+        "all54FilesAssignedExactlyOnce": true,
+        "all362RowsGrouped": true,
+        "all48KeysExistInHistoricalRouteLedger": true,
+        "allGroupEvidencePointersResolvedInRepositoryOrExistingInventory": true,
+        "workQueueGroupPointersValid": true,
+        "historicalCatalogueRegenerated": false,
+        "newRuntimeOrCiAcceptanceClaimed": false
+      },
+      "limits": [
+        "362 registrations,236 distinct method/path keys and48 linked keys are metadata, not a test denominator, whole-app completion percentage or remaining test count.",
+        "Current source blob equality is source continuity only; four changed route blobs are tied to current accepted overlay refs. Neither unchanged blobs nor CI totals prove all missing actor/field assertions.",
+        "Legacy required-mode fallthrough retirement, PG interception/fallback ordering, canonical Knowledge retirement and alternate-case behavior are distinct conditions.",
+        "Existing24-row access inventory and8-table86-column field inventory retain bounded scope; no full-P0 inventory accepted.",
+        "No runtime rerun, code/schema/grant/policy change or source gate closure in this docs-only review."
+      ],
+      "nextExactAction": "Execute MATRIX-C01 in manualReconciliation.actorRouteEvidenceConsolidation20261029: reuse current full-app fixture and existing canonical legacy Knowledge retirement assertion; first observe required-mode canonical/mixed-case legacy saved-answer/training path refusal with unchanged owned SQL and legacy files plus current Knowledge authority positive. Do not classify the case-sensitive source predicate as a confirmed exploit before runtime. Apply only a confirmed minimal guard fix, preserve valid access, and require exact-source target/broader CI. Then follow the frozen eight work-item reconciliation queue; do not generate one test per362 historical registrations or reopen48 linked bounded keys. No new gate/policy, hosted/provider, merge or deployment.",
+      "userActionRequiredNow": false,
+      "parentGateClosed": false,
+      "newGate": false
     }
   },
   "componentScopes": {
