@@ -1846,5 +1846,98 @@ test('full application management privacy preserves cutover ordering and current
       allAssertionsPassed:passed,physicalWriteFaultAndRecovery:writeFault,filesystemOnly:true,hosted:false}));
   });
 
+  await t.test('current catalog promotion writes full-app origin actor tenant version and SQL rollback boundary',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant'),tenantIds=[x.id,y.id];
+    for(const m of [x,y]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected',country_code='IQ',timezone='Asia/Baghdad',currency_code='IQD' WHERE id=$1",[m.id]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});
+      m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const promotions=await import('../src/services/postgresCommercePromotionAuthority.ts');
+    const catalog=await import('../src/services/postgresCatalogAuthority.ts');
+    const base='/api/catalog/promotions',allowed={Origin:'https://management.example.invalid'},foreign={Origin:'https://foreign.example.invalid'};
+    const draft={name:'Owned HTTP promotion',scope:'delivery',effect:'free_delivery',starts_local:'2030-01-01T09:00',ends_local:'2030-01-02T09:00',enabled:false,priority:7};
+    const key='promotion-write-'+randomUUID(),fault='promo_write_fault_'+randomUUID().replaceAll('-','');
+    let trigger=false,fn=false,sequence=false,passed=false,rollback=false;
+    const stable=async()=>({business:await snapshot(),promotions:(await admin.query('SELECT to_jsonb(p) AS row FROM commerce_promotions p WHERE merchant_id=ANY($1::text[]) ORDER BY id',[tenantIds])).rows,
+      products:(await admin.query('SELECT to_jsonb(p) AS row FROM products p WHERE merchant_id=ANY($1::text[]) ORDER BY id',[tenantIds])).rows,
+      variants:(await admin.query('SELECT to_jsonb(p) AS row FROM product_variants p WHERE merchant_id=ANY($1::text[]) ORDER BY id',[tenantIds])).rows});
+    async function unchanged(path,who,method,body,headers,status,code){
+      const before=await stable(),r=await req(path,who,method,body,headers);assert.equal(r.status,status,path+' '+method);if(code)assert.equal(r.body.code,code);assert.deepEqual(await stable(),before);return r;
+    }
+    try{
+      const seeds=[];
+      for(const m of [x,x,y])seeds.push((await promotions.createCommercePromotionAuthoritative({merchantId:m.id,idempotencyKey:randomUUID(),input:draft})).promotion);
+      // Observe every verb before asserting, so one source run establishes the whole family.
+      const beforeOrigin=await stable(),observed=[];
+      observed.push((await req(base,x,'POST',{promotion:draft},{...foreign,'Idempotency-Key':'foreign-'+key})).status);
+      observed.push((await req(base+'/'+seeds[0].id,x,'PATCH',{expected_version:1,promotion:{name:'Foreign Origin patch'}},foreign)).status);
+      observed.push((await req(base+'/'+seeds[1].id,x,'DELETE',{expected_version:1},foreign)).status);
+      const afterOrigin=await stable();
+      console.log('P0_PROMOTION_WRITE_ORIGIN_OBSERVED '+JSON.stringify({statuses:observed,rowsUnchanged:JSON.stringify(afterOrigin)===JSON.stringify(beforeOrigin)}));
+      assert.deepEqual(observed,[403,403,403]);assert.deepEqual(afterOrigin,beforeOrigin);
+      const endpoints=[[base,'POST',{promotion:draft}], [base+'/'+seeds[0].id,'PATCH',{expected_version:1,promotion:{name:'Denied patch'}}], [base+'/'+seeds[1].id,'DELETE',{expected_version:1}]];
+      for(const [path,method,body] of endpoints){
+        for(const who of [undefined,owner,viewer,channelManager])await unchanged(path,who,method,body,{...allowed,'Idempotency-Key':key},401);
+        for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:`${x.cookie}; ${owner.cookie}`},{Cookie:'fawri_merchant_session=synthetic-invalid'}])await unchanged(path,x,method,body,{...allowed,'Idempotency-Key':key,...headers},401);
+        await unchanged(path,x,method,{...body,merchant_id:y.id},{...allowed,'Idempotency-Key':key},403,'MERCHANT_ACCESS_FORBIDDEN');
+      }
+      const created=await req(base+'?merchant_id='+y.id,x,'POST',{promotion:draft},{...allowed,'Idempotency-Key':key});
+      assert.equal(created.status,201);assert.equal(created.cache,'no-store');assert.equal(created.body.replayed,false);
+      const own=created.body.promotion;assert.equal(own.merchant_id,x.id);assert.equal(own.version,1);assert.equal(own.currency_code,'IQD');assert.equal(own.schedule_timezone,'Asia/Baghdad');assert.equal(own.starts_at,'2030-01-01T06:00:00.000Z');
+      assert.doesNotMatch(JSON.stringify(created.body),/create_request_hash|metadata|created_at|updated_at/);
+      const replayBefore=await stable();
+      const replay=await fetch(origin+base,{method:'POST',headers:{Cookie:x.cookie,'X-Fawri-Device-Id':x.device,'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({promotion:draft})});
+      assert.equal(replay.status,200);assert.equal(replay.headers.get('Idempotent-Replay'),'true');assert.deepEqual(await replay.json(),{ok:true,replayed:true,promotion:own});assert.deepEqual(await stable(),replayBefore);
+      await unchanged(base,x,'POST',{promotion:{...draft,name:'Changed retry'}},{...allowed,'Idempotency-Key':key},409,'COMMERCE_PROMOTION_IDEMPOTENCY_CONFLICT');
+      const peer=await req(base,y,'POST',{promotion:draft},{'Idempotency-Key':key});assert.equal(peer.status,201);assert.equal(peer.body.promotion.merchant_id,y.id);assert.notEqual(peer.body.promotion.id,own.id);
+      for(const method of ['PATCH','DELETE'])await unchanged(base+'/'+peer.body.promotion.id,x,method,method==='PATCH'?{expected_version:1,promotion:{name:'Foreign id'}}:{expected_version:1},allowed,404,'COMMERCE_PROMOTION_NOT_FOUND');
+      for(const field of ['merchant_id','currency_code','schedule_timezone','starts_at','ends_at'])await unchanged(base,x,'POST',{promotion:{...draft,[field]:field==='merchant_id'?x.id:'synthetic-authority-override'}},{...allowed,'Idempotency-Key':randomUUID()},400,'COMMERCE_PROMOTION_AUTHORITY_OVERRIDE_FORBIDDEN');
+      await unchanged(base,x,'POST',{promotion:draft},allowed,400,'COMMERCE_PROMOTION_IDEMPOTENCY_KEY_REQUIRED');
+      const ownPath=base+'/'+own.id;
+      await unchanged(ownPath,x,'PATCH',{promotion:{name:'Missing version'}},allowed,400);
+      const edited=await req('/API/CaTaLoG/PrOmOtIoNs/'+own.id+'/?merchant_id='+y.id,x,'PATCH',{expected_version:1,promotion:{name:'Legitimate changed name'}},allowed);
+      assert.equal(edited.status,200);assert.equal(edited.body.promotion.name,'Legitimate changed name');assert.equal(edited.body.promotion.version,2);assert.equal(edited.body.promotion.merchant_id,x.id);
+      await unchanged(ownPath,x,'PATCH',{expected_version:1,promotion:{name:'Stale patch'}},allowed,409,'COMMERCE_PROMOTION_VERSION_CONFLICT');
+      await unchanged(ownPath+'?expected_version=1',x,'DELETE',undefined,allowed,409,'COMMERCE_PROMOTION_VERSION_CONFLICT');
+      const products=[];
+      for(const m of [x,y]){
+        const id='promo-target-'+randomUUID(),variant='promo-variant-'+randomUUID();
+        const result=await catalog.createCatalogProductAuthoritative({merchantId:m.id,idempotencyKey:randomUUID(),input:{id,name:'Synthetic promotion target',price_iqd:1000,variants:[{id:variant,name:'Variant',stock_quantity:3,options:{Size:'M'}}]}});
+        products.push(result.product);
+      }
+      const targetDraft={...draft,scope:'catalog_item',effect:'percentage_off',percentage_bps:1000,product_id:products[0].id,variant_id:products[0].variants[0].id};
+      for(const promotion of [{...targetDraft,product_id:products[1].id,variant_id:products[1].variants[0].id},{...targetDraft,variant_id:products[1].variants[0].id}])await unchanged(base,x,'POST',{promotion},{...allowed,'Idempotency-Key':randomUUID()},404,'COMMERCE_PROMOTION_TARGET_NOT_FOUND');
+      await unchanged(base,x,'POST',{promotion:{...targetDraft,percentage_bps:10001}},{...allowed,'Idempotency-Key':randomUUID()},400,'COMMERCE_PROMOTION_FIELD_INVALID');
+      const targeted=await req(base,x,'POST',{promotion:targetDraft},{...allowed,'Idempotency-Key':randomUUID()});assert.equal(targeted.status,201);assert.equal(targeted.body.promotion.variant_id,products[0].variants[0].id);
+      // Actual AFTER-row failures prove INSERT/UPDATE/DELETE were reached and rolled back.
+      await admin.query(`CREATE SEQUENCE ${fault}`);sequence=true;await admin.query(`GRANT USAGE ON SEQUENCE ${fault} TO ${runtime.role}`);
+      await admin.query(`CREATE FUNCTION ${fault}() RETURNS trigger LANGUAGE plpgsql AS $promo_fault$ BEGIN IF (CASE WHEN TG_OP='DELETE' THEN OLD.merchant_id ELSE NEW.merchant_id END)=TG_ARGV[0] THEN PERFORM nextval(TG_ARGV[1]::regclass); RAISE EXCEPTION 'synthetic promotion post-write fault'; END IF; IF TG_OP='DELETE' THEN RETURN OLD; END IF; RETURN NEW; END $promo_fault$`);fn=true;
+      await admin.query(`CREATE TRIGGER ${fault} AFTER INSERT OR UPDATE OR DELETE ON commerce_promotions FOR EACH ROW EXECUTE FUNCTION ${fault}('${x.id}','${fault}')`);trigger=true;
+      const faultKey='fault-'+key;
+      for(const [path,method,body,headers] of [[base,'POST',{promotion:draft},{...allowed,'Idempotency-Key':faultKey}],[ownPath,'PATCH',{expected_version:2,promotion:{name:'Rolled back patch'}},allowed],[ownPath+'?expected_version=2','DELETE',undefined,allowed]]){
+        const failed=await unchanged(path,x,method,body,headers,500);assert.equal(failed.cache,'no-store');assert.deepEqual(failed.body,{ok:false,code:'CATALOG_OPERATION_FAILED',error:'catalog operation failed'});
+      }
+      assert.deepEqual((await admin.query(`SELECT last_value::int AS value,is_called FROM ${fault}`)).rows[0],{value:3,is_called:true});rollback=true;
+      await admin.query(`DROP TRIGGER ${fault} ON commerce_promotions`);trigger=false;
+      const recovered=await req(base,x,'POST',{promotion:draft},{...allowed,'Idempotency-Key':faultKey});assert.equal(recovered.status,201);assert.equal(recovered.body.replayed,false);
+      const updated=await req(ownPath,x,'PATCH',{expected_version:2,promotion:{name:'Recovered patch'}});assert.equal(updated.status,200);assert.equal(updated.body.promotion.version,3);
+      const deleted=await req(ownPath+'?expected_version=3',x,'DELETE');assert.equal(deleted.status,200);assert.deepEqual(deleted.body,{ok:true,deleted_promotion_id:own.id,deleted_version:3});
+      await unchanged(ownPath+'?expected_version=3',x,'DELETE',undefined,allowed,404,'COMMERCE_PROMOTION_NOT_FOUND');
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      for(const [path,method,body] of endpoints)await unchanged(path,x,method,body,{...allowed,'Idempotency-Key':key},401);
+      assert.equal((await req(base,y)).body.promotions.some(p=>p.id===peer.body.promotion.id),true);passed=true;
+    }finally{
+      await cleanupResources([
+        ['promotion fault trigger',()=>trigger?admin.query(`DROP TRIGGER ${fault} ON commerce_promotions`):undefined],
+        ['promotion fault function',()=>fn?admin.query(`DROP FUNCTION ${fault}()`):undefined],
+        ['promotion fault sequence',()=>sequence?admin.query(`DROP SEQUENCE ${fault}`):undefined],
+        ['owned promotion rows',()=>admin.query('DELETE FROM commerce_promotions WHERE merchant_id=ANY($1::text[])',[tenantIds])],
+        ...['catalog_image_references','catalog_variant_options','product_variants','catalog_idempotency_keys','products'].map(table=>['owned promotion targets '+table,()=>admin.query(`DELETE FROM ${table} WHERE merchant_id=ANY($1::text[])`,[tenantIds])]),
+      ]);
+    }
+    console.log('P0_PROMOTION_WRITE_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,allAssertionsPassed:passed,postWriteRollbackAllThreeVerbs:rollback,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
