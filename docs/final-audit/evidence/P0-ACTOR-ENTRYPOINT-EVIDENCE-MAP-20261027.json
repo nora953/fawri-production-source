@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/context and GET /api/catalog/promotions: reconcile actual secure compatibility/session chain, normalized currency context, promotion field/ownership projection and existing catalog/promotion SQL/HTTP/consumer evidence before selecting any missing cell. Reuse accepted regional and catalog list/detail proofs; no automatic repeat test or policy/Origin redesign. No new gate/count growth, hosted/provider action, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -41028,14 +41028,137 @@
         },
         "errorContract": "Catalog route sendError preserves declared typed errors; unexpected SQL42501 is generic500 CATALOG_OPERATION_FAILED. No defect asserted by this source review.",
         "nextAction": "Implement one bounded current catalog list/detail actual-full-app read case in the existing management privacy harness after63TAP: reuse actor helpers and two owned merchants, positive exact root/nested projection with merchant-private root/variant cost and images/options, no raw product metadata, foreign query ignored and peer detail404, secure actor/device/combined-cookie/revoked-session denials. Reuse accepted sale/stock and variant-history tests. Target the separate archived-variant SELECT after successful core reads using disposable primary column grants that preserve core product_variants columns but deny metadata; prove42501, generic error, unchanged business rows, restore original grants and both-tenant recovery. Inspect seed API/cleanup/grants before mutation. No automatic policy, new gate, credential/provider/hosted action, merge or deployment."
+      },
+      {
+        "boundary": "currentCatalogReadFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "status": "BOUNDED_CURRENT_CATALOG_LIST_DETAIL_PRIVATE_NESTED_FIELDS_ACTOR_TENANT_AND_ARCHIVE_SQL_FAILURE_FULL_APP_ACCEPTED",
+        "sourceReviewed": "453e0ccf518f216e38f975d49c2e2d5e9eb9d926",
+        "source": "d77cf9e0027e52507cb57c10261f32cc410e0c8b",
+        "sourceTree": "475cb0bb72a72db2cfafc98481b8630fa5ff7356",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "b64f7b8551d8144ec16727842e83a8b374737d16",
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "schemaChanged": false,
+        "aclOrProductionGrantChanged": false,
+        "applicationExecuted": true,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "acceptanceCondition": "Existing current catalog list/detail missing exact merchant-private nested field/actor/tenant and post-core archive-read failure/recovery full-app cell. Bounded prerequisite only, not full P0/field inventory or policy closure.",
+        "fixture": {
+          "reuse": "Existing actual-app management test actor/request/disposable restricted primary and separate authentication helper.",
+          "additionalMerchants": 2,
+          "products": 2,
+          "variants": 3,
+          "archivedVariants": 1,
+          "seed": "Existing catalog create authoritative service with owned synthetic IDs/idempotency keys; direct owned SQL adds raw product metadata extension and archive marker. Image references are synthetic URL/storage keys only, no external fetch or physical storage/provider proof.",
+          "rootCost": [
+            88,
+            55
+          ],
+          "visibleVariantCost": [
+            77,
+            44
+          ],
+          "archivedVariantCost": 66,
+          "inventory": "Target root quantity7 includes two original variants3+4; archive visibility fixture leaves stored root quantity unchanged and filters archived variant from read only. This is not adoption of archive inventory accounting or a new sale/stock/return proof.",
+          "cleanup": "Owned image references, variant options, variants, catalog idempotency and products removed before root account cleanup. Column grants restored in finally; no hosted privileges changed."
+        },
+        "assertions": [
+          "Canonical and mixed-case/trailing-slash list/detail use actual application bridge; foreign tenant query ignored and exact list root/detail root plus entire nested expected product equality; no-store.",
+          "Own product cost88 and visible variant cost77, image URL/storage_key/alt, option Color=Blue and price/stock/version/type/inventory fields preserved. Peer independently receives own cost55/variant44 and Green option.",
+          "Raw metadata, private_extension, fawri_catalog_v2 and internal variant_costs_iqd map absent. Archived Red variant/cost not exposed; stored graph remains unchanged. Dynamic timestamps/scoped image IDs use generated fixture identities; business values fixed independently.",
+          "No session/admin owner/viewer/channel manager denied401; wrong device, mixed secure role cookie, forged legacy cookie denied401; foreign product detail404 CATALOG_PRODUCT_NOT_FOUND.",
+          "Selected existing business snapshot plus five catalog table whole-row snapshots remain unchanged through reads/denials, fault and recovery; merchant housekeeping watermark/accounts sessions are outside this read snapshot, as previously reconciled.",
+          "Original primary product_variants table SELECT verified. Revoke table SELECT then grant only14core graph columns, excluding metadata; has_column_privilege false and actual pool query42501.",
+          "Under these temporary grants, core.get own succeeds with two variants and core.list peer succeeds. Wrapper direct read fails42501 at its later metadata-dependent archive query; actual HTTP list and detail return fixed generic500 CATALOG_OPERATION_FAILED with no-store and no catalog payload.",
+          "Restore table SELECT and remove added explicit column grants; own detail and peer list recover exact projections. Revoke own merchant session, list/detail401 while peer still200; selected rows unchanged."
+        ],
+        "targeted": {
+          "run": 40820058129,
+          "job": 123270172185,
+          "checkout": "0ac1c673f18b1a24d89b926bd757cb725033534b",
+          "tree": "475cb0bb72a72db2cfafc98481b8630fa5ff7356",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 95,
+          "fullAppTap": 64,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 64
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "marker": {
+            "actualFullApp": true,
+            "restrictedPrimary": true,
+            "separateAuthLogin": true,
+            "passedCases": 1,
+            "allAssertionsPassed": true,
+            "archiveSqlReadFaultAfterCoreSuccess": true,
+            "hosted": false
+          }
+        },
+        "firstAttempt": "Targeted first source run PASS; no failed assertion, source fix, weakened assertion or rerun.",
+        "limits": [
+          "Bounded actual local HTTP+PostgreSQL proof, not all optional product/service/measurement fields or complete actor/producer/historical provenance inventory.",
+          "Preserves existing merchant-private cost contract; not approval for cost disclosure to customers or new metadata/image retention policy.",
+          "Synthetic archive marker/read behavior only, no archive lifecycle/concurrency snapshot/stock-accounting acceptance; core and archive wrapper use separate transactions.",
+          "No browser/physical-device/hosted/media-object/provider/send/release proof; historical catalogue counts stay historical."
+        ],
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/context and GET /api/catalog/promotions: reconcile actual secure compatibility/session chain, normalized currency context, promotion field/ownership projection and existing catalog/promotion SQL/HTTP/consumer evidence before selecting any missing cell. Reuse accepted regional and catalog list/detail proofs; no automatic repeat test or policy/Origin redesign. No new gate/count growth, hosted/provider action, merge or deployment.",
+        "accepted": true,
+        "broader": {
+          "run": 40820058378,
+          "job": 123270173057,
+          "checkout": "0ac1c673f18b1a24d89b926bd757cb725033534b",
+          "tree": "475cb0bb72a72db2cfafc98481b8630fa5ff7356",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "d77cf9e0027e52507cb57c10261f32cc410e0c8b",
+          "checkout": "0ac1c673f18b1a24d89b926bd757cb725033534b",
+          "checkoutTreeMatched": true,
+          "finalSourceRetries": 0,
+          "localSyntax": "node --check catalog-full-app-candidate.mjs PASS"
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+      "source": "d77cf9e0027e52507cb57c10261f32cc410e0c8b",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "32abf6ec9c9819fb5aacd535737a1272542e70ae",
+      "gitBlob": "b64f7b8551d8144ec16727842e83a8b374737d16",
       "catalogueRegenerated": false,
-      "interpretation": "Historical catalogue hashes/counts remain historical. Regional full-app overlay adds1case after original62TAP, two owned merchants and catalog fixture, exact context, actor/tenant guard, existing Origin guard fix and real SQL failure/post-update rollback. Compare all merchant fields except proven global-retention updated_at watermark; no policy or full inventory acceptance."
+      "interpretation": "Historical catalogue counts/hashes remain historical. Catalog read full-app overlay adds1case after original63TAP; two owned merchants, products/variants and synthetic image references, exact private-cost/nested projection, actor/tenant denials and actual archive-metadata SQL42501 after core success, generic error and recovery. Existing accepted boundaries retained; no application change or blanket field/inventory acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -41716,6 +41839,39 @@
       "parentGateClosed": false,
       "newGate": false,
       "userActionRequiredNow": false
+    },
+    "currentCatalogReadFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogReadFullApp]",
+      "status": "BOUNDED_CURRENT_CATALOG_LIST_DETAIL_PRIVATE_NESTED_FIELDS_ACTOR_TENANT_AND_ARCHIVE_SQL_FAILURE_FULL_APP_ACCEPTED",
+      "source": "d77cf9e0027e52507cb57c10261f32cc410e0c8b",
+      "sourceTree": "475cb0bb72a72db2cfafc98481b8630fa5ff7356",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 95,
+      "fullAppTap": 64,
+      "targetRun": 40820058129,
+      "targetJob": 123270172185,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40820058378,
+      "broaderJob": 123270173057,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeCatalogRead20261029": {
+      "source": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "32abf6ec9c9819fb5aacd535737a1272542e70ae",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical catalogue hashes/counts remain historical. Regional full-app overlay adds1case after original62TAP, two owned merchants and catalog fixture, exact context, actor/tenant guard, existing Origin guard fix and real SQL failure/post-update rollback. Compare all merchant fields except proven global-retention updated_at watermark; no policy or full inventory acceptance."
     }
   },
   "componentScopes": {
