@@ -24,6 +24,8 @@ assert.equal(
 const PASSWORD_SALT = "admin-auth-postgres-proof-password-salt";
 const AUTH_SECRET = "admin-auth-postgres-proof-security-secret-at-least-32-characters";
 const ownerId = "admin-pg-owner-proof";
+const peerId = "admin-pg-otp-peer-proof";
+const peerDeviceRecordId = "2f008861-128e-426a-a01b-96f69825a33b";
 const ownerPhone = "+9647987654321";
 const ownerPassword = "OwnerProof9!";
 const ownerDeviceId = "owner-device-postgres-proof";
@@ -159,6 +161,7 @@ test("admin auth router is end-to-end PostgreSQL authoritative", async (t) => {
       "DELETE FROM accounts WHERE id = $1 OR id = $2 OR phone = ANY($3::text[])",
       [ownerId, assistantId || "missing-assistant", [ownerPhone, assistantPhone]],
     );
+    await pool.query("DELETE FROM accounts WHERE id = $1", [peerId]);
     await operatorFixture.dispose();
     await runtimeFixture.dispose();
     await rm(runtimeDirectory, { recursive: true, force: true });
@@ -195,6 +198,56 @@ test("admin auth router is end-to-end PostgreSQL authoritative", async (t) => {
   assert.equal(ownerOtpRows.rows[0].purpose, "admin_device_verification");
   assert.equal(ownerOtpRows.rows[0].used_at, null);
   assertNoLegacyAuthFiles(dataDirectory);
+
+
+  // A second account's pre-existing pending device is a fixture, not a route-created device.
+  await pool.query(`INSERT INTO accounts
+    (id, kind, phone, password_hash, state, language, phone_verified, phone_verified_at, created_at, updated_at)
+    VALUES ($1, 'admin', '+9647987654399', $2, 'active', 'en', TRUE, now(), now(), now())`,
+    [peerId, hashPassword(ownerPassword)]);
+  await pool.query(`INSERT INTO trusted_devices
+    SELECT (jsonb_populate_record(NULL::trusted_devices,
+      to_jsonb(d) || jsonb_build_object('id', $2::text, 'account_id', $3::text))).*
+    FROM trusted_devices d WHERE id = $1`,
+    [ownerLogin.body.device_record_id, peerDeviceRecordId, peerId]);
+  async function otpBoundaryState() {
+    const result = await pool.query(`SELECT
+      (SELECT jsonb_agg(to_jsonb(a) ORDER BY a.id) FROM accounts a WHERE id = ANY($1::text[])) AS accounts,
+      (SELECT COALESCE(jsonb_agg(to_jsonb(d) ORDER BY d.id), '[]'::jsonb) FROM trusted_devices d WHERE account_id = ANY($1::text[])) AS devices,
+      (SELECT COALESCE(jsonb_agg(to_jsonb(s) ORDER BY s.id), '[]'::jsonb) FROM account_sessions s WHERE account_id = ANY($1::text[])) AS sessions,
+      (SELECT COALESCE(jsonb_agg(to_jsonb(o) ORDER BY o.id), '[]'::jsonb) FROM auth_otp_challenges o WHERE account_id = ANY($1::text[])) AS challenges`, [[ownerId, peerId]]);
+    return result.rows[0];
+  }
+  const beforeDeniedOtp = await otpBoundaryState();
+  const deniedOtp: Array<{ scenario: string; endpoint: string; status: number; code: string }> = [];
+  for (const scenario of [
+    { name: "missing-record", record: "", device: ownerDeviceId },
+    { name: "nonexistent-record", record: "f5555a05-e82e-4f9d-a4e0-93b560f033aa", device: ownerDeviceId },
+    { name: "wrong-fingerprint", record: ownerLogin.body.device_record_id, device: "unregistered-otp-device-proof" },
+    { name: "other-account-record", record: peerDeviceRecordId, device: ownerDeviceId },
+  ]) {
+    for (const endpoint of ["resend", "verify"]) {
+      const denied = await json(await fetch(`${baseUrl}/api/auth/admin/device-otp/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-fawri-device-id": scenario.device },
+        body: JSON.stringify({ phone: ownerPhone, device_record_id: scenario.record,
+          challenge_id: ownerLogin.body.challenge_id, code: ownerLogin.body.devCode }),
+        signal: AbortSignal.timeout(3000),
+      }));
+      deniedOtp.push({ scenario: scenario.name, endpoint, status: denied.response.status, code: denied.body?.code });
+      assert.equal(denied.response.status, 400);
+      assert.equal(denied.body?.code, "OWNER_DEVICE_VERIFICATION_INVALID");
+      assert.equal(denied.response.headers.has("set-cookie"), false);
+      assert.equal(denied.body?.devCode, undefined);
+      assert.equal(denied.body?.challenge_id, undefined);
+      assert.deepEqual(await otpBoundaryState(), beforeDeniedOtp,
+        "rejected lookup must not create/trust devices, issue/consume OTP or create sessions");
+    }
+  }
+  assertNoLegacyAuthFiles(dataDirectory);
+  console.log("P0_ADMIN_DEVICE_OTP_OWNERSHIP_OBSERVED " + JSON.stringify({
+    observations: deniedOtp, unchangedState: true, noSessionCookie: true, devOtpOnly: true, aggregateRouter: true,
+  }));
 
   const ownerVerify = await json(await fetch(
     `${baseUrl}/api/auth/admin/device-otp/verify`,

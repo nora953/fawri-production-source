@@ -2,6 +2,7 @@ name: P0 management privacy HTTP matrix
 on:
   pull_request:
     paths:
+      - 'artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts'
       - 'artifacts/api-server/tests/owner-break-glass-recovery.integration.test.ts'
       - 'artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts'
       - 'artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts'
