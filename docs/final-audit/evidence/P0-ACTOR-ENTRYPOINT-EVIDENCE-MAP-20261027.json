@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current POST /api/catalog/media/images: trace secure compatibility/session and raw-body parser order, existing mutation-Origin contract, upload MIME/size/error projection and storage/preview consumers against accepted direct storage tests before selecting any missing full-app upload cell. Preserve existing merchant-owned preview-before-product-attachment behavior; no new SQL attachment/approval authority. Reuse accepted GET media and catalog proofs, no automatic policy/cache redesign, new gate/count growth, hosted/provider action, merge or deployment.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current catalog promotion write family POST /api/catalog/promotions, PATCH/DELETE /api/catalog/promotions/:promotionId: reconcile actual secure compatibility/session and existing mutation-Origin ordering, path/body tenant targeting, idempotency/expected-version/financial target guards and accepted service/HTTP evidence before selecting missing cells. Reuse accepted context/list/catalog/media proofs; no automatic product policy, global auth redesign, new gate/count, hosted/provider action, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -41557,14 +41557,191 @@
           "finalSourceRetries": 0,
           "localSyntax": "node --check media-full-app-candidate.mjs PASS"
         }
+      },
+      {
+        "boundary": "currentCatalogMediaUploadFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "status": "BOUNDED_CURRENT_CATALOG_MEDIA_UPLOAD_ORIGIN_ACTOR_PARSER_AND_PHYSICAL_WRITE_RECOVERY_FULL_APP_ACCEPTED",
+        "sourceReviewed": "db57c636f253949ea7fabf3643da9bce9bb29f2f",
+        "source": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
+        "sourceTree": "a597a54d49df40de299a0a9db2fa4d6753c513fa",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "c4526901a79ad1df9fc08871246912d10ba961fe",
+        "route": "artifacts/api-server/src/routes/catalog-operations.ts",
+        "routeBlob": "370d94ec9933fe863c825a607f8d6722b928cc6e",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+            "gitBlobSha": "a96246c760be858132e43db49c1b2ff52776c879",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authSession.ts",
+            "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/catalogMediaStorage.ts",
+            "gitBlobSha": "a45ad21fd84e4b76ab922b1261f7240551012be3",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/lib/dataPaths.ts",
+            "gitBlobSha": "4a12047647e3dc5ba7ebf5dfa627c26a4ad9a02c",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/catalog-media-storage.test.ts",
+            "gitBlobSha": "f7d7fc68408007e421f8d3398b3b670b999f5daa",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/fawri/src/lib/catalogMediaUiApi.ts",
+            "gitBlobSha": "539fd55cfdc7d83f0dddac7d563137f31191dca6",
+            "localBlobMatched": true
+          }
+        ],
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "applicationExecuted": true,
+        "schemaChanged": false,
+        "productionGrantsChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "acceptanceCondition": "Existing upload actor/privacy/write safety matrix lacked bounded actual-full-app explicit-Origin/physical mutation, parser size/content and real write-failure/recovery evidence. Closes this cell only.",
+        "sourceReconciliation": {
+          "order": "Existing global JSON/urlencoded parsers precede compatibility/auth layers; route-specific image raw parser follows merchant guard. Fix inserts existing enforceAuthOrigin after merchant guard and before image raw parser; no global parser/bridge change.",
+          "parser": "express.raw image/jpeg/png/webp limit CATALOG_IMAGE_MAX_BYTES=8MiB; route callback maps oversize413 and invalid parser400. Non-buffer/empty body rejected400; store validates supplied exact MIME against signature and size before writing.",
+          "storage": "Existing hashed merchant prefix and filesystem provider, random UUID asset plus SHA256/preview URL. No SQL image attachment authority introduced.",
+          "consumer": "Pinned catalogMediaUiApi sends raw File with its MIME; existing client validates size/MIME before upload. Source only, not browser proof."
+        },
+        "reproduction": {
+          "source": "dbd9c988bf2e523c24f2aa1f3341ca1d17f5d4f6",
+          "tree": "f0d0bf0c89fbf3edd1b2768a346ffee545616415",
+          "run": 40861081350,
+          "job": 123404181116,
+          "fullAppTap": 67,
+          "passed": 65,
+          "failed": 2,
+          "skipped": 0,
+          "cancelled": 0,
+          "observed": {
+            "status": 201,
+            "filesCreated": 1
+          },
+          "expected": {
+            "status": 403,
+            "filesCreated": 0
+          },
+          "classification": "Direct synthetic HTTP valid merchant cookie with explicit foreign Origin accepted and physically wrote one owned file. New child plus parent TAP failed; existing65passed. No retry or test weakening; owned fixture files removed in finally.",
+          "claimLimit": "Not a demonstrated browser-CSRF exploit, hostile upload, hosted storage exposure or credential compromise."
+        },
+        "fix": "Two application lines: import existing enforceAuthOrigin from middleware/authSession and add on POST image upload after existing merchant guard before parseCatalogImageBody. GET unchanged; allowlisted and omitted-Origin writes preserved, no new auth/ownership/policy.",
+        "fixture": {
+          "additionalMerchants": 2,
+          "provider": "filesystem",
+          "body": "PNG signature + synthetic bytes, not full image decoding",
+          "seed": "Actual POST uploads; prefix independently calculated from merchant ID SHA256 for ownership/directory assertions. No existing file attachment/DB graph required.",
+          "fileState": "Only generated owned/peer prefix file names and byte hashes inspected. Actual upload receipts/preview GET/direct file bytes verified; selected existing business snapshot unchanged.",
+          "cleanup": "Restore owned upload backup first, remove only two owned merchant prefixes and restore provider env through cleanupResources, even on assertion failure."
+        },
+        "assertions": [
+          "No session/admin owner/viewer/channel manager/wrong device/mixed cookie/forged legacy cookie401 before physical writes; owned/peer file snapshots remain empty.",
+          "Explicit foreign Origin403 AUTH_ORIGIN_FORBIDDEN and filesCreated0. Configured allowed Origin creates target file; omitted Origin creates peer file. Foreign query merchant_id ignored: each asset under actual session prefix.",
+          "Exact receipt root/asset keys, random PNG UUID suffix, encoded preview URL, MIME/size and independently computed SHA256; actual file and one preview response match uploaded bytes.",
+          "MIME mismatch PNG bytes under JPEG415, invalid magic415, empty image400 and JSON rather than binary400 produce declared codes with no new files. MAX_BYTES+1 actual raw POST413 and max_bytes bound; no exact-MAX valid upload certification.",
+          "Unknown synthetic storage provider503 with unchanged owned/peer file hashes; configuration restored.",
+          "Temporarily rename owned directory to owned backup and place owned file at parent path; real mkdir/write stage fails and HTTP500 generic CATALOG_OPERATION_FAILED/no-store without storage details. Peer file bytes and selected business rows unchanged.",
+          "Restore original directory with original file byte hash; next legitimate upload201 creates exactly one additional own file, peer unchanged. Revoked target session401 cannot add files or change selected rows."
+        ],
+        "targeted": {
+          "run": 40861412945,
+          "job": 123405297637,
+          "checkout": "05841e58ea9cfe15dc1abd5c124805c4c6f08893",
+          "tree": "a597a54d49df40de299a0a9db2fa4d6753c513fa",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 98,
+          "fullAppTap": 67,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 67
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "marker": {
+            "actualFullApp": true,
+            "restrictedPrimary": true,
+            "separateAuthLogin": true,
+            "passedCases": 1,
+            "allAssertionsPassed": true,
+            "physicalWriteFaultAndRecovery": true,
+            "filesystemOnly": true,
+            "hosted": false
+          },
+          "originObserved": {
+            "status": 403,
+            "filesCreated": 0
+          }
+        },
+        "limits": [
+          "Synthetic direct local HTTP/filesystem+PostgreSQL sessions only; not browser exploit/CSRF/cross-origin preflight or real hosted storage/durability proof.",
+          "Existing signature check, not image decoder/malware/symlink/host compromise or full JPEG/WebP/size boundary matrix.",
+          "Read proof reused; no cache policy, SQL attachment requirement, role/OTP/pairing redesign or physical file retention/deletion approval.",
+          "Initial generic JSON parser still precedes auth globally; only route image raw parser moved behind existing Origin guard. No global DoS/parser-order acceptance."
+        ],
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current catalog promotion write family POST /api/catalog/promotions, PATCH/DELETE /api/catalog/promotions/:promotionId: reconcile actual secure compatibility/session and existing mutation-Origin ordering, path/body tenant targeting, idempotency/expected-version/financial target guards and accepted service/HTTP evidence before selecting missing cells. Reuse accepted context/list/catalog/media proofs; no automatic product policy, global auth redesign, new gate/count, hosted/provider action, merge or deployment.",
+        "accepted": true,
+        "broader": {
+          "run": 40861412863,
+          "job": 123405423953,
+          "checkout": "05841e58ea9cfe15dc1abd5c124805c4c6f08893",
+          "tree": "a597a54d49df40de299a0a9db2fa4d6753c513fa",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
+          "checkout": "05841e58ea9cfe15dc1abd5c124805c4c6f08893",
+          "checkoutTreeMatched": true,
+          "finalSourceRetries": 0,
+          "localSyntax": "node --check upload-full-app-candidate.mjs PASS"
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "fb13bb2af34c8af787125228758b4e37db642a8c",
+      "source": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "8b91cdbec4c5e36772c7616635b74aea099b5722",
+      "gitBlob": "c4526901a79ad1df9fc08871246912d10ba961fe",
       "catalogueRegenerated": false,
-      "interpretation": "Historical catalogue hashes/counts remain historical. Media image actual-app overlay adds1case after original65TAP; two owned local media prefixes, exact bytes/headers, actor/tenant denial, missing/corrupt/real filesystem read error/provider-unavailable and recovery. Existing ownership-before-product-attachment and private cache behavior retained; no app change, browser/hosted/upload/policy/full-inventory acceptance."
+      "interpretation": "Historical catalogue counts/hashes remain historical. Upload actual-app overlay adds1case after original66TAP; explicit foreign-Origin physical-write repro fixed with existing guard before image raw parser. Own/peer legitimate upload, exact asset/file/preview, declared MIME/empty/JSON/oversize, real filesystem write error and recovery/revocation accepted. No global parser/auth redesign, new ownership/cache/attachment policy, browser/hosted/full-inventory acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -42345,6 +42522,39 @@
       "gitBlob": "58cf93f8fce7bbae46bfc32c4d650b96f408a92e",
       "catalogueRegenerated": false,
       "interpretation": "Historical catalogue hashes/counts remain historical. Context/promotion actual-app overlay adds1case after original64TAP; two owned merchants/profiles and disabled delivery promotions, exact context/promotion DTO, actor/tenant denials, real SQL42501 generic error and recovery while context remains available. Existing accepted boundaries retained; no application change or whole inventory/promotion lifecycle acceptance."
+    },
+    "currentCatalogMediaUploadFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogMediaUploadFullApp]",
+      "status": "BOUNDED_CURRENT_CATALOG_MEDIA_UPLOAD_ORIGIN_ACTOR_PARSER_AND_PHYSICAL_WRITE_RECOVERY_FULL_APP_ACCEPTED",
+      "source": "3b73afe1710e60a0e034afc06b11ccc12257d8f2",
+      "sourceTree": "a597a54d49df40de299a0a9db2fa4d6753c513fa",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 98,
+      "fullAppTap": 67,
+      "targetRun": 40861412945,
+      "targetJob": 123405297637,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40861412863,
+      "broaderJob": 123405423953,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeCatalogUpload20261029": {
+      "source": "fb13bb2af34c8af787125228758b4e37db642a8c",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "8b91cdbec4c5e36772c7616635b74aea099b5722",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical catalogue hashes/counts remain historical. Media image actual-app overlay adds1case after original65TAP; two owned local media prefixes, exact bytes/headers, actor/tenant denial, missing/corrupt/real filesystem read error/provider-unavailable and recovery. Existing ownership-before-product-attachment and private cache behavior retained; no app change, browser/hosted/upload/policy/full-inventory acceptance."
     }
   },
   "componentScopes": {
