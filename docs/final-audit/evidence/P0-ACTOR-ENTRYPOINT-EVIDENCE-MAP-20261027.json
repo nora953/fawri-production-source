@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/channels: reconcile actual secure merchant router/service and channel connection/credential projection against the existing literal test reference, current provider/channel service tests and accepted runtime evidence before selecting a missing cell. Reuse conversation and message-metadata source maps; no automatic test or metadata restriction, policy adoption, gate/count growth, hosted action, merge or deployment. Historical/unknown metadata provenance remains unverified within GitHub-only scope.",
+    "nextExactAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -40351,6 +40351,98 @@
           "Do not repeat the accepted conversation route/metadata cases; proceed with independent current channel projection reconciliation while retaining policy/history limits."
         ],
         "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/channels: reconcile actual secure merchant router/service and channel connection/credential projection against the existing literal test reference, current provider/channel service tests and accepted runtime evidence before selecting a missing cell. Reuse conversation and message-metadata source maps; no automatic test or metadata restriction, policy adoption, gate/count growth, hosted action, merge or deployment. Historical/unknown metadata provenance remains unverified within GitHub-only scope."
+      },
+      {
+        "boundary": "currentChannelListEvidenceReconciliation",
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListEvidenceReconciliation]",
+        "status": "CURRENT_CHANNEL_SUMMARY_SOURCE_AND_ROUTER_HTTP_EVIDENCE_RECONCILED_FULL_APP_CELL_PENDING",
+        "sourceReviewed": "a138997fb3a1031dc892bd21cdf24e158b4762b5",
+        "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+        "reviewComplete": true,
+        "expandedPins": 8,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": false,
+        "pins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+            "localGitBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/channel-operations.ts",
+            "gitBlobSha": "fa466ea2bd55771ebf51f01abec4bd172086ccb2",
+            "localGitBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMetaChannelAuthority.ts",
+            "gitBlobSha": "edd76d6b7bab816ca0547984366858066b9a71c9",
+            "localGitBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-channels-postgres-http.integration.test.ts",
+            "gitBlobSha": "08d1d6409430d73ae0468ad32e39758f3b98ec27",
+            "localGitBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/helpers/disposable-knowledge-runtime.mjs",
+            "gitBlobSha": "4b0c9cb1b33a6dc41369b3af1bdf133a5e1de032",
+            "localGitBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authSession.ts",
+            "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46",
+            "localGitBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/authenticationPostgresAuthority.ts",
+            "gitBlobSha": "d99b68f22b49fea6dc26a0d8b9faf90c0a485287",
+            "localGitBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/merchantOperationalAccess.ts",
+            "gitBlobSha": "b858092077e01bdbc2c40bd274bea23930a2dcb8",
+            "localGitBlobMatched": true
+          }
+        ],
+        "sourceFindings": [
+          "GET /channels uses secure merchant session and operational eligibility; merchant ID is obtained from session, not request query. app mounts this router at /api before Meta OAuth activation gate.",
+          "PostgreSQL list uses withMerchantAuthenticationTransaction, not primary operational transaction; SELECT predicate is merchant_id=$1, sorted updated_at DESC,id.",
+          "Explicit summary maps id,merchant_id,platform,page_id,page_name, optional instagram_account_id/instagram_username,status,webhook_subscribed,connection_version, optional connected_at/disconnect_requested_at/disconnected_at/last_error_code,created_at,updated_at,credential_configured.",
+          "SELECT reads encrypted credential envelope inside trusted authentication authority; HTTP summary excludes ciphertext,nonce,auth_tag,key_id,algorithm and raw metadata. credential_configured checks envelope presence and aes-256-gcm, not decryptability/provider validity.",
+          "Metadata operation determines pending status; only disconnect_requested_at is forwarded. last_error_code is forwarded when present; this review does not certify all historical error values.",
+          "Existing helper provisions restricted primary and separate auth role. Router proof mounts Express+cookie-parser+channel router directly, not actual application."
+        ],
+        "existingRuntime": {
+          "run": 40719124854,
+          "job": 122924882468,
+          "checkout": "ced45deb8ad2e894bad71b497910fe05639f8021",
+          "suite": "merchant-channels-postgres-http.integration.test.ts",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "assertions": [
+            "unauthenticated401",
+            "two-merchant isolated positive channel lists",
+            "no-store",
+            "active status and credential configured",
+            "synthetic plaintext token absent from HTTP and stored ciphertext",
+            "cross-tenant disconnect404",
+            "stale version409",
+            "disconnect202 durable scoped job and peer unchanged",
+            "no legacy JSON stores"
+          ],
+          "limits": [
+            "one TAP test contains multiple assertions; not one complete actor matrix",
+            "router-only: alternate actor, combined role/device, revoked session, exact all-key projection and credential SELECT fault through actual app not established",
+            "existing accepted run reused, no new tests executed"
+          ]
+        },
+        "nextAction": "Add one bounded GET /api/channels actual-full-app case to the existing management privacy harness, reusing actor/device/session and two-merchant fixtures: own and peer positive projections, ignored foreign merchant query, exact summary key set excluding credential envelopes/raw metadata, denied existing alternate actors/device combinations and revoked session, then credential-read SQL privilege failure/sanitized recovery through the separate authentication role. Existing router-only channel/disconnect proof is reused, not repeated. First inspect harness teardown/role helper and current service projection; no credential policy change, provider call, gate/count growth, hosted, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -40941,6 +41033,20 @@
       "newCiRuns": 0,
       "applicationChanged": false,
       "policyAdopted": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": false
+    },
+    "currentChannelReadSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentChannelListEvidenceReconciliation]",
+      "status": "CURRENT_CHANNEL_SUMMARY_SOURCE_AND_ROUTER_HTTP_EVIDENCE_RECONCILED_FULL_APP_CELL_PENDING",
+      "sourceReviewed": "a138997fb3a1031dc892bd21cdf24e158b4762b5",
+      "acceptedExecutable": "b26b4c7ab3c6ebacfbcc94d8ff99dec969cf1bf9",
+      "reviewComplete": true,
+      "expandedPins": 8,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
       "parentGateClosed": false,
       "newGate": false,
       "userActionRequiredNow": false
