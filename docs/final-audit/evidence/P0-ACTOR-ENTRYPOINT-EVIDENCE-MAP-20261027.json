@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -42450,14 +42450,378 @@
           "finalSourceRetries": 0,
           "localSyntax": "node --check knowledge-retirement-full-app-candidate.mjs PASS"
         }
+      },
+      {
+        "boundary": "currentAdminIncompleteCutoverFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02",
+        "date": "2026-10-29",
+        "status": "BOUNDED_ADMIN_INCOMPLETE_AUTHORITY_CASE_MATCHING_AND_COMPLETE_PROFILE_RECOVERY_FULL_APP_ACCEPTED",
+        "sourceReviewed": "0078331e9ee4e79aa45d0eeb01d3ef5d8f3af1db",
+        "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+        "sourceTree": "0af469ca22cb39c2a34b62181edbd2f569de87d8",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "route": "artifacts/api-server/src/routes/auth-security.ts",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts",
+            "gitBlobSha": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts",
+            "gitBlobSha": "f330455d224194cd12401b31752b1b1929f69e9e",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-admin-routes.ts",
+            "gitBlobSha": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+            "gitBlobSha": "188eeaa89b4fdd4cdb8cae44ab0997da24bee572",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-public-routes.ts",
+            "gitBlobSha": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-security.ts",
+            "gitBlobSha": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-session-routes.ts",
+            "gitBlobSha": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/adminAuthPostgresCutover.ts",
+            "gitBlobSha": "494873e8dbe2a376936fbf417dbdcbb7d428dc61",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/authPostgresSessionAuthority.ts",
+            "gitBlobSha": "1d51316e51a20783ea1e5ddbca23044ae129fd96",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authSession.ts",
+            "gitBlobSha": "da07602cf12dc9b80091eac77bf869d88255cc46",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/admin-auth-postgres-cutover-mode.test.ts",
+            "gitBlobSha": "558132b8248e48bc6e4f76bb81e1be57a771a574",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/auth-cutover-path-case.test.ts",
+            "gitBlobSha": "af6dd8a3e0312ae8bc98dfc1396cede9e65ea25d",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/admin-auth-router-postgres.integration.test.ts",
+            "gitBlobSha": "303a309c7bc039c3d0b73365121e84fffca91e88",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-session-restricted-http-postgres.integration.test.mjs",
+            "gitBlobSha": "06d1618b883fca6f77dc4707b08ca28f2751acca",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/admin-device-otp-postgres-security.test.ts",
+            "gitBlobSha": "e11a18fb4c0c2623077a9e0db85574af106ecbf0",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/owner-break-glass-recovery.integration.test.ts",
+            "gitBlobSha": "cb1757ffe32980bab6ecc05e7782e64c039b6815",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-password-recovery-postgres.integration.test.ts",
+            "gitBlobSha": "261066699c4fe767b29389ca9e6c14c5e07c3fcb",
+            "localBlobMatched": true
+          },
+          {
+            "path": ".github/workflows/owner-break-glass-recovery.yml",
+            "gitBlobSha": "67d02addec069885a30dd6fcfbdf9442fda21807",
+            "localBlobMatched": true
+          }
+        ],
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "applicationExecuted": true,
+        "schemaChanged": false,
+        "productionGrantsChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "accepted": true,
+        "acceptanceCondition": "Existing incomplete administrator authority guard must reject admin/admins routes before underlying handlers consistently with Express matching. Existing cutover-mode unit and two isolated middleware case tests do not prove aggregate app gate under either half-configured profile.",
+        "sourceReconciliation": {
+          "registeredRows": 60,
+          "distinctMethodPaths": 43,
+          "files": 7,
+          "countsNotAcceptance": true,
+          "overlap": "14 admin PG registrations precede14 same-path compatibility registrations; PG owner recovery/device OTP intercept before matching public compatibility handlers; owner setup generation uses preceding password middleware. Existing18-route admin ledger reused as bounded evidence, not28 new admin routes.",
+          "mode": "adminAuthPostgresCutoverMode returns postgres only with operational and admin session authority required, legacy only with both absent, incomplete otherwise. Existing unit tests the mode truth table, not HTTP gate.",
+          "case": "auth-security gate compared raw req.path case-sensitively; auth-cutover-path-case.test.ts exercises compatibility and final fallback guards in separate Express apps, not this aggregate gate. One line lower-cases local comparison path; URL/resource IDs and namespace scope unchanged.",
+          "reusedProofs": {
+            "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+            "run": 40928861789,
+            "job": 123641930643,
+            "layer": "Existing completed isolated source execution, not new tests",
+            "rows": [
+              {
+                "suite": "authentication-operator-pool-postgres.integration.test.mjs",
+                "passed": 63
+              },
+              {
+                "suite": "admin-auth-router-postgres.integration.test.ts",
+                "passed": 1
+              },
+              {
+                "suite": "merchant-session-restricted-http-postgres.integration.test.mjs",
+                "passed": 5
+              },
+              {
+                "suite": "merchant-password-recovery-postgres.integration.test.ts",
+                "passed": 1
+              }
+            ],
+            "limits": "Aggregate router journey and startup-role merchant session proof retain original different authority layers; not all current full-app actor/field conditions."
+          },
+          "ownerOtp": "Two source-contract assertions require OTP resend/verify to reference a pre-existing login-created device and PG challenge authority; admin journey covers its stated login/trust/change-password/revoke flow. Static references alone do not establish all OTP runtime negatives.",
+          "ownerRecovery": "Existing integration source exercises setup password, stored hashes, key/OTP stages, phone change, optional password reset, key consumption/replay, all-session/device revocation and session caps in aggregate auth router. Not executed by current97-file-invocation audit; separate workflow pull_request base is parallel/integration-coordinator. Current58 success does not manufacture a new owner recovery runtime acceptance."
+        },
+        "reproduction": {
+          "source": "9faf4e4bd49384a798632d76b4150e6f34dc3032",
+          "tree": "435d32092a46f2d62d8b8c64e077f42d53ed88ab",
+          "checkout": "0b00af872d35b1f8f9439b4b664e1dd2b416869f",
+          "run": 40934080791,
+          "job": 123659879364,
+          "fullAppTap": 71,
+          "passed": 69,
+          "failed": 2,
+          "skipped": 0,
+          "cancelled": 0,
+          "observed": {
+            "statuses": [
+              503,
+              503,
+              503,
+              400,
+              503,
+              400,
+              503,
+              503,
+              503,
+              503,
+              503,
+              400,
+              503,
+              400,
+              503,
+              503
+            ],
+            "legacyFilesUnchanged": true,
+            "downstreamCodes": [
+              "CREDENTIALS_REQUIRED",
+              "OWNER_DEVICE_VERIFICATION_INVALID"
+            ]
+          },
+          "expected": {
+            "statuses": [
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503
+            ],
+            "code": "AUTH_POSTGRES_CUTOVER_INCOMPLETE"
+          },
+          "classification": "Two mismatched profiles x four admin namespace endpoints x two path variants observed before assertion. Mixed-case login/device OTP reached downstream input validation400 instead of incomplete gate503; other requests503. No credentials, OTP, authenticated data access, file mutation or hosted exploit demonstrated. New child plus parent failed; existing69TAP and other3files passed; env restored in finally."
+        },
+        "fixture": {
+          "additionalActors": 0,
+          "profiles": [
+            {
+              "operational": "required",
+              "session": "off"
+            },
+            {
+              "operational": "off",
+              "session": "required"
+            }
+          ],
+          "scope": "Mutates only process env in disposable CI test, never hosted configuration. Anonymous GET and empty POST body avoid live OTP or credential action. Existing owner reused after restoring complete profile.",
+          "snapshots": "Three named legacy auth file contents plus selected prior business tables, not full authentication table timestamps or wholeDB.",
+          "cleanup": "finally restores exact previous values or absence of both environment flags; existing parent disposes owned HTTP/roles/database."
+        },
+        "assertions": [
+          "All16 half-configured admin/admins requests503 AUTH_POSTGRES_CUTOVER_INCOMPLETE consistently across canonical and mixed-case/trailing-slash/query paths.",
+          "Legacy auth file bytes and selected SQL business rows unchanged.",
+          "After restoring both required flags, mode returns postgres, owner can use canonical and mixed-case admin list200; anonymous requests401. No new full directory DTO or all admin mutation certification.",
+          "All prior full-app cases and aggregate/domain regression layers preserved."
+        ],
+        "limits": [
+          "Only incomplete-admin gate/case cell. No valid credential/OTP/recovery success under half-configured profiles and no authenticated legacy access claim.",
+          "Existing mode policy, namespaces and all current/legacy authority selection rules retained. No broader global auth cutoff redesign or new device approval policy.",
+          "No all public auth/recovery/session/OTP actor/field completeness, browser or hosted acceptance. Current owner recovery runtime evidence reconciliation remains named MATRIX-C02 work."
+        ],
+        "nextAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+        "gitBlobSha": "0c9076cbf71178a729a2264cc24e67d3c08f2a78",
+        "routeBlob": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e",
+        "targeted": {
+          "run": 40934588346,
+          "job": 123661639709,
+          "checkout": "49ab8769631765dfed9ccebc22ac63ddfccb4b72",
+          "tree": "0af469ca22cb39c2a34b62181edbd2f569de87d8",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 102,
+          "fullAppTap": 71,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 71
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "observed": {
+            "statuses": [
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503,
+              503
+            ],
+            "code": "AUTH_POSTGRES_CUTOVER_INCOMPLETE",
+            "legacyFilesUnchanged": true
+          },
+          "completeModeOwnerPositive": true
+        },
+        "broader": {
+          "run": 40934587853,
+          "job": 123662400543,
+          "checkout": "49ab8769631765dfed9ccebc22ac63ddfccb4b72",
+          "tree": "0af469ca22cb39c2a34b62181edbd2f569de87d8",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+          "checkout": "49ab8769631765dfed9ccebc22ac63ddfccb4b72",
+          "checkoutTreeMatched": true,
+          "finalSourceRetries": 0,
+          "localSyntax": "node --check auth-cutover-full-app-candidate.mjs PASS"
+        },
+        "currentRegressionAuthRows": [
+          {
+            "suite": "authentication-operator-pool-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.2",
+            "exit": 0,
+            "passed": 63,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          },
+          {
+            "suite": "admin-auth-router-postgres.integration.test.ts",
+            "auditBatch": "tenant",
+            "runtime": "v24.22.2",
+            "exit": 0,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          },
+          {
+            "suite": "merchant-session-restricted-http-postgres.integration.test.mjs",
+            "auditBatch": "tenant",
+            "runtime": "v24.22.2",
+            "exit": 0,
+            "passed": 5,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          },
+          {
+            "suite": "merchant-password-recovery-postgres.integration.test.ts",
+            "auditBatch": "tenant",
+            "runtime": "v24.22.2",
+            "exit": 0,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ]
       }
     ],
     "currentTestOverlay": {
-      "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+      "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "8ecc4acb618a7653c448a782c25ade5bfe784af3",
+      "gitBlob": "0c9076cbf71178a729a2264cc24e67d3c08f2a78",
       "catalogueRegenerated": false,
-      "interpretation": "Current full-app overlay adds one MATRIX-C01 legacy Knowledge retirement case after69TAP. Canonical/mixed/uppercase nine-method variants denied without owned legacy file/SQL changes; current PG inactive saved-answer positive/tenant/runtime/session proof retained. Local pathname guard normalization only. Not full Knowledge/auth/field/hosted or all encoding acceptance."
+      "interpretation": "One MATRIX-C02 current full-app case adds after70TAP. Both half-configured admin authority profiles refuse all16canonical/mixed-case paths503 before input handling, named legacy files/selected business rows stable, complete-mode owner200/anonymous401 preserved. No credentials/OTP/hosted execution. Current60-registration/43-key group source review does not accept all recovery/session/field conditions."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -45300,10 +45664,41 @@
           "groups": [
             "currentAuthAdmin"
           ],
-          "status": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
+          "status": "PARTIAL_CURRENT_RUNTIME_INCOMPLETE_CUTOVER_CELL_ACCEPTED_OWNER_RECOVERY_PROOF_REMAINDER",
           "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
-          "next": "Reuse current18-route admin ledger and original auth-router/session/recovery tests; identify an actual unmatched condition before adding tests. Historical failed-login stubs/reset later-fault limits do not automatically become new release gates.",
-          "newGate": false
+          "next": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+          "newGate": false,
+          "initialStatus": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
+          "acceptedBoundedProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp]",
+            "status": "BOUNDED_ADMIN_INCOMPLETE_AUTHORITY_CASE_MATCHING_AND_COMPLETE_PROFILE_RECOVERY_FULL_APP_ACCEPTED",
+            "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+            "sourceTree": "0af469ca22cb39c2a34b62181edbd2f569de87d8",
+            "newFunctionalCases": 1,
+            "newTapCases": 1,
+            "newGroup": false,
+            "targetedTap": 102,
+            "fullAppTap": 71,
+            "targetRun": 40934588346,
+            "targetJob": 123661639709,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "broaderRun": 40934587853,
+            "broaderJob": 123662400543,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "reviewedSourcePins": 18,
+            "authRegistrationRows": 60,
+            "authDistinctMethodPathKeys": 43,
+            "applicationFilesChanged": 1,
+            "testFilesChanged": 1,
+            "newGate": false,
+            "parentGateClosed": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "previousNext": "Reuse current18-route admin ledger and original auth-router/session/recovery tests; identify an actual unmatched condition before adding tests. Historical failed-login stubs/reset later-fault limits do not automatically become new release gates."
         },
         {
           "id": "MATRIX-C03",
@@ -45513,7 +45908,41 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
+      "nextCurrentAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+      "currentAuthFollowup": {
+        "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+        "proof": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp]",
+          "status": "BOUNDED_ADMIN_INCOMPLETE_AUTHORITY_CASE_MATCHING_AND_COMPLETE_PROFILE_RECOVERY_FULL_APP_ACCEPTED",
+          "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+          "sourceTree": "0af469ca22cb39c2a34b62181edbd2f569de87d8",
+          "newFunctionalCases": 1,
+          "newTapCases": 1,
+          "newGroup": false,
+          "targetedTap": 102,
+          "fullAppTap": 71,
+          "targetRun": 40934588346,
+          "targetJob": 123661639709,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "broaderRun": 40934587853,
+          "broaderJob": 123662400543,
+          "allCiSuccess": 58,
+          "accepted": true,
+          "reviewedSourcePins": 18,
+          "authRegistrationRows": 60,
+          "authDistinctMethodPathKeys": 43,
+          "applicationFilesChanged": 1,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
+        },
+        "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
+        "ownerRecoveryRuntimeClaimed": false
+      }
     },
     "previousTestOverlayBeforeLegacyKnowledgeRetirement20261029": {
       "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
@@ -45541,6 +45970,42 @@
       "broaderJob": 123641930643,
       "allCiSuccess": 58,
       "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeAdminIncompleteCutover20261029": {
+      "source": "4e570fd09a16c887ff867c01be94e781cdf55140",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "8ecc4acb618a7653c448a782c25ade5bfe784af3",
+      "catalogueRegenerated": false,
+      "interpretation": "Current full-app overlay adds one MATRIX-C01 legacy Knowledge retirement case after69TAP. Canonical/mixed/uppercase nine-method variants denied without owned legacy file/SQL changes; current PG inactive saved-answer positive/tenant/runtime/session proof retained. Local pathname guard normalization only. Not full Knowledge/auth/field/hosted or all encoding acceptance."
+    },
+    "currentAdminIncompleteCutoverFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp]",
+      "status": "BOUNDED_ADMIN_INCOMPLETE_AUTHORITY_CASE_MATCHING_AND_COMPLETE_PROFILE_RECOVERY_FULL_APP_ACCEPTED",
+      "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+      "sourceTree": "0af469ca22cb39c2a34b62181edbd2f569de87d8",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 102,
+      "fullAppTap": 71,
+      "targetRun": 40934588346,
+      "targetJob": 123661639709,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40934587853,
+      "broaderJob": 123662400543,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "reviewedSourcePins": 18,
+      "authRegistrationRows": 60,
+      "authDistinctMethodPathKeys": 43,
       "applicationFilesChanged": 1,
       "testFilesChanged": 1,
       "newGate": false,
