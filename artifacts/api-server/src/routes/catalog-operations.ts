@@ -8,6 +8,7 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "./auth";
+import { enforceAuthOrigin } from "../middleware/authSession";
 import { CatalogRuntimeError } from "../services/catalogInventoryRuntime";
 import {
   CATALOG_IMAGE_MAX_BYTES,
@@ -189,6 +190,7 @@ function parseCatalogImageBody(
 router.post(
   "/catalog/media/images",
   requireMerchantSession,
+  enforceAuthOrigin,
   parseCatalogImageBody,
   async (req: Request, res: Response) => {
     try {
