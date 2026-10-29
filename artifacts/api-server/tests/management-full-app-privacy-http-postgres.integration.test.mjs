@@ -1941,5 +1941,94 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_PROMOTION_WRITE_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,allAssertionsPassed:passed,postWriteRollbackAllThreeVerbs:rollback,hosted:false}));
   });
 
+  await t.test('current catalog product and inventory writes full-app origin isolation replay and SQL rollback boundary',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant'),tenantIds=[x.id,y.id];
+    for(const m of [x,y]){
+      await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[m.id]);
+      m.session=await auth.issueSession({accountId:m.id,accountKind:'merchant',tenantId:m.id,deviceId:m.device});m.cookie=`${MERCHANT_SESSION_COOKIE}=${m.session.token}`;
+    }
+    const catalog=await import('../src/services/postgresCatalogAuthority.ts');
+    const base='/api/catalog/products',allowed={Origin:'https://management.example.invalid'},foreign={Origin:'https://foreign.example.invalid'};
+    const key='catalog-write-'+randomUUID(),fault='catalog_write_fault_'+randomUUID().replaceAll('-','');
+    const graphTables=['inventory_mutations','catalog_identifiers','catalog_image_references','catalog_variant_options','product_variants','catalog_idempotency_keys','products'];
+    const input=(name)=>({id:'catalog-write-'+randomUUID(),name,sku:'SKU-'+randomUUID(),price_iqd:1000,stock_quantity:5,low_stock_threshold:1,track_inventory:true,status:'available',allow_fawri_reply:true});
+    const stable=async()=>({business:await snapshot(),graph:Object.fromEntries(await Promise.all(graphTables.map(async table=>[table,(await admin.query(`SELECT to_jsonb(p) AS row FROM ${table} p WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(p)::text`,[tenantIds])).rows])))});
+    const peerState=async()=>Object.fromEntries(await Promise.all(graphTables.map(async table=>[table,(await admin.query(`SELECT to_jsonb(p) AS row FROM ${table} p WHERE merchant_id=$1 ORDER BY to_jsonb(p)::text`,[y.id])).rows])));
+    async function unchanged(path,who,method,body,headers,status,code){const before=await stable(),r=await req(path,who,method,body,headers);assert.equal(r.status,status,method+' '+path);if(code)assert.equal(r.body.code,code);assert.deepEqual(await stable(),before);return r;}
+    const stockPath=(id,op)=>'/api/inventory/products/'+id+'/'+op;
+    let productTrigger=false,mutationTrigger=false,fn=false,sequence=false,passed=false,rollback=false;
+    try{
+      const seeds=[];for(const m of [x,x,x,x,y])seeds.push((await catalog.createCatalogProductAuthoritative({merchantId:m.id,idempotencyKey:randomUUID(),input:input('Synthetic catalog seed')})).product);
+      const endpoints=[
+        [base,'POST',{product:input('Foreign Origin create')}],
+        [base+'/import','POST',{products:[input('Foreign Origin import')]}],
+        [base+'/'+seeds[0].id,'PATCH',{expected_version:1,product:{name:'Foreign Origin patch'}}],
+        [base+'/'+seeds[1].id,'DELETE',{expected_version:1}],
+        [stockPath(seeds[2].id,'set'),'POST',{expected_version:1,quantity:8}],
+        [stockPath(seeds[3].id,'adjust'),'POST',{expected_version:1,delta:2,reason:'Synthetic foreign-origin adjustment'}],
+      ];
+      const original=await stable(),statuses=[];
+      for(const [path,method,body] of endpoints)statuses.push((await req(path,x,method,body,{...foreign,'Idempotency-Key':randomUUID()})).status);
+      const afterOrigin=await stable();console.log('P0_PRODUCT_WRITE_ORIGIN_OBSERVED '+JSON.stringify({statuses,rowsUnchanged:JSON.stringify(original)===JSON.stringify(afterOrigin)}));
+      assert.deepEqual(statuses,[403,403,403,403,403,403]);assert.deepEqual(afterOrigin,original);
+      for(const [path,method,body] of endpoints){
+        for(const who of [undefined,owner,viewer,channelManager])await unchanged(path,who,method,body,{...allowed,'Idempotency-Key':key},401);
+        for(const headers of [{'X-Fawri-Device-Id':'wrong'},{Cookie:`${x.cookie}; ${owner.cookie}`},{Cookie:'fawri_merchant_session=synthetic-invalid'}])await unchanged(path,x,method,body,{...allowed,'Idempotency-Key':key,...headers},401);
+        await unchanged(path,x,method,{...body,merchant_id:y.id},{...allowed,'Idempotency-Key':key},403,'MERCHANT_ACCESS_FORBIDDEN');
+      }
+      const createInput=input('Legitimate created product');
+      const created=await req(base+'?merchant_id='+y.id,x,'POST',{product:createInput},{...allowed,'Idempotency-Key':key});assert.equal(created.status,201);assert.equal(created.cache,'no-store');assert.equal(created.body.replayed,false);
+      const own=created.body.product;assert.equal(own.id,createInput.id);assert.equal(own.merchant_id,x.id);assert.equal(own.stock_quantity,5);assert.equal(own.version,1);
+      const beforeReplay=await stable();const replay=await fetch(origin+base,{method:'POST',headers:{Cookie:x.cookie,'X-Fawri-Device-Id':x.device,'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({product:createInput})});
+      assert.equal(replay.status,200);assert.equal(replay.headers.get('Idempotent-Replay'),'true');assert.deepEqual(await replay.json(),{ok:true,replayed:true,product:own});assert.deepEqual(await stable(),beforeReplay);
+      await unchanged(base,x,'POST',{product:{...createInput,name:'Changed retry'}},{...allowed,'Idempotency-Key':key},409,'CATALOG_IDEMPOTENCY_CONFLICT');
+      const peerInput=input('Peer legitimate product');const peer=await req(base,y,'POST',peerInput,{'Idempotency-Key':key});assert.equal(peer.status,201);assert.equal(peer.body.product.merchant_id,y.id);const peerBefore=await peerState();
+      const imports=[input('Imported first'),input('Imported second')],importKey='import-'+key;
+      const imported=await req(base+'/import',x,'POST',{products:imports},{...allowed,'Idempotency-Key':importKey});assert.equal(imported.status,201);assert.equal(imported.body.created_count,2);assert.equal(imported.body.replayed,false);assert.deepEqual(imported.body.products.map(p=>p.id),imports.map(p=>p.id));
+      const beforeImportReplay=await stable();const importedAgain=await req(base+'/import',x,'POST',{products:imports},{'Idempotency-Key':importKey});assert.equal(importedAgain.status,200);assert.equal(importedAgain.body.replayed,true);assert.equal(importedAgain.body.created_count,2);assert.deepEqual(await stable(),beforeImportReplay);
+      await unchanged(base+'/import',x,'POST',{products:[]},{...allowed,'Idempotency-Key':randomUUID()},400,'CATALOG_IMPORT_EMPTY');
+      for(const [path,method,body] of [[base+'/'+seeds[4].id,'PATCH',{expected_version:1,product:{name:'Wrong tenant'}}],[base+'/'+seeds[4].id,'DELETE',{expected_version:1}],[stockPath(seeds[4].id,'set'),'POST',{expected_version:1,quantity:8}],[stockPath(seeds[4].id,'adjust'),'POST',{expected_version:1,delta:1}]])await unchanged(path,x,method,body,{...allowed,'Idempotency-Key':randomUUID()},404,'CATALOG_PRODUCT_NOT_FOUND');
+      const edited=await req('/API/CaTaLoG/PrOdUcTs/'+own.id+'/?merchant_id='+y.id,x,'PATCH',{expected_version:1,product:{name:'Legitimate edited product'}},allowed);assert.equal(edited.status,200);assert.equal(edited.body.product.version,2);assert.equal(edited.body.product.name,'Legitimate edited product');assert.equal(edited.body.product.merchant_id,x.id);
+      await unchanged(base+'/'+own.id,x,'PATCH',{expected_version:1,product:{name:'Stale edit'}},allowed,409,'CATALOG_VERSION_CONFLICT');
+      const inventoryId=seeds[2].id;
+      const set=await req(stockPath(inventoryId,'set'),x,'POST',{expected_version:1,quantity:8},allowed);assert.equal(set.status,200);assert.equal(set.body.product.version,2);assert.equal(set.body.product.stock_quantity,8);
+      const adjustBody={expected_version:2,delta:-3,reason:'Synthetic authorized adjustment'},adjustKey='adjust-'+key;
+      const adjusted=await req(stockPath(inventoryId,'adjust'),x,'POST',adjustBody,{'Idempotency-Key':adjustKey});assert.equal(adjusted.status,200);assert.equal(adjusted.body.replayed,false);assert.equal(adjusted.body.product.stock_quantity,5);assert.equal(adjusted.body.product.version,3);
+      const beforeAdjustReplay=await stable();const adjustedAgain=await req(stockPath(inventoryId,'adjust'),x,'POST',adjustBody,{'Idempotency-Key':adjustKey});assert.equal(adjustedAgain.status,200);assert.equal(adjustedAgain.body.replayed,true);assert.deepEqual(await stable(),beforeAdjustReplay);
+      await unchanged(stockPath(inventoryId,'adjust'),x,'POST',{...adjustBody,delta:-2},{...allowed,'Idempotency-Key':adjustKey},409,'CATALOG_IDEMPOTENCY_CONFLICT');
+      await unchanged(stockPath(inventoryId,'set'),x,'POST',{expected_version:1,quantity:9},allowed,409,'CATALOG_VERSION_CONFLICT');
+      await unchanged(stockPath(inventoryId,'adjust'),x,'POST',{expected_version:3,delta:-99},{...allowed,'Idempotency-Key':randomUUID()},409,'CATALOG_NEGATIVE_STOCK');
+      const moves=(await admin.query('SELECT mutation_type,before_quantity,after_quantity,expected_version,resulting_version,actor_type,actor_account_id FROM inventory_mutations WHERE merchant_id=$1 AND product_id=$2 ORDER BY resulting_version',[x.id,inventoryId])).rows;
+      assert.deepEqual(moves,[{mutation_type:'set',before_quantity:5,after_quantity:8,expected_version:1,resulting_version:2,actor_type:'merchant',actor_account_id:x.id},{mutation_type:'adjust',before_quantity:8,after_quantity:5,expected_version:2,resulting_version:3,actor_type:'merchant',actor_account_id:x.id}]);
+      const faultItems=[input('Rollback import first'),input('Rollback import second')],faultImportKey='fault-import-'+key;
+      await admin.query(`CREATE SEQUENCE ${fault}`);sequence=true;await admin.query(`GRANT USAGE ON SEQUENCE ${fault} TO ${runtime.role}`);
+      await admin.query(`CREATE FUNCTION ${fault}() RETURNS trigger LANGUAGE plpgsql AS $catalog_fault$ BEGIN IF NEW.merchant_id=TG_ARGV[0] THEN PERFORM nextval(TG_ARGV[1]::regclass); IF TG_TABLE_NAME='inventory_mutations' OR NEW.id=TG_ARGV[2] THEN RAISE EXCEPTION 'synthetic catalog post-write fault'; END IF; END IF; RETURN NEW; END $catalog_fault$`);fn=true;
+      await admin.query(`CREATE TRIGGER ${fault} AFTER INSERT ON products FOR EACH ROW EXECUTE FUNCTION ${fault}('${x.id}','${fault}','${faultItems[1].id}')`);productTrigger=true;
+      await admin.query(`CREATE TRIGGER ${fault} AFTER INSERT ON inventory_mutations FOR EACH ROW EXECUTE FUNCTION ${fault}('${x.id}','${fault}','${faultItems[1].id}')`);mutationTrigger=true;
+      for(const [path,body,headers] of [[base+'/import',{products:faultItems},{...allowed,'Idempotency-Key':faultImportKey}],[stockPath(inventoryId,'set'),{expected_version:3,quantity:10},allowed],[stockPath(inventoryId,'adjust'),{expected_version:3,delta:1},{...allowed,'Idempotency-Key':'fault-adjust-'+key}]]){
+        const failed=await unchanged(path,x,'POST',body,headers,500);assert.equal(failed.cache,'no-store');assert.deepEqual(failed.body,{ok:false,code:'CATALOG_OPERATION_FAILED',error:'catalog operation failed'});
+      }
+      assert.deepEqual((await admin.query(`SELECT last_value::int AS value,is_called FROM ${fault}`)).rows[0],{value:4,is_called:true});rollback=true;
+      await admin.query(`DROP TRIGGER ${fault} ON products`);productTrigger=false;await admin.query(`DROP TRIGGER ${fault} ON inventory_mutations`);mutationTrigger=false;
+      const importRecovered=await req(base+'/import',x,'POST',{products:faultItems},{...allowed,'Idempotency-Key':faultImportKey});assert.equal(importRecovered.status,201);assert.equal(importRecovered.body.replayed,false);assert.equal(importRecovered.body.created_count,2);
+      const setRecovered=await req(stockPath(inventoryId,'set'),x,'POST',{expected_version:3,quantity:10},allowed);assert.equal(setRecovered.status,200);assert.equal(setRecovered.body.product.version,4);assert.equal(setRecovered.body.product.stock_quantity,10);
+      const adjustRecovered=await req(stockPath(inventoryId,'adjust'),x,'POST',{expected_version:4,delta:1},{...allowed,'Idempotency-Key':'fault-adjust-'+key});assert.equal(adjustRecovered.status,200);assert.equal(adjustRecovered.body.product.version,5);assert.equal(adjustRecovered.body.product.stock_quantity,11);
+      await unchanged(base+'/'+own.id+'?expected_version=1',x,'DELETE',undefined,allowed,409,'CATALOG_VERSION_CONFLICT');
+      const deleted=await req(base+'/'+own.id+'?expected_version=2',x,'DELETE');assert.equal(deleted.status,200);assert.deepEqual(deleted.body,{ok:true,deleted_product_id:own.id,deleted_version:2});
+      const deletedRow=(await admin.query('SELECT deleted_at,version FROM products WHERE merchant_id=$1 AND id=$2',[x.id,own.id])).rows[0];assert.ok(deletedRow.deleted_at);assert.equal(deletedRow.version,3);
+      await unchanged(base+'/'+own.id,x,'DELETE',{expected_version:2},allowed,404,'CATALOG_PRODUCT_NOT_FOUND');
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);for(const [path,method,body] of endpoints)await unchanged(path,x,method,body,{...allowed,'Idempotency-Key':key},401);
+      assert.deepEqual(await peerState(),peerBefore);assert.deepEqual(await snapshot(),original.business);passed=true;
+    }finally{
+      await cleanupResources([
+        ['catalog product fault trigger',()=>productTrigger?admin.query(`DROP TRIGGER ${fault} ON products`):undefined],
+        ['catalog mutation fault trigger',()=>mutationTrigger?admin.query(`DROP TRIGGER ${fault} ON inventory_mutations`):undefined],
+        ['catalog fault function',()=>fn?admin.query(`DROP FUNCTION ${fault}()`):undefined],['catalog fault sequence',()=>sequence?admin.query(`DROP SEQUENCE ${fault}`):undefined],
+        ...graphTables.map(table=>['owned catalog write rows '+table,()=>admin.query(`DELETE FROM ${table} WHERE merchant_id=ANY($1::text[])`,[tenantIds])]),
+      ]);
+    }
+    console.log('P0_PRODUCT_WRITE_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,allAssertionsPassed:passed,importAndInventoryPostWriteRollback:rollback,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
