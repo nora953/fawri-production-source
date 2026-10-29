@@ -149,6 +149,37 @@ test(
 
     await waitForServer(baseUrl, child, () => serverOutput);
 
+    const unknownPhone = phone.slice(0, -1) + ((Number(phone.at(-1)) + 1) % 10);
+    assert.equal((await pool.query("SELECT id FROM accounts WHERE phone = $1", [unknownPhone])).rowCount, 0);
+    const resendObservations = [];
+    async function ineligibleResend(targetPhone, purpose, label) {
+      async function snapshot() {
+        const result = await pool.query(`SELECT
+          (SELECT COALESCE(jsonb_agg(to_jsonb(a) ORDER BY a.id), '[]'::jsonb) FROM accounts a WHERE phone = ANY($1::text[])) AS accounts,
+          (SELECT COALESCE(jsonb_agg(to_jsonb(o) ORDER BY o.id), '[]'::jsonb) FROM auth_otp_challenges o) AS challenges,
+          (SELECT COALESCE(jsonb_agg(to_jsonb(s) ORDER BY s.id), '[]'::jsonb) FROM account_sessions s WHERE account_id IN (SELECT id FROM accounts WHERE phone = ANY($1::text[]))) AS sessions,
+          (SELECT COALESCE(jsonb_agg(to_jsonb(d) ORDER BY d.id), '[]'::jsonb) FROM trusted_devices d WHERE account_id IN (SELECT id FROM accounts WHERE phone = ANY($1::text[]))) AS devices`, [[phone, unknownPhone]]);
+        return result.rows[0];
+      }
+      const before = await snapshot();
+      const denied = await jsonRequest(`${baseUrl}/api/auth/otp/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Fawri-Device-Id": deviceId },
+        body: JSON.stringify({ phone: targetPhone, purpose }),
+        signal: AbortSignal.timeout(3000),
+      });
+      assert.equal(denied.response.status, 202);
+      assert.equal(denied.body?.ok, true);
+      assert.equal(cookieByName(denied.response, "fawri_merchant_session_v2"), "");
+      for (const key of ["challenge_id", "devCode", "expires_at", "retry_after_seconds", "account", "merchant"]) {
+        assert.equal(denied.body?.[key], undefined);
+      }
+      assert.deepEqual(await snapshot(), before, "ineligible resend must not issue OTP/session or mutate account/device rows");
+      resendObservations.push({ label, purpose, status: denied.response.status, unchangedState: true, challengeIssued: false, sessionIssued: false });
+    }
+    await ineligibleResend(unknownPhone, "signup", "unknown-account");
+    await ineligibleResend(unknownPhone, "password_reset", "unknown-account");
+
     const signup = await jsonRequest(`${baseUrl}/api/auth/signup`, {
       method: "POST",
       headers: {
@@ -220,6 +251,9 @@ test(
       [merchantId],
     );
     assert.equal(verifiedRow.rows[0]?.phone_verified, true);
+    await ineligibleResend(phone, "signup", "already-verified-account");
+    assert.equal(resendObservations.length, 3);
+    console.log("P0_MERCHANT_INELIGIBLE_OTP_RESEND_OBSERVED " + JSON.stringify({ observations: resendObservations, actualApp: true, devOtpOnly: true }));
 
     const login = await jsonRequest(`${baseUrl}/api/auth/login`, {
       method: "POST",
