@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue MATRIX-C02 with the exact missing owner-recovery stage-refusal condition: inspect the existing /otp/request, /otp/verify and /complete stage branches and response termination, then add bounded negative HTTP observations to the existing aggregate journey (bounded request timeout and unchanged account/session/device state) before any fix. Reuse this canonical successful journey and all accepted full-app/admin/merchant proofs; do not count reruns as new cases. Keep dev OTP offline; no OTP/pairing redesign, recovery policy adoption, hosted/provider, merge or deployment.",
+    "nextExactAction": "Continue MATRIX-C02 by reconciling current admin device OTP ownership/fingerprint negative runtime coverage. Reuse the accepted admin-auth aggregate journey and unchanged existing owner recovery positives plus accepted stage refusal. The two admin-device-otp-postgres-security tests are source contracts, not negative HTTP proof. Trace current resend/verify lookup, OTP-consumption and trust/session ordering against existing runtime assertions before selecting one truly missing condition; do not create a new OTP/pairing protocol, recovery policy, gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -42969,6 +42969,135 @@
         },
         "accepted": true,
         "nextExactAction": "Continue MATRIX-C02 with the exact missing owner-recovery stage-refusal condition: inspect the existing /otp/request, /otp/verify and /complete stage branches and response termination, then add bounded negative HTTP observations to the existing aggregate journey (bounded request timeout and unchanged account/session/device state) before any fix. Reuse this canonical successful journey and all accepted full-app/admin/merchant proofs; do not count reruns as new cases. Keep dev OTP offline; no OTP/pairing redesign, recovery policy adoption, hosted/provider, merge or deployment."
+      },
+      {
+        "boundary": "currentOwnerRecoveryStageRefusalAggregateRuntime",
+        "date": "2026-10-29",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02",
+        "source": "7b3f4a451451baa5fc420f392dd7231498459c11",
+        "sourceTree": "7c31aa1da62f74f728fba7ce3b42e17e06515e6a",
+        "status": "BOUNDED_OWNER_RECOVERY_WRONG_STAGE_RESPONSE_TERMINATION_AND_STATE_IMMUTABILITY_AGGREGATE_ACCEPTED",
+        "sourceReconciliation": {
+          "condition": "Wrong-stage owner recovery POSTs must terminate with existing invalid-session response without state mutation, while legitimate recovery remains functional.",
+          "file": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+          "confirmedSource": "Three stage branches returned without sending a response when the authenticated recovery proof had a different stage.",
+          "fix": "Pass expected stage into recoveryProof and reject mismatch via existing clear-cookie/401 OWNER_RECOVERY_SESSION_INVALID branch.",
+          "policyChanged": false
+        },
+        "reproduction": {
+          "source": "a78eb56e2e12e5b91e0a5016a5ebd4a675efdf7d",
+          "tree": "23ed41e805eb4b7b0f1f7446c0057459c0af4ab6",
+          "checkout": "9aceb5c50b4e415575a0b64e6da1fc43c7baecc6",
+          "run": 40943249023,
+          "job": 123691818285,
+          "observedRequests": 6,
+          "allTimedOutAtClientMs": 1500,
+          "unchangedAccountSessionsDevicesChallenges": true,
+          "ownerJourneyFailed": 1,
+          "otherLaneTapPassed": 102,
+          "legitimateJourneyCompletedBeforeFinalAssertion": true
+        },
+        "testScope": {
+          "existingAggregateJourneyExpanded": true,
+          "newTapCases": 0,
+          "newFunctionalCondition": 1,
+          "observations": 6,
+          "key1VerifiedDenied": [
+            "otp/verify",
+            "complete"
+          ],
+          "otpPendingDenied": [
+            "otp/request",
+            "complete"
+          ],
+          "otpVerifiedDenied": [
+            "otp/request",
+            "otp/verify"
+          ],
+          "stateCompared": [
+            "complete owner account row",
+            "owner account_sessions rows",
+            "owner trusted_devices rows",
+            "owner-associated OTP rows and admin_recovery OTP rows in disposable DB"
+          ],
+          "legitimate": "Existing phone-only recovery, password reset, old password refusal, consumed-key replay and session/device caps retained.",
+          "clientLayer": "Raw HTTP client passes explicit cookies; no browser cookie-jar acceptance claimed."
+        },
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "limits": [
+          "Aggregate auth-security router and bootstrap pool; not full application or separate restricted LOGIN.",
+          "Synthetic dev OTP only, no real delivery.",
+          "Not cookie tampering/expiry, concurrent recovery, SQL rollback or all device OTP actor acceptance.",
+          "No hosted exploit or unauthorized data disclosure demonstrated: observed defect is missing response termination.",
+          "No recovery policy, merchant pairing, schema, ACL or new gate."
+        ],
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "target": {
+          "run": 40943584986,
+          "job": 123692993970,
+          "tap": 103,
+          "files": 5,
+          "fullAppTap": 71,
+          "ownerJourneyTap": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "runtime": "v24.22.2",
+          "canonicalMigrations": 53,
+          "checkout": "0e7c4011d29d2570b1bb15e8583765f7a230ef06",
+          "checkoutTreeMatched": true,
+          "observedStatuses": [
+            401,
+            401,
+            401,
+            401,
+            401,
+            401
+          ],
+          "observedCodes": [
+            "OWNER_RECOVERY_SESSION_INVALID",
+            "OWNER_RECOVERY_SESSION_INVALID",
+            "OWNER_RECOVERY_SESSION_INVALID",
+            "OWNER_RECOVERY_SESSION_INVALID",
+            "OWNER_RECOVERY_SESSION_INVALID",
+            "OWNER_RECOVERY_SESSION_INVALID"
+          ],
+          "timedOut": 0,
+          "unchangedAccountSessionsDevicesChallenges": true
+        },
+        "pins": [
+          {
+            "path": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+            "sha": "14f545ca14ab14f409714a7aae06a36bc4d649e1"
+          },
+          {
+            "path": "artifacts/api-server/tests/owner-break-glass-recovery.integration.test.ts",
+            "sha": "c6345928e0cc8496f7795a119eb904b16b565bdc"
+          }
+        ],
+        "accepted": true,
+        "broader": {
+          "run": 40943585050,
+          "job": 123693194094,
+          "tap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "checkoutTreeMatched": true
+        },
+        "allCi": {
+          "success": 58,
+          "total": 58,
+          "attempt": 1,
+          "retries": 0
+        },
+        "nextExactAction": "Continue MATRIX-C02 by reconciling current admin device OTP ownership/fingerprint negative runtime coverage. Reuse the accepted admin-auth aggregate journey and unchanged existing owner recovery positives plus accepted stage refusal. The two admin-device-otp-postgres-security tests are source contracts, not negative HTTP proof. Trace current resend/verify lookup, OTP-consumption and trust/session ordering against existing runtime assertions before selecting one truly missing condition; do not create a new OTP/pairing protocol, recovery policy, gate, hosted/provider, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -45819,9 +45948,9 @@
           "groups": [
             "currentAuthAdmin"
           ],
-          "status": "PARTIAL_OWNER_RECOVERY_EXISTING_CANONICAL_AGGREGATE_JOURNEY_ACCEPTED_STAGE_REFUSAL_REMAINS",
+          "status": "PARTIAL_OWNER_RECOVERY_STAGE_REFUSAL_AGGREGATE_ACCEPTED_DEVICE_OTP_RECONCILIATION_REMAINS",
           "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
-          "next": "Continue MATRIX-C02 with the exact missing owner-recovery stage-refusal condition: inspect the existing /otp/request, /otp/verify and /complete stage branches and response termination, then add bounded negative HTTP observations to the existing aggregate journey (bounded request timeout and unchanged account/session/device state) before any fix. Reuse this canonical successful journey and all accepted full-app/admin/merchant proofs; do not count reruns as new cases. Keep dev OTP offline; no OTP/pairing redesign, recovery policy adoption, hosted/provider, merge or deployment.",
+          "next": "Continue MATRIX-C02 by reconciling current admin device OTP ownership/fingerprint negative runtime coverage. Reuse the accepted admin-auth aggregate journey and unchanged existing owner recovery positives plus accepted stage refusal. The two admin-device-otp-postgres-security tests are source contracts, not negative HTTP proof. Trace current resend/verify lookup, OTP-consumption and trust/session ordering against existing runtime assertions before selecting one truly missing condition; do not create a new OTP/pairing protocol, recovery policy, gate, hosted/provider, merge or deployment.",
           "newGate": false,
           "initialStatus": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
           "acceptedBoundedProof": {
@@ -45892,6 +46021,35 @@
             "testFilesChanged": 0,
             "ciFilesChanged": 2,
             "proofLayer": "AGGREGATE_AUTH_SECURITY_ROUTER_BOOTSTRAP_DATABASE_POOL_DEV_OTP",
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "ownerRecoveryStageRefusalProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStageRefusalAggregateRuntime]",
+            "status": "BOUNDED_OWNER_RECOVERY_WRONG_STAGE_RESPONSE_TERMINATION_AND_STATE_IMMUTABILITY_AGGREGATE_ACCEPTED",
+            "source": "7b3f4a451451baa5fc420f392dd7231498459c11",
+            "sourceTree": "7c31aa1da62f74f728fba7ce3b42e17e06515e6a",
+            "newFunctionalCondition": 1,
+            "newTapCases": 0,
+            "existingAggregateJourneyExpanded": true,
+            "negativeHttpObservations": 6,
+            "targetedTap": 103,
+            "targetFiles": 5,
+            "fullAppTap": 71,
+            "ownerJourneyTap": 1,
+            "targetRun": 40943584986,
+            "targetJob": 123692993970,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "broaderRun": 40943585050,
+            "broaderJob": 123693194094,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "applicationFilesChanged": 1,
+            "testFilesChanged": 1,
             "parentGateClosed": false,
             "newGate": false,
             "policyAdopted": false,
@@ -46106,7 +46264,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Continue MATRIX-C02 with the exact missing owner-recovery stage-refusal condition: inspect the existing /otp/request, /otp/verify and /complete stage branches and response termination, then add bounded negative HTTP observations to the existing aggregate journey (bounded request timeout and unchanged account/session/device state) before any fix. Reuse this canonical successful journey and all accepted full-app/admin/merchant proofs; do not count reruns as new cases. Keep dev OTP offline; no OTP/pairing redesign, recovery policy adoption, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "Continue MATRIX-C02 by reconciling current admin device OTP ownership/fingerprint negative runtime coverage. Reuse the accepted admin-auth aggregate journey and unchanged existing owner recovery positives plus accepted stage refusal. The two admin-device-otp-postgres-security tests are source contracts, not negative HTTP proof. Trace current resend/verify lookup, OTP-consumption and trust/session ordering against existing runtime assertions before selecting one truly missing condition; do not create a new OTP/pairing protocol, recovery policy, gate, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -46253,6 +46411,44 @@
       "newGate": false,
       "policyAdopted": false,
       "userActionRequiredNow": false
+    },
+    "currentOwnerRecoveryStageRefusalProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStageRefusalAggregateRuntime]",
+      "status": "BOUNDED_OWNER_RECOVERY_WRONG_STAGE_RESPONSE_TERMINATION_AND_STATE_IMMUTABILITY_AGGREGATE_ACCEPTED",
+      "source": "7b3f4a451451baa5fc420f392dd7231498459c11",
+      "sourceTree": "7c31aa1da62f74f728fba7ce3b42e17e06515e6a",
+      "newFunctionalCondition": 1,
+      "newTapCases": 0,
+      "existingAggregateJourneyExpanded": true,
+      "negativeHttpObservations": 6,
+      "targetedTap": 103,
+      "targetFiles": 5,
+      "fullAppTap": 71,
+      "ownerJourneyTap": 1,
+      "targetRun": 40943584986,
+      "targetJob": 123692993970,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40943585050,
+      "broaderJob": 123693194094,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentOwnerRecoveryTestOverlay": {
+      "source": "7b3f4a451451baa5fc420f392dd7231498459c11",
+      "path": "artifacts/api-server/tests/owner-break-glass-recovery.integration.test.ts",
+      "sha": "c6345928e0cc8496f7795a119eb904b16b565bdc",
+      "previousSha": "cb1757ffe32980bab6ecc05e7782e64c039b6815",
+      "proofLayer": "AGGREGATE_AUTH_ROUTER_BOOTSTRAP_POOL_DEV_OTP",
+      "tap": 1,
+      "newTapCases": 0
     }
   },
   "componentScopes": {
