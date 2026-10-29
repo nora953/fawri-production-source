@@ -32,7 +32,7 @@ const router = Router();
 startPostgresSupportRuntimeCutover();
 router.use(enforceAuthOrigin);
 router.use((req: Request, res: Response, next: NextFunction) => {
-  const path = String(req.path || "");
+  const path = String(req.path || "").toLowerCase();
   const adminSurface = path === "/admin" || path.startsWith("/admin/") ||
     path === "/admins" || path.startsWith("/admins/");
   if (adminSurface && adminAuthPostgresCutoverMode() === "incomplete") {
