@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current GET /api/catalog/media/images: reconcile compatibility/session authority, storage_key ownership resolution and physical read adapter, response headers/errors and existing local media/cross-tenant SQL/source tests before selecting any missing cell. Reuse accepted catalog context/promotion/list/detail and regional proofs; no automatic write/Origin change, new policy/gate/count, provider/hosted object access, merge or deployment.",
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current POST /api/catalog/media/images: trace secure compatibility/session and raw-body parser order, existing mutation-Origin contract, upload MIME/size/error projection and storage/preview consumers against accepted direct storage tests before selecting any missing full-app upload cell. Preserve existing merchant-owned preview-before-product-attachment behavior; no new SQL attachment/approval authority. Reuse accepted GET media and catalog proofs, no automatic policy/cache redesign, new gate/count growth, hosted/provider action, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -41394,14 +41394,177 @@
           "infrastructureFailedJobRetries": 1,
           "localSyntax": "node --check promotions-full-app-candidate.mjs PASS"
         }
+      },
+      {
+        "boundary": "currentCatalogMediaReadFullApp",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "date": "2026-10-29",
+        "status": "BOUNDED_CURRENT_CATALOG_MEDIA_READ_OWNERSHIP_ACTOR_BYTES_HEADERS_AND_FILESYSTEM_FAILURE_FULL_APP_ACCEPTED",
+        "sourceReviewed": "2167724a65c62cd033c17a0df4609637b0b131c2",
+        "source": "fb13bb2af34c8af787125228758b4e37db642a8c",
+        "sourceTree": "8f517191a357d4a924d142640acd212a09b34f4d",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "8b91cdbec4c5e36772c7616635b74aea099b5722",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+            "gitBlobSha": "a96246c760be858132e43db49c1b2ff52776c879",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth.ts",
+            "gitBlobSha": "61958ff03a7412661783c9e0210b94ba00ae10cb",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/authCutoverCompatibility.ts",
+            "gitBlobSha": "e81efa86b6c2874727e796a8adbdbc9747de7cf2",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/services/catalogMediaStorage.ts",
+            "gitBlobSha": "a45ad21fd84e4b76ab922b1261f7240551012be3",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/src/lib/dataPaths.ts",
+            "gitBlobSha": "4a12047647e3dc5ba7ebf5dfa627c26a4ad9a02c",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/catalog-media-storage.test.ts",
+            "gitBlobSha": "f7d7fc68408007e421f8d3398b3b670b999f5daa",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/catalog-server-contract.test.mjs",
+            "gitBlobSha": "8cd1cdcc1d0f76e59fcc40e285705348e3d8f490",
+            "localBlobMatched": true
+          },
+          {
+            "path": "artifacts/api-server/tests/helpers/disposable-knowledge-runtime.mjs",
+            "gitBlobSha": "4b0c9cb1b33a6dc41369b3af1bdf133a5e1de032",
+            "localBlobMatched": true
+          }
+        ],
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "applicationExecuted": true,
+        "schemaChanged": false,
+        "productionGrantsChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "acceptanceCondition": "Existing current GET catalog image actor/privacy matrix lacked actual-full-app ownership/bytes/cache/MIME/ETag and real physical read-fault/recovery proof. Bounded source cell only, not hosted storage/release/whole matrix acceptance.",
+        "sourceReconciliation": {
+          "route": "GET /catalog/media/images uses existing routes/auth secure-context bridge; merchant from res.locals only, storage_key from query. Unknown merchant_id query is ignored.",
+          "ownership": "assertMerchantStorageKey requires merchant/<first32hex sha256(trim merchantId)>/ prefix and rejects empty/over512/backslash/.. keys before provider read. Existing pre-product preview allowed: no SQL image-reference membership gate. Filesystem adapter lexical path containment is checked separately.",
+          "storage": "Current available provider is filesystem only. getFawriDataDir supplies configured isolated test directory. MIME on read inferred from storage extension then compared against JPEG/PNG/WebP magic bytes; sha256 computed from returned buffer.",
+          "headers": "Successful read200 image bytes with Content-Type, private max-age300 cache, quoted SHA256 ETag and nosniff. Handler errors use existing typed/generic catalogue mapping and no-store. Legacy/secure auth401 branches may differ in code/cache metadata, so this case requires401/no payload without inventing a new uniform auth error/header contract.",
+          "existingTests": "catalog-media-storage.test.ts has5direct service/local-filesystem cases for magic detection, owned storage/read, MIME mismatch, cross-merchant and traversal denial. catalog-server-contract is source inspection. These are not mislabelled actual full-app image HTTP coverage."
+        },
+        "fixture": {
+          "additionalMerchants": 2,
+          "additionalAssets": 2,
+          "provider": "filesystem",
+          "seed": "Existing storeCatalogImage directly, not POST upload acceptance; PNG-signature bytes plus distinct synthetic target/peer suffix, not a full PNG decoder/browser-rendering test.",
+          "productAttachments": 0,
+          "ownershipPreserved": "Preview before product/SQL attachment remains allowed by existing contract.",
+          "cleanup": "Only two generated merchant media prefixes removed via existing helper and provider env restored through cleanupResources; no entire shared directory deletion or external object access."
+        },
+        "assertions": [
+          "Actual full app canonical and mixed-case/trailing-slash GET returns exact own fixture bytes despite foreign merchant_id query; peer independently receives different own bytes.",
+          "Each successful response exact image/png, private max-age300, nosniff and ETag equal to independently computed byte SHA256.",
+          "No session/admin owner/viewer/channel manager denied401 without bytes; wrong device, mixed secure merchant/admin cookie and forged legacy cookie401; target session revoked later401 while peer200.",
+          "Cross-merchant storage key403 even with valid other merchant cookie; empty/traversal-like keys403; owned absent filename404. Typed handler errors no-store and no fixture bytes/physical path/system errno/stack.",
+          "Replace owned file contents with invalid magic:503 CATALOG_IMAGE_CORRUPT; restore bytes:200 with original digest.",
+          "Temporarily rename owned file to owned backup and place owned directory at same key; actual fs.readFileSync fails, HTTP500 fixed CATALOG_OPERATION_FAILED with no path/system details. Peer remains200 and selected existing business snapshot unchanged; remove directory/restore file then original bytes200.",
+          "Temporarily select unsupported synthetic provider:503 CATALOG_MEDIA_STORAGE_PROVIDER_UNAVAILABLE; restore filesystem and both assets200.",
+          "Selected existing business-table snapshot stays unchanged through reads/denials/faults/recovery/revocation; this is not a whole-database snapshot."
+        ],
+        "targeted": {
+          "run": 40859525798,
+          "job": 123398909094,
+          "checkout": "ec3b27ffa813db564c44d2b2557b47bd5339a852",
+          "tree": "8f517191a357d4a924d142640acd212a09b34f4d",
+          "runtime": "v24.22.2",
+          "tapIncludingParents": 97,
+          "fullAppTap": 66,
+          "suites": [
+            {
+              "suite": "management-full-app-privacy-http-postgres.integration.test.mjs",
+              "passed": 66
+            },
+            {
+              "suite": "merchant-management-privacy-http-postgres.integration.test.mjs",
+              "passed": 11
+            },
+            {
+              "suite": "merchant-owner-import-http-postgres.integration.test.mjs",
+              "passed": 6
+            },
+            {
+              "suite": "merchant-owner-deletion-http-postgres.integration.test.mjs",
+              "passed": 14
+            }
+          ],
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "marker": {
+            "actualFullApp": true,
+            "restrictedPrimary": true,
+            "separateAuthLogin": true,
+            "passedCases": 1,
+            "allAssertionsPassed": true,
+            "physicalReadFaultAndRecovery": true,
+            "filesystemOnly": true,
+            "hosted": false
+          }
+        },
+        "limits": [
+          "Synthetic signature-bearing PNG bytes test current magic-byte/read contract, not complete image decoding, JPEG/WebP HTTP acceptance or browser rendering/security.",
+          "Server HTTP revocation denial, not browser cache eviction/logout behavior or new cache policy approval; existing private300 header retained.",
+          "Owned local filesystem fault only; not hosted durable storage provider, symlink/host compromise model, full storage lifecycle/deletion/backup recovery or provider readiness.",
+          "Read only; no upload Origin/MIME/size parser or mutation lifecycle acceptance, product attachment requirement or image policy adopted."
+        ],
+        "nextAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with current POST /api/catalog/media/images: trace secure compatibility/session and raw-body parser order, existing mutation-Origin contract, upload MIME/size/error projection and storage/preview consumers against accepted direct storage tests before selecting any missing full-app upload cell. Preserve existing merchant-owned preview-before-product-attachment behavior; no new SQL attachment/approval authority. Reuse accepted GET media and catalog proofs, no automatic policy/cache redesign, new gate/count growth, hosted/provider action, merge or deployment.",
+        "accepted": true,
+        "broader": {
+          "run": 40859525846,
+          "job": 123398908434,
+          "checkout": "ec3b27ffa813db564c44d2b2557b47bd5339a852",
+          "tree": "8f517191a357d4a924d142640acd212a09b34f4d",
+          "passedTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "allSummariesComplete": true
+        },
+        "validation": {
+          "allCiSuccess": 58,
+          "totalWorkflows": 58,
+          "source": "fb13bb2af34c8af787125228758b4e37db642a8c",
+          "checkout": "ec3b27ffa813db564c44d2b2557b47bd5339a852",
+          "checkoutTreeMatched": true,
+          "firstAttemptPassed": true,
+          "finalSourceRetries": 0,
+          "localSyntax": "node --check media-full-app-candidate.mjs PASS"
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "4dbc428834d152a618c753a253476122dca7f43a",
+      "source": "fb13bb2af34c8af787125228758b4e37db642a8c",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "58cf93f8fce7bbae46bfc32c4d650b96f408a92e",
+      "gitBlob": "8b91cdbec4c5e36772c7616635b74aea099b5722",
       "catalogueRegenerated": false,
-      "interpretation": "Historical catalogue hashes/counts remain historical. Context/promotion actual-app overlay adds1case after original64TAP; two owned merchants/profiles and disabled delivery promotions, exact context/promotion DTO, actor/tenant denials, real SQL42501 generic error and recovery while context remains available. Existing accepted boundaries retained; no application change or whole inventory/promotion lifecycle acceptance."
+      "interpretation": "Historical catalogue hashes/counts remain historical. Media image actual-app overlay adds1case after original65TAP; two owned local media prefixes, exact bytes/headers, actor/tenant denial, missing/corrupt/real filesystem read error/provider-unavailable and recovery. Existing ownership-before-product-attachment and private cache behavior retained; no app change, browser/hosted/upload/policy/full-inventory acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -42149,6 +42312,39 @@
       "gitBlob": "b64f7b8551d8144ec16727842e83a8b374737d16",
       "catalogueRegenerated": false,
       "interpretation": "Historical catalogue counts/hashes remain historical. Catalog read full-app overlay adds1case after original63TAP; two owned merchants, products/variants and synthetic image references, exact private-cost/nested projection, actor/tenant denials and actual archive-metadata SQL42501 after core success, generic error and recovery. Existing accepted boundaries retained; no application change or blanket field/inventory acceptance."
+    },
+    "currentCatalogMediaReadFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCatalogMediaReadFullApp]",
+      "status": "BOUNDED_CURRENT_CATALOG_MEDIA_READ_OWNERSHIP_ACTOR_BYTES_HEADERS_AND_FILESYSTEM_FAILURE_FULL_APP_ACCEPTED",
+      "source": "fb13bb2af34c8af787125228758b4e37db642a8c",
+      "sourceTree": "8f517191a357d4a924d142640acd212a09b34f4d",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "targetedTap": 97,
+      "fullAppTap": 66,
+      "targetRun": 40859525798,
+      "targetJob": 123398909094,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 40859525846,
+      "broaderJob": 123398908434,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeCatalogMediaRead20261029": {
+      "source": "4dbc428834d152a618c753a253476122dca7f43a",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "58cf93f8fce7bbae46bfc32c4d650b96f408a92e",
+      "catalogueRegenerated": false,
+      "interpretation": "Historical catalogue hashes/counts remain historical. Context/promotion actual-app overlay adds1case after original64TAP; two owned merchants/profiles and disabled delivery promotions, exact context/promotion DTO, actor/tenant denials, real SQL42501 generic error and recovery while context remains available. Existing accepted boundaries retained; no application change or whole inventory/promotion lifecycle acceptance."
     }
   },
   "componentScopes": {
