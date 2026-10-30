@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+  "sourceCandidate": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
   "lastFullyAcceptedSource": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
   "release": "NO-GO",
   "rows": [
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
+      "nextAction": "First verify exact source416a0210f41bb8da9d3627e32ff6eb0a039cc798 final58 workflow conclusions, especially41099580457/41099580562/41099580112/41099580131, fetch completed broader job124214105217 logs and compare checkout treeedf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c. Target41099580291/job124214104681 already passed108TAP/full75 with SSE marker and checkoutcec273e9429e4fcf581ee36ad80b191059e82f90 tree matched. Do not rerun accepted target. Keep accepted executable8694d1fc until final acceptance; GitHub ReadTimeout is a verification blocker, not a source failure. After final evidence, continue remaining MATRIX-C05 Knowledge/order sibling reconciliation as recorded.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -3406,10 +3406,37 @@
               "notificationsAndRealtime",
               "catalog"
             ],
-            "status": "NAMED_CELLS_ACCEPTED_SIBLING_AND_FIELD_CONDITIONS_PARTIAL",
+            "status": "SSE_TARGET_PASSED_FINAL_CI_PENDING_REMAINING_SIBLING_RECONCILIATION",
             "condition": "Current named read/mutation/Origin/idempotency/version/failure proofs retain their exact bounds. Sibling order/Knowledge/realtime/other field conditions require existing assertion review before deciding a missing runtime cell.",
-            "next": "Use catalog15-method overlay and current settings/regional/report/order/conversation/notification proofs as no-repeat baseline; inspect only effective sibling authority and sensitive fields. Product variants/archive/concurrency limits are not automatically a mandatory new case per limit.",
-            "newGate": false
+            "next": "First verify exact source416a0210f41bb8da9d3627e32ff6eb0a039cc798 final58 workflow conclusions, especially41099580457/41099580562/41099580112/41099580131, fetch completed broader job124214105217 logs and compare checkout treeedf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c. Target41099580291/job124214104681 already passed108TAP/full75 with SSE marker and checkoutcec273e9429e4fcf581ee36ad80b191059e82f90 tree matched. Do not rerun accepted target. Keep accepted executable8694d1fc until final acceptance; GitHub ReadTimeout is a verification blocker, not a source failure. After final evidence, continue remaining MATRIX-C05 Knowledge/order sibling reconciliation as recorded.",
+            "newGate": false,
+            "currentMerchantRealtimeFullAppProof": {
+              "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
+              "status": "TARGETED_MERCHANT_SSE_FULL_APP_PASS_FINAL_CI_UNVERIFIED_GITHUB_READ_TIMEOUT",
+              "source": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
+              "sourceTree": "edf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c",
+              "newFunctionalCases": 1,
+              "newTapCases": 1,
+              "newGroup": false,
+              "fullAppTap": 75,
+              "targetedTap": 108,
+              "targetFiles": 6,
+              "targetRun": 41099580291,
+              "targetJob": 124214104681,
+              "merchantSnapshots": 2,
+              "deniedRequests": 6,
+              "peerReconnect": true,
+              "lastObservedCiSuccess": 54,
+              "totalCi": 58,
+              "finalCiVerified": false,
+              "accepted": false,
+              "applicationFilesChanged": 0,
+              "testFilesChanged": 1,
+              "newGate": false,
+              "parentGateClosed": false,
+              "policyAdopted": false,
+              "userActionRequiredNow": false
+            }
           },
           {
             "id": "MATRIX-C06",
@@ -3575,7 +3602,7 @@
           "originalSourceOnlySnapshotPreserved": true,
           "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
         },
-        "nextCurrentAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
+        "nextCurrentAction": "First verify exact source416a0210f41bb8da9d3627e32ff6eb0a039cc798 final58 workflow conclusions, especially41099580457/41099580562/41099580112/41099580131, fetch completed broader job124214105217 logs and compare checkout treeedf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c. Target41099580291/job124214104681 already passed108TAP/full75 with SSE marker and checkoutcec273e9429e4fcf581ee36ad80b191059e82f90 tree matched. Do not rerun accepted target. Keep accepted executable8694d1fc until final acceptance; GitHub ReadTimeout is a verification blocker, not a source failure. After final evidence, continue remaining MATRIX-C05 Knowledge/order sibling reconciliation as recorded.",
         "currentAuthFollowup": {
           "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
           "proof": {
@@ -4024,6 +4051,33 @@
         "parentGateClosed": false,
         "sequenceGateClosed": false,
         "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false
+      },
+      "currentMerchantRealtimeFullAppProof": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
+        "status": "TARGETED_MERCHANT_SSE_FULL_APP_PASS_FINAL_CI_UNVERIFIED_GITHUB_READ_TIMEOUT",
+        "source": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
+        "sourceTree": "edf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c",
+        "newFunctionalCases": 1,
+        "newTapCases": 1,
+        "newGroup": false,
+        "fullAppTap": 75,
+        "targetedTap": 108,
+        "targetFiles": 6,
+        "targetRun": 41099580291,
+        "targetJob": 124214104681,
+        "merchantSnapshots": 2,
+        "deniedRequests": 6,
+        "peerReconnect": true,
+        "lastObservedCiSuccess": 54,
+        "totalCi": 58,
+        "finalCiVerified": false,
+        "accepted": false,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "newGate": false,
+        "parentGateClosed": false,
         "policyAdopted": false,
         "userActionRequiredNow": false
       }
@@ -7115,7 +7169,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
+        "nextAction": "First verify exact source416a0210f41bb8da9d3627e32ff6eb0a039cc798 final58 workflow conclusions, especially41099580457/41099580562/41099580112/41099580131, fetch completed broader job124214105217 logs and compare checkout treeedf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c. Target41099580291/job124214104681 already passed108TAP/full75 with SSE marker and checkoutcec273e9429e4fcf581ee36ad80b191059e82f90 tree matched. Do not rerun accepted target. Keep accepted executable8694d1fc until final acceptance; GitHub ReadTimeout is a verification blocker, not a source failure. After final evidence, continue remaining MATRIX-C05 Knowledge/order sibling reconciliation as recorded.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -10326,10 +10380,37 @@
                 "notificationsAndRealtime",
                 "catalog"
               ],
-              "status": "NAMED_CELLS_ACCEPTED_SIBLING_AND_FIELD_CONDITIONS_PARTIAL",
+              "status": "SSE_TARGET_PASSED_FINAL_CI_PENDING_REMAINING_SIBLING_RECONCILIATION",
               "condition": "Current named read/mutation/Origin/idempotency/version/failure proofs retain their exact bounds. Sibling order/Knowledge/realtime/other field conditions require existing assertion review before deciding a missing runtime cell.",
-              "next": "Use catalog15-method overlay and current settings/regional/report/order/conversation/notification proofs as no-repeat baseline; inspect only effective sibling authority and sensitive fields. Product variants/archive/concurrency limits are not automatically a mandatory new case per limit.",
-              "newGate": false
+              "next": "First verify exact source416a0210f41bb8da9d3627e32ff6eb0a039cc798 final58 workflow conclusions, especially41099580457/41099580562/41099580112/41099580131, fetch completed broader job124214105217 logs and compare checkout treeedf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c. Target41099580291/job124214104681 already passed108TAP/full75 with SSE marker and checkoutcec273e9429e4fcf581ee36ad80b191059e82f90 tree matched. Do not rerun accepted target. Keep accepted executable8694d1fc until final acceptance; GitHub ReadTimeout is a verification blocker, not a source failure. After final evidence, continue remaining MATRIX-C05 Knowledge/order sibling reconciliation as recorded.",
+              "newGate": false,
+              "currentMerchantRealtimeFullAppProof": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
+                "status": "TARGETED_MERCHANT_SSE_FULL_APP_PASS_FINAL_CI_UNVERIFIED_GITHUB_READ_TIMEOUT",
+                "source": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
+                "sourceTree": "edf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c",
+                "newFunctionalCases": 1,
+                "newTapCases": 1,
+                "newGroup": false,
+                "fullAppTap": 75,
+                "targetedTap": 108,
+                "targetFiles": 6,
+                "targetRun": 41099580291,
+                "targetJob": 124214104681,
+                "merchantSnapshots": 2,
+                "deniedRequests": 6,
+                "peerReconnect": true,
+                "lastObservedCiSuccess": 54,
+                "totalCi": 58,
+                "finalCiVerified": false,
+                "accepted": false,
+                "applicationFilesChanged": 0,
+                "testFilesChanged": 1,
+                "newGate": false,
+                "parentGateClosed": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             },
             {
               "id": "MATRIX-C06",
@@ -10495,7 +10576,7 @@
             "originalSourceOnlySnapshotPreserved": true,
             "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
           },
-          "nextCurrentAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
+          "nextCurrentAction": "First verify exact source416a0210f41bb8da9d3627e32ff6eb0a039cc798 final58 workflow conclusions, especially41099580457/41099580562/41099580112/41099580131, fetch completed broader job124214105217 logs and compare checkout treeedf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c. Target41099580291/job124214104681 already passed108TAP/full75 with SSE marker and checkoutcec273e9429e4fcf581ee36ad80b191059e82f90 tree matched. Do not rerun accepted target. Keep accepted executable8694d1fc until final acceptance; GitHub ReadTimeout is a verification blocker, not a source failure. After final evidence, continue remaining MATRIX-C05 Knowledge/order sibling reconciliation as recorded.",
           "currentAuthFollowup": {
             "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
             "proof": {
@@ -10944,6 +11025,33 @@
           "parentGateClosed": false,
           "sequenceGateClosed": false,
           "newGate": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
+        },
+        "currentMerchantRealtimeFullAppProof": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
+          "status": "TARGETED_MERCHANT_SSE_FULL_APP_PASS_FINAL_CI_UNVERIFIED_GITHUB_READ_TIMEOUT",
+          "source": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
+          "sourceTree": "edf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c",
+          "newFunctionalCases": 1,
+          "newTapCases": 1,
+          "newGroup": false,
+          "fullAppTap": 75,
+          "targetedTap": 108,
+          "targetFiles": 6,
+          "targetRun": 41099580291,
+          "targetJob": 124214104681,
+          "merchantSnapshots": 2,
+          "deniedRequests": 6,
+          "peerReconnect": true,
+          "lastObservedCiSuccess": 54,
+          "totalCi": 58,
+          "finalCiVerified": false,
+          "accepted": false,
+          "applicationFilesChanged": 0,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
           "policyAdopted": false,
           "userActionRequiredNow": false
         }
@@ -15227,10 +15335,37 @@
             "notificationsAndRealtime",
             "catalog"
           ],
-          "status": "NAMED_CELLS_ACCEPTED_SIBLING_AND_FIELD_CONDITIONS_PARTIAL",
+          "status": "SSE_TARGET_PASSED_FINAL_CI_PENDING_REMAINING_SIBLING_RECONCILIATION",
           "condition": "Current named read/mutation/Origin/idempotency/version/failure proofs retain their exact bounds. Sibling order/Knowledge/realtime/other field conditions require existing assertion review before deciding a missing runtime cell.",
-          "next": "Use catalog15-method overlay and current settings/regional/report/order/conversation/notification proofs as no-repeat baseline; inspect only effective sibling authority and sensitive fields. Product variants/archive/concurrency limits are not automatically a mandatory new case per limit.",
-          "newGate": false
+          "next": "First verify exact source416a0210f41bb8da9d3627e32ff6eb0a039cc798 final58 workflow conclusions, especially41099580457/41099580562/41099580112/41099580131, fetch completed broader job124214105217 logs and compare checkout treeedf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c. Target41099580291/job124214104681 already passed108TAP/full75 with SSE marker and checkoutcec273e9429e4fcf581ee36ad80b191059e82f90 tree matched. Do not rerun accepted target. Keep accepted executable8694d1fc until final acceptance; GitHub ReadTimeout is a verification blocker, not a source failure. After final evidence, continue remaining MATRIX-C05 Knowledge/order sibling reconciliation as recorded.",
+          "newGate": false,
+          "currentMerchantRealtimeFullAppProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
+            "status": "TARGETED_MERCHANT_SSE_FULL_APP_PASS_FINAL_CI_UNVERIFIED_GITHUB_READ_TIMEOUT",
+            "source": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
+            "sourceTree": "edf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c",
+            "newFunctionalCases": 1,
+            "newTapCases": 1,
+            "newGroup": false,
+            "fullAppTap": 75,
+            "targetedTap": 108,
+            "targetFiles": 6,
+            "targetRun": 41099580291,
+            "targetJob": 124214104681,
+            "merchantSnapshots": 2,
+            "deniedRequests": 6,
+            "peerReconnect": true,
+            "lastObservedCiSuccess": 54,
+            "totalCi": 58,
+            "finalCiVerified": false,
+            "accepted": false,
+            "applicationFilesChanged": 0,
+            "testFilesChanged": 1,
+            "newGate": false,
+            "parentGateClosed": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          }
         },
         {
           "id": "MATRIX-C06",
@@ -15396,7 +15531,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "First verify exact source416a0210f41bb8da9d3627e32ff6eb0a039cc798 final58 workflow conclusions, especially41099580457/41099580562/41099580112/41099580131, fetch completed broader job124214105217 logs and compare checkout treeedf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c. Target41099580291/job124214104681 already passed108TAP/full75 with SSE marker and checkoutcec273e9429e4fcf581ee36ad80b191059e82f90 tree matched. Do not rerun accepted target. Keep accepted executable8694d1fc until final acceptance; GitHub ReadTimeout is a verification blocker, not a source failure. After final evidence, continue remaining MATRIX-C05 Knowledge/order sibling reconciliation as recorded.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -15859,6 +15994,33 @@
       "parentGateClosed": false,
       "sequenceGateClosed": false,
       "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentMerchantRealtimeFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
+      "status": "TARGETED_MERCHANT_SSE_FULL_APP_PASS_FINAL_CI_UNVERIFIED_GITHUB_READ_TIMEOUT",
+      "source": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
+      "sourceTree": "edf18fb29afd3dcd4ac4ae03173bb01cd9a8e01c",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "fullAppTap": 75,
+      "targetedTap": 108,
+      "targetFiles": 6,
+      "targetRun": 41099580291,
+      "targetJob": 124214104681,
+      "merchantSnapshots": 2,
+      "deniedRequests": 6,
+      "peerReconnect": true,
+      "lastObservedCiSuccess": 54,
+      "totalCi": 58,
+      "finalCiVerified": false,
+      "accepted": false,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
       "policyAdopted": false,
       "userActionRequiredNow": false
     }
