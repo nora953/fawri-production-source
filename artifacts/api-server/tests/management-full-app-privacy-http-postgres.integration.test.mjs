@@ -2125,11 +2125,17 @@ test('full application management privacy preserves cutover ordering and current
     const paths=[path,'/API/AuTh/AdMiN/OwNeR-ReCoVeRy/StAtUs/?account_id='+manager.id+'&merchant_id='+a.id];
     const original=(await admin.query('SELECT metadata FROM accounts WHERE id=$1',[owner.id])).rows[0].metadata;
     const businessBefore=await snapshot();
-    const statusAssistant=await actor('admin','assistant_admin',['manage_merchant_status','view_logs']);
-    const assistantDevice=await security.registerAdminDeviceAuthoritative({accountId:statusAssistant.id,accountKind:'admin',deviceId:statusAssistant.device,deviceLabel:'Owner status proof assistant'});
-    await security.setAdminDeviceTrustAuthoritative({deviceRecordId:assistantDevice.id,trusted:true,actorAccountId:owner.id});
-    statusAssistant.session=await auth.issueSession({accountId:statusAssistant.id,accountKind:'admin',tenantId:statusAssistant.id,adminRole:statusAssistant.role,deviceId:statusAssistant.device,permissions:statusAssistant.permissions});
-    statusAssistant.cookie=ADMIN_SESSION_COOKIE+'='+statusAssistant.session.token;
+    const statusAssistants=[];
+    for(const permissions of [['manage_merchant_status','view_logs'],[],['view_logs']]){
+      const assistant=await actor('admin','assistant_admin',permissions);
+      const device=await security.registerAdminDeviceAuthoritative({accountId:assistant.id,accountKind:'admin',deviceId:assistant.device,deviceLabel:'Owner status proof assistant'});
+      await security.setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:owner.id});
+      assistant.session=await auth.issueSession({accountId:assistant.id,accountKind:'admin',tenantId:'fawri-admin',adminRole:assistant.role,deviceId:assistant.device,permissions:assistant.permissions});
+      assistant.cookie=ADMIN_SESSION_COOKIE+'='+assistant.session.token;
+      const me=await req('/api/auth/admin/me',assistant);
+      assert.equal(me.status,200,'fresh assistant authentication precondition: '+JSON.stringify(me.body));
+      statusAssistants.push(assistant);
+    }
     const extra=await auth.issueSession({accountId:owner.id,accountKind:'admin',tenantId:owner.id,adminRole:'owner_admin',deviceId:owner.device,permissions:[]});
     await auth.revokeSession(extra.token,'admin','logout');
     const revoked={...owner,cookie:ADMIN_SESSION_COOKIE+'='+extra.token};
@@ -2154,12 +2160,12 @@ test('full application management privacy preserves cutover ordering and current
       const before=await authority();
       for(const variant of paths){
         for(const [who,status,headers] of [
-          [undefined,401,{}],[a,401,{}],[b,401,{}],[statusAssistant,403,{}],[denied,403,{}],[viewer,403,{}],
+          [undefined,401,{}],[a,401,{}],[b,401,{}],[statusAssistants[0],403,{}],[statusAssistants[1],403,{}],[statusAssistants[2],403,{}],
           [owner,401,{'X-Fawri-Device-Id':'wrong-owner-status-device'}],
           [owner,401,{Cookie:owner.cookie+'; '+a.cookie}],[revoked,401,{}],
         ]){
           const r=await req(variant,who,'GET',undefined,headers);
-          assert.equal(r.status,status);assert.equal(JSON.stringify(r.body).includes(secret),false);
+          assert.equal(r.status,status,JSON.stringify({role:who?.role,expected:status,body:r.body}));assert.equal(JSON.stringify(r.body).includes(secret),false);
           for(const field of ['enabled','created_at','used_at','owner_recovery','key_1_hash','key_2_hash'])assert.equal(Object.hasOwn(r.body,field),false);
           assert.deepEqual(await authority(),before);deniedCount++;
         }
