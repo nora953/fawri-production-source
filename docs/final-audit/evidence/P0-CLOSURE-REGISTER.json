@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
+      "nextAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -3356,15 +3356,45 @@
             "groups": [
               "cashier"
             ],
-            "status": "BOUNDED_NATIVE_SQL_HTTP_PROOFS_POLICY_DEVICE_REMAINDER",
+            "status": "PROOF_LAYERS_RECONCILED_EXISTING_SEQUENCE_POLICY_DEVICE_GAPS_REMAIN",
             "condition": "Separate staff/discount/subscription/operator/sync authority proof layers and shared mounts. Existing merchant pairing and accepted public v2 refusal must not be reopened as new OTP/owner approval work.",
-            "next": "Map original accepted access inventory/native/operator cases to current handlers; link unresolved sequence provenance/SEQ-R2 and physical device/release requirements to existing gates, not new route tests.",
+            "next": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
             "dependencies": [
               "CASHIER-SYNC-SEQUENCE-001",
               "P0-OFFLINE-DEVICE-ACCEPTANCE",
               "P0-OFFLINE-KEY-RELEASE"
             ],
-            "newGate": false
+            "newGate": false,
+            "currentCashierActorSequenceSourceReview": {
+              "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+              "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+              "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+              "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+              "reviewComplete": true,
+              "sourcePins": 22,
+              "historicalRouteFiles": 5,
+              "historicalRegistrationRows": 64,
+              "sourceDrifts": 0,
+              "reusedAccessInventoryRows": 9,
+              "reusedBroaderRun": 41089107861,
+              "reusedBroaderJob": 124177960342,
+              "remainingSequenceConditions": [
+                "SEQ-R1",
+                "SEQ-R2",
+                "SEQ-R3"
+              ],
+              "seqR2Decision": "UNAPPROVED",
+              "existingMerchantPairingPreserved": true,
+              "newRuntimeTests": 0,
+              "newCiRuns": 0,
+              "applicationChanged": false,
+              "parentGateClosed": false,
+              "sequenceGateClosed": false,
+              "newGate": false,
+              "policyAdopted": false,
+              "userActionRequiredNow": false
+            },
+            "noAutomaticPairingTest": true
           },
           {
             "id": "MATRIX-C05",
@@ -3545,7 +3575,7 @@
           "originalSourceOnlySnapshotPreserved": true,
           "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
         },
-        "nextCurrentAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
+        "nextCurrentAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
         "currentAuthFollowup": {
           "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
           "proof": {
@@ -3580,7 +3610,7 @@
           "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
           "ownerRecoveryRuntimeClaimed": false
         },
-        "nextWorkItem": "MATRIX-C04"
+        "nextWorkItem": "MATRIX-C05"
       },
       "currentLegacyKnowledgeRetirementFullAppProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
@@ -3964,6 +3994,35 @@
         "newCiRuns": 0,
         "applicationChanged": false,
         "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false
+      },
+      "currentCashierActorSequenceSourceReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+        "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+        "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+        "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+        "reviewComplete": true,
+        "sourcePins": 22,
+        "historicalRouteFiles": 5,
+        "historicalRegistrationRows": 64,
+        "sourceDrifts": 0,
+        "reusedAccessInventoryRows": 9,
+        "reusedBroaderRun": 41089107861,
+        "reusedBroaderJob": 124177960342,
+        "remainingSequenceConditions": [
+          "SEQ-R1",
+          "SEQ-R2",
+          "SEQ-R3"
+        ],
+        "seqR2Decision": "UNAPPROVED",
+        "existingMerchantPairingPreserved": true,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "sequenceGateClosed": false,
         "newGate": false,
         "policyAdopted": false,
         "userActionRequiredNow": false
@@ -5860,6 +5919,35 @@
           "SEQ-R3"
         ],
         "newRuntime": false
+      },
+      "currentCashierActorSequenceSourceReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+        "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+        "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+        "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+        "reviewComplete": true,
+        "sourcePins": 22,
+        "historicalRouteFiles": 5,
+        "historicalRegistrationRows": 64,
+        "sourceDrifts": 0,
+        "reusedAccessInventoryRows": 9,
+        "reusedBroaderRun": 41089107861,
+        "reusedBroaderJob": 124177960342,
+        "remainingSequenceConditions": [
+          "SEQ-R1",
+          "SEQ-R2",
+          "SEQ-R3"
+        ],
+        "seqR2Decision": "UNAPPROVED",
+        "existingMerchantPairingPreserved": true,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "sequenceGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false
       }
     },
     {
@@ -7027,7 +7115,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
+        "nextAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -10188,15 +10276,45 @@
               "groups": [
                 "cashier"
               ],
-              "status": "BOUNDED_NATIVE_SQL_HTTP_PROOFS_POLICY_DEVICE_REMAINDER",
+              "status": "PROOF_LAYERS_RECONCILED_EXISTING_SEQUENCE_POLICY_DEVICE_GAPS_REMAIN",
               "condition": "Separate staff/discount/subscription/operator/sync authority proof layers and shared mounts. Existing merchant pairing and accepted public v2 refusal must not be reopened as new OTP/owner approval work.",
-              "next": "Map original accepted access inventory/native/operator cases to current handlers; link unresolved sequence provenance/SEQ-R2 and physical device/release requirements to existing gates, not new route tests.",
+              "next": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
               "dependencies": [
                 "CASHIER-SYNC-SEQUENCE-001",
                 "P0-OFFLINE-DEVICE-ACCEPTANCE",
                 "P0-OFFLINE-KEY-RELEASE"
               ],
-              "newGate": false
+              "newGate": false,
+              "currentCashierActorSequenceSourceReview": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+                "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+                "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+                "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                "reviewComplete": true,
+                "sourcePins": 22,
+                "historicalRouteFiles": 5,
+                "historicalRegistrationRows": 64,
+                "sourceDrifts": 0,
+                "reusedAccessInventoryRows": 9,
+                "reusedBroaderRun": 41089107861,
+                "reusedBroaderJob": 124177960342,
+                "remainingSequenceConditions": [
+                  "SEQ-R1",
+                  "SEQ-R2",
+                  "SEQ-R3"
+                ],
+                "seqR2Decision": "UNAPPROVED",
+                "existingMerchantPairingPreserved": true,
+                "newRuntimeTests": 0,
+                "newCiRuns": 0,
+                "applicationChanged": false,
+                "parentGateClosed": false,
+                "sequenceGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              },
+              "noAutomaticPairingTest": true
             },
             {
               "id": "MATRIX-C05",
@@ -10377,7 +10495,7 @@
             "originalSourceOnlySnapshotPreserved": true,
             "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
           },
-          "nextCurrentAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
+          "nextCurrentAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
           "currentAuthFollowup": {
             "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
             "proof": {
@@ -10412,7 +10530,7 @@
             "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
             "ownerRecoveryRuntimeClaimed": false
           },
-          "nextWorkItem": "MATRIX-C04"
+          "nextWorkItem": "MATRIX-C05"
         },
         "currentLegacyKnowledgeRetirementFullAppProof": {
           "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
@@ -10799,6 +10917,35 @@
           "newGate": false,
           "policyAdopted": false,
           "userActionRequiredNow": false
+        },
+        "currentCashierActorSequenceSourceReview": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+          "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+          "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+          "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+          "reviewComplete": true,
+          "sourcePins": 22,
+          "historicalRouteFiles": 5,
+          "historicalRegistrationRows": 64,
+          "sourceDrifts": 0,
+          "reusedAccessInventoryRows": 9,
+          "reusedBroaderRun": 41089107861,
+          "reusedBroaderJob": 124177960342,
+          "remainingSequenceConditions": [
+            "SEQ-R1",
+            "SEQ-R2",
+            "SEQ-R3"
+          ],
+          "seqR2Decision": "UNAPPROVED",
+          "existingMerchantPairingPreserved": true,
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "parentGateClosed": false,
+          "sequenceGateClosed": false,
+          "newGate": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -10835,6 +10982,35 @@
           "localCompensationReplayAcceptance": "evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json#localCompensationReplay20261027",
           "publicProtocolRefusal": "evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json#protocolNegotiationReconciliation20261027",
           "seqR2Decision": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#seqR2OperationCompatibilityDecision20261027"
+        },
+        "currentCashierActorSequenceSourceReview": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+          "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+          "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+          "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+          "reviewComplete": true,
+          "sourcePins": 22,
+          "historicalRouteFiles": 5,
+          "historicalRegistrationRows": 64,
+          "sourceDrifts": 0,
+          "reusedAccessInventoryRows": 9,
+          "reusedBroaderRun": 41089107861,
+          "reusedBroaderJob": 124177960342,
+          "remainingSequenceConditions": [
+            "SEQ-R1",
+            "SEQ-R2",
+            "SEQ-R3"
+          ],
+          "seqR2Decision": "UNAPPROVED",
+          "existingMerchantPairingPreserved": true,
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
+          "parentGateClosed": false,
+          "sequenceGateClosed": false,
+          "newGate": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
         }
       },
       {
@@ -15001,15 +15177,45 @@
           "groups": [
             "cashier"
           ],
-          "status": "BOUNDED_NATIVE_SQL_HTTP_PROOFS_POLICY_DEVICE_REMAINDER",
+          "status": "PROOF_LAYERS_RECONCILED_EXISTING_SEQUENCE_POLICY_DEVICE_GAPS_REMAIN",
           "condition": "Separate staff/discount/subscription/operator/sync authority proof layers and shared mounts. Existing merchant pairing and accepted public v2 refusal must not be reopened as new OTP/owner approval work.",
-          "next": "Map original accepted access inventory/native/operator cases to current handlers; link unresolved sequence provenance/SEQ-R2 and physical device/release requirements to existing gates, not new route tests.",
+          "next": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
           "dependencies": [
             "CASHIER-SYNC-SEQUENCE-001",
             "P0-OFFLINE-DEVICE-ACCEPTANCE",
             "P0-OFFLINE-KEY-RELEASE"
           ],
-          "newGate": false
+          "newGate": false,
+          "currentCashierActorSequenceSourceReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+            "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+            "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+            "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+            "reviewComplete": true,
+            "sourcePins": 22,
+            "historicalRouteFiles": 5,
+            "historicalRegistrationRows": 64,
+            "sourceDrifts": 0,
+            "reusedAccessInventoryRows": 9,
+            "reusedBroaderRun": 41089107861,
+            "reusedBroaderJob": 124177960342,
+            "remainingSequenceConditions": [
+              "SEQ-R1",
+              "SEQ-R2",
+              "SEQ-R3"
+            ],
+            "seqR2Decision": "UNAPPROVED",
+            "existingMerchantPairingPreserved": true,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "applicationChanged": false,
+            "parentGateClosed": false,
+            "sequenceGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "noAutomaticPairingTest": true
         },
         {
           "id": "MATRIX-C05",
@@ -15190,7 +15396,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -15225,7 +15431,7 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C04"
+      "nextWorkItem": "MATRIX-C05"
     },
     "currentLegacyKnowledgeRetirementFullAppProof": {
       "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
@@ -15623,6 +15829,35 @@
       "newCiRuns": 0,
       "applicationChanged": false,
       "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentCashierActorSequenceSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+      "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+      "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+      "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+      "reviewComplete": true,
+      "sourcePins": 22,
+      "historicalRouteFiles": 5,
+      "historicalRegistrationRows": 64,
+      "sourceDrifts": 0,
+      "reusedAccessInventoryRows": 9,
+      "reusedBroaderRun": 41089107861,
+      "reusedBroaderJob": 124177960342,
+      "remainingSequenceConditions": [
+        "SEQ-R1",
+        "SEQ-R2",
+        "SEQ-R3"
+      ],
+      "seqR2Decision": "UNAPPROVED",
+      "existingMerchantPairingPreserved": true,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "sequenceGateClosed": false,
       "newGate": false,
       "policyAdopted": false,
       "userActionRequiredNow": false

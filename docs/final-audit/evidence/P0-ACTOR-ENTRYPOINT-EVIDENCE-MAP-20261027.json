@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
+    "nextExactAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -45107,6 +45107,292 @@
         "newGate": false,
         "policyAdopted": false,
         "nextExactAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment."
+      },
+      {
+        "boundary": "currentCashierActorPairingSequenceEvidenceReconciliation",
+        "date": "2026-10-30",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "relatedGates": [
+          "CASHIER-SYNC-SEQUENCE-001",
+          "P0-OFFLINE-DEVICE-ACCEPTANCE",
+          "P0-OFFLINE-KEY-RELEASE"
+        ],
+        "workItem": "MATRIX-C04",
+        "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+        "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+        "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+        "reviewComplete": true,
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "sha": "173c5c0a96c273d04bc0977ec9eb667b6fd6e0dd"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/cashier-staff-operations.ts",
+            "sha": "287eaa5d9af35eb31afe32c172e35007c0ad244b"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+            "sha": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/cashier-sync-operations.ts",
+            "sha": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts",
+            "sha": "11f699c7af92a14aea653c6557287aa3ca5f324f"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/cashier-subscription-operations.ts",
+            "sha": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f"
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/cashierStaffSession.ts",
+            "sha": "7b036a6e51135c3c7cbb89a43cdaf560b5a08d92"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts",
+            "sha": "d7212e7b4c8055f7bfeda3430fbb6ace843ebcbb"
+          },
+          {
+            "path": "artifacts/api-server/src/services/cashierStationConfigurationAuthority.ts",
+            "sha": "3f59b948fcde6ea739a808be6c73966c8095a398"
+          },
+          {
+            "path": "artifacts/api-server/src/services/cashierStreamAdmissionAuthority.ts",
+            "sha": "046359c729a90fb7d6ed2b7b9da6fc665ebb6f30"
+          },
+          {
+            "path": "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts",
+            "sha": "6e806a12a9b11b71bff47d67e3645215eebfbb31"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts",
+            "sha": "54f3a7ccfc72ed6d5b69073b4161b2bae6618eb2"
+          },
+          {
+            "path": "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts",
+            "sha": "521fda9ac08e6c31be37883f46ab67cb8dda074d"
+          },
+          {
+            "path": "artifacts/fawri/src/pages/dashboard/CashierManagementPage.tsx",
+            "sha": "33ff12e98d4fed9af9ffe9cd42d3372191e17deb"
+          },
+          {
+            "path": "artifacts/fawri/src/components/cashier/CashierOperatorGate.tsx",
+            "sha": "319bf89d57256d6835d0162f223eaabd8a509ba6"
+          },
+          {
+            "path": "artifacts/api-server/tests/cashier-full-lifecycle-postgres.integration.test.ts",
+            "sha": "66cb99fd73292779f77466feeaddcd62b4182ae0"
+          },
+          {
+            "path": "artifacts/api-server/tests/cashier-operator-profit-http-postgres.integration.test.mjs",
+            "sha": "92f08b647d9269d929010d853a92b5ac980296b5"
+          },
+          {
+            "path": "docs/final-audit/evidence/P0-CASHIER-PAIRING-CONTINUITY-20261027.json",
+            "sha": "00f9dd1471231797188d022dcc177eeb9660ca28"
+          },
+          {
+            "path": "docs/final-audit/evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json",
+            "sha": "369dd0b6256fd79e5b7c6d0db4bdcc10009eeb19"
+          },
+          {
+            "path": "docs/final-audit/evidence/P0-CASHIER-NATIVE-OUTBOX-20261026.json",
+            "sha": "61fdaf9803ea4a301ca3ce5ef31083997e830ff6"
+          },
+          {
+            "path": "docs/final-audit/evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json",
+            "sha": "78be745953a2eb9a5dfc684687aaeec016c72277"
+          },
+          {
+            "path": "docs/final-audit/evidence/P0-ACCESS-CONTROL-PROOF-INVENTORY-20261023.json",
+            "sha": "5b0c6c6d4c7cb38e2fb0d6328c65c43bdbf5845a"
+          }
+        ],
+        "historicalCatalogue": {
+          "files": 5,
+          "registrationRows": 64,
+          "sourceDrifts": 0,
+          "interpretation": "Contains repeated staff/commerce mounts and generated admin actions; not64 missing tests or complete per-route acceptance."
+        },
+        "authorityMap": [
+          {
+            "family": "staff/stations/pairing",
+            "finding": "Merchant management uses secure merchant session and session tenant; begin pairing checks active owned licensed station and issues one-use hashed10-minute code. Redeem serializes station then challenge, rechecks active/license/code expiry, revokes old runtime, increments credential version, binds device and consumes challenge. No routine platform-owner review/OTP inserted."
+          },
+          {
+            "family": "frontend pairing",
+            "finding": "Dashboard creates existing code, gate redeems using pairCashierStation; local identity persists device/history, pending envelope guard blocks pairing. Local pending-count guard is not server-authenticated fresh-empty provenance."
+          },
+          {
+            "family": "station/operator guards",
+            "finding": "Headers bind station token/operator token/device; middleware refreshes durable station credential, current authentication and effective permission/license state. historicalSync intentionally hands entitlement validation to historical operation authority rather than the normal online guard; not authorization removal."
+          },
+          {
+            "family": "commerce",
+            "finding": "sale.create/sale.return/sale.void/reports.sales/sale.discount and current effective reports.profit projection are distinct privileges. Public handlers do not pass the internal versionedStreamId capability; v2/root stream markers remain unsupported."
+          },
+          {
+            "family": "discount",
+            "finding": "Merchant session scopes settings/policy writes; active subscription and expected staff version/current role constraints remain. Operator reads use operator guard. SQL authority tests are not automatically every full-app DTO proof."
+          },
+          {
+            "family": "subscription",
+            "finding": "Merchant catalogue/entitlement/billing/downgrade derives session tenant. Admin subscription read/state actions require manage_subscriptions and server-derived actor ID. Fake billing/source acceptance does not certify a real payment provider."
+          },
+          {
+            "family": "mount overlap",
+            "finding": "app.ts directly mounts subscription/staff/discount/commerce before sync router; sync nests staff/commerce again. Therefore sync wrapper reconciliation comment is not a blanket proof every cashier path executes that wrapper. Current direct station/operator guards perform their own refresh/auth checks; no new bypass is claimed from repeated registration alone."
+          }
+        ],
+        "reusedAccessInventory": [
+          {
+            "id": "P0-ACCESS-CREDENTIAL-LIFECYCLE",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-credential-housekeeping-postgres.integration.test.mjs",
+            "currentTap": 10,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          },
+          {
+            "id": "P0-ACCESS-MANAGER-PIN",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-manager-pin-persistence-postgres.integration.test.mjs",
+            "currentTap": 10,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          },
+          {
+            "id": "P0-ACCESS-PERMISSION-SESSION",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-permission-session-authority-postgres.integration.test.mjs",
+            "currentTap": 8,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          },
+          {
+            "id": "P0-ACCESS-STAFF-LOCK",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-staff-lock-boundary-postgres.integration.test.mjs",
+            "currentTap": 7,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          },
+          {
+            "id": "P0-ACCESS-CASHIER-IDENTITY-RLS",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-identity-tenant-rls-postgres.integration.test.mjs",
+            "currentTap": 8,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          },
+          {
+            "id": "P0-ACCESS-CASHIER-BUSINESS-RLS",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
+            "currentTap": 8,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          },
+          {
+            "id": "P0-ACCESS-DISCOUNT-POLICY-AUTHORITY",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-discount-policy-integrity-postgres.integration.test.mjs",
+            "currentTap": 5,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          },
+          {
+            "id": "P0-ACCESS-APPROVAL-AUTHORITY",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-approval-provenance-postgres.integration.test.mjs",
+            "currentTap": 8,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          },
+          {
+            "id": "P0-ACCESS-SETTINGS-AUTHORITY",
+            "originalLayer": "isolated_actual_login",
+            "test": "artifacts/api-server/tests/cashier-discount-settings-authority-postgres.integration.test.mjs",
+            "currentTap": 8,
+            "status": "REUSED_BOUNDED_CURRENT_RUNTIME"
+          }
+        ],
+        "reusedCurrentRuntime": {
+          "source": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+          "run": 41089107861,
+          "job": 124177960342,
+          "broaderTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "newExecution": false,
+          "selectedSuites": [
+            {
+              "file": "cashier-operator-profit-http-postgres.integration.test.mjs",
+              "tap": 5
+            },
+            {
+              "file": "cashier-historical-compensation-http-postgres.integration.test.mjs",
+              "tap": 28
+            },
+            {
+              "file": "cashier-closed-shift-recovery-http-postgres.integration.test.mjs",
+              "tap": 1
+            },
+            {
+              "file": "cashier-sync-multidevice-postgres.integration.test.mjs",
+              "tap": 5
+            },
+            {
+              "file": "cashier-full-lifecycle-postgres.integration.test.ts",
+              "tap": 4
+            },
+            {
+              "file": "cashier-subscription-postgres.integration.test.ts",
+              "tap": 1
+            }
+          ],
+          "exactSubtestsReobserved": "Three pairing history/used-code cases and six sale/return/void unsupported-protocol cases PASS in accepted logs.28-TAP operator suite is actual loopback mounted routers, not whole app.ts. Lifecycle4 is service/SQL; profit5 is isolated operator-router HTTP.",
+          "allCiSuccess": 58
+        },
+        "protocolContinuity": {
+          "priorRef": "P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json#protocolNegotiationReconciliation20261027",
+          "priorPins": 9,
+          "unchangedPins": 8,
+          "knownDrift": "app.ts accepted Knowledge legacy gate change; current cashier mounts inspected.",
+          "sixCases36Requests": "Existing loop-derived counts retained, not newly executed traffic. Reuse public negative admission evidence; no identical test selected.",
+          "internalVsPublic": "Canonical0052 storage and candidate0053/proposed internal reviewer/financial/restore proofs are not public v2 activation or native-to-real-server ACK/recovery."
+        },
+        "remainingExistingConditions": [
+          {
+            "id": "SEQ-R1",
+            "remaining": "Adopted positive public/native v2 admission and complete ACK/hold/legacy recovery depend on R2/R3; no automatic historical backfill."
+          },
+          {
+            "id": "SEQ-R2",
+            "remaining": "Explicit independent local movement-only API/retained counter/stock/outbox compatibility choice.",
+            "decision": "UNAPPROVED",
+            "selectedModel": null,
+            "source": "P0-CASHIER-SEQUENCE-DESIGN-20261026.json#seqR2OperationCompatibilityDecision20261027"
+          },
+          {
+            "id": "SEQ-R3",
+            "remaining": "Trusted original device/queue provenance and first/legacy/restored checkpoint recovery authority; pairing success is not fresh-empty enrollment."
+          },
+          {
+            "id": "P0-OFFLINE-DEVICE-ACCEPTANCE",
+            "remaining": "Physical device/main-secondary/grace/time/profile acceptance remains separate; synthetic Chromium proof not hardware acceptance."
+          },
+          {
+            "id": "P0-OFFLINE-KEY-RELEASE",
+            "remaining": "Real key/release/hosted identity remains separately blocked."
+          }
+        ],
+        "selection": "No duplicate pairing issuer, identical public refusal test, new recovery policy or canonical promotion selected. Historical HTTP pairing extension suggestion remains conditional; it does not resolve current R2/R3 trust choices. Continue independent C05.",
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "sequenceGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false,
+        "nextExactAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -48681,15 +48967,45 @@
           "groups": [
             "cashier"
           ],
-          "status": "BOUNDED_NATIVE_SQL_HTTP_PROOFS_POLICY_DEVICE_REMAINDER",
+          "status": "PROOF_LAYERS_RECONCILED_EXISTING_SEQUENCE_POLICY_DEVICE_GAPS_REMAIN",
           "condition": "Separate staff/discount/subscription/operator/sync authority proof layers and shared mounts. Existing merchant pairing and accepted public v2 refusal must not be reopened as new OTP/owner approval work.",
-          "next": "Map original accepted access inventory/native/operator cases to current handlers; link unresolved sequence provenance/SEQ-R2 and physical device/release requirements to existing gates, not new route tests.",
+          "next": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
           "dependencies": [
             "CASHIER-SYNC-SEQUENCE-001",
             "P0-OFFLINE-DEVICE-ACCEPTANCE",
             "P0-OFFLINE-KEY-RELEASE"
           ],
-          "newGate": false
+          "newGate": false,
+          "currentCashierActorSequenceSourceReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+            "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+            "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+            "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+            "reviewComplete": true,
+            "sourcePins": 22,
+            "historicalRouteFiles": 5,
+            "historicalRegistrationRows": 64,
+            "sourceDrifts": 0,
+            "reusedAccessInventoryRows": 9,
+            "reusedBroaderRun": 41089107861,
+            "reusedBroaderJob": 124177960342,
+            "remainingSequenceConditions": [
+              "SEQ-R1",
+              "SEQ-R2",
+              "SEQ-R3"
+            ],
+            "seqR2Decision": "UNAPPROVED",
+            "existingMerchantPairingPreserved": true,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "applicationChanged": false,
+            "parentGateClosed": false,
+            "sequenceGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "noAutomaticPairingTest": true
         },
         {
           "id": "MATRIX-C05",
@@ -48870,7 +49186,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "MATRIX-C05: reconcile existing order/conversation, current Knowledge, notification/realtime and merchant settings/regional/channel/report/catalog sensitive actor/field assertions against current effective handlers and accumulated bounded proofs. Start from current catalog15-method and accepted full-app read/mutation/Origin/version/replay/rollback overlays, current Knowledge retirement and actual notification/conversation producer-consumer evidence; identify only a demonstrated unproved sibling sensitive condition before code/test. Do not reopen accepted C01-C04 proofs, require one new test for every documented limitation, or use remaining SEQ-R2 policy/physical device/hosted dependencies to invent new work. Preserve FIELD002/003/004/005 policy and completeness remainder, existing merchant pairing and public v2 refusal. GitHub-only; no policy adoption, new gate, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -48905,7 +49221,7 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C04"
+      "nextWorkItem": "MATRIX-C05"
     },
     "previousTestOverlayBeforeLegacyKnowledgeRetirement20261029": {
       "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
@@ -49363,6 +49679,35 @@
       "newCiRuns": 0,
       "applicationChanged": false,
       "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentCashierActorSequenceSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentCashierActorPairingSequenceEvidenceReconciliation]",
+      "status": "CURRENT_CASHIER_AUTHORITY_AND_PAIRING_PROOF_LAYERS_RECONCILED_EXISTING_SEQ_POLICY_DEVICE_GAPS_RETAINED",
+      "sourceReviewed": "9d8d231e2da42c305f3ea95f08b4840d5a0f7faa",
+      "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+      "reviewComplete": true,
+      "sourcePins": 22,
+      "historicalRouteFiles": 5,
+      "historicalRegistrationRows": 64,
+      "sourceDrifts": 0,
+      "reusedAccessInventoryRows": 9,
+      "reusedBroaderRun": 41089107861,
+      "reusedBroaderJob": 124177960342,
+      "remainingSequenceConditions": [
+        "SEQ-R1",
+        "SEQ-R2",
+        "SEQ-R3"
+      ],
+      "seqR2Decision": "UNAPPROVED",
+      "existingMerchantPairingPreserved": true,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "sequenceGateClosed": false,
       "newGate": false,
       "policyAdopted": false,
       "userActionRequiredNow": false
