@@ -2280,5 +2280,84 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_SUPPORT_NESTED_READ_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,positiveReads:positive,deniedReads:negative,merchants:2,freshActorPrechecks:4,exactNestedDto:true,softDeletedAttachmentOmitted:true,lifecycleWarmedBeforeSnapshot:true,ownedFiveTableStateUnchanged:true,ownedFixturesCleaned:true,physicalImageWritten:false,hosted:false}));
   });
 
+
+  await t.test('MATRIX-C03 image aliases and private bytes use full-app current authority before retired legacy paths',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant'),helper=await actor('admin','assistant_admin',['manage_support']),unpermitted=await actor('admin','assistant_admin',[]);
+    for(const who of [x,y,helper,unpermitted]){
+      if(who.kind==='merchant')await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[who.id]);
+      else{
+        const d=await security.registerAdminDeviceAuthoritative({accountId:who.id,accountKind:'admin',deviceId:who.device,deviceLabel:'Support image app proof'});
+        await security.setAdminDeviceTrustAuthoritative({deviceRecordId:d.id,trusted:true,actorAccountId:owner.id});
+      }
+      who.session=await auth.issueSession({accountId:who.id,accountKind:who.kind,tenantId:who.kind==='admin'?'fawri-admin':who.id,adminRole:who.role,deviceId:who.device,permissions:who.permissions});
+      who.cookie=(who.kind==='admin'?ADMIN_SESSION_COOKIE:MERCHANT_SESSION_COOKIE)+'='+who.session.token;
+      assert.equal((await req(who.kind==='admin'?'/api/auth/admin/me':'/api/auth/me',who)).status,200);
+    }
+    const {SUPPORT_IMAGE_DIR}=await import('../src/services/postgresSupportImageAuthority.ts');
+    const {getFawriDataFilePath}=await import('../src/lib/dataPaths.ts');
+    const legacyFiles=['merchants.json','auth-accounts.json','auth-security.json'];
+    const legacyState=()=>legacyFiles.map(name=>{const p=getFawriDataFilePath(name);return {name,body:fs.existsSync(p)?fs.readFileSync(p,'base64'):null};});
+    const legacyBefore=legacyState();
+    const ticket='Image-App-'+randomUUID(),peerTicket='Image-App-Peer-'+randomUUID(),ownedTickets=[ticket,peerTicket];
+    const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=','base64');
+    const merchantUpload='/api/auth/support-images/merchant/tickets/'+ticket+'/messages',adminUpload='/api/auth/support-images/admin/tickets/'+ticket+'/messages',genericUpload='/api/auth/support-images/tickets/'+ticket+'/messages';
+    const tables=['support_tickets','support_messages','support_attachments','support_inspection_requests','support_preview_sessions'];
+    const state=async()=>Object.fromEntries(await Promise.all(tables.map(async table=>[table,(await admin.query('SELECT to_jsonb(t) AS row FROM '+table+' t WHERE '+(table==='support_tickets'?'id':'ticket_id')+'=ANY($1::text[]) ORDER BY to_jsonb(t)::text',[ownedTickets])).rows])));
+    const files=()=>ownedTickets.map(id=>{const dir=SUPPORT_IMAGE_DIR+'/'+id;return {id,files:fs.existsSync(dir)?fs.readdirSync(dir).sort().map(name=>({name,bytes:fs.readFileSync(dir+'/'+name,'base64')})):[]};});
+    async function imageReq(path,who,method='GET',headers={}){
+      const r=await fetch(origin+path,{method,headers:{...(who?{Cookie:who.cookie,'X-Fawri-Device-Id':who.device}:{}),...(method==='POST'?{Origin:'https://management.example.invalid','Content-Type':'image/png','X-File-Name':'full-app.png'}:{}),...headers},...(method==='POST'?{body:png}:{})});
+      const bytes=Buffer.from(await r.arrayBuffer()),type=r.headers.get('content-type')||'';
+      return {status:r.status,cache:r.headers.get('cache-control'),type,bytes,body:type.includes('application/json')?JSON.parse(bytes.toString()):undefined};
+    }
+    let uploads=0,reads=0,denials=0,retired=0,passed=false;
+    try{
+      for(const [id,m] of [[ticket,x],[peerTicket,y]])await admin.query("INSERT INTO support_tickets(id,merchant_id,subject,category,status,assigned_admin_account_id,waiting_on,waiting_since) VALUES($1,$2,'Full app image proof','technical','in_progress',$3,'admin',now())",[id,m.id,helper.id]);
+      const beforePeer=(await admin.query('SELECT to_jsonb(t) AS row FROM support_tickets t WHERE id=$1',[peerTicket])).rows;
+      const attachments=[];
+      for(const [path,who,senderType] of [[merchantUpload,x,'merchant'],[adminUpload,helper,'admin'],[genericUpload,x,'merchant']]){
+        const r=await imageReq(path,who,'POST');assert.equal(r.status,201,JSON.stringify(r.body));assert.equal(r.body.ok,true);
+        const message=r.body.ticket.messages.at(-1),attachment=message.attachments[0];assert.equal(message.sender_type,senderType);assert.equal(message.sender_id,who.id);
+        assert.deepEqual(Object.keys(attachment).sort(),['id','kind','original_name','mime_type','size_bytes','url','created_at'].sort());
+        assert.equal(attachment.original_name,'full-app.png');assert.equal(attachment.url,'/api/auth/support-images/attachments/'+encodeURIComponent(attachment.id));
+        const stored=(await admin.query('SELECT storage_key FROM support_attachments WHERE id=$1 AND ticket_id=$2',[attachment.id,ticket])).rows[0];assert.ok(stored);assert.deepEqual(fs.readFileSync(SUPPORT_IMAGE_DIR+'/'+stored.storage_key),png);
+        attachments.push({...attachment,messageId:message.id});uploads++;
+      }
+      const before=await state(),beforeFiles=files(),business=await snapshot();
+      for(const attachment of attachments)for(const who of [x,owner,helper]){
+        const r=await imageReq(attachment.url,who);assert.equal(r.status,200);assert.match(r.type,/^image\/png/);assert.equal(r.cache,'private, no-store');assert.deepEqual(r.bytes,png);reads++;
+        assert.deepEqual(await state(),before);assert.deepEqual(files(),beforeFiles);
+      }
+      const readPath=attachments[0].url;
+      for(const [path,who,method,status,headers] of [
+        [readPath,undefined,'GET',401,{}],[readPath,y,'GET',404,{}],[readPath,unpermitted,'GET',403,{}],
+        [readPath,x,'GET',401,{'X-Fawri-Device-Id':'wrong-image-device'}],
+        [readPath,owner,'GET',401,{Cookie:owner.cookie+'; '+x.cookie}],
+        [merchantUpload,y,'POST',404,{}],[merchantUpload,undefined,'POST',401,{}],[merchantUpload,owner,'POST',401,{}],
+        [adminUpload,owner,'POST',403,{}],[adminUpload,unpermitted,'POST',403,{}],[adminUpload,x,'POST',401,{}],
+        [genericUpload,owner,'POST',403,{}],[genericUpload,unpermitted,'POST',403,{}],
+        [merchantUpload,x,'POST',403,{Origin:'https://foreign.example.invalid'}],
+      ]){
+        const r=await imageReq(path,who,method,headers);assert.equal(r.status,status,JSON.stringify({path,status,body:r.body}));assert.ok(r.body);assert.equal(r.bytes.equals(png),false);
+        assert.deepEqual(await state(),before);assert.deepEqual(files(),beforeFiles);denials++;
+      }
+      // The internal service result's nested URL is not the HTTP mapper URL.
+      // Unhandled legacy image paths must stop before JSON-backed routers.
+      const nested='/api/auth/support-images/tickets/'+ticket+'/messages/'+attachments[0].messageId+'/attachments/'+attachments[0].id;
+      for(const path of [nested,nested.replace('/api/auth/support-images','/API/AuTh/SuPpOrT-ImAgEs')])for(const who of [x,owner]){
+        const r=await imageReq(path,who);assert.equal(r.status,410);assert.equal(r.body.code,'LEGACY_AUTH_ROUTE_RETIRED');assert.equal(r.cache,'no-store');
+        assert.deepEqual(await state(),before);assert.deepEqual(files(),beforeFiles);retired++;
+      }
+      assert.deepEqual(legacyState(),legacyBefore);assert.deepEqual(await snapshot(),business);
+      assert.deepEqual((await admin.query('SELECT to_jsonb(t) AS row FROM support_tickets t WHERE id=$1',[peerTicket])).rows,beforePeer);
+      assert.equal((await imageReq(readPath,x)).status,200);passed=true;
+    }finally{
+      await admin.query('DELETE FROM support_tickets WHERE id=ANY($1::text[])',[ownedTickets]);
+      for(const id of ownedTickets)fs.rmSync(SUPPORT_IMAGE_DIR+'/'+id,{recursive:true,force:true});
+      for(const table of tables)assert.equal((await admin.query('SELECT count(*)::int AS n FROM '+table+' WHERE '+(table==='support_tickets'?'id':'ticket_id')+'=ANY($1::text[])',[ownedTickets])).rows[0].n,0);
+      assert.ok(files().every(row=>row.files.length===0));
+    }
+    console.log('P0_SUPPORT_IMAGE_ALIAS_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,uploads,exactByteReads:reads,denials,retiredLegacyRequests:retired,freshActorPrechecks:4,currentMapperUrl:true,ownedFiveTableStateAndFilesStableOnDenial:true,legacyJsonUnchanged:true,peerPreserved:true,ownedCleanup:true,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
