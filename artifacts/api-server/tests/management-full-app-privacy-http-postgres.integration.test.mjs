@@ -2359,5 +2359,85 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_SUPPORT_IMAGE_ALIAS_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,uploads,exactByteReads:reads,denials,retiredLegacyRequests:retired,freshActorPrechecks:4,currentMapperUrl:true,ownedFiveTableStateAndFilesStableOnDenial:true,legacyJsonUnchanged:true,peerPreserved:true,ownedCleanup:true,hosted:false}));
   });
 
+
+  await t.test('MATRIX-C05 merchant SSE isolates tenant counts and bounds session revalidation through actual app',async()=>{
+    const envName='FAWRI_AUTH_SSE_REVALIDATE_MS',saved=process.env[envName];
+    process.env[envName]='5000';
+    const x=await actor('merchant'),y=await actor('merchant'),tenantIds=[x.id,y.id],streams=[];
+    const secret='Private-SSE-'+randomUUID();
+    const restore=()=>{if(saved===undefined)delete process.env[envName];else process.env[envName]=saved;};
+    const path='/api/auth/events';
+    const notificationState=async()=>(await admin.query('SELECT to_jsonb(n) AS row FROM notifications n WHERE merchant_id=ANY($1::text[]) ORDER BY id',[tenantIds])).rows;
+    async function openStream(url,who){
+      const controller=new AbortController(),started=Date.now();
+      const entry={controller,reader:null};streams.push(entry);
+      const response=await fetch(origin+url,{headers:{Cookie:who.cookie,'X-Fawri-Device-Id':who.device,Accept:'text/event-stream'},signal:AbortSignal.any([controller.signal,AbortSignal.timeout(15000)])});
+      assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/^text\/event-stream/);
+      assert.equal(response.headers.get('cache-control'),'no-cache, no-transform');assert.equal(response.headers.get('x-accel-buffering'),'no');
+      const reader=response.body.getReader();entry.reader=reader;
+      let resolveFirst,rejectFirst;
+      const first=new Promise((ok,no)=>{resolveFirst=ok;rejectFirst=no;});
+      const frames=[],decoder=new TextDecoder();let buffer='';
+      const closed=(async()=>{
+        try{
+          while(true){
+            const {done,value}=await reader.read();if(done)break;
+            buffer+=decoder.decode(value,{stream:true});buffer=buffer.replace(/\r\n/g,'\n');
+            let boundary;
+            while((boundary=buffer.indexOf('\n\n'))>=0){
+              const block=buffer.slice(0,boundary);buffer=buffer.slice(boundary+2);
+              const event=block.split('\n').find(line=>line.startsWith('event:'))?.slice(6).trim();
+              const data=block.split('\n').filter(line=>line.startsWith('data:')).map(line=>line.slice(5).trimStart()).join('\n');
+              if(event&&data){const frame={event,payload:JSON.parse(data)};frames.push(frame);resolveFirst(frame);}
+            }
+          }
+          if(!frames.length)throw new Error('SSE closed without snapshot');
+          return {frames,elapsed:Date.now()-started};
+        }catch(error){rejectFirst(error);throw error;}
+      })();
+      closed.catch(()=>{});first.catch(()=>{});
+      return {first,closed,entry};
+    }
+    let denials=0,passed=false;
+    try{
+      for(const who of [x,y]){
+        await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[who.id]);
+        who.session=await auth.issueSession({accountId:who.id,accountKind:'merchant',tenantId:who.id,deviceId:who.device});
+        who.cookie=MERCHANT_SESSION_COOKIE+'='+who.session.token;
+        assert.equal((await req('/api/auth/me',who)).status,200);
+        const count=who===x?53:2;
+        for(let i=0;i<count;i++)await admin.query("INSERT INTO notifications(id,audience,merchant_id,type,title_key,body_key,variables) VALUES($1,'merchant',$2,'synthetic','synthetic','synthetic',$3::jsonb)",['SSE-'+randomUUID(),who.id,JSON.stringify({private_probe:secret})]);
+        for(const audience of ['merchant','admin'])await admin.query("INSERT INTO notifications(id,audience,merchant_id,account_id,type,title_key,body_key,variables,expires_at) VALUES($1,$2,$3,$4,'synthetic','synthetic','synthetic',$5::jsonb,$6)",['SSE-excluded-'+randomUUID(),audience,who.id,audience==='admin'?owner.id:null,JSON.stringify({private_probe:secret}),audience==='merchant'?new Date(Date.now()-60000):null]);
+      }
+      const before=await notificationState(),business=await snapshot();
+      for(const [who,headers] of [[undefined,{}],[owner,{}],[x,{'X-Fawri-Device-Id':'wrong-sse-device'}],[x,{Cookie:x.cookie+'; '+owner.cookie}],[x,{Cookie:MERCHANT_SESSION_COOKIE+'=synthetic-invalid'}]]){
+        const r=await fetch(origin+path,{headers:{...(who?{Cookie:who.cookie,'X-Fawri-Device-Id':who.device}:{}),...headers},signal:AbortSignal.timeout(3000)});
+        assert.equal(r.status,401);const body=await r.json();assert.equal(JSON.stringify(body).includes(secret),false);denials++;
+      }
+      const streamX=await openStream(path+'?merchant_id='+y.id+'&account_id='+owner.id,x);
+      const streamY=await openStream('/API/AuTh/EVeNtS/?merchant_id='+x.id,y);
+      const frames=await Promise.all([streamX.first,streamY.first]);
+      for(const [frame,count] of [[frames[0],53],[frames[1],2]]){
+        assert.equal(frame.event,'snapshot');assert.deepEqual(Object.keys(frame.payload).sort(),['subscription','unread_notification_count','emitted_at'].sort());
+        assert.equal(frame.payload.subscription,null);assert.equal(frame.payload.unread_notification_count,count);assert.ok(Number.isFinite(Date.parse(frame.payload.emitted_at)));
+        assert.equal(JSON.stringify(frame).includes(secret),false);
+        for(const id of tenantIds)assert.equal(JSON.stringify(frame).includes(id),false);
+      }
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      // Current contract closes a bounded connection and authenticates reconnect.
+      // It does not promise instantaneous revocation of an already-open stream.
+      const completed=await Promise.all([streamX.closed,streamY.closed]);
+      for(const result of completed){assert.ok(result.elapsed<12000,'bounded SSE did not end in its configured window');assert.equal(result.frames.length,1);}
+      const rejected=await req(path,x);assert.equal(rejected.status,401);denials++;
+      const peer=await openStream(path,y),peerFirst=await peer.first;assert.equal(peerFirst.payload.unread_notification_count,2);
+      peer.entry.controller.abort();await peer.closed.catch(error=>assert.equal(error.name,'AbortError'));
+      assert.deepEqual(await notificationState(),before);assert.deepEqual(await snapshot(),business);passed=true;
+    }finally{
+      for(const entry of streams){entry.controller.abort();if(entry.reader)await entry.reader.cancel().catch(()=>{});}
+      restore();await admin.query('DELETE FROM notifications WHERE merchant_id=ANY($1::text[])',[tenantIds]);
+    }
+    console.log('P0_MERCHANT_SSE_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,merchantSnapshots:2,peerReconnect:true,denials,liveUnreadCounts:[53,2],exactPayloadKeys:3,privateVariablesAbsent:true,foreignIdentityHintsIgnored:true,boundedServerClose:true,reconnectRevalidatesRevokedSession:true,instantRevocationClaimed:false,ownedNotificationsStable:true,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
