@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "Continue MATRIX-C03 (existing gate, not new scope): reconcile support/inspection/image/emergency/merchant-management actor and nested field consumer evidence against accepted five-table Support, emergency remediation, owner import/deletion and current full-app management proofs. Start from the existing finite workQueue entry and named boundaries; preserve FIELD002/003/004/005 and retention/policy dependencies. Do not rerun accepted purge/recovery/auth proofs or create another emergency authority; select only a demonstrated unmet sensitive projection/actor condition before any new test. MATRIX-C02's selected R1/R2/R3 conditions are bounded accepted, not all authentication variants or parent matrix closure. GitHub-only; no OTP/pairing redesign, policy adoption, new gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -44218,14 +44218,134 @@
         "parentGateClosed": false,
         "newGate": false,
         "nextExactAction": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment."
+      },
+      {
+        "boundary": "currentOwnerRecoveryStatusFullApp",
+        "date": "2026-10-30",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02-R3",
+        "status": "BOUNDED_OWNER_RECOVERY_STATUS_OWNER_ACTOR_FIELD_PROJECTION_AND_READ_IMMUTABILITY_FULL_APP_ACCEPTED",
+        "source": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
+        "sourceTree": "0818e1005d963926cc76ada25b59f1028764eaad",
+        "sourceReview": "currentOwnerRecoveryStatusEvidenceReconciliation",
+        "test": {
+          "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+          "blob": "33f8727a73bb654aaa2eaf7cf6423a54260b465a",
+          "newFunctionalCases": 1,
+          "newTapCases": 1,
+          "newGroup": false,
+          "previousFullAppTap": 71,
+          "fullAppTap": 72,
+          "pathVariants": 2,
+          "metadataStates": [
+            "disabled/absent recovery metadata",
+            "enabled recovery metadata",
+            "used/disabled recovery metadata"
+          ],
+          "deniedRequests": 18,
+          "ownerReads": 6,
+          "freshAssistantAuthenticationPrechecks": 3,
+          "actors": "Anonymous, two merchant roles, three live assistant profiles with differing permissions, wrong owner device, combined role cookies and revoked owner session; legitimate owner.",
+          "exactResponseKeys": [
+            "ok",
+            "enabled",
+            "created_at",
+            "used_at"
+          ],
+          "privateProjection": "Synthetic recovery keys/hashes/generation/recovery ID hash and unrelated private metadata omitted by exact-body assertion.",
+          "stateCompared": [
+            "Accounts fixture metadata/security/session/password versions/state",
+            "Selected session id/account/status/revoke reason",
+            "Selected device id/account/status/trust slot/revoked time",
+            "OTP challenge rows associated with fixture accounts",
+            "Existing six-table selected business snapshot"
+          ],
+          "ownedMetadataRestored": true,
+          "fixtureScope": "Manual metadata states exercise the status reader; not a new real key-generation/recovery lifecycle.",
+          "endpoint": "GET /api/auth/admin/owner-recovery/status"
+        },
+        "fixtureDevelopment": [
+          {
+            "source": "a58369778f6471e9a4cf4cee74c884e68b2d26e1",
+            "run": 41008963036,
+            "job": 123910252325,
+            "result": "FAILURE",
+            "fullAppPassed": 70,
+            "fullAppFailed": 2,
+            "reason": "Expected403 used original manager session which earlier accepted test explicitly revoked; unsuitable live-role fixture.",
+            "applicationDefectClaimed": false
+          },
+          {
+            "source": "d33673434781c1f1d3d1a829876771ca21812cdf",
+            "run": 41009176993,
+            "job": 123910925970,
+            "result": "FAILURE",
+            "fullAppPassed": 70,
+            "fullAppFailed": 2,
+            "reason": "One expected live assistant denial still returned401; initial assertion did not identify actor, so no exact actor/root cause claimed. Isolated all assistant fixtures and added /admin/me200 preconditions; retained403 assertions.",
+            "applicationDefectClaimed": false
+          }
+        ],
+        "target": {
+          "run": 41009481890,
+          "job": 123911874299,
+          "tap": 105,
+          "files": 6,
+          "fullAppTap": 72,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "canonicalMigrations": 53,
+          "runtime": "v24.22.2",
+          "checkout": "61e73cacdae39e4adf63f8bff4cb48776a4e44ec",
+          "checkoutTreeMatched": true,
+          "markerObserved": true
+        },
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "ciFilesChanged": 0,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "limits": [
+          "Actual full app with existing restricted-primary/separate-auth LOGIN fixture; no hosted/browser/device acceptance.",
+          "Session activity/expiry timestamps intentionally excluded; no full-database immutability claim.",
+          "No OTP delivery or owner-recovery policy; scoped status metadata fixtures only.",
+          "No SQL fault/concurrency/all auth permutations acceptance; original parent matrix remains OPEN."
+        ],
+        "nextExactAction": "Continue MATRIX-C03 (existing gate, not new scope): reconcile support/inspection/image/emergency/merchant-management actor and nested field consumer evidence against accepted five-table Support, emergency remediation, owner import/deletion and current full-app management proofs. Start from the existing finite workQueue entry and named boundaries; preserve FIELD002/003/004/005 and retention/policy dependencies. Do not rerun accepted purge/recovery/auth proofs or create another emergency authority; select only a demonstrated unmet sensitive projection/actor condition before any new test. MATRIX-C02's selected R1/R2/R3 conditions are bounded accepted, not all authentication variants or parent matrix closure. GitHub-only; no OTP/pairing redesign, policy adoption, new gate, hosted/provider, merge or deployment.",
+        "accepted": true,
+        "broader": {
+          "run": 41009482326,
+          "job": 123911972809,
+          "tap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "checkoutTreeMatched": true
+        },
+        "allCi": {
+          "success": 58,
+          "total": 58,
+          "attempt": 1,
+          "retries": 0
+        },
+        "plannedConditionResolution": {
+          "R1": "currentMerchantIneligibleOtpResendFullApp",
+          "R2": "currentMerchantSelfServiceFullAppRuntime",
+          "R3": "currentOwnerRecoveryStatusFullApp",
+          "scope": "Only the selected finite conditions accepted; not all authentication variants or parent privacy matrix."
+        }
       }
     ],
     "currentTestOverlay": {
-      "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+      "source": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "0c9076cbf71178a729a2264cc24e67d3c08f2a78",
+      "gitBlob": "33f8727a73bb654aaa2eaf7cf6423a54260b465a",
       "catalogueRegenerated": false,
-      "interpretation": "One MATRIX-C02 current full-app case adds after70TAP. Both half-configured admin authority profiles refuse all16canonical/mixed-case paths503 before input handling, named legacy files/selected business rows stable, complete-mode owner200/anonymous401 preserved. No credentials/OTP/hosted execution. Current60-registration/43-key group source review does not accept all recovery/session/field conditions."
+      "interpretation": "One bounded MATRIX-C02-R3 actual-full-app owner recovery status case after71 previousTAP; full72/target105. Eighteen actor denials, three fresh assistant authentication prechecks, six exact owner field reads over three owned metadata states, read authority unchanged and owned metadata restored. No application/OTP/policy/hosted change or parent-gate closure."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -47068,9 +47188,9 @@
           "groups": [
             "currentAuthAdmin"
           ],
-          "status": "PARTIAL_R2_CANONICAL_SELF_SERVICE_ACCEPTED_R3_ACTOR_FIELD_CASE_SELECTED",
+          "status": "BOUNDED_PLANNED_AUTH_CONDITIONS_ACCEPTED_NOT_ALL_AUTH_VARIANTS_OR_PARENT_GATE",
           "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
-          "next": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment.",
+          "next": "Continue MATRIX-C03 (existing gate, not new scope): reconcile support/inspection/image/emergency/merchant-management actor and nested field consumer evidence against accepted five-table Support, emergency remediation, owner import/deletion and current full-app management proofs. Start from the existing finite workQueue entry and named boundaries; preserve FIELD002/003/004/005 and retention/policy dependencies. Do not rerun accepted purge/recovery/auth proofs or create another emergency authority; select only a demonstrated unmet sensitive projection/actor condition before any new test. MATRIX-C02's selected R1/R2/R3 conditions are bounded accepted, not all authentication variants or parent matrix closure. GitHub-only; no OTP/pairing redesign, policy adoption, new gate, hosted/provider, merge or deployment.",
           "newGate": false,
           "initialStatus": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
           "acceptedBoundedProof": {
@@ -47223,32 +47343,7 @@
             "newGate": false,
             "userActionRequiredNow": false
           },
-          "remainingConditions": [
-            {
-              "id": "MATRIX-C02-R3",
-              "kind": "OWNER_STATUS_PROJECTION_RECONCILIATION",
-              "routes": [
-                "GET /admin/owner-recovery/status"
-              ],
-              "condition": "Bind legitimate status field projection and wrong-actor rejection to existing evidence; owner recovery journey covers five other paths and incomplete-cutover probe503 is not legitimate status acceptance.",
-              "automaticNewTest": false,
-              "sourceReview": {
-                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStatusEvidenceReconciliation]",
-                "status": "OWNER_STATUS_SOURCE_AND_EXISTING_PROOF_LAYERS_RECONCILED_BOUNDED_ACTOR_FIELD_CASE_SELECTED",
-                "sourceReviewed": "138e74f4c83c786bb93fde6bd651cd2a7638ccf8",
-                "reviewComplete": true,
-                "sourcePins": 6,
-                "newRuntimeTests": 0,
-                "newCiRuns": 0,
-                "applicationChanged": false,
-                "parentGateClosed": false,
-                "newGate": false,
-                "userActionRequiredNow": false
-              },
-              "status": "SOURCE_RECONCILIATION_COMPLETE_BOUNDED_STATUS_ACTOR_FIELD_CASE_SELECTED",
-              "next": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment."
-            }
-          ],
+          "remainingConditions": [],
           "merchantIneligibleOtpResendProof": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantIneligibleOtpResendFullApp]",
             "status": "BOUNDED_MERCHANT_INELIGIBLE_OTP_RESEND_STATE_AND_BOOTSTRAP_FULL_APP_ACCEPTED",
@@ -47334,6 +47429,42 @@
                 "policyAdopted": false,
                 "userActionRequiredNow": false
               }
+            },
+            {
+              "id": "MATRIX-C02-R3",
+              "scope": "Bounded actual-app owner status actor/field read condition accepted.",
+              "proof": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStatusFullApp]",
+                "status": "BOUNDED_OWNER_RECOVERY_STATUS_OWNER_ACTOR_FIELD_PROJECTION_AND_READ_IMMUTABILITY_FULL_APP_ACCEPTED",
+                "source": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
+                "sourceTree": "0818e1005d963926cc76ada25b59f1028764eaad",
+                "newFunctionalCases": 1,
+                "newTapCases": 1,
+                "newGroup": false,
+                "fullAppTap": 72,
+                "targetedTap": 105,
+                "targetFiles": 6,
+                "targetRun": 41009481890,
+                "targetJob": 123911874299,
+                "deniedRequests": 18,
+                "ownerReads": 6,
+                "freshAssistantAuthenticationPrechecks": 3,
+                "metadataStates": 3,
+                "broaderTap": 836,
+                "broaderInvocations": 97,
+                "broaderUniqueFiles": 94,
+                "broaderRun": 41009482326,
+                "broaderJob": 123911972809,
+                "allCiSuccess": 58,
+                "accepted": true,
+                "applicationFilesChanged": 0,
+                "testFilesChanged": 1,
+                "ciFilesChanged": 0,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             }
           ],
           "merchantSelfServiceSourceReview": {
@@ -47392,6 +47523,38 @@
             "applicationChanged": false,
             "parentGateClosed": false,
             "newGate": false,
+            "userActionRequiredNow": false
+          },
+          "ownerRecoveryStatusFullAppProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStatusFullApp]",
+            "status": "BOUNDED_OWNER_RECOVERY_STATUS_OWNER_ACTOR_FIELD_PROJECTION_AND_READ_IMMUTABILITY_FULL_APP_ACCEPTED",
+            "source": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
+            "sourceTree": "0818e1005d963926cc76ada25b59f1028764eaad",
+            "newFunctionalCases": 1,
+            "newTapCases": 1,
+            "newGroup": false,
+            "fullAppTap": 72,
+            "targetedTap": 105,
+            "targetFiles": 6,
+            "targetRun": 41009481890,
+            "targetJob": 123911874299,
+            "deniedRequests": 18,
+            "ownerReads": 6,
+            "freshAssistantAuthenticationPrechecks": 3,
+            "metadataStates": 3,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "broaderRun": 41009482326,
+            "broaderJob": 123911972809,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "applicationFilesChanged": 0,
+            "testFilesChanged": 1,
+            "ciFilesChanged": 0,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
             "userActionRequiredNow": false
           }
         },
@@ -47603,7 +47766,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "Continue MATRIX-C03 (existing gate, not new scope): reconcile support/inspection/image/emergency/merchant-management actor and nested field consumer evidence against accepted five-table Support, emergency remediation, owner import/deletion and current full-app management proofs. Start from the existing finite workQueue entry and named boundaries; preserve FIELD002/003/004/005 and retention/policy dependencies. Do not rerun accepted purge/recovery/auth proofs or create another emergency authority; select only a demonstrated unmet sensitive projection/actor condition before any new test. MATRIX-C02's selected R1/R2/R3 conditions are bounded accepted, not all authentication variants or parent matrix closure. GitHub-only; no OTP/pairing redesign, policy adoption, new gate, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -47637,7 +47800,8 @@
         },
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
-      }
+      },
+      "nextWorkItem": "MATRIX-C03"
     },
     "previousTestOverlayBeforeLegacyKnowledgeRetirement20261029": {
       "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
@@ -47935,6 +48099,45 @@
       "parentGateClosed": false,
       "newGate": false,
       "userActionRequiredNow": false
+    },
+    "currentOwnerRecoveryStatusFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStatusFullApp]",
+      "status": "BOUNDED_OWNER_RECOVERY_STATUS_OWNER_ACTOR_FIELD_PROJECTION_AND_READ_IMMUTABILITY_FULL_APP_ACCEPTED",
+      "source": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
+      "sourceTree": "0818e1005d963926cc76ada25b59f1028764eaad",
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "fullAppTap": 72,
+      "targetedTap": 105,
+      "targetFiles": 6,
+      "targetRun": 41009481890,
+      "targetJob": 123911874299,
+      "deniedRequests": 18,
+      "ownerReads": 6,
+      "freshAssistantAuthenticationPrechecks": 3,
+      "metadataStates": 3,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 41009482326,
+      "broaderJob": 123911972809,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "ciFilesChanged": 0,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeOwnerRecoveryStatus20261030": {
+      "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "0c9076cbf71178a729a2264cc24e67d3c08f2a78",
+      "catalogueRegenerated": false,
+      "interpretation": "One MATRIX-C02 current full-app case adds after70TAP. Both half-configured admin authority profiles refuse all16canonical/mixed-case paths503 before input handling, named legacy files/selected business rows stable, complete-mode owner200/anonymous401 preserved. No credentials/OTP/hosted execution. Current60-registration/43-key group source review does not accept all recovery/session/field conditions."
     }
   },
   "componentScopes": {
