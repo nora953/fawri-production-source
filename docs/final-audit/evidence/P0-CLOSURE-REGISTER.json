@@ -6,7 +6,7 @@
   "completeP0Inventory": false,
   "overallPercentage": null,
   "sourceCandidate": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
-  "lastFullyAcceptedSource": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
+  "lastFullyAcceptedSource": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
   "release": "NO-GO",
   "rows": [
     {
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Verify exact-source CI for f3d09c87cd02a6f918fa2da4019e06b4c086def1: management run41104637622 and isolated PostgreSQL run41104637551; inspect completed logs, marker and checkout tree; fix any failure without weakening assertions. Knowledge three-GET read condition remains CI_PENDING; do not repeat accepted SSE/order/pairing evidence or close parent gate.",
+      "nextAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -4184,7 +4184,7 @@
       },
       "currentKnowledgeReadFullAppProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentKnowledgeReadFullApp]",
-        "status": "BOUNDED_KNOWLEDGE_READ_FULL_APP_CI_PENDING",
+        "status": "BOUNDED_KNOWLEDGE_THREE_READ_DTO_ACTOR_TENANT_FULL_APP_ACCEPTED",
         "source": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
         "sourceTree": "8b08124b62af129e715bc26a866cf04de21b36c6",
         "testBlob": "b6a500871f2d1567b87723654cc68c4517f33043",
@@ -4197,12 +4197,28 @@
         "expectedTargetFiles": 6,
         "plannedPositiveReads": 15,
         "plannedDeniedReads": 21,
-        "accepted": false,
+        "accepted": true,
         "applicationFilesChanged": 0,
         "testFilesChanged": 1,
         "parentGateClosed": false,
         "newGate": false,
-        "policyAdopted": false
+        "policyAdopted": false,
+        "fullAppTap": 76,
+        "targetedTap": 109,
+        "targetFiles": 6,
+        "targetJob": 124230817669,
+        "broaderJob": 124230816897,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "positiveReads": 15,
+        "deniedReads": 21,
+        "allCiSuccess": 58,
+        "totalCi": 58,
+        "firstAttemptSuccess": 56,
+        "infrastructureRetryWorkflows": 2,
+        "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
+        "checkoutTreeMatched": true
       }
     },
     {
@@ -6638,7 +6654,7 @@
     "release": "NO-GO",
     "noNewReleaseRequirementsAdded": true,
     "noExistingStatusChanged": true,
-    "acceptedSource": "416a0210f41bb8da9d3627e32ff6eb0a039cc798",
+    "acceptedSource": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
     "executionRules": [
       "Select one existing gate and its exact unmet closure condition before new code/tests. State whether the batch closes it or only completes a named necessary prerequisite.",
       "Reuse accepted positive/negative/runtime evidence at its original layer and source. No repeated accepted test solely to increase totals; rerun only for a source change, failure or identified integration gap.",
@@ -7292,7 +7308,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Verify exact-source CI for f3d09c87cd02a6f918fa2da4019e06b4c086def1: management run41104637622 and isolated PostgreSQL run41104637551; inspect completed logs, marker and checkout tree; fix any failure without weakening assertions. Knowledge three-GET read condition remains CI_PENDING; do not repeat accepted SSE/order/pairing evidence or close parent gate.",
+        "nextAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -11281,7 +11297,7 @@
         },
         "currentKnowledgeReadFullAppProof": {
           "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentKnowledgeReadFullApp]",
-          "status": "BOUNDED_KNOWLEDGE_READ_FULL_APP_CI_PENDING",
+          "status": "BOUNDED_KNOWLEDGE_THREE_READ_DTO_ACTOR_TENANT_FULL_APP_ACCEPTED",
           "source": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
           "sourceTree": "8b08124b62af129e715bc26a866cf04de21b36c6",
           "testBlob": "b6a500871f2d1567b87723654cc68c4517f33043",
@@ -11294,12 +11310,28 @@
           "expectedTargetFiles": 6,
           "plannedPositiveReads": 15,
           "plannedDeniedReads": 21,
-          "accepted": false,
+          "accepted": true,
           "applicationFilesChanged": 0,
           "testFilesChanged": 1,
           "parentGateClosed": false,
           "newGate": false,
-          "policyAdopted": false
+          "policyAdopted": false,
+          "fullAppTap": 76,
+          "targetedTap": 109,
+          "targetFiles": 6,
+          "targetJob": 124230817669,
+          "broaderJob": 124230816897,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "positiveReads": 15,
+          "deniedReads": 21,
+          "allCiSuccess": 58,
+          "totalCi": 58,
+          "firstAttemptSuccess": 56,
+          "infrastructureRetryWorkflows": 2,
+          "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
+          "checkoutTreeMatched": true
         }
       },
       {
@@ -15599,9 +15631,9 @@
             "notificationsAndRealtime",
             "catalog"
           ],
-          "status": "SSE_ACCEPTED_KNOWLEDGE_READ_CI_PENDING",
+          "status": "SSE_AND_KNOWLEDGE_READ_ACCEPTED_REMAINING_FAMILY_EVIDENCE_CONSOLIDATION",
           "condition": "Current named read/mutation/Origin/idempotency/version/failure proofs retain their exact bounds. Sibling order/Knowledge/realtime/other field conditions require existing assertion review before deciding a missing runtime cell.",
-          "next": "Verify exact-source CI for f3d09c87cd02a6f918fa2da4019e06b4c086def1: management run41104637622 and isolated PostgreSQL run41104637551; inspect completed logs, marker and checkout tree; fix any failure without weakening assertions. Knowledge three-GET read condition remains CI_PENDING; do not repeat accepted SSE/order/pairing evidence or close parent gate.",
+          "next": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
           "newGate": false,
           "currentMerchantRealtimeFullAppProof": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
@@ -15688,11 +15720,52 @@
                 "broaderJob": 124214105217,
                 "allCiSuccess": 58
               }
+            },
+            {
+              "id": "MATRIX-C05-KNOWLEDGE-READ",
+              "proof": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentKnowledgeReadFullApp]",
+                "status": "BOUNDED_KNOWLEDGE_THREE_READ_DTO_ACTOR_TENANT_FULL_APP_ACCEPTED",
+                "source": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
+                "sourceTree": "8b08124b62af129e715bc26a866cf04de21b36c6",
+                "testBlob": "b6a500871f2d1567b87723654cc68c4517f33043",
+                "newFunctionalCases": 1,
+                "newTapCases": 1,
+                "targetRun": 41104637622,
+                "broaderRun": 41104637551,
+                "expectedFullAppTap": 76,
+                "expectedTargetTap": 109,
+                "expectedTargetFiles": 6,
+                "plannedPositiveReads": 15,
+                "plannedDeniedReads": 21,
+                "accepted": true,
+                "applicationFilesChanged": 0,
+                "testFilesChanged": 1,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "fullAppTap": 76,
+                "targetedTap": 109,
+                "targetFiles": 6,
+                "targetJob": 124230817669,
+                "broaderJob": 124230816897,
+                "broaderTap": 836,
+                "broaderInvocations": 97,
+                "broaderUniqueFiles": 94,
+                "positiveReads": 15,
+                "deniedReads": 21,
+                "allCiSuccess": 58,
+                "totalCi": 58,
+                "firstAttemptSuccess": 56,
+                "infrastructureRetryWorkflows": 2,
+                "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
+                "checkoutTreeMatched": true
+              }
             }
           ],
           "currentKnowledgeReadFullAppProof": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentKnowledgeReadFullApp]",
-            "status": "BOUNDED_KNOWLEDGE_READ_FULL_APP_CI_PENDING",
+            "status": "BOUNDED_KNOWLEDGE_THREE_READ_DTO_ACTOR_TENANT_FULL_APP_ACCEPTED",
             "source": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
             "sourceTree": "8b08124b62af129e715bc26a866cf04de21b36c6",
             "testBlob": "b6a500871f2d1567b87723654cc68c4517f33043",
@@ -15705,12 +15778,28 @@
             "expectedTargetFiles": 6,
             "plannedPositiveReads": 15,
             "plannedDeniedReads": 21,
-            "accepted": false,
+            "accepted": true,
             "applicationFilesChanged": 0,
             "testFilesChanged": 1,
             "parentGateClosed": false,
             "newGate": false,
-            "policyAdopted": false
+            "policyAdopted": false,
+            "fullAppTap": 76,
+            "targetedTap": 109,
+            "targetFiles": 6,
+            "targetJob": 124230817669,
+            "broaderJob": 124230816897,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "positiveReads": 15,
+            "deniedReads": 21,
+            "allCiSuccess": 58,
+            "totalCi": 58,
+            "firstAttemptSuccess": 56,
+            "infrastructureRetryWorkflows": 2,
+            "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
+            "checkoutTreeMatched": true
           }
         },
         {
@@ -15877,7 +15966,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Verify exact-source CI for f3d09c87cd02a6f918fa2da4019e06b4c086def1: management run41104637622 and isolated PostgreSQL run41104637551; inspect completed logs, marker and checkout tree; fix any failure without weakening assertions. Knowledge three-GET read condition remains CI_PENDING; do not repeat accepted SSE/order/pairing evidence or close parent gate.",
+      "nextCurrentAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -16395,7 +16484,7 @@
     },
     "currentKnowledgeReadFullAppProof": {
       "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentKnowledgeReadFullApp]",
-      "status": "BOUNDED_KNOWLEDGE_READ_FULL_APP_CI_PENDING",
+      "status": "BOUNDED_KNOWLEDGE_THREE_READ_DTO_ACTOR_TENANT_FULL_APP_ACCEPTED",
       "source": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
       "sourceTree": "8b08124b62af129e715bc26a866cf04de21b36c6",
       "testBlob": "b6a500871f2d1567b87723654cc68c4517f33043",
@@ -16408,12 +16497,28 @@
       "expectedTargetFiles": 6,
       "plannedPositiveReads": 15,
       "plannedDeniedReads": 21,
-      "accepted": false,
+      "accepted": true,
       "applicationFilesChanged": 0,
       "testFilesChanged": 1,
       "parentGateClosed": false,
       "newGate": false,
-      "policyAdopted": false
+      "policyAdopted": false,
+      "fullAppTap": 76,
+      "targetedTap": 109,
+      "targetFiles": 6,
+      "targetJob": 124230817669,
+      "broaderJob": 124230816897,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "positiveReads": 15,
+      "deniedReads": 21,
+      "allCiSuccess": 58,
+      "totalCi": 58,
+      "firstAttemptSuccess": 56,
+      "infrastructureRetryWorkflows": 2,
+      "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
+      "checkoutTreeMatched": true
     }
   }
 }

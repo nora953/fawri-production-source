@@ -1,3 +1,15 @@
+## قبول MATRIX-C05: قراءة المعرفة عبر التطبيق الكامل — 2026-10-30
+
+المصدر [f3d09c87](https://github.com/nora953/fawri-production-source/commit/f3d09c87cd02a6f918fa2da4019e06b4c086def1) مقبول ضمن شرط القراءة المحدد: **58/58workflowSUCCESS**. نجح56بالمحاولة الأولى؛ أُعيد مساران فقط بعد إثبات HTTP502 من DockerHub أثناء تنزيل الصور قبل اختبارات التطبيق، دون تعديل كود أو تخفيف assertions أو إعادة الحزم الناجحة. نقاط CI_PENDING أدناه تاريخية.
+
+[الإدارة41104637622/job124230817669](https://github.com/nora953/fawri-production-source/actions/runs/41104637622/job/124230817669): **109TAP/6ملفات، full-app76**؛0فشل/تخطٍّ/إلغاء. marker P0_KNOWLEDGE_READ_FULL_APP_OBSERVED يثبت طفلًا جديدًا واحدًا، تاجرين جديدين وprechecks2، **15قراءة مسموحة و21طلبًا مرفوضًا** عبر GET training-requests/learned-answers/audit. ثبتت DTOغيرالفارغة كاملة، تلميحات الهوية الأجنبية غيرمؤثرة، رفض المجهول والإدارة والجهاز الخطأ والجلسات المجمعة/المزورة/الملغاة، وبقاء قراءة التاجر الآخر. customerTextPreview/customerTextHash/version وmetadata.decisionCode مقصودة ومحفوظة؛ لم تُستحدث سياسة منعhash/metadata. جداولKnowledgeالخمسة والبيانات المختارة ثابتة، والتنظيف للعينات المملوكة فقط.
+
+[التدقيق الأوسع41104637551/job124230816897](https://github.com/nora953/fawri-production-source/actions/runs/41104637551/job/124230816897): **836TAP/97استدعاء/94ملفًا**؛ كل97summaryComplete،0فشل/تخطٍّ/إلغاء. شجرةcheckout fef0fee4bb3cd836322df099a21768e72c772fa1 تطابق المصدر8b08124b62af129e715bc26a866cf04de21b36c6 في الحزمتين. testblob b6a500871f2d1567b87723654cc68c4517f33043. لا تعديل تطبيق/مخطط/صلاحيات/سياسة؛ لم تُعد الحزمتان الناجحتان.
+
+حُفظ فشلا البنية الأصلية: globalmerchant41104637052/job124230815875 توقف عندnode manifest502؛ conversation41104637167/job124230815580 عندpostgres blob502. نجحت المحاولة2على نفسcheckout: globalmerchant/job124239653450 **1TAP** وconversation/job124239659900 **23TAP**. هذه إعادة مفسرة وليست نجاح58منالمحاولةالأولى؛ لا وصف الفشل كعيب تطبيقي.
+
+التالي ضمنC05: مطابقة بقية أدلة عائلاتKnowledge write/runtime/response-style وتعديلاتالطلبات الحالية مع القائمة المجمدة قبل اختيار نقص فعلي؛ إعادة استخدامC01 وSQLKnowledge وglobalorder/pairing، ثمC06لمطابقة shared-alias/provider/billing والتمييزfake/real. لا اختبار لكلroute أوإعادةالأدلةالمقبولة. القبول لا يشمل كلKnowledgeCRUD/AI أوكلالحقول. المصفوفة الأمOPEN؛45بندًا معروفًا:29CLOSED_SOURCE/7OPEN/9BLOCKED؛completeP0Inventory=false وoverallPercentage=null؛**NO-GO**. FIELD002/003/004/005 وSEQ والسياسات وhostedدون تغيير. GitHub-only؛PR550Draft؛لاmerge/deploy أوP1/P2.
+
 ## MATRIX-C05: إضافة اختبار قراءة المعرفة — CI_PENDING — 2026-10-30
 
 المصدر المرشح [f3d09c87](https://github.com/nora953/fawri-production-source/commit/f3d09c87cd02a6f918fa2da4019e06b4c086def1)، الشجرة8b08124b62af129e715bc26a866cf04de21b36c6، testblob b6a500871f2d1567b87723654cc68c4517f33043. أضيف طفل واحد إلى اختبارmanagement-full-app القائم؛ لا تعديل تطبيق أو مخطط أو صلاحيات أو سياسة.
