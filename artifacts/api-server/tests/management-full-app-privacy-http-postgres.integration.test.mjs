@@ -2125,6 +2125,11 @@ test('full application management privacy preserves cutover ordering and current
     const paths=[path,'/API/AuTh/AdMiN/OwNeR-ReCoVeRy/StAtUs/?account_id='+manager.id+'&merchant_id='+a.id];
     const original=(await admin.query('SELECT metadata FROM accounts WHERE id=$1',[owner.id])).rows[0].metadata;
     const businessBefore=await snapshot();
+    const statusAssistant=await actor('admin','assistant_admin',['manage_merchant_status','view_logs']);
+    const assistantDevice=await security.registerAdminDeviceAuthoritative({accountId:statusAssistant.id,accountKind:'admin',deviceId:statusAssistant.device,deviceLabel:'Owner status proof assistant'});
+    await security.setAdminDeviceTrustAuthoritative({deviceRecordId:assistantDevice.id,trusted:true,actorAccountId:owner.id});
+    statusAssistant.session=await auth.issueSession({accountId:statusAssistant.id,accountKind:'admin',tenantId:statusAssistant.id,adminRole:statusAssistant.role,deviceId:statusAssistant.device,permissions:statusAssistant.permissions});
+    statusAssistant.cookie=ADMIN_SESSION_COOKIE+'='+statusAssistant.session.token;
     const extra=await auth.issueSession({accountId:owner.id,accountKind:'admin',tenantId:owner.id,adminRole:'owner_admin',deviceId:owner.device,permissions:[]});
     await auth.revokeSession(extra.token,'admin','logout');
     const revoked={...owner,cookie:ADMIN_SESSION_COOKIE+'='+extra.token};
@@ -2149,7 +2154,7 @@ test('full application management privacy preserves cutover ordering and current
       const before=await authority();
       for(const variant of paths){
         for(const [who,status,headers] of [
-          [undefined,401,{}],[a,401,{}],[b,401,{}],[manager,403,{}],[denied,403,{}],[viewer,403,{}],
+          [undefined,401,{}],[a,401,{}],[b,401,{}],[statusAssistant,403,{}],[denied,403,{}],[viewer,403,{}],
           [owner,401,{'X-Fawri-Device-Id':'wrong-owner-status-device'}],
           [owner,401,{Cookie:owner.cookie+'; '+a.cookie}],[revoked,401,{}],
         ]){
