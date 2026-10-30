@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "MATRIX-C02-R2 source/evidence reconciliation is complete; implement only the identified full operational-PG HTTP integration condition using the existing actual-app global-merchant-auth-bootstrap journey and its fixture. Exercise /me and /lifecycle self identity/projection with rejected missing/wrong session and ignored foreign identity hints; preserve existing pending lifecycle purpose. Verify bad-current-password leaves credential/security versions and session authority unchanged, legitimate password change advances versions and revokes old sessions, and /logout revokes a newly authenticated session. Preserve original bootstrap/resend positives, do not rerun hybrid concurrency as new canonical proof, and inspect existing merchant audit fallback as an observation before any policy/fix decision. R3 owner recovery status remains reconciliation. No OTP/pairing redesign, policy, new gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -44098,6 +44098,126 @@
         "newGate": false,
         "policyAdopted": false,
         "nextExactAction": "MATRIX-C02-R2 source/evidence reconciliation is complete; implement only the identified full operational-PG HTTP integration condition using the existing actual-app global-merchant-auth-bootstrap journey and its fixture. Exercise /me and /lifecycle self identity/projection with rejected missing/wrong session and ignored foreign identity hints; preserve existing pending lifecycle purpose. Verify bad-current-password leaves credential/security versions and session authority unchanged, legitimate password change advances versions and revokes old sessions, and /logout revokes a newly authenticated session. Preserve original bootstrap/resend positives, do not rerun hybrid concurrency as new canonical proof, and inspect existing merchant audit fallback as an observation before any policy/fix decision. R3 owner recovery status remains reconciliation. No OTP/pairing redesign, policy, new gate, hosted/provider, merge or deployment."
+      },
+      {
+        "boundary": "currentMerchantSelfServiceFullAppRuntime",
+        "date": "2026-10-30",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02-R2",
+        "status": "BOUNDED_MERCHANT_SELF_IDENTITY_LIFECYCLE_PASSWORD_AND_LOGOUT_CANONICAL_FULL_APP_ACCEPTED",
+        "source": "c8d125e40d067775e8c81e01da4c00c8b8312814",
+        "sourceTree": "c1e98ec84a0cf190e423dd1624173ac256e09a2a",
+        "sourceReview": "currentMerchantSelfServiceEvidenceReconciliation",
+        "test": {
+          "path": "artifacts/api-server/tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs",
+          "blob": "e970289d4b9d6558bb20c3084c3bdb9bc1140763",
+          "existingActualAppJourneyExpanded": true,
+          "newTapCases": 0,
+          "newFunctionalCondition": 1,
+          "routes": [
+            "GET /me",
+            "GET /lifecycle",
+            "POST /change-password",
+            "POST /logout"
+          ],
+          "merchants": 2,
+          "peerFixture": "Second actual PostgreSQL merchant/account copies existing validated regional/status fixture fields and password hash, has distinct identity/phone/device and logs in through the actual route; owned accounts cleaned up.",
+          "readNegativeRequests": 6,
+          "readChecks": "Missing/tampered/wrong-device cookies refused for both reads; actual peer identity hints ignored, self IDs and four lifecycle fields exact, no-store and no password-hash projection.",
+          "badPassword": "401 CURRENT_PASSWORD_INVALID; credential versions/hash and selected session id/status/revoke_reason unchanged; current session remains usable.",
+          "goodPassword": "200 reauthentication_required; new hash; password/session/security versions each +1; all old sessions revoked; old verification and login cookies rejected at both reads; old password refused; new password login succeeds.",
+          "logout": "New session me200, logout200 clears cookie, replay refused at me/lifecycle, all target sessions revoked.",
+          "peer": "Peer me200 and credential/version plus selected session authority identical before/after target changes.",
+          "comparisonLimits": "Intentionally excludes session activity/expiry timestamps from authority snapshot; not full database immutability."
+        },
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "ciFilesChanged": 0,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "limits": [
+          "Raw HTTP actual built app; not browser/device or hosted proof.",
+          "Existing fixture/runtime authority retained; no new independently authenticated restricted LOGIN assertion.",
+          "No new SQL failure/concurrency/all status permutations or record-specific audit retention acceptance.",
+          "Existing merchant post-commit authSecurityStore.audit source behavior is preserved; no claim it moved to PostgreSQL or never creates a JSON audit file.",
+          "Target result is the existing bootstrap journey within broader audit, not an additional independent run."
+        ],
+        "nextExactAction": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment.",
+        "accepted": true,
+        "runtime": {
+          "run": 41002990588,
+          "job": 123891438527,
+          "targetBootstrapTap": 1,
+          "broaderTap": 836,
+          "broaderInvocations": 97,
+          "broaderUniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "runtime": "v24.22.2",
+          "checkout": "0a860bec7593e86cb315b65717218de563d68da2",
+          "checkoutTreeMatched": true,
+          "markerObserved": true
+        },
+        "allCi": {
+          "success": 58,
+          "total": 58,
+          "attempt": 1,
+          "retries": 0
+        }
+      },
+      {
+        "boundary": "currentOwnerRecoveryStatusEvidenceReconciliation",
+        "date": "2026-10-30",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C02-R3",
+        "status": "OWNER_STATUS_SOURCE_AND_EXISTING_PROOF_LAYERS_RECONCILED_BOUNDED_ACTOR_FIELD_CASE_SELECTED",
+        "sourceReviewed": "138e74f4c83c786bb93fde6bd651cd2a7638ccf8",
+        "reviewComplete": true,
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/auth-security.ts",
+            "sha": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+            "sha": "14f545ca14ab14f409714a7aae06a36bc4d649e1"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-route-common.ts",
+            "sha": "2caf6afde7a437dc8f8bcea824111a71ed505064"
+          },
+          {
+            "path": "artifacts/api-server/src/services/ownerBreakGlassRecoveryAuthority.ts",
+            "sha": "9ad921156ccbba7eacd625b5504e2b7c27ecd063"
+          },
+          {
+            "path": "artifacts/api-server/tests/owner-break-glass-recovery.integration.test.ts",
+            "sha": "c6345928e0cc8496f7795a119eb904b16b565bdc"
+          },
+          {
+            "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+            "sha": "0c9076cbf71178a729a2264cc24e67d3c08f2a78"
+          }
+        ],
+        "sourceTrace": [
+          "auth-security recovery no-store and secure admin-session middleware precede owner PG router.",
+          "Route ownerContext rejects any non-owner profile; service ownerById requires active admin account, enabled owner profile and owner role via authentication pool.",
+          "Response is ok plus enabled, created_at, used_at; service does not project keys, hashes, generation or recovery path."
+        ],
+        "existingProofLimits": [
+          "Owner recovery aggregate journey has no status endpoint request.",
+          "Full-app incomplete-cutover case reaches this route only under half-configured profiles expecting503; not legitimate owner status projection acceptance.",
+          "Bounded lookup of named tests does not prove absence of historical evidence everywhere."
+        ],
+        "selectedCondition": "Actual-app actor/field read acceptance over existing owned metadata fixtures, not new recovery key workflow or policy.",
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "nextExactAction": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -46948,9 +47068,9 @@
           "groups": [
             "currentAuthAdmin"
           ],
-          "status": "PARTIAL_R2_SOURCE_RECONCILED_CANONICAL_SELF_SERVICE_HTTP_CONDITION_SELECTED",
+          "status": "PARTIAL_R2_CANONICAL_SELF_SERVICE_ACCEPTED_R3_ACTOR_FIELD_CASE_SELECTED",
           "condition": "Public authentication, recovery/device OTP, merchant self-session and admin compatibility overlap must each resolve to current authority and original actor/session assertions. Fourteen matching PG and fallback admin registrations are not28 independent supported routes.",
-          "next": "MATRIX-C02-R2 source/evidence reconciliation is complete; implement only the identified full operational-PG HTTP integration condition using the existing actual-app global-merchant-auth-bootstrap journey and its fixture. Exercise /me and /lifecycle self identity/projection with rejected missing/wrong session and ignored foreign identity hints; preserve existing pending lifecycle purpose. Verify bad-current-password leaves credential/security versions and session authority unchanged, legitimate password change advances versions and revokes old sessions, and /logout revokes a newly authenticated session. Preserve original bootstrap/resend positives, do not rerun hybrid concurrency as new canonical proof, and inspect existing merchant audit fallback as an observation before any policy/fix decision. R3 owner recovery status remains reconciliation. No OTP/pairing redesign, policy, new gate, hosted/provider, merge or deployment.",
+          "next": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment.",
           "newGate": false,
           "initialStatus": "PARTIAL_CURRENT_RUNTIME_AND_AGGREGATE",
           "acceptedBoundedProof": {
@@ -47105,27 +47225,19 @@
           },
           "remainingConditions": [
             {
-              "id": "MATRIX-C02-R2",
-              "kind": "PROOF_LAYER_RECONCILIATION",
+              "id": "MATRIX-C02-R3",
+              "kind": "OWNER_STATUS_PROJECTION_RECONCILIATION",
               "routes": [
-                "GET /me",
-                "GET /lifecycle",
-                "POST /change-password",
-                "POST /logout"
+                "GET /admin/owner-recovery/status"
               ],
-              "condition": "Bind current canonical PG self identity/lifecycle/password/logout assertions to original evidence. Existing restricted-session proof covers session listing/revocation/logout-all; old JSON-fixture journey must retain its original layer.",
+              "condition": "Bind legitimate status field projection and wrong-actor rejection to existing evidence; owner recovery journey covers five other paths and incomplete-cutover probe503 is not legitimate status acceptance.",
               "automaticNewTest": false,
               "sourceReview": {
-                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantSelfServiceEvidenceReconciliation]",
-                "status": "CURRENT_MERCHANT_SELF_SERVICE_PROOF_LAYERS_RECONCILED_BOUNDED_CANONICAL_HTTP_CONDITION_SELECTED",
-                "sourceReviewed": "89f0306ee0994f0c92b6ceb95693fb0d25347efd",
-                "acceptedExecutable": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStatusEvidenceReconciliation]",
+                "status": "OWNER_STATUS_SOURCE_AND_EXISTING_PROOF_LAYERS_RECONCILED_BOUNDED_ACTOR_FIELD_CASE_SELECTED",
+                "sourceReviewed": "138e74f4c83c786bb93fde6bd651cd2a7638ccf8",
                 "reviewComplete": true,
-                "sourcePins": 15,
-                "routes": 4,
-                "reusedHybridConcurrencyTap": 8,
-                "reusedRestrictedSessionTap": 5,
-                "reusedAuthenticationOperatorTap": 63,
+                "sourcePins": 6,
                 "newRuntimeTests": 0,
                 "newCiRuns": 0,
                 "applicationChanged": false,
@@ -47133,17 +47245,8 @@
                 "newGate": false,
                 "userActionRequiredNow": false
               },
-              "status": "SOURCE_RECONCILIATION_COMPLETE_BOUNDED_OPERATIONAL_PG_HTTP_CONDITION_SELECTED",
-              "next": "MATRIX-C02-R2 source/evidence reconciliation is complete; implement only the identified full operational-PG HTTP integration condition using the existing actual-app global-merchant-auth-bootstrap journey and its fixture. Exercise /me and /lifecycle self identity/projection with rejected missing/wrong session and ignored foreign identity hints; preserve existing pending lifecycle purpose. Verify bad-current-password leaves credential/security versions and session authority unchanged, legitimate password change advances versions and revokes old sessions, and /logout revokes a newly authenticated session. Preserve original bootstrap/resend positives, do not rerun hybrid concurrency as new canonical proof, and inspect existing merchant audit fallback as an observation before any policy/fix decision. R3 owner recovery status remains reconciliation. No OTP/pairing redesign, policy, new gate, hosted/provider, merge or deployment."
-            },
-            {
-              "id": "MATRIX-C02-R3",
-              "kind": "OWNER_STATUS_PROJECTION_RECONCILIATION",
-              "routes": [
-                "GET /admin/owner-recovery/status"
-              ],
-              "condition": "Bind legitimate status field projection and wrong-actor rejection to existing evidence; owner recovery journey covers five other paths and incomplete-cutover probe503 is not legitimate status acceptance.",
-              "automaticNewTest": false
+              "status": "SOURCE_RECONCILIATION_COMPLETE_BOUNDED_STATUS_ACTOR_FIELD_CASE_SELECTED",
+              "next": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment."
             }
           ],
           "merchantIneligibleOtpResendProof": {
@@ -47200,6 +47303,37 @@
                 "policyAdopted": false,
                 "userActionRequiredNow": false
               }
+            },
+            {
+              "id": "MATRIX-C02-R2",
+              "scope": "Bounded current canonical full-app self-service condition accepted; no all-variants/fault/concurrency claim.",
+              "proof": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantSelfServiceFullAppRuntime]",
+                "status": "BOUNDED_MERCHANT_SELF_IDENTITY_LIFECYCLE_PASSWORD_AND_LOGOUT_CANONICAL_FULL_APP_ACCEPTED",
+                "source": "c8d125e40d067775e8c81e01da4c00c8b8312814",
+                "sourceTree": "c1e98ec84a0cf190e423dd1624173ac256e09a2a",
+                "newFunctionalCondition": 1,
+                "newTapCases": 0,
+                "existingActualAppJourneyExpanded": true,
+                "routes": 4,
+                "merchants": 2,
+                "readNegativeRequests": 6,
+                "targetBootstrapTap": 1,
+                "run": 41002990588,
+                "job": 123891438527,
+                "broaderTap": 836,
+                "broaderInvocations": 97,
+                "broaderUniqueFiles": 94,
+                "allCiSuccess": 58,
+                "accepted": true,
+                "applicationFilesChanged": 0,
+                "testFilesChanged": 1,
+                "ciFilesChanged": 0,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             }
           ],
           "merchantSelfServiceSourceReview": {
@@ -47213,6 +47347,46 @@
             "reusedHybridConcurrencyTap": 8,
             "reusedRestrictedSessionTap": 5,
             "reusedAuthenticationOperatorTap": 63,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "applicationChanged": false,
+            "parentGateClosed": false,
+            "newGate": false,
+            "userActionRequiredNow": false
+          },
+          "merchantSelfServiceFullAppProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantSelfServiceFullAppRuntime]",
+            "status": "BOUNDED_MERCHANT_SELF_IDENTITY_LIFECYCLE_PASSWORD_AND_LOGOUT_CANONICAL_FULL_APP_ACCEPTED",
+            "source": "c8d125e40d067775e8c81e01da4c00c8b8312814",
+            "sourceTree": "c1e98ec84a0cf190e423dd1624173ac256e09a2a",
+            "newFunctionalCondition": 1,
+            "newTapCases": 0,
+            "existingActualAppJourneyExpanded": true,
+            "routes": 4,
+            "merchants": 2,
+            "readNegativeRequests": 6,
+            "targetBootstrapTap": 1,
+            "run": 41002990588,
+            "job": 123891438527,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "applicationFilesChanged": 0,
+            "testFilesChanged": 1,
+            "ciFilesChanged": 0,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "ownerRecoveryStatusSourceReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStatusEvidenceReconciliation]",
+            "status": "OWNER_STATUS_SOURCE_AND_EXISTING_PROOF_LAYERS_RECONCILED_BOUNDED_ACTOR_FIELD_CASE_SELECTED",
+            "sourceReviewed": "138e74f4c83c786bb93fde6bd651cd2a7638ccf8",
+            "reviewComplete": true,
+            "sourcePins": 6,
             "newRuntimeTests": 0,
             "newCiRuns": 0,
             "applicationChanged": false,
@@ -47429,7 +47603,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C02-R2 source/evidence reconciliation is complete; implement only the identified full operational-PG HTTP integration condition using the existing actual-app global-merchant-auth-bootstrap journey and its fixture. Exercise /me and /lifecycle self identity/projection with rejected missing/wrong session and ignored foreign identity hints; preserve existing pending lifecycle purpose. Verify bad-current-password leaves credential/security versions and session authority unchanged, legitimate password change advances versions and revokes old sessions, and /logout revokes a newly authenticated session. Preserve original bootstrap/resend positives, do not rerun hybrid concurrency as new canonical proof, and inspect existing merchant audit fallback as an observation before any policy/fix decision. R3 owner recovery status remains reconciliation. No OTP/pairing redesign, policy, new gate, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "MATRIX-C02-R3 source review is complete: add one bounded actual-app owner-recovery status read case using existing management full-app actors/SQL fixture. Verify anonymous/merchant/assistant/wrong-device/revoked denial as applicable to current middleware, legitimate owner200/no-store, exact ok+enabled+created_at+used_at projection for scoped disabled/enabled/used metadata fixtures, omitted keys/hashes/generation/private metadata and no request-caused state mutation. Restore only owned fixture metadata. State fixtures are not a new end-to-end recovery workflow; reuse accepted owner recovery/stage/device and merchant self-service positives. No automatic OTP redesign, pairing authority, new policy/gate, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -47697,10 +47871,10 @@
       "userActionRequiredNow": false
     },
     "currentMerchantBootstrapTestOverlay": {
-      "source": "a589fa82c0bd3b52f5ce148e9af75b13b1dae7a3",
+      "source": "c8d125e40d067775e8c81e01da4c00c8b8312814",
       "path": "artifacts/api-server/tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs",
-      "sha": "c95c3228a21159f560c534392b22c05c11768566",
-      "layer": "ACTUAL_BUILT_APP_DISPOSABLE_POSTGRES_DEV_OTP",
+      "sha": "e970289d4b9d6558bb20c3084c3bdb9bc1140763",
+      "layer": "ACTUAL_BUILT_APP_OPERATIONAL_AND_SESSION_POSTGRES_REQUIRED",
       "tap": 1,
       "newTapCases": 0
     },
@@ -47715,6 +47889,46 @@
       "reusedHybridConcurrencyTap": 8,
       "reusedRestrictedSessionTap": 5,
       "reusedAuthenticationOperatorTap": 63,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": false
+    },
+    "currentMerchantSelfServiceFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantSelfServiceFullAppRuntime]",
+      "status": "BOUNDED_MERCHANT_SELF_IDENTITY_LIFECYCLE_PASSWORD_AND_LOGOUT_CANONICAL_FULL_APP_ACCEPTED",
+      "source": "c8d125e40d067775e8c81e01da4c00c8b8312814",
+      "sourceTree": "c1e98ec84a0cf190e423dd1624173ac256e09a2a",
+      "newFunctionalCondition": 1,
+      "newTapCases": 0,
+      "existingActualAppJourneyExpanded": true,
+      "routes": 4,
+      "merchants": 2,
+      "readNegativeRequests": 6,
+      "targetBootstrapTap": 1,
+      "run": 41002990588,
+      "job": 123891438527,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "ciFilesChanged": 0,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentOwnerRecoveryStatusSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentOwnerRecoveryStatusEvidenceReconciliation]",
+      "status": "OWNER_STATUS_SOURCE_AND_EXISTING_PROOF_LAYERS_RECONCILED_BOUNDED_ACTOR_FIELD_CASE_SELECTED",
+      "sourceReviewed": "138e74f4c83c786bb93fde6bd651cd2a7638ccf8",
+      "reviewComplete": true,
+      "sourcePins": 6,
       "newRuntimeTests": 0,
       "newCiRuns": 0,
       "applicationChanged": false,
