@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+    "nextExactAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -44904,6 +44904,209 @@
           "Non-critical attachment display contract discrepancy is explicit; no new P0 gate or full frontend acceptance.",
           "FIELD003 metadata cross-consumer policy remains unapproved; parent privacy matrix OPEN."
         ]
+      },
+      {
+        "boundary": "currentEmergencyAlternateProjectionEvidenceReconciliation",
+        "date": "2026-10-30",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C03-R3",
+        "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+        "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+        "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+        "reviewComplete": true,
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts",
+            "sha": "b4b51261b6eda63d4ca03f81491c609bb7883171"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+            "sha": "fbae7386f98795048494e41a84505157ee7d0ff1"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresEmergencySnapshot.ts",
+            "sha": "f2ab3b2e531ce47f2bdac4896da9c856021f26e0"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+            "sha": "e5387972b31ef272418158e8b1be52bc81dd6b75"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+            "sha": "cd6c904610ed95206d309f52efa11a96b744012e"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+            "sha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338"
+          },
+          {
+            "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+            "sha": "83348cd92bf39448e00ae647bf24246b02119945"
+          },
+          {
+            "path": "artifacts/api-server/src/services/earlyWarningIncidentMonitor.ts",
+            "sha": "aa50ceedad1a331655064a845b78cf4e1947dbd6"
+          },
+          {
+            "path": "artifacts/api-server/tests/emergency-privacy-remediation-postgres.integration.test.mjs",
+            "sha": "e99cdf8bc870471f3c35c078a6be179c6f695146"
+          },
+          {
+            "path": "artifacts/api-server/tests/emergency-privacy-authority-postgres.integration.test.mjs",
+            "sha": "760bdf1f3c69c4bfa31bc0fdc035e7e4e47cc4b1"
+          },
+          {
+            "path": "artifacts/api-server/tests/emergency-read-access-postgres.integration.test.ts",
+            "sha": "9cbf8c2247d05312a8cf556da616e8864a47f857"
+          },
+          {
+            "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+            "sha": "68d0d86cd772fe13a02610767c41a4c5386b1cb1"
+          },
+          {
+            "path": "artifacts/fawri/src/pages/AdminEmergencyAccessPage.tsx",
+            "sha": "130478fc0b0f7313145e8bc7454655a6ccc648fe"
+          },
+          {
+            "path": "artifacts/fawri/src/pages/AdminEmergencyAccessRouterPage.tsx",
+            "sha": "997ad0d524b24220de3e32de75c0187234943fa4"
+          },
+          {
+            "path": "artifacts/fawri/src/pages/AdminEmergencySnapshotPage.tsx",
+            "sha": "dc9463ace2f70e95095c946390f5bb640ff52274"
+          },
+          {
+            "path": "artifacts/fawri/src/components/EmergencyIncidentNoticeBanner.tsx",
+            "sha": "5bc00c0a5c452da1cb87522f74b674332903539b"
+          },
+          {
+            "path": "artifacts/fawri/src/components/admin/EmergencyReadAccessLauncher.tsx",
+            "sha": "44fed795252046af094f624ec7fc42dc1cb0b383"
+          },
+          {
+            "path": "docs/final-audit/evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json",
+            "sha": "a7b2298b4dee43b9b92b26ab012cb59d8169aa2a"
+          },
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "sha": "173c5c0a96c273d04bc0977ec9eb667b6fd6e0dd"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-security.ts",
+            "sha": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e"
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+            "sha": "5da7b9fd813d11b258b2270aa0353500f90e0283"
+          }
+        ],
+        "scope": "Complete the selected bounded evidence reconciliation condition, not all emergency actors/fields/runtime combinations or parent-gate acceptance.",
+        "currentAuthority": [
+          {
+            "surface": "Emergency admin route family",
+            "finding": "Eleven registration rows including all-method read-only guard; live Auth v2 PG routes precede guarded legacy mounts. Owner role derives from current secure SQL admin context, never query/body."
+          },
+          {
+            "surface": "Directory and overview",
+            "finding": "Non-owner directory needs active emergency authorization; owner receives assistants. Overview gives assistants their own requests/current authorization, owner additionally all authorizations/alerts/notices/audit verification."
+          },
+          {
+            "surface": "Temporary snapshot",
+            "finding": "Not globally owner-only: requester assistant must match account, bound session and current active authorization; both requester and owner need an active unexpired request. Snapshot uses merchant-scoped transaction and explicit SQL selections for merchant/subscription/products/orders/conversations/Knowledge/channels, not provider credentials/password."
+          },
+          {
+            "surface": "Snapshot read side effects",
+            "finding": "Refresh may expire requests/create notices; first owner/requester view records viewed_sections/first_viewed_at and chain audit. Do not impose a false blanket read-immutability expectation."
+          },
+          {
+            "surface": "Merchant notice",
+            "finding": "Session merchant identity controls list and mark-read. Trusted service queries filter merchant_id; read COALESCE preserves first read_at but appends audit on each accepted mark. Do not invent strict audit replay idempotency policy."
+          },
+          {
+            "surface": "Dedicated emergency audit versus general logs",
+            "finding": "Dedicated route owner-only. General log route derives includeEmergencyAudit solely from current owner profile and SQL excludes emergency_read_access for assistants. Existing actual-app negatives/owner positives cover alternate projection."
+          },
+          {
+            "surface": "Early-warning versus generic logs",
+            "finding": "Dedicated early-warning applies current view_logs and extra view_merchants to merchant rows/history/usage/cost and nested AI telemetry after cached data. Generic view_logs log history still maps merchant-linked incident metadata; emergency exclusion does not imply policy for every incident type. FIELD003 remains explicitly unapproved."
+          }
+        ],
+        "reusedRuntime": {
+          "source": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+          "newExecution": false,
+          "target": {
+            "run": 41089107977,
+            "job": 124177959490,
+            "tap": 107,
+            "files": 6,
+            "fullAppTap": 74,
+            "observedExistingChildren": [
+              "actual early-warning owner path creates canonical scoped history and normalizes metadata with authorized merchant view",
+              "view_logs-only early-warning response omits merchant identity in every nested projection while retaining system history and aggregates",
+              "current SQL permissions override cached early-warning data and denied actors cannot mutate incident history",
+              "owner-only emergency audit remains accessible to owner and denied to log-viewing assistants",
+              "general log endpoint cannot bypass owner-only emergency audit through alternate projection",
+              "ordinary log metadata actor identity and current SQL permission checks survive emergency filtering"
+            ]
+          },
+          "broader": {
+            "run": 41089107861,
+            "job": 124177960342,
+            "tap": 836,
+            "invocations": 97,
+            "uniqueFiles": 94,
+            "suites": [
+              {
+                "file": "emergency-privacy-remediation-postgres.integration.test.mjs",
+                "tap": 7,
+                "layer": "STRICT_FOUR_TABLE_SQL_AND_NOTICE_SERVICE_ACCEPTANCE",
+                "assertions": "Restricted LOGIN/read+mutation denials, mandatory RLS readiness, directory capability not emergency authority, trusted rollback, notice ancestry preflight and foreign notice denial."
+              },
+              {
+                "file": "emergency-privacy-authority-postgres.integration.test.mjs",
+                "tap": 4,
+                "layer": "READ_ONLY_DIAGNOSTIC_NOT_PRIVACY_ACCEPTANCE"
+              },
+              {
+                "file": "emergency-read-access-postgres.integration.test.ts",
+                "tap": 1,
+                "layer": "AGGREGATE_AUTH_SECURITY_ROUTER_HTTP",
+                "assertions": "Directory/authorization/high request owner approval/wrong-session403/snapshot secret exclusion/read-only/owner snapshot/end/merchant notice/critical self-activation/delayed expiry/chain/revocation. One TAP journey, not one independent test per operation."
+              }
+            ]
+          },
+          "allCiSuccess": 58,
+          "checkout": "e7a5abd4655a7cbcf18344b284aa2f697fa5ca5e",
+          "sourceTree": "4edec7931e00005f5c6319db217fa7cd9dd1783f"
+        },
+        "field003Continuity": {
+          "historicalPacket": "P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#currentUseReconciliation20261028",
+          "historicalInputPins": 21,
+          "unchanged": 18,
+          "trackedDrifts": [
+            "app.ts: accepted legacy Knowledge guard source change; current mounting traced.",
+            "auth-security.ts: accepted incomplete admin cutover comparison change; current mounting traced.",
+            "management-full-app test: accepted additions, current six existing emergency/early-warning assertions pass."
+          ],
+          "fresh854FileScanClaimed": false,
+          "decision": "UNAPPROVED",
+          "userActionRequiredNow": false,
+          "policyAdopted": false
+        },
+        "consumerScope": "Current emergency overview/launcher/router/snapshot and notice-banner callers use reviewed current endpoints; UI masks/type declarations are not server minimization proof. Existing FIELD003 packet's general-log and early-warning consumers retained by source-pin continuity, not a fresh exhaustive consumer inventory.",
+        "historicalBaseline": "Earlier emergency open-table diagnostic describes pre-remediation state; strict remediation7 and current diagnostic4/router1 remain separate. Do not reopen old baseline as a new current failure.",
+        "resolution": {
+          "MATRIX_C03_R1": "Bounded actual-app nested read accepted in currentSupportNestedReadFullApp.",
+          "MATRIX_C03_R2": "Bounded image actual-app integration accepted; preview layers reconciled; non-critical display naming note retained.",
+          "MATRIX_C03_R3": "Selected source/evidence reconciliation complete. FIELD003 policy remains in existing C07/residual row; no new emergency test selected from registration count alone."
+        },
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "nextExactAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -48132,9 +48335,9 @@
             "emergencyAndAudit",
             "merchantManagement"
           ],
-          "status": "BOUNDED_SUPPORT_READ_AND_IMAGE_RUNTIME_ACCEPTED_PREVIEW_RECONCILED_EMERGENCY_POLICY_RECONCILIATION_REMAINS",
+          "status": "SELECTED_SUPPORT_EMERGENCY_MANAGEMENT_CONDITIONS_RECONCILED_NOT_ALL_VARIANTS_OR_PARENT_GATE",
           "condition": "Link current support/inspection/image/emergency/management actors and nested field consumers to accepted SQL, router and full-app layers; retain policy/alternate-projection exceptions explicitly.",
-          "next": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+          "next": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
           "newGate": false,
           "currentSourceReview": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportEmergencyManagementEvidenceReconciliation]",
@@ -48246,7 +48449,32 @@
               "id": "MATRIX-C03-R3",
               "kind": "EMERGENCY_ALTERNATE_PROJECTION_AND_POLICY_RECONCILIATION",
               "automaticNewTest": false,
-              "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures."
+              "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures.",
+              "status": "BOUNDED_SOURCE_EVIDENCE_RECONCILIATION_COMPLETE_FIELD003_POLICY_UNAPPROVED",
+              "review": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                "reviewComplete": true,
+                "sourcePins": 21,
+                "reusedEmergencyRemediationTap": 7,
+                "reusedDiagnosticTap": 4,
+                "reusedAggregateJourneyTap": 1,
+                "reusedCurrentFullAppAssertions": 6,
+                "reusedTargetRun": 41089107977,
+                "reusedTargetJob": 124177959490,
+                "reusedBroaderRun": 41089107861,
+                "reusedBroaderJob": 124177960342,
+                "field003Decision": "UNAPPROVED",
+                "newRuntimeTests": 0,
+                "newCiRuns": 0,
+                "applicationChanged": false,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             }
           ],
           "currentSupportNestedReadFullAppProof": {
@@ -48355,6 +48583,34 @@
                 "policyAdopted": false,
                 "userActionRequiredNow": false
               }
+            },
+            {
+              "id": "MATRIX-C03-R3",
+              "scope": "Bounded source/evidence reconciliation complete; FIELD003 unapproved policy retained in C07 and existing residual row.",
+              "review": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                "reviewComplete": true,
+                "sourcePins": 21,
+                "reusedEmergencyRemediationTap": 7,
+                "reusedDiagnosticTap": 4,
+                "reusedAggregateJourneyTap": 1,
+                "reusedCurrentFullAppAssertions": 6,
+                "reusedTargetRun": 41089107977,
+                "reusedTargetJob": 124177959490,
+                "reusedBroaderRun": 41089107861,
+                "reusedBroaderJob": 124177960342,
+                "field003Decision": "UNAPPROVED",
+                "newRuntimeTests": 0,
+                "newCiRuns": 0,
+                "applicationChanged": false,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             }
           ],
           "currentSupportImageAliasFullAppProof": {
@@ -48391,7 +48647,33 @@
             "newGate": false,
             "policyAdopted": false,
             "userActionRequiredNow": false
-          }
+          },
+          "currentEmergencyProjectionSourceReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+            "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+            "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+            "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+            "reviewComplete": true,
+            "sourcePins": 21,
+            "reusedEmergencyRemediationTap": 7,
+            "reusedDiagnosticTap": 4,
+            "reusedAggregateJourneyTap": 1,
+            "reusedCurrentFullAppAssertions": 6,
+            "reusedTargetRun": 41089107977,
+            "reusedTargetJob": 124177959490,
+            "reusedBroaderRun": 41089107861,
+            "reusedBroaderJob": 124177960342,
+            "field003Decision": "UNAPPROVED",
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "applicationChanged": false,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "remainingSelectedConditions": [],
+          "policyRemainder": "FIELD003 unapproved retained in existing C07/residual field gate, not closed by C03 evidence reconciliation."
         },
         {
           "id": "MATRIX-C04",
@@ -48588,7 +48870,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -48623,7 +48905,7 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C03"
+      "nextWorkItem": "MATRIX-C04"
     },
     "previousTestOverlayBeforeLegacyKnowledgeRetirement20261029": {
       "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
@@ -49060,6 +49342,30 @@
       "gitBlob": "0801f7a5b1092fa7d184bde28ae10d696786018a",
       "catalogueRegenerated": false,
       "interpretation": "One bounded MATRIX-C03-R1 actual-full-app Support nested read case; full73/target106. Twelve exact DTO reads,15 actor/tenant denials,4 fresh authentication prechecks, owned5-table read stability and cascade cleanup. No app/image/preview/policy/hosted change or parent-gate closure."
+    },
+    "currentEmergencyProjectionSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+      "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+      "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+      "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+      "reviewComplete": true,
+      "sourcePins": 21,
+      "reusedEmergencyRemediationTap": 7,
+      "reusedDiagnosticTap": 4,
+      "reusedAggregateJourneyTap": 1,
+      "reusedCurrentFullAppAssertions": 6,
+      "reusedTargetRun": 41089107977,
+      "reusedTargetJob": 124177959490,
+      "reusedBroaderRun": 41089107861,
+      "reusedBroaderJob": 124177960342,
+      "field003Decision": "UNAPPROVED",
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
     }
   },
   "componentScopes": {

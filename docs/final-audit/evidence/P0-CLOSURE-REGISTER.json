@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+      "nextAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -3010,9 +3010,9 @@
               "emergencyAndAudit",
               "merchantManagement"
             ],
-            "status": "BOUNDED_SUPPORT_READ_AND_IMAGE_RUNTIME_ACCEPTED_PREVIEW_RECONCILED_EMERGENCY_POLICY_RECONCILIATION_REMAINS",
+            "status": "SELECTED_SUPPORT_EMERGENCY_MANAGEMENT_CONDITIONS_RECONCILED_NOT_ALL_VARIANTS_OR_PARENT_GATE",
             "condition": "Link current support/inspection/image/emergency/management actors and nested field consumers to accepted SQL, router and full-app layers; retain policy/alternate-projection exceptions explicitly.",
-            "next": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+            "next": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
             "newGate": false,
             "currentSourceReview": {
               "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportEmergencyManagementEvidenceReconciliation]",
@@ -3124,7 +3124,32 @@
                 "id": "MATRIX-C03-R3",
                 "kind": "EMERGENCY_ALTERNATE_PROJECTION_AND_POLICY_RECONCILIATION",
                 "automaticNewTest": false,
-                "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures."
+                "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures.",
+                "status": "BOUNDED_SOURCE_EVIDENCE_RECONCILIATION_COMPLETE_FIELD003_POLICY_UNAPPROVED",
+                "review": {
+                  "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                  "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                  "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                  "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                  "reviewComplete": true,
+                  "sourcePins": 21,
+                  "reusedEmergencyRemediationTap": 7,
+                  "reusedDiagnosticTap": 4,
+                  "reusedAggregateJourneyTap": 1,
+                  "reusedCurrentFullAppAssertions": 6,
+                  "reusedTargetRun": 41089107977,
+                  "reusedTargetJob": 124177959490,
+                  "reusedBroaderRun": 41089107861,
+                  "reusedBroaderJob": 124177960342,
+                  "field003Decision": "UNAPPROVED",
+                  "newRuntimeTests": 0,
+                  "newCiRuns": 0,
+                  "applicationChanged": false,
+                  "parentGateClosed": false,
+                  "newGate": false,
+                  "policyAdopted": false,
+                  "userActionRequiredNow": false
+                }
               }
             ],
             "currentSupportNestedReadFullAppProof": {
@@ -3233,6 +3258,34 @@
                   "policyAdopted": false,
                   "userActionRequiredNow": false
                 }
+              },
+              {
+                "id": "MATRIX-C03-R3",
+                "scope": "Bounded source/evidence reconciliation complete; FIELD003 unapproved policy retained in C07 and existing residual row.",
+                "review": {
+                  "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                  "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                  "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                  "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                  "reviewComplete": true,
+                  "sourcePins": 21,
+                  "reusedEmergencyRemediationTap": 7,
+                  "reusedDiagnosticTap": 4,
+                  "reusedAggregateJourneyTap": 1,
+                  "reusedCurrentFullAppAssertions": 6,
+                  "reusedTargetRun": 41089107977,
+                  "reusedTargetJob": 124177959490,
+                  "reusedBroaderRun": 41089107861,
+                  "reusedBroaderJob": 124177960342,
+                  "field003Decision": "UNAPPROVED",
+                  "newRuntimeTests": 0,
+                  "newCiRuns": 0,
+                  "applicationChanged": false,
+                  "parentGateClosed": false,
+                  "newGate": false,
+                  "policyAdopted": false,
+                  "userActionRequiredNow": false
+                }
               }
             ],
             "currentSupportImageAliasFullAppProof": {
@@ -3269,7 +3322,33 @@
               "newGate": false,
               "policyAdopted": false,
               "userActionRequiredNow": false
-            }
+            },
+            "currentEmergencyProjectionSourceReview": {
+              "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+              "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+              "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+              "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+              "reviewComplete": true,
+              "sourcePins": 21,
+              "reusedEmergencyRemediationTap": 7,
+              "reusedDiagnosticTap": 4,
+              "reusedAggregateJourneyTap": 1,
+              "reusedCurrentFullAppAssertions": 6,
+              "reusedTargetRun": 41089107977,
+              "reusedTargetJob": 124177959490,
+              "reusedBroaderRun": 41089107861,
+              "reusedBroaderJob": 124177960342,
+              "field003Decision": "UNAPPROVED",
+              "newRuntimeTests": 0,
+              "newCiRuns": 0,
+              "applicationChanged": false,
+              "parentGateClosed": false,
+              "newGate": false,
+              "policyAdopted": false,
+              "userActionRequiredNow": false
+            },
+            "remainingSelectedConditions": [],
+            "policyRemainder": "FIELD003 unapproved retained in existing C07/residual field gate, not closed by C03 evidence reconciliation."
           },
           {
             "id": "MATRIX-C04",
@@ -3466,7 +3545,7 @@
           "originalSourceOnlySnapshotPreserved": true,
           "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
         },
-        "nextCurrentAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+        "nextCurrentAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
         "currentAuthFollowup": {
           "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
           "proof": {
@@ -3501,7 +3580,7 @@
           "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
           "ownerRecoveryRuntimeClaimed": false
         },
-        "nextWorkItem": "MATRIX-C03"
+        "nextWorkItem": "MATRIX-C04"
       },
       "currentLegacyKnowledgeRetirementFullAppProof": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
@@ -3860,6 +3939,30 @@
         "testFilesChanged": 1,
         "ciFilesChanged": 0,
         "nonCriticalDisplayCompatibilityNote": true,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "userActionRequiredNow": false
+      },
+      "currentEmergencyProjectionSourceReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+        "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+        "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+        "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+        "reviewComplete": true,
+        "sourcePins": 21,
+        "reusedEmergencyRemediationTap": 7,
+        "reusedDiagnosticTap": 4,
+        "reusedAggregateJourneyTap": 1,
+        "reusedCurrentFullAppAssertions": 6,
+        "reusedTargetRun": 41089107977,
+        "reusedTargetJob": 124177959490,
+        "reusedBroaderRun": 41089107861,
+        "reusedBroaderJob": 124177960342,
+        "field003Decision": "UNAPPROVED",
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
         "parentGateClosed": false,
         "newGate": false,
         "policyAdopted": false,
@@ -6924,7 +7027,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+        "nextAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -9739,9 +9842,9 @@
                 "emergencyAndAudit",
                 "merchantManagement"
               ],
-              "status": "BOUNDED_SUPPORT_READ_AND_IMAGE_RUNTIME_ACCEPTED_PREVIEW_RECONCILED_EMERGENCY_POLICY_RECONCILIATION_REMAINS",
+              "status": "SELECTED_SUPPORT_EMERGENCY_MANAGEMENT_CONDITIONS_RECONCILED_NOT_ALL_VARIANTS_OR_PARENT_GATE",
               "condition": "Link current support/inspection/image/emergency/management actors and nested field consumers to accepted SQL, router and full-app layers; retain policy/alternate-projection exceptions explicitly.",
-              "next": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+              "next": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
               "newGate": false,
               "currentSourceReview": {
                 "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportEmergencyManagementEvidenceReconciliation]",
@@ -9853,7 +9956,32 @@
                   "id": "MATRIX-C03-R3",
                   "kind": "EMERGENCY_ALTERNATE_PROJECTION_AND_POLICY_RECONCILIATION",
                   "automaticNewTest": false,
-                  "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures."
+                  "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures.",
+                  "status": "BOUNDED_SOURCE_EVIDENCE_RECONCILIATION_COMPLETE_FIELD003_POLICY_UNAPPROVED",
+                  "review": {
+                    "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                    "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                    "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                    "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                    "reviewComplete": true,
+                    "sourcePins": 21,
+                    "reusedEmergencyRemediationTap": 7,
+                    "reusedDiagnosticTap": 4,
+                    "reusedAggregateJourneyTap": 1,
+                    "reusedCurrentFullAppAssertions": 6,
+                    "reusedTargetRun": 41089107977,
+                    "reusedTargetJob": 124177959490,
+                    "reusedBroaderRun": 41089107861,
+                    "reusedBroaderJob": 124177960342,
+                    "field003Decision": "UNAPPROVED",
+                    "newRuntimeTests": 0,
+                    "newCiRuns": 0,
+                    "applicationChanged": false,
+                    "parentGateClosed": false,
+                    "newGate": false,
+                    "policyAdopted": false,
+                    "userActionRequiredNow": false
+                  }
                 }
               ],
               "currentSupportNestedReadFullAppProof": {
@@ -9962,6 +10090,34 @@
                     "policyAdopted": false,
                     "userActionRequiredNow": false
                   }
+                },
+                {
+                  "id": "MATRIX-C03-R3",
+                  "scope": "Bounded source/evidence reconciliation complete; FIELD003 unapproved policy retained in C07 and existing residual row.",
+                  "review": {
+                    "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                    "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                    "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                    "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                    "reviewComplete": true,
+                    "sourcePins": 21,
+                    "reusedEmergencyRemediationTap": 7,
+                    "reusedDiagnosticTap": 4,
+                    "reusedAggregateJourneyTap": 1,
+                    "reusedCurrentFullAppAssertions": 6,
+                    "reusedTargetRun": 41089107977,
+                    "reusedTargetJob": 124177959490,
+                    "reusedBroaderRun": 41089107861,
+                    "reusedBroaderJob": 124177960342,
+                    "field003Decision": "UNAPPROVED",
+                    "newRuntimeTests": 0,
+                    "newCiRuns": 0,
+                    "applicationChanged": false,
+                    "parentGateClosed": false,
+                    "newGate": false,
+                    "policyAdopted": false,
+                    "userActionRequiredNow": false
+                  }
                 }
               ],
               "currentSupportImageAliasFullAppProof": {
@@ -9998,7 +10154,33 @@
                 "newGate": false,
                 "policyAdopted": false,
                 "userActionRequiredNow": false
-              }
+              },
+              "currentEmergencyProjectionSourceReview": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                "reviewComplete": true,
+                "sourcePins": 21,
+                "reusedEmergencyRemediationTap": 7,
+                "reusedDiagnosticTap": 4,
+                "reusedAggregateJourneyTap": 1,
+                "reusedCurrentFullAppAssertions": 6,
+                "reusedTargetRun": 41089107977,
+                "reusedTargetJob": 124177959490,
+                "reusedBroaderRun": 41089107861,
+                "reusedBroaderJob": 124177960342,
+                "field003Decision": "UNAPPROVED",
+                "newRuntimeTests": 0,
+                "newCiRuns": 0,
+                "applicationChanged": false,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              },
+              "remainingSelectedConditions": [],
+              "policyRemainder": "FIELD003 unapproved retained in existing C07/residual field gate, not closed by C03 evidence reconciliation."
             },
             {
               "id": "MATRIX-C04",
@@ -10195,7 +10377,7 @@
             "originalSourceOnlySnapshotPreserved": true,
             "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
           },
-          "nextCurrentAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+          "nextCurrentAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
           "currentAuthFollowup": {
             "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
             "proof": {
@@ -10230,7 +10412,7 @@
             "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
             "ownerRecoveryRuntimeClaimed": false
           },
-          "nextWorkItem": "MATRIX-C03"
+          "nextWorkItem": "MATRIX-C04"
         },
         "currentLegacyKnowledgeRetirementFullAppProof": {
           "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
@@ -10589,6 +10771,30 @@
           "testFilesChanged": 1,
           "ciFilesChanged": 0,
           "nonCriticalDisplayCompatibilityNote": true,
+          "parentGateClosed": false,
+          "newGate": false,
+          "policyAdopted": false,
+          "userActionRequiredNow": false
+        },
+        "currentEmergencyProjectionSourceReview": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+          "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+          "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+          "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+          "reviewComplete": true,
+          "sourcePins": 21,
+          "reusedEmergencyRemediationTap": 7,
+          "reusedDiagnosticTap": 4,
+          "reusedAggregateJourneyTap": 1,
+          "reusedCurrentFullAppAssertions": 6,
+          "reusedTargetRun": 41089107977,
+          "reusedTargetJob": 124177959490,
+          "reusedBroaderRun": 41089107861,
+          "reusedBroaderJob": 124177960342,
+          "field003Decision": "UNAPPROVED",
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "applicationChanged": false,
           "parentGateClosed": false,
           "newGate": false,
           "policyAdopted": false,
@@ -14449,9 +14655,9 @@
             "emergencyAndAudit",
             "merchantManagement"
           ],
-          "status": "BOUNDED_SUPPORT_READ_AND_IMAGE_RUNTIME_ACCEPTED_PREVIEW_RECONCILED_EMERGENCY_POLICY_RECONCILIATION_REMAINS",
+          "status": "SELECTED_SUPPORT_EMERGENCY_MANAGEMENT_CONDITIONS_RECONCILED_NOT_ALL_VARIANTS_OR_PARENT_GATE",
           "condition": "Link current support/inspection/image/emergency/management actors and nested field consumers to accepted SQL, router and full-app layers; retain policy/alternate-projection exceptions explicitly.",
-          "next": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+          "next": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
           "newGate": false,
           "currentSourceReview": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportEmergencyManagementEvidenceReconciliation]",
@@ -14563,7 +14769,32 @@
               "id": "MATRIX-C03-R3",
               "kind": "EMERGENCY_ALTERNATE_PROJECTION_AND_POLICY_RECONCILIATION",
               "automaticNewTest": false,
-              "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures."
+              "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures.",
+              "status": "BOUNDED_SOURCE_EVIDENCE_RECONCILIATION_COMPLETE_FIELD003_POLICY_UNAPPROVED",
+              "review": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                "reviewComplete": true,
+                "sourcePins": 21,
+                "reusedEmergencyRemediationTap": 7,
+                "reusedDiagnosticTap": 4,
+                "reusedAggregateJourneyTap": 1,
+                "reusedCurrentFullAppAssertions": 6,
+                "reusedTargetRun": 41089107977,
+                "reusedTargetJob": 124177959490,
+                "reusedBroaderRun": 41089107861,
+                "reusedBroaderJob": 124177960342,
+                "field003Decision": "UNAPPROVED",
+                "newRuntimeTests": 0,
+                "newCiRuns": 0,
+                "applicationChanged": false,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             }
           ],
           "currentSupportNestedReadFullAppProof": {
@@ -14672,6 +14903,34 @@
                 "policyAdopted": false,
                 "userActionRequiredNow": false
               }
+            },
+            {
+              "id": "MATRIX-C03-R3",
+              "scope": "Bounded source/evidence reconciliation complete; FIELD003 unapproved policy retained in C07 and existing residual row.",
+              "review": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+                "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+                "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+                "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                "reviewComplete": true,
+                "sourcePins": 21,
+                "reusedEmergencyRemediationTap": 7,
+                "reusedDiagnosticTap": 4,
+                "reusedAggregateJourneyTap": 1,
+                "reusedCurrentFullAppAssertions": 6,
+                "reusedTargetRun": 41089107977,
+                "reusedTargetJob": 124177959490,
+                "reusedBroaderRun": 41089107861,
+                "reusedBroaderJob": 124177960342,
+                "field003Decision": "UNAPPROVED",
+                "newRuntimeTests": 0,
+                "newCiRuns": 0,
+                "applicationChanged": false,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             }
           ],
           "currentSupportImageAliasFullAppProof": {
@@ -14708,7 +14967,33 @@
             "newGate": false,
             "policyAdopted": false,
             "userActionRequiredNow": false
-          }
+          },
+          "currentEmergencyProjectionSourceReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+            "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+            "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+            "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+            "reviewComplete": true,
+            "sourcePins": 21,
+            "reusedEmergencyRemediationTap": 7,
+            "reusedDiagnosticTap": 4,
+            "reusedAggregateJourneyTap": 1,
+            "reusedCurrentFullAppAssertions": 6,
+            "reusedTargetRun": 41089107977,
+            "reusedTargetJob": 124177959490,
+            "reusedBroaderRun": 41089107861,
+            "reusedBroaderJob": 124177960342,
+            "field003Decision": "UNAPPROVED",
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "applicationChanged": false,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "remainingSelectedConditions": [],
+          "policyRemainder": "FIELD003 unapproved retained in existing C07/residual field gate, not closed by C03 evidence reconciliation."
         },
         {
           "id": "MATRIX-C04",
@@ -14905,7 +15190,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "MATRIX-C04: reconcile existing cashier staff/discount/subscription/operator/sync actors, effective router mounts and accepted native/SQL/HTTP proof layers to the original access inventory and current CASHIER-SYNC-SEQUENCE-001 SEQ-R1/R2/R3 records. Trace existing merchant dashboard link-code issuer, cashier redemption, station credential and local stream provenance before selecting only a demonstrated unmet condition. Preserve merchant-controlled ordinary pairing, historical sequence/device history and main/secondary/offline grace rules. SEQ-R2 exceptional recovery choice remains unapproved; physical device/key/hosted acceptance stays in existing gates. Reuse accepted C03 Support and emergency/management proofs; do not add one test per historical route or repeat purge/recovery/auth tests. No new pairing/OTP/platform-owner reviewer, policy adoption, denominator expansion, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -14940,7 +15225,7 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C03"
+      "nextWorkItem": "MATRIX-C04"
     },
     "currentLegacyKnowledgeRetirementFullAppProof": {
       "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
@@ -15313,6 +15598,30 @@
       "testFilesChanged": 1,
       "ciFilesChanged": 0,
       "nonCriticalDisplayCompatibilityNote": true,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "currentEmergencyProjectionSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentEmergencyAlternateProjectionEvidenceReconciliation]",
+      "status": "CURRENT_EMERGENCY_AND_ALTERNATE_AUDIT_PROOF_LAYERS_RECONCILED_FIELD003_POLICY_REMAINS_OPEN",
+      "sourceReviewed": "6b49587d65bfafc17add30ccd2ba9e10abc2a7be",
+      "acceptedExecutable": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+      "reviewComplete": true,
+      "sourcePins": 21,
+      "reusedEmergencyRemediationTap": 7,
+      "reusedDiagnosticTap": 4,
+      "reusedAggregateJourneyTap": 1,
+      "reusedCurrentFullAppAssertions": 6,
+      "reusedTargetRun": 41089107977,
+      "reusedTargetJob": 124177959490,
+      "reusedBroaderRun": 41089107861,
+      "reusedBroaderJob": 124177960342,
+      "field003Decision": "UNAPPROVED",
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
       "parentGateClosed": false,
       "newGate": false,
       "policyAdopted": false,
