@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Continue MATRIX-C03 (existing gate, not new scope): reconcile support/inspection/image/emergency/merchant-management actor and nested field consumer evidence against accepted five-table Support, emergency remediation, owner import/deletion and current full-app management proofs. Start from the existing finite workQueue entry and named boundaries; preserve FIELD002/003/004/005 and retention/policy dependencies. Do not rerun accepted purge/recovery/auth proofs or create another emergency authority; select only a demonstrated unmet sensitive projection/actor condition before any new test. MATRIX-C02's selected R1/R2/R3 conditions are bounded accepted, not all authentication variants or parent matrix closure. GitHub-only; no OTP/pairing redesign, policy adoption, new gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "MATRIX-C03-R1: add one bounded actual-app Support ticket read/DTO case using current full-app actor/session/SQL fixtures, after tracing DTOs and actor permissions. Cover own merchant list/detail, cross-merchant detail denial and ignored foreign identity hints, admin list for owner/manage_support assistant and denial for live unpermitted actors; compare exact nested message/attachment/inspection projection to existing mapper contract, omitting storage keys/providers and arbitrary inspection/ticket metadata while retaining intended fields. Account for lifecycle refresh before immutability assertions; use fresh actors with authenticated preconditions, restore/delete only owned Support fixtures. Reuse existing actual-app inspection/notice lifecycle, SQL privacy8, aggregate Support5, emergency7/4/1, import/deletion and accepted management proofs. C03-R2 aliases/preview and C03-R3 emergency/policy stay reconciliation items, not automatic tests. No new Support/emergency authority, purge rerun, field-policy adoption, new gate, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -44338,6 +44338,258 @@
           "R3": "currentOwnerRecoveryStatusFullApp",
           "scope": "Only the selected finite conditions accepted; not all authentication variants or parent privacy matrix."
         }
+      },
+      {
+        "boundary": "currentSupportEmergencyManagementEvidenceReconciliation",
+        "date": "2026-10-30",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C03",
+        "status": "CURRENT_SUPPORT_EMERGENCY_MANAGEMENT_PROOF_LAYERS_RECONCILED_NESTED_SUPPORT_READ_CELL_SELECTED",
+        "sourceReviewed": "e6753456e55304693ef3afa43ef10a32d606c55c",
+        "acceptedExecutable": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
+        "reviewComplete": true,
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+            "sha": "cd6c904610ed95206d309f52efa11a96b744012e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-support-admin-lifecycle-postgres-routes.ts",
+            "sha": "a1806154af21c4b4436f76b0086de11293d9b050"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-support-image-alias-postgres-routes.ts",
+            "sha": "b6a5df901b2a25b31c43e7d0f8e145baae587d6b"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-support-inspection-decision-postgres-routes.ts",
+            "sha": "53944a0016eb7ea29e13417641f30dd173457308"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-support-message-postgres-routes.ts",
+            "sha": "691335f4844f04129166f0fb3472879ce4f58234"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+            "sha": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/support-images.ts",
+            "sha": "290efb7be74e9e52bad541e15f2df5df9d9259e4"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/support-preview.ts",
+            "sha": "31680e06afc432e43727f576eb6a039b68d36c51"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+            "sha": "e5387972b31ef272418158e8b1be52bc81dd6b75"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts",
+            "sha": "b4b51261b6eda63d4ca03f81491c609bb7883171"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/emergency-merchant-notices.ts",
+            "sha": "6751ad597496ee8605f59d2605a89689bd1c49c1"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/emergency-owner-snapshot.ts",
+            "sha": "318da1b944fe61f3ad741d053ebe80939f6d5640"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/emergency-read-access.ts",
+            "sha": "2c7a58d4bc0c1bd80bde68322bad9baa25f6bfd9"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/emergency-read-directory.ts",
+            "sha": "685dd77044243ca39e398e3986cd74f12c2d4496"
+          },
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "sha": "173c5c0a96c273d04bc0977ec9eb667b6fd6e0dd"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-security.ts",
+            "sha": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+            "sha": "08a4f4881d4887b850bb7b6a42ba171fccc064dd"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresSupportSnapshot.ts",
+            "sha": "67f17d5d0e6c07b0d6b560fa976a07d2eae2dac1"
+          },
+          {
+            "path": "artifacts/api-server/tests/support-postgres-cutover.integration.test.ts",
+            "sha": "9b24cc9f6efba70b2594c55d9c68bed0cbba4e9c"
+          },
+          {
+            "path": "artifacts/api-server/tests/support-privacy-tenant-rls-postgres.integration.test.mjs",
+            "sha": "59ec196d860f72c5338253e5007dd6fd5a3bd9f0"
+          },
+          {
+            "path": "artifacts/api-server/tests/support-image-write-order-postgres.integration.test.ts",
+            "sha": "87eac446734213f6517aec4af93d7b301e670816"
+          },
+          {
+            "path": "artifacts/api-server/tests/operational-notification-field-full-app-http-postgres.integration.test.mjs",
+            "sha": "5571abaaa0906ae6ab845dc0373c2d931696b1d4"
+          },
+          {
+            "path": "artifacts/api-server/tests/emergency-privacy-remediation-postgres.integration.test.mjs",
+            "sha": "e99cdf8bc870471f3c35c078a6be179c6f695146"
+          },
+          {
+            "path": "artifacts/api-server/tests/emergency-read-access-postgres.integration.test.ts",
+            "sha": "9cbf8c2247d05312a8cf556da616e8864a47f857"
+          },
+          {
+            "path": "docs/final-audit/evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json",
+            "sha": "a7b2298b4dee43b9b92b26ab012cb59d8169aa2a"
+          },
+          {
+            "path": "docs/final-audit/evidence/P0-SUPPORT-NOTIFICATION-ENDING-20261025.json",
+            "sha": "52fc096822796627d3774c01e420c129bff99ee5"
+          }
+        ],
+        "reviewScope": "Bounded source-pin, mounting/overlap, DTO and named runtime evidence reconciliation; not every actor/field/route acceptance.",
+        "historicalCatalogue": {
+          "files": 14,
+          "registrationRows": 70,
+          "sourceDrifts": 0,
+          "groups": [
+            {
+              "id": "merchantManagement",
+              "files": 1,
+              "registrationRows": 13
+            },
+            {
+              "id": "supportCurrentAndLegacy",
+              "files": 7,
+              "registrationRows": 33
+            },
+            {
+              "id": "emergencyAndAudit",
+              "files": 6,
+              "registrationRows": 24
+            }
+          ],
+          "sourceCountsAreAcceptanceDenominator": false
+        },
+        "sourceInterpretation": [
+          "auth-security mounts admin lifecycle, image aliases, inspection decision and message interception before general Support router; overlapping registrations do not represent independently untested supported routes.",
+          "General Support notifications are overlapped by the earlier merchant notification router. Legacy image/preview and emergency mounts occur after required-mode cutover guards; source guard evidence is distinct from runtime current DTO evidence.",
+          "Admin list permits owner or manage_support; administrative message/image writes require assistant_admin plus manage_support; preview additionally requires inspect_merchant_sessions and scoped approved consent. Do not broaden owner write or assistant preview policy.",
+          "Support hydrateTicket exposes intended merchant identity, assignment and message fields. mapAttachment emits id/kind/original_name/mime_type/size_bytes/current authorized URL/created_at, not storage_provider/storage_key. mapInspection emits declared consent/lifecycle fields, not arbitrary metadata.",
+          "Operational notification test uses actual app origin for Support create/claim/message/inspection/decision/termination/lifecycle list and preview operations; retain that actual-app layer rather than classifying all Support HTTP as aggregate-only."
+        ],
+        "evidenceLinkCorrection": {
+          "historicalReference": "docs/final-audit/evidence/P0-CORRECTION-APPROVAL-HTTP-20261024.json",
+          "actualScope": "Conversation correction approval and knowledge/review write behavior, not direct Support ticket read/DTO actor proof.",
+          "action": "Historical catalogue preserved; this current overlay links Support SQL, aggregate cutover, image service and actual-app Support notification/inspection lifecycle evidence instead.",
+          "newDefectOrGate": false
+        },
+        "reusedCurrentRuntime": {
+          "source": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
+          "run": 41009482326,
+          "job": 123911972809,
+          "broaderTap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "suites": [
+            {
+              "file": "support-privacy-tenant-rls-postgres.integration.test.mjs",
+              "tap": 8,
+              "layer": "FIVE_TABLE_SQL_AUTHORITY"
+            },
+            {
+              "file": "support-postgres-cutover.integration.test.ts",
+              "tap": 5,
+              "layer": "AGGREGATE_AUTH_ROUTER_HTTP_POSTGRES"
+            },
+            {
+              "file": "emergency-privacy-remediation-postgres.integration.test.mjs",
+              "tap": 7,
+              "layer": "FOUR_TABLE_SQL_REMEDIATION_AND_NOTICE_SERVICES"
+            },
+            {
+              "file": "emergency-privacy-authority-postgres.integration.test.mjs",
+              "tap": 4,
+              "layer": "DIAGNOSTIC_SQL_AUTHORITY"
+            },
+            {
+              "file": "emergency-read-access-postgres.integration.test.ts",
+              "tap": 1,
+              "layer": "AGGREGATE_AUTH_ROUTER_HTTP_POSTGRES"
+            },
+            {
+              "file": "merchant-management-privacy-rls-postgres.integration.test.mjs",
+              "tap": 5,
+              "layer": "SQL_PRIVACY"
+            },
+            {
+              "file": "merchant-management-tenant-rls.integration.test.mjs",
+              "tap": 6,
+              "layer": "SQL_TENANT_AUTHORITY"
+            }
+          ],
+          "allCiSuccess": 58,
+          "newExecution": false
+        },
+        "existingEvidence": [
+          "P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json",
+          "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+          "P0-SUPPORT-NOTIFICATION-ENDING-20261025.json",
+          "P0-INSPECTION-CONCURRENT-CREATE-20261025.json",
+          "P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
+          "P0-OWNER-IMPORT-HTTP-20261024.json",
+          "P0-OWNER-DELETION-HTTP-20261024.json"
+        ],
+        "followupConditions": [
+          {
+            "id": "MATRIX-C03-R1",
+            "kind": "BOUNDED_ACTUAL_APP_NESTED_SUPPORT_READ_ACTOR_FIELD_GAP",
+            "selectedNext": true,
+            "routes": [
+              "GET /support/tickets",
+              "GET /support/tickets/:id",
+              "GET /admin/support/tickets"
+            ],
+            "condition": "Current nested ticket DTO contract and actor isolation through actual app, complementing accepted SQL/aggregate/lifecycle/notice evidence."
+          },
+          {
+            "id": "MATRIX-C03-R2",
+            "kind": "ALIAS_PREVIEW_IMAGE_EVIDENCE_RECONCILIATION",
+            "automaticNewTest": false,
+            "condition": "Link image write/download and preview route aliases, current guarded legacy fallthrough, exact session binding and DTO consumers to existing runtime/service evidence before selecting any missing case."
+          },
+          {
+            "id": "MATRIX-C03-R3",
+            "kind": "EMERGENCY_ALTERNATE_PROJECTION_AND_POLICY_RECONCILIATION",
+            "automaticNewTest": false,
+            "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures."
+          }
+        ],
+        "policyDependencies": [
+          "FIELD002 generic notification projection policy remains open.",
+          "FIELD003 cross-consumer audit/health metadata decision remains unapproved; no new vulnerability/intent claim.",
+          "FIELD004/005 and retention/receipt repair remain separately recorded; local purge/fake replay does not close hosted/policy gates."
+        ],
+        "limits": [
+          "Source registration rows include overlaps, all-method guards and legacy declarations; not70 missing tests.",
+          "Image write-order service has five source test declarations; not claimed newly executed in the97 broad invocations.",
+          "Existing baseline evidence describes earlier source; current remediation evidence and layers preserved explicitly.",
+          "No new application/test/runtime/CI, policy or parent gate closure."
+        ],
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "nextExactAction": "MATRIX-C03-R1: add one bounded actual-app Support ticket read/DTO case using current full-app actor/session/SQL fixtures, after tracing DTOs and actor permissions. Cover own merchant list/detail, cross-merchant detail denial and ignored foreign identity hints, admin list for owner/manage_support assistant and denial for live unpermitted actors; compare exact nested message/attachment/inspection projection to existing mapper contract, omitting storage keys/providers and arbitrary inspection/ticket metadata while retaining intended fields. Account for lifecycle refresh before immutability assertions; use fresh actors with authenticated preconditions, restore/delete only owned Support fixtures. Reuse existing actual-app inspection/notice lifecycle, SQL privacy8, aggregate Support5, emergency7/4/1, import/deletion and accepted management proofs. C03-R2 aliases/preview and C03-R3 emergency/policy stay reconciliation items, not automatic tests. No new Support/emergency authority, purge rerun, field-policy adoption, new gate, hosted/provider, merge or deployment."
       }
     ],
     "currentTestOverlay": {
@@ -47566,10 +47818,54 @@
             "emergencyAndAudit",
             "merchantManagement"
           ],
-          "status": "BOUNDED_SQL_ROUTER_FULL_APP_PROOFS_PARTIAL_FIELDS",
+          "status": "SOURCE_AND_PROOF_LAYERS_RECONCILED_THREE_BOUNDED_FOLLOWUP_CONDITIONS",
           "condition": "Link current support/inspection/image/emergency/management actors and nested field consumers to accepted SQL, router and full-app layers; retain policy/alternate-projection exceptions explicitly.",
-          "next": "Reuse five-table Support, emergency remediation, owner import/deletion and current full-app management proofs. Reconcile only remaining sensitive projection/actor conditions; do not re-run purge or create another emergency authority.",
-          "newGate": false
+          "next": "MATRIX-C03-R1: add one bounded actual-app Support ticket read/DTO case using current full-app actor/session/SQL fixtures, after tracing DTOs and actor permissions. Cover own merchant list/detail, cross-merchant detail denial and ignored foreign identity hints, admin list for owner/manage_support assistant and denial for live unpermitted actors; compare exact nested message/attachment/inspection projection to existing mapper contract, omitting storage keys/providers and arbitrary inspection/ticket metadata while retaining intended fields. Account for lifecycle refresh before immutability assertions; use fresh actors with authenticated preconditions, restore/delete only owned Support fixtures. Reuse existing actual-app inspection/notice lifecycle, SQL privacy8, aggregate Support5, emergency7/4/1, import/deletion and accepted management proofs. C03-R2 aliases/preview and C03-R3 emergency/policy stay reconciliation items, not automatic tests. No new Support/emergency authority, purge rerun, field-policy adoption, new gate, hosted/provider, merge or deployment.",
+          "newGate": false,
+          "currentSourceReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportEmergencyManagementEvidenceReconciliation]",
+            "status": "CURRENT_SUPPORT_EMERGENCY_MANAGEMENT_PROOF_LAYERS_RECONCILED_NESTED_SUPPORT_READ_CELL_SELECTED",
+            "sourceReviewed": "e6753456e55304693ef3afa43ef10a32d606c55c",
+            "acceptedExecutable": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
+            "reviewComplete": true,
+            "sourcePins": 26,
+            "historicalRouteFiles": 14,
+            "historicalRegistrationRows": 70,
+            "sourceDrifts": 0,
+            "followupConditions": 3,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "applicationChanged": false,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "followupConditions": [
+            {
+              "id": "MATRIX-C03-R1",
+              "kind": "BOUNDED_ACTUAL_APP_NESTED_SUPPORT_READ_ACTOR_FIELD_GAP",
+              "selectedNext": true,
+              "routes": [
+                "GET /support/tickets",
+                "GET /support/tickets/:id",
+                "GET /admin/support/tickets"
+              ],
+              "condition": "Current nested ticket DTO contract and actor isolation through actual app, complementing accepted SQL/aggregate/lifecycle/notice evidence."
+            },
+            {
+              "id": "MATRIX-C03-R2",
+              "kind": "ALIAS_PREVIEW_IMAGE_EVIDENCE_RECONCILIATION",
+              "automaticNewTest": false,
+              "condition": "Link image write/download and preview route aliases, current guarded legacy fallthrough, exact session binding and DTO consumers to existing runtime/service evidence before selecting any missing case."
+            },
+            {
+              "id": "MATRIX-C03-R3",
+              "kind": "EMERGENCY_ALTERNATE_PROJECTION_AND_POLICY_RECONCILIATION",
+              "automaticNewTest": false,
+              "condition": "Reuse current emergency remediation/service/router proofs, owner-only snapshots and merchant notices; retain FIELD003 audit/early-warning cross-consumer decision unapproved. Historic baseline open statements are not current remediation failures."
+            }
+          ]
         },
         {
           "id": "MATRIX-C04",
@@ -47766,7 +48062,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Continue MATRIX-C03 (existing gate, not new scope): reconcile support/inspection/image/emergency/merchant-management actor and nested field consumer evidence against accepted five-table Support, emergency remediation, owner import/deletion and current full-app management proofs. Start from the existing finite workQueue entry and named boundaries; preserve FIELD002/003/004/005 and retention/policy dependencies. Do not rerun accepted purge/recovery/auth proofs or create another emergency authority; select only a demonstrated unmet sensitive projection/actor condition before any new test. MATRIX-C02's selected R1/R2/R3 conditions are bounded accepted, not all authentication variants or parent matrix closure. GitHub-only; no OTP/pairing redesign, policy adoption, new gate, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "MATRIX-C03-R1: add one bounded actual-app Support ticket read/DTO case using current full-app actor/session/SQL fixtures, after tracing DTOs and actor permissions. Cover own merchant list/detail, cross-merchant detail denial and ignored foreign identity hints, admin list for owner/manage_support assistant and denial for live unpermitted actors; compare exact nested message/attachment/inspection projection to existing mapper contract, omitting storage keys/providers and arbitrary inspection/ticket metadata while retaining intended fields. Account for lifecycle refresh before immutability assertions; use fresh actors with authenticated preconditions, restore/delete only owned Support fixtures. Reuse existing actual-app inspection/notice lifecycle, SQL privacy8, aggregate Support5, emergency7/4/1, import/deletion and accepted management proofs. C03-R2 aliases/preview and C03-R3 emergency/policy stay reconciliation items, not automatic tests. No new Support/emergency authority, purge rerun, field-policy adoption, new gate, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -48138,6 +48434,25 @@
       "gitBlob": "0c9076cbf71178a729a2264cc24e67d3c08f2a78",
       "catalogueRegenerated": false,
       "interpretation": "One MATRIX-C02 current full-app case adds after70TAP. Both half-configured admin authority profiles refuse all16canonical/mixed-case paths503 before input handling, named legacy files/selected business rows stable, complete-mode owner200/anonymous401 preserved. No credentials/OTP/hosted execution. Current60-registration/43-key group source review does not accept all recovery/session/field conditions."
+    },
+    "currentSupportEmergencyManagementSourceReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportEmergencyManagementEvidenceReconciliation]",
+      "status": "CURRENT_SUPPORT_EMERGENCY_MANAGEMENT_PROOF_LAYERS_RECONCILED_NESTED_SUPPORT_READ_CELL_SELECTED",
+      "sourceReviewed": "e6753456e55304693ef3afa43ef10a32d606c55c",
+      "acceptedExecutable": "d17811ee367bb5bfe1371b8f3ea396177fe46e76",
+      "reviewComplete": true,
+      "sourcePins": 26,
+      "historicalRouteFiles": 14,
+      "historicalRegistrationRows": 70,
+      "sourceDrifts": 0,
+      "followupConditions": 3,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "applicationChanged": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
     }
   },
   "componentScopes": {
