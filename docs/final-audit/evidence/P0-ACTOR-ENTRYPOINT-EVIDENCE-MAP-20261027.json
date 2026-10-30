@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "MATRIX-C03-R2: reconcile existing current image upload/download aliases, preview routes/session binding, required-mode legacy fallthrough and frontend DTO consumers against accepted actual-app Support notice/inspection, aggregate cutover and image-service evidence before selecting any demonstrated unmet runtime condition. Retain C03-R3 emergency alternate-projection/FIELD003 policy reconciliation and accepted management/import/deletion proofs. Do not repeat accepted read/consent/purge/recovery journeys or add policy/authority, gate, hosted/provider, merge or deployment.",
+    "nextExactAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -44701,14 +44701,217 @@
           "retries": 0
         },
         "nextExactAction": "MATRIX-C03-R2: reconcile existing current image upload/download aliases, preview routes/session binding, required-mode legacy fallthrough and frontend DTO consumers against accepted actual-app Support notice/inspection, aggregate cutover and image-service evidence before selecting any demonstrated unmet runtime condition. Retain C03-R3 emergency alternate-projection/FIELD003 policy reconciliation and accepted management/import/deletion proofs. Do not repeat accepted read/consent/purge/recovery journeys or add policy/authority, gate, hosted/provider, merge or deployment."
+      },
+      {
+        "boundary": "currentSupportImagePreviewReconciliationAndFullApp",
+        "date": "2026-10-30",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C03-R2",
+        "status": "BOUNDED_SUPPORT_IMAGE_ALIAS_BYTES_AND_LEGACY_RETIREMENT_FULL_APP_ACCEPTED_PREVIEW_LAYERS_RECONCILED",
+        "sourceReviewed": "fab8558df942cab13ee951139070713a3dced258",
+        "source": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+        "sourceTree": "4edec7931e00005f5c6319db217fa7cd9dd1783f",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "sha": "173c5c0a96c273d04bc0977ec9eb667b6fd6e0dd"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-security.ts",
+            "sha": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-support-image-alias-postgres-routes.ts",
+            "sha": "b6a5df901b2a25b31c43e7d0f8e145baae587d6b"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+            "sha": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234"
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+            "sha": "5da7b9fd813d11b258b2270aa0353500f90e0283"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+            "sha": "08a4f4881d4887b850bb7b6a42ba171fccc064dd"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresSupportImageAuthority.ts",
+            "sha": "06d1aca51b75e912689ebb53fa727a6287365f98"
+          },
+          {
+            "path": "artifacts/api-server/tests/support-postgres-cutover.integration.test.ts",
+            "sha": "9b24cc9f6efba70b2594c55d9c68bed0cbba4e9c"
+          },
+          {
+            "path": "artifacts/api-server/tests/support-image-write-order-postgres.integration.test.ts",
+            "sha": "87eac446734213f6517aec4af93d7b301e670816"
+          },
+          {
+            "path": "artifacts/api-server/tests/support-postgres-cutover-guards.test.ts",
+            "sha": "8ab005b22b0cd07689d9ac91c0fb8a7fb514c5d8"
+          },
+          {
+            "path": "artifacts/api-server/tests/support-images.integration.test.mjs",
+            "sha": "8a503655808d8e24a457a7e7b274f6995c6342e6"
+          },
+          {
+            "path": "artifacts/api-server/tests/support-preview.integration.test.mjs",
+            "sha": "1586fb1cf24b8042803d302154082b2234ade65b"
+          },
+          {
+            "path": "artifacts/fawri/src/components/support/PrivateSupportImage.tsx",
+            "sha": "1c56dce86caa3ac878e3359cf232b702cb8bf37f"
+          },
+          {
+            "path": "artifacts/fawri/src/components/support/MerchantSupportImageButton.tsx",
+            "sha": "843d8fb9a88db2297137912a8895227bf45030ac"
+          },
+          {
+            "path": "artifacts/fawri/src/components/support/AdminSupportImageButton.tsx",
+            "sha": "fe12658f51ba6046a870b7c5d71649e84759138f"
+          },
+          {
+            "path": "artifacts/fawri/src/components/admin/SupportPreviewLauncher.tsx",
+            "sha": "f1eb7adba9b02baf2bda0662c24f48aca8d2d41b"
+          },
+          {
+            "path": "artifacts/fawri/src/pages/dashboard/SupportPage.tsx",
+            "sha": "9bd2e8064b0d791fbe9fc75b3912a8e55e0c213b"
+          },
+          {
+            "path": "artifacts/fawri/src/components/admin/AdminSupportTab.tsx",
+            "sha": "cf7d6756631a11b3bfc0a562e080a7edbdaec78e"
+          },
+          {
+            "path": "artifacts/fawri/src/pages/AdminSupportPreviewPage.tsx",
+            "sha": "5faabaec91f7e6f3cca0aa3fde89b2bad698b177"
+          },
+          {
+            "path": "scripts/fawri-support-browser-audit.mjs",
+            "sha": "5dcb66c158d7c800d1814d634d79b1a738602370"
+          },
+          {
+            "path": "scripts/fawri-support-preview-browser-audit.mjs",
+            "sha": "7b291959465b51e5343211adb3c3ba3ece582dae"
+          },
+          {
+            "path": ".github/workflows/support-browser-audit.yml",
+            "sha": "dc5f60ec0ed994c7f0356e4af4d44d45170d348b"
+          },
+          {
+            "path": ".github/workflows/support-preview-browser-audit.yml",
+            "sha": "d63ffa064fb1708a24e2d96cba1995791e490899"
+          }
+        ],
+        "reconciliation": {
+          "currentUploadRoutes": [
+            "POST /support-images/merchant/tickets/:ticketId/messages",
+            "POST /support-images/admin/tickets/:ticketId/messages",
+            "POST /support-images/tickets/:ticketId/messages"
+          ],
+          "currentReadRoute": "GET /support-images/attachments/:attachmentId",
+          "serviceResultVsHttpProjection": "saveSupportImagePostgres returns an internal nested URL plus storage metadata; HTTP handlers discard that result and rehydrate ticket through mapAttachment, yielding the flat authorized URL and no storage secrets. Do not label internal service return as leaked HTTP data.",
+          "retiredLegacy": "Legacy images and preview mount after current auth-security handlers and enforceLegacyAuthProductionCutoverGate; originalUrl comparison is lowercased without changing IDs. Nested service-result image path is not a supported current alias.",
+          "imageServiceLayer": "Existing five source test declarations cover no-file mutation unauthorized/inactive, SQL rollback cleanup, symlink write rejection and orphan reconciliation; not claimed newly executed in97 broader invocations.",
+          "existingAggregate": "support-postgres-cutover integration runs aggregate auth-security router; actual alias uploads, authorized image bytes status/type, foreign tenant denial, live grant revocation, approved preview secret projection/read-only/exact session mismatch/end refusal. Preserve five-TAP aggregate layer; not full app or browser.",
+          "existingActualApp": "Operational notification full-app test already starts real previews and observes merchant termination/approved-window lifecycle plus ended snapshot refusal; no need to repeat these accepted lifecycle flows.",
+          "legacyIntegration": "support-images and support-preview mjs launch built API with JSON/legacy auth fixtures. Retain legacy scope, not required-mode PostgreSQL acceptance.",
+          "browserLayer": "Existing actual-component browser scripts use synthetic HTTP responses/role props; useful UI freshness/role/expiry evidence, not server session/RLS proof. Workflow/source review only here; no new browser execution or result claimed.",
+          "frontendContractObservation": {
+            "serverFields": [
+              "kind",
+              "original_name"
+            ],
+            "consumerFields": [
+              "type",
+              "file_name"
+            ],
+            "path": "artifacts/fawri/src/components/support/PrivateSupportImage.tsx",
+            "impact": "Current PostgreSQL DTO preserves url/mime/id used to fetch/render bytes, but file_name used for fallback/title/alt is absent under the reviewed direct typed casts; no adapter found in merchant/admin page mapping reviewed. Type assertions do not transform JSON. This is a bounded display-contract discrepancy, not an authorization bypass or confirmed data leak.",
+            "action": "Retain as a non-critical display compatibility note for later frontend work; exact-byte current-authority runtime proves image transport separately. This does not add a P0 release gate or require a new security test. Do not silently mark the whole frontend contract accepted.",
+            "p0GateAdded": false,
+            "priority": "NON_CRITICAL_DISPLAY_COMPATIBILITY"
+          }
+        },
+        "test": {
+          "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+          "newFunctionalCases": 1,
+          "newTapCases": 1,
+          "previousFullAppTap": 73,
+          "expectedFullAppTap": 74,
+          "expectedUploads": 3,
+          "expectedExactByteReads": 9,
+          "expectedDenials": 14,
+          "expectedRetiredRequests": 4,
+          "freshAuthenticationPrechecks": 4,
+          "ownFiveTableSnapshot": true,
+          "ownedFileBytesSnapshot": true,
+          "ownedOnlyCleanup": true,
+          "noImageFaultRerun": true,
+          "blob": "68d0d86cd772fe13a02610767c41a4c5386b1cb1"
+        },
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "ciFilesChanged": 0,
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "accepted": true,
+        "target": {
+          "run": 41089107977,
+          "job": 124177959490,
+          "tap": 107,
+          "files": 6,
+          "fullAppTap": 74,
+          "uploads": 3,
+          "exactByteReads": 9,
+          "denials": 14,
+          "retiredLegacyRequests": 4,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "checkout": "e7a5abd4655a7cbcf18344b284aa2f697fa5ca5e",
+          "checkoutTreeMatched": true,
+          "markerObserved": true,
+          "runtime": "v24.22.2"
+        },
+        "broader": {
+          "run": 41089107861,
+          "job": 124177960342,
+          "tap": 836,
+          "invocations": 97,
+          "uniqueFiles": 94,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "checkout": "e7a5abd4655a7cbcf18344b284aa2f697fa5ca5e",
+          "checkoutTreeMatched": true,
+          "reusedSupportAggregateTap": 5
+        },
+        "allCi": {
+          "success": 58,
+          "total": 58,
+          "attempt": 1,
+          "retries": 0
+        },
+        "nextExactAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
+        "limits": [
+          "One actual-app integration case, not every MIME/size/status/physical device/browser or hosted combination.",
+          "Existing aggregate preview session binding/read-only and actual-app lifecycle proofs reused, not repeated or upgraded to all preview/consumer acceptance.",
+          "No new image SQL rollback/symlink/orphan execution claim; existing service test source scope retained.",
+          "Non-critical attachment display contract discrepancy is explicit; no new P0 gate or full frontend acceptance.",
+          "FIELD003 metadata cross-consumer policy remains unapproved; parent privacy matrix OPEN."
+        ]
       }
     ],
     "currentTestOverlay": {
-      "source": "14dff84a618986380f6d7a68353cd64a02b1434b",
+      "source": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "0801f7a5b1092fa7d184bde28ae10d696786018a",
+      "gitBlob": "68d0d86cd772fe13a02610767c41a4c5386b1cb1",
       "catalogueRegenerated": false,
-      "interpretation": "One bounded MATRIX-C03-R1 actual-full-app Support nested read case; full73/target106. Twelve exact DTO reads,15 actor/tenant denials,4 fresh authentication prechecks, owned5-table read stability and cascade cleanup. No app/image/preview/policy/hosted change or parent-gate closure."
+      "interpretation": "One bounded current actual-app Support image alias/private byte/retired nested-path case; full74/target107.3uploads,9exact-byte reads,14denials,4retired legacy requests; owned SQL/files and selected legacy JSON preserved, cleanup verified. Preview aggregate/actual-app lifecycle layers reused; non-critical display naming discrepancy recorded. No application/policy/hosted or parent closure."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -47929,9 +48132,9 @@
             "emergencyAndAudit",
             "merchantManagement"
           ],
-          "status": "BOUNDED_NESTED_SUPPORT_READ_ACCEPTED_ALIAS_AND_EMERGENCY_RECONCILIATION_REMAIN",
+          "status": "BOUNDED_SUPPORT_READ_AND_IMAGE_RUNTIME_ACCEPTED_PREVIEW_RECONCILED_EMERGENCY_POLICY_RECONCILIATION_REMAINS",
           "condition": "Link current support/inspection/image/emergency/management actors and nested field consumers to accepted SQL, router and full-app layers; retain policy/alternate-projection exceptions explicitly.",
-          "next": "MATRIX-C03-R2: reconcile existing current image upload/download aliases, preview routes/session binding, required-mode legacy fallthrough and frontend DTO consumers against accepted actual-app Support notice/inspection, aggregate cutover and image-service evidence before selecting any demonstrated unmet runtime condition. Retain C03-R3 emergency alternate-projection/FIELD003 policy reconciliation and accepted management/import/deletion proofs. Do not repeat accepted read/consent/purge/recovery journeys or add policy/authority, gate, hosted/provider, merge or deployment.",
+          "next": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
           "newGate": false,
           "currentSourceReview": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportEmergencyManagementEvidenceReconciliation]",
@@ -48001,7 +48204,43 @@
               "id": "MATRIX-C03-R2",
               "kind": "ALIAS_PREVIEW_IMAGE_EVIDENCE_RECONCILIATION",
               "automaticNewTest": false,
-              "condition": "Link image write/download and preview route aliases, current guarded legacy fallthrough, exact session binding and DTO consumers to existing runtime/service evidence before selecting any missing case."
+              "condition": "Link image write/download and preview route aliases, current guarded legacy fallthrough, exact session binding and DTO consumers to existing runtime/service evidence before selecting any missing case.",
+              "status": "BOUNDED_IMAGE_RUNTIME_ACCEPTED_PREVIEW_PROOF_LAYERS_RECONCILED",
+              "proof": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportImagePreviewReconciliationAndFullApp]",
+                "status": "BOUNDED_SUPPORT_IMAGE_ALIAS_BYTES_AND_LEGACY_RETIREMENT_FULL_APP_ACCEPTED_PREVIEW_LAYERS_RECONCILED",
+                "source": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                "sourceTree": "4edec7931e00005f5c6319db217fa7cd9dd1783f",
+                "reviewedSourcePins": 23,
+                "newFunctionalCases": 1,
+                "newTapCases": 1,
+                "newGroup": false,
+                "fullAppTap": 74,
+                "targetedTap": 107,
+                "targetFiles": 6,
+                "targetRun": 41089107977,
+                "targetJob": 124177959490,
+                "uploads": 3,
+                "exactByteReads": 9,
+                "denials": 14,
+                "retiredLegacyRequests": 4,
+                "freshAuthenticationPrechecks": 4,
+                "broaderTap": 836,
+                "broaderInvocations": 97,
+                "broaderUniqueFiles": 94,
+                "broaderRun": 41089107861,
+                "broaderJob": 124177960342,
+                "allCiSuccess": 58,
+                "accepted": true,
+                "applicationFilesChanged": 0,
+                "testFilesChanged": 1,
+                "ciFilesChanged": 0,
+                "nonCriticalDisplayCompatibilityNote": true,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             },
             {
               "id": "MATRIX-C03-R3",
@@ -48077,8 +48316,82 @@
                 "policyAdopted": false,
                 "userActionRequiredNow": false
               }
+            },
+            {
+              "id": "MATRIX-C03-R2",
+              "scope": "Bounded image integration accepted and preview proof layers reconciled; display compatibility note not a new P0 gate.",
+              "proof": {
+                "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportImagePreviewReconciliationAndFullApp]",
+                "status": "BOUNDED_SUPPORT_IMAGE_ALIAS_BYTES_AND_LEGACY_RETIREMENT_FULL_APP_ACCEPTED_PREVIEW_LAYERS_RECONCILED",
+                "source": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+                "sourceTree": "4edec7931e00005f5c6319db217fa7cd9dd1783f",
+                "reviewedSourcePins": 23,
+                "newFunctionalCases": 1,
+                "newTapCases": 1,
+                "newGroup": false,
+                "fullAppTap": 74,
+                "targetedTap": 107,
+                "targetFiles": 6,
+                "targetRun": 41089107977,
+                "targetJob": 124177959490,
+                "uploads": 3,
+                "exactByteReads": 9,
+                "denials": 14,
+                "retiredLegacyRequests": 4,
+                "freshAuthenticationPrechecks": 4,
+                "broaderTap": 836,
+                "broaderInvocations": 97,
+                "broaderUniqueFiles": 94,
+                "broaderRun": 41089107861,
+                "broaderJob": 124177960342,
+                "allCiSuccess": 58,
+                "accepted": true,
+                "applicationFilesChanged": 0,
+                "testFilesChanged": 1,
+                "ciFilesChanged": 0,
+                "nonCriticalDisplayCompatibilityNote": true,
+                "parentGateClosed": false,
+                "newGate": false,
+                "policyAdopted": false,
+                "userActionRequiredNow": false
+              }
             }
-          ]
+          ],
+          "currentSupportImageAliasFullAppProof": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportImagePreviewReconciliationAndFullApp]",
+            "status": "BOUNDED_SUPPORT_IMAGE_ALIAS_BYTES_AND_LEGACY_RETIREMENT_FULL_APP_ACCEPTED_PREVIEW_LAYERS_RECONCILED",
+            "source": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+            "sourceTree": "4edec7931e00005f5c6319db217fa7cd9dd1783f",
+            "reviewedSourcePins": 23,
+            "newFunctionalCases": 1,
+            "newTapCases": 1,
+            "newGroup": false,
+            "fullAppTap": 74,
+            "targetedTap": 107,
+            "targetFiles": 6,
+            "targetRun": 41089107977,
+            "targetJob": 124177959490,
+            "uploads": 3,
+            "exactByteReads": 9,
+            "denials": 14,
+            "retiredLegacyRequests": 4,
+            "freshAuthenticationPrechecks": 4,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "broaderRun": 41089107861,
+            "broaderJob": 124177960342,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "applicationFilesChanged": 0,
+            "testFilesChanged": 1,
+            "ciFilesChanged": 0,
+            "nonCriticalDisplayCompatibilityNote": true,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          }
         },
         {
           "id": "MATRIX-C04",
@@ -48275,7 +48588,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C03-R2: reconcile existing current image upload/download aliases, preview routes/session binding, required-mode legacy fallthrough and frontend DTO consumers against accepted actual-app Support notice/inspection, aggregate cutover and image-service evidence before selecting any demonstrated unmet runtime condition. Retain C03-R3 emergency alternate-projection/FIELD003 policy reconciliation and accepted management/import/deletion proofs. Do not repeat accepted read/consent/purge/recovery journeys or add policy/authority, gate, hosted/provider, merge or deployment.",
+      "nextCurrentAction": "MATRIX-C03-R3: reconcile current emergency owner snapshots, merchant notices and alternate audit/early-warning projections against accepted remediation7/diagnostic4/router1 and current full-app management/early-warning evidence. Retain FIELD003 cross-consumer metadata policy unapproved; historic baseline open diagnostics are not current remediation failures. Reuse accepted Support nested/image HTTP, aggregate preview exact-session/readonly and actual-app lifecycle proofs. Keep the attachment label/type mismatch as an explicit non-critical display compatibility note, not a new P0 gate or automatic test/fix. After C03 resolution follow MATRIX-C04 existing cashier/SEQ/device evidence queue; no duplicate pairing/OTP/owner approval or purge work. GitHub-only; no policy/authority/denominator expansion, hosted/provider, merge or deployment.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -48705,6 +49018,48 @@
       "gitBlob": "33f8727a73bb654aaa2eaf7cf6423a54260b465a",
       "catalogueRegenerated": false,
       "interpretation": "One bounded MATRIX-C02-R3 actual-full-app owner recovery status case after71 previousTAP; full72/target105. Eighteen actor denials, three fresh assistant authentication prechecks, six exact owner field reads over three owned metadata states, read authority unchanged and owned metadata restored. No application/OTP/policy/hosted change or parent-gate closure."
+    },
+    "currentSupportImageAliasFullAppProof": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentSupportImagePreviewReconciliationAndFullApp]",
+      "status": "BOUNDED_SUPPORT_IMAGE_ALIAS_BYTES_AND_LEGACY_RETIREMENT_FULL_APP_ACCEPTED_PREVIEW_LAYERS_RECONCILED",
+      "source": "8694d1fcc81ecca56d410357916b7c4ad1d3b5d9",
+      "sourceTree": "4edec7931e00005f5c6319db217fa7cd9dd1783f",
+      "reviewedSourcePins": 23,
+      "newFunctionalCases": 1,
+      "newTapCases": 1,
+      "newGroup": false,
+      "fullAppTap": 74,
+      "targetedTap": 107,
+      "targetFiles": 6,
+      "targetRun": 41089107977,
+      "targetJob": 124177959490,
+      "uploads": 3,
+      "exactByteReads": 9,
+      "denials": 14,
+      "retiredLegacyRequests": 4,
+      "freshAuthenticationPrechecks": 4,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "broaderRun": 41089107861,
+      "broaderJob": 124177960342,
+      "allCiSuccess": 58,
+      "accepted": true,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "ciFilesChanged": 0,
+      "nonCriticalDisplayCompatibilityNote": true,
+      "parentGateClosed": false,
+      "newGate": false,
+      "policyAdopted": false,
+      "userActionRequiredNow": false
+    },
+    "previousTestOverlayBeforeSupportImageAliases20261030": {
+      "source": "14dff84a618986380f6d7a68353cd64a02b1434b",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "0801f7a5b1092fa7d184bde28ae10d696786018a",
+      "catalogueRegenerated": false,
+      "interpretation": "One bounded MATRIX-C03-R1 actual-full-app Support nested read case; full73/target106. Twelve exact DTO reads,15 actor/tenant denials,4 fresh authentication prechecks, owned5-table read stability and cascade cleanup. No app/image/preview/policy/hosted change or parent-gate closure."
     }
   },
   "componentScopes": {
