@@ -93,11 +93,14 @@ test(
     const runtimeDirectory = path.join(dataDirectory, "runtime");
     let merchantId = "";
     let phoneOwned = false;
+    const peerId = `golden-self-peer-${id}`;
+    let peerOwned = false;
 
     let child;
     t.after(async () => cleanupResources([
       ["server", () => stopTestChild(child)],
       ["fixture accounts", async () => {
+        if (peerOwned) await pool.query("DELETE FROM accounts WHERE id = $1", [peerId]);
         if (phoneOwned) await pool.query("DELETE FROM accounts WHERE phone = $1 AND kind = 'merchant'", [phone]);
       }],
       ["actual runtime fixture", () => runtimeFixture.dispose()],
@@ -282,5 +285,116 @@ test(
       cookieByName(login.response, "fawri_merchant_session_v2"),
       "hashed-password login must issue the secure v2 merchant session cookie",
     );
+
+    const originalCookie = cookieByName(login.response, "fawri_merchant_session_v2");
+    const verificationCookie = cookieByName(verified.response, "fawri_merchant_session_v2");
+    const peerDevice = `golden-self-peer-device-${id}`;
+    await pool.query(`INSERT INTO accounts
+      (id, kind, phone, password_hash, state, language, phone_verified, phone_verified_at)
+      SELECT $2, 'merchant', $3, password_hash, 'active', language, TRUE, now()
+      FROM accounts WHERE id = $1`, [merchantId, peerId, unknownPhone]);
+    peerOwned = true;
+    await pool.query(`INSERT INTO merchants
+      (id, account_id, owner_name, store_name, activity_type, status, account_status, onboarding_status, country_code, currency_code, timezone)
+      SELECT $2, $2, 'Peer Owner', 'Peer Store', activity_type, status, account_status, onboarding_status, country_code, currency_code, timezone
+      FROM merchants WHERE id = $1`, [merchantId, peerId]);
+    async function secureRequest(endpoint, cookie, device = deviceId, method = "GET", body) {
+      return jsonRequest(`${baseUrl}/api/auth/${endpoint}`, {
+        method,
+        headers: { ...(cookie ? { Cookie: cookie } : {}), "X-Fawri-Device-Id": device,
+          ...(body ? { "Content-Type": "application/json" } : {}) },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+        signal: AbortSignal.timeout(3000),
+      });
+    }
+    async function passwordLogin(loginPhone, loginPassword, device = deviceId) {
+      return jsonRequest(`${baseUrl}/api/auth/login`, {
+        method: "POST", headers: { "Content-Type": "application/json", "X-Fawri-Device-Id": device },
+        body: JSON.stringify({ phone: loginPhone, password: loginPassword }),
+        signal: AbortSignal.timeout(3000),
+      });
+    }
+    const peerLogin = await passwordLogin(unknownPhone, password, peerDevice);
+    assert.equal(peerLogin.response.status, 200, JSON.stringify(peerLogin.body));
+    const peerCookie = cookieByName(peerLogin.response, "fawri_merchant_session_v2");
+    assert.ok(peerCookie);
+    const lifecycleRow = (await pool.query(
+      "SELECT account_status, onboarding_status FROM merchants WHERE id = $1", [merchantId])).rows[0];
+    for (const endpoint of ["me", "lifecycle"]) {
+      for (const [cookie, device] of [[undefined, deviceId], ["fawri_merchant_session_v2=invalid", deviceId], [originalCookie, peerDevice]]) {
+        assert.equal((await secureRequest(endpoint, cookie, device)).response.status, 401);
+      }
+      const own = await secureRequest(`${endpoint}?merchant_id=${peerId}&merchantId=${peerId}&phone=${unknownPhone}`, originalCookie);
+      assert.equal(own.response.status, 200, JSON.stringify(own.body));
+      assert.match(own.response.headers.get("cache-control") || "", /no-store/);
+      if (endpoint === "me") {
+        assert.equal(own.body?.account?.id, merchantId);
+        assert.equal(own.body?.merchant?.id, merchantId);
+        assert.equal(own.body?.merchant_profile?.tenantId, merchantId);
+        assert.equal(JSON.stringify(own.body).includes(credential.rows[0].password_hash), false);
+      } else {
+        assert.deepEqual(own.body?.lifecycle, {
+          merchant_id: merchantId, account_status: lifecycleRow.account_status,
+          merchant_status: lifecycleRow.account_status === "pending_review" ? "pending_activation" : lifecycleRow.account_status,
+          onboarding_status: lifecycleRow.onboarding_status,
+        });
+      }
+    }
+    async function authorityState(accountId) {
+      const account = (await pool.query(
+        "SELECT password_hash, password_version, session_version, security_version FROM accounts WHERE id = $1", [accountId])).rows[0];
+      const sessions = (await pool.query(
+        "SELECT id, status, revoke_reason FROM account_sessions WHERE account_id = $1 ORDER BY id", [accountId])).rows;
+      return { account, sessions };
+    }
+    const beforeBadPassword = await authorityState(merchantId);
+    const peerBefore = await authorityState(peerId);
+    const nextPassword = "GoldenAuth2!";
+    const badPassword = await secureRequest("change-password", originalCookie, deviceId, "POST", {
+      current_password: "WrongCurrent1!", new_password: nextPassword, confirm_password: nextPassword,
+    });
+    assert.equal(badPassword.response.status, 401);
+    assert.equal(badPassword.body?.code, "CURRENT_PASSWORD_INVALID");
+    assert.deepEqual(await authorityState(merchantId), beforeBadPassword);
+    assert.equal((await secureRequest("me", originalCookie)).response.status, 200);
+
+    const changed = await secureRequest("change-password", originalCookie, deviceId, "POST", {
+      current_password: password, new_password: nextPassword, confirm_password: nextPassword,
+    });
+    assert.equal(changed.response.status, 200, JSON.stringify(changed.body));
+    assert.equal(changed.body?.reauthentication_required, true);
+    const afterPassword = await authorityState(merchantId);
+    assert.notEqual(afterPassword.account.password_hash, beforeBadPassword.account.password_hash);
+    for (const version of ["password_version", "session_version", "security_version"]) {
+      assert.equal(afterPassword.account[version], beforeBadPassword.account[version] + 1);
+    }
+    assert.ok(afterPassword.sessions.length >= 2);
+    assert.ok(afterPassword.sessions.every(row => row.status === "revoked"));
+    for (const stale of [originalCookie, verificationCookie]) {
+      for (const endpoint of ["me", "lifecycle"]) {
+        assert.equal((await secureRequest(endpoint, stale)).response.status, 401);
+      }
+    }
+    assert.equal((await passwordLogin(phone, password)).response.status, 401);
+    const renewed = await passwordLogin(phone, nextPassword);
+    assert.equal(renewed.response.status, 200, JSON.stringify(renewed.body));
+    const renewedCookie = cookieByName(renewed.response, "fawri_merchant_session_v2");
+    assert.ok(renewedCookie);
+    assert.equal((await secureRequest("me", renewedCookie)).response.status, 200);
+    const logout = await secureRequest("logout", renewedCookie, deviceId, "POST");
+    assert.equal(logout.response.status, 200);
+    assert.equal(cookieByName(logout.response, "fawri_merchant_session_v2"), "fawri_merchant_session_v2=");
+    for (const endpoint of ["me", "lifecycle"]) {
+      assert.equal((await secureRequest(endpoint, renewedCookie)).response.status, 401);
+    }
+    assert.ok((await authorityState(merchantId)).sessions.every(row => row.status === "revoked"));
+    assert.equal((await secureRequest("me", peerCookie, peerDevice)).response.status, 200);
+    assert.deepEqual(await authorityState(peerId), peerBefore);
+    console.log("P0_MERCHANT_SELF_SERVICE_FULL_APP_OBSERVED " + JSON.stringify({
+      actualApp: true, operationalPostgresRequired: true, authSessionsPostgresRequired: true,
+      routes: 4, merchants: 2, invalidActorReads: 6, selfProjectionChecks: 2,
+      badPasswordPreservedAuthority: true, passwordAdvancedVersionsAndRevokedSessions: true,
+      logoutReplayDenied: true, peerAuthorityUnchanged: true, devOtpOnly: true,
+    }));
   },
 );
