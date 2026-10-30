@@ -2119,5 +2119,64 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_ADMIN_INCOMPLETE_CUTOVER_FULL_APP_HTTP '+JSON.stringify({actualFullApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,allAssertionsPassed:passed,halfConfiguredProfiles:2,requests:16,noOtpDelivery:true,hosted:false}));
   });
 
+
+  await t.test('MATRIX-C02 owner recovery status is owner-only and projects no recovery secrets',async()=>{
+    const path='/api/auth/admin/owner-recovery/status';
+    const paths=[path,'/API/AuTh/AdMiN/OwNeR-ReCoVeRy/StAtUs/?account_id='+manager.id+'&merchant_id='+a.id];
+    const original=(await admin.query('SELECT metadata FROM accounts WHERE id=$1',[owner.id])).rows[0].metadata;
+    const businessBefore=await snapshot();
+    const extra=await auth.issueSession({accountId:owner.id,accountKind:'admin',tenantId:owner.id,adminRole:'owner_admin',deviceId:owner.device,permissions:[]});
+    await auth.revokeSession(extra.token,'admin','logout');
+    const revoked={...owner,cookie:ADMIN_SESSION_COOKIE+'='+extra.token};
+    const authority=async()=>{
+      const accounts=(await admin.query('SELECT id,metadata,password_version,session_version,security_version,state FROM accounts WHERE id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+      const sessions=(await admin.query('SELECT id,account_id,status,revoke_reason FROM account_sessions WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+      const devices=(await admin.query('SELECT id,account_id,status,trust_slot,revoked_at FROM trusted_devices WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+      const challenges=(await admin.query('SELECT to_jsonb(o) AS row FROM auth_otp_challenges o WHERE account_id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+      return {accounts,sessions,devices,challenges};
+    };
+    const stamp='2026-10-01T00:00:00.000Z',used='2026-10-02T00:00:00.000Z';
+    const secret='Synthetic-Owner-Recovery-Private-'+randomUUID();
+    const enabled={version:1,generation:secret+'-generation',recovery_id_hash:secret+'-id',key_1_hash:secret+'-key1',key_2_hash:secret+'-key2',enabled:true,created_at:stamp,used_at:null};
+    const states=[
+      {name:'disabled',metadata:{private_status_probe:secret},expected:{ok:true,enabled:false,created_at:null,used_at:null}},
+      {name:'enabled',metadata:{private_status_probe:secret,owner_recovery:enabled},expected:{ok:true,enabled:true,created_at:stamp,used_at:null}},
+      {name:'used',metadata:{private_status_probe:secret,owner_recovery:{...enabled,enabled:false,used_at:used}},expected:{ok:true,enabled:false,created_at:stamp,used_at:used}},
+    ];
+    let deniedCount=0,positiveCount=0,passed=false;
+    try{
+      await admin.query("UPDATE accounts SET metadata=$2::jsonb WHERE id=$1",[owner.id,JSON.stringify(states[1].metadata)]);
+      const before=await authority();
+      for(const variant of paths){
+        for(const [who,status,headers] of [
+          [undefined,401,{}],[a,401,{}],[b,401,{}],[manager,403,{}],[denied,403,{}],[viewer,403,{}],
+          [owner,401,{'X-Fawri-Device-Id':'wrong-owner-status-device'}],
+          [owner,401,{Cookie:owner.cookie+'; '+a.cookie}],[revoked,401,{}],
+        ]){
+          const r=await req(variant,who,'GET',undefined,headers);
+          assert.equal(r.status,status);assert.equal(JSON.stringify(r.body).includes(secret),false);
+          for(const field of ['enabled','created_at','used_at','owner_recovery','key_1_hash','key_2_hash'])assert.equal(Object.hasOwn(r.body,field),false);
+          assert.deepEqual(await authority(),before);deniedCount++;
+        }
+      }
+      for(const state of states){
+        await admin.query("UPDATE accounts SET metadata=$2::jsonb WHERE id=$1",[owner.id,JSON.stringify(state.metadata)]);
+        const stateBefore=await authority();
+        for(const variant of paths){
+          const r=await req(variant,owner);assert.equal(r.status,200);
+          assert.deepEqual(r.body,state.expected,state.name);assert.match(r.cache,/no-store/);
+          assert.equal(JSON.stringify(r.body).includes(secret),false);
+          assert.deepEqual(await authority(),stateBefore);positiveCount++;
+        }
+      }
+      assert.deepEqual(await snapshot(),businessBefore);passed=true;
+    }finally{
+      await admin.query('UPDATE accounts SET metadata=$2::jsonb WHERE id=$1',[owner.id,JSON.stringify(original)]);
+    }
+    assert.deepEqual((await admin.query('SELECT metadata FROM accounts WHERE id=$1',[owner.id])).rows[0].metadata,original);
+    assert.equal((await req(path,owner)).status,200);
+    console.log('P0_OWNER_RECOVERY_STATUS_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,deniedRequests:deniedCount,ownerReads:positiveCount,metadataStates:3,pathVariants:2,exactResponseKeys:4,authorityUnchangedByReads:true,ownedMetadataRestored:true,noOtpDelivery:true,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
