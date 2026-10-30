@@ -2439,5 +2439,55 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_MERCHANT_SSE_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,merchantSnapshots:2,peerReconnect:true,denials,liveUnreadCounts:[53,2],exactPayloadKeys:3,privateVariablesAbsent:true,foreignIdentityHintsIgnored:true,boundedServerClose:true,reconnectRevalidatesRevokedSession:true,instantRevocationClaimed:false,ownedNotificationsStable:true,hosted:false}));
   });
 
+
+  await t.test('MATRIX-C05 Knowledge read projections retain intended fields and isolate authenticated tenants in actual app',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant'),tenantIds=[x.id,y.id];
+    const knowledgeTables=['knowledge_embeddings','knowledge_audit_events','learned_answers','training_requests','saved_answers'];
+    const state=async()=>Object.fromEntries(await Promise.all(knowledgeTables.map(async table=>[table,(await admin.query('SELECT to_jsonb(t) AS row FROM '+table+' t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text',[tenantIds])).rows])));
+    const stamp='2026-10-30T10:00:00.000Z',expected=new Map();
+    let positives=0,denials=0,passed=false;
+    try{
+      for(const [who,digest] of [[x,'a'.repeat(64)],[y,'b'.repeat(64)]]){
+        await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[who.id]);
+        who.session=await auth.issueSession({accountId:who.id,accountKind:'merchant',tenantId:who.id,deviceId:who.device});
+        who.cookie=MERCHANT_SESSION_COOKIE+'='+who.session.token;
+        assert.equal((await req('/api/auth/me',who)).status,200);
+        const training='Read-training-'+randomUUID(),learned='Read-learned-'+randomUUID(),audit='Read-audit-'+randomUUID();
+        const preview='Own preview '+who.id,answer='Own answer '+who.id;
+        await admin.query("INSERT INTO training_requests(id,merchant_id,customer_text_preview,customer_text_hash,customer_text_length,detected_intent,detected_language,reason,suggested_reply,suggested_reply_source,status,rejection_reason,version,created_at,updated_at) VALUES($1,$2,$3,$4,200,'availability','en','read_fixture',$5,'merchant_draft','pending_review',NULL,3,$6,$6)",[training,who.id,preview,digest,answer,stamp]);
+        await admin.query("INSERT INTO learned_answers(id,merchant_id,training_request_id,intent,language,examples,keywords,answer_text,source,approval_status,confidence,safe_to_auto_reply,version,created_at,updated_at) VALUES($1,$2,$3,'availability','en',$4::jsonb,'[\"stock\"]'::jsonb,$5,'merchant_approved','approved',0.75,true,4,$6,$6)",[learned,who.id,training,JSON.stringify([preview]),answer,stamp]);
+        await admin.query("INSERT INTO knowledge_audit_events(id,merchant_id,action,entity_type,entity_id,actor_account_id,customer_text_hash,customer_text_length,signal_codes,decision_code,outcome_code,created_at) VALUES($1,$2,'training_reply_proposed','training_request',$3,$2,$4,12,'[\"synthetic_signal\"]'::jsonb,'read_fixture_decision','success',$5)",[audit,who.id,training,digest,stamp]);
+        expected.set(who.id,{
+          'training-requests':{ok:true,requests:[{id:training,merchantId:who.id,customerTextPreview:preview,customerTextHash:digest,detectedIntent:'availability',detectedLanguage:'en',reason:'read_fixture',suggestedReply:answer,suggestedReplySource:'merchant_draft',status:'pending_review',rejectionReason:null,version:3,createdAt:stamp,updatedAt:stamp}],nextCursor:null},
+          'learned-answers':{ok:true,answers:[{id:learned,merchantId:who.id,intent:'availability',language:'en',examples:[preview],keywords:['stock'],answerText:answer,source:'merchant_approved',approvalStatus:'approved',confidence:0.75,safeToAutoReply:true,trainingRequestId:training,version:4,createdAt:stamp,updatedAt:stamp}],nextCursor:null},
+          audit:{ok:true,events:[{id:audit,merchantId:who.id,action:'training_reply_proposed',entityType:'training_request',entityId:training,actor:'merchant',outcome:'success',customerTextHash:digest,customerTextLength:12,injectionSignals:['synthetic_signal'],metadata:{decisionCode:'read_fixture_decision'},createdAt:stamp}],nextCursor:null},
+        });
+      }
+      const before=await state(),business=await snapshot();
+      for(const family of ['training-requests','learned-answers','audit']){
+        const path='/api/knowledge/'+family;
+        for(const [who,peer] of [[x,y],[y,x]])for(const url of [path,'/API/KnOwLeDgE/'+family+'/?merchant_id='+peer.id+'&merchantId='+peer.id+'&account_id='+owner.id]){
+          const r=await req(url,who);assert.equal(r.status,200,JSON.stringify(r.body));assert.deepEqual(r.body,expected.get(who.id)[family]);positives++;
+          assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+        }
+        for(const [who,headers] of [[undefined,{}],[owner,{}],[denied,{}],[x,{'X-Fawri-Device-Id':'wrong-knowledge-device'}],[x,{Cookie:x.cookie+'; '+owner.cookie}],[x,{Cookie:MERCHANT_SESSION_COOKIE+'=synthetic-invalid'}]]){
+          const r=await req(path,who,'GET',undefined,headers);assert.equal(r.status,401,JSON.stringify(r.body));denials++;
+          for(const id of tenantIds)assert.equal(JSON.stringify(r.body).includes(id),false);
+          assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);
+        }
+      }
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      for(const family of ['training-requests','learned-answers','audit']){
+        assert.equal((await req('/api/knowledge/'+family,x)).status,401);denials++;
+        const peer=await req('/api/knowledge/'+family,y);assert.equal(peer.status,200);assert.deepEqual(peer.body,expected.get(y.id)[family]);positives++;
+      }
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);passed=true;
+    }finally{
+      for(const table of knowledgeTables)await admin.query('DELETE FROM '+table+' WHERE merchant_id=ANY($1::text[])',[tenantIds]);
+      for(const rows of Object.values(await state()))assert.deepEqual(rows,[]);
+    }
+    console.log('P0_KNOWLEDGE_READ_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,merchants:2,freshActorPrechecks:2,positiveReads:positives,deniedReads:denials,exactNonemptyDto:true,intendedPreviewHashVersionRetained:true,normalizedAuditDecisionCodeRetained:true,foreignIdentityHintsIgnored:true,ownedFiveTableStateStable:true,peerPreservedAfterRevocation:true,ownedCleanup:true,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
