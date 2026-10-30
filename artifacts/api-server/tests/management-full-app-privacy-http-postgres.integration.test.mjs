@@ -2189,5 +2189,96 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_OWNER_RECOVERY_STATUS_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,deniedRequests:deniedCount,ownerReads:positiveCount,metadataStates:3,pathVariants:2,exactResponseKeys:4,authorityUnchangedByReads:true,ownedMetadataRestored:true,noOtpDelivery:true,hosted:false}));
   });
 
+
+  await t.test('MATRIX-C03 support reads isolate merchants and project exact nested ticket DTOs for authorized actors',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant');
+    const helper=await actor('admin','assistant_admin',['manage_support']);
+    const unpermitted=await actor('admin','assistant_admin',[]);
+    for(const who of [x,y,helper,unpermitted]){
+      if(who.kind==='merchant')await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[who.id]);
+      else{
+        const device=await security.registerAdminDeviceAuthoritative({accountId:who.id,accountKind:'admin',deviceId:who.device,deviceLabel:'Support DTO proof'});
+        await security.setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:owner.id});
+      }
+      who.session=await auth.issueSession({accountId:who.id,accountKind:who.kind,tenantId:who.kind==='admin'?'fawri-admin':who.id,adminRole:who.role,deviceId:who.device,permissions:who.permissions});
+      who.cookie=(who.kind==='admin'?ADMIN_SESSION_COOKIE:MERCHANT_SESSION_COOKIE)+'='+who.session.token;
+      const me=await req(who.kind==='admin'?'/api/auth/admin/me':'/api/auth/me',who);
+      assert.equal(me.status,200,'fresh support actor authentication: '+JSON.stringify(me.body));
+    }
+    const stamp='2026-10-01T00:00:00.000Z',ended='2026-10-01T00:10:00.000Z',expires='2026-10-01T00:30:00.000Z';
+    const ownedTickets=[],expected=[],privateMarkers=[];
+    const supportTables=['support_tickets','support_messages','support_attachments','support_inspection_requests','support_preview_sessions'];
+    const supportState=async()=>Object.fromEntries(await Promise.all(supportTables.map(async table=>[table,(await admin.query('SELECT to_jsonb(t) AS row FROM '+table+' t WHERE '+(table==='support_tickets'?'id':'ticket_id')+'=ANY($1::text[]) ORDER BY to_jsonb(t)::text',[ownedTickets])).rows])));
+    const list='/api/auth/support/tickets',adminList='/api/auth/admin/support/tickets';
+    let positive=0,negative=0,passed=false;
+    try{
+      for(const merchant of [x,y]){
+        const ticket='Support-DTO-'+randomUUID(),message='Message-'+randomUUID(),system='System-'+randomUUID(),attachment='Attachment /?&=#-'+randomUUID(),deleted='Deleted-'+randomUUID(),inspection='Inspection-'+randomUUID();
+        const secret='Private-Support-'+randomUUID();privateMarkers.push(secret);ownedTickets.push(ticket);
+        const phone=(await admin.query('SELECT phone FROM accounts WHERE id=$1',[merchant.id])).rows[0].phone;
+        // Trusted SQL fixtures exercise read projection, not another create/consent/upload lifecycle.
+        // Closed tickets and ended approvals cannot become due during HTTP read assertions.
+        await admin.query("INSERT INTO support_tickets(id,merchant_id,subject,category,status,assigned_admin_account_id,closed_at,merchant_reminder_sent_at,assistant_reminder_sent_at,owner_escalated_at,metadata,created_at,updated_at) VALUES($1,$2,$3,'technical','closed',$4,$5,$5,$5,$5,$6::jsonb,$5,$5)",[ticket,merchant.id,'Subject '+ticket,helper.id,stamp,JSON.stringify({auto_closed_at:stamp,auto_closed_reason:'merchant_inactivity',private_storage:secret})]);
+        await admin.query("INSERT INTO support_messages(id,ticket_id,merchant_id,sender_type,sender_account_id,sender_name_snapshot,body,created_at) VALUES($1,$2,$3,'merchant',$3,'Synthetic',$4,$5),($6,$2,$3,'system',NULL,'System',$7,$8)",[message,ticket,merchant.id,'Body '+ticket,stamp,system,'System '+ticket,ended]);
+        for(const [id,isDeleted] of [[attachment,false],[deleted,true]])await admin.query("INSERT INTO support_attachments(id,message_id,ticket_id,merchant_id,original_file_name,mime_type,size_bytes,sha256,storage_provider,storage_key,deleted_at,created_at) VALUES($1,$2,$3,$4,'synthetic.png','image/png',19,$5,'filesystem',$6,$7,$8)",[id,message,ticket,merchant.id,'a'.repeat(64),secret+'/'+id,isDeleted?ended:null,stamp]);
+        await admin.query("INSERT INTO support_inspection_requests(id,ticket_id,merchant_id,admin_account_id,mode,reason,status,consent_decision,read_only,session_duration_minutes,requested_at,request_expires_at,responded_at,approved_at,ended_at,end_reason,metadata) VALUES($1,$2,$3,$4,'independent_read_only',$5,'approved','approved',true,30,$6,$7,$6,$6,$8,'merchant_terminated',$9::jsonb)",[inspection,ticket,merchant.id,helper.id,'Reason '+ticket,stamp,expires,ended,JSON.stringify({private_inspection:secret})]);
+        expected.push({
+          id:ticket,merchant_id:merchant.id,merchant_name:'Synthetic',merchant_phone:phone,subject:'Subject '+ticket,category:'technical',status:'closed',assigned_admin_id:helper.id,assigned_admin_name:'Synthetic',created_at:stamp,updated_at:stamp,closed_at:stamp,merchant_reminder_sent_at:stamp,auto_closed_at:stamp,auto_closed_reason:'merchant_inactivity',
+          messages:[
+            {id:message,sender_type:'merchant',sender_id:merchant.id,sender_name:'Synthetic',body:'Body '+ticket,created_at:stamp,attachments:[{id:attachment,kind:'image',original_name:'synthetic.png',mime_type:'image/png',size_bytes:19,url:'/api/auth/support-images/attachments/'+encodeURIComponent(attachment),created_at:stamp}]},
+            {id:system,sender_type:'system',sender_id:'system',sender_name:'System',body:'System '+ticket,created_at:ended,attachments:[]},
+          ],
+          inspection_requests:[{id:inspection,ticket_id:ticket,merchant_id:merchant.id,admin_id:helper.id,admin_name:'Synthetic',mode:'independent_read_only',reason:'Reason '+ticket,status:'approved',consent_decision:'approved',end_reason:'merchant_terminated',ended_at:ended,read_only:true,session_duration_minutes:30,requested_at:stamp,request_expires_at:expires,responded_at:stamp,approved_at:stamp,session_expires_at:expires}],
+        });
+      }
+      // Execute the real global lifecycle refresh before capturing owned-state invariants.
+      assert.equal((await req(adminList,owner)).status,200);
+      const before=await supportState(),business=await snapshot();
+      const noPrivate=result=>{
+        const wire=JSON.stringify(result.body);
+        for(const secret of privateMarkers)assert.equal(wire.includes(secret),false);
+        for(const field of ['storage_key','storage_provider','sha256','private_inspection','private_storage','metadata'])assert.equal(wire.includes('"'+field+'"'),false);
+      };
+      for(const [merchant,index] of [[x,0],[y,1]]){
+        const foreign=[x,y][1-index];
+        for(const suffix of ['', '?merchant_id='+foreign.id+'&account_id='+foreign.id]){
+          for(const path of [list+suffix,list+'/'+ownedTickets[index]+suffix]){
+            const r=await req(path,merchant);assert.equal(r.status,200);noPrivate(r);
+            assert.deepEqual(r.body,path.startsWith(list+'/')?{ok:true,ticket:expected[index]}:{ok:true,tickets:[expected[index]]});
+            assert.deepEqual(await supportState(),before);positive++;
+          }
+          const deniedRead=await req(list+'/'+ownedTickets[1-index]+suffix,merchant);
+          assert.equal(deniedRead.status,404);assert.equal(deniedRead.body.code,'SUPPORT_TICKET_NOT_FOUND');noPrivate(deniedRead);
+          assert.equal(JSON.stringify(deniedRead.body).includes('Body '+ownedTickets[1-index]),false);
+          assert.deepEqual(await supportState(),before);negative++;
+        }
+      }
+      for(const who of [owner,helper])for(const suffix of ['', '?merchant_id='+x.id+'&admin_id='+unpermitted.id]){
+        const r=await req(adminList+suffix,who);assert.equal(r.status,200);noPrivate(r);assert.equal(r.body.ok,true);
+        const rows=r.body.tickets.filter(row=>ownedTickets.includes(row.id)).sort((a,b)=>a.id.localeCompare(b.id));
+        const want=expected.map(row=>({...row,assistant_reminder_sent_at:stamp,owner_escalated_at:stamp})).sort((a,b)=>a.id.localeCompare(b.id));
+        assert.deepEqual(rows,want);assert.deepEqual(await supportState(),before);positive++;
+      }
+      for(const [path,who,status,headers] of [
+        [adminList,undefined,401,{}],[adminList,x,401,{}],[adminList,y,401,{}],[adminList,unpermitted,403,{}],
+        [list,undefined,401,{}],[list,owner,401,{}],[list,helper,401,{}],
+        [list+'/'+ownedTickets[0],undefined,401,{}],[list+'/'+ownedTickets[0],owner,401,{}],
+        [list,x,401,{'X-Fawri-Device-Id':'wrong-support-device'}],
+        [adminList,owner,401,{Cookie:owner.cookie+'; '+x.cookie}],
+      ]){
+        const r=await req(path,who,'GET',undefined,headers);assert.equal(r.status,status,JSON.stringify({path,status,body:r.body}));noPrivate(r);
+        for(const row of expected){assert.equal(JSON.stringify(r.body).includes(row.subject),false);assert.equal(JSON.stringify(r.body).includes(row.messages[0].body),false);}
+        assert.deepEqual(await supportState(),before);negative++;
+      }
+      assert.deepEqual(await snapshot(),business);
+      assert.equal((await req(adminList,helper)).status,200);passed=true;
+    }finally{
+      // Ticket FKs cascade only these owned messages, attachments, requests and previews.
+      await admin.query('DELETE FROM support_tickets WHERE id=ANY($1::text[])',[ownedTickets]);
+      for(const table of supportTables)assert.equal((await admin.query('SELECT count(*)::int AS n FROM '+table+' WHERE '+(table==='support_tickets'?'id':'ticket_id')+'=ANY($1::text[])',[ownedTickets])).rows[0].n,0);
+    }
+    console.log('P0_SUPPORT_NESTED_READ_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,positiveReads:positive,deniedReads:negative,merchants:2,freshActorPrechecks:4,exactNestedDto:true,softDeletedAttachmentOmitted:true,lifecycleWarmedBeforeSnapshot:true,ownedFiveTableStateUnchanged:true,ownedFixturesCleaned:true,physicalImageWritten:false,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
