@@ -1,3 +1,13 @@
+## MATRIX-C05: إضافة اختبار قراءة المعرفة — CI_PENDING — 2026-10-30
+
+المصدر المرشح [f3d09c87](https://github.com/nora953/fawri-production-source/commit/f3d09c87cd02a6f918fa2da4019e06b4c086def1)، الشجرة8b08124b62af129e715bc26a866cf04de21b36c6، testblob b6a500871f2d1567b87723654cc68c4517f33043. أضيف طفل واحد إلى اختبارmanagement-full-app القائم؛ لا تعديل تطبيق أو مخطط أو صلاحيات أو سياسة.
+
+يغطي المرشح GET /api/knowledge/training-requests و/learned-answers و/audit على تاجرين جديدين مع precheckمصادقة200، عيناتSQLمملوكة غير فارغة، مقارنةDTOكاملة، canonical/mixed-case وتلميحات هوية أجنبية، ورفض المجهول والإدارة والجهاز الخطأ والجلسات المجمعة/المزورة/الملغاة. مخطط الاختبار15قراءة مسموحة و21مرفوضة؛ هذه أعداد assertionsمكتوبة وليست نتائج تشغيل بعد. يحتفظ customerTextPreview/customerTextHash/version وmetadata.decisionCode المقصودة، ويتحقق من ثبات جداولKnowledgeالخمسة والبيانات المختارة وبقاء التاجر الآخر بعد إلغاء الجلسة، وينظف العينات المملوكة فقط. روجعت قيود المخطط الحالي؛ لم يُستخدم مخطط migrationالتاريخي كمرجع نهائي.
+
+بدأت58workflowللمصدر؛ آخر قراءة1SUCCESS/12in_progress/45queued. [المستهدف41104637622](https://github.com/nora953/fawri-production-source/actions/runs/41104637622) و[الأوسع41104637551](https://github.com/nora953/fawri-production-source/actions/runs/41104637551) في الانتظار. المتوقعfull76/target109عبر6ملفات، وليس PASSمثبتًا. لا إعادة تشغيل أو قبول أو نقلlastFullyAcceptedSource؛ يظل416a0210المصدر المقبول58/58،target108/full75،broad836/97/94.
+
+التالي إنهاء CIللمصدر نفسه، قراءة logs/markerوشجرةcheckout، وإصلاح أي فشل دون تخفيف الاختبار، ثم تثبيت القبول المحدود عند نجاح كل الشروط. يعاد استخدام C01 وSQLKnowledge ورحلةorder/pairingالحالية؛ لا تكرارSSEأوالربط العادي أوالتوسع إلىAI/كلCRUD. المصفوفة الأمOPEN؛29CLOSED_SOURCE/7OPEN/9BLOCKED؛completeP0Inventory=false وoverallPercentage=null؛NO-GO. GitHub-only،PR550Draft؛لاhosted/provider/merge/deploy أوP1/P2.
+
 ## قبول MATRIX-C05 للبث اللحظي ومطابقة إخوة المعرفة والطلبات — 2026-10-30
 
 اكتمل التحقق من [المصدر416a0210](https://github.com/nora953/fawri-production-source/commit/416a0210f41bb8da9d3627e32ff6eb0a039cc798): **58/58 workflows SUCCESS، بالمحاولة الأولى دون إعادة تشغيل**. انتهت المهمتان اللتان كانتا معلقتين؛ لا فشل مصدر أو تعديل تطبيقي إضافي بسبب انتظارCI/ReadTimeout. نقاط الانتظار السابقة أدناه تاريخية؛ هذه الفقرة هي الحالة الحالية.
