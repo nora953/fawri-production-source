@@ -1,5 +1,11 @@
 ## الحالة الحالية — 2026-10-31
 
+قُبل الشرطان المحددان لكتابات المعرفة/أسلوب الرد وتعديل طلب التاجر معًا عند74d3b349:58/58CI من المحاولة الأولى؛target112/full79 وbroad836/97/94. انتقلا إلى completedImplementationConditions ضمنC05. التفاصيل والحدود فيPROGRESS.md وactor-map#currentKnowledgeWriteAndOwnOrderFullApp.
+
+التاليC08 لربط بقية المنتجين والمستهلكين الحساسين؛ أُعيد استخدام أدلة التقارير واللقطات دون اختبار جديد. المؤشر الحالي فيclosurePlan.deliveryControl20261031. البوابة الأمOPEN؛29CLOSED_SOURCE/7OPEN/9BLOCKED وNO-GO. لا تغيير سياسة أو مزود أو بيئة مستضافة أو دمج أو نشر. نقاط الانتظار الأقدم أدناه تاريخية.
+
+## الحالة الحالية — 2026-10-31
+
 نُفذت عينة الفجوتين المحددتين في اختبارين داخل التطبيق الكامل عند74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7. CI_PENDING؛ لا قبول runtime بعد. تفاصيل المرشح وتشغيلاته فيPROGRESS.md وactor-map#currentKnowledgeWriteAndOwnOrderFullApp؛ مؤشر المتابعة الحالي فيclosurePlan.deliveryControl20261031. لا تغيير لحالات الإغلاق أو آخر مصدر مقبول؛NO-GO والقيود محفوظة.
 
 ## المتابعة الحالية — 2026-10-31
