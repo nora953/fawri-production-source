@@ -436,12 +436,12 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       id: text(item.id) || stableId("runtime-order-draft", conversationId),
       merchant_id: merchantId,
       conversation_id: conversationId,
-      customer_external_id: text(item.customer_external_id),
-      awaiting_field: text(item.awaiting_field),
+      customer_external_id: text(item.customer_external_id || item.customer_id),
+      awaiting_field: text(item.awaiting_field || item.awaiting),
       draft_data: item.draft_data || item,
       expires_at: item.expires_at || null,
-      created_at: item.created_at || null,
-      updated_at: item.updated_at || item.created_at || null,
+      created_at: item.created_at || item.started_at || null,
+      updated_at: item.updated_at || item.created_at || item.started_at || null,
     };
     const conversation = asArray(report.rows.conversations).find(
       (candidate) => candidate.id === conversationId && candidate.merchant_id === merchantId,
