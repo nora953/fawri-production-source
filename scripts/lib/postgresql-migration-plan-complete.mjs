@@ -443,6 +443,18 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       created_at: item.created_at || item.started_at || null,
       updated_at: item.updated_at || item.created_at || item.started_at || null,
     };
+    if ((item.customer_external_id && item.customer_id &&
+         text(item.customer_external_id) !== text(item.customer_id)) ||
+        (item.awaiting_field && item.awaiting &&
+         text(item.awaiting_field) !== text(item.awaiting)) ||
+        (item.created_at && item.started_at &&
+         text(item.created_at) !== text(item.started_at))) {
+      addError(report, "LEGACY_DRAFT_FIELD_ALIAS_CONFLICT", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
     const conversation = asArray(report.rows.conversations).find(
       (candidate) => candidate.id === conversationId && candidate.merchant_id === merchantId,
     );
