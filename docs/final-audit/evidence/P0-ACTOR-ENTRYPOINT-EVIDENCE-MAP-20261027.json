@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "MATRIX-C08: finish existing source inventory reconciliation by linking remaining catalogue/family sensitive producer/consumer rows to named accepted overlays or exact existing policy/physical/hosted dependencies. Use the completed four-question C05/C06 reconciliation, accepted grouped Knowledge/style and own-order runtime proof, classified22 startup calls and bounded7 report/snapshot paths. Return a finite list of genuinely unclassified P0 exposures, if any; do not repeat accepted families, one-test-per-registration, pairing, SQL financial faults, provider simulations or whole audits. Preserve FIELD002/003/004/005 and all16 existing nonclosed gate cards; no implied policy/hosted/merge/deploy approval.",
+    "nextExactAction": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO. FIELD002-R1's old premature request remains withdrawn; current extension behavior is intentional and no stripping policy is selected. Read existing consumerUseReconciliation20261028 and field-policy decision forms before any question or implementation.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -46658,6 +46658,1999 @@
         "newCiRuns": 0,
         "parentGateClosed": false,
         "newGate": false
+      },
+      {
+        "boundary": "currentC08SourceContinuityAndOpaqueConsumerLedger",
+        "date": "2026-10-31",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C08",
+        "sourceReviewed": "74d2a4e8308e8ed053edb11bee6a6185cc355cc8",
+        "acceptedExecutable": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+        "status": "CURRENT_CODE_CONTINUITY_AND64_OPAQUE_REFERENCES_RECONCILED_FIELD_POLICY_ACCEPTANCE_OPEN",
+        "codeModuleContinuity": {
+          "oldCodeModules": 318,
+          "currentCodeModules": 318,
+          "newCode": 0,
+          "removedCode": 0,
+          "changed": [
+            {
+              "path": "artifacts/api-server/src/app.ts",
+              "previous": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+              "current": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+              "previous": "188eeaa89b4fdd4cdb8cae44ab0997da24bee572",
+              "current": "14f545ca14ab14f409714a7aae06a36bc4d649e1"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-security.ts",
+              "previous": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+              "current": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+              "previous": "a96246c760be858132e43db49c1b2ff52776c879",
+              "current": "f9912a5218dc68a1482fae1695c32d096da78bc4"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/channel-operations.ts",
+              "previous": "fa466ea2bd55771ebf51f01abec4bd172086ccb2",
+              "current": "71d4d35550cedfdbb64fdba18f40b17362c42fe0"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/merchant-regional.ts",
+              "previous": "7b1fac506cfecb816e639a9d7beb64e833555432",
+              "current": "5f4f7b594cb6f31ad3ba806cb861858473f12607"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/merchant-settings.ts",
+              "previous": "eac167a6892b348fa811d6622c1c2a5633846720",
+              "current": "9a9ff086fc88e1fabd8be3940d084b53e928f55c"
+            },
+            {
+              "path": "artifacts/api-server/src/services/merchantDeletionProviderIdentifierRetirement.ts",
+              "previous": "8fa7e00c730c7ec11d4b0f962c9e0704d9a6a995",
+              "current": "d3283ef8eb0aed08b7f6752d87c0173bf9cf2d90"
+            },
+            {
+              "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+              "previous": "6e56efeab5f5cc19aa503b078e64fff6382e6fe9",
+              "current": "5b3c856cae817b625e52eda978bf994283775505"
+            },
+            {
+              "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+              "previous": "e455b1402558b821997ebce9e16d8893c8c00ed9",
+              "current": "4d0a819ba19148e9a8471e710f6bbdfc413bc04b"
+            },
+            {
+              "path": "artifacts/api-server/src/services/postgresDurableJobQueue.ts",
+              "previous": "05922f957a12bd09d6671082c52f8f5085ee0723",
+              "current": "22638f632eb845da91fafe74c02abe41e8d8ee70"
+            },
+            {
+              "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+              "previous": "9ea596dd997d4536f41402e65950d60cc12479a4",
+              "current": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2"
+            }
+          ]
+        },
+        "registeredFileContinuity": {
+          "files": 54,
+          "unchanged": 47,
+          "changedAccepted": 7,
+          "rows": [
+            {
+              "path": "artifacts/api-server/src/app.ts",
+              "prior": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+              "current": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22",
+              "unchanged": false,
+              "currentPinBoundaries": [
+                "currentC05C06FourQuestionClosureReconciliation"
+              ],
+              "acceptedBoundary": "currentMetaActivationPathMatchingFullApp",
+              "acceptedSource": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+              "acceptedCurrentBlob": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22",
+              "currentProofBlobMatched": true
+            },
+            {
+              "path": "artifacts/api-server/src/observability/router.ts",
+              "prior": "974716b7df074a6d59ab0ad42dd4d907b91df93e",
+              "current": "974716b7df074a6d59ab0ad42dd4d907b91df93e",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentC08BoundedReportSnapshotReaderReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/health.ts",
+              "prior": "3d68d7d33e0d0a237792697d7c3c7d4bc72bcc8a",
+              "current": "3d68d7d33e0d0a237792697d7c3c7d4bc72bcc8a",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts",
+              "prior": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37",
+              "current": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentAdminIncompleteCutoverFullApp",
+                "currentOwnerRecoveryDeviceOtpEvidenceReconciliation",
+                "currentAuthFiniteConditionConsolidation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts",
+              "prior": "f330455d224194cd12401b31752b1b1929f69e9e",
+              "current": "f330455d224194cd12401b31752b1b1929f69e9e",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentAdminIncompleteCutoverFullApp",
+                "currentAuthFiniteConditionConsolidation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-admin-routes.ts",
+              "prior": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+              "current": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentAdminIncompleteCutoverFullApp",
+                "currentAuthFiniteConditionConsolidation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+              "prior": "188eeaa89b4fdd4cdb8cae44ab0997da24bee572",
+              "current": "14f545ca14ab14f409714a7aae06a36bc4d649e1",
+              "unchanged": false,
+              "currentPinBoundaries": [
+                "currentAuthFiniteConditionConsolidation",
+                "currentOwnerRecoveryStatusEvidenceReconciliation"
+              ],
+              "acceptedBoundary": "currentOwnerRecoveryStageRefusalAggregateRuntime",
+              "acceptedSource": "7b3f4a451451baa5fc420f392dd7231498459c11",
+              "currentProofBlobMatched": true,
+              "acceptedCurrentBlob": "14f545ca14ab14f409714a7aae06a36bc4d649e1"
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-public-routes.ts",
+              "prior": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+              "current": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentAdminIncompleteCutoverFullApp",
+                "currentAuthFiniteConditionConsolidation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-security.ts",
+              "prior": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+              "current": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e",
+              "unchanged": false,
+              "currentPinBoundaries": [
+                "currentOwnerRecoveryDeviceOtpEvidenceReconciliation",
+                "currentAuthFiniteConditionConsolidation",
+                "currentOwnerRecoveryStatusEvidenceReconciliation",
+                "currentSupportEmergencyManagementEvidenceReconciliation",
+                "currentSupportNestedReadFullApp",
+                "currentSupportImagePreviewReconciliationAndFullApp",
+                "currentEmergencyAlternateProjectionEvidenceReconciliation"
+              ],
+              "acceptedBoundary": "currentAdminIncompleteCutoverFullApp",
+              "acceptedSource": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+              "acceptedCurrentBlob": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e",
+              "currentProofBlobMatched": true
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-session-routes.ts",
+              "prior": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+              "current": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentAdminIncompleteCutoverFullApp",
+                "currentAuthFiniteConditionConsolidation",
+                "currentMerchantSelfServiceEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+              "prior": "9fb113d4938fb138e96f913cea367e7859048b5c",
+              "current": "9fb113d4938fb138e96f913cea367e7859048b5c",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+              "prior": "39f8bc60d040674732b182c0333cf55227b6bf8b",
+              "current": "39f8bc60d040674732b182c0333cf55227b6bf8b",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+              "prior": "9198cf27912b3071f7eab59f74ab40dbb50d1f01",
+              "current": "9198cf27912b3071f7eab59f74ab40dbb50d1f01",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+              "prior": "cd6c904610ed95206d309f52efa11a96b744012e",
+              "current": "cd6c904610ed95206d309f52efa11a96b744012e",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation",
+                "currentEmergencyAlternateProjectionEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-support-admin-lifecycle-postgres-routes.ts",
+              "prior": "a1806154af21c4b4436f76b0086de11293d9b050",
+              "current": "a1806154af21c4b4436f76b0086de11293d9b050",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation",
+                "currentSupportNestedReadFullApp"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-support-image-alias-postgres-routes.ts",
+              "prior": "b6a5df901b2a25b31c43e7d0f8e145baae587d6b",
+              "current": "b6a5df901b2a25b31c43e7d0f8e145baae587d6b",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation",
+                "currentSupportImagePreviewReconciliationAndFullApp"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-support-inspection-decision-postgres-routes.ts",
+              "prior": "53944a0016eb7ea29e13417641f30dd173457308",
+              "current": "53944a0016eb7ea29e13417641f30dd173457308",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-support-message-postgres-routes.ts",
+              "prior": "691335f4844f04129166f0fb3472879ce4f58234",
+              "current": "691335f4844f04129166f0fb3472879ce4f58234",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+              "prior": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+              "current": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation",
+                "currentSupportNestedReadFullApp",
+                "currentSupportImagePreviewReconciliationAndFullApp"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/support-images.ts",
+              "prior": "290efb7be74e9e52bad541e15f2df5df9d9259e4",
+              "current": "290efb7be74e9e52bad541e15f2df5df9d9259e4",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/support-preview.ts",
+              "prior": "31680e06afc432e43727f576eb6a039b68d36c51",
+              "current": "31680e06afc432e43727f576eb6a039b68d36c51",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+              "prior": "e5387972b31ef272418158e8b1be52bc81dd6b75",
+              "current": "e5387972b31ef272418158e8b1be52bc81dd6b75",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation",
+                "currentEmergencyAlternateProjectionEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts",
+              "prior": "b4b51261b6eda63d4ca03f81491c609bb7883171",
+              "current": "b4b51261b6eda63d4ca03f81491c609bb7883171",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation",
+                "currentEmergencyAlternateProjectionEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/emergency-merchant-notices.ts",
+              "prior": "6751ad597496ee8605f59d2605a89689bd1c49c1",
+              "current": "6751ad597496ee8605f59d2605a89689bd1c49c1",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/emergency-owner-snapshot.ts",
+              "prior": "318da1b944fe61f3ad741d053ebe80939f6d5640",
+              "current": "318da1b944fe61f3ad741d053ebe80939f6d5640",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/emergency-read-access.ts",
+              "prior": "2c7a58d4bc0c1bd80bde68322bad9baa25f6bfd9",
+              "current": "2c7a58d4bc0c1bd80bde68322bad9baa25f6bfd9",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/emergency-read-directory.ts",
+              "prior": "685dd77044243ca39e398e3986cd74f12c2d4496",
+              "current": "685dd77044243ca39e398e3986cd74f12c2d4496",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentSupportEmergencyManagementEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-provider-cost-postgres-routes.ts",
+              "prior": "d54287ef80755bd70765e72925d805c2b7398003",
+              "current": "d54287ef80755bd70765e72925d805c2b7398003",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/channel-durable-job-admin.ts",
+              "prior": "c62f7e42d66b85265f85184678cd8222f02e4501",
+              "current": "c62f7e42d66b85265f85184678cd8222f02e4501",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+              "prior": "a96246c760be858132e43db49c1b2ff52776c879",
+              "current": "f9912a5218dc68a1482fae1695c32d096da78bc4",
+              "unchanged": false,
+              "currentPinBoundaries": [],
+              "acceptedBoundary": "currentCatalogProductInventoryWriteFullApp",
+              "acceptedSource": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
+              "acceptedCurrentBlob": "f9912a5218dc68a1482fae1695c32d096da78bc4",
+              "currentProofBlobMatched": true
+            },
+            {
+              "path": "artifacts/api-server/src/routes/channel-operations.ts",
+              "prior": "fa466ea2bd55771ebf51f01abec4bd172086ccb2",
+              "current": "71d4d35550cedfdbb64fdba18f40b17362c42fe0",
+              "unchanged": false,
+              "currentPinBoundaries": [],
+              "acceptedBoundary": "currentChannelListFullApp",
+              "acceptedSource": "dcb035d0c838e41c7b0ead0ba11b07cf827055ff",
+              "acceptedCurrentBlob": "71d4d35550cedfdbb64fdba18f40b17362c42fe0",
+              "currentProofBlobMatched": true
+            },
+            {
+              "path": "artifacts/api-server/src/routes/merchant-regional.ts",
+              "prior": "7b1fac506cfecb816e639a9d7beb64e833555432",
+              "current": "5f4f7b594cb6f31ad3ba806cb861858473f12607",
+              "unchanged": false,
+              "currentPinBoundaries": [],
+              "acceptedBoundary": "currentMerchantRegionalFullApp",
+              "acceptedSource": "2485efbc3a19805d62291bdd267bc26db95d5cda",
+              "acceptedCurrentBlob": "5f4f7b594cb6f31ad3ba806cb861858473f12607",
+              "currentProofBlobMatched": true
+            },
+            {
+              "path": "artifacts/api-server/src/routes/merchant-settings.ts",
+              "prior": "eac167a6892b348fa811d6622c1c2a5633846720",
+              "current": "9a9ff086fc88e1fabd8be3940d084b53e928f55c",
+              "unchanged": false,
+              "currentPinBoundaries": [],
+              "acceptedBoundary": "currentMerchantSettings",
+              "acceptedSource": "89d335e75144c99552943b1018efdaf7d387c84b",
+              "acceptedCurrentBlob": "9a9ff086fc88e1fabd8be3940d084b53e928f55c",
+              "currentProofBlobMatched": true
+            },
+            {
+              "path": "artifacts/api-server/src/routes/reports-operations.ts",
+              "prior": "c77c0f1cb1d43e73dbcdafb5b687d4a4199f3f95",
+              "current": "c77c0f1cb1d43e73dbcdafb5b687d4a4199f3f95",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentC08BoundedReportSnapshotReaderReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/conversation-operations.ts",
+              "prior": "38b54a24b735c0c7b0e2df66f86e624beed6156d",
+              "current": "38b54a24b735c0c7b0e2df66f86e624beed6156d",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/order-operations.ts",
+              "prior": "20e26c8a1b0cf5705084bbe563349e4b5c3f89ae",
+              "current": "20e26c8a1b0cf5705084bbe563349e4b5c3f89ae",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentMerchantRealtimeFullApp",
+                "currentKnowledgeOrderSiblingEvidenceReconciliation",
+                "currentC05C06FourQuestionClosureReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/bot-training.ts",
+              "prior": "0811211beabba018181c711e54bb5647ebbc59f0",
+              "current": "0811211beabba018181c711e54bb5647ebbc59f0",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentLegacyKnowledgeRetirementFullApp"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/knowledge-operations.ts",
+              "prior": "1b655329d08ada28c531d0277338c4913d9fe137",
+              "current": "1b655329d08ada28c531d0277338c4913d9fe137",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentLegacyKnowledgeRetirementFullApp",
+                "currentMerchantRealtimeFullApp",
+                "currentKnowledgeOrderSiblingEvidenceReconciliation",
+                "currentC05C06FourQuestionClosureReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/saved-answer-operations.ts",
+              "prior": "7b862281e94507455f20a91535acd15fdc5c5c47",
+              "current": "7b862281e94507455f20a91535acd15fdc5c5c47",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentLegacyKnowledgeRetirementFullApp",
+                "currentKnowledgeOrderSiblingEvidenceReconciliation",
+                "currentC05C06FourQuestionClosureReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/saved-answers.ts",
+              "prior": "1c87b80710b19b987c32cc9229702295f25a185f",
+              "current": "1c87b80710b19b987c32cc9229702295f25a185f",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentLegacyKnowledgeRetirementFullApp"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/training-operations.ts",
+              "prior": "4476518b3b5af45c0f3839f1db0ea7352068d88f",
+              "current": "4476518b3b5af45c0f3839f1db0ea7352068d88f",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentKnowledgeOrderSiblingEvidenceReconciliation",
+                "currentC05C06FourQuestionClosureReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts",
+              "prior": "11f699c7af92a14aea653c6557287aa3ca5f324f",
+              "current": "11f699c7af92a14aea653c6557287aa3ca5f324f",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentCashierActorPairingSequenceEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+              "prior": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+              "current": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentCashierActorPairingSequenceEvidenceReconciliation",
+                "currentC08BoundedReportSnapshotReaderReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/cashier-staff-operations.ts",
+              "prior": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+              "current": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentCashierActorPairingSequenceEvidenceReconciliation",
+                "currentC08BoundedReportSnapshotReaderReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/cashier-subscription-operations.ts",
+              "prior": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f",
+              "current": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentCashierActorPairingSequenceEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/cashier-sync-operations.ts",
+              "prior": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf",
+              "current": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentCashierActorPairingSequenceEvidenceReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts",
+              "prior": "3e13c1291187dc254a1bbeee09dda6755f411e2d",
+              "current": "3e13c1291187dc254a1bbeee09dda6755f411e2d",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentMetaActivationPathMatchingFullApp",
+                "currentC05C06FourQuestionClosureReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/saas-billing.ts",
+              "prior": "3665c398beb2822853b4e83a158b714380a2410e",
+              "current": "3665c398beb2822853b4e83a158b714380a2410e",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentMetaActivationPathMatchingFullApp",
+                "currentC05C06FourQuestionClosureReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/subscription-entitlement-pg.ts",
+              "prior": "86c85847b2e0b4d0abc49f9703ecc6433c8b89ff",
+              "current": "86c85847b2e0b4d0abc49f9703ecc6433c8b89ff",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+              "prior": "f22d0f89ab1899e9af7f32b9d7d2bca3f6861a36",
+              "current": "f22d0f89ab1899e9af7f32b9d7d2bca3f6861a36",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentMerchantRealtimeFullApp"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/merchant-realtime-pg.ts",
+              "prior": "6ab8322e113e621e06837068b48400b77d17a4d8",
+              "current": "6ab8322e113e621e06837068b48400b77d17a4d8",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentMerchantRealtimeFullApp"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/retention-guard.ts",
+              "prior": "400af5f17b1f386602c10a6554dc40ce8ad72b1e",
+              "current": "400af5f17b1f386602c10a6554dc40ce8ad72b1e",
+              "unchanged": true,
+              "currentPinBoundaries": []
+            },
+            {
+              "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+              "prior": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+              "current": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentMetaActivationPathMatchingFullApp",
+                "currentC05C06FourQuestionClosureReconciliation"
+              ]
+            },
+            {
+              "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+              "prior": "2704c0a99970c736e0de2a91ef7901f961614ec4",
+              "current": "2704c0a99970c736e0de2a91ef7901f961614ec4",
+              "unchanged": true,
+              "currentPinBoundaries": [
+                "currentMetaActivationPathMatchingFullApp",
+                "currentC05C06FourQuestionClosureReconciliation"
+              ]
+            }
+          ]
+        },
+        "routeModuleContinuity": {
+          "currentRouteModules": 66,
+          "notInCatalogueSourceInputs": [],
+          "removedCatalogueRouteModules": []
+        },
+        "unchangedRouteHelperModules": [
+          {
+            "path": "artifacts/api-server/src/routes/auth-login-route-support.ts",
+            "current": "c831357b4bf0cc866afcc9221dec4338491fb767",
+            "prior": "c831357b4bf0cc866afcc9221dec4338491fb767"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-password-route-support.ts",
+            "current": "d7908a3ea113920ca933bbad306484edda70389e",
+            "prior": "d7908a3ea113920ca933bbad306484edda70389e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-route-common.ts",
+            "current": "2caf6afde7a437dc8f8bcea824111a71ed505064",
+            "prior": "2caf6afde7a437dc8f8bcea824111a71ed505064"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth.ts",
+            "current": "61958ff03a7412661783c9e0210b94ba00ae10cb",
+            "prior": "61958ff03a7412661783c9e0210b94ba00ae10cb"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntime.ts",
+            "current": "38d3e4a88696bf90eec37f7d33e4ff93cad6384e",
+            "prior": "38d3e4a88696bf90eec37f7d33e4ff93cad6384e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+            "current": "6b48bf08c5416e67e513e3b80ccbaedd0b4ece7b",
+            "prior": "6b48bf08c5416e67e513e3b80ccbaedd0b4ece7b"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntimePart2.ts",
+            "current": "b31cc89d479006bcf0d128d7360178c34f1f46da",
+            "prior": "b31cc89d479006bcf0d128d7360178c34f1f46da"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+            "current": "37a8125ca5dc3c3028b68ac286d22b656c2e9594",
+            "prior": "37a8125ca5dc3c3028b68ac286d22b656c2e9594"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+            "current": "5d2c161fb3e04dfbd5055149929f01bc160b48e9",
+            "prior": "5d2c161fb3e04dfbd5055149929f01bc160b48e9"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/index.ts",
+            "current": "a0d029e0c19bacd2fd15fb2048d2c03b7af9d723",
+            "prior": "a0d029e0c19bacd2fd15fb2048d2c03b7af9d723"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+            "current": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+            "prior": "7083e4a5038dfa8f9b9586a490ae272b119c17fb"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/indexModulePart2.ts",
+            "current": "7799cfea1f05b4bad1f386eb549876b3ca00fd45",
+            "prior": "7799cfea1f05b4bad1f386eb549876b3ca00fd45"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/knowledge-route-utils.ts",
+            "current": "a26c69eeda93739f7f942f931f67cd957f6a0c1b",
+            "prior": "a26c69eeda93739f7f942f931f67cd957f6a0c1b"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts",
+            "current": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70",
+            "prior": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70"
+          }
+        ],
+        "changedNonRouteProducerContinuity": [
+          {
+            "path": "artifacts/api-server/src/services/merchantDeletionProviderIdentifierRetirement.ts",
+            "sha": "d3283ef8eb0aed08b7f6752d87c0173bf9cf2d90",
+            "priorSha": "8fa7e00c730c7ec11d4b0f962c9e0704d9a6a995",
+            "acceptedSource": "94090776025da649cede64f253fea58a1dff15f2",
+            "proofBlobMatched": true,
+            "evidence": "closurePlan.field005OrderReplyIntentRetirement20261028"
+          },
+          {
+            "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+            "sha": "5b3c856cae817b625e52eda978bf994283775505",
+            "priorSha": "6e56efeab5f5cc19aa503b078e64fff6382e6fe9",
+            "acceptedSource": "94090776025da649cede64f253fea58a1dff15f2",
+            "proofBlobMatched": true,
+            "evidence": "closurePlan.legacyMetaHistoryReplayProof"
+          },
+          {
+            "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+            "sha": "4d0a819ba19148e9a8471e710f6bbdfc413bc04b",
+            "priorSha": "e455b1402558b821997ebce9e16d8893c8c00ed9",
+            "acceptedSource": "94090776025da649cede64f253fea58a1dff15f2",
+            "proofBlobMatched": true,
+            "evidence": "closurePlan.legacyMetaHistoryReplayProof"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresDurableJobQueue.ts",
+            "sha": "22638f632eb845da91fafe74c02abe41e8d8ee70",
+            "priorSha": "05922f957a12bd09d6671082c52f8f5085ee0723",
+            "acceptedSource": "94090776025da649cede64f253fea58a1dff15f2",
+            "proofBlobMatched": true,
+            "evidence": "closurePlan.legacyMetaHistoryReplayProof"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+            "sha": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2",
+            "priorSha": "9ea596dd997d4536f41402e65950d60cc12479a4",
+            "acceptedSource": "94090776025da649cede64f253fea58a1dff15f2",
+            "proofBlobMatched": true,
+            "evidence": "closurePlan.field005OrderReplyIntentRetirement20261028"
+          }
+        ],
+        "opaqueResponseRows": [
+          {
+            "historicalRegistrationIndex": 4,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts:63",
+            "method": "POST",
+            "path": "/api/auth/admin/device-otp/resend",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37",
+            "topLevelKeys": [
+              "challenge_id",
+              "expires_at",
+              "ok",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentAdminDeviceOtpOwnershipAggregateRuntime",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 5,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts:84",
+            "method": "POST",
+            "path": "/api/auth/admin/device-otp/verify",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "b6844cae268db2c0d4099b5e3ac42f92bbf25e37",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentAdminDeviceOtpOwnershipAggregateRuntime",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 7,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:139",
+            "method": "POST",
+            "path": "/api/auth/admins",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "adminAccountProjectionAndOwnerPasswordReset",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 8,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:192",
+            "method": "PATCH",
+            "path": "/api/auth/admins/:adminId/enabled",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "adminAccountProjectionAndOwnerPasswordReset",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 9,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts:232",
+            "method": "PATCH",
+            "path": "/api/auth/admins/:adminId/permissions",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "f330455d224194cd12401b31752b1b1929f69e9e",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "adminAccountProjectionAndOwnerPasswordReset",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 21,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-admin-routes.ts:84",
+            "method": "POST",
+            "path": "/api/auth/admins",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "adminAccountProjectionAndOwnerPasswordReset",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 22,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-admin-routes.ts:137",
+            "method": "PATCH",
+            "path": "/api/auth/admins/:adminId/enabled",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "adminAccountProjectionAndOwnerPasswordReset",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 23,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-admin-routes.ts:176",
+            "method": "PATCH",
+            "path": "/api/auth/admins/:adminId/permissions",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "f246443540cebae8266b9aa7dd0d7fe8c3942958",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "adminAccountProjectionAndOwnerPasswordReset",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 35,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts:87",
+            "method": "GET",
+            "path": "/api/auth/admin/emergency-read-access/directory",
+            "family": "emergencyAndAudit",
+            "currentFileGitBlob": "b4b51261b6eda63d4ca03f81491c609bb7883171",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentEmergencyAlternateProjectionEvidenceReconciliation"
+            ],
+            "kind": "BOUNDED_EMERGENCY_LAYER_AND_FIELD_POLICY",
+            "limit": "Owner/requester lifecycle and merchant notice projections retain accepted source/runtime bounds. FIELD003/005 permissions/retention not adopted.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 36,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts:102",
+            "method": "GET",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "family": "emergencyAndAudit",
+            "currentFileGitBlob": "b4b51261b6eda63d4ca03f81491c609bb7883171",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentEmergencyAlternateProjectionEvidenceReconciliation"
+            ],
+            "kind": "BOUNDED_EMERGENCY_LAYER_AND_FIELD_POLICY",
+            "limit": "Owner/requester lifecycle and merchant notice projections retain accepted source/runtime bounds. FIELD003/005 permissions/retention not adopted.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 43,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts:233",
+            "method": "GET",
+            "path": "/api/auth/admin/emergency-read-access/audit",
+            "family": "emergencyAndAudit",
+            "currentFileGitBlob": "b4b51261b6eda63d4ca03f81491c609bb7883171",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentEmergencyAlternateProjectionEvidenceReconciliation"
+            ],
+            "kind": "BOUNDED_EMERGENCY_LAYER_AND_FIELD_POLICY",
+            "limit": "Owner/requester lifecycle and merchant notice projections retain accepted source/runtime bounds. FIELD003/005 permissions/retention not adopted.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 44,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts:248",
+            "method": "GET",
+            "path": "/api/auth/emergency-read-access/notices",
+            "family": "emergencyAndAudit",
+            "currentFileGitBlob": "b4b51261b6eda63d4ca03f81491c609bb7883171",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentEmergencyAlternateProjectionEvidenceReconciliation"
+            ],
+            "kind": "BOUNDED_EMERGENCY_LAYER_AND_FIELD_POLICY",
+            "limit": "Owner/requester lifecycle and merchant notice projections retain accepted source/runtime bounds. FIELD003/005 permissions/retention not adopted.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 59,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts:227",
+            "method": "GET",
+            "path": "/api/auth/admin/owner-recovery/status",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "14f545ca14ab14f409714a7aae06a36bc4d649e1",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentOwnerRecoveryStatusFullApp",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 62,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts:295",
+            "method": "POST",
+            "path": "/api/auth/owner-recovery/:recoveryId/otp/request",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "14f545ca14ab14f409714a7aae06a36bc4d649e1",
+            "topLevelKeys": [
+              "challenge_id",
+              "expires_at",
+              "ok",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentOwnerRecoveryCanonicalAggregateRuntime",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 68,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-public-routes.ts:108",
+            "method": "POST",
+            "path": "/api/auth/signup",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+            "topLevelKeys": [
+              "challenge_id",
+              "expires_at",
+              "ok",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentMerchantIneligibleOtpResendFullApp",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 69,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-public-routes.ts:205",
+            "method": "POST",
+            "path": "/api/auth/otp/resend",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+            "topLevelKeys": [
+              "challenge_id",
+              "expires_at",
+              "message",
+              "ok",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentMerchantIneligibleOtpResendFullApp",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 70,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-public-routes.ts:244",
+            "method": "POST",
+            "path": "/api/auth/verify-otp",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentMerchantIneligibleOtpResendFullApp",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 73,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-public-routes.ts:318",
+            "method": "POST",
+            "path": "/api/auth/admin/device-otp/resend",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+            "topLevelKeys": [
+              "challenge_id",
+              "expires_at",
+              "ok",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentAdminDeviceOtpOwnershipAggregateRuntime",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 74,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-public-routes.ts:357",
+            "method": "POST",
+            "path": "/api/auth/admin/device-otp/verify",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentAdminDeviceOtpOwnershipAggregateRuntime",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 75,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-public-routes.ts:461",
+            "method": "POST",
+            "path": "/api/auth/password-reset/request",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "85fd691d22e9f27c05ac6eb4e417ef7df39cea90",
+            "topLevelKeys": [
+              "challenge_id",
+              "expires_at",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentMerchantIneligibleOtpResendFullApp",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 90,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-session-routes.ts:205",
+            "method": "GET",
+            "path": "/api/auth/me",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+            "topLevelKeys": [
+              "code",
+              "error",
+              "ok"
+            ],
+            "refs": [
+              "currentMerchantSelfServiceFullAppRuntime",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 91,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-session-routes.ts:220",
+            "method": "GET",
+            "path": "/api/auth/admin/me",
+            "family": "currentAuthAdmin",
+            "currentFileGitBlob": "041d0ca3a3d35a0c09a3e10766370bfb17d084d5",
+            "topLevelKeys": [
+              "code",
+              "error",
+              "ok"
+            ],
+            "refs": [
+              "currentAdminSelfSessions",
+              "currentAuthFiniteConditionConsolidation"
+            ],
+            "kind": "BOUNDED_AUTH_LAYER_REUSED",
+            "limit": "Keep actual-app versus aggregate scope. OTP/challenge fields are intentional current DTOs; not a new blanket removal policy. Duplicate PG/compatibility declarations do not make duplicate supported endpoints.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 118,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts:9",
+            "method": "GET",
+            "path": "/api/auth/admin/billing/verified-receipts",
+            "family": "billingAndVerifiedReceipts",
+            "currentFileGitBlob": "3e13c1291187dc254a1bbeee09dda6755f411e2d",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "paidMerchantDeletionAndReceiptReplay"
+            ],
+            "evidence": [
+              "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028"
+            ],
+            "kind": "MOUNTED_ROUTER_SQL_FAKE_PROVIDER_AND_POLICY_LAYERS",
+            "limit": "Real HTTP router/SQL and fake-provider tests retain their original scope. Whole-app inheritance, real provider and arbitrary receipt repair/retention are not inferred.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 119,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts:26",
+            "method": "POST",
+            "path": "/api/auth/admin/billing/verified-receipts/:eventId/replay-review",
+            "family": "billingAndVerifiedReceipts",
+            "currentFileGitBlob": "3e13c1291187dc254a1bbeee09dda6755f411e2d",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "paidMerchantDeletionAndReceiptReplay"
+            ],
+            "evidence": [
+              "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028"
+            ],
+            "kind": "MOUNTED_ROUTER_SQL_FAKE_PROVIDER_AND_POLICY_LAYERS",
+            "limit": "Real HTTP router/SQL and fake-provider tests retain their original scope. Whole-app inheritance, real provider and arbitrary receipt repair/retention are not inferred.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 120,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts:42",
+            "method": "POST",
+            "path": "/api/auth/admin/billing/verified-receipts/:eventId/replay",
+            "family": "billingAndVerifiedReceipts",
+            "currentFileGitBlob": "3e13c1291187dc254a1bbeee09dda6755f411e2d",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "paidMerchantDeletionAndReceiptReplay"
+            ],
+            "evidence": [
+              "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028"
+            ],
+            "kind": "MOUNTED_ROUTER_SQL_FAKE_PROVIDER_AND_POLICY_LAYERS",
+            "limit": "Real HTTP router/SQL and fake-provider tests retain their original scope. Whole-app inheritance, real provider and arbitrary receipt repair/retention are not inferred.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 121,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/authRoutesPart1.ts:57",
+            "method": "POST",
+            "path": "/api/auth/signup",
+            "family": "legacyAuthFallback",
+            "currentFileGitBlob": "9fb113d4938fb138e96f913cea367e7859048b5c",
+            "topLevelKeys": [
+              "merchant",
+              "message",
+              "ok",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentLegacyKnowledgeRetirementFullApp",
+              "currentAdminIncompleteCutoverFullApp"
+            ],
+            "kind": "RETIRED_OR_SHADOWED_REQUIRED_MODE",
+            "limit": "Legacy opaque body is not a supported PostgreSQL response. Current early handler or required-mode410 fence applies; do not rebuild JSON.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 122,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/authRoutesPart1.ts:170",
+            "method": "POST",
+            "path": "/api/auth/otp/resend",
+            "family": "legacyAuthFallback",
+            "currentFileGitBlob": "9fb113d4938fb138e96f913cea367e7859048b5c",
+            "topLevelKeys": [
+              "message",
+              "ok",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentLegacyKnowledgeRetirementFullApp",
+              "currentAdminIncompleteCutoverFullApp"
+            ],
+            "kind": "RETIRED_OR_SHADOWED_REQUIRED_MODE",
+            "limit": "Legacy opaque body is not a supported PostgreSQL response. Current early handler or required-mode410 fence applies; do not rebuild JSON.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 126,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/authRoutesPart1.ts:333",
+            "method": "POST",
+            "path": "/api/auth/password-reset/request",
+            "family": "legacyAuthFallback",
+            "currentFileGitBlob": "9fb113d4938fb138e96f913cea367e7859048b5c",
+            "topLevelKeys": [
+              "message",
+              "ok",
+              "retry_after_seconds"
+            ],
+            "refs": [
+              "currentLegacyKnowledgeRetirementFullApp",
+              "currentAdminIncompleteCutoverFullApp"
+            ],
+            "kind": "RETIRED_OR_SHADOWED_REQUIRED_MODE",
+            "limit": "Legacy opaque body is not a supported PostgreSQL response. Current early handler or required-mode410 fence applies; do not rebuild JSON.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 153,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/authRoutesPart2.ts:423",
+            "method": "GET",
+            "path": "/api/auth/admins/:adminId/work-monitor",
+            "family": "legacyAuthFallback",
+            "currentFileGitBlob": "39f8bc60d040674732b182c0333cf55227b6bf8b",
+            "topLevelKeys": [
+              "admin",
+              "ok",
+              "recent_logs"
+            ],
+            "refs": [
+              "currentLegacyKnowledgeRetirementFullApp",
+              "currentAdminIncompleteCutoverFullApp"
+            ],
+            "kind": "RETIRED_OR_SHADOWED_REQUIRED_MODE",
+            "limit": "Legacy opaque body is not a supported PostgreSQL response. Current early handler or required-mode410 fence applies; do not rebuild JSON.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 173,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/authRoutesPart3.ts:239",
+            "method": "POST",
+            "path": "/api/auth/merchants/:id/delete",
+            "family": "legacyAuthFallback",
+            "currentFileGitBlob": "9198cf27912b3071f7eab59f74ab40dbb50d1f01",
+            "topLevelKeys": [
+              "deletion_request"
+            ],
+            "refs": [
+              "currentLegacyKnowledgeRetirementFullApp",
+              "currentAdminIncompleteCutoverFullApp"
+            ],
+            "kind": "RETIRED_OR_SHADOWED_REQUIRED_MODE",
+            "limit": "Legacy opaque body is not a supported PostgreSQL response. Current early handler or required-mode410 fence applies; do not rebuild JSON.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 177,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/authRoutesPart3.ts:526",
+            "method": "PATCH",
+            "path": "/api/auth/merchants/:id/subscription",
+            "family": "legacyAuthFallback",
+            "currentFileGitBlob": "9198cf27912b3071f7eab59f74ab40dbb50d1f01",
+            "topLevelKeys": [
+              "ok",
+              "subscription"
+            ],
+            "refs": [
+              "currentLegacyKnowledgeRetirementFullApp",
+              "currentAdminIncompleteCutoverFullApp"
+            ],
+            "kind": "RETIRED_OR_SHADOWED_REQUIRED_MODE",
+            "limit": "Legacy opaque body is not a supported PostgreSQL response. Current early handler or required-mode410 fence applies; do not rebuild JSON.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 184,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts:95",
+            "method": "GET",
+            "path": "/api/cashier/management/discount-policies",
+            "family": "cashier",
+            "currentFileGitBlob": "11f699c7af92a14aea653c6557287aa3ca5f324f",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 186,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts:154",
+            "method": "PUT",
+            "path": "/api/cashier/management/staff/:staffId/discount-policy",
+            "family": "cashier",
+            "currentFileGitBlob": "11f699c7af92a14aea653c6557287aa3ca5f324f",
+            "topLevelKeys": [
+              "code",
+              "error",
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 187,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts:278",
+            "method": "GET",
+            "path": "/api/cashier/operator/discount-policy",
+            "family": "cashier",
+            "currentFileGitBlob": "11f699c7af92a14aea653c6557287aa3ca5f324f",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 188,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:68",
+            "method": "GET",
+            "path": "/api/cashier/operator/catalog-snapshot",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 189,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:68",
+            "method": "GET",
+            "path": "/api/cashier/operator/catalog-snapshot",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 192,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:101",
+            "method": "GET",
+            "path": "/api/cashier/operator/report",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 193,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:101",
+            "method": "GET",
+            "path": "/api/cashier/operator/report",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 198,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:158",
+            "method": "POST",
+            "path": "/api/cashier/operator/sync/sale",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 199,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:158",
+            "method": "POST",
+            "path": "/api/cashier/operator/sync/sale",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 200,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:182",
+            "method": "POST",
+            "path": "/api/cashier/operator/sync/return",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 201,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:182",
+            "method": "POST",
+            "path": "/api/cashier/operator/sync/return",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 202,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:206",
+            "method": "POST",
+            "path": "/api/cashier/operator/sync/void",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 203,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-operator-commerce.ts:206",
+            "method": "POST",
+            "path": "/api/cashier/operator/sync/void",
+            "family": "cashier",
+            "currentFileGitBlob": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 204,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-staff-operations.ts:167",
+            "method": "GET",
+            "path": "/api/cashier/management/report",
+            "family": "cashier",
+            "currentFileGitBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+            "topLevelKeys": [
+              "activity",
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 205,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-staff-operations.ts:167",
+            "method": "GET",
+            "path": "/api/cashier/management/report",
+            "family": "cashier",
+            "currentFileGitBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+            "topLevelKeys": [
+              "activity",
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 222,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-staff-operations.ts:371",
+            "method": "POST",
+            "path": "/api/cashier/management/stations/:stationId/pairing",
+            "family": "cashier",
+            "currentFileGitBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 223,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-staff-operations.ts:371",
+            "method": "POST",
+            "path": "/api/cashier/management/stations/:stationId/pairing",
+            "family": "cashier",
+            "currentFileGitBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 224,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-staff-operations.ts:388",
+            "method": "POST",
+            "path": "/api/cashier/station/pair",
+            "family": "cashier",
+            "currentFileGitBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 225,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-staff-operations.ts:388",
+            "method": "POST",
+            "path": "/api/cashier/station/pair",
+            "family": "cashier",
+            "currentFileGitBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 230,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-staff-operations.ts:447",
+            "method": "POST",
+            "path": "/api/cashier/operator/login",
+            "family": "cashier",
+            "currentFileGitBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+            "topLevelKeys": [
+              "cashier_entitlement",
+              "cashier_offline_entitlement",
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 231,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-staff-operations.ts:447",
+            "method": "POST",
+            "path": "/api/cashier/operator/login",
+            "family": "cashier",
+            "currentFileGitBlob": "287eaa5d9af35eb31afe32c172e35007c0ad244b",
+            "topLevelKeys": [
+              "cashier_entitlement",
+              "cashier_offline_entitlement",
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 236,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-subscription-operations.ts:48",
+            "method": "GET",
+            "path": "/api/cashier/subscription/catalog",
+            "family": "cashier",
+            "currentFileGitBlob": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 240,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-subscription-operations.ts:135",
+            "method": "POST",
+            "path": "/api/cashier/billing/checkout",
+            "family": "cashier",
+            "currentFileGitBlob": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 246,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-sync-operations.ts:74",
+            "method": "POST",
+            "path": "/api/cashier/sync/sale",
+            "family": "cashier",
+            "currentFileGitBlob": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 247,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/cashier-sync-operations.ts:92",
+            "method": "POST",
+            "path": "/api/cashier/sync/compensation",
+            "family": "cashier",
+            "currentFileGitBlob": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCashierActorPairingSequenceEvidenceReconciliation"
+            ],
+            "kind": "CASHIER_AUTHORITY_LAYERS_AND_EXISTING_DEPENDENCIES",
+            "limit": "Native/SQL/operator-router/current initial-pairing proofs retained. No repeated mount as a separate gap; SEQ-R1/R2/R3, physical device/key/hosted dependencies remain.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 254,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/catalog-operations.ts:318",
+            "method": "DELETE",
+            "path": "/api/catalog/promotions/:promotionId",
+            "family": "catalog",
+            "currentFileGitBlob": "f9912a5218dc68a1482fae1695c32d096da78bc4",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCatalogPromotionWriteFullApp"
+            ],
+            "kind": "NAMED_FULL_APP_MUTATION_BOUNDARY",
+            "limit": "Accepted tested mutation/rollback bounds only; spread result alone does not mean a secret leak or all-field closure.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 260,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/catalog-operations.ts:449",
+            "method": "DELETE",
+            "path": "/api/catalog/products/:productId",
+            "family": "catalog",
+            "currentFileGitBlob": "f9912a5218dc68a1482fae1695c32d096da78bc4",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentCatalogProductInventoryWriteFullApp"
+            ],
+            "kind": "NAMED_FULL_APP_MUTATION_BOUNDARY",
+            "limit": "Accepted tested mutation/rollback bounds only; spread result alone does not mean a secret leak or all-field closure.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 272,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/conversation-operations.ts:164",
+            "method": "POST",
+            "path": "/api/conversations/:conversationId/messages",
+            "family": "ordersAndConversations",
+            "currentFileGitBlob": "38b54a24b735c0c7b0e2df66f86e624beed6156d",
+            "topLevelKeys": [
+              "conversation",
+              "deduplicated",
+              "message",
+              "ok"
+            ],
+            "refs": [
+              "currentMessageMetadataProducerReaderReconciliation",
+              "currentConversationListEvidenceReconciliation"
+            ],
+            "evidence": [
+              "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+              "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json"
+            ],
+            "kind": "EXISTING_CONVERSATION_HTTP_AND_PROVENANCE_LAYERS",
+            "limit": "Messages/current manual operations HTTP retained; arbitrary metadata policy remains existing FIELD002/003 matter, not automatically accepted or newly stripped.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 277,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/emergency-read-access.ts:226",
+            "method": "GET",
+            "path": "/api/auth/admin/emergency-read-access/overview",
+            "family": "emergencyAndAudit",
+            "currentFileGitBlob": "2c7a58d4bc0c1bd80bde68322bad9baa25f6bfd9",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "currentEmergencyAlternateProjectionEvidenceReconciliation"
+            ],
+            "kind": "BOUNDED_EMERGENCY_LAYER_AND_FIELD_POLICY",
+            "limit": "Owner/requester lifecycle and merchant notice projections retain accepted source/runtime bounds. FIELD003/005 permissions/retention not adopted.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 303,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/indexModulePart4.ts:201",
+            "method": "GET",
+            "path": "/api/meta/callback",
+            "family": "sharedLegacyAndMeta",
+            "currentFileGitBlob": "2704c0a99970c736e0de2a91ef7901f961614ec4",
+            "topLevelKeys": [],
+            "refs": [
+              "currentMetaActivationPathMatchingFullApp"
+            ],
+            "kind": "ACTIVATION_FENCE_ACCEPTED_REAL_PROVIDER_BLOCKED",
+            "limit": "Callback HTML/redirect is opaque to JSON parser. Accepted disabled/configured-no-code tests do not prove real OAuth; actual provider remains existing P0-HOSTED-PROVIDER-META.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 331,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/saas-billing.ts:64",
+            "method": "GET",
+            "path": "/api/auth/billing/catalog",
+            "family": "billingAndVerifiedReceipts",
+            "currentFileGitBlob": "3665c398beb2822853b4e83a158b714380a2410e",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "paidMerchantDeletionAndReceiptReplay"
+            ],
+            "evidence": [
+              "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028"
+            ],
+            "kind": "MOUNTED_ROUTER_SQL_FAKE_PROVIDER_AND_POLICY_LAYERS",
+            "limit": "Real HTTP router/SQL and fake-provider tests retain their original scope. Whole-app inheritance, real provider and arbitrary receipt repair/retention are not inferred.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 333,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/saas-billing.ts:79",
+            "method": "POST",
+            "path": "/api/auth/billing/checkout",
+            "family": "billingAndVerifiedReceipts",
+            "currentFileGitBlob": "3665c398beb2822853b4e83a158b714380a2410e",
+            "topLevelKeys": [
+              "ok"
+            ],
+            "refs": [
+              "paidMerchantDeletionAndReceiptReplay"
+            ],
+            "evidence": [
+              "evidence/P0-FIELD005-RETENTION-FIELDS-20261025.json#billingProviderReceiptUseReconciliation20261028"
+            ],
+            "kind": "MOUNTED_ROUTER_SQL_FAKE_PROVIDER_AND_POLICY_LAYERS",
+            "limit": "Real HTTP router/SQL and fake-provider tests retain their original scope. Whole-app inheritance, real provider and arbitrary receipt repair/retention are not inferred.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          },
+          {
+            "historicalRegistrationIndex": 359,
+            "historicalSourceAnchor": "artifacts/api-server/src/routes/training-operations.ts:153",
+            "method": "POST",
+            "path": "/api/knowledge/training-requests/:id/approve",
+            "family": "knowledgeCurrentAndLegacy",
+            "currentFileGitBlob": "4476518b3b5af45c0f3839f1db0ea7352068d88f",
+            "topLevelKeys": [
+              "code",
+              "error",
+              "ok"
+            ],
+            "refs": [
+              "currentKnowledgeWriteAndOwnOrderFullApp"
+            ],
+            "kind": "NAMED_CURRENT_FULL_APP_TRAINING_APPROVAL",
+            "limit": "Current own approval/revocation and foreign approval denial accepted in grouped journey. Not every training/AI permutation.",
+            "allFieldsAccepted": false,
+            "newTestRequiredByOpaqueFlag": false
+          }
+        ],
+        "counts": {
+          "historicalOpaqueRows": 64,
+          "distinctOpaqueMethodPaths": 46,
+          "unboundOpaqueRows": 0,
+          "opaqueBoundToProofDoesNotMeanAllFieldsAccepted": true
+        },
+        "validation": {
+          "allChangedCodeModulesExplained": true,
+          "newCodeModules": 0,
+          "removedCodeModules": 0,
+          "allReferencedBoundaryNamesResolved": true
+        },
+        "interpretation": [
+          "Source catalogue and family limits are historical inputs. New overlay links current hashes and subsequent accepted proof layers without relabeling all historical field/runtime cells as accepted.",
+          "Opaque/spread marks syntax, not a proven secret leak or mandatory extra test.64historical rows map to46method/path keys; duplicate mounts/PG compatibility routes remain separate registrations, not additional product requirements.",
+          "318current production API code modules match the318code inputs in the original320entry source inventory; the remaining2inputs are non-code markers.306code modules unchanged,12changed and explained. This is file-set/hash continuity, not a fresh AST, semantic proof of every unchanged module, or whole-P0 denominator.",
+          "No new critical defect is asserted from these bookkeeping gaps; no new test or repeated whole audit is admitted just for counts.",
+          "Final field/producer/consumer inventory acceptance remains false pending the existing unresolved field-policy and external dependencies; source continuity does not waive them."
+        ],
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "completeP0Inventory": false,
+        "nextExactAction": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO."
       }
     ],
     "currentTestOverlay": {
@@ -50739,9 +52732,9 @@
             "supportCurrentAndLegacy",
             "sharedLegacyAndMeta"
           ],
-          "status": "CURRENT_CATALOGUE_CLASSIFIED_COMPLETENESS_NOT_ESTABLISHED",
+          "status": "SOURCE_CONTINUITY_AND_OPAQUE_REFERENCES_RECONCILED_FINAL_FIELD_ACCEPTANCE_DEPENDENT",
           "condition": "Every relevant P0 actor/field/background/alternate producer or consumer must have evidence or a named unmet condition. Static362 registrations/54 files/236 method-path keys are neither the current complete runtime surface nor a P0 denominator.",
-          "next": "After C01-C07 reconciliation, reconcile startup/background and sensitive export/consumer candidates to actual effective authority. Unknown surfaces remain explicit. Any newly confirmed critical addition needs source/evidence and count impact; never silently expand the45 known release rows or demand one test per registration.",
+          "next": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO.",
           "newGate": false,
           "currentStartupCandidateClassification": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
@@ -50763,6 +52756,22 @@
             "uniqueMethodPaths": 9,
             "newRuntimeTests": 0,
             "parentGateClosed": false
+          },
+          "currentC08SourceConsumerReconciliation": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC08SourceContinuityAndOpaqueConsumerLedger]",
+            "status": "CURRENT_CODE_CONTINUITY_AND64_OPAQUE_REFERENCES_RECONCILED_FIELD_POLICY_ACCEPTANCE_OPEN",
+            "sourceReviewed": "74d2a4e8308e8ed053edb11bee6a6185cc355cc8",
+            "apiCodeModules": 318,
+            "unchangedCodeModules": 306,
+            "changedCodeModulesExplained": 12,
+            "registeredFiles": 54,
+            "opaqueRowsLinked": 64,
+            "distinctOpaqueMethodPaths": 46,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "fullInventoryAccepted": false,
+            "parentGateClosed": false,
+            "newGate": false
           }
         }
       ],
@@ -50879,7 +52888,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C08: finish existing source inventory reconciliation by linking remaining catalogue/family sensitive producer/consumer rows to named accepted overlays or exact existing policy/physical/hosted dependencies. Use the completed four-question C05/C06 reconciliation, accepted grouped Knowledge/style and own-order runtime proof, classified22 startup calls and bounded7 report/snapshot paths. Return a finite list of genuinely unclassified P0 exposures, if any; do not repeat accepted families, one-test-per-registration, pairing, SQL financial faults, provider simulations or whole audits. Preserve FIELD002/003/004/005 and all16 existing nonclosed gate cards; no implied policy/hosted/merge/deploy approval.",
+      "nextCurrentAction": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO. FIELD002-R1's old premature request remains withdrawn; current extension behavior is intentional and no stripping policy is selected. Read existing consumerUseReconciliation20261028 and field-policy decision forms before any question or implementation.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -50914,7 +52923,7 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C08"
+      "nextWorkItem": "MATRIX-C07"
     },
     "previousTestOverlayBeforeLegacyKnowledgeRetirement20261029": {
       "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
@@ -51511,8 +53520,8 @@
       "status": "ACTIVE_EXECUTION_CONTROL_NOT_GATE_ACCEPTANCE",
       "evidence": "evidence/P0-CLOSURE-REGISTER.json#closurePlan.deliveryControl20261031",
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
-      "currentWorkItem": "MATRIX-C08",
-      "nextAction": "MATRIX-C08: finish existing source inventory reconciliation by linking remaining catalogue/family sensitive producer/consumer rows to named accepted overlays or exact existing policy/physical/hosted dependencies. Use the completed four-question C05/C06 reconciliation, accepted grouped Knowledge/style and own-order runtime proof, classified22 startup calls and bounded7 report/snapshot paths. Return a finite list of genuinely unclassified P0 exposures, if any; do not repeat accepted families, one-test-per-registration, pairing, SQL financial faults, provider simulations or whole audits. Preserve FIELD002/003/004/005 and all16 existing nonclosed gate cards; no implied policy/hosted/merge/deploy approval.",
+      "currentWorkItem": "MATRIX-C07",
+      "nextAction": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO. FIELD002-R1's old premature request remains withdrawn; current extension behavior is intentional and no stripping policy is selected. Read existing consumerUseReconciliation20261028 and field-policy decision forms before any question or implementation.",
       "staleActivePointersCorrected": 5,
       "gateStatusesChanged": false,
       "newRuntimeTests": 0,
@@ -51585,6 +53594,22 @@
         "checkout": "aca85c397b58c9d069342c94969373ec55faa02a",
         "checkoutTree": "984f0d2b260ff6cf9d340fcdbcc2df3e0693e40b",
         "checkoutTreeMatched": true
+      },
+      "currentC08SourceConsumerReconciliation": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC08SourceContinuityAndOpaqueConsumerLedger]",
+        "status": "CURRENT_CODE_CONTINUITY_AND64_OPAQUE_REFERENCES_RECONCILED_FIELD_POLICY_ACCEPTANCE_OPEN",
+        "sourceReviewed": "74d2a4e8308e8ed053edb11bee6a6185cc355cc8",
+        "apiCodeModules": 318,
+        "unchangedCodeModules": 306,
+        "changedCodeModulesExplained": 12,
+        "registeredFiles": 54,
+        "opaqueRowsLinked": 64,
+        "distinctOpaqueMethodPaths": 46,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "fullInventoryAccepted": false,
+        "parentGateClosed": false,
+        "newGate": false
       }
     },
     "currentMetaActivationPathMatchingProof": {
@@ -51711,6 +53736,32 @@
       "gitBlob": "a644e56aeea1af66415ef63ddbf4d7f1bce07de9",
       "catalogueRegenerated": false,
       "interpretation": "Accepted one bounded actual-app callback activation case:8inactive503 GET/HEAD case/slash denials,4configured missing-code400 validations,0remote attempts, stable owned state; target110/full77,broader836/97/94,all58first attempt. Normalized app gate classifier only; not real Meta activation, all OAuth lifecycle or parent acceptance."
+    },
+    "currentC08SourceConsumerReconciliation": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC08SourceContinuityAndOpaqueConsumerLedger]",
+      "status": "CURRENT_CODE_CONTINUITY_AND64_OPAQUE_REFERENCES_RECONCILED_FIELD_POLICY_ACCEPTANCE_OPEN",
+      "sourceReviewed": "74d2a4e8308e8ed053edb11bee6a6185cc355cc8",
+      "apiCodeModules": 318,
+      "unchangedCodeModules": 306,
+      "changedCodeModulesExplained": 12,
+      "registeredFiles": 54,
+      "opaqueRowsLinked": 64,
+      "distinctOpaqueMethodPaths": 46,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "fullInventoryAccepted": false,
+      "parentGateClosed": false,
+      "newGate": false,
+      "field002DecisionReadiness": {
+        "evidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json#policyReconciliation20261028.r1Decision",
+        "status": "CONCRETE_REVIEWABLE_CHOICE_READY_NOT_ADOPTED",
+        "approval": "UNAPPROVED",
+        "selectedModel": null,
+        "requestStatus": "PREMATURE_IMMEDIATE_REQUEST_WITHDRAWN_PENDING_COMPATIBILITY_EVIDENCE",
+        "userActionRequiredNow": false,
+        "compatibilityImpact": "Changes explicitly retained current extension behavior. Example: extra order_id on operational_customer_message is currently returned; candidate removes it because that type permits conversation_id/action_url only. The reserved-key proof's extra-key-preservation assertion would be explicitly superseded only at the response projection layer.",
+        "interpretation": "Existing premature request remains withdrawn. Do not ask for blanket field stripping or relabel changed extension behavior a routine fix; use current consumer compatibility evidence and a concrete bounded scope first."
+      }
     }
   },
   "componentScopes": {
