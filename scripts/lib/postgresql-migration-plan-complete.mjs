@@ -443,7 +443,7 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       created_at: item.created_at || null,
       updated_at: item.updated_at || item.created_at || null,
     };
-    mergeRow(report, "order_drafts", row, "transitional_runtime", item, { replaceExisting: true });
+    mergeRow(report, "order_drafts", row, "transitional_runtime", item);
   }
 }
 
