@@ -290,3 +290,53 @@ test("FIELD004 rejects conflicting historical and canonical draft aliases", () =
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("FIELD004 rejects unsupported legacy state despite valid identity and timestamps", () => {
+  const directory = createFixture();
+  try {
+    const runtime = readJson(directory, "fawri-runtime-db.json");
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "unsupported-state",
+        merchant_id: "merchant-1",
+        customer_id: "customer-1",
+        awaiting: "payment",
+        started_at: "2026-08-02T00:00:00.000Z",
+        updated_at: "2026-08-02T00:10:00.000Z",
+        expires_at: "2026-08-02T01:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", runtime);
+    const { report } = buildValidatedMigrationPlan({ dataDirectory: directory, includeRows: true });
+    assert.equal(report.write_readiness.ok, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_STATE_UNSUPPORTED"));
+    assert.equal(report.rows.order_drafts.some((row) => row.id === "unsupported-state"), false);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("FIELD004 rejects legacy draft expiry earlier than its last update", () => {
+  const directory = createFixture();
+  try {
+    const runtime = readJson(directory, "fawri-runtime-db.json");
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "invalid-chronology",
+        merchant_id: "merchant-1",
+        customer_id: "customer-1",
+        awaiting: "product",
+        started_at: "2026-08-02T00:00:00.000Z",
+        updated_at: "2026-08-02T02:00:00.000Z",
+        expires_at: "2026-08-02T01:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", runtime);
+    const { report } = buildValidatedMigrationPlan({ dataDirectory: directory, includeRows: true });
+    assert.equal(report.write_readiness.ok, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID"));
+    assert.equal(report.rows.order_drafts.some((row) => row.id === "invalid-chronology"), false);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
