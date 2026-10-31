@@ -366,6 +366,28 @@ test("FIELD004 rejects draft whose customer does not own its conversation", () =
   }
 });
 
+test("FIELD004 rejects draft timestamps lacking timezone", () => {
+  const directory = createFixture();
+  try {
+    const runtime = readJson(directory, "fawri-runtime-db.json");
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "missing-zone", merchant_id: "merchant-1",
+        customer_id: "customer-1", awaiting: "product",
+        started_at: "2026-08-02T00:00:00",
+        updated_at: "2026-08-02T00:10:00.000Z",
+        expires_at: "2026-08-02T01:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", runtime);
+    const { report } = buildValidatedMigrationPlan({ dataDirectory: directory, includeRows: true });
+    assert.equal(report.write_readiness.ok, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID"));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("FIELD004 refuses to invent missing legacy draft last-update time", () => {
   const directory = createFixture();
   try {
