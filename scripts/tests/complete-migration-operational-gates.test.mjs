@@ -261,3 +261,32 @@ test("FIELD004 maps historical draft keys only with explicit expiry evidence", (
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("FIELD004 rejects conflicting historical and canonical draft aliases", () => {
+  const directory = createFixture();
+  try {
+    const runtime = readJson(directory, "fawri-runtime-db.json");
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "alias-conflict",
+        merchant_id: "merchant-1",
+        customer_external_id: "customer-1",
+        customer_id: "another-customer",
+        awaiting_field: "product",
+        awaiting: "customer_info",
+        created_at: "2026-08-02T00:00:00.000Z",
+        started_at: "2026-08-02T00:05:00.000Z",
+        updated_at: "2026-08-02T00:10:00.000Z",
+        expires_at: "2026-08-02T01:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", runtime);
+    const { report } = buildValidatedMigrationPlan({ dataDirectory: directory, includeRows: true });
+    assert.equal(report.write_readiness.ok, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_FIELD_ALIAS_CONFLICT"));
+    assert.equal(report.rows.order_drafts.some((row) => row.id === "alias-conflict"), false);
+    assert.throws(() => assertCompleteMigrationWritable(report));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
