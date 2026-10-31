@@ -330,7 +330,7 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     await assert.rejects(sell(substituted),e=>e.code==='CASHIER_SYNC_PROTOCOL_UNSUPPORTED'||e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_STREAM_REVIEW_REQUIRED'||e.message==='active reviewed stream required');
     // The server-bound operator context cannot be transplanted to a peer device.
     const changedContext={...own,context:{...own.context,device_id:peer.f.stations[0].deviceId}};
-    await assert.rejects(sell(changedContext),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_SYNC_INVALID');
+    await assert.rejects(sell(changedContext),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_SYNC_INVALID'||e.message==='cashier operation device does not match paired station credential');
     assert.deepEqual(await data(),initial.data);
   });
   if(phase==='verify')await t.test('restored canonical writer commits next sequence once and retains peer and review evidence',async()=>{
