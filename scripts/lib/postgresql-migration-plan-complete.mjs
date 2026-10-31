@@ -529,6 +529,19 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       });
       continue;
     }
+    // One conversation cannot acquire two distinct active draft identities.
+    // A matching record ID is still checked by mergeRow for payload conflicts.
+    const conflictingDraft = asArray(report.rows.order_drafts).find(
+      (candidate) => text(candidate.merchant_id) === merchantId &&
+        text(candidate.conversation_id) === conversationId &&
+        text(candidate.id) !== text(row.id),
+    );
+    if (conflictingDraft) {
+      addError(report, "LEGACY_DRAFT_CONVERSATION_CONFLICT", {
+        table: "order_drafts", target_record_id: row.id,
+      });
+      continue;
+    }
     mergeRow(report, "order_drafts", row, "transitional_runtime", item);
   }
 }
