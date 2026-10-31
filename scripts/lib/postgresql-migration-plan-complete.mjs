@@ -494,6 +494,8 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       calendar.setUTCFullYear(year, month, 0);
       const daysInMonth = calendar.getUTCDate();
       const clock = value.match(/T(\d{2}):(\d{2}):(\d{2})/);
+      const offset = value.match(/([+-])(\d{2}):(\d{2})$/);
+      if (offset && (Number(offset[2]) > 23 || Number(offset[3]) > 59)) return false;
       if (!clock) return false;
       const [hour, minute, second] = clock.slice(1).map(Number);
       return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth &&
