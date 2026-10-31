@@ -1,3 +1,17 @@
+## SEQ-R3 device admission decision packet — 2026-10-31
+
+Status: PROPOSAL ONLY, not authorized for production or protocol v2.
+
+Existing merchant-managed pairing issues a single-use code, binds the receiving device and rotates station credentials. It does not prove a fresh financial stream. The internal read-only history assessment explicitly returns enrollmentAuthorized=false even when no rows are found.
+
+Proposed rules for review:
+- New device: keep existing merchant pairing; require independently trusted empty-history provenance and serialized server-side enrollment before any financial v2 admission. A zero local counter or missing timeline rows is insufficient.
+- Same-device re-pair: preserve original device stream, immutable receipts and checkpoint. Credential rotation must never reset the sequence; exact replay must match the original operation.
+- Replacement or restored device: preserve the old device history; reconcile server receipts, pending local envelopes and restored identity. Missing or conflicting evidence means HOLD, not reset or inferred baseline.
+- Exceptional recovery: require separately authorized and auditable review with fixed merchant/station/device scope and immutable external evidence. Routine merchant pairing is not an exceptional recovery approval.
+
+Acceptance still required: authenticated merchant issuance and cashier redemption HTTP, reused-code rejection, restricted cross-tenant SQL, concurrent enrollment/writer serialization, matching and conflicting restore cases, no financial or inventory mutation on rejection. SEQ-R1/R2/R3 and full v2 adoption remain OPEN. No hosted inspection, migration or deployment; release NO-GO.
+
 ## مطابقة دليل رفض البروتوكول وتحضير قرار SEQ-R2 — 2026-10-27
 
 الحالة: **الدليل الموجود كافٍ للحد السلبي المسمّى؛ لا اختبار أو تشغيل CI جديد**. المصدر المراجع242821b938b3a7183831ee043ca77cb815ffbb9b؛ آخر مصدر تنفيذي مقبول يبقى711fd97d989b3733e68af7e1a094fe92dfb08d74. [المطابقة في ملف HTTP الموجود](evidence/P0-CASHIER-SEQUENCE-OPERATOR-HTTP-20261026.json#protocolNegotiationReconciliation20261027).
