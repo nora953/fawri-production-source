@@ -37,5 +37,17 @@
     "assertion": "Reject legacy draft historical expires_at preceding updated_at; dry-run preserves source files and makes no database connection",
     "scope": "source-only defensive migration planner test",
     "hostedVerified": false
+  },
+  "additionalAcceptedRegressionUpdateBeforeCreation": {
+    "commit": "6d1c380b93ef24bd708c0e68c7a237c3a22f84bf",
+    "ci": {
+      "success": 58,
+      "total": 58,
+      "failed": 0,
+      "pending": 0
+    },
+    "assertion": "Reject legacy draft updated_at earlier than created_at; rejected dry-run preserves source files and avoids database connection",
+    "scope": "source-only defensive migration planner test",
+    "hostedVerified": false
   }
 }
