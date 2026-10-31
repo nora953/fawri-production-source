@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "FIELD003 merchant-incident generic-audit permission rule is implemented and verified at the linked accepted source; do not repeat its tests or request its approval again. Continue MATRIX-C07 using existing FIELD004 F004-R1 draft continuity/lifecycle packet: prepare one concrete disposition/continuation contract with actual legacy customer mapping, awaiting-field semantics and expiry/time provenance; do not invent TTL, revive expired drafts, add CRUD or normalize historical rows before that contract. FIELD002 compatibility/producer scope, FIELD005 record-specific retention, SEQ and hosted requirements remain separately unresolved and unapproved.",
+    "nextExactAction": "Review the concrete F004-R1 conditional offline draft migration contract in evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031. Recommended: support source-bound legacy identity/state/time normalization for reviewed compatibility storage only, with no automatic runtime continuation, no guessed TTL and whole-plan refusal on ambiguity. Implement bounded offline planner validation only after this specified contract is selected; no source/configuration evidence, actual import, hosted, retention, SEQ or new runtime authority is authorized by that choice. If deferred, preserve current fail-closed behavior and continue independent authorized work.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -48756,6 +48756,27 @@
         "testBlob": "24909f6395632d2ed04bfe8445f5ee34faf7ad24",
         "evidence": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#permissionRuleAcceptance20261031",
         "nextExactAction": "FIELD003 merchant-incident generic-audit permission rule is implemented and verified at the linked accepted source; do not repeat its tests or request its approval again. Continue MATRIX-C07 using existing FIELD004 F004-R1 draft continuity/lifecycle packet: prepare one concrete disposition/continuation contract with actual legacy customer mapping, awaiting-field semantics and expiry/time provenance; do not invent TTL, revive expired drafts, add CRUD or normalize historical rows before that contract. FIELD002 compatibility/producer scope, FIELD005 record-specific retention, SEQ and hosted requirements remain separately unresolved and unapproved."
+      },
+      {
+        "boundary": "currentField004ConditionalMigrationDecisionReadiness",
+        "date": "2026-10-31",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C07",
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031",
+        "status": "CONCRETE_BOUNDED_LIFECYCLE_CHOICE_READY_NOT_ADOPTED",
+        "sourceReviewed": "f5eefaa8481157e38963d64960e12764e8f34af3",
+        "approval": "UNAPPROVED",
+        "recommendedChoice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
+        "sourcePins": 24,
+        "unchangedPins": 23,
+        "explainedDrift": 1,
+        "applicationChanged": false,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": true,
+        "nextExactAction": "Review the concrete F004-R1 conditional offline draft migration contract in evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031. Recommended: support source-bound legacy identity/state/time normalization for reviewed compatibility storage only, with no automatic runtime continuation, no guessed TTL and whole-plan refusal on ambiguity. Implement bounded offline planner validation only after this specified contract is selected; no source/configuration evidence, actual import, hosted, retention, SEQ or new runtime authority is authorized by that choice. If deferred, preserve current fail-closed behavior and continue independent authorized work."
       }
     ],
     "currentTestOverlay": {
@@ -53909,12 +53930,12 @@
     },
     "currentC07DecisionSelection": {
       "sourceReviewed": "c554deaa39cabde0089b59af17b5b2feb217708b",
-      "status": "FIELD003_SPECIFIED_PERMISSION_RULE_ACCEPTED_OTHER_CONTRACTS_UNADOPTED",
-      "selectedDecision": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031",
-      "approval": "AUTHORIZED_SPECIFIC_RECOMMENDED_RULE_BY_CONTEXTUAL_CONTINUE",
-      "applicationChanged": true,
-      "newRuntimeTests": 1,
-      "newCiRuns": 58,
+      "status": "FIELD003_RULE_ACCEPTED_FIELD004_CONDITIONAL_MIGRATION_CHOICE_READY",
+      "selectedDecision": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031",
+      "approval": "UNAPPROVED_FOR_FIELD004_ONLY",
+      "applicationChanged": false,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
       "field002": {
         "projection": "UNAPPROVED_PRIOR_PREMATURE_REQUEST_REMAINS_WITHDRAWN",
         "finding": {
@@ -53942,17 +53963,30 @@
       },
       "newGate": false,
       "parentGateClosed": false,
-      "authorization": {
-        "date": "2026-10-31",
-        "userReply": "اكمل",
-        "context": "Direct reply to the concrete FIELD003 recommended rule and the question asking to implement and test it; treated as authorization to proceed with that specified rule only.",
-        "scope": "REQUIRE_VIEW_LOGS_AND_VIEW_MERCHANTS_FOR_MERCHANT_INCIDENT_ROWS",
-        "otherFieldSeqRetentionHostedMergeDeployAuthorized": false
+      "nextAction": "Review the concrete F004-R1 conditional offline draft migration contract in evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031. Recommended: support source-bound legacy identity/state/time normalization for reviewed compatibility storage only, with no automatic runtime continuation, no guessed TTL and whole-plan refusal on ambiguity. Implement bounded offline planner validation only after this specified contract is selected; no source/configuration evidence, actual import, hosted, retention, SEQ or new runtime authority is authorized by that choice. If deferred, preserve current fail-closed behavior and continue independent authorized work.",
+      "accepted": false,
+      "previousField003Decision": {
+        "selectedDecision": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031",
+        "approval": "AUTHORIZED_SPECIFIC_RECOMMENDED_RULE_BY_CONTEXTUAL_CONTINUE",
+        "status": "FIELD003_SPECIFIED_PERMISSION_RULE_ACCEPTED_OTHER_CONTRACTS_UNADOPTED",
+        "source": "49eeb8990513e562bb2a823742229d16c0f13a18",
+        "implementationEvidence": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#permissionRuleAcceptance20261031",
+        "authorization": {
+          "date": "2026-10-31",
+          "userReply": "اكمل",
+          "context": "Direct reply to the concrete FIELD003 recommended rule and the question asking to implement and test it; treated as authorization to proceed with that specified rule only.",
+          "scope": "REQUIRE_VIEW_LOGS_AND_VIEW_MERCHANTS_FOR_MERCHANT_INCIDENT_ROWS",
+          "otherFieldSeqRetentionHostedMergeDeployAuthorized": false
+        },
+        "acceptedSource": "49eeb8990513e562bb2a823742229d16c0f13a18"
       },
-      "source": "49eeb8990513e562bb2a823742229d16c0f13a18",
-      "nextAction": "FIELD003 merchant-incident generic-audit permission rule is implemented and verified at the linked accepted source; do not repeat its tests or request its approval again. Continue MATRIX-C07 using existing FIELD004 F004-R1 draft continuity/lifecycle packet: prepare one concrete disposition/continuation contract with actual legacy customer mapping, awaiting-field semantics and expiry/time provenance; do not invent TTL, revive expired drafts, add CRUD or normalize historical rows before that contract. FIELD002 compatibility/producer scope, FIELD005 record-specific retention, SEQ and hosted requirements remain separately unresolved and unapproved.",
-      "implementationEvidence": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#permissionRuleAcceptance20261031",
-      "accepted": true
+      "currentSourceReview": "f5eefaa8481157e38963d64960e12764e8f34af3",
+      "currentBatch": {
+        "applicationChanged": false,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0
+      },
+      "field003RuleRetained": true
     },
     "currentField003IncidentAuditPermissionProof": {
       "status": "BOUNDED_FIELD003_MERCHANT_INCIDENT_AUDIT_PERMISSION_FULL_APP_ACCEPTED",
@@ -54024,6 +54058,22 @@
       "gitBlob": "2b5cbd7ee8a1d517557f623dc7fa8d2f0a3345c9",
       "catalogueRegenerated": false,
       "interpretation": "Accepted two named actual-app conditions in one candidate: Knowledge/style9writes20denials and own-order4positive4denials, correct body/If-Match/request versions, approval/revoke, preserved peers/metadata, one attributed delivered COD decision and immutable exact replay. target112/full79;broader836/97/94;all58first attempt. No application/schema/ACL change or parent/hosted/provider/fulfillment acceptance."
+    },
+    "currentField004ContractReadiness": {
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031",
+      "status": "CONCRETE_BOUNDED_LIFECYCLE_CHOICE_READY_NOT_ADOPTED",
+      "sourceReviewed": "f5eefaa8481157e38963d64960e12764e8f34af3",
+      "approval": "UNAPPROVED",
+      "recommendedChoice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
+      "sourcePins": 24,
+      "unchangedPins": 23,
+      "explainedDrift": 1,
+      "applicationChanged": false,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "parentGateClosed": false,
+      "newGate": false,
+      "userActionRequiredNow": true
     }
   },
   "componentScopes": {

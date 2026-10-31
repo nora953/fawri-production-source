@@ -55,7 +55,7 @@
     "No online conversational order creation or whole commercial journey acceptance"
   ],
   "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
-  "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
+  "nextExactAction": "Review the concrete F004-R1 conditional offline draft migration contract in evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031. Recommended: support source-bound legacy identity/state/time normalization for reviewed compatibility storage only, with no automatic runtime continuation, no guessed TTL and whole-plan refusal on ambiguity. Implement bounded offline planner validation only after this specified contract is selected; no source/configuration evidence, actual import, hosted, retention, SEQ or new runtime authority is authorized by that choice. If deferred, preserve current fail-closed behavior and continue independent authorized work.",
   "previousStatus": "BOUNDED_SOURCE_AUTHORITIES_MAPPED_HTTP_PROOF_PENDING",
   "reconciledAtSource": "8eb803e68dc8457a2914ecdf5072f00994e8f639",
   "checklist": [
@@ -114,6 +114,22 @@
         "parentGateClosed": false,
         "newGate": false,
         "userActionRequiredNow": false
+      },
+      "currentDecision": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031",
+        "status": "CONCRETE_BOUNDED_LIFECYCLE_CHOICE_READY_NOT_ADOPTED",
+        "sourceReviewed": "f5eefaa8481157e38963d64960e12764e8f34af3",
+        "approval": "UNAPPROVED",
+        "recommendedChoice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
+        "sourcePins": 24,
+        "unchangedPins": 23,
+        "explainedDrift": 1,
+        "applicationChanged": false,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": true
       }
     },
     {
@@ -1094,7 +1110,7 @@
     "nextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption."
   },
   "previousNextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
-  "currentReviewPointer": "draftContinuityReconciliation20261028",
+  "currentReviewPointer": "decisionProposal20261031",
   "previousNewRuntimeExecuted": false,
   "newRuntimeLayer": "OWNED_OFFLINE_POSTGRES_ACTUAL_SIGNED_HTTP_AND_ORIGINAL_RESTRICTED_WORKER",
   "legacyReplayAdmissionAcceptance20261028": {
@@ -3197,5 +3213,236 @@
     ],
     "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies."
   },
-  "previousCurrentReviewPointer": "legacyReplayAdmissionAcceptance20261028"
+  "previousCurrentReviewPointer": "legacyReplayAdmissionAcceptance20261028",
+  "previousNextExactActionBeforeDecision20261031": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
+  "previousCurrentReviewPointerBeforeDecision20261031": "draftContinuityReconciliation20261028",
+  "decisionProposal20261031": {
+    "id": "F004-R1-CONDITIONAL_OFFLINE_DRAFT_MIGRATION_ONLY-20261031",
+    "date": "2026-10-31",
+    "status": "CONCRETE_BOUNDED_LIFECYCLE_CHOICE_READY_NOT_ADOPTED",
+    "approval": "UNAPPROVED",
+    "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+    "workItem": "MATRIX-C07",
+    "sourceReviewed": "f5eefaa8481157e38963d64960e12764e8f34af3",
+    "acceptedExecutable": "49eeb8990513e562bb2a823742229d16c0f13a18",
+    "recommendedChoice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
+    "businessMeaningArabic": "ندعم نقل مسودات الطلبات القديمة إلى التخزين الجديد عندما يمكن إثبات التاجر والعميل والوقت الأصليين. النقل وحده لا يستكمل طلبًا ولا يرسل رسالة ولا يحجز مخزونًا. السجلات الغامضة توقف جاهزية الترحيل وتبقى أصولها محفوظة دون حذف أو مهلة جديدة.",
+    "sourceVerification": {
+      "method": "Reconcile24 existing candidate/expanded pins against exact current Git tree; reread producer, expiry, schema, migration overlay and current Meta authority. Reuse prior actual-shape planner observation, no rerun.",
+      "pins": [
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+          "previousBlob": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+          "currentBlob": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "previousBlob": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "currentBlob": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "previousBlob": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "currentBlob": "479baa1d64dc679d8608d7462c25de0aaca372ad",
+          "unchanged": false
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "previousBlob": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "currentBlob": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+          "previousBlob": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "currentBlob": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/drizzle/0001_military_proteus.sql",
+          "previousBlob": "0631349cad0075d927bfcf67a96180111555a5a4",
+          "currentBlob": "0631349cad0075d927bfcf67a96180111555a5a4",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+          "previousBlob": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "currentBlob": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/src/schema/orders.ts",
+          "previousBlob": "1343264314a660311ef261c2c95eddb3bc70f490",
+          "currentBlob": "1343264314a660311ef261c2c95eddb3bc70f490",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "previousBlob": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "currentBlob": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/audit-fawri-json-data.mjs",
+          "previousBlob": "32fa2970cbeebf17ed0b381f21d6e8391c836e84",
+          "currentBlob": "32fa2970cbeebf17ed0b381f21d6e8391c836e84",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "previousBlob": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "currentBlob": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/plan-postgresql-migration.mjs",
+          "previousBlob": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "currentBlob": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/audit-fawri-data.test.mjs",
+          "previousBlob": "6a2c2614a970c424be2bff4c3358d829d8308302",
+          "currentBlob": "6a2c2614a970c424be2bff4c3358d829d8308302",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+          "previousBlob": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+          "currentBlob": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/locked-migration-operational-safety.test.mjs",
+          "previousBlob": "5cda1ef54d7d2840b137015f226d91892ec269f6",
+          "currentBlob": "5cda1ef54d7d2840b137015f226d91892ec269f6",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/plan-postgresql-migration.test.mjs",
+          "previousBlob": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "currentBlob": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/validated-order-operations-gate.test.mjs",
+          "previousBlob": "1d282aeb9c7044661b8a5bb7c33bcc013473b794",
+          "currentBlob": "1d282aeb9c7044661b8a5bb7c33bcc013473b794",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+          "previousBlob": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2",
+          "currentBlob": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+          "previousBlob": "5b3c856cae817b625e52eda978bf994283775505",
+          "currentBlob": "5b3c856cae817b625e52eda978bf994283775505",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts",
+          "previousBlob": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70",
+          "currentBlob": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+          "previousBlob": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf",
+          "currentBlob": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-safe.mjs",
+          "previousBlob": "73bb96d8398239e555f42294f6a7d54fd4b97b84",
+          "currentBlob": "73bb96d8398239e555f42294f6a7d54fd4b97b84",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/fixtures/create-postgresql-migration-fixture.mjs",
+          "previousBlob": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3",
+          "currentBlob": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/drizzle/meta/0052_snapshot.json",
+          "previousBlob": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535",
+          "currentBlob": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535",
+          "unchanged": true
+        }
+      ],
+      "unchanged": 23,
+      "changed": 1,
+      "changedExplanation": "Only postgresMerchantManagementAuthority.ts differs; exact compare from accepted940907 to current shows listAdminLogsPostgres FIELD003 options/predicate changes only. Draft purge behavior is unchanged.",
+      "fullInventory": false
+    },
+    "currentBehavior": {
+      "legacyShape": "customer_id / awaiting ('product'|'customer_info') / started_at / updated_at; no stored expiry or effective TTL.",
+      "expiry": "getActiveOrderDraft uses current process BOT_DRAFT_TTL_MINUTES (default60) and updated_at||started_at; finite elapsed beyond TTL clears legacy Map draft. Invalid times do not establish trusted expiry. Do not copy permissive invalid-time behavior into migration.",
+      "planner": "Runtime overlay currently reads SQL-shaped names, preserves item in draft_data, and replaces same-id canonical rows. Existing actual-shape fixture fails3 required fields; no SQL write accepted.",
+      "runtime": "Current required-mode Meta path has no identified order_drafts continuation decoder. Existing SQL-shaped storage and RLS/purge do not prove automatic continuation."
+    },
+    "proposedContract": {
+      "lifecycle": "Supported compatibility storage via offline reviewed migration; no new HTTP CRUD, timer, runtime draft bridge or automatic legacy bot activation.",
+      "identity": "merchant_id must resolve to the same tenant as the canonical conversation; customer_id is a candidate external sender identifier, not a trusted internal account ID. Map to customer_external_id only after equality with that conversation's external customer identity and channel ownership are validated. Do not derive authority from messenger-<customer> alone.",
+      "awaiting": "Map only exact product or customer_info to awaiting_field unchanged, retaining the original payload. Unknown, conflicting or empty values block readiness; do not infer a new conversational state.",
+      "timestamps": "started_at -> created_at and updated_at -> updated_at only with valid, ordered, source-bound instants; no migration NOW/defaultNow repair. Missing/invalid/inconsistent inputs block readiness.",
+      "expiry": "Accept a validated explicit original expires_at, or derive it from the last valid old activity timestamp plus a proven effective old-reader TTL bound to the frozen source/configuration checkpoint. Require trusted cutoff time/provenance; an environment default/current TTL alone is not historical evidence. Never create a fresh deadline from migration time. If both expiry sources exist and disagree, block readiness.",
+      "expired": "Preserve proven historical expiry in the mapped record; expired status never becomes active merely because data is imported. No expiry deletion, cleanup or retention duration is authorized.",
+      "duplicates": "If canonical and transitional drafts describe the same target draft/conversation, require matching tenant/customer/state/time/payload provenance or stop with an explicit conflict. Do not silently replace canonical ownership/state based on input order.",
+      "failure": "Any unsupported/ambiguous record makes the complete plan not write-ready. Return bounded diagnostic codes/record references without dumping draft PII to general logs. Preserve all source bytes; no silent row omission/quarantine destination/import side effect.",
+      "consumer": "Mapped storage is not a supported automatic runtime continuation consumer. Any future continuation requires separately reviewed current tenant/channel/customer ownership, original expiry, product/price/stock validity and idempotent order rules before activation; this choice does not approve that feature.",
+      "sideEffects": "No order creation, stock/payment mutation, outbound message, SQL permission grant, retention/hash rewrite or source-file mutation."
+    },
+    "compatibilityImpact": [
+      "The actual old shape could become plan-ready only when all declared identity/time evidence exists; today's missing-field failure would be superseded only under that bounded mapping.",
+      "Conflicting same-draft canonical/transitional rows would stop readiness instead of transitional replacement. Existing identical non-draft lane behavior is outside the change.",
+      "Incomplete/expired/unknown drafts are never silently discarded or made active. Missing real provenance may continue to block an actual migration.",
+      "No promise that real datasets satisfy this contract; F004-R2 remains blocked under GitHub-only restriction."
+    ],
+    "implementationAfterApproval": {
+      "phase": "Offline planner normalization and explicit caller-supplied source-bound provenance validation only; no hosted import or runtime continuation.",
+      "files": [
+        "scripts/lib/postgresql-migration-plan-complete.mjs",
+        "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+        "scripts/tests/plan-postgresql-migration.test.mjs",
+        "scripts/tests/run-postgresql-migration-plan.test.mjs"
+      ],
+      "preImplementationCheck": "Confirm existing source snapshot and caller options can carry the declared provenance without weakening locked/checksum/reconciliation contracts. Define the exact manifest interface before editing; refuse ambient environment TTL or hidden defaults.",
+      "acceptance": [
+        "Real planner positive actual legacy shape with verified tenant/customer mapping, both awaiting states and deterministic original times/expiry; payload/source bytes preserved.",
+        "Reject mismatched tenant/channel/customer, ambiguous identity and conflicting canonical/transitional records; preserve accepted unrelated migration lanes.",
+        "Reject missing/invalid/future-inconsistent time or unproven TTL; no60 fallback/NOW/deadline refresh. Trusted expired draft retains expired time and cannot imply activation.",
+        "Rejected plan not write-ready and no source mutation; diagnostic output does not reveal full customer draft data.",
+        "Exact-source targeted migration checks and relevant broader checks. Reuse accepted residual RLS/debug410/Meta history holds; do not relabel synthetic planning as SQL import/hosted or runtime continuation."
+      ]
+    },
+    "alternatives": [
+      {
+        "choice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
+        "effect": "Adopt this storage/lifecycle contract, then implement and test its bounded offline mapping only."
+      },
+      {
+        "choice": "DEFER_KEEP_CURRENT_FAIL_CLOSED_PLANNER",
+        "effect": "Keep existing rejection/source preservation, F004-R1 open, and continue independent work. No legacy retirement is inferred."
+      }
+    ],
+    "approvalBoundary": [
+      "No actual source snapshot/config/TTL value supplied or certified by approval",
+      "No supported runtime continuation/automatic reply/new order feature",
+      "No retirement/deletion/quarantine/retention schedule",
+      "No FIELD002/FIELD005/SEQ/receipt ownership/repair policy",
+      "No hosted/provider/credentials/import/merge/deploy or complete P0 acceptance"
+    ],
+    "decisionNeeded": "The remaining question is intended support for old draft compatibility storage, not a request to guess technical field names or TTL. Plan/continuation approval alone does not choose this new lifecycle contract.",
+    "applicationChanged": false,
+    "newRuntimeTests": 0,
+    "newCiRuns": 0,
+    "parentGateClosed": false,
+    "newGate": false
+  }
 }
