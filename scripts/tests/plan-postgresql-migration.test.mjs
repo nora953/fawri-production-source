@@ -573,6 +573,8 @@ test("dry-run blocks legacy drafts when channel ownership is unverified", () => 
   try {
     createCompleteFixture(directory);
     const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-not-in-source";
+    writeJson(directory, "bot-runtime.json", runtime);
     runtime.orderDraftsByConversation = {
       "conversation-1": {
         id: "legacy-draft-channel-unverified",
