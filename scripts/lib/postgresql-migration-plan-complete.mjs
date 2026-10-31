@@ -490,7 +490,11 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       const month = Number(match[2]);
       const day = Number(match[3]);
       const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-      return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth;
+      const clock = value.match(/T(\d{2}):(\d{2}):(\d{2})/);
+      if (!clock) return false;
+      const [hour, minute, second] = clock.slice(1).map(Number);
+      return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth &&
+        hour <= 23 && minute <= 59 && second <= 59;
     };
     if (![row.created_at, row.updated_at, row.expires_at].every(validCalendarInstant)) {
       addError(report, "LEGACY_DRAFT_TIME_PROVENANCE_INVALID", {
