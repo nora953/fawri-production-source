@@ -325,6 +325,9 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     const foreignDevice=structuredClone(own.body);
     foreignDevice.envelopes[0].device_id=peer.f.stations[0].deviceId;
     await assert.rejects(sell(own,foreignDevice),e=>e.code==='CASHIER_SYNC_INVALID'||e.code==='CASHIER_STREAM_IDENTITY_CONFLICT');
+    // Restored clients cannot substitute a different enrolled stream.
+    const substituted={...own,streamId:peer.streamId};
+    await assert.rejects(sell(substituted));
     assert.deepEqual(await data(),initial.data);
   });
   if(phase==='verify')await t.test('restored canonical writer commits next sequence once and retains peer and review evidence',async()=>{
