@@ -232,3 +232,32 @@ test("FIELD004 retains verified legacy draft without changing original expiry", 
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("FIELD004 maps historical draft keys only with explicit expiry evidence", () => {
+  const directory = createFixture();
+  try {
+    const runtime = readJson(directory, "fawri-runtime-db.json");
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "historical-draft",
+        merchant_id: "merchant-1",
+        customer_id: "customer-1",
+        awaiting: "customer_info",
+        started_at: "2026-08-02T00:00:00.000Z",
+        updated_at: "2026-08-02T00:10:00.000Z",
+        expires_at: "2026-08-02T01:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", runtime);
+    const { report } = buildValidatedMigrationPlan({ dataDirectory: directory, includeRows: true });
+    assert.equal(report.write_readiness.ok, true, JSON.stringify(report.errors));
+    const draft = report.rows.order_drafts.find((row) => row.id === "historical-draft");
+    assert.ok(draft);
+    assert.equal(draft.customer_external_id, "customer-1");
+    assert.equal(draft.awaiting_field, "customer_info");
+    assert.equal(draft.created_at, "2026-08-02T00:00:00.000Z");
+    assert.equal(draft.expires_at, "2026-08-02T01:00:00.000Z");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
