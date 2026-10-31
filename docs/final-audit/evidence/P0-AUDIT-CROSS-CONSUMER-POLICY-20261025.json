@@ -31,10 +31,11 @@
       "Explicitly allow incident audit metadata under view_logs while documenting the endpoint-specific distinction"
     ],
     "notInferred": "No new confirmed vulnerability, intentionality theorem or authorization-policy adoption from source alone.",
-    "currentReview": "currentUseReconciliation20261028",
-    "userActionRequiredNow": false,
+    "currentReview": "decisionProposal20261031",
+    "userActionRequiredNow": true,
     "approval": "UNAPPROVED",
-    "requestStatus": "SOURCE_BEHAVIOR_CLASSIFIED_NO_IMMEDIATE_CHOICE_REQUEST"
+    "requestStatus": "CONCRETE_BOUNDED_FIELD003_CHOICE_PREPARED_20261031",
+    "previousRequestStatus": "SOURCE_BEHAVIOR_CLASSIFIED_NO_IMMEDIATE_CHOICE_REQUEST"
   },
   "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
   "inheritedCi": {
@@ -43,7 +44,7 @@
     "broaderTap": 721,
     "newRun": false
   },
-  "nextExactAction": "Reconcile existing RESIDUAL-FIELD-004/F004-R1/R2 against current order_drafts and processed_channel_events SQL writers/readers, startup/migration/ingress paths and accepted Meta/new-order reachability evidence. Separate dormant-table intended lifecycle from legacy same-name stores and hosted actual-row inventory; identify only a concrete current unproved boundary before code/tests. Do not add CRUD routes, infer inapplicability from lexical absence, repeat accepted notification/early-warning/emergency tests or adopt FIELD002/FIELD003/SEQ-R2 policy.",
+  "nextExactAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred.",
   "currentUseReconciliation20261028": {
     "date": "2026-10-28",
     "sourceReviewed": "efa54d518b096fe75cc646568a4c730ed7dfa776",
@@ -459,5 +460,95 @@
     ],
     "nextExactAction": "Reconcile existing RESIDUAL-FIELD-004/F004-R1/R2 against current order_drafts and processed_channel_events SQL writers/readers, startup/migration/ingress paths and accepted Meta/new-order reachability evidence. Separate dormant-table intended lifecycle from legacy same-name stores and hosted actual-row inventory; identify only a concrete current unproved boundary before code/tests. Do not add CRUD routes, infer inapplicability from lexical absence, repeat accepted notification/early-warning/emergency tests or adopt FIELD002/FIELD003/SEQ-R2 policy."
   },
-  "previousNextExactAction": "Continue RESIDUAL-FIELD-004: trace current order_drafts and processed_channel_events SQL writers/readers versus legacy debug/in-memory order and durable ingress consumers, reusing accepted Meta/new-order reachability evidence. Identify one missing live authority/field boundary; do not add CRUD routes or repeat accepted notification/early-warning proofs."
+  "previousNextExactAction": "Continue RESIDUAL-FIELD-004: trace current order_drafts and processed_channel_events SQL writers/readers versus legacy debug/in-memory order and durable ingress consumers, reusing accepted Meta/new-order reachability evidence. Identify one missing live authority/field boundary; do not add CRUD routes or repeat accepted notification/early-warning proofs.",
+  "decisionProposal20261031": {
+    "id": "FIELD003-MERCHANT-INCIDENT-AUDIT-VISIBILITY-20261031",
+    "date": "2026-10-31",
+    "status": "CONCRETE_PERMISSION_CHOICE_READY_FOR_OWNER_DECISION",
+    "approval": "UNAPPROVED",
+    "sourceReviewed": "c554deaa39cabde0089b59af17b5b2feb217708b",
+    "acceptedExecutable": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+    "sourcePins": [
+      {
+        "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+        "gitBlobSha": "cd6c904610ed95206d309f52efa11a96b744012e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+        "gitBlobSha": "e5387972b31ef272418158e8b1be52bc81dd6b75"
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+        "gitBlobSha": "83348cd92bf39448e00ae647bf24246b02119945"
+      }
+    ],
+    "currentBehavior": {
+      "genericRoute": "GET /api/auth/admin/logs",
+      "genericPermission": "view_logs",
+      "specificRoute": "GET /api/auth/admin/early-warning",
+      "merchantDetailsPermission": "view_merchants in addition to view_logs",
+      "query": "Generic audit currently includes merchant-linked early_warning_incident rows and full nonempty metadata; ordinary merchant logs also include merchant references under view_logs.",
+      "producer": "earlyWarningIncidentHistory writes entity_type=early_warning_incident and merchant_id for merchant scope.",
+      "confirmedNewVulnerability": false
+    },
+    "recommendedChoice": "REQUIRE_VIEW_LOGS_AND_VIEW_MERCHANTS_FOR_MERCHANT_INCIDENT_ROWS",
+    "proposedBehavior": {
+      "owner": "Keep current owner visibility.",
+      "assistantBothPermissions": "May read merchant early-warning incident rows in generic audit.",
+      "assistantViewLogsOnly": "Continue ordinary audit access; exclude merchant-linked early_warning_incident rows from generic audit response.",
+      "assistantViewMerchantsOnly": "No audit endpoint access; existing view_logs requirement still applies.",
+      "ordinaryAudit": "Keep current ordinary merchant audit references and mapper.",
+      "emergencyAudit": "Keep existing owner-only exclusion; no change.",
+      "systemIncidents": "No new inclusion of null-merchant system incident rows into generic audit.",
+      "storedRows": "No deletion, metadata scrubbing, history rewrite, hash rewrite, retention change or SQL grant.",
+      "decisionSource": "Use current SQL-backed profile and existing hasAdminPermission semantics, never request hints."
+    },
+    "implementationScope": {
+      "route": "Derive includeMerchantIncidentAudit from current admin profile; owner or has view_merchants, after existing view_logs authorization.",
+      "reader": "Add a default-deny reader option; filter merchant-linked entity_type=early_warning_incident rows before ORDER/LIMIT unless explicitly allowed by current trusted caller. Preserve emergency filter independently.",
+      "files": [
+        "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+        "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      ],
+      "client": "No UI feature needed; API rows change for view_logs-only readers.",
+      "compatibilityImpact": "view_logs-only assistants lose these incident entries and their health/value/runbook metadata in the general log timeline/search. Ordinary merchant audit entries remain visible. Unknown external consumers using that role may notice fewer incident rows.",
+      "notAnExistingPolicyFix": "This is an explicit cross-consumer permission choice; do not describe current behavior as a newly confirmed violation."
+    },
+    "acceptanceAfterApproval": [
+      "Actual app: owner and assistant with both permissions receive owned merchant incident with expected DTO.",
+      "Actual app: view_logs-only assistant receives ordinary merchant audit but no merchant incident, including foreign identity/query permission hints.",
+      "view_merchants-only/unauthenticated/merchant access follows existing denials; no inferred audit permission.",
+      "Current SQL permission removal changes existing-session response; no cached permission or row mutation.",
+      "Preserve peer/stored incident bytes, ordinary metadata attribution and independent owner-only emergency boundary; reuse existing accepted tests instead of duplicating them."
+    ],
+    "alternatives": [
+      {
+        "choice": "REQUIRE_VIEW_LOGS_AND_VIEW_MERCHANTS_FOR_MERCHANT_INCIDENT_ROWS",
+        "effect": "Adopt proposed narrower visibility, then implement and verify only this changed rule."
+      },
+      {
+        "choice": "EXPLICITLY_ALLOW_INCIDENT_METADATA_UNDER_VIEW_LOGS",
+        "effect": "Keep current behavior and explicitly adopt endpoint-specific permission difference; verify this selected incident-specific contract before closure."
+      },
+      {
+        "choice": "DEFER",
+        "effect": "No app change, keep FIELD003 open and continue independent authorized work."
+      }
+    ],
+    "approvalBoundary": [
+      "No FIELD002 projection/type support choice",
+      "No FIELD004 legacy draft migration/TTL/retirement",
+      "No FIELD005 retention/deletion/chain policy",
+      "No SEQ-R2, receipt repair or new grants",
+      "No hosted/provider/merge/deploy or whole P0 closure"
+    ],
+    "whyDecisionNeeded": "Current behavior and intended cross-consumer policy differ in scope but no approved uniform rule exists. AGENTS.md states plan approval does not approve policies; a continuation request does not select one.",
+    "previousNoImmediateRequest": "SOURCE_BEHAVIOR_CLASSIFIED_NO_IMMEDIATE_CHOICE_REQUEST",
+    "requestTiming": "Previously deferred while selected independent source/runtime conditions were being completed; those named Knowledge/order conditions are now accepted. This concrete permission choice is needed before changing this specific contract, not a claim that all other P0 work is complete."
+  },
+  "previousNextExactActionBeforeDecision20261031": "Reconcile existing RESIDUAL-FIELD-004/F004-R1/R2 against current order_drafts and processed_channel_events SQL writers/readers, startup/migration/ingress paths and accepted Meta/new-order reachability evidence. Separate dormant-table intended lifecycle from legacy same-name stores and hosted actual-row inventory; identify only a concrete current unproved boundary before code/tests. Do not add CRUD routes, infer inapplicability from lexical absence, repeat accepted notification/early-warning/emergency tests or adopt FIELD002/FIELD003/SEQ-R2 policy."
 }

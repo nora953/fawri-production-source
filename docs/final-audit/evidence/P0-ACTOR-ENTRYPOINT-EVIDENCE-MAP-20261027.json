@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO. FIELD002-R1's old premature request remains withdrawn; current extension behavior is intentional and no stripping policy is selected. Read existing consumerUseReconciliation20261028 and field-policy decision forms before any question or implementation.",
+    "nextExactAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -48651,6 +48651,40 @@
         "newGate": false,
         "completeP0Inventory": false,
         "nextExactAction": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO."
+      },
+      {
+        "boundary": "currentC07FieldPolicyDecisionReadiness",
+        "date": "2026-10-31",
+        "sourceReviewed": "c554deaa39cabde0089b59af17b5b2feb217708b",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C07",
+        "status": "FIELD003_PERMISSION_CHOICE_READY_OTHER_CONTRACTS_UNADOPTED",
+        "proposal": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031",
+        "approval": "UNAPPROVED",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+            "gitBlobSha": "cd6c904610ed95206d309f52efa11a96b744012e"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+            "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+            "gitBlobSha": "e5387972b31ef272418158e8b1be52bc81dd6b75"
+          },
+          {
+            "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+            "gitBlobSha": "83348cd92bf39448e00ae647bf24246b02119945"
+          }
+        ],
+        "applicationChanged": false,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false,
+        "nextExactAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred."
       }
     ],
     "currentTestOverlay": {
@@ -52716,12 +52750,48 @@
           ],
           "status": "FIELD002_003_004_005_UNADOPTED_OR_SOURCE_COMPATIBILITY_OPEN",
           "condition": "Bounded eight-table/86-column evidence is not full privacy acceptance. Reserved/extension/history semantics, cross-consumer audit projection, legacy draft compatibility and record-specific retention require their existing explicit decisions or source contracts.",
-          "next": "Reuse current FIELD002/003/004/005 packets and consumer/provenance reviews; preserve SQL-vs-legacy distinctions. No silent field stripping, indefinite retention, repair or schedule adoption from continuation.",
+          "next": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred.",
           "dependencies": [
             "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
             "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
           ],
-          "newGate": false
+          "newGate": false,
+          "currentDecisionProposal": {
+            "sourceReviewed": "c554deaa39cabde0089b59af17b5b2feb217708b",
+            "status": "FIELD003_PERMISSION_CHOICE_READY_OTHER_CONTRACTS_UNADOPTED",
+            "selectedDecision": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031",
+            "approval": "UNAPPROVED",
+            "applicationChanged": false,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "field002": {
+              "projection": "UNAPPROVED_PRIOR_PREMATURE_REQUEST_REMAINS_WITHDRAWN",
+              "finding": {
+                "currentDisplayDependenceOnUndeclaredExtraKeysIdentified": false,
+                "retainedTransportStateCompatibility": true,
+                "existingPrivacyOrCrossTenantLeakProven": false,
+                "currentBehaviorChanged": false,
+                "policyEnforcementJustifiedByNewDefect": false,
+                "description": "No functional display/count/action dependency on undeclared extras identified in the traced current first-party consumers. Raw-record return/state and existing tests intentionally preserve extra keys. This does not prove all unknown historical/custom consumers safe or absent."
+              },
+              "history": "BLOCKED_HOSTED_INVENTORY",
+              "producerScope": "UNAPPROVED"
+            },
+            "field004": {
+              "normalization": "UNRESOLVED_SOURCE_CONTRACT",
+              "expiry": "ACTUAL_CONFIGURATION_AND_TIME_PROVENANCE_REQUIRED",
+              "consumer": "LIFECYCLE_DECISION_REQUIRED",
+              "history": "BLOCKED_HOSTED_INVENTORY"
+            },
+            "field005": {
+              "snapshots": "RECORD_SPECIFIC_PURPOSE_READER_DURATION_REQUIRED",
+              "financialAudit": "RETENTION_AND_HOLDS_REQUIRED",
+              "emergencyChain": "VERSIONED_PRIVACY_INTEGRITY_DESIGN_REQUIRED",
+              "historyCopies": "BLOCKED_HOSTED_INVENTORY_RECOVERY"
+            },
+            "newGate": false,
+            "parentGateClosed": false
+          }
         },
         {
           "id": "MATRIX-C08",
@@ -52888,7 +52958,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO. FIELD002-R1's old premature request remains withdrawn; current extension behavior is intentional and no stripping policy is selected. Read existing consumerUseReconciliation20261028 and field-policy decision forms before any question or implementation.",
+      "nextCurrentAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -52923,7 +52993,9 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C07"
+      "nextWorkItem": "MATRIX-C07",
+      "nextAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred.",
+      "currentWorkItem": "MATRIX-C07"
     },
     "previousTestOverlayBeforeLegacyKnowledgeRetirement20261029": {
       "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
@@ -53521,7 +53593,7 @@
       "evidence": "evidence/P0-CLOSURE-REGISTER.json#closurePlan.deliveryControl20261031",
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "currentWorkItem": "MATRIX-C07",
-      "nextAction": "MATRIX-C07: use the existing FIELD002/003/004/005 decision packets and prepare the exact first unresolved field-contract choice that unlocks source acceptance, with current behavior, proposed change, compatibility/retention impact and remaining proof. Do not rescan or rebuild accepted source/tests; C08 source continuity and64opaque-reference bookkeeping are now reconciled. Keep completeP0Inventory=false until final field/producer/consumer acceptance is satisfied; do not infer policy or hosted approval from continue. Retain current SEQ/receipt/retention/physical/incident/hosted gate cards and NO-GO. FIELD002-R1's old premature request remains withdrawn; current extension behavior is intentional and no stripping policy is selected. Read existing consumerUseReconciliation20261028 and field-policy decision forms before any question or implementation.",
+      "nextAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred.",
       "staleActivePointersCorrected": 5,
       "gateStatusesChanged": false,
       "newRuntimeTests": 0,
@@ -53610,7 +53682,8 @@
         "fullInventoryAccepted": false,
         "parentGateClosed": false,
         "newGate": false
-      }
+      },
+      "nextCurrentAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred."
     },
     "currentMetaActivationPathMatchingProof": {
       "status": "BOUNDED_META_INACTIVE_CALLBACK_EXPRESS_PATH_AND_HEAD_GATE_FULL_APP_ACCEPTED",
@@ -53762,6 +53835,42 @@
         "compatibilityImpact": "Changes explicitly retained current extension behavior. Example: extra order_id on operational_customer_message is currently returned; candidate removes it because that type permits conversation_id/action_url only. The reserved-key proof's extra-key-preservation assertion would be explicitly superseded only at the response projection layer.",
         "interpretation": "Existing premature request remains withdrawn. Do not ask for blanket field stripping or relabel changed extension behavior a routine fix; use current consumer compatibility evidence and a concrete bounded scope first."
       }
+    },
+    "currentC07DecisionSelection": {
+      "sourceReviewed": "c554deaa39cabde0089b59af17b5b2feb217708b",
+      "status": "FIELD003_PERMISSION_CHOICE_READY_OTHER_CONTRACTS_UNADOPTED",
+      "selectedDecision": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031",
+      "approval": "UNAPPROVED",
+      "applicationChanged": false,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "field002": {
+        "projection": "UNAPPROVED_PRIOR_PREMATURE_REQUEST_REMAINS_WITHDRAWN",
+        "finding": {
+          "currentDisplayDependenceOnUndeclaredExtraKeysIdentified": false,
+          "retainedTransportStateCompatibility": true,
+          "existingPrivacyOrCrossTenantLeakProven": false,
+          "currentBehaviorChanged": false,
+          "policyEnforcementJustifiedByNewDefect": false,
+          "description": "No functional display/count/action dependency on undeclared extras identified in the traced current first-party consumers. Raw-record return/state and existing tests intentionally preserve extra keys. This does not prove all unknown historical/custom consumers safe or absent."
+        },
+        "history": "BLOCKED_HOSTED_INVENTORY",
+        "producerScope": "UNAPPROVED"
+      },
+      "field004": {
+        "normalization": "UNRESOLVED_SOURCE_CONTRACT",
+        "expiry": "ACTUAL_CONFIGURATION_AND_TIME_PROVENANCE_REQUIRED",
+        "consumer": "LIFECYCLE_DECISION_REQUIRED",
+        "history": "BLOCKED_HOSTED_INVENTORY"
+      },
+      "field005": {
+        "snapshots": "RECORD_SPECIFIC_PURPOSE_READER_DURATION_REQUIRED",
+        "financialAudit": "RETENTION_AND_HOLDS_REQUIRED",
+        "emergencyChain": "VERSIONED_PRIVACY_INTEGRITY_DESIGN_REQUIRED",
+        "historyCopies": "BLOCKED_HOSTED_INVENTORY_RECOVERY"
+      },
+      "newGate": false,
+      "parentGateClosed": false
     }
   },
   "componentScopes": {

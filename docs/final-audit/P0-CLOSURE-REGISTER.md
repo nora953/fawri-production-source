@@ -1,3 +1,9 @@
+## قرار التنفيذ المطلوب — 2026-10-31
+
+جُهّز قرار FIELD003 لظهور سجلات إنذار التاجر في التدقيق العام؛ التوصية تتطلب view_logs وview_merchants معًا لهذه السجلات، مع حفظ السجل العادي وحد الطوارئ. التفاصيل والنطاق والأثر والاختبارات في P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 وPROGRESS.md. approval=UNAPPROVED؛ لا تعديل تطبيق أو اختبارات جديدة. مؤشر المتابعة فيclosurePlan.deliveryControl20261031.
+
+لا موافقة ضمنية من «أكمل» على هذا القرار أو بقية عقود الحقول/SEQ/الاحتفاظ أو خدمات مستضافة؛NO-GO و29CLOSED_SOURCE/7OPEN/9BLOCKED محفوظة.
+
 ## الحالة الحالية — 2026-10-31
 
 أُنجزت مطابقة استمرارية المصدر وربط64 استجابة opaque/spread بالأدلة وحدودها ضمنC08. لا وحدات كود جديدة أو محذوفة في مجموعة318؛12 تغيرًا مفسرًا بإصلاحات مقبولة. التفاصيل فيPROGRESS.md وactor-map#currentC08SourceContinuityAndOpaqueConsumerLedger.
