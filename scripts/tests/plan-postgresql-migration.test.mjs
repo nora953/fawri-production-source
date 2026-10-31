@@ -712,3 +712,39 @@ test("dry-run rejects duplicate conversation drafts with different IDs", () => {
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("dry-run rejects same-ID conflicting legacy draft state", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "draft-1",
+          merchant_id: "merchant-1",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "DUPLICATE_TARGET_IDENTITY_CONFLICT",
+    ), "planner must reject a conflicting legacy payload for the same draft ID");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
