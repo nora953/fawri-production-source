@@ -474,8 +474,10 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       });
       continue;
     }
+    // Reject ambiguous local timestamps: historical expiry must carry its timezone.
     const parseInstant = (value) =>
-      typeof value === "string" && value.trim() &&
+      typeof value === "string" &&
+      /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value) &&
       Number.isFinite(Date.parse(value)) ? Date.parse(value) : null;
     const created = parseInstant(row.created_at);
     const updated = parseInstant(row.updated_at);
