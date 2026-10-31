@@ -169,3 +169,36 @@ test("FIELD004 rejects conflicting duplicate draft IDs", () => {
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("FIELD004 rejects a draft without proven original expiry", () => {
+  const directory = createFixture();
+  try {
+    const runtime = readJson(directory, "fawri-runtime-db.json");
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "draft-without-expiry",
+        merchant_id: "merchant-1",
+        customer_external_id: "customer-1",
+        awaiting_field: "product",
+        started_at: "2026-08-02T00:00:00.000Z",
+        updated_at: "2026-08-02T00:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", runtime);
+    const { report } = buildValidatedMigrationPlan({
+      dataDirectory: directory,
+      includeRows: true,
+    });
+    assert.equal(report.write_readiness.ok, false);
+    assert.ok(report.errors.some((issue) =>
+      issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID"
+    ));
+    assert.equal(
+      report.rows.order_drafts.some((row) => row.id === "draft-without-expiry"),
+      false,
+    );
+    assert.throws(() => assertCompleteMigrationWritable(report));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
