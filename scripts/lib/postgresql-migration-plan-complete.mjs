@@ -489,7 +489,10 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       const year = Number(match[1]);
       const month = Number(match[2]);
       const day = Number(match[3]);
-      const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      // Date.UTC treats years 0-99 as 1900-1999; set the full year explicitly.
+      const calendar = new Date(0);
+      calendar.setUTCFullYear(year, month, 0);
+      const daysInMonth = calendar.getUTCDate();
       const clock = value.match(/T(\d{2}):(\d{2}):(\d{2})/);
       if (!clock) return false;
       const [hour, minute, second] = clock.slice(1).map(Number);
