@@ -103,7 +103,9 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
   const [{ default: express }, { default: commerceRouter }, { default: staffRouter }] = await Promise.all([
     import('express'), import('../src/routes/cashier-operator-commerce.ts'), import('../src/routes/cashier-staff-operations.ts'),
   ]);
+  const {default: cookieParser} = await import('cookie-parser');
   const app = express();
+  app.use(cookieParser());
   app.use(express.json()); app.use('/api', staffRouter, commerceRouter);
   server = await new Promise((resolve, reject) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); s.once('error', reject); });
   const base = `http://127.0.0.1:${server.address().port}`;
