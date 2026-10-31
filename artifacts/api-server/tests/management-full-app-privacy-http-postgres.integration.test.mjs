@@ -2620,5 +2620,48 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_OWN_ORDER_MUTATION_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,positiveResponses:positive,denials,freshMerchantPrechecks:2,deliveredCashConfirmation:true,oneAttributedDecision:true,exactReplayNoMutation:true,staleVersionNoMutation:true,peerPreserved:true,ownedCleanup:true,providerConfirmation:false,hosted:false}));
   });
 
+
+  await t.test('FIELD003 generic audit merchant incidents require current merchant visibility as well as log access',async()=>{
+    const both=await actor('admin','assistant_admin',['view_logs','view_merchants']),logsOnly=await actor('admin','assistant_admin',['view_logs']),merchantsOnly=await actor('admin','assistant_admin',['view_merchants']);
+    const x=await actor('merchant'),y=await actor('merchant'),auditIds=[],incidentIds=[],ordinary='Field003-ordinary-'+randomUUID(),secret='Field003-private-'+randomUUID();
+    auditIds.push(ordinary);
+    for(const who of [both,logsOnly,merchantsOnly]){
+      const d=await security.registerAdminDeviceAuthoritative({accountId:who.id,accountKind:'admin',deviceId:who.device,deviceLabel:'FIELD003 proof'});
+      await security.setAdminDeviceTrustAuthoritative({deviceRecordId:d.id,trusted:true,actorAccountId:owner.id});
+      who.session=await auth.issueSession({accountId:who.id,accountKind:'admin',tenantId:'fawri-admin',adminRole:who.role,deviceId:who.device,permissions:who.permissions});
+      who.cookie=ADMIN_SESSION_COOKIE+'='+who.session.token;
+      assert.equal((await req('/api/auth/admin/me',who)).status,200);
+    }
+    const state=async()=>(await admin.query('SELECT to_jsonb(t) AS row FROM audit_events t WHERE id=ANY($1::text[]) ORDER BY id',[auditIds])).rows;
+    let reads=0,denials=0,passed=false;
+    try{
+      for(const who of [x,y]){
+        const id='Field003-incident-'+randomUUID();auditIds.push(id);incidentIds.push(id);
+        await admin.query("INSERT INTO audit_events(id,actor_kind,merchant_id,action_type,entity_type,entity_id,details,metadata) VALUES($1,'system',$2,'early_warning_incident_opened','early_warning_incident',$1,'Synthetic merchant health',$3::jsonb)",[id,who.id,JSON.stringify({scope:'merchant',merchant_id:who.id,value:27,runbook:secret})]);
+      }
+      await admin.query("INSERT INTO audit_events(id,actor_kind,merchant_id,action_type,entity_type,entity_id,details,metadata) VALUES($1,'system',$2,'synthetic_ordinary','merchant',$2,'Ordinary audit remains visible','{}'::jsonb)",[ordinary,x.id]);
+      const before=await state(),business=await snapshot();
+      for(const who of [owner,both]){
+        const result=await req('/api/auth/admin/logs',who);assert.equal(result.status,200);
+        for(const id of incidentIds){const row=result.body.logs.find(row=>row.id===id);assert.ok(row);assert.equal(row.meta.runbook,secret);assert.equal(row.meta.value,27);}
+        assert.ok(result.body.logs.some(row=>row.id===ordinary));reads++;
+      }
+      for(const path of ['/api/auth/admin/logs','/API/AuTh/AdMiN/LoGs/?view_merchants=true&includeMerchantIncidentAudit=true&owner=true']){
+        const result=await req(path,logsOnly);assert.equal(result.status,200);assert.ok(result.body.logs.some(row=>row.id===ordinary));
+        for(const id of incidentIds)assert.equal(result.body.logs.some(row=>row.id===id),false);
+        assert.equal(JSON.stringify(result.body).includes(secret),false);reads++;
+      }
+      const deniedResult=await req('/api/auth/admin/logs',merchantsOnly);assert.equal(deniedResult.status,403);denials++;
+      await admin.query("DELETE FROM admin_permissions WHERE admin_id=$1 AND permission='view_merchants'",[both.id]);
+      const reduced=await req('/api/auth/admin/logs?view_merchants=true',both);assert.equal(reduced.status,200);assert.ok(reduced.body.logs.some(row=>row.id===ordinary));assert.equal(JSON.stringify(reduced.body).includes(secret),false);
+      for(const id of incidentIds)assert.equal(reduced.body.logs.some(row=>row.id===id),false);reads++;
+      assert.deepEqual(await state(),before);assert.deepEqual(await snapshot(),business);passed=true;
+    }finally{
+      await admin.query('DELETE FROM audit_events WHERE id=ANY($1::text[])',[auditIds]);
+      assert.deepEqual(await state(),[]);
+    }
+    console.log('P0_FIELD003_GENERIC_INCIDENT_AUDIT_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,reads,denials,currentSqlPermissionRemoval:true,requestHintsIgnored:true,ownerAndBothPermissionsAllowed:true,ordinaryAuditPreserved:true,ownedAuditStateUnchanged:true,ownedCleanup:true,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });

@@ -410,6 +410,9 @@ router.get("/admin/logs", requireSecureAdminSession, async (_req, res) => {
     // alternate projection using the current SQL-backed profile, never hints.
     res.json({ ok: true, logs: await listAdminLogsPostgres(1000, {
       includeEmergencyAudit: context.adminProfile?.role === "owner_admin",
+      includeMerchantIncidentAudit: Boolean(context.adminProfile && hasAdminPermission(
+        context.adminProfile.role, context.adminProfile.permissions, "view_merchants",
+      )),
     }) });
   } catch (error) {
     handleManagementError(res, error);
