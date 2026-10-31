@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
+    "nextExactAction": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -45829,6 +45829,97 @@
           "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
           "checkoutTreeMatched": true
         }
+      },
+      {
+        "boundary": "currentMetaActivationPathMatchingFullApp",
+        "date": "2026-10-31",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C06",
+        "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+        "sourceReviewed": "a983b8cd4292c5ced47a8caf8ca7602b2dc5c4ed",
+        "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlobSha": "173c5c0a96c273d04bc0977ec9eb667b6fd6e0dd"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+            "gitBlobSha": "96edbe04ad56360e8fa53c9f66df71c0add5464d"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+            "gitBlobSha": "2704c0a99970c736e0de2a91ef7901f961614ec4"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/saas-billing.ts",
+            "gitBlobSha": "3665c398beb2822853b4e83a158b714380a2410e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts",
+            "gitBlobSha": "3e13c1291187dc254a1bbeee09dda6755f411e2d"
+          },
+          {
+            "path": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+            "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939"
+          },
+          {
+            "path": "artifacts/api-server/tests/meta-oauth-operational-cutoff-postgres.integration.test.ts",
+            "gitBlobSha": "dc1ed0db633b1aa3c858dcdcb807a4605a1fe9e7"
+          },
+          {
+            "path": "artifacts/api-server/tests/meta-webhook-postgres-ingress-cutover.integration.test.ts",
+            "gitBlobSha": "0553bbba2e73a9a0c98243a7bc0fd53d7a52a6c1"
+          },
+          {
+            "path": "artifacts/api-server/src/services/productionReleaseReadiness.ts",
+            "gitBlobSha": "0c65de64f932bf7a7de1de93641dee996c37d77e"
+          },
+          {
+            "path": "artifacts/api-server/src/middleware/merchantOperationalAccess.ts",
+            "gitBlobSha": "5b20798f481a754f236b540e33652d0d5a33ca2f"
+          }
+        ],
+        "acceptanceCondition": "Inactive connection gate must cover the effective Express GET/HEAD case-insensitive optional-trailing-slash callback route, while configured requests retain existing missing-code validation without provider I/O.",
+        "sourceFindings": [
+          "Current app activation predicate compared literal GET paths; shared Express GET route accepts case/slash variants and HEAD. Normalize only gate pathname and GET/HEAD classification; no activation prerequisites, credentials, callback business logic or policy changed.",
+          "Operational callback middleware also uses literal matching, but invalid/no state falls through. The callback handler independently validates state and merchant before exchange. This batch does not claim all callback/state/operational variants accepted.",
+          "Current Meta cutoff integration is service/SQL; ingress cutover test directly exercises middleware, not whole app. Neither is a proof of this app-level activation matcher.",
+          "Verified receipt replay execution test mounts the actual receipt router on a small Express app and intercepts provider-status fetch; synthetic sandbox names are not actual sandbox provider delivery acceptance. Real payment/Meta and arbitrary receipt ownership repair remain in existing blocked/policy gates."
+        ],
+        "test": {
+          "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+          "newCases": 1,
+          "inactiveRequests": 8,
+          "configuredNoCodeRequests": 4,
+          "externalTransportForbidden": true
+        },
+        "ci": {
+          "status": "PENDING"
+        },
+        "proof": {
+          "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+          "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+          "sourceTree": "bc6372468bb5dd8d1b5f1b167c941429471c2770",
+          "accepted": false,
+          "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+          "workItem": "MATRIX-C06",
+          "newFunctionalCases": 1,
+          "expectedFullAppTap": 77,
+          "expectedTargetedTap": 110,
+          "expectedInactiveDenials": 8,
+          "expectedConfiguredValidationResponses": 4,
+          "expectedRemoteAttempts": 0,
+          "applicationFilesChanged": 1,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
+          "policyAdopted": false
+        },
+        "parentGateClosed": false,
+        "newGate": false,
+        "policyAdopted": false,
+        "nextExactAction": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards."
       }
     ],
     "currentTestOverlay": {
@@ -49658,7 +49749,26 @@
             "P0-HOSTED-PROVIDER-PAYMENT",
             "P0-HOSTED-PROVIDER-META"
           ],
-          "newGate": false
+          "newGate": false,
+          "currentMetaActivationPathMatchingProof": {
+            "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+            "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+            "sourceTree": "bc6372468bb5dd8d1b5f1b167c941429471c2770",
+            "accepted": false,
+            "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+            "workItem": "MATRIX-C06",
+            "newFunctionalCases": 1,
+            "expectedFullAppTap": 77,
+            "expectedTargetedTap": 110,
+            "expectedInactiveDenials": 8,
+            "expectedConfiguredValidationResponses": 4,
+            "expectedRemoteAttempts": 0,
+            "applicationFilesChanged": 1,
+            "testFilesChanged": 1,
+            "newGate": false,
+            "parentGateClosed": false,
+            "policyAdopted": false
+          }
         },
         {
           "id": "MATRIX-C07",
@@ -49806,7 +49916,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
+      "nextCurrentAction": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -49841,7 +49951,7 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C05"
+      "nextWorkItem": "MATRIX-C06"
     },
     "previousTestOverlayBeforeLegacyKnowledgeRetirement20261029": {
       "source": "8b201f91d0fc9411a8ccf2bbc640703596a64b2d",
@@ -50433,6 +50543,36 @@
       "gitBlob": "326337019be70011aa6a48f19d833715964ee169",
       "catalogueRegenerated": false,
       "interpretation": "One bounded actual-app merchant SSE case accepted: target108/full75, two tenant snapshots with uncapped53/2 counts,6denials, real bounded server EOF, revoked reconnect denial and valid peer reconnect. All58 CI first attempt and836broader/97invocations/94files, checkout tree matched. No app/policy/hosted or parent closure."
+    },
+    "deliveryControl20261031": {
+      "status": "ACTIVE_EXECUTION_CONTROL_NOT_GATE_ACCEPTANCE",
+      "evidence": "evidence/P0-CLOSURE-REGISTER.json#closurePlan.deliveryControl20261031",
+      "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "currentWorkItem": "MATRIX-C06",
+      "nextAction": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards.",
+      "staleActivePointersCorrected": 5,
+      "gateStatusesChanged": false,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0
+    },
+    "currentMetaActivationPathMatchingProof": {
+      "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+      "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+      "sourceTree": "bc6372468bb5dd8d1b5f1b167c941429471c2770",
+      "accepted": false,
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "workItem": "MATRIX-C06",
+      "newFunctionalCases": 1,
+      "expectedFullAppTap": 77,
+      "expectedTargetedTap": 110,
+      "expectedInactiveDenials": 8,
+      "expectedConfiguredValidationResponses": 4,
+      "expectedRemoteAttempts": 0,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false
     }
   },
   "componentScopes": {

@@ -1,3 +1,9 @@
+## إصلاح محدد لبوابة Meta وضبط تنفيذ الإغلاق — 2026-10-31
+
+المصدر المرشح [ca2d779b](https://github.com/nora953/fawri-production-source/commit/ca2d779b2590c52af7dd2a208a3b65a62e27921e) يوحّد مطابقة بوابة تعطيل اتصالMeta مع Express لاختلاف الأحرف والشرطة الأخيرة وGET/HEAD. أضيف اختبار واحد عبرapp.ts:8طلبات تعطيل متوقعة503 و4طلبات بإعداد اصطناعي كامل متوقعة400لنقصcode؛ يمنع أيfetchخارجي ويتحقق من ثبات البيانات. CI_PENDING؛ لا قبولruntimeقبل النتائج. لا اتصالMeta أوتفعيلمزود أوتغييرمتطلباتالإعداد. الدليل التفصيلي في evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMetaActivationPathMatchingFullApp].
+
+ثُبّت المنوال الجديد فيAGENTS وخطةالتنفيذ وclosurePlan.deliveryControl20261031:16بطاقةللأبوابالقائمة،5تصحيحاتلمؤشراتقديمة كانت تعيدC02،ومعيارشرطإغلاق/دليلناقص/أثرمحدد قبل أي اختبار. تاريخالأدلةمحفوظ؛ لا إعادةعدّالاختبارات كتقدم. C06مقدّم مؤقتًا لإصلاححدتعطيلفعلي؛ C05بقيةالمطابقةمؤجلةوليستمغلقة. لا بنودجديدة أوتغييرللحالات:29CLOSED_SOURCE/7OPEN/9BLOCKED،completeP0Inventory=false،overallPercentage=null،NO-GO. آخرمصدرمقبولf3d09c87؛نتائجه58/58 محفوظة. التالي تحققCIللمرشحثمقبولالشرطالمحددأوإصلاحالفشل؛GitHub-only دونmerge/deploy/hosted/P1/P2.
+
 ## قبول MATRIX-C05: قراءة المعرفة عبر التطبيق الكامل — 2026-10-30
 
 المصدر [f3d09c87](https://github.com/nora953/fawri-production-source/commit/f3d09c87cd02a6f918fa2da4019e06b4c086def1) مقبول ضمن شرط القراءة المحدد: **58/58workflowSUCCESS**. نجح56بالمحاولة الأولى؛ أُعيد مساران فقط بعد إثبات HTTP502 من DockerHub أثناء تنزيل الصور قبل اختبارات التطبيق، دون تعديل كود أو تخفيف assertions أو إعادة الحزم الناجحة. نقاط CI_PENDING أدناه تاريخية.

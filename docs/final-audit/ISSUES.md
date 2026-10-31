@@ -1,3 +1,7 @@
+## نقطة التنفيذ الحالية — 2026-10-31
+
+إصلاح بوابة تعطيلMeta مرشحCI_PENDING عند ca2d779b2590c52af7dd2a208a3b65a62e27921e. قواعدالإنجازوبطاقاتالمتبقي وتصحيحالمؤشرات في evidence/P0-CLOSURE-REGISTER.json#closurePlan.deliveryControl20261031؛ تفاصيلالمرشح فيPROGRESS.md وأدلةactor-map. لا قبولبوابةأونسبةتقدمجديدة؛NO-GO والقيودمحفوظة. الفقراتالأقدم أدناه تاريخية؛مؤشرالمتابعةالحالي داخلdeliveryControl.
+
 ## قبول MATRIX-C05: قراءة المعرفة عبر التطبيق الكامل — 2026-10-30
 
 المصدر [f3d09c87](https://github.com/nora953/fawri-production-source/commit/f3d09c87cd02a6f918fa2da4019e06b4c086def1) مقبول ضمن شرط القراءة المحدد: **58/58workflowSUCCESS**. نجح56بالمحاولة الأولى؛ أُعيد مساران فقط بعد إثبات HTTP502 من DockerHub أثناء تنزيل الصور قبل اختبارات التطبيق، دون تعديل كود أو تخفيف assertions أو إعادة الحزم الناجحة. نقاط CI_PENDING أدناه تاريخية.

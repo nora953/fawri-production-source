@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
+  "sourceCandidate": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
   "lastFullyAcceptedSource": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
   "release": "NO-GO",
   "rows": [
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
+      "nextAction": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -4219,6 +4219,25 @@
         "infrastructureRetryWorkflows": 2,
         "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
         "checkoutTreeMatched": true
+      },
+      "currentMetaActivationPathMatchingProof": {
+        "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+        "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+        "sourceTree": "bc6372468bb5dd8d1b5f1b167c941429471c2770",
+        "accepted": false,
+        "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C06",
+        "newFunctionalCases": 1,
+        "expectedFullAppTap": 77,
+        "expectedTargetedTap": 110,
+        "expectedInactiveDenials": 8,
+        "expectedConfiguredValidationResponses": 4,
+        "expectedRemoteAttempts": 0,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false
       }
     },
     {
@@ -6149,7 +6168,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+      "nextAction": "MATRIX-C07: resolve only the recorded FIELD002/003/004/005 compatibility, historical inventory, cross-consumer permission and retention decisions. Reuse accepted C02 owner recovery/admin OTP and merchant self-service proofs; they are not the current next task. Follow closurePlan.deliveryControl20261031 for policy/external dependencies; no policy adoption or hosted action from continuation.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -6671,35 +6690,44 @@
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
         "completedPrerequisite": "POST catalog image source/client/parser reconciled with6matched pins. One actual-full-app case after66TAP reproduced foreign-Origin201 plus1physical file; existing guard applied after merchant auth and before raw parser in2application lines. Final403/no files, allowed/omitted-Origin own/peer upload, exact asset/file/preview, MIME/empty/JSON/oversize denials, provider and real filesystem write error/recovery/session-revoke pass: target98/full-app67, broader836, all58CI. No schema/production grants/ownership policies or parent/count change. Next reconcile promotion write family source/evidence.",
-        "nextNamedReview": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+        "nextNamedReview": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards.",
         "latestAcceptedBoundary": {
-          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp]",
-          "status": "BOUNDED_ADMIN_INCOMPLETE_AUTHORITY_CASE_MATCHING_AND_COMPLETE_PROFILE_RECOVERY_FULL_APP_ACCEPTED",
-          "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
-          "sourceTree": "0af469ca22cb39c2a34b62181edbd2f569de87d8",
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentKnowledgeReadFullApp]",
+          "status": "BOUNDED_KNOWLEDGE_THREE_READ_DTO_ACTOR_TENANT_FULL_APP_ACCEPTED",
+          "source": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
+          "sourceTree": "8b08124b62af129e715bc26a866cf04de21b36c6",
+          "testBlob": "b6a500871f2d1567b87723654cc68c4517f33043",
           "newFunctionalCases": 1,
           "newTapCases": 1,
-          "newGroup": false,
-          "targetedTap": 102,
-          "fullAppTap": 71,
-          "targetRun": 40934588346,
-          "targetJob": 123661639709,
+          "targetRun": 41104637622,
+          "broaderRun": 41104637551,
+          "expectedFullAppTap": 76,
+          "expectedTargetTap": 109,
+          "expectedTargetFiles": 6,
+          "plannedPositiveReads": 15,
+          "plannedDeniedReads": 21,
+          "accepted": true,
+          "applicationFilesChanged": 0,
+          "testFilesChanged": 1,
+          "parentGateClosed": false,
+          "newGate": false,
+          "policyAdopted": false,
+          "fullAppTap": 76,
+          "targetedTap": 109,
+          "targetFiles": 6,
+          "targetJob": 124230817669,
+          "broaderJob": 124230816897,
           "broaderTap": 836,
           "broaderInvocations": 97,
           "broaderUniqueFiles": 94,
-          "broaderRun": 40934587853,
-          "broaderJob": 123662400543,
+          "positiveReads": 15,
+          "deniedReads": 21,
           "allCiSuccess": 58,
-          "accepted": true,
-          "reviewedSourcePins": 18,
-          "authRegistrationRows": 60,
-          "authDistinctMethodPathKeys": 43,
-          "applicationFilesChanged": 1,
-          "testFilesChanged": 1,
-          "newGate": false,
-          "parentGateClosed": false,
-          "policyAdopted": false,
-          "userActionRequiredNow": false
+          "totalCi": 58,
+          "firstAttemptSuccess": 56,
+          "infrastructureRetryWorkflows": 2,
+          "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
+          "checkoutTreeMatched": true
         },
         "noRepeat": "Reuse bounded18-route admin ledger and current accepted overlays. No automatic repetition of aggregate positives/source-only edges. Return to FIELD002/003/004/005 queue while retaining explicit limits and SEQ-R2 non-approval.",
         "nextAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
@@ -7282,7 +7310,7 @@
         "order": 3,
         "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
         "deliverable": "Only unresolved FIELD002/003/004/005 decisions/cases, reusing accepted cells.",
-        "nextAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment."
+        "nextAction": "MATRIX-C07: resolve only the recorded FIELD002/003/004/005 compatibility, historical inventory, cross-consumer permission and retention decisions. Reuse accepted C02 owner recovery/admin OTP and merchant self-service proofs; they are not the current next task. Follow closurePlan.deliveryControl20261031 for policy/external dependencies; no policy adoption or hosted action from continuation."
       },
       {
         "order": 4,
@@ -7308,7 +7336,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
+        "nextAction": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -11332,6 +11360,25 @@
           "infrastructureRetryWorkflows": 2,
           "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
           "checkoutTreeMatched": true
+        },
+        "currentMetaActivationPathMatchingProof": {
+          "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+          "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+          "sourceTree": "bc6372468bb5dd8d1b5f1b167c941429471c2770",
+          "accepted": false,
+          "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+          "workItem": "MATRIX-C06",
+          "newFunctionalCases": 1,
+          "expectedFullAppTap": 77,
+          "expectedTargetedTap": 110,
+          "expectedInactiveDenials": 8,
+          "expectedConfiguredValidationResponses": 4,
+          "expectedRemoteAttempts": 0,
+          "applicationFilesChanged": 1,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
+          "policyAdopted": false
         }
       },
       {
@@ -11415,7 +11462,7 @@
         "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
         "executableNowWithinGitHub": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
         "externalDependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
-        "nextAction": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+        "nextAction": "MATRIX-C07: resolve only the recorded FIELD002/003/004/005 compatibility, historical inventory, cross-consumer permission and retention decisions. Reuse accepted C02 owner recovery/admin OTP and merchant self-service proofs; they are not the current next task. Follow closurePlan.deliveryControl20261031 for policy/external dependencies; no policy adoption or hosted action from continuation.",
         "dependsOn": [
           "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
         ],
@@ -15818,7 +15865,26 @@
             "P0-HOSTED-PROVIDER-PAYMENT",
             "P0-HOSTED-PROVIDER-META"
           ],
-          "newGate": false
+          "newGate": false,
+          "currentMetaActivationPathMatchingProof": {
+            "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+            "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+            "sourceTree": "bc6372468bb5dd8d1b5f1b167c941429471c2770",
+            "accepted": false,
+            "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+            "workItem": "MATRIX-C06",
+            "newFunctionalCases": 1,
+            "expectedFullAppTap": 77,
+            "expectedTargetedTap": 110,
+            "expectedInactiveDenials": 8,
+            "expectedConfiguredValidationResponses": 4,
+            "expectedRemoteAttempts": 0,
+            "applicationFilesChanged": 1,
+            "testFilesChanged": 1,
+            "newGate": false,
+            "parentGateClosed": false,
+            "policyAdopted": false
+          }
         },
         {
           "id": "MATRIX-C07",
@@ -15966,7 +16032,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
+      "nextCurrentAction": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -16001,7 +16067,7 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C05"
+      "nextWorkItem": "MATRIX-C06"
     },
     "currentLegacyKnowledgeRetirementFullAppProof": {
       "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
@@ -16519,6 +16585,389 @@
       "infrastructureRetryWorkflows": 2,
       "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
       "checkoutTreeMatched": true
+    },
+    "deliveryControl20261031": {
+      "date": "2026-10-31",
+      "sourceReviewed": "a983b8cd4292c5ced47a8caf8ca7602b2dc5c4ed",
+      "userDirection": "Work immediately under closure-oriented execution; retain accuracy and all required verification.",
+      "status": "ACTIVE_EXECUTION_CONTROL_NOT_GATE_ACCEPTANCE",
+      "rules": [
+        "Before new code/test: name existing gate, exact unmet acceptance condition, existing evidence and why it is insufficient, and expected gate/condition status delta. A documented limitation alone does not automatically require another test.",
+        "Batch related independent conditions under the same existing gate where they share fixtures and authority; complete relevant checks once per coherent source candidate. Never weaken negative/positive/fault assertions to save time.",
+        "Measure delivered closure conditions and unresolved blockers. TAP/workflow/commit/document counts are verification metadata, not completion progress.",
+        "Preserve accepted evidence at its original proof layer; rerun only for changed source, observed failure or a named integration gap. During CI waits perform independent authorized work, with bounded polling and visible blocker updates.",
+        "Maintain one current next-action pointer. Supersede stale active pointers without rewriting historical evidence. Do not route a new session back into accepted C01-C04 conditions.",
+        "Every batch ends in either a verified implementation/accepted condition, a finite evidence classification resolving a named inventory unknown, or a concrete decision/external blocker. Source-only classification does not close runtime/release gates.",
+        "Continue authorized independent work without asking for another continue. Stop dependent work only for a missing required decision, unavailable capability or authorization boundary; preserve a GitHub checkpoint.",
+        "Use existing register and evidence documents. Do not create overlapping progress packets or repeat the same long status narrative across all documents; keep authoritative details in one location and concise references elsewhere."
+      ],
+      "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "currentWorkItem": "MATRIX-C06",
+      "nextAction": "Verify exact-source CI for ca2d779b2590c52af7dd2a208a3b65a62e27921e and actual-app P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED before accepting the C06 gate-matching condition. Expected8inactive503 denials (GET/HEAD,canonical/case/trailing slash),4configured400 missing-code validations,0remote attempts; preserve valid callback behavior. Do not rerun accepted Knowledge/SSE/order/pairing solely for totals. C05 remaining evidence consolidation is deferred, not closed; after this candidate resolve the finite C05-C08 inventory unknowns and transfer policy/physical/hosted items to existing gate cards.",
+      "knownRemainingGates": [
+        {
+          "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+          "status": "OPEN",
+          "executionClass": "ENGINEERING_AND_INVENTORY_NOW",
+          "closureConditions": [
+            "Reconcile current mounted entrypoints, background/alternate producers, actors, roles/sessions and sensitive field consumers to the existing register and accepted proof layers; every P0 exposure has an evidence link or explicit unmet acceptance item.",
+            "No unresolved P0 actor/field boundary remains unclassified; known/unknown and policy/hosted requirements remain explicit rather than counted as accepted.",
+            "Any actual unproved authorization boundary has legitimate-positive, unauthorized-negative and required runtime evidence at the accepted source."
+          ],
+          "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
+          "executableNow": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
+          "dependency": "Related field policies and hosted inventory can block final acceptance.",
+          "nextAction": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy."
+        },
+        {
+          "gate": "CASHIER-SYNC-SEQUENCE-001",
+          "status": "OPEN",
+          "executionClass": "DECISION_BEFORE_DEPENDENT_IMPLEMENTATION",
+          "closureConditions": [
+            "Resolve SEQ-R1/R2/R3: future-gap/late operation disposition, movement-only local API/outbox treatment, first-device/checkpoint/restore and legacy reconciliation.",
+            "Reuse authenticated merchant pairing; define its connection to stream identity/checkpoint without reset, guessed baseline or treating successful pairing as fresh-empty evidence.",
+            "Required source/native/HTTP/restricted-SQL matrix in the existing recovery contract passes: exact replay,1/3/late2 chosen handling, unsupported operation hold, lost ACK/restart, rollback, tenant/device/station denial, real concurrency and restore.",
+            "New protocol remains unsupported publicly until its complete acceptance boundary is met; operational promotion and grant/retention prerequisites are separately satisfied, not inferred from fixtures."
+          ],
+          "missingEvidenceOrDecision": "Existing public protocol refusal is already covered by6 passing real-router HTTP cases/36 requests at accepted711fd97; no new test/runtime is needed for that subcondition. Next explicit SEQ-R2 future-operation/retained-movement contract choice is prepared and UNAPPROVED. Trusted original review, legacy/restore authority and positive public HTTP/native v2 admission remain open.",
+          "executableNow": "Reconcile each required recovery-contract row against existing evidence. Implement only the next missing row that advances SEQ-R1/R2/R3; the HTTP pairing extension is conditional on that mapping.",
+          "dependency": "Intended manual-adjustment/legacy disposition, trusted enrollment/recovery rules, FIELD005 and separately authorized operational adoption remain dependencies.",
+          "nextAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request."
+        },
+        {
+          "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+          "status": "OPEN",
+          "executionClass": "POLICY_AND_EXTERNAL_WITH_BOUNDED_SOURCE_REMAINDER",
+          "closureConditions": [
+            "Reconcile owner/assistant/merchant access for the existing eight residual tables and their actual HTTP/alternate producers/consumers, preserving legitimate operations and tenant isolation.",
+            "Resolve FIELD002-R1 response extra-key/unknown/malformed compatibility contract, R2 actual historical disposition, R3 supported versus compatibility-only producer scope.",
+            "Resolve FIELD003 cross-consumer view_logs/view_merchants policy and verify only behavior changed by the chosen rule.",
+            "Resolve F004-R1 intended lifecycle of dormant tables and F004-R2 authorized actual row/writer inventory; resolve FIELD005 through its existing retention gate.",
+            "Close only when every required field/actor cell has the required proof or an approved inapplicability decision; a literal scan absence does not prove inapplicability."
+          ],
+          "missingEvidenceOrDecision": "FIELD001 accepted; FIELD002/003/004/005 open. Many SQL/HTTP cells already accepted; remaining items are not all missing tests.",
+          "executableNow": "Attach existing accepted evidence to exact cells and list only unmet field/actor cases; prepare concrete policy choices without silently adopting them.",
+          "dependency": "FIELD002-R2/F004-R2 hosted inventory; response/incident/dormant-table policy choices; FIELD005.",
+          "nextAction": "MATRIX-C07: resolve only the recorded FIELD002/003/004/005 compatibility, historical inventory, cross-consumer permission and retention decisions. Reuse accepted C02 owner recovery/admin OTP and merchant self-service proofs; they are not the current next task. Follow closurePlan.deliveryControl20261031 for policy/external dependencies; no policy adoption or hosted action from continuation."
+        },
+        {
+          "gate": "P0-OFFLINE-DEVICE-ACCEPTANCE",
+          "status": "OPEN",
+          "executionClass": "PHYSICAL_DEVICE_EXECUTION_UNAVAILABLE",
+          "closureConditions": [
+            "Accept main/secondary station behavior, grace boundaries, operator/shift transitions and local queue preservation on the declared supported physical-device profiles.",
+            "Document OS clock/profile/storage trust limits and enforce the declared offline entitlement boundary; no claim that a client-controlled profile is independently trusted.",
+            "Required actual-device cases and real server ACK/replay are linked to the exact client/server version; synthetic fetch ACK/native-only evidence is not substituted."
+          ],
+          "missingEvidenceOrDecision": "Native8 and real HTTP/SQL proofs exist at their original layers; physical-device and complete combined acceptance missing.",
+          "executableNow": "Prepare the exact remaining physical-device case sheet by subtracting existing evidence; source fixes only for a confirmed uncovered defect.",
+          "dependency": "Access to declared supported physical devices and an approved test environment; operational release key parity is separate.",
+          "nextAction": "Name the missing physical profile/case and expected observation. Mark execution blocked when the device/environment is unavailable; do not regenerate synthetic device proofs."
+        },
+        {
+          "gate": "P0-RECEIPT-OWNERSHIP-POLICY",
+          "status": "OPEN",
+          "executionClass": "OWNER_OPERATOR_POLICY_REQUIRED",
+          "closureConditions": [
+            "Approve who may resolve arbitrary missing-order/receipt ownership, admissible original evidence, conflict/refusal cases and immutable audit responsibilities.",
+            "Implement only the adopted bounded workflow; prove legitimate repair plus foreign/ambiguous/unauthorized denial and rollback/idempotency without fabricating financial identity.",
+            "Fixture mapping restoration is retained as fixture evidence and never relabeled supported operational repair."
+          ],
+          "missingEvidenceOrDecision": "No supported administrative recovery workflow or explicit approval for arbitrary ownership repair.",
+          "executableNow": "Prepare a concrete decision record using issue523 and actual receipt resolver paths, with existing behavior and exact proposed change.",
+          "dependency": "Explicit owner/operator decision on repair authority and admissible evidence; hosted evidence if historical records are involved.",
+          "nextAction": "Present one source-grounded ownership/recovery proposal with approval scope and failure cases; no repair writes or new authority before that decision."
+        },
+        {
+          "gate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY",
+          "status": "OPEN",
+          "executionClass": "RECORD_SPECIFIC_POLICY_AND_EXTERNAL_EVIDENCE",
+          "closureConditions": [
+            "Approve F005-R1/R2 per-field/record purpose, permitted readers, retention trigger/duration, holds and final disposition, including review-ledger linkage and external originals.",
+            "Approve F005-R3 versioned emergency privacy/integrity treatment; preserve current deletion409 until an accepted replacement exists.",
+            "After approval, prove expiry boundaries/holds and valid/invalid readers with financial replay/deletion/peer integrity preserved.",
+            "Complete F005-R4/R5 original-evidence recovery and backup/media/export/restored-copy inventory and disposition at the authorized operational layer."
+          ],
+          "missingEvidenceOrDecision": "F005-R1/R2/R3 have no approved schedules/design. F005-R4/R5 hosted scope/evidence unavailable. Existing purge/reference-minimization tests do not approve indefinite retention.",
+          "executableNow": "Consolidate existing field-specific decision forms; prepare reviewable choices. No invented duration, anonymous-hash claim or repeated purge tests.",
+          "dependency": "Explicit record-specific policy decisions; separately authorized hosted inventory/recovery for R4/R5.",
+          "nextAction": "Use the consolidated current class/field/reader decision packet before selecting any retention implementation. Per-class purpose, post-deletion readers, trigger/duration, holds/release and final disposition remain unapproved; selected behavior then needs bounded expiry/financial/replay proof. Continue independent known F004-R1 work now; no choice inferred from continuation."
+        },
+        {
+          "gate": "P0-INCIDENT-REVIEW",
+          "status": "OPEN",
+          "executionClass": "ORIGINAL_OPERATIONAL_EVIDENCE_REQUIRED",
+          "closureConditions": [
+            "Build a timestamped incident/exposure timeline from original service/account/security evidence with affected revisions/identities and uncertainties explicitly recorded.",
+            "Review relevant account/service activity and credential exposure, record needed containment/rotation and verify it only under separately authorized scope.",
+            "Obtain responsible operational/security acceptance of the incident disposition; healthy samples alone do not close an incident."
+          ],
+          "missingEvidenceOrDecision": "Historical healthy samples exist; current exposure-window/account/service assessment and operational clearance are missing.",
+          "executableNow": "Organize existing repository incident evidence into a finite gap list; do not infer uncompromised credentials or perform rotation.",
+          "dependency": "New explicit authorization and original operational/account evidence for external inspection, rotation and incident signoff.",
+          "nextAction": "List required original logs/identity/time windows and responsible review, preserving GitHub-only boundary. No broad rescan to simulate incident clearance."
+        },
+        {
+          "gate": "P0-ACCESS-HOSTED-IDENTITY",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Verify actual deployed revision, target database/branch, active runtime login and pooling from independent read-only operational evidence.",
+            "Link findings to the accepted source and record any mismatch; no credential disclosure in repository."
+          ],
+          "missingEvidenceOrDecision": "Current deployed identity not independently verified; old hosted observations do not accept current source.",
+          "executableNow": "Prepare a read-only evidence checklist using existing hosted recovery evidence; no hosted call now.",
+          "dependency": "Explicit authorization for the specified hosted identity/target inspection.",
+          "nextAction": "After authorization, collect exact revision/DB/login/pooling evidence read-only; refuse to accept based on environment-variable names alone."
+        },
+        {
+          "gate": "P0-ACCESS-HOSTED-ROLLOUT",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Observe deployed migration journal/schema, function owners/definitions, grants/RLS and restricted role identities matching the accepted source manifest.",
+            "Verify missing/extra/unsafe state is refused by readiness and preserve a reviewed rollback/change plan for any needed correction.",
+            "Any rollout/grant/migration is independently authorized and verified; fixture roles/grants are not operational identities."
+          ],
+          "missingEvidenceOrDecision": "Current hosted catalog/journal/ACL parity unavailable.",
+          "executableNow": "Reuse accepted read-only installation/readiness contracts to specify required outputs, without repeating candidate migrations.",
+          "dependency": "Hosted read-only authorization first; separate explicit authorization for any change.",
+          "nextAction": "Once identity is verified and scope authorized, compare actual catalog and full journal to accepted source; record discrepancies before proposing writes."
+        },
+        {
+          "gate": "P0-OFFLINE-KEY-RELEASE",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Verify operational signing key/public verifier parity for the exact client/server release and key identifiers without exporting private secrets.",
+            "Accept rotation/revocation/old-token handling and signed rollout/rollback under the documented trust boundary."
+          ],
+          "missingEvidenceOrDecision": "No operational key provisioning/parity/rotation or signed rollout acceptance.",
+          "executableNow": "Prepare exact parity/rotation evidence requirements from existing key contract; no key/provider call.",
+          "dependency": "Explicit authorization for operational key inspection/provisioning/rotation/release as applicable.",
+          "nextAction": "Collect approved key-ID/public-key/release-manifest parity, then rehearse authorized rotation and rollback; do not substitute generated fixture keys."
+        },
+        {
+          "gate": "P0-HOSTED-PROVIDER-PAYMENT",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Use the actual approved provider sandbox/contract for signature validation, exact amount/currency/order identity, settlement/status and duplicate/retry/failure outcomes.",
+            "Demonstrate one durable financial effect and tenant-safe reconciliation, tied to the exact accepted source and provider mode."
+          ],
+          "missingEvidenceOrDecision": "Fake signed gateway only; current source/provider integration not operationally accepted.",
+          "executableNow": "Map already accepted fake-provider cases to the missing provider-specific outcomes; no credential request or provider call now.",
+          "dependency": "Explicit authorization, approved sandbox/account and provider credentials supplied through the proper secure channel.",
+          "nextAction": "After authorization, execute only the missing provider contract cases and retain redacted original evidence; fake fixtures remain labeled fake."
+        },
+        {
+          "gate": "P0-HOSTED-PROVIDER-META",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Verify actual approved connected-page/account OAuth/webhook/Graph delivery and AI request behavior for the supported declared channels.",
+            "Accept provider retries/failure and quota/refund/privacy boundaries with real delivered outcomes and tenant isolation at the exact source."
+          ],
+          "missingEvidenceOrDecision": "Injected Graph/AI proofs retained; current actual credentials/page delivery/provider failures not accepted.",
+          "executableNow": "Prepare the missing real-provider case list by reusing source/injected evidence; no new channel/product expansion.",
+          "dependency": "Explicit authorization for the selected provider accounts/pages/AI sandbox and secure credentials.",
+          "nextAction": "Execute a bounded approved real-provider scenario set and reconcile delivery/failure outputs; do not activate planned channels."
+        },
+        {
+          "gate": "P0-HOSTED-STORAGE-DELETION",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Inventory the actual storage/media/object paths, copies/exports and relevant readers/access, linked to deployed version.",
+            "Prove authorized and unauthorized access, retry-safe durable deletion/cleanup and disposition of each in-scope copy according to approved retention.",
+            "Reconcile restored-copy reintroduction through the recovery gate; local filesystem cleanup is not object-store acceptance."
+          ],
+          "missingEvidenceOrDecision": "Actual object/media inventory and deletion/access proof missing.",
+          "executableNow": "Prepare bounded inventory and observations needed; no object/storage connector now.",
+          "dependency": "Hosted/storage authorization and approved applicable retention/copy policy.",
+          "nextAction": "After authorization, establish actual copy/storage inventory before mutation, then test only the approved deletion/access path."
+        },
+        {
+          "gate": "P0-HOSTED-RECOVERY",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Inventory actual backup/PITR/media/key/role dependencies and specify approved RPO/RTO targets.",
+            "Rehearse recovery in an authorized isolated operational environment, verifying exact source/schema/roles/key/media parity and financial/tenant/retention integrity.",
+            "Measure achieved RPO/RTO and accept retry/rollback plus treatment of restored deleted data; retain original historical unverifiability when no trusted original exists."
+          ],
+          "missingEvidenceOrDecision": "Owned offline dump/restore and six-role rotation proofs exist; actual operational backup/PITR/media inventory, targets and recovery signoff missing.",
+          "executableNow": "Reuse existing recovery proofs, prepare exact operational delta/checklist; do not repeat identical offline restore to claim hosted readiness.",
+          "dependency": "Explicit authorization for inventory/rehearsal, actual backup/media/key/role evidence and responsible RPO/RTO decisions.",
+          "nextAction": "Inventory dependencies read-only under approved scope; define measurable targets before the separately authorized recovery rehearsal."
+        },
+        {
+          "gate": "P0-HOSTED-BRANCH-DEPLOYMENT",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Independently verify exact deployed branch/commit/image/config and readiness against the accepted source.",
+            "Accept reviewed deployment/rollback/release controls and post-change health under separately authorized operational scope.",
+            "No source CI pass, old main observation or draft PR is treated as deployment/merge authorization."
+          ],
+          "missingEvidenceOrDecision": "Current deployment unverified; last historic main/d38d2922 observation is not parity evidence.",
+          "executableNow": "Prepare exact release manifest and operational evidence checklist from existing source; no deployment or main change.",
+          "dependency": "Explicit read-only deployment identity scope; separate authorization for deployment/rollback rehearsal/change.",
+          "nextAction": "Verify current artifact identity first; record parity gap and concrete reviewed rollout/rollback before requesting any change."
+        },
+        {
+          "gate": "P0-RELEASE-SIGNOFF",
+          "status": "BLOCKED",
+          "executionClass": "EXTERNAL_OR_DEPENDENT_BLOCKED",
+          "closureConditions": [
+            "Complete the P0 inventory reconciliation and satisfy every required P0 acceptance condition at its stated proof layer.",
+            "Resolve all remaining register blockers and obtain independent responsible owner/operator/security release-gate approval.",
+            "Record exact accepted source/evidence and any separately authorized operational acceptance; P0 acceptance alone does not start P1/P2 or authorize merge/deploy."
+          ],
+          "missingEvidenceOrDecision": "All other remaining acceptance gates and complete-inventory reconciliation still pending.",
+          "executableNow": "Maintain the evidence/approval ledger only; cannot sign off now.",
+          "dependency": "All P0 blockers resolved and explicit independent signoff. No approval inferred from user agreement to this closure plan.",
+          "nextAction": "Review the complete requirement/evidence register only after blockers are satisfied; retain NO-GO until an authorized decision."
+        }
+      ],
+      "pointerCorrections": [
+        {
+          "path": "closurePlan.activeWorkOrder[order=1].nextNamedReview",
+          "previous": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+          "current": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy."
+        },
+        {
+          "path": "closurePlan.activeWorkOrder[order=1].latestAcceptedBoundary",
+          "previous": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp]",
+            "status": "BOUNDED_ADMIN_INCOMPLETE_AUTHORITY_CASE_MATCHING_AND_COMPLETE_PROFILE_RECOVERY_FULL_APP_ACCEPTED",
+            "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
+            "sourceTree": "0af469ca22cb39c2a34b62181edbd2f569de87d8",
+            "newFunctionalCases": 1,
+            "newTapCases": 1,
+            "newGroup": false,
+            "targetedTap": 102,
+            "fullAppTap": 71,
+            "targetRun": 40934588346,
+            "targetJob": 123661639709,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "broaderRun": 40934587853,
+            "broaderJob": 123662400543,
+            "allCiSuccess": 58,
+            "accepted": true,
+            "reviewedSourcePins": 18,
+            "authRegistrationRows": 60,
+            "authDistinctMethodPathKeys": 43,
+            "applicationFilesChanged": 1,
+            "testFilesChanged": 1,
+            "newGate": false,
+            "parentGateClosed": false,
+            "policyAdopted": false,
+            "userActionRequiredNow": false
+          },
+          "current": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentKnowledgeReadFullApp]",
+            "status": "BOUNDED_KNOWLEDGE_THREE_READ_DTO_ACTOR_TENANT_FULL_APP_ACCEPTED",
+            "source": "f3d09c87cd02a6f918fa2da4019e06b4c086def1",
+            "sourceTree": "8b08124b62af129e715bc26a866cf04de21b36c6",
+            "testBlob": "b6a500871f2d1567b87723654cc68c4517f33043",
+            "newFunctionalCases": 1,
+            "newTapCases": 1,
+            "targetRun": 41104637622,
+            "broaderRun": 41104637551,
+            "expectedFullAppTap": 76,
+            "expectedTargetTap": 109,
+            "expectedTargetFiles": 6,
+            "plannedPositiveReads": 15,
+            "plannedDeniedReads": 21,
+            "accepted": true,
+            "applicationFilesChanged": 0,
+            "testFilesChanged": 1,
+            "parentGateClosed": false,
+            "newGate": false,
+            "policyAdopted": false,
+            "fullAppTap": 76,
+            "targetedTap": 109,
+            "targetFiles": 6,
+            "targetJob": 124230817669,
+            "broaderJob": 124230816897,
+            "broaderTap": 836,
+            "broaderInvocations": 97,
+            "broaderUniqueFiles": 94,
+            "positiveReads": 15,
+            "deniedReads": 21,
+            "allCiSuccess": 58,
+            "totalCi": 58,
+            "firstAttemptSuccess": 56,
+            "infrastructureRetryWorkflows": 2,
+            "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
+            "checkoutTreeMatched": true
+          }
+        },
+        {
+          "path": "closurePlan.activeWorkOrder[order=3].nextAction",
+          "previous": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+          "current": "MATRIX-C07: resolve only the recorded FIELD002/003/004/005 compatibility, historical inventory, cross-consumer permission and retention decisions. Reuse accepted C02 owner recovery/admin OTP and merchant self-service proofs; they are not the current next task. Follow closurePlan.deliveryControl20261031 for policy/external dependencies; no policy adoption or hosted action from continuation."
+        },
+        {
+          "path": "closurePlan.entries[gate=P0-RESIDUAL-MERCHANT-PRIVACY-001/http].nextAction",
+          "previous": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+          "current": "MATRIX-C07: resolve only the recorded FIELD002/003/004/005 compatibility, historical inventory, cross-consumer permission and retention decisions. Reuse accepted C02 owner recovery/admin OTP and merchant self-service proofs; they are not the current next task. Follow closurePlan.deliveryControl20261031 for policy/external dependencies; no policy adoption or hosted action from continuation."
+        },
+        {
+          "path": "rows[id=P0-RESIDUAL-MERCHANT-PRIVACY-001/http].nextAction",
+          "previous": "Continue MATRIX-C02 with the existing owner recovery/admin device OTP proof layer. Reuse accepted18-route admin ledger, current merchant session/recovery and authentication SQL suites, and accepted incomplete-cutover case; do not rerun them as new work. Recover original owner-break-glass runtime evidence if available and bind its test/source to current accepted code; its workflow targets parallel/integration-coordinator and its integration file was not among current97 isolated audit invocations. Reconcile current aggregate mounting, pre-existing device ownership, password/key/stage/replay/session revocation invariants before deciding whether to include existing test in current disposable CI or add only a truly missing full-app assertion. No OTP redesign, merchant/cashier pairing change, policy, new gate, hosted/provider, merge or deployment.",
+          "current": "MATRIX-C07: resolve only the recorded FIELD002/003/004/005 compatibility, historical inventory, cross-consumer permission and retention decisions. Reuse accepted C02 owner recovery/admin OTP and merchant self-service proofs; they are not the current next task. Follow closurePlan.deliveryControl20261031 for policy/external dependencies; no policy adoption or hosted action from continuation."
+        }
+      ],
+      "gateStatusesChanged": false,
+      "applicationChanged": false,
+      "newTests": 0,
+      "newCiRuns": 0,
+      "completeP0Inventory": false,
+      "overallPercentage": null,
+      "release": "NO-GO",
+      "implementationCandidate": {
+        "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+        "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+        "sourceTree": "bc6372468bb5dd8d1b5f1b167c941429471c2770",
+        "accepted": false,
+        "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C06",
+        "newFunctionalCases": 1,
+        "expectedFullAppTap": 77,
+        "expectedTargetedTap": 110,
+        "expectedInactiveDenials": 8,
+        "expectedConfiguredValidationResponses": 4,
+        "expectedRemoteAttempts": 0,
+        "applicationFilesChanged": 1,
+        "testFilesChanged": 1,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false
+      },
+      "priorC05Status": "PENDING_REMAINDER_CONSOLIDATION_NOT_CLOSED"
+    },
+    "currentMetaActivationPathMatchingProof": {
+      "status": "META_ACTIVATION_MATCHING_SOURCE_FIXED_FULL_APP_CI_PENDING",
+      "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+      "sourceTree": "bc6372468bb5dd8d1b5f1b167c941429471c2770",
+      "accepted": false,
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "workItem": "MATRIX-C06",
+      "newFunctionalCases": 1,
+      "expectedFullAppTap": 77,
+      "expectedTargetedTap": 110,
+      "expectedInactiveDenials": 8,
+      "expectedConfiguredValidationResponses": 4,
+      "expectedRemoteAttempts": 0,
+      "applicationFilesChanged": 1,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false
     }
   }
 }

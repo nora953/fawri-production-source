@@ -36,3 +36,14 @@ The user approved consolidating the known P0 remainder into a finite closure que
 Each new engineering batch must name an existing gate, its unmet acceptance condition, the missing evidence/decision, and whether it closes the gate or completes a necessary prerequisite. Reuse accepted proofs; repeat only for changed source, a failure or a named integration gap. Do not create unused features, duplicate pairing/issuer designs or overlapping proof documents to generate activity. Newly confirmed critical additions must record evidence, justification and scope/count impact; never silently enlarge or suppress the known remainder.
 
 Immediate execution order: reconcile current P0 actor/entrypoint/field-to-evidence gaps from existing manifests; map SEQ-R1/R2/R3 to current pairing/client/SQL evidence; then implement the identified missing acceptance condition. The previously suggested HTTP pairing test is conditional on that gap map, not an automatic next task. Policy proposals must be concrete and reviewable before a choice is requested. GitHub-only restrictions, no merge/deploy and releaseNO-GO remain in force; user agreement to closure planning approves none of the outstanding operational or record-specific policies.
+
+
+## Delivery discipline — 2026-10-31
+
+The current execution contract is `closurePlan.deliveryControl20261031` in `evidence/P0-CLOSURE-REGISTER.json`. It links the16 existing nonclosed gates to exact acceptance conditions, missing evidence, executable work and policy/physical/external dependencies. This does not change any gate status or establish inventory completeness.
+
+Before a new test or change, identify the existing gate, unmet condition, insufficient existing evidence and expected closure delta. Batch related conditions with shared authority/fixtures; run required checks once per coherent candidate, preserving positive/negative/fault depth. Test, commit and document counts are verification metadata, not progress. A documented limitation does not automatically require a new test.
+
+Keep active next-action pointers synchronized; preserve obsolete actions only as history. Reuse accepted C01-C04/Knowledge/SSE/order/pairing proofs. Use CI wait time for independent authorized work with bounded polling. Continue within authorization without asking for another continuation; clearly checkpoint unavailable capabilities or required decisions. Keep authoritative details in the existing register/evidence and use short references elsewhere rather than duplicating long narratives.
+
+A batch must deliver a verified implementation/accepted condition, resolve a named inventory unknown with finite evidence classification, or prepare a concrete decision/external blocker. Source-only classification never closes a runtime or release gate. All existing GitHub-only, policy, physical-device, hosted, no merge/deploy and NO-GO restrictions remain unchanged.
