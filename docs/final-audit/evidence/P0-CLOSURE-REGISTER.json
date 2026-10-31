@@ -5,7 +5,7 @@
   "scope": "Known P0 requirements reconciled from bounded proof inventory, P0 gate matrix, execution charter, active issues523/535 and current checkpoint. Source closures are bounded, not release approvals.",
   "completeP0Inventory": false,
   "overallPercentage": null,
-  "sourceCandidate": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+  "sourceCandidate": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
   "lastFullyAcceptedSource": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
   "release": "NO-GO",
   "rows": [
@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
+      "nextAction": "Verify candidate 74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7 in management run41180385445 and broader run41180385350. Expected two new actual-app cases: Knowledge writes/style and own-order mutation, full79/target112 across6files. Read exact logs/markers and checkout tree; no runtime acceptance until all required CI passes. Fix any failure without weakening assertions. After acceptance continue existing C08 sensitive export/producer/consumer inventory, reusing classified22 startup calls; do not reopen accepted C01-C04/Knowledge reads/SSE/Meta/order foreign denial/pairing.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -4284,6 +4284,33 @@
         "newCiRuns": 0,
         "newGate": false,
         "parentGateClosed": false
+      },
+      "currentKnowledgeWriteAndOwnOrderProof": {
+        "status": "GROUPED_KNOWLEDGE_WRITE_STYLE_AND_OWN_ORDER_FULL_APP_CI_PENDING",
+        "source": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+        "sourceTree": "984f0d2b260ff6cf9d340fcdbcc2df3e0693e40b",
+        "accepted": false,
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C05",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "newFunctionalCases": 2,
+        "newTapCases": 2,
+        "expectedFullAppTap": 79,
+        "expectedTargetedTap": 112,
+        "targetFiles": 6,
+        "targetRun": 41180385445,
+        "broaderRun": 41180385350,
+        "plannedKnowledgeWrites": 9,
+        "plannedKnowledgeDenials": 20,
+        "plannedOwnOrderPositiveResponses": 4,
+        "plannedOwnOrderDenials": 4,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "realProvider": false,
+        "hosted": false
       }
     },
     {
@@ -6736,7 +6763,7 @@
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
         "completedPrerequisite": "POST catalog image source/client/parser reconciled with6matched pins. One actual-full-app case after66TAP reproduced foreign-Origin201 plus1physical file; existing guard applied after merchant auth and before raw parser in2application lines. Final403/no files, allowed/omitted-Origin own/peer upload, exact asset/file/preview, MIME/empty/JSON/oversize denials, provider and real filesystem write error/recovery/session-revoke pass: target98/full-app67, broader836, all58CI. No schema/production grants/ownership policies or parent/count change. Next reconcile promotion write family source/evidence.",
-        "nextNamedReview": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
+        "nextNamedReview": "Verify candidate 74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7 in management run41180385445 and broader run41180385350. Expected two new actual-app cases: Knowledge writes/style and own-order mutation, full79/target112 across6files. Read exact logs/markers and checkout tree; no runtime acceptance until all required CI passes. Fix any failure without weakening assertions. After acceptance continue existing C08 sensitive export/producer/consumer inventory, reusing classified22 startup calls; do not reopen accepted C01-C04/Knowledge reads/SSE/Meta/order foreign denial/pairing.",
         "latestAcceptedBoundary": {
           "status": "BOUNDED_META_INACTIVE_CALLBACK_EXPRESS_PATH_AND_HEAD_GATE_FULL_APP_ACCEPTED",
           "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
@@ -7386,7 +7413,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
+        "nextAction": "Verify candidate 74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7 in management run41180385445 and broader run41180385350. Expected two new actual-app cases: Knowledge writes/style and own-order mutation, full79/target112 across6files. Read exact logs/markers and checkout tree; no runtime acceptance until all required CI passes. Fix any failure without weakening assertions. After acceptance continue existing C08 sensitive export/producer/consumer inventory, reusing classified22 startup calls; do not reopen accepted C01-C04/Knowledge reads/SSE/Meta/order foreign denial/pairing.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -11475,6 +11502,33 @@
           "newCiRuns": 0,
           "newGate": false,
           "parentGateClosed": false
+        },
+        "currentKnowledgeWriteAndOwnOrderProof": {
+          "status": "GROUPED_KNOWLEDGE_WRITE_STYLE_AND_OWN_ORDER_FULL_APP_CI_PENDING",
+          "source": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+          "sourceTree": "984f0d2b260ff6cf9d340fcdbcc2df3e0693e40b",
+          "accepted": false,
+          "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+          "workItem": "MATRIX-C05",
+          "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+          "newFunctionalCases": 2,
+          "newTapCases": 2,
+          "expectedFullAppTap": 79,
+          "expectedTargetedTap": 112,
+          "targetFiles": 6,
+          "targetRun": 41180385445,
+          "broaderRun": 41180385350,
+          "plannedKnowledgeWrites": 9,
+          "plannedKnowledgeDenials": 20,
+          "plannedOwnOrderPositiveResponses": 4,
+          "plannedOwnOrderDenials": 4,
+          "applicationFilesChanged": 0,
+          "testFilesChanged": 1,
+          "newGate": false,
+          "parentGateClosed": false,
+          "policyAdopted": false,
+          "realProvider": false,
+          "hosted": false
         }
       },
       {
@@ -15774,7 +15828,7 @@
             "notificationsAndRealtime",
             "catalog"
           ],
-          "status": "SSE_AND_KNOWLEDGE_READ_ACCEPTED_REMAINING_FAMILY_EVIDENCE_CONSOLIDATION",
+          "status": "TWO_NAMED_RUNTIME_CONDITIONS_CI_PENDING",
           "condition": "Current named read/mutation/Origin/idempotency/version/failure proofs retain their exact bounds. Sibling order/Knowledge/realtime/other field conditions require existing assertion review before deciding a missing runtime cell.",
           "next": "MATRIX-C08 bounded inventory closure prerequisite: classify the22 existing startupCallCandidates by actual current role (startup bootstrap, background worker/reconciler, per-request operation, legacy/unreachable); bind existing proof layers and identify only actual unclassified P0 producer/consumer authority. Do not add22 tests or regenerate accepted catalogs. Then schedule the two recorded C05 implementation buckets (grouped Knowledge writes/response-style and own-order mutation) against finalized inventory. C07 policy and physical/hosted dependencies remain in deliveryControl gate cards; no implied approvals, external access, merge/deploy.",
           "newGate": false,
@@ -15964,6 +16018,33 @@
             "C05-OWN-ORDER-MUTATION-AUTHORITY": [
               "C05-Q3"
             ]
+          },
+          "currentKnowledgeWriteAndOwnOrderProof": {
+            "status": "GROUPED_KNOWLEDGE_WRITE_STYLE_AND_OWN_ORDER_FULL_APP_CI_PENDING",
+            "source": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+            "sourceTree": "984f0d2b260ff6cf9d340fcdbcc2df3e0693e40b",
+            "accepted": false,
+            "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+            "workItem": "MATRIX-C05",
+            "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+            "newFunctionalCases": 2,
+            "newTapCases": 2,
+            "expectedFullAppTap": 79,
+            "expectedTargetedTap": 112,
+            "targetFiles": 6,
+            "targetRun": 41180385445,
+            "broaderRun": 41180385350,
+            "plannedKnowledgeWrites": 9,
+            "plannedKnowledgeDenials": 20,
+            "plannedOwnOrderPositiveResponses": 4,
+            "plannedOwnOrderDenials": 4,
+            "applicationFilesChanged": 0,
+            "testFilesChanged": 1,
+            "newGate": false,
+            "parentGateClosed": false,
+            "policyAdopted": false,
+            "realProvider": false,
+            "hosted": false
           }
         },
         {
@@ -16195,7 +16276,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
+      "nextCurrentAction": "Verify candidate 74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7 in management run41180385445 and broader run41180385350. Expected two new actual-app cases: Knowledge writes/style and own-order mutation, full79/target112 across6files. Read exact logs/markers and checkout tree; no runtime acceptance until all required CI passes. Fix any failure without weakening assertions. After acceptance continue existing C08 sensitive export/producer/consumer inventory, reusing classified22 startup calls; do not reopen accepted C01-C04/Knowledge reads/SSE/Meta/order foreign denial/pairing.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -16766,7 +16847,7 @@
       ],
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "currentWorkItem": "MATRIX-C05",
-      "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
+      "nextAction": "Verify candidate 74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7 in management run41180385445 and broader run41180385350. Expected two new actual-app cases: Knowledge writes/style and own-order mutation, full79/target112 across6files. Read exact logs/markers and checkout tree; no runtime acceptance until all required CI passes. Fix any failure without weakening assertions. After acceptance continue existing C08 sensitive export/producer/consumer inventory, reusing classified22 startup calls; do not reopen accepted C01-C04/Knowledge reads/SSE/Meta/order foreign denial/pairing.",
       "knownRemainingGates": [
         {
           "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -16780,7 +16861,7 @@
           "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
           "executableNow": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
           "dependency": "Related field policies and hosted inventory can block final acceptance.",
-          "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy."
+          "nextAction": "Verify candidate 74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7 in management run41180385445 and broader run41180385350. Expected two new actual-app cases: Knowledge writes/style and own-order mutation, full79/target112 across6files. Read exact logs/markers and checkout tree; no runtime acceptance until all required CI passes. Fix any failure without weakening assertions. After acceptance continue existing C08 sensitive export/producer/consumer inventory, reusing classified22 startup calls; do not reopen accepted C01-C04/Knowledge reads/SSE/Meta/order foreign denial/pairing."
         },
         {
           "gate": "CASHIER-SYNC-SEQUENCE-001",
@@ -17199,6 +17280,33 @@
         "newCiRuns": 0,
         "newGate": false,
         "parentGateClosed": false
+      },
+      "currentKnowledgeWriteAndOwnOrderProof": {
+        "status": "GROUPED_KNOWLEDGE_WRITE_STYLE_AND_OWN_ORDER_FULL_APP_CI_PENDING",
+        "source": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+        "sourceTree": "984f0d2b260ff6cf9d340fcdbcc2df3e0693e40b",
+        "accepted": false,
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C05",
+        "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+        "newFunctionalCases": 2,
+        "newTapCases": 2,
+        "expectedFullAppTap": 79,
+        "expectedTargetedTap": 112,
+        "targetFiles": 6,
+        "targetRun": 41180385445,
+        "broaderRun": 41180385350,
+        "plannedKnowledgeWrites": 9,
+        "plannedKnowledgeDenials": 20,
+        "plannedOwnOrderPositiveResponses": 4,
+        "plannedOwnOrderDenials": 4,
+        "applicationFilesChanged": 0,
+        "testFilesChanged": 1,
+        "newGate": false,
+        "parentGateClosed": false,
+        "policyAdopted": false,
+        "realProvider": false,
+        "hosted": false
       }
     },
     "currentMetaActivationPathMatchingProof": {
@@ -17265,6 +17373,33 @@
       "newCiRuns": 0,
       "newGate": false,
       "parentGateClosed": false
+    },
+    "currentKnowledgeWriteAndOwnOrderProof": {
+      "status": "GROUPED_KNOWLEDGE_WRITE_STYLE_AND_OWN_ORDER_FULL_APP_CI_PENDING",
+      "source": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+      "sourceTree": "984f0d2b260ff6cf9d340fcdbcc2df3e0693e40b",
+      "accepted": false,
+      "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "workItem": "MATRIX-C05",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "newFunctionalCases": 2,
+      "newTapCases": 2,
+      "expectedFullAppTap": 79,
+      "expectedTargetedTap": 112,
+      "targetFiles": 6,
+      "targetRun": 41180385445,
+      "broaderRun": 41180385350,
+      "plannedKnowledgeWrites": 9,
+      "plannedKnowledgeDenials": 20,
+      "plannedOwnOrderPositiveResponses": 4,
+      "plannedOwnOrderDenials": 4,
+      "applicationFilesChanged": 0,
+      "testFilesChanged": 1,
+      "newGate": false,
+      "parentGateClosed": false,
+      "policyAdopted": false,
+      "realProvider": false,
+      "hosted": false
     }
   }
 }
