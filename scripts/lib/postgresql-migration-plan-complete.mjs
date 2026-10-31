@@ -455,6 +455,13 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       });
       continue;
     }
+    if (!["product", "customer_info"].includes(text(row.awaiting_field))) {
+      addError(report, "LEGACY_DRAFT_STATE_UNSUPPORTED", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
     const parseInstant = (value) =>
       typeof value === "string" && value.trim() &&
       Number.isFinite(Date.parse(value)) ? Date.parse(value) : null;
