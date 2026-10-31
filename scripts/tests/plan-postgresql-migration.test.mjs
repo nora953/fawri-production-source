@@ -439,6 +439,21 @@ test("dry-run fails safely for invalid JSON", () => {
   }
 });
 
+
+function runCompletePlanner(directory) {
+  const program = [
+    'import { buildValidatedMigrationPlan } from "./scripts/lib/postgresql-migration-plan-complete.mjs";',
+    'const { report } = buildValidatedMigrationPlan({ dataDirectory: process.argv[1] });',
+    'process.stdout.write(JSON.stringify(report));',
+    'process.exitCode = report.ok ? 0 : 2;',
+  ].join("\n");
+  return spawnSync(process.execPath, ["--input-type=module", "-e", program, directory], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+    env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" },
+  });
+}
+
 test("dry-run rejects impossible legacy draft calendar dates without source mutation", () => {
   const directory = makeDataDirectory();
   try {
@@ -458,7 +473,7 @@ test("dry-run rejects impossible legacy draft calendar dates without source muta
     };
     writeJson(directory, "bot-runtime.json", runtime);
     const before = directorySnapshot(directory);
-    const result = runPlanner(directory);
+    const result = runCompletePlanner(directory);
     const after = directorySnapshot(directory);
     assert.equal(result.status, 2, result.stderr || result.stdout);
     assert.deepEqual(after, before, "rejected draft mutated source files");
@@ -494,7 +509,7 @@ test("dry-run rejects invalid legacy draft clock values without source mutation"
     };
     writeJson(directory, "bot-runtime.json", runtime);
     const before = directorySnapshot(directory);
-    const result = runPlanner(directory);
+    const result = runCompletePlanner(directory);
     const after = directorySnapshot(directory);
     assert.equal(result.status, 2, result.stderr || result.stdout);
     assert.deepEqual(after, before, "rejected draft mutated source files");
@@ -530,7 +545,7 @@ test("dry-run rejects invalid legacy draft timezone offsets without source mutat
     };
     writeJson(directory, "bot-runtime.json", runtime);
     const before = directorySnapshot(directory);
-    const result = runPlanner(directory);
+    const result = runCompletePlanner(directory);
     const after = directorySnapshot(directory);
     assert.equal(result.status, 2, result.stderr || result.stdout);
     assert.deepEqual(after, before, "rejected draft mutated source files");
