@@ -348,6 +348,13 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     for(const table of selectedTables)assert.deepEqual(after[table].filter(x=>x.row.merchant_id===peer.f.merchantId),initial.data[table].filter(x=>x.row.merchant_id===peer.f.merchantId));
     assert.equal((await sell(own,body)).replayed,true);const retry=await enrollReview(own.review);assert.equal(retry.last_sequence,'3');assert.equal(retry.version,4);
     assert.deepEqual(await data(),after);
+    // Once sequence 3 is committed, a restored device cannot reissue it
+    // with a new operation identity or silently skip sequence 4.
+    const staleAfterCommit=saleBody(own.f,own.f.stations[0],body.envelopes[0].occurred_at,3);
+    await assert.rejects(sell(own,staleAfterCommit));
+    const gapAfterCommit=saleBody(own.f,own.f.stations[0],body.envelopes[0].occurred_at,5);
+    await assert.rejects(sell(own,gapAfterCommit));
+    assert.deepEqual(await data(),after);
   });
 
   if(phase==='verify')await t.test('post-restore merchant deletion with hashed review ledger is atomic and cannot reset receipts',async deletionT=>{
