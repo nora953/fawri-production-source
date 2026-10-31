@@ -25,5 +25,17 @@
   "parentGate": "OPEN",
   "release": "NO-GO",
   "closureRegisterCountsUnchanged": true,
-  "reference": "docs/final-audit/P0-CLOSURE-REGISTER.md"
+  "reference": "docs/final-audit/P0-CLOSURE-REGISTER.md",
+  "additionalAcceptedRegression": {
+    "commit": "5ad153fc9aef0e46e50070c47d434d851cc3bcf7",
+    "ci": {
+      "success": 58,
+      "total": 58,
+      "failed": 0,
+      "pending": 0
+    },
+    "assertion": "Reject legacy draft historical expires_at preceding updated_at; dry-run preserves source files and makes no database connection",
+    "scope": "source-only defensive migration planner test",
+    "hostedVerified": false
+  }
 }
