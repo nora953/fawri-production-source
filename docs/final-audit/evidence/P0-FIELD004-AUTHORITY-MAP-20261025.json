@@ -55,7 +55,7 @@
     "No online conversational order creation or whole commercial journey acceptance"
   ],
   "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
-  "nextExactAction": "Review the concrete F004-R1 conditional offline draft migration contract in evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031. Recommended: support source-bound legacy identity/state/time normalization for reviewed compatibility storage only, with no automatic runtime continuation, no guessed TTL and whole-plan refusal on ambiguity. Implement bounded offline planner validation only after this specified contract is selected; no source/configuration evidence, actual import, hosted, retention, SEQ or new runtime authority is authorized by that choice. If deferred, preserve current fail-closed behavior and continue independent authorized work.",
+  "nextExactAction": "Implement and test approved F004-R1 bounded offline planner normalization after checking explicit source-bound provenance interface; preserve fail-closed behavior on ambiguity. F004-R2 hosted evidence remains blocked.",
   "previousStatus": "BOUNDED_SOURCE_AUTHORITIES_MAPPED_HTTP_PROOF_PENDING",
   "reconciledAtSource": "8eb803e68dc8457a2914ecdf5072f00994e8f639",
   "checklist": [
@@ -3219,8 +3219,8 @@
   "decisionProposal20261031": {
     "id": "F004-R1-CONDITIONAL_OFFLINE_DRAFT_MIGRATION_ONLY-20261031",
     "date": "2026-10-31",
-    "status": "CONCRETE_BOUNDED_LIFECYCLE_CHOICE_READY_NOT_ADOPTED",
-    "approval": "UNAPPROVED",
+    "status": "OWNER_APPROVED_BOUNDED_OFFLINE_PLANNER_IMPLEMENTATION_PENDING",
+    "approval": "APPROVED_BY_OWNER_2026-10-31",
     "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
     "workItem": "MATRIX-C07",
     "sourceReviewed": "f5eefaa8481157e38963d64960e12764e8f34af3",
@@ -3443,6 +3443,7 @@
     "newRuntimeTests": 0,
     "newCiRuns": 0,
     "parentGateClosed": false,
-    "newGate": false
+    "newGate": false,
+    "ownerApprovalScope": "Conditional source-bound offline legacy draft mapping/planner tests only; no actual import, automatic order continuation, TTL guessing, hosted access, deployment, retention changes or P0 gate closure."
   }
 }
