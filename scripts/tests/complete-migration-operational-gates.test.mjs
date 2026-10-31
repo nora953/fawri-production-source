@@ -148,6 +148,10 @@ test("FIELD004 rejects conflicting duplicate draft IDs", () => {
       updated_at: "2026-08-02T00:00:00.000Z",
       expires_at: "2026-08-03T00:00:00.000Z",
     };
+    runtime.conversationsByMerchant["merchant-1"].push({
+      ...runtime.conversationsByMerchant["merchant-1"][0],
+      id: "conversation-2",
+    });
     runtime.orderDraftsByConversation = {
       "conversation-1": { ...draft, draft_data: { name: "first" } },
       "conversation-2": { ...draft, draft_data: { name: "second" } },
