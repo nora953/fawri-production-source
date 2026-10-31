@@ -443,6 +443,18 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       created_at: item.created_at || null,
       updated_at: item.updated_at || item.created_at || null,
     };
+    const conversation = asArray(report.rows.conversations).find(
+      (candidate) => candidate.id === conversationId && candidate.merchant_id === merchantId,
+    );
+    if (!conversation || !merchantId ||
+        !text(row.customer_external_id) ||
+        text(conversation.customer_external_id) !== text(row.customer_external_id)) {
+      addError(report, "LEGACY_DRAFT_CONVERSATION_IDENTITY_UNVERIFIED", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
     mergeRow(report, "order_drafts", row, "transitional_runtime", item);
   }
 }
