@@ -43,6 +43,12 @@ function writeJson(directory, fileName, value) {
   );
 }
 
+function removeCanonicalDraftsForIsolatedLegacyCase(directory) {
+  const canonical = readJson(directory, "bot-runtime.json");
+  canonical.orderDrafts = [];
+  writeJson(directory, "bot-runtime.json", canonical);
+}
+
 test("complete plan includes operational overlays and deterministic lineage", () => {
   const directory = createFixture();
   try {
@@ -138,6 +144,7 @@ test("invalid operational settings fail closed before database use", () => {
 test("FIELD004 rejects conflicting duplicate draft IDs", () => {
   const directory = createFixture();
   try {
+    removeCanonicalDraftsForIsolatedLegacyCase(directory);
     const runtime = readJson(directory, "fawri-runtime-db.json");
     const draft = {
       id: "draft-collision",
@@ -206,6 +213,7 @@ test("FIELD004 rejects a draft without proven original expiry", () => {
 test("FIELD004 retains verified legacy draft without changing original expiry", () => {
   const directory = createFixture();
   try {
+    removeCanonicalDraftsForIsolatedLegacyCase(directory);
     const runtime = readJson(directory, "fawri-runtime-db.json");
     runtime.orderDraftsByConversation = {
       "conversation-1": {
@@ -236,6 +244,7 @@ test("FIELD004 retains verified legacy draft without changing original expiry", 
 test("FIELD004 maps historical draft keys only with explicit expiry evidence", () => {
   const directory = createFixture();
   try {
+    removeCanonicalDraftsForIsolatedLegacyCase(directory);
     const runtime = readJson(directory, "fawri-runtime-db.json");
     runtime.orderDraftsByConversation = {
       "conversation-1": {
