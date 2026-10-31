@@ -441,7 +441,7 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       draft_data: item.draft_data || item,
       expires_at: item.expires_at || null,
       created_at: item.created_at || item.started_at || null,
-      updated_at: item.updated_at || item.created_at || item.started_at || null,
+      updated_at: item.updated_at || null,
     };
     if ((item.customer_external_id && item.customer_id &&
          text(item.customer_external_id) !== text(item.customer_id)) ||
