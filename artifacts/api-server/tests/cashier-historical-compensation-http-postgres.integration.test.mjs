@@ -184,6 +184,20 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       );
       return {status: response.status, body: await response.json()};
     }
+    const unauthenticated = await fetch(
+      base + '/api/cashier/management/stations/' + encodeURIComponent(station.stationId) + '/pairing',
+      {method: 'POST', signal: AbortSignal.timeout(15000),
+        headers: {'Content-Type': 'application/json'}, body: JSON.stringify({})},
+    );
+    const unauthenticatedBody = await unauthenticated.json();
+    assert.equal(unauthenticated.status, 401, JSON.stringify(unauthenticatedBody));
+    assert.equal(unauthenticatedBody.code, 'SESSION_REQUIRED');
+    assert.deepEqual(await snapshot(), before, 'missing merchant session must not rewrite financial history');
+    const unauthenticatedChallenges = await pool.query(
+      'SELECT id FROM cashier_station_pairing_challenges WHERE merchant_id=$1 AND station_id=$2',
+      [f.merchantId, station.stationId],
+    );
+    assert.equal(unauthenticatedChallenges.rows.length, 0, 'anonymous request must not issue a pairing challenge');
     const peer = await fixture();
     const peerDevice = 'pairing-peer-' + randomUUID();
     const peerSession = await sessionAuthority.issueSession({
