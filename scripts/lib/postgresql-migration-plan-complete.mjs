@@ -484,7 +484,7 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
     // normalize (for example, February 30) instead of importing a shifted TTL.
     const validCalendarInstant = (value) => {
       if (parseInstant(value) === null) return false;
-      const match = value.match(/^(\\d{4})-(\\d{2})-(\\d{2})T/);
+      const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T/);
       if (!match) return false;
       const year = Number(match[1]);
       const month = Number(match[2]);
