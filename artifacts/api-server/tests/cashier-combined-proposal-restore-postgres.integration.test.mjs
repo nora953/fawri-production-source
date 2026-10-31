@@ -328,6 +328,9 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     // Restored clients cannot substitute a different enrolled stream.
     const substituted={...own,streamId:peer.streamId};
     await assert.rejects(sell(substituted));
+    // The server-bound operator context cannot be transplanted to a peer device.
+    const changedContext={...own,context:{...own.context,device_id:peer.f.stations[0].deviceId}};
+    await assert.rejects(sell(changedContext));
     assert.deepEqual(await data(),initial.data);
   });
   if(phase==='verify')await t.test('restored canonical writer commits next sequence once and retains peer and review evidence',async()=>{
