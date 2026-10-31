@@ -297,6 +297,15 @@ export function isKnownHistoricalEntrypointFenceFixture(finding, objectPath, obj
     finding.rule === "credential-url" && finding.index === 641 && finding.length === 54;
 }
 
+// Fabricated pre-import rejection input from the initial fresh-role rehearsal.
+ // The current test no longer embeds credentials. Only this immutable historical
+ // blob/path/rule/span is classified as a fixture; all changed findings still fail.
+export function isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) {
+  return objectId === "5b2ebc7b8262d8cc44fda859a2bab52337bafb59" &&
+    normalizeRepositoryPath(objectPath) === "scripts/tests/disposable-cashier-role-recovery.test.mjs" &&
+    finding.rule === "credential-url" && finding.index === 2607 && finding.length === 54;
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -375,7 +384,8 @@ function scanHistory(root) {
         isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath) ||
         isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId) ||
         isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId) ||
-        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId)
+        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,
@@ -455,6 +465,26 @@ function scanOutput(inputs) {
   return findings.length === 0 ? 0 : 1;
 }
 
+export function summarizeBlockingAdvisories(payload) {
+  const advisories = payload?.advisories;
+  if (!advisories || typeof advisories !== "object" || Array.isArray(advisories)) return [];
+  const rows = [];
+  for (const advisory of Object.values(advisories)) {
+    if (!advisory || !["high", "critical"].includes(advisory.severity)) continue;
+    const name = advisory.module_name;
+    const ghsa = advisory.github_advisory_id;
+    // Only bounded public identifiers, never advisory text, URLs, findings,
+    // dependency paths, request headers or raw registry error payloads.
+    const row = { severity: advisory.severity };
+    if (typeof name === "string" && name.length <= 128 &&
+        /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(name)) row.package = name;
+    if (typeof ghsa === "string" && /^GHSA-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}$/.test(ghsa)) row.ghsa = ghsa;
+    rows.push(row);
+    if (rows.length === 50) break;
+  }
+  return rows;
+}
+
 function dependencyAudit() {
   const result = spawnSync("pnpm", ["audit", "--json", "--audit-level=high"], {
     cwd: process.cwd(),
@@ -478,6 +508,7 @@ function dependencyAudit() {
     status: evaluation.status,
     vulnerabilities: counts,
     blocking_severities: ["high", "critical"],
+    blocking_advisories: summarizeBlockingAdvisories(payload),
   };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 

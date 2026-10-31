@@ -91,8 +91,6 @@ function main() {
     url,
     "--format=custom",
     "--compress=9",
-    "--no-owner",
-    "--no-privileges",
     "--file",
     outputPath,
   ]);
@@ -101,7 +99,9 @@ function main() {
   if (!stat?.isFile() || stat.size === 0) throw new Error("PostgreSQL backup is empty");
 
   const payload = {
-    format: "fawri-postgresql-backup-v1",
+    format: "fawri-postgresql-backup-v2",
+    security_model: "preserve-owners-acls",
+    role_bootstrap: "preprovision-global-roles-before-restore",
     created_at: new Date().toISOString(),
     file: path.basename(outputPath),
     size: stat.size,

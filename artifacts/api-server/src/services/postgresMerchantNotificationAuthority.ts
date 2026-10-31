@@ -258,13 +258,74 @@ function mapNotification(row: {
   read_at: Date | string | null;
   created_at: Date | string;
 }) {
+  // Stored template data must not replace canonical record identity or read
+  // state. Copy first so projection never edits the persisted variables.
+  const variables = { ...record(row.variables) };
+  for (const key of ["id", "type", "created_at", "read_at"]) delete variables[key];
   return {
     id: row.id,
     type: row.type,
-    ...record(row.variables),
+    ...variables,
     created_at: iso(row.created_at) || new Date().toISOString(),
     ...(row.read_at ? { read_at: iso(row.read_at) } : {}),
   };
+}
+
+type NotificationProjectionRow = {
+  id: string;
+  type: string;
+  variables: unknown;
+  read_at: Date | string | null;
+  created_at: Date | string;
+  source_entity_type: string | null;
+  source_entity_id: string | null;
+};
+
+// Inspection lifecycle is mutable. Read it from the tenant-owned request rather
+// than persisting a pending snapshot in notification variables.
+async function mapNotificationRows(
+  client: { query<T extends Record<string, unknown>>(sql: string, values?: unknown[]): Promise<{ rows: T[] }> },
+  merchantId: string,
+  rows: NotificationProjectionRow[],
+) {
+  const requestIds = [...new Set(rows
+    .filter(row => row.type === "inspection_session_request" && row.source_entity_type === "support_inspection_request")
+    .map(row => text(row.source_entity_id)).filter(Boolean))];
+  const requests = requestIds.length ? await client.query<{
+    id: string; ticket_id: string; status: string; consent_decision: string | null;
+    responded_at: Date | string | null; session_expires_at: Date | string | null;
+    ended_at: Date | string | null; end_reason: string | null;
+  }>(
+    `SELECT id, ticket_id, status::text AS status,
+            consent_decision::text AS consent_decision, responded_at,
+            approved_at + (session_duration_minutes * interval '1 minute') AS session_expires_at,
+            ended_at, end_reason
+       FROM support_inspection_requests
+      WHERE merchant_id = $1 AND id = ANY($2::text[])`,
+    [merchantId, requestIds],
+  ) : { rows: [] };
+  const byId = new Map(requests.rows.map(request => [request.id, request]));
+  return rows.map(row => {
+    const mapped = mapNotification(row);
+    if (row.type !== "inspection_session_request") return mapped;
+    const variables = record(row.variables);
+    // Lifecycle keys are authoritative even if historical variables contain
+    // stale values. Unlinked/legacy rows are not assigned a fabricated status.
+    const projected: Record<string, unknown> = { ...mapped };
+    for (const key of ["request_status", "consent_decision", "responded_at", "session_expires_at", "ended_at", "end_reason"]) delete projected[key];
+    const request = row.source_entity_type === "support_inspection_request"
+      ? byId.get(text(row.source_entity_id)) : undefined;
+    if (!request || variables.inspection_request_id !== request.id || variables.ticket_id !== request.ticket_id) return projected;
+    return {
+      ...projected,
+      request_status: request.status,
+      ...(request.consent_decision ? { consent_decision: request.consent_decision } : {}),
+      ...(iso(request.responded_at) ? { responded_at: iso(request.responded_at) } : {}),
+      ...(iso(request.session_expires_at) ? { session_expires_at: iso(request.session_expires_at) } : {}),
+      ...(iso(request.ended_at) ? { ended_at: iso(request.ended_at) } : {}),
+      ...(request.end_reason ? { end_reason: request.end_reason } : {}),
+    };
+  });
 }
 
 export async function listMerchantNotificationsPostgresCanonical(input: {
@@ -279,14 +340,8 @@ export async function listMerchantNotificationsPostgresCanonical(input: {
     ? Math.max(1, Math.min(50, Number(input.limit)))
     : 20;
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const result = await client.query<{
-      id: string;
-      type: string;
-      variables: unknown;
-      read_at: Date | string | null;
-      created_at: Date | string;
-    }>(
-      `SELECT id, type, variables, read_at, created_at
+    const result = await client.query<NotificationProjectionRow>(
+      `SELECT id, type, variables, read_at, created_at, source_entity_type, source_entity_id
          FROM notifications
         WHERE audience = 'merchant' AND merchant_id = $1
           AND ($2::boolean = false OR read_at IS NULL)
@@ -295,7 +350,7 @@ export async function listMerchantNotificationsPostgresCanonical(input: {
         LIMIT $3`,
       [merchantId, Boolean(input.unreadOnly), limit],
     );
-    return result.rows.map(mapNotification);
+    return mapNotificationRows(client, merchantId, result.rows);
   });
 }
 
@@ -325,17 +380,11 @@ export async function markMerchantNotificationReadPostgresCanonical(input: {
   assertRequired();
   const merchantId = text(input.merchantId);
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const result = await client.query<{
-      id: string;
-      type: string;
-      variables: unknown;
-      read_at: Date | string | null;
-      created_at: Date | string;
-    }>(
+    const result = await client.query<NotificationProjectionRow>(
       `UPDATE notifications
           SET read_at = COALESCE(read_at, now())
         WHERE id = $1 AND audience = 'merchant' AND merchant_id = $2
-      RETURNING id, type, variables, read_at, created_at`,
+      RETURNING id, type, variables, read_at, created_at, source_entity_type, source_entity_id`,
       [text(input.notificationId), merchantId],
     );
     if (!result.rows[0]) {
@@ -345,7 +394,7 @@ export async function markMerchantNotificationReadPostgresCanonical(input: {
         404,
       );
     }
-    return mapNotification(result.rows[0]);
+    return (await mapNotificationRows(client, merchantId, result.rows))[0];
   });
 }
 

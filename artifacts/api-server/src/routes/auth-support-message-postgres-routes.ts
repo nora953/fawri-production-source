@@ -7,7 +7,6 @@ import {
 } from "../middleware/authSession";
 import { hasAdminPermission } from "../services/authPolicy";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
 } from "../services/operationalPostgresAuthority";
 import {
@@ -50,13 +49,6 @@ router.post(
         ticketId,
         body: req.body?.message,
       });
-      const pool = await operationalDatabasePool();
-      await pool.query(
-        `UPDATE support_tickets
-            SET merchant_reminder_sent_at = NULL
-          WHERE id = $1 AND merchant_id = $2`,
-        [ticketId, merchantId],
-      );
       const ticket = await getMerchantSupportTicketPostgres(merchantId, ticketId);
       res.status(201).json({ ok: true, ticket });
     } catch (error) {
@@ -90,14 +82,6 @@ router.post(
         adminId: context?.account.id || "",
         body: req.body?.message,
       });
-      const pool = await operationalDatabasePool();
-      await pool.query(
-        `UPDATE support_tickets
-            SET assistant_reminder_sent_at = NULL,
-                owner_escalated_at = NULL
-          WHERE id = $1`,
-        [ticketId],
-      );
       const ticket = (await listAdminSupportTicketsPostgres()).find(
         (item) => item.id === ticketId,
       );

@@ -436,14 +436,113 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       id: text(item.id) || stableId("runtime-order-draft", conversationId),
       merchant_id: merchantId,
       conversation_id: conversationId,
-      customer_external_id: text(item.customer_external_id),
-      awaiting_field: text(item.awaiting_field),
+      customer_external_id: text(item.customer_external_id || item.customer_id),
+      awaiting_field: text(item.awaiting_field || item.awaiting),
       draft_data: item.draft_data || item,
       expires_at: item.expires_at || null,
-      created_at: item.created_at || null,
-      updated_at: item.updated_at || item.created_at || null,
+      created_at: item.created_at || item.started_at || null,
+      updated_at: item.updated_at || null,
     };
-    mergeRow(report, "order_drafts", row, "transitional_runtime", item, { replaceExisting: true });
+    if ((item.customer_external_id && item.customer_id &&
+         text(item.customer_external_id) !== text(item.customer_id)) ||
+        (item.awaiting_field && item.awaiting &&
+         text(item.awaiting_field) !== text(item.awaiting)) ||
+        (item.created_at && item.started_at &&
+         text(item.created_at) !== text(item.started_at))) {
+      addError(report, "LEGACY_DRAFT_FIELD_ALIAS_CONFLICT", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
+    const conversation = asArray(report.rows.conversations).find(
+      (candidate) => candidate.id === conversationId && candidate.merchant_id === merchantId,
+    );
+    if (!conversation || !merchantId ||
+        !text(row.customer_external_id) ||
+        text(conversation.customer_external_id) !== text(row.customer_external_id)) {
+      addError(report, "LEGACY_DRAFT_CONVERSATION_IDENTITY_UNVERIFIED", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
+    const channel = asArray(report.rows.merchant_channels).filter(
+      (candidate) => text(candidate.id) === text(conversation.channel_id) &&
+        text(candidate.merchant_id) === merchantId,
+    );
+    if (!text(conversation.channel_id) || channel.length !== 1) {
+      addError(report, "LEGACY_DRAFT_CHANNEL_OWNERSHIP_UNVERIFIED", {
+        table: "order_drafts", target_record_id: row.id,
+      });
+      continue;
+    }
+    if (!["product", "customer_info"].includes(text(row.awaiting_field))) {
+      addError(report, "LEGACY_DRAFT_STATE_UNSUPPORTED", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
+    // Reject ambiguous local timestamps: historical expiry must carry its timezone.
+    const parseInstant = (value) =>
+      typeof value === "string" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) &&
+      Number.isFinite(Date.parse(value)) ? Date.parse(value) : null;
+    // A syntactically valid offset timestamp is not sufficient provenance for
+    // a legacy draft. Reject impossible calendar dates that Date.parse may
+    // normalize (for example, February 30) instead of importing a shifted TTL.
+    const validCalendarInstant = (value) => {
+      if (parseInstant(value) === null) return false;
+      const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+      if (!match) return false;
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      // Date.UTC treats years 0-99 as 1900-1999; set the full year explicitly.
+      const calendar = new Date(0);
+      calendar.setUTCFullYear(year, month, 0);
+      const daysInMonth = calendar.getUTCDate();
+      const clock = value.match(/T(\d{2}):(\d{2}):(\d{2})/);
+      const offset = value.match(/([+-])(\d{2}):(\d{2})$/);
+      if (offset && (Number(offset[2]) > 23 || Number(offset[3]) > 59)) return false;
+      if (!clock) return false;
+      const [hour, minute, second] = clock.slice(1).map(Number);
+      return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth &&
+        hour <= 23 && minute <= 59 && second <= 59;
+    };
+    if (![row.created_at, row.updated_at, row.expires_at].every(validCalendarInstant)) {
+      addError(report, "LEGACY_DRAFT_TIME_PROVENANCE_INVALID", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
+    const created = parseInstant(row.created_at);
+    const updated = parseInstant(row.updated_at);
+    const expires = parseInstant(row.expires_at);
+    if (created === null || updated === null || expires === null ||
+        updated < created || expires < updated) {
+      addError(report, "LEGACY_DRAFT_TIME_PROVENANCE_INVALID", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
+    // One conversation cannot acquire two distinct active draft identities.
+    // A matching record ID is still checked by mergeRow for payload conflicts.
+    const conflictingDraft = asArray(report.rows.order_drafts).find(
+      (candidate) => text(candidate.merchant_id) === merchantId &&
+        text(candidate.conversation_id) === conversationId &&
+        text(candidate.id) !== text(row.id),
+    );
+    if (conflictingDraft) {
+      addError(report, "LEGACY_DRAFT_CONVERSATION_CONFLICT", {
+        table: "order_drafts", target_record_id: row.id,
+      });
+      continue;
+    }
+    mergeRow(report, "order_drafts", row, "transitional_runtime", item);
   }
 }
 

@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
-import {operationalDatabasePool,operationalQueryRows,operationalPostgresAuthorityRequired} from './operationalPostgresAuthority';
+import {withReceiptOperatorReviewTransaction} from './operatorReceiptReviewPostgresAuthority';
+import {operationalQueryRows,operationalPostgresAuthorityRequired} from './operationalPostgresAuthority';
 import {getSuperQiSandboxPaymentStatus,getSuperQiSandboxPublicState,superQiWebhookPayloadHash,type SuperQiFetch} from './superQiSandboxTransport';
 import {superQiConfirmedProviderEventId} from './superQiSandboxWebhook';
 export class ReceiptReplayReviewError extends Error {
@@ -10,12 +11,11 @@ function fail(code:string,status:number):never {throw new ReceiptReplayReviewErr
 export async function reviewVerifiedReceiptReplay(actorId:string,eventId:string,body:unknown,fetchImpl?:SuperQiFetch) {
   if (!operationalPostgresAuthorityRequired()) fail('RECEIPT_REPLAY_REVIEW_UNAVAILABLE',503);
   const value=parseReceiptReplayIntent(eventId,body);
-  const database=await operationalDatabasePool();
   const review=async()=>{
     const auditId=`billing-review-${crypto.randomUUID()}`;
     const hash=crypto.createHash('sha256').update(JSON.stringify({auditId,eventId,authority:value.authority,orderId:value.order_id})).digest('hex');
     try {
-      const rows=await operationalQueryRows<ReviewRow>(database,'SELECT * FROM public.fawri_review_verified_payment_receipt($1,$2,$3,$4,$5,$6)',[actorId,eventId,value.authority,value.order_id,auditId,hash]);
+      const rows=await withReceiptOperatorReviewTransaction(database=>operationalQueryRows<ReviewRow>(database,'SELECT * FROM public.fawri_review_verified_payment_receipt($1,$2,$3,$4,$5,$6)',[actorId,eventId,value.authority,value.order_id,auditId,hash]));
       if(rows.length!==1) fail('RECEIPT_REPLAY_REVIEW_CONFLICT',409);
       return rows[0];
     }catch(error){
@@ -24,7 +24,7 @@ export async function reviewVerifiedReceiptReplay(actorId:string,eventId:string,
       fail('RECEIPT_REPLAY_REVIEW_UNAVAILABLE',503);
     }
   };
-  // Autocommit durable audit before access/provider lookup; no raw data to browser.
+  // Commit the audit before provider I/O; never keep actor locks across the network.
   const receipt=await review();
   await confirmReceiptReplay(receipt,fetchImpl);
   // Fresh authorization/mapping check after provider I/O; review authorizes no later grant.

@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import {randomUUID,randomInt,generateKeyPairSync} from 'node:crypto';
 import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {cleanupResources} from './helpers/cleanup-resources.mjs';
+import {proveReceiptCapabilityOwners} from './helpers/receipt-capability-owner-matrix.mjs';
 await assertDisposablePostgres();
 Object.assign(process.env,{
   FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',
@@ -11,7 +13,9 @@ Object.assign(process.env,{
 });
 const {publicKey}=generateKeyPairSync('rsa',{modulusLength:2048});
 Object.assign(process.env,{FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY:'required',FAWRI_SAAS_BILLING_PROVIDER:'superqi_sandbox',FAWRI_SAAS_BILLING_PROVIDERS:'superqi_sandbox,test_fake',FAWRI_SUPERQI_SANDBOX_ENABLED:'1',FAWRI_SUPERQI_SANDBOX_USERNAME:'synthetic-user',FAWRI_SUPERQI_SANDBOX_PASSWORD:'synthetic-password',FAWRI_SUPERQI_SANDBOX_TERMINAL_ID:'synthetic-terminal',FAWRI_SUPERQI_SANDBOX_NOTIFICATION_URL:'https://operator.example.invalid/webhook',FAWRI_SUPERQI_SANDBOX_FINISH_URL:'https://operator.example.invalid/finish',FAWRI_SUPERQI_SANDBOX_WEBHOOK_PUBLIC_KEY_B64:Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64')});
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const runtime=await createDisposableKnowledgeRuntime();
+const {Pool}=await import('pg');
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 const {superQiConfirmedProviderEventId}=await import('../src/services/superQiSandboxWebhook.ts');
@@ -25,13 +29,17 @@ const readSql='SELECT * FROM public.fawri_review_verified_payment_receipt($1,$2,
 
 test('real HTTP replay review requires fresh provider confirmation and durable current-operator audit without grants',async t=>{
   const ids=[],events=[],role=`receipt_http_${randomUUID().replaceAll('-','')}`;
-  let admin,server,roleCreated=false,faultName;
-  const originalOptions=pool.options.options,nativeFetch=globalThis.fetch;
-  let providerCalls=0,providerMode='ok',providerHook;const fixtures=[],setupClients=[];
+  let admin,pool,server,roleCreated=false,faultName;
+  const originalOperatorUrl=process.env.FAWRI_OPERATOR_DATABASE_URL;
+  const password=randomUUID().replaceAll('-','');
+  const nativeFetch=globalThis.fetch;
+  let providerCalls=0,providerMode='ok',providerHook;const fixtures=[];
   globalThis.fetch=async(url,init)=>{const target=String(url);if(target.startsWith('https://uat-sandbox-3ds-api.qi.iq/api/v1/payment/')){providerCalls++;assert.equal(init.method,'GET');if(providerHook)await providerHook();if(providerMode==='outage')throw new Error('SENSITIVE_PROVIDER_DETAIL');const f=fixtures.find(f=>target.endsWith(`/payment/${encodeURIComponent(f.payload.paymentId)}/status`));assert.ok(f,'owned provider identity only');return Response.json({...f.payload,...(providerMode==='request'?{requestId:randomUUID()}:providerMode==='amount'?{confirmedAmount:f.payload.amount+1}:providerMode==='nonterminal'?{status:'CREATED'}:providerMode==='date'?{creationDate:'2026-10-15T12:00:00Z'}:{})});}assert.ok(target.startsWith('http://127.0.0.1:'),'no external network');return nativeFetch(url,init);};
   t.after(async()=>cleanupResources([
     ['transport restore',()=>{globalThis.fetch=nativeFetch;}],
     ['HTTP server',()=>server?new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve())):undefined],
+    ['review pool',async()=>{const {closeReceiptOperatorReviewPool}=await import('../src/services/operatorReceiptReviewPostgresAuthority.ts');await closeReceiptOperatorReviewPool();}],
+    ['raw review pool',()=>pool?.end()],
     ['audit fault',async()=>{if(faultName){await admin.query(`DROP TRIGGER IF EXISTS ${faultName} ON database_admin_access_audits`);await admin.query(`DROP FUNCTION IF EXISTS ${faultName}()`);}}],
     ['owned receipts',()=>admin?.query('DELETE FROM verified_provider_payment_receipts WHERE provider_event_id=ANY($1::text[])',[events])],
     ['owned read audits',()=>admin?.query('DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])',[ids])],
@@ -39,14 +47,16 @@ test('real HTTP replay review requires fresh provider confirmation and durable c
     ['owned accounts',()=>admin?.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
     ['role grants',()=>roleCreated?admin.query(`DROP OWNED BY ${role}`):undefined],
     ['role',()=>roleCreated?admin.query(`DROP ROLE ${role}`):undefined],
-    ['owner connection',()=>{pool.options.options=originalOptions;for(const client of setupClients)client.release();admin?.release();}],
-    ['pool',()=>pool.end()],
+    ['owner connection',()=>admin?.release()],
+    ['runtime',()=>runtime.dispose()],
+    ['operator environment',()=>{if(originalOperatorUrl===undefined)delete process.env.FAWRI_OPERATOR_DATABASE_URL;else process.env.FAWRI_OPERATOR_DATABASE_URL=originalOperatorUrl;}],
   ]));
-  admin=await pool.connect();
-  await admin.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
+  admin=await runtime.admin.connect();
+  await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
   await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
-  await admin.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
-  await admin.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
+  const operatorUrl=new URL(bootstrapUrl);operatorUrl.username=role;operatorUrl.password=password;operatorUrl.search='';
+  process.env.FAWRI_OPERATOR_DATABASE_URL=operatorUrl.toString();
+  pool=new Pool({connectionString:operatorUrl.toString(),connectionTimeoutMillis:5000});
   async function account(kind,adminRole,permissions=[]) {
     const id=`receipt-actor-${randomUUID()}`;ids.push(id);
     await admin.query('INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,$2,$3,$4,\'active\',true)',[id,kind,`+1992${String(randomInt(0,100000000)).padStart(8,'0')}`,'synthetic']);
@@ -76,11 +86,9 @@ test('real HTTP replay review requires fresh provider confirmation and durable c
   const originalReceipts=await receiptSnapshot();
   const entitlementCount=async()=>(await admin.query('SELECT (SELECT count(*) FROM saas_entitlement_applications)+(SELECT count(*) FROM cashier_entitlement_applications) AS n')).rows[0].n;
   const originalEntitlements=await entitlementCount();
-  while(pool.idleCount>0)setupClients.push(await pool.connect());
-  pool.options.options=`-c role=${role}`;
-  const identity=(await pool.query("SELECT current_user AS role,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
-  assert.deepEqual(identity,{role,rolsuper:false,rolbypassrls:false,owns_table:false});
-  assert.equal((await pool.query('SELECT * FROM verified_provider_payment_receipts')).rows.length,0);
+  const identity=(await pool.query("SELECT current_user AS role,session_user AS login,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
+  assert.deepEqual(identity,{role,login:role,rolsuper:false,rolbypassrls:false,owns_table:false});
+  await assert.rejects(()=>pool.query('SELECT * FROM verified_provider_payment_receipts'),{code:'42501'});
   await assert.rejects(()=>pool.query(readSql,[owner.id,fixtures[0].event,fixtures[0].body.authority,fixtures[0].order.id,randomUUID(),'a'.repeat(64)]),error=>error.code==='42501');
   await admin.query(`GRANT EXECUTE ON FUNCTION ${capability} TO ${role}`);
   for(const actor of [owner,finance,denied,merchant]){
@@ -100,6 +108,15 @@ test('real HTTP replay review requires fresh provider confirmation and durable c
     return {response,body:await response.json()};
   }
   const audits=async()=>(await admin.query("SELECT id,admin_account_id,reason_code,request_hash FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[]) AND reason_code='BILLING_RECEIPT_REPLAY_REVIEW' ORDER BY started_at,id",[ids])).rows;
+  await proveReceiptCapabilityOwners(t,{
+    admin,role,functions:[capability],
+    tables:['accounts','admin_profiles','admin_permissions','database_admin_access_audits','verified_provider_payment_receipts','saas_billing_orders','cashier_billing_orders'],
+    fixtures,actorId:owner.id,deniedActorId:denied.id,
+    invoke:(f,actorId,auditId)=>admin.query(readSql,[actorId,f.event,f.body.authority,f.order.id,auditId,'a'.repeat(64)]),
+    expected:f=>({provider:'superqi_sandbox',provider_event_id:f.event,payment_ref:f.payload.paymentId,request_ref:f.payload.requestId,event_type:'payment_succeeded',amount_iqd:f.payload.amount,payload_hash:superQiWebhookPayloadHash(f.payload),first_received_at:'2026-10-14T12:00:00.123456Z',order_id:f.order.id,authority:f.body.authority}),
+    snapshot:async()=>({receipts:await receiptSnapshot(),orders:await orderSnapshot(),audits:await audits(),entitlements:await entitlementCount()}),
+    auditReasons:['BILLING_RECEIPT_REPLAY_REVIEW'],
+  });
   await t.test('session/device/permission/origin denials stop before raw lookup and provider access',async()=>{
     assert.equal((await request()).response.status,401);
     assert.equal((await request(owner,fixtures[0],fixtures[0].body,{'X-Fawri-Device-Id':'wrong'})).response.status,401);
@@ -136,9 +153,13 @@ test('real HTTP replay review requires fresh provider confirmation and durable c
   });
   await t.test('cross-authority ambiguity and exact identity mismatch stop before provider access',async()=>{
     const a=fixtures[0],b=fixtures[1],calls=providerCalls;
-    await admin.query(`UPDATE ${b.table} SET provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[b.order.id,a.payload.paymentId,JSON.stringify({provider_request_id:a.payload.requestId})]);
-    assert.equal((await request(owner,a)).response.status,409);assert.equal(providerCalls,calls);
-    await admin.query(`UPDATE ${b.table} SET provider_checkout_ref=$2,metadata=$3::jsonb WHERE id=$1`,[b.order.id,b.payload.paymentId,JSON.stringify(originalOrders[1].metadata)]);
+    // Cross-authority duplicates are rejected at the database write boundary.
+    await assert.rejects(
+      ()=>admin.query(`UPDATE ${b.table} SET provider_checkout_ref=$2,metadata=metadata||$3::jsonb WHERE id=$1`,[b.order.id,a.payload.paymentId,JSON.stringify({provider_request_id:a.payload.requestId})]),
+      error=>error.code==='23514',
+    );
+    assert.deepEqual((await admin.query(`SELECT * FROM ${b.table} WHERE id=$1`,[b.order.id])).rows[0],originalOrders[1]);
+    assert.equal(providerCalls,calls);
     await admin.query(`UPDATE ${a.table} SET metadata=metadata||$2::jsonb WHERE id=$1`,[a.order.id,JSON.stringify({provider_request_id:randomUUID()})]);
     assert.equal((await request(owner,a)).response.status,409);assert.equal(providerCalls,calls);
     await admin.query(`UPDATE ${a.table} SET metadata=$2::jsonb WHERE id=$1`,[a.order.id,JSON.stringify(originalOrders[0].metadata)]);
@@ -165,7 +186,7 @@ test('real HTTP replay review requires fresh provider confirmation and durable c
   await t.test('concurrent reviews remain read-only; receipt/order/time and all entitlements unchanged',async()=>{
     const results=await Promise.all([request(owner),request(finance)]);assert.ok(results.every(result=>result.response.status===200&&result.body.applied===false));
     assert.deepEqual(await receiptSnapshot(),originalReceipts);assert.deepEqual(await orderSnapshot(),originalOrders);assert.equal(await entitlementCount(),originalEntitlements);
-    assert.equal((await pool.query('SELECT * FROM verified_provider_payment_receipts')).rows.length,0);
-    console.log('VERIFIED_RECEIPT_REPLAY_REVIEW_HTTP_PROOF '+JSON.stringify({restrictedRole:true,realAdminSession:true,freshProvider:true,durableAudit:true,permissionRecheckedAfterProvider:true,receiptAndOrderUnchanged:true,entitlementGrants:0,executionAction:false}));
+    await assert.rejects(()=>pool.query('SELECT * FROM verified_provider_payment_receipts'),{code:'42501'});
+    console.log('VERIFIED_RECEIPT_REPLAY_REVIEW_HTTP_PROOF '+JSON.stringify({restrictedRole:true,actualLogin:true,separateTenantAuthReview:true,realAdminSession:true,freshProvider:true,durableAudit:true,permissionRecheckedAfterProvider:true,receiptAndOrderUnchanged:true,entitlementGrants:0,executionAction:false}));
   });
 });

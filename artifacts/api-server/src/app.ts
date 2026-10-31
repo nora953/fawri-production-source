@@ -184,9 +184,10 @@ function enforceMetaConnectionActivationGate(
   res: Response,
   next: NextFunction,
 ): void {
+  const pathname = req.path.toLowerCase().replace(/\/+$/, "");
   const isConnectionPath =
-    req.method === "GET" &&
-    (req.path === "/api/meta/login" || req.path === "/api/meta/callback");
+    (req.method === "GET" || req.method === "HEAD") &&
+    (pathname === "/api/meta/login" || pathname === "/api/meta/callback");
 
   if (!isConnectionPath || metaConnectionActivationConfigured(process.env)) {
     next();
@@ -206,11 +207,12 @@ function enforceLegacyKnowledgeCutoverGate(
   res: Response,
   next: NextFunction,
 ): void {
+  const pathname = req.path.toLowerCase();
   const isLegacyKnowledgePath =
-    req.path === "/api/saved-answers" ||
-    req.path.startsWith("/api/saved-answers/") ||
-    req.path === "/api/bot-training" ||
-    req.path.startsWith("/api/bot-training/");
+    pathname === "/api/saved-answers" ||
+    pathname.startsWith("/api/saved-answers/") ||
+    pathname === "/api/bot-training" ||
+    pathname.startsWith("/api/bot-training/");
 
   if (!isLegacyKnowledgePath) {
     next();

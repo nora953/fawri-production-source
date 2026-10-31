@@ -1,0 +1,2172 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "sourceRevision": "53f4f4b0ae3f0d5a62611d978771bba285b98653",
+  "lastAcceptedExecutable": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "status": "BOUNDED_SOURCE_INVENTORY_NOT_PRIVACY_ACCEPTANCE",
+  "release": "NO-GO",
+  "boundedTableEnumerationComplete": true,
+  "boundedColumnEnumerationComplete": true,
+  "fullActorFieldProducerConsumerAcceptance": false,
+  "completeP0Inventory": false,
+  "counts": {
+    "tables": 8,
+    "columns": 86,
+    "reviewedRouteRows": 19,
+    "literalSqlReferences": 61,
+    "selectedOpenCells": 4,
+    "selectedAcceptedCells": 1,
+    "fieldObservationClasses": {
+      "ADMIN_CHANNEL_KEYED_PROJECTION": 3,
+      "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION": 13,
+      "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION": 11,
+      "ADMIN_NOTE_PROJECTION": 2,
+      "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE": 8,
+      "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS": 5,
+      "INTERNAL_AUTHORSHIP_OR_TIMESTAMP": 6,
+      "INTERNAL_LIVE_LINK_OR_COMPLETION": 3,
+      "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION": 11,
+      "MERCHANT_SELECTED_PROJECTION": 5,
+      "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN": 19
+    }
+  },
+  "inputs": {
+    "snapshot": "lib/db/drizzle/meta/0051_snapshot.json",
+    "snapshotSha256": "68d12a4f1ccdd5d52978334c4eb194a367803ffc86cda30910adb66a2016f47d",
+    "curationSha256": "7a831712242c36b3827c0c0d855e302d14dff11e4892de523900802d179b0b42",
+    "generatorSha256": "1017e5b0c989ae496b92d78ee7c7c23c3f4e082f6d3f495d5cee4b15dc37de29",
+    "scannedRuntimeFileCount": 312,
+    "scannedRuntimeTreeSha256": "9ad0295fef3d38b56eaa31ed990b3f34462161c1ba4d86c80c8ea1eb386b8e91"
+  },
+  "methodLimits": [
+    "Snapshot columns are exact; field/role observations are manually reviewed source mappings.",
+    "Literal SQL scan and nearest function heuristic are not an AST, call graph or dynamic SQL proof.",
+    "Reviewed route rows are not an exhaustive endpoint/actor denominator.",
+    "No same-name legacy JSON store is treated as the SQL table.",
+    "Nested JSON keys and producer/input provenance remain explicit open work.",
+    "Existing runtime acceptance is bounded by its original evidence; no new runtime PASS from this inventory."
+  ],
+  "tables": [
+    {
+      "table": "audit_events",
+      "schemaPath": "lib/db/src/schema/audit.ts",
+      "schemaSha256": "2b31decaaeb9115d54de8e1646eabd9dbebaf464006f0890d5089b509b30a011",
+      "columnCount": 16,
+      "fields": [
+        {
+          "column": "id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": true,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "actor_kind",
+          "sqlType": "audit_actor_kind",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "actor_account_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "action_type",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "entity_type",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "entity_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "reason_code",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "details",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "metadata",
+          "sqlType": "jsonb",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "ip_address",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "user_agent",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "request_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "previous_hash",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "event_hash",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "created_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        }
+      ],
+      "literalSqlReferences": [
+        {
+          "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+          "line": 109,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "insertLifecycleEvent"
+        },
+        {
+          "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+          "line": 221,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "syncEarlyWarningIncidentHistory"
+        },
+        {
+          "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+          "line": 254,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "syncEarlyWarningIncidentHistory"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+          "line": 283,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "appendAuditEvent"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+          "line": 314,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "appendAuditEvent"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+          "line": 1257,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "auditRows"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantAdminLogAuthority.ts",
+          "line": 62,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "appendMerchantAdminLogPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 291,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "writeAudit"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1170,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1362,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "importLegacyAdminDataPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1470,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "listAdminLogsPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts",
+          "line": 792,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "resolveMerchantPaymentConflictAuthoritative"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts",
+          "line": 1112,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "writeAudit"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "line": 79,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "insertAudit"
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionPlanCycleAuthority.ts",
+          "line": 309,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "applySubscriptionPlanCycleInTransaction"
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionServiceGuarantee.ts",
+          "line": 970,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "recordSubscriptionServiceGuaranteeAssessmentAudit"
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionServiceGuarantee.ts",
+          "line": 988,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "recordSubscriptionServiceGuaranteeAssessmentAudit"
+        }
+      ],
+      "sqlWriteProducerCandidates": [
+        {
+          "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+          "nearestNamedFunctionHeuristic": "insertLifecycleEvent",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            109
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+          "nearestNamedFunctionHeuristic": "appendAuditEvent",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            314
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantAdminLogAuthority.ts",
+          "nearestNamedFunctionHeuristic": "appendMerchantAdminLogPostgres",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            62
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "writeAudit",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            291
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            1170
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "importLegacyAdminDataPostgres",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            1362
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts",
+          "nearestNamedFunctionHeuristic": "resolveMerchantPaymentConflictAuthoritative",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            792
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts",
+          "nearestNamedFunctionHeuristic": "writeAudit",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            1112
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "nearestNamedFunctionHeuristic": "insertAudit",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            79
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionPlanCycleAuthority.ts",
+          "nearestNamedFunctionHeuristic": "applySubscriptionPlanCycleInTransaction",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            309
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/subscriptionServiceGuarantee.ts",
+          "nearestNamedFunctionHeuristic": "recordSubscriptionServiceGuaranteeAssessmentAudit",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            970,
+            988
+          ]
+        }
+      ],
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function listAdminLogsPostgres",
+          "note": "Selected columns plus joined admin/merchant identity; metadata mapped wholesale to meta.",
+          "line": 1445,
+          "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+          "anchor": "function mapAudit(",
+          "note": "Emergency-specific selected metadata/event/hash projection; separate owner route.",
+          "line": 1231,
+          "sha256": "45c53442056c4842e969d1867d085053aa0d935f4fbc9d0c5b7ca9815a320f40"
+        },
+        {
+          "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+          "anchor": "export async function syncEarlyWarningIncidentHistory",
+          "note": "Incident lifecycle selected fields and normalized metadata; separate early-warning consumer.",
+          "line": 201,
+          "sha256": "a67633bebbf6588c3412ecf85fae5ebd10493921c7d93392c4cce4e24461e165"
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/logs",
+          "guard": "secure admin + view_logs",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/logs",
+          "guard": "secure admin + manage_subscriptions",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/emergency-read-access/audit",
+          "guard": "secure admin + owner",
+          "source": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "SEPARATE_EMERGENCY_EVIDENCE_NOT_ALL_FIELD_ACCEPTANCE"
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/early-warning",
+          "guard": "secure admin + view_logs",
+          "source": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "PRODUCER_FIELD_RECONCILIATION_PENDING"
+        }
+      ],
+      "actorPolicyObserved": {
+        "merchant": "denied direct management/admin audit reads",
+        "owner": "global selected management and emergency projection",
+        "assistant": "permission-dependent management log; emergency audit owner-only",
+        "worker": "multiple SQL event producers; not an HTTP role"
+      },
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
+        "evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json",
+        "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+        "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json"
+      ],
+      "notes": [
+        "Same-name legacy auth-security/emergency JSON audit_events are different authorities; literal table-name matches are not automatically SQL consumers.",
+        "metadata/details producer provenance is not fully accepted; management log tests do not certify all emergency/incident fields."
+      ]
+    },
+    {
+      "table": "manual_reply_requests",
+      "schemaPath": "lib/db/src/schema/manual-conversations.ts",
+      "schemaSha256": "df8daf8e3ffd42eda7dc24ac1f026d495c9f64e9f6f0e6b08bac0fd80ef0e8da",
+      "columnCount": 11,
+      "fields": [
+        {
+          "column": "id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": true,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "conversation_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "idempotency_key",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "text_sha256",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "status",
+          "sqlType": "manual_reply_request_status",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "message_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "external_message_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "error_code",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "created_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "updated_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+          "fieldPrivacyAccepted": false
+        }
+      ],
+      "literalSqlReferences": [
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "line": 203,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "updateConversationControl"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "line": 433,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "prepareManualReplyAuthoritative"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "line": 482,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "prepareManualReplyAuthoritative"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "line": 548,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "completeManualReplyAuthoritative"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "line": 725,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "completeManualReplyAuthoritative"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "line": 811,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "failManualReplyAuthoritative"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 963,
+          "operation": "DELETE FROM",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData"
+        }
+      ],
+      "sqlWriteProducerCandidates": [
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "nearestNamedFunctionHeuristic": "prepareManualReplyAuthoritative",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            482
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "nearestNamedFunctionHeuristic": "completeManualReplyAuthoritative",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            725
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "nearestNamedFunctionHeuristic": "failManualReplyAuthoritative",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            811
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData",
+          "operations": [
+            "DELETE FROM"
+          ],
+          "lines": [
+            963
+          ]
+        }
+      ],
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "anchor": "async function updateConversationControl",
+          "note": "Pending/uncertain status gates return-to-Fawri; raw rows are not conversation projection.",
+          "line": 193,
+          "sha256": "2d4515227229618be97d90f0d618127ae8ba21b416dd5e5e6ca17ec27624b328"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/conversation-operations.ts",
+          "anchor": "const requestKey = idempotencyKey(req);",
+          "note": "Secure merchant owns conversation; replay returns message/conversation, not raw request row.",
+          "line": 170,
+          "sha256": "0d783553f5c6bb6a532dc1d25152ca75b5b84f9d777e2f920a3e2ab1c7a19961"
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/conversations[/:merchantId]; /api/conversation/:conversationId",
+          "guard": "secure merchant own tenant",
+          "source": "artifacts/api-server/src/routes/conversation-operations.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/conversations/:conversationId/{takeover,return-to-fawri,messages}",
+          "guard": "secure merchant own tenant; reply lifecycle and provider boundary",
+          "source": "artifacts/api-server/src/routes/conversation-operations.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        }
+      ],
+      "actorPolicyObserved": {
+        "merchant": "own conversation projection/control; foreign IDs denied",
+        "owner": "admin cookie cannot substitute for merchant cookie",
+        "assistant": "admin cookie cannot substitute for merchant cookie",
+        "worker": "scoped lifecycle mutations; no public raw table endpoint"
+      },
+      "boundedEvidence": [
+        "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json"
+      ],
+      "notes": [
+        "idempotency and delivery state are internal; public messages are a different table/projection.",
+        "No new provider-send acceptance; provider/session/failure proofs retain their own limits."
+      ]
+    },
+    {
+      "table": "merchant_admin_notes",
+      "schemaPath": "lib/db/src/schema/merchant-management.ts",
+      "schemaSha256": "3e9eaa95e5b7e98fc67b9defa7eb74c3a9866f99cc958713ca3ee2c10a8f6659",
+      "columnCount": 5,
+      "fields": [
+        {
+          "column": "merchant_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": true,
+          "sourceObservation": "ADMIN_NOTE_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "note",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_NOTE_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "updated_by_admin_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "created_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "updated_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+          "fieldPrivacyAccepted": false
+        }
+      ],
+      "literalSqlReferences": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 369,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "getMerchantAdminNotePostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 392,
+          "operation": "DELETE FROM",
+          "nearestNamedFunctionHeuristic": "setMerchantAdminNotePostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 397,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "setMerchantAdminNotePostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1158,
+          "operation": "DELETE FROM",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1399,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "importLegacyAdminDataPostgres"
+        }
+      ],
+      "sqlWriteProducerCandidates": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "setMerchantAdminNotePostgres",
+          "operations": [
+            "DELETE FROM",
+            "INSERT INTO"
+          ],
+          "lines": [
+            392,
+            397
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData",
+          "operations": [
+            "DELETE FROM"
+          ],
+          "lines": [
+            1158
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "importLegacyAdminDataPostgres",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            1399
+          ]
+        }
+      ],
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function getMerchantAdminNotePostgres",
+          "note": "SELECT note; response merchant_id follows validated path.",
+          "line": 360,
+          "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function setMerchantAdminNotePostgres",
+          "note": "Admin ID is supplied from current authenticated context; import is owner-only.",
+          "line": 375,
+          "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET/PUT",
+          "path": "/api/auth/merchants/:id/note",
+          "guard": "secure admin + manage_merchant_status",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/local-data-migration",
+          "guard": "secure owner",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        }
+      ],
+      "actorPolicyObserved": {
+        "merchant": "denied",
+        "owner": "global read/write/import",
+        "assistant": "manage_merchant_status read/write; no owner import",
+        "worker": "tenant deletion purges note"
+      },
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-OWNER-IMPORT-HTTP-20261024.json",
+        "evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json"
+      ],
+      "notes": [
+        "Legitimate administrator scope is global; merchant isolation does not mean an authorized owner is restricted to one merchant."
+      ]
+    },
+    {
+      "table": "merchant_channel_overrides",
+      "schemaPath": "lib/db/src/schema/merchant-management.ts",
+      "schemaSha256": "3e9eaa95e5b7e98fc67b9defa7eb74c3a9866f99cc958713ca3ee2c10a8f6659",
+      "columnCount": 6,
+      "fields": [
+        {
+          "column": "merchant_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_CHANNEL_KEYED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "platform",
+          "sqlType": "channel_platform",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_CHANNEL_KEYED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "status",
+          "sqlType": "channel_status",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_CHANNEL_KEYED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "updated_by_admin_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "created_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "updated_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+          "fieldPrivacyAccepted": false
+        }
+      ],
+      "literalSqlReferences": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 430,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "listMerchantChannelOverridesPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 474,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "setMerchantChannelOverridePostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1159,
+          "operation": "DELETE FROM",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1431,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "importLegacyAdminDataPostgres"
+        }
+      ],
+      "sqlWriteProducerCandidates": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "setMerchantChannelOverridePostgres",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            474
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData",
+          "operations": [
+            "DELETE FROM"
+          ],
+          "lines": [
+            1159
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "importLegacyAdminDataPostgres",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            1431
+          ]
+        }
+      ],
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function listMerchantChannelOverridesPostgres",
+          "note": "Projection is merchant_id -> platform -> status, not credentials.",
+          "line": 418,
+          "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function setMerchantChannelOverridePostgres",
+          "note": "Current admin actor; closed-account checks.",
+          "line": 443,
+          "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/channels",
+          "guard": "secure admin + manage_channels",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/merchants/:id/channels/:platform",
+          "guard": "secure admin + manage_channels",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/local-data-migration",
+          "guard": "secure owner",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        }
+      ],
+      "actorPolicyObserved": {
+        "merchant": "denied",
+        "owner": "global override read/write/import",
+        "assistant": "manage_channels read/write; no owner import",
+        "worker": "tenant deletion purges overrides"
+      },
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-OWNER-IMPORT-HTTP-20261024.json"
+      ],
+      "notes": [
+        "This administrative override table is not encrypted merchant_channels credentials."
+      ]
+    },
+    {
+      "table": "merchant_deletion_requests",
+      "schemaPath": "lib/db/src/schema/merchant-management.ts",
+      "schemaSha256": "3e9eaa95e5b7e98fc67b9defa7eb74c3a9866f99cc958713ca3ee2c10a8f6659",
+      "columnCount": 16,
+      "fields": [
+        {
+          "column": "id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": true,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_LIVE_LINK_OR_COMPLETION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_id_snapshot",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_name_snapshot",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_phone_snapshot",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "requested_by_admin_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_LIVE_LINK_OR_COMPLETION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "requested_by_admin_id_snapshot",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "requested_by_admin_name_snapshot",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "requested_by_admin_phone_snapshot",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "reason",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "details",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "status",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "reviewed_by_admin_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "reviewed_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "completed_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "INTERNAL_LIVE_LINK_OR_COMPLETION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "created_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+          "fieldPrivacyAccepted": false
+        }
+      ],
+      "literalSqlReferences": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 515,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "updateMerchantStatusPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 700,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "listDeletionRequestsPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 753,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "createDeletionRequestPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 801,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "createDeletionRequestPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 821,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "rejectDeletionRequestPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 838,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "rejectDeletionRequestPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 858,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "rejectDeletionRequestPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1205,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "completeMerchantDeletionPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1290,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "completeMerchantDeletionPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1298,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "completeMerchantDeletionPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1324,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "completeMerchantDeletionPostgres"
+        }
+      ],
+      "sqlWriteProducerCandidates": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "createDeletionRequestPostgres",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            753
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "rejectDeletionRequestPostgres",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            838
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "completeMerchantDeletionPostgres",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            1290,
+            1298
+          ]
+        }
+      ],
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "function deletionRequest(",
+          "note": "Snapshot fields are deliberately remapped to legacy public names; completed_at not returned by this mapper.",
+          "line": 215,
+          "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+        },
+        {
+          "path": "artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts",
+          "anchor": "export async function completeMerchantDeletionWithPhysicalMediaCleanup",
+          "note": "Manifest before actual deletion, local media after transaction commit.",
+          "line": 365,
+          "sha256": "766cc5e7aa0b59ad33fae04c3a1e30c92b84cac5734a89e5e8085fdda66592d8"
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/deletion-requests",
+          "guard": "secure admin + manage_merchant_status",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/merchants/:id/deletion-requests",
+          "guard": "secure assistant + manage_merchant_status (owner excluded by current requireAssistant)",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/deletion-requests/:requestId/reject",
+          "guard": "secure owner",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/merchants/:id/delete",
+          "guard": "secure owner + own password + suspended merchant + matching request + quiescence",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        }
+      ],
+      "actorPolicyObserved": {
+        "merchant": "denied",
+        "owner": "review/reject/complete; creation route explicitly assistant-only",
+        "assistant": "manage_merchant_status create/read; cannot reject/complete",
+        "worker": "trusted tenant deletion transaction retains bounded completion record"
+      },
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-OWNER-DELETION-HTTP-20261024.json"
+      ],
+      "notes": [
+        "Snapshot ID/name/phone provenance differs from nullable live foreign keys.",
+        "Complete financial/PII retention schedule remains separately OPEN; do not derive policy approval from deletion runtime PASS."
+      ]
+    },
+    {
+      "table": "notifications",
+      "schemaPath": "lib/db/src/schema/notifications.ts",
+      "schemaSha256": "a6190fb65372ecde3070e184deeeea6ece0e5d7774f14295a27acfc0fff25cab",
+      "columnCount": 13,
+      "fields": [
+        {
+          "column": "id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": true,
+          "sourceObservation": "MERCHANT_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "audience",
+          "sqlType": "notification_audience",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "account_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "type",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "MERCHANT_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "title_key",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "body_key",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "variables",
+          "sqlType": "jsonb",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "MERCHANT_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "source_entity_type",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "source_entity_id",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "read_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "MERCHANT_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "expires_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "created_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "MERCHANT_SELECTED_PROJECTION",
+          "fieldPrivacyAccepted": false
+        }
+      ],
+      "literalSqlReferences": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 1156,
+          "operation": "DELETE FROM",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "line": 88,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "insertMerchantNotification"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "line": 290,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "listMerchantNotificationsPostgresCanonical"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "line": 311,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "countUnreadMerchantNotificationsPostgresCanonical"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "line": 335,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "markMerchantNotificationReadPostgresCanonical"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "line": 359,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "markAllMerchantNotificationsReadPostgresCanonical"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+          "line": 56,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "insertOperationalNotification"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+          "line": 65,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "insertOperationalNotification"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "line": 948,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "insertMerchantNotification"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "line": 995,
+          "operation": "FROM",
+          "nearestNamedFunctionHeuristic": "listMerchantNotificationsPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "line": 1018,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "markMerchantNotificationReadPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "line": 1036,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "markAllMerchantNotificationsReadPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts",
+          "line": 134,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "createInspectionRequestCanonicalPostgres"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "line": 109,
+          "operation": "INSERT INTO",
+          "nearestNamedFunctionHeuristic": "insertMerchantNotification"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "line": 289,
+          "operation": "UPDATE",
+          "nearestNamedFunctionHeuristic": "refreshSupportLifecyclePostgresCanonical"
+        }
+      ],
+      "sqlWriteProducerCandidates": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData",
+          "operations": [
+            "DELETE FROM"
+          ],
+          "lines": [
+            1156
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "nearestNamedFunctionHeuristic": "insertMerchantNotification",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            88
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "nearestNamedFunctionHeuristic": "markMerchantNotificationReadPostgresCanonical",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            335
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "nearestNamedFunctionHeuristic": "markAllMerchantNotificationsReadPostgresCanonical",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            359
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+          "nearestNamedFunctionHeuristic": "insertOperationalNotification",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            65
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "nearestNamedFunctionHeuristic": "insertMerchantNotification",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            948
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "nearestNamedFunctionHeuristic": "markMerchantNotificationReadPostgres",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            1018
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "nearestNamedFunctionHeuristic": "markAllMerchantNotificationsReadPostgres",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            1036
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts",
+          "nearestNamedFunctionHeuristic": "createInspectionRequestCanonicalPostgres",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            134
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "nearestNamedFunctionHeuristic": "insertMerchantNotification",
+          "operations": [
+            "INSERT INTO"
+          ],
+          "lines": [
+            109
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "nearestNamedFunctionHeuristic": "refreshSupportLifecyclePostgresCanonical",
+          "operations": [
+            "UPDATE"
+          ],
+          "lines": [
+            289
+          ]
+        }
+      ],
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "anchor": "function mapNotification(",
+          "note": "variables is spread at top level; id/type precede spread, timestamps follow it. No arbitrary-key acceptance.",
+          "line": 254,
+          "sha256": "91a3111f26b6d4b9876451b09c3218126a901d79a37eef1e8aa584b2e9fe0ff8"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "anchor": "\"/notifications\",",
+          "note": "Mounted earlier under auth-security; owns GET list and PATCH individual read.",
+          "line": 45,
+          "sha256": "e605658c347b63379fbb1c062e201dcbaaf6dc25ff08d48f1f4da963c9292135"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "anchor": "\"/notifications/read-all\",",
+          "note": "Later support router owns POST bulk read; its GET/PATCH duplicates are shadowed by earlier notification router in required mode.",
+          "line": 484,
+          "sha256": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "anchor": "export async function listMerchantNotificationsPostgres(",
+          "note": "Older SQL notification functions exist; current support routes import canonical authority instead.",
+          "line": 982,
+          "sha256": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0"
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/notifications",
+          "guard": "secure merchant; audience=merchant + own merchant + expiry filter",
+          "source": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/notifications/:id/read",
+          "guard": "secure merchant; own merchant/audience",
+          "source": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/notifications/read-all",
+          "guard": "secure merchant; own merchant/audience",
+          "source": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_HTTP_ACCEPTED_RESIDUAL_FIELD_001"
+        },
+        {
+          "method": "GET/PATCH",
+          "path": "same list/individual paths in support router",
+          "guard": "secure merchant",
+          "source": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "reachability": "SHADOWED_IN_CURRENT_REQUIRED_MODE",
+          "evidenceStatus": "REACHABILITY_SOURCE_REVIEW"
+        }
+      ],
+      "actorPolicyObserved": {
+        "merchant": "own live merchant audience list; own read and bulk read",
+        "owner": "admin cookie denied merchant notification API",
+        "assistant": "admin cookie denied merchant notification API",
+        "worker": "canonical scoped notification producers; admin audience may share SQL table"
+      },
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+        "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
+      ],
+      "notes": [
+        "Subscription, operational order/payment/knowledge/customer-message, Support lifecycle and inspection notification producers require explicit variable-key provenance reconciliation.",
+        "Bulk-read route has bounded actual-app runtime acceptance on bd3c518e; notification JSON variable producer/key policy remains separately OPEN."
+      ]
+    },
+    {
+      "table": "order_drafts",
+      "schemaPath": "lib/db/src/schema/orders.ts",
+      "schemaSha256": "b84d1fd59d3d0dc779ec3bf48564d05d19f2b097c2210dbfb7cfe0c4b6248884",
+      "columnCount": 9,
+      "fields": [
+        {
+          "column": "id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": true,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "conversation_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "customer_external_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "awaiting_field",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "draft_data",
+          "sqlType": "jsonb",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "expires_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "created_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "updated_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        }
+      ],
+      "literalSqlReferences": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 962,
+          "operation": "DELETE FROM",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData"
+        }
+      ],
+      "sqlWriteProducerCandidates": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData",
+          "operations": [
+            "DELETE FROM"
+          ],
+          "lines": [
+            962
+          ]
+        }
+      ],
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "async function purgeMerchantOperationalData",
+          "note": "Tenant deletion includes table; no raw table reader found in scanned current server SQL source.",
+          "line": 911,
+          "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "anchor": "router.get(\"/bot/debug\",",
+          "note": "Legacy debug reads merchant-filtered in-memory orderDraftsByConversation and db_path, not SQL order_drafts. Reachability/field policy remains open.",
+          "line": 684,
+          "sha256": "4f32c94a6fca5e3394882e0ecfb1bdb352e5fc6c9573d08a6c6f9597e7f72c47"
+        }
+      ],
+      "routes": [],
+      "actorPolicyObserved": {
+        "all_http_actors": "no direct SQL row route identified; no HTTP PASS inferred",
+        "trusted_deletion": "actual tenant-scoped purge exists",
+        "legacy_or_worker": "separate storage/event pipelines require source/reachability reconciliation"
+      },
+      "boundedEvidence": [
+        "evidence/P0-0051-VERIFICATION-20261024.json",
+        "evidence/P0-ACCESS-CONTROL-PROOF-INVENTORY-20261023.json"
+      ],
+      "notes": [
+        "SQL schema/readiness/deletion refs alone do not prove route absence globally or require a new public CRUD API.",
+        "Current canonical SQL table and legacy/in-memory business structures must be reconciled; no whole-feature acceptance."
+      ]
+    },
+    {
+      "table": "processed_channel_events",
+      "schemaPath": "lib/db/src/schema/conversations.ts",
+      "schemaSha256": "49362ee5b3396790c307c85a0bd6dc26faa1034e8d684f6d62c55a4847dfbc0d",
+      "columnCount": 10,
+      "fields": [
+        {
+          "column": "id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": true,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "merchant_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "channel_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "external_event_id",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "event_type",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "payload_hash",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "processing_status",
+          "sqlType": "text",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "error_code",
+          "sqlType": "text",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "received_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": false,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        },
+        {
+          "column": "completed_at",
+          "sqlType": "timestamp with time zone",
+          "nullable": true,
+          "primaryKey": false,
+          "sourceObservation": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+          "fieldPrivacyAccepted": false
+        }
+      ],
+      "literalSqlReferences": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "line": 966,
+          "operation": "DELETE FROM",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData"
+        }
+      ],
+      "sqlWriteProducerCandidates": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "nearestNamedFunctionHeuristic": "purgeMerchantOperationalData",
+          "operations": [
+            "DELETE FROM"
+          ],
+          "lines": [
+            966
+          ]
+        }
+      ],
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "async function purgeMerchantOperationalData",
+          "note": "Tenant deletion includes table; no raw table reader found in scanned current server SQL source.",
+          "line": 911,
+          "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+        }
+      ],
+      "routes": [],
+      "actorPolicyObserved": {
+        "all_http_actors": "no direct SQL row route identified; no HTTP PASS inferred",
+        "trusted_deletion": "actual tenant-scoped purge exists",
+        "legacy_or_worker": "separate storage/event pipelines require source/reachability reconciliation"
+      },
+      "boundedEvidence": [
+        "evidence/P0-0051-VERIFICATION-20261024.json",
+        "evidence/P0-ACCESS-CONTROL-PROOF-INVENTORY-20261023.json"
+      ],
+      "notes": [
+        "SQL schema/readiness/deletion refs alone do not prove route absence globally or require a new public CRUD API.",
+        "Current canonical SQL table and legacy/in-memory business structures must be reconciled; no whole-feature acceptance."
+      ]
+    }
+  ],
+  "reviewCells": [
+    {
+      "id": "RESIDUAL-FIELD-001",
+      "priority": 1,
+      "table": "notifications",
+      "status": "BOUNDED_HTTP_ACCEPTED",
+      "gap": "Actual-app bulk-read actor/tenant/audience/replay boundary accepted:5new functional cases,11denied requests, exact peer/admin preservation and existing expired-unread inclusion. Full field/producer policy not accepted.",
+      "next": "Continue RESIDUAL-FIELD-002 notification variable producer/key/input provenance; do not repeat accepted bulk scope absent source changes.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "originalGap": "POST read-all uses later Support route; no current named runtime proof located.",
+      "acceptedAt": "2026-10-25",
+      "acceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+      "evidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
+    },
+    {
+      "id": "RESIDUAL-FIELD-002",
+      "priority": 2,
+      "table": "notifications",
+      "status": "OPEN",
+      "gap": "Canonical field projection and eight identified caller type contracts bounded accepted. Non-reserved/unknown-record field policy, hosted historical-row disposition and intended producer scope remain unresolved; no whole field privacy acceptance.",
+      "next": "Candidate responseFieldContract and local actual-client6PASS prepared. Product enforcement/extension compatibility and hosted disposition remain unresolved. Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+      "sourceFieldMapStatus": "FINITE_CHECKLIST_RECONCILED_EIGHT_CALLER_TYPES_ACCEPTED_FIELD002_OPEN",
+      "initialReview": {
+        "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
+        "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+        "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
+      },
+      "unresolvedChecklistItems": [
+        "FIELD002-R1",
+        "FIELD002-R2",
+        "FIELD002-R3"
+      ],
+      "responseFieldContractStatus": "CANDIDATE_LOCAL_CLIENT_TESTED_NOT_ENFORCED",
+      "responseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs"
+    },
+    {
+      "id": "RESIDUAL-FIELD-003",
+      "priority": 3,
+      "table": "audit_events",
+      "status": "OPEN",
+      "gap": "Emergency alternate-log projection and early-warning nested telemetry permission defects fixed with bounded actual HTTP/SQL evidence. Generic audit metadata/details and merchant incident cross-consumer field policy remain incomplete.",
+      "next": "Reconcile merchant-scoped early_warning_incident metadata in the generic /api/auth/admin/logs projection against the declared view_logs versus view_merchants policies. Preserve the established ordinary global-admin-log contract; distinguish an intentional audit reference from restricted merchant health/usage details before asserting a new defect. Use only missing actual-app positive/negative field proof justified by source policy; do not repeat accepted early-warning or emergency cases. FIELD002 candidate/history/scope items remain open.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "initialReview": {
+        "gap": "Management meta/details, emergency event metadata and incident history have different projections and scopes.",
+        "next": "Reconcile each producer and current HTTP role/field mapping against existing emergency/management tests."
+      },
+      "boundedAuditEvidence": "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+      "boundedAuditStatus": "FIXED_SOURCE_BOUNDED_ALTERNATE_EMERGENCY_PROJECTION_FIELD003_OPEN",
+      "earlyWarningEvidence": "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+      "earlyWarningStatus": "BOUNDED_ACTUAL_HTTP_NORMALIZED_HISTORY_AND_TELEMETRY_PERMISSION_ACCEPTED"
+    },
+    {
+      "id": "RESIDUAL-FIELD-004",
+      "priority": 4,
+      "table": "order_drafts,processed_channel_events",
+      "status": "OPEN",
+      "gap": "Bounded source authority separation and retired debug HTTP accepted. Intended residual storage lifecycle and actual hosted/external writer inventory remain unresolved.",
+      "next": "Continue FIELD005 source reconciliation of merchant_deletion_requests identity snapshots and audit-retention handling against the existing privileged-deletion/retention gate. Reuse accepted deletion execution tests; identify exact unresolved field/duration policy without inventing retention periods or changing hosted data. FIELD004 unresolved scope and hosted inventory stay explicit.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "previousGap": "No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping.",
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json",
+      "checklistRemaining": [
+        "F004-R1",
+        "F004-R2"
+      ]
+    },
+    {
+      "id": "RESIDUAL-FIELD-005",
+      "priority": 5,
+      "table": "merchant_deletion_requests",
+      "status": "OPEN_EXISTING_POLICY_GATE",
+      "gap": "Phone/name snapshots, audit retention and complete PII schedule remain policy-sensitive despite tested tenant deletion.",
+      "next": "Keep existing retention/privileged-deletion policy gate open; document exact field policy rather than invent duration.",
+      "existingGate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+    }
+  ],
+  "openCells": [
+    {
+      "id": "RESIDUAL-FIELD-002",
+      "priority": 2,
+      "table": "notifications",
+      "status": "OPEN",
+      "gap": "Canonical field projection and eight identified caller type contracts bounded accepted. Non-reserved/unknown-record field policy, hosted historical-row disposition and intended producer scope remain unresolved; no whole field privacy acceptance.",
+      "next": "Candidate responseFieldContract and local actual-client6PASS prepared. Product enforcement/extension compatibility and hosted disposition remain unresolved. Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+      "sourceFieldMapStatus": "FINITE_CHECKLIST_RECONCILED_EIGHT_CALLER_TYPES_ACCEPTED_FIELD002_OPEN",
+      "initialReview": {
+        "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
+        "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+        "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
+      },
+      "unresolvedChecklistItems": [
+        "FIELD002-R1",
+        "FIELD002-R2",
+        "FIELD002-R3"
+      ],
+      "responseFieldContractStatus": "CANDIDATE_LOCAL_CLIENT_TESTED_NOT_ENFORCED",
+      "responseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs"
+    },
+    {
+      "id": "RESIDUAL-FIELD-003",
+      "priority": 3,
+      "table": "audit_events",
+      "status": "OPEN",
+      "gap": "Emergency alternate-log projection and early-warning nested telemetry permission defects fixed with bounded actual HTTP/SQL evidence. Generic audit metadata/details and merchant incident cross-consumer field policy remain incomplete.",
+      "next": "Reconcile merchant-scoped early_warning_incident metadata in the generic /api/auth/admin/logs projection against the declared view_logs versus view_merchants policies. Preserve the established ordinary global-admin-log contract; distinguish an intentional audit reference from restricted merchant health/usage details before asserting a new defect. Use only missing actual-app positive/negative field proof justified by source policy; do not repeat accepted early-warning or emergency cases. FIELD002 candidate/history/scope items remain open.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "initialReview": {
+        "gap": "Management meta/details, emergency event metadata and incident history have different projections and scopes.",
+        "next": "Reconcile each producer and current HTTP role/field mapping against existing emergency/management tests."
+      },
+      "boundedAuditEvidence": "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
+      "boundedAuditStatus": "FIXED_SOURCE_BOUNDED_ALTERNATE_EMERGENCY_PROJECTION_FIELD003_OPEN",
+      "earlyWarningEvidence": "evidence/P0-EARLY-WARNING-FIELD-HTTP-20261025.json",
+      "earlyWarningStatus": "BOUNDED_ACTUAL_HTTP_NORMALIZED_HISTORY_AND_TELEMETRY_PERMISSION_ACCEPTED"
+    },
+    {
+      "id": "RESIDUAL-FIELD-004",
+      "priority": 4,
+      "table": "order_drafts,processed_channel_events",
+      "status": "OPEN",
+      "gap": "Bounded source authority separation and retired debug HTTP accepted. Intended residual storage lifecycle and actual hosted/external writer inventory remain unresolved.",
+      "next": "Continue FIELD005 source reconciliation of merchant_deletion_requests identity snapshots and audit-retention handling against the existing privileged-deletion/retention gate. Reuse accepted deletion execution tests; identify exact unresolved field/duration policy without inventing retention periods or changing hosted data. FIELD004 unresolved scope and hosted inventory stay explicit.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "previousGap": "No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping.",
+      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json",
+      "checklistRemaining": [
+        "F004-R1",
+        "F004-R2"
+      ]
+    },
+    {
+      "id": "RESIDUAL-FIELD-005",
+      "priority": 5,
+      "table": "merchant_deletion_requests",
+      "status": "OPEN_EXISTING_POLICY_GATE",
+      "gap": "Phone/name snapshots, audit retention and complete PII schedule remain policy-sensitive despite tested tenant deletion.",
+      "next": "Keep existing retention/privileged-deletion policy gate open; document exact field policy rather than invent duration.",
+      "existingGate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+    }
+  ],
+  "acceptedCells": [
+    {
+      "id": "RESIDUAL-FIELD-001",
+      "priority": 1,
+      "table": "notifications",
+      "status": "BOUNDED_HTTP_ACCEPTED",
+      "gap": "Actual-app bulk-read actor/tenant/audience/replay boundary accepted:5new functional cases,11denied requests, exact peer/admin preservation and existing expired-unread inclusion. Full field/producer policy not accepted.",
+      "next": "Continue RESIDUAL-FIELD-002 notification variable producer/key/input provenance; do not repeat accepted bulk scope absent source changes.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "originalGap": "POST read-all uses later Support route; no current named runtime proof located.",
+      "acceptedAt": "2026-10-25",
+      "acceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+      "evidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
+    }
+  ],
+  "notificationFieldReconciliation": {
+    "date": "2026-10-25",
+    "source": "04552d16ab432fcf90eec3d0e40d218c42ae4403",
+    "evidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+    "status": "OPEN_FINITE_CHECKLIST_RECONCILED",
+    "newSchemaEnumeration": false,
+    "originalInventoryScopePreserved": true
+  },
+  "currentSchemaReconciliation": {
+    "source": "ccda10c03b91633825cd2a1aea58f97ca2727da9",
+    "date": "2026-10-27",
+    "allEightTableSchemaHashesMatch": true,
+    "columns": 86,
+    "details": "P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#boundedFieldSchemaContinuity",
+    "privacyAcceptancePromoted": false
+  }
+}

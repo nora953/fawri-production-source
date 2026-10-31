@@ -17,7 +17,16 @@ if (!databaseUrl) {
   );
 }
 
-export const pool = new Pool({ connectionString: databaseUrl });
+export function createPostgresPool(
+  connectionString: string,
+  options: { max?: number; connectionTimeoutMillis?: number } = {},
+) {
+  const created = new Pool({ ...options, connectionString });
+  created.on("connect", client => client.on("error", reportConnectionFailure));
+  created.on("error", reportConnectionFailure);
+  return created;
+}
+export const pool = createPostgresPool(databaseUrl);
 function reportConnectionFailure(error: unknown): void {
   const code = error && typeof error === "object" && "code" in error
     ? String(error.code) : "";
@@ -29,8 +38,7 @@ function reportConnectionFailure(error: unknown): void {
 // A leased pg client can emit an additional connection error after its active
 // query rejects. Drain that event so transport loss cannot crash the process;
 // query/transaction promises still reject and failed clients are discarded by pg.
-pool.on("connect", client => client.on("error", reportConnectionFailure));
-pool.on("error", reportConnectionFailure);
+
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";

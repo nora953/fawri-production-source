@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "field": "FIELD004",
+  "scope": "Bounded offline legacy order draft migration planner only",
+  "approval": "OWNER_APPROVED_BOUNDED_OFFLINE_PLANNER",
+  "sourceCommit": "3f5559b2c26bcb082bfc184ecc89f45b692c857f",
+  "sourceCi": {
+    "success": 58,
+    "total": 58,
+    "failed": 0,
+    "pending": 0
+  },
+  "sourceAcceptance": [
+    "Legacy draft source-bound identity, channel ownership and expiry validation",
+    "Reject distinct draft IDs for one conversation",
+    "Reject conflicting same-ID canonical/transitional payloads",
+    "Rejected dry-run preserves source files and avoids database connection"
+  ],
+  "limitations": [
+    "No historical TTL proof when original expiry absent",
+    "No hosted migration/import validation",
+    "No automatic runtime continuation"
+  ],
+  "hostedGate": "F004-R2 BLOCKED",
+  "parentGate": "OPEN",
+  "release": "NO-GO",
+  "closureRegisterCountsUnchanged": true,
+  "reference": "docs/final-audit/P0-CLOSURE-REGISTER.md",
+  "additionalAcceptedRegression": {
+    "commit": "5ad153fc9aef0e46e50070c47d434d851cc3bcf7",
+    "ci": {
+      "success": 58,
+      "total": 58,
+      "failed": 0,
+      "pending": 0
+    },
+    "assertion": "Reject legacy draft historical expires_at preceding updated_at; dry-run preserves source files and makes no database connection",
+    "scope": "source-only defensive migration planner test",
+    "hostedVerified": false
+  },
+  "additionalAcceptedRegressionUpdateBeforeCreation": {
+    "commit": "6d1c380b93ef24bd708c0e68c7a237c3a22f84bf",
+    "ci": {
+      "success": 58,
+      "total": 58,
+      "failed": 0,
+      "pending": 0
+    },
+    "assertion": "Reject legacy draft updated_at earlier than created_at; rejected dry-run preserves source files and avoids database connection",
+    "scope": "source-only defensive migration planner test",
+    "hostedVerified": false
+  }
+}

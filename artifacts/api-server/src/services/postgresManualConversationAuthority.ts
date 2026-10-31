@@ -424,21 +424,25 @@ export async function prepareManualReplyAuthoritative(input: {
     }
     const hash = sha256(messageText);
     const existing = await client.query<{
+      conversation_id: string;
       status: string;
       text_sha256: string;
       message_id: string | null;
     }>(
-      `SELECT status::text AS status, text_sha256, message_id
+      `SELECT conversation_id, status::text AS status, text_sha256, message_id
          FROM manual_reply_requests
         WHERE merchant_id = $1 AND idempotency_key = $2
         LIMIT 1`,
       [merchantId, idempotencyKey],
     );
     if (existing.rows[0]) {
-      if (existing.rows[0].text_sha256 !== hash) {
+      if (
+        existing.rows[0].conversation_id !== conversationId ||
+        existing.rows[0].text_sha256 !== hash
+      ) {
         throw new ManualConversationError(
           "IDEMPOTENCY_KEY_REUSED",
-          "Idempotency-Key was already used with different content",
+          "Idempotency-Key was already used with a different conversation or content",
         );
       }
       if (existing.rows[0].status === "sent" && existing.rows[0].message_id) {

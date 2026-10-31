@@ -1,0 +1,12 @@
+{
+  "index": 44,
+  "name": "cashier_discount_attribution_tenant_rls",
+  "when": 1791936000016,
+  "mode": "reviewed_sql",
+  "sql_sha256": "abb05446f350956056ddf7c62b36e5f2fbdb8306833ac59a6d5762e3b3e210a1",
+  "preimage_files": [
+    "cashier-discount.ts",
+    "cashier-operation-attribution.ts",
+    "tenant-security.ts"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "BOUNDED_PROPOSAL_DEVICE_BINDING_ERASURE_ACCEPTED_CANONICAL_LIFECYCLE_PENDING",
+  "source": "5a9489f6d5cde233fcb54cb690cef15ceab0d7e3",
+  "sourceTree": "2d10ad103811985af985c560c1edc723f12120dc",
+  "checkout": "dd53694e1e3f0bdd24d7d6c1a03058d1920dc27d",
+  "checkoutTreeMatched": true,
+  "release": "NO-GO",
+  "gateClosed": false,
+  "proposalRevision": 2,
+  "proposal": "evidence/seq-d2-stream-receipt-schema-proposal.sql",
+  "proposalSha256": "942fc259f81b1b4bff954b8b0338e0a475f6f56ede007a39eee945d0ee70ba2a",
+  "fixture": "artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs",
+  "fixtureSha256": "afef2fc4dc41a0dd107a6f9dad99ade0ea5f0e6e1e8ca14290ebdb3bb8da3016",
+  "observed": [
+    "Immutable receipt no longer has device_id column; stable stream_id/merchant_id foreign key retained",
+    "Retirement requires device_id=NULL and active/review stream requires valid non-null binding",
+    "Active binding cannot be silently cleared or rebound; retired stream cannot reopen or rebind",
+    "Root proposal retirement preserves exact selected receipt rows and peer stream",
+    "Restricted scoped runtime cannot retire stream",
+    "Receipt writer observed blocked on retirement lock then rejects23514 after retirement commits",
+    "Prior same-stream commit/rollback concurrency and tenant/constraint assertions still pass"
+  ],
+  "limits": [
+    "Only disposable proposal SQL; no canonical journal/schema, owner deletion, live admission or hosted changes",
+    "Synthetic bootstrap/root writer and result identifiers, not authenticated financial operation proof",
+    "No retention duration or complete FIELD005 policy adoption",
+    "Other retained identifiers, canonical request hashes, historical data and backups remain outside this raw-device-column proof",
+    "No permission for reenrollment or resetting history from an empty device mapping"
+  ],
+  "nextAction": "Implement and verify an internal trusted lifecycle retirement primitive for the revised schema proposal, including merchant transaction rollback/peer preservation; reconcile retained fields with FIELD005 before canonical schema/readiness/restore promotion.",
+  "ci": {
+    "total": 56,
+    "success": 56,
+    "target": {
+      "run": 40265005413,
+      "job": 121385370597,
+      "invocations": 14,
+      "files": 14,
+      "passed": 34,
+      "failed": 0,
+      "skipped": 0,
+      "checkout": "dd53694e1e3f0bdd24d7d6c1a03058d1920dc27d"
+    },
+    "broader": {
+      "run": 40265005072,
+      "job": 121385369306,
+      "invocations": 93,
+      "files": 91,
+      "passed": 730,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "dd53694e1e3f0bdd24d7d6c1a03058d1920dc27d"
+    }
+  },
+  "fixtureTap": {
+    "passed": 6,
+    "functionalSubtests": 5,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  }
+}

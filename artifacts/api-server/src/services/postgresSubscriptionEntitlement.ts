@@ -1,3 +1,5 @@
+import { withOperatorDirectoryTransaction } from "./operatorDirectoryPostgresAuthority";
+import { withOperationalTransaction, type OperationalQueryTarget, type OperationalTransactionClient, type OperationalDatabasePool } from "./operationalPostgresAuthority";
 import crypto from "node:crypto";
 import {
   applySubscriptionPlanCyclePostgres,
@@ -116,17 +118,9 @@ export class SubscriptionEntitlementAuthorityError extends Error {
   }
 }
 
-type QueryResult = {
-  rows: Record<string, unknown>[];
-  rowCount?: number | null;
-};
-
-type QueryTarget = {
-  query(sql: string, values?: unknown[]): Promise<QueryResult>;
-};
-
-type TransactionClient = QueryTarget & { release(): void };
-type DatabasePool = QueryTarget & { connect(): Promise<TransactionClient> };
+type QueryTarget = OperationalQueryTarget;
+type TransactionClient = OperationalTransactionClient;
+type DatabasePool = OperationalDatabasePool;
 
 type SubscriptionRow = {
   id: string;
@@ -409,19 +403,7 @@ async function queryRows<T extends Record<string, unknown>>(
 async function withTransaction<T>(
   work: (client: TransactionClient) => Promise<T>,
 ): Promise<T> {
-  const pool = await databasePool();
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await work(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+  return withOperationalTransaction(work, await databasePool());
 }
 
 // Tenant context belongs to this transaction only; pooled connections must not
@@ -431,7 +413,8 @@ async function withMerchantSubscriptionTransaction<T>(
   work: (client: TransactionClient) => Promise<T>,
 ): Promise<T> {
   return withTransaction(async (client) => {
-    await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
+    const { issueMerchantTransactionScope } = await import("./tenantTransactionScope");
+    await issueMerchantTransactionScope(client, merchantId);
     return work(client);
   });
 }
@@ -710,13 +693,25 @@ export async function getCurrentSubscriptionPostgres(
 }
 
 export async function listSubscriptionsPostgres(
+  actorAdminId: string,
   now: Date = new Date(),
 ): Promise<SubscriptionApiRecord[]> {
-  const pool = await databasePool();
-  const result = await queryRows<Record<string, unknown>>(
-    pool,
-    `SELECT merchant_id FROM subscriptions ORDER BY starts_at DESC, merchant_id ASC`,
-  );
+  const actor = requiredText(actorAdminId, 180);
+  // Only the separately configured directory LOGIN may issue this audit. The
+  // SQL issuer rechecks current actor state and permissions on every snapshot.
+  const result = await withOperatorDirectoryTransaction(async client => {
+    const auditId = `database-admin-${crypto.randomUUID()}`;
+    await client.query("SELECT public.fawri_issue_admin_directory_audit($1,$2,$3)",
+      [actor, auditId, crypto.createHash("sha256").update(auditId).digest("hex")]);
+    const permission = await client.query<{allowed:boolean}>(`SELECT
+      EXISTS(SELECT 1 FROM public.admin_profiles WHERE account_id=$1 AND role='owner_admin')
+      OR EXISTS(SELECT 1 FROM public.admin_permissions WHERE admin_id=$1 AND permission='manage_subscriptions') AS allowed`,[actor]);
+    if (permission.rows[0]?.allowed !== true) {
+      fail("SUBSCRIPTION_ADMIN_PERMISSION_REQUIRED", "subscription administrator permission is required", 403);
+    }
+    return (await client.query<{merchant_id:string}>(`SELECT merchant_id FROM subscriptions
+      ORDER BY starts_at DESC, merchant_id ASC`)).rows;
+  });
   const output: SubscriptionApiRecord[] = [];
   for (const item of result) {
     const current = await getCurrentSubscriptionPostgres(

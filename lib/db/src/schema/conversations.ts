@@ -184,7 +184,7 @@ export const processedChannelEvents = pgTable(
       sql`${table.completedAt} IS NULL OR ${table.completedAt} >= ${table.receivedAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;

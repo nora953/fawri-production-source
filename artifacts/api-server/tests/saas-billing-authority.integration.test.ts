@@ -1,17 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pool } from "@workspace/db";
-import {
+const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
+const {
   applyVerifiedSaasBillingProviderEvent,
   createSaasBillingCheckout,
   getSaasBillingCatalog,
   listMerchantSaasBillingOrders,
-} from "../src/services/saasBillingAuthority";
-import {
+}=await import("../src/services/saasBillingAuthority");
+const {
   applySubscriptionPlanOperationPostgres,
   getCurrentSubscriptionPostgres,
-} from "../src/services/postgresSubscriptionEntitlement";
-import { PostgresSubscriptionGuaranteeSubscriptionAuthority } from "../src/services/subscriptionServiceGuarantee";
+}=await import("../src/services/postgresSubscriptionEntitlement");
+const { PostgresSubscriptionGuaranteeSubscriptionAuthority }=await import("../src/services/subscriptionServiceGuarantee");
 
 const merchantId = "merchant-saas-billing-test";
 const manualMerchantId = "merchant-saas-manual-test";
@@ -51,13 +53,14 @@ async function seedMerchant(id: string, phone: string) {
 }
 
 function successEvent(input: {
+  merchantId: string;
   orderId: string;
   eventId: string;
   paymentRef: string;
   amount: number;
   at: Date;
 }) {
-  return {
+  return { merchantId: input.merchantId,
     provider: "test_fake" as const,
     providerEventId: input.eventId,
     orderId: input.orderId,
@@ -112,7 +115,7 @@ test("verified SaaS payment applies one entitlement exactly once", async () => {
     assert.equal(duplicateCheckout.duplicate, true);
     assert.equal(duplicateCheckout.order.id, first.order.id);
 
-    const event = successEvent({
+    const event = successEvent({ merchantId: first.order.merchant_id,
       orderId: first.order.id,
       eventId: "provider-event-paid-1",
       paymentRef: "provider-payment-1",
@@ -151,7 +154,7 @@ test("verified SaaS payment applies one entitlement exactly once", async () => {
     assert.equal(snapshot?.billingState, "paid");
     assert.equal(snapshot?.billingReference, `saas-billing-order:${first.order.id}`);
 
-    const refund = await applyVerifiedSaasBillingProviderEvent({
+    const refund = await applyVerifiedSaasBillingProviderEvent({ merchantId: first.order.merchant_id,
       provider: "test_fake",
       providerEventId: "provider-event-refund-1",
       orderId: first.order.id,
@@ -229,7 +232,7 @@ test("late verified payment is preserved for reconciliation without silent entit
       now: new Date("2026-08-11T03:00:00.000Z"),
     });
     const outcome = await applyVerifiedSaasBillingProviderEvent(
-      successEvent({
+      successEvent({ merchantId: created.order.merchant_id,
         orderId: created.order.id,
         eventId: "provider-event-late-1",
         paymentRef: "provider-payment-late-1",
@@ -274,7 +277,7 @@ test("browser amount cannot override server plan pricing", async () => {
       now: new Date("2026-08-11T04:00:00.000Z"),
     });
     const mismatch = await applyVerifiedSaasBillingProviderEvent(
-      successEvent({
+      successEvent({ merchantId: created.order.merchant_id,
         orderId: created.order.id,
         eventId: "provider-event-wrong-amount",
         paymentRef: "provider-payment-wrong-amount",
@@ -298,3 +301,6 @@ test("browser amount cannot override server plan pricing", async () => {
     else process.env.NODE_ENV = oldNodeEnv;
   }
 });
+
+// Dispose only after all original cases and their fixture cleanup finish.
+test.after(()=>runtimeFixture.dispose());

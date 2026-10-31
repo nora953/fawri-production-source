@@ -1,4 +1,17 @@
+import { authenticationDatabasePool, withAuthenticationTransaction, withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
+import {
+  CashierStaffAuthorityError,
+  identifier,
+  optionalLabel,
+  positiveInteger,
+  cashierRole,
+  cashierPermissions,
+  staffStatus,
+  offlineAuthorityFlag,
+  stationStatus,
+} from "./cashierStaffAuthorityValidation";
+export { CashierStaffAuthorityError } from "./cashierStaffAuthorityValidation";
 import { hashPassword, verifyPassword } from "./authPasswordService";
 import {
   assignCashierStationSeatInTransaction,
@@ -17,11 +30,8 @@ import {
   type CashierStaffRole,
 } from "./cashierStaffPolicy";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withMerchantOperationalTransaction,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -177,25 +187,6 @@ export type CashierOperatorContext = CashierStationContext & {
   operator_expires_at: string;
 };
 
-export class CashierStaffAuthorityError extends Error {
-  readonly code: string;
-  readonly status: number;
-  readonly details?: Record<string, unknown>;
-
-  constructor(
-    code: string,
-    message: string,
-    status = 409,
-    details?: Record<string, unknown>,
-  ) {
-    super(message);
-    this.name = "CashierStaffAuthorityError";
-    this.code = code;
-    this.status = status;
-    this.details = details;
-  }
-}
-
 async function assertMerchantOperationalAccessForCashier(
   target: OperationalQueryTarget,
   merchantId: string,
@@ -257,95 +248,6 @@ function assertPostgresAuthority(): void {
       503,
     );
   }
-}
-
-function identifier(value: unknown, field: string, maxLength = 200): string {
-  const normalized = String(value ?? "").normalize("NFKC").trim();
-  if (
-    !normalized ||
-    normalized.length > maxLength ||
-    /[\u0000-\u001f\u007f]/.test(normalized)
-  ) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_STAFF_INPUT_INVALID",
-      `${field} is invalid`,
-      400,
-      { field },
-    );
-  }
-  return normalized;
-}
-
-function optionalLabel(value: unknown, field: string, maxLength: number): string | null {
-  if (value === null || value === undefined || value === "") return null;
-  return identifier(value, field, maxLength);
-}
-
-function positiveInteger(value: unknown, field: string): number {
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_STAFF_INPUT_INVALID",
-      `${field} is invalid`,
-      400,
-      { field },
-    );
-  }
-  return parsed;
-}
-
-function cashierRole(value: unknown): CashierStaffRole {
-  if (!isCashierStaffRole(value)) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_STAFF_ROLE_INVALID",
-      "cashier staff role is invalid",
-      400,
-    );
-  }
-  return value;
-}
-
-function cashierPermissions(value: unknown): CashierStaffPermission[] {
-  if (!Array.isArray(value)) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_STAFF_PERMISSIONS_INVALID",
-      "cashier staff permissions must be an array",
-      400,
-    );
-  }
-  try {
-    return normalizeCashierStaffPermissions(value);
-  } catch {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_STAFF_PERMISSION_INVALID",
-      "cashier staff permission is invalid",
-      400,
-    );
-  }
-}
-
-function staffStatus(value: unknown): "active" | "disabled" | "revoked" {
-  const status = String(value ?? "").trim();
-  if (!(["active", "disabled", "revoked"] as const).includes(status as never)) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_STAFF_STATUS_INVALID",
-      "cashier staff status is invalid",
-      400,
-    );
-  }
-  return status as "active" | "disabled" | "revoked";
-}
-
-function stationStatus(value: unknown): "active" | "disabled" | "revoked" {
-  const status = String(value ?? "").trim();
-  if (!(["active", "disabled", "revoked"] as const).includes(status as never)) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_STATION_STATUS_INVALID",
-      "cashier station status is invalid",
-      400,
-    );
-  }
-  return status as "active" | "disabled" | "revoked";
 }
 
 function cashierPin(value: unknown): string {
@@ -645,7 +547,7 @@ export async function listCashierStaffAuthoritative(
 ): Promise<CashierStaffView[]> {
   assertPostgresAuthority();
   const merchantId = identifier(merchantIdValue, "merchant_id");
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const rows = await operationalQueryRows<StaffRow>(
       client,
       `SELECT id, merchant_id, display_name, role, status, pin_hash, pin_version,
@@ -680,7 +582,7 @@ export async function createCashierStaffAuthoritative(input: {
   const staffId = randomId("cashier_staff");
   const pinHash = hashPassword(pin);
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     await client.query(
       `INSERT INTO merchant_cashier_staff (
@@ -747,7 +649,7 @@ export async function updateCashierStaffAuthoritative(input: {
     );
   }
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const current = await getStaffRow(client, merchantId, staffId, true);
     if (!current) {
@@ -849,7 +751,7 @@ export async function listCashierLocationsAuthoritative(
 ): Promise<CashierLocationView[]> {
   assertPostgresAuthority();
   const merchantId = identifier(merchantIdValue, "merchant_id");
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const rows = await operationalQueryRows<CashierLocationRow>(
       client,
       `SELECT id, name, legacy_branch_key, is_default, operational_status
@@ -883,7 +785,7 @@ export async function listCashierStationsAuthoritative(
 ): Promise<CashierStationView[]> {
   assertPostgresAuthority();
   const merchantId = identifier(merchantIdValue, "merchant_id");
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const rows = await operationalQueryRows<StationRow>(
       client,
       `SELECT id, merchant_id, name, location_id, branch_key, branch_label, status,
@@ -923,10 +825,10 @@ export async function createCashierStationAuthoritative(input: {
     locationId !== undefined
       ? null
       : optionalLabel(input.branchLabel, "branch_label", 120);
-  const offlineInventoryAuthority = Boolean(input.offlineInventoryAuthority);
+  const offlineInventoryAuthority = input.offlineInventoryAuthority === undefined ? false : offlineAuthorityFlag(input.offlineInventoryAuthority);
   const stationId = randomId("cashier_station");
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const location = locationId
       ? await resolveCashierLocationById(client, { merchantId, locationId })
@@ -1003,7 +905,7 @@ export async function updateCashierStationAuthoritative(input: {
   const offlineInventoryAuthority =
     input.offlineInventoryAuthority === undefined
       ? undefined
-      : Boolean(input.offlineInventoryAuthority);
+      : offlineAuthorityFlag(input.offlineInventoryAuthority);
   if (
     name === undefined &&
     branchKey === undefined &&
@@ -1018,7 +920,7 @@ export async function updateCashierStationAuthoritative(input: {
     );
   }
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const current = await getStationRow(client, merchantId, stationId, true);
     if (!current) {
@@ -1067,14 +969,15 @@ export async function updateCashierStationAuthoritative(input: {
       add("location_id", targetLocation.id);
     }
     if (branchLabel !== undefined) add("branch_label", branchLabel);
-    if (offlineInventoryAuthority !== undefined) {
+    if (status !== undefined && status !== "active") {
+      sets.push("offline_inventory_authority = FALSE");
+    } else if (offlineInventoryAuthority !== undefined) {
       add("offline_inventory_authority", offlineInventoryAuthority);
     }
     if (status !== undefined) {
       add("status", status);
       sets.push(status === "revoked" ? "revoked_at = now()" : "revoked_at = NULL");
       if (status !== "active") {
-        sets.push("offline_inventory_authority = FALSE");
         if (!locationChanged) {
           sets.push(
             "paired_device_id = NULL",
@@ -1102,7 +1005,7 @@ export async function updateCashierStationAuthoritative(input: {
         404,
       );
     }
-    if (locationChanged) {
+    if (locationChanged || status === "disabled" || status === "revoked") {
       await client.query(
         `UPDATE cashier_station_pairing_challenges
             SET status = 'revoked', revoked_at = now()
@@ -1145,7 +1048,7 @@ export async function beginCashierStationPairingAuthoritative(input: {
   const challengeId = randomId("cashier_pairing");
   const expiresAt = new Date(Date.now() + PAIRING_TTL_MS);
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const station = await getStationRow(client, merchantId, stationId, true);
     if (!station) {
@@ -1211,15 +1114,45 @@ export async function redeemCashierStationPairingAuthoritative(input: {
   const credentialId = randomId("cashier_credential");
   const expiresAt = new Date(Date.now() + STATION_CREDENTIAL_TTL_MS);
 
-  return withOperationalTransaction(async (client) => {
-    const challenges = await operationalQueryRows<PairingRow>(
+  return withAuthenticationTransaction(async (client) => {
+    // Discover the tenant without taking a challenge row lock. All pairing paths
+    // acquire the station lock before the challenge lock to avoid a lock cycle
+    // with station disable/revoke, which updates challenges after the station.
+    const discovered = await operationalQueryRows<PairingRow>(
       client,
       `SELECT id, merchant_id, station_id, status, expires_at
          FROM cashier_station_pairing_challenges
         WHERE code_hash = $1
-        LIMIT 1
-        FOR UPDATE`,
+        LIMIT 1`,
       [codeHash],
+    );
+    const candidate = discovered[0];
+    if (!candidate) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_PAIRING_INVALID",
+        "cashier pairing code is invalid or already used",
+        401,
+      );
+    }
+    const merchantId = identifier(candidate.merchant_id, "merchant_id");
+    // Pairing runs on the identity-checked authentication LOGIN. Its database
+    // authority comes from the marker ACL; merchantId remains explicit below.
+    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
+    const station = await getStationRow(
+      client,
+      merchantId,
+      candidate.station_id,
+      true,
+    );
+    // Re-read under lock: a concurrent disable or pairing redemption may have
+    // invalidated the code after the unlocked tenant discovery.
+    const challenges = await operationalQueryRows<PairingRow>(
+      client,
+      `SELECT id, merchant_id, station_id, status, expires_at
+         FROM cashier_station_pairing_challenges
+        WHERE id = $1 AND code_hash = $2 AND merchant_id = $3 AND station_id = $4
+        FOR UPDATE`,
+      [candidate.id, codeHash, merchantId, candidate.station_id],
     );
     const challenge = challenges[0];
     if (!challenge || challenge.status !== "active") {
@@ -1236,15 +1169,6 @@ export async function redeemCashierStationPairingAuthoritative(input: {
         410,
       );
     }
-    const merchantId = identifier(challenge.merchant_id, "merchant_id");
-    await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
-    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
-    const station = await getStationRow(
-      client,
-      merchantId,
-      challenge.station_id,
-      true,
-    );
     if (!station || station.status !== "active") {
       throw new CashierStaffAuthorityError(
         "CASHIER_STATION_INACTIVE",
@@ -1320,7 +1244,7 @@ export async function authenticateCashierStationAuthoritative(input: {
   const stationToken = identifier(input.stationToken, "station_token", 200);
   const deviceId = identifier(input.deviceId, "device_id", 200);
   const tokenHash = hashSecret(stationToken);
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<StationCredentialRow>(
     pool,
     `SELECT c.id AS credential_id, c.merchant_id, c.station_id,
@@ -1505,7 +1429,7 @@ export async function loginCashierOperatorAuthoritative(input: {
   const sessionId = randomId("cashier_operator_session");
   const station = input.station;
 
-  const decision = await withMerchantOperationalTransaction(
+  const decision = await withMerchantAuthenticationTransaction(
     station.merchant_id,
     async (client) => {
       const pinDecision = await verifyOperatorPinInTransaction(
@@ -1660,7 +1584,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
   const deviceId = identifier(input.deviceId, "device_id", 200);
   const stationHash = hashSecret(stationToken);
   const operatorHash = hashSecret(operatorToken);
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<OperatorAuthRow & StationCredentialRow>(
     pool,
     `SELECT os.id AS session_id, os.merchant_id, os.station_id, os.staff_id,
@@ -1757,7 +1681,7 @@ export async function logoutCashierOperatorAuthoritative(
   context: CashierOperatorContext,
 ): Promise<void> {
   assertPostgresAuthority();
-  await withMerchantOperationalTransaction(context.merchant_id, async (client) => {
+  await withMerchantAuthenticationTransaction(context.merchant_id, async (client) => {
     await client.query(
       `UPDATE cashier_operator_sessions
           SET status = 'revoked', revoked_at = now()

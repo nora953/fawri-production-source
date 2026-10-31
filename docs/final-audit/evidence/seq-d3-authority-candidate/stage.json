@@ -1,0 +1,14 @@
+{
+  "index": 53,
+  "name": "cashier_stream_authority",
+  "when": 1791936000025,
+  "mode": "reviewed_sql",
+  "sql_sha256": "4c003d0f021d814a6172f913b7cdbbb9dac2d13b997cd43405682978dd5583b4",
+  "preimage_files": [
+    "cashier-staff.ts",
+    "orders.ts",
+    "merchants.ts",
+    "cashier-operation-attribution.ts",
+    "cashier-subscription.ts"
+  ]
+}

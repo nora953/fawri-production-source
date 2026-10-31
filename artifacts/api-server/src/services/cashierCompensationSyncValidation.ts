@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { CashierSyncError } from "./postgresCashierSyncAuthority";
+import { assertLegacyCashierSyncProtocol, CashierSyncError } from "./postgresCashierSyncAuthority";
 import {
   CASHIER_REFUND_PRICING_VERSION,
   cashierAdjustedLineRevenueById,
@@ -491,6 +491,7 @@ export function validateCashierCompensationSyncBundle(
   body: unknown,
 ): ValidatedCompensationBundle {
   const raw = record(body);
+  assertLegacyCashierSyncProtocol(raw);
   const cloudMerchantId = identifier(raw.cloud_merchant_id, "cloud_merchant_id");
   const localMerchantId = identifier(raw.local_merchant_id, "local_merchant_id");
   const deviceId = identifier(raw.device_id, "device_id");

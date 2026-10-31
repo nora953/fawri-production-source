@@ -25,15 +25,55 @@ export function assertExpectedPostgresRuntimeRole(
   }
 }
 
+export function assertSafePostgresRuntimeRole(row: {
+  role_name?: unknown; is_superuser?: unknown;
+  bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
+  session_role_name?: unknown; session_is_superuser?: unknown; session_bypass_rls?: unknown;
+  session_can_create_role?: unknown; session_inherits_privileged_role?: unknown;
+  session_can_set_privileged_role?: unknown;
+} | undefined): void {
+  if (!row || typeof row.role_name !== "string" || !row.role_name.trim() || row.is_superuser !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false || typeof row.session_role_name !== "string" || !row.session_role_name.trim() || row.session_is_superuser !== false || row.session_bypass_rls !== false || row.session_can_create_role !== false || row.session_inherits_privileged_role !== false || row.session_can_set_privileged_role !== false) {
+    throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
+  }
+  assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
+}
+
 export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
   return {
     name: "postgresql_authority",
     timeoutMs: 2_000,
     async check() {
       const { pool } = await import("@workspace/db");
-      const result = await pool.query("select current_user as role_name");
-      const row = result.rows[0] as { role_name?: unknown } | undefined;
-      assertExpectedPostgresRuntimeRole(String(row?.role_name || ""));
+      const result = await pool.query(`SELECT current_user AS role_name,
+        r.rolsuper AS is_superuser, r.rolbypassrls AS bypass_rls,
+        session_role.rolname AS session_role_name,
+        session_role.rolsuper AS session_is_superuser,
+        session_role.rolbypassrls AS session_bypass_rls,
+        session_role.rolcreaterole AS session_can_create_role,
+        EXISTS (
+          SELECT 1 FROM pg_roles privileged
+          WHERE (privileged.rolsuper OR privileged.rolbypassrls)
+            AND pg_has_role(session_role.oid, privileged.oid, 'USAGE')
+        ) AS session_inherits_privileged_role,
+        EXISTS (
+          SELECT 1 FROM pg_roles privileged
+          WHERE (privileged.rolsuper OR privileged.rolbypassrls)
+            AND pg_has_role(session_role.oid, privileged.oid, 'SET')
+        ) AS session_can_set_privileged_role,
+        EXISTS (
+          SELECT 1 FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'public'
+            AND c.relkind IN ('r', 'p') AND c.relrowsecurity
+            AND NOT c.relforcerowsecurity AND c.relowner = r.oid
+        ) AS owns_unforced_rls_table
+        FROM pg_roles r JOIN pg_roles session_role ON session_role.rolname = session_user
+        WHERE r.rolname = current_user`);
+      const row = result.rows[0] as {
+        role_name?: unknown; is_superuser?: unknown;
+        bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
+      } | undefined;
+      assertSafePostgresRuntimeRole(row);
     },
   };
 }

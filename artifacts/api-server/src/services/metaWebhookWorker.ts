@@ -214,6 +214,9 @@ async function processLiveMetaReplyJob(
     prepared = await preparePostgresMetaAutoReply(job);
   } catch (error) {
     const code = text((error as { code?: unknown } | undefined)?.code);
+    if (code === "META_LEGACY_EVENT_HISTORY_UNRECONCILED") {
+      throw jobError(code, "Legacy Meta event history is unreconciled", false, false);
+    }
     throw jobError(
       code || "META_REPLY_DECISION_UNAVAILABLE",
       "Meta reply preparation is temporarily unavailable",

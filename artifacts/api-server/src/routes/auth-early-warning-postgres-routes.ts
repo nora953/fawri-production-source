@@ -185,7 +185,12 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
         merchant_usage_status: merchantHealthVisible && merchantUsageResult.status === "fulfilled" ? "available" : "unavailable",
         merchant_usage: merchantUsage,
         http,
-        ai_runtime: aiRuntime,
+        ai_runtime: {
+          ...aiRuntime,
+          // Match the existing merchant health/history boundary at response time;
+          // cached/global telemetry must not bypass the current SQL permission.
+          merchants: merchantHealthVisible ? aiRuntime.merchants : [],
+        },
         merchant_health_visible: merchantHealthVisible,
         merchants: merchantHealthVisible
           ? operationalMerchants.map((merchant) => {

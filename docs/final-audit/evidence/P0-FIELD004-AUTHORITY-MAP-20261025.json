@@ -1,0 +1,3449 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-004",
+  "status": "SOURCE_AND_BOUNDED_HTTP_RECONCILED_FINITE_REMAINDER_OPEN",
+  "sourceRevision": "236f36204e5df8abd717acee393293969659b7bd",
+  "release": "NO-GO",
+  "fieldCellClosed": false,
+  "applicationChanged": true,
+  "newRuntimeExecuted": true,
+  "observations": [
+    {
+      "authority": "order_drafts SQL",
+      "sources": [
+        "lib/db/src/schema/orders.ts",
+        "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts:purgeMerchantOperationalData"
+      ],
+      "result": "Schema/RLS and tenant-scoped DELETE found; no direct SQL row HTTP reader or INSERT identified in reviewed server source. Not a whole-program absence theorem."
+    },
+    {
+      "authority": "Legacy orderDraftsByConversation",
+      "sources": [
+        "artifacts/api-server/src/routes/indexModulePart1.ts",
+        "artifacts/api-server/src/routes/indexModulePart3.ts"
+      ],
+      "result": "Separate Map/runtime JSON authority. /bot/debug would return db_path, product/draft/page fields only after readBotProductsForHttp. That helper returns410 and null in required PostgreSQL mode before this projection."
+    },
+    {
+      "authority": "processed_channel_events SQL",
+      "sources": [
+        "lib/db/src/schema/conversations.ts",
+        "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts:purgeMerchantOperationalData"
+      ],
+      "result": "Schema/RLS and tenant-scoped DELETE found; not evidence of the current durable Meta identity ledger."
+    },
+    {
+      "authority": "Current Meta durable pipeline",
+      "sources": [
+        "artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts",
+        "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "artifacts/api-server/src/services/postgresMetaWebhookReplyTransport.ts"
+      ],
+      "result": "Ingress enqueues durable jobs; current worker writes/reconciles channel_inbound_events. Legacy indexModulePart4 webhook returns410 in required mode. Ingress processed Set is per-request memory, not processed_channel_events SQL."
+    }
+  ],
+  "reusedEvidence": [
+    "P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json",
+    "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+    "P0-RESIDUAL-FIELD-INVENTORY-20261024.json"
+  ],
+  "limits": [
+    "Literal source/call-chain review only, not new HTTP/SQL execution or complete dynamic writer inventory",
+    "No hosted historical data inspected, no migration or dormant table deletion justified",
+    "Current debug authentication/mount/alias behavior still requires exact-source actual-app proof",
+    "No online conversational order creation or whole commercial journey acceptance"
+  ],
+  "retainedExecutable": "7a5a532727ab8759ef672e9b0748f74717d8b499",
+  "nextExactAction": "Implement and test approved F004-R1 bounded offline planner normalization after checking explicit source-bound provenance interface; preserve fail-closed behavior on ambiguity. F004-R2 hosted evidence remains blocked.",
+  "previousStatus": "BOUNDED_SOURCE_AUTHORITIES_MAPPED_HTTP_PROOF_PENDING",
+  "reconciledAtSource": "8eb803e68dc8457a2914ecdf5072f00994e8f639",
+  "checklist": [
+    {
+      "id": "F004-C1",
+      "status": "BOUNDED_SOURCE_MAPPED",
+      "requirement": "Separate residual SQL tables, legacy Map/JSON and current durable Meta inbound authorities",
+      "evidence": "P0-FIELD004-AUTHORITY-MAP-20261025.json"
+    },
+    {
+      "id": "F004-C2",
+      "status": "BOUNDED_HTTP_ACCEPTED",
+      "requirement": "Required-mode retired debug aliases, invalid actors, no private projection/selected SQL mutations/root JSON creation",
+      "evidence": "P0-FIELD004-DEBUG-HTTP-20261025.json",
+      "limit": "Selected fixture snapshots do not directly certify rows in both residual SQL tables"
+    },
+    {
+      "id": "F004-C3",
+      "status": "REUSED_SQL_BOUNDARY_EVIDENCE",
+      "requirement": "Residual table scoped SQL/RLS proof remains separate from public route acceptance",
+      "evidence": "P0-0051-VERIFICATION-20261024.json",
+      "limit": "Original acceptance scope only; no fresh SQL execution in this batch"
+    },
+    {
+      "id": "F004-C4",
+      "status": "REUSED_SEPARATE_DURABLE_CALLER_EVIDENCE",
+      "requirement": "Current Meta inbound/worker proof is not processed_channel_events table coverage",
+      "evidence": "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json"
+    },
+    {
+      "id": "F004-R1",
+      "status": "OPEN_INTENDED_AUTHORITY_CONTRACT",
+      "requirement": "Confirm whether residual tables are supported dormant storage, migration compatibility or candidates for retirement",
+      "acceptance": "Document intended lifecycle and any supported writer/reader. Do not infer retirement, new CRUD requirement or online-order completeness from literal scan absence.",
+      "currentReview": "draftContinuityReconciliation20261028",
+      "narrowedRemainder": "Actual Map draft layout rejects in current planner with three missing columns, while its full payload remains preserved in draft_data and source files unchanged. Field normalization, trusted expiry/time configuration and intended current consumer/disposition remain open; existing SQL-shaped probe and legacy event hold are retained within their original scope. No migration, guessed TTL, silent retirement or runtime bridge accepted.",
+      "draftContinuityReview": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#draftContinuityReconciliation20261028",
+        "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+        "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+        "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+        "sourceFilesVerified": 954,
+        "metadataJsonVerified": 54,
+        "candidateFiles": 17,
+        "newLocalPlannerProbes": 1,
+        "newSqlOrHttpRuntime": 0,
+        "newCiRuns": 0,
+        "observedPlanOk": false,
+        "observedWriteReady": false,
+        "missingColumns": [
+          "customer_external_id",
+          "awaiting_field",
+          "expires_at"
+        ],
+        "applicationChanged": false,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": false
+      },
+      "currentDecision": {
+        "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031",
+        "status": "CONCRETE_BOUNDED_LIFECYCLE_CHOICE_READY_NOT_ADOPTED",
+        "sourceReviewed": "f5eefaa8481157e38963d64960e12764e8f34af3",
+        "approval": "UNAPPROVED",
+        "recommendedChoice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
+        "sourcePins": 24,
+        "unchangedPins": 23,
+        "explainedDrift": 1,
+        "applicationChanged": false,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "parentGateClosed": false,
+        "newGate": false,
+        "userActionRequiredNow": true
+      }
+    },
+    {
+      "id": "F004-R2",
+      "status": "BLOCKED_HOSTED_VERIFICATION",
+      "requirement": "Actual row contents, external/dynamic writers and migration/deployed consistency",
+      "acceptance": "Authorized read-only inventory tied to deployed revision and declared storage lifecycle; preserve rows without deletion/import/repair policy.",
+      "authorization": "Unavailable under current GitHub-only restriction"
+    }
+  ],
+  "currentAcceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+  "currentLifecycleReconciliation20261028": {
+    "date": "2026-10-28",
+    "sourceReviewed": "139b0c44398cfd67bf20feef3bb03c0f116a140c",
+    "acceptedExecutable": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+    "gates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    ],
+    "status": "EXISTING_MIGRATION_WRITER_AND_LOCAL_PLAN_RECONCILED_CURRENT_REPLAY_COMPATIBILITY_UNPROVED",
+    "acceptanceCondition": "Resolve existing F004-R1 actual supported storage/lifecycle authorities and identify a concrete unproved boundary, distinguishing F004-R2 hosted inventory. This is a prerequisite, not gate closure.",
+    "applicationChanged": false,
+    "newTestFiles": 0,
+    "newCiRuns": 0,
+    "newLocalPlannerProbe": 1,
+    "newSqlOrHttpRuntime": 0,
+    "fieldCellClosed": false,
+    "userActionRequiredNow": false,
+    "sourceVerification": {
+      "filesVerified": 958,
+      "localMatchingBlobs": 954,
+      "exactRemoteOverrides": 4,
+      "roots": [
+        "artifacts/api-server/src/",
+        "artifacts/fawri/src/",
+        "src/",
+        "lib/",
+        "scripts/"
+      ],
+      "extensions": [
+        "JS/TS family",
+        "sql"
+      ],
+      "exclusions": [
+        "lib/db/migration-stages historical preimages/reviewed copies",
+        "docs/final-audit output and evidence",
+        "Drizzle meta JSON from lexical scan (separately verified)"
+      ],
+      "additionalSelections": [
+        "four selected existing API regression files",
+        "docs/postgresql-migration-inventory.md",
+        "docs/meta-webhook-durable-pipeline.md",
+        "docs/postgresql-cutover-runbook.md"
+      ],
+      "verification": "Git SHA1('blob '+byteLength+NUL+bytes) matched all958; all958 have same blob IDs at69a3ccc. Additional54 Drizzle metadata JSON blobs also verified against reviewed HEAD before local planner execution.",
+      "manifestSha256": "d4f2a61768bc45f8404b306342584cf1d83b5b9e5e94c497421e2a728516cd20",
+      "scanSha256": "5c1a005d66e491fdeb283d412ca7da4b5c25e8e8146f3eb390576633a348c092",
+      "digestEncoding": "Python json.dumps(data,sort_keys=True,separators=(',',':')).encode(); manifest objects{path,sha} in recursive Git tree order; scan objects{path,sha,hits:[{line,text}]}.",
+      "pattern": "order_drafts|processed_channel_events|orderDraftsByConversation|processedChannelEvents",
+      "candidateFiles": 24,
+      "candidateMatches": [
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+          "sha": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+          "hits": [
+            {
+              "line": 173,
+              "text": "orderDraftsByConversation: Record<string, OrderDraft>;"
+            },
+            {
+              "line": 235,
+              "text": "export const orderDraftsByConversation = new Map<string, OrderDraft>();"
+            },
+            {
+              "line": 247,
+              "text": "orderDraftsByConversation: {},"
+            },
+            {
+              "line": 338,
+              "text": "orderDraftsByConversation.clear();"
+            },
+            {
+              "line": 377,
+              "text": "db.orderDraftsByConversation || {},"
+            },
+            {
+              "line": 379,
+              "text": "orderDraftsByConversation.set(conversationId, draft);"
+            },
+            {
+              "line": 401,
+              "text": "orderDraftsByConversation: Object.fromEntries("
+            },
+            {
+              "line": 402,
+              "text": "orderDraftsByConversation.entries(),"
+            },
+            {
+              "line": 419,
+              "text": "const draftEntries = Array.from(orderDraftsByConversation.entries()).filter("
+            },
+            {
+              "line": 432,
+              "text": "orderDraftsByConversation.delete(conversationId);"
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "sha": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "hits": [
+            {
+              "line": 41,
+              "text": "import { DB_PATH, DRAFT_TTL_MINUTES, conversationsByMerchant, getParamString, getQueryString, makeId, metaPagesByPageId, orderDraftsByConversation, ordersByMerchant, readBotProductsForHttp, rejectCrossMerchantPath, router, saveRuntimeDb, sendLegacyProductAuthorityDisabled } from './indexModulePart1';"
+            },
+            {
+              "line": 46,
+              "text": "const draft = orderDraftsByConversation.get(conversationId);"
+            },
+            {
+              "line": 281,
+              "text": "orderDraftsByConversation.set(draft.conversation_id, {"
+            },
+            {
+              "line": 289,
+              "text": "orderDraftsByConversation.delete(conversationId);"
+            },
+            {
+              "line": 705,
+              "text": "drafts_count: Array.from(orderDraftsByConversation.values()).filter("
+            },
+            {
+              "line": 709,
+              "text": "Array.from(orderDraftsByConversation.entries()).filter("
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "sha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "hits": [
+            {
+              "line": 962,
+              "text": "await target.query(`DELETE FROM order_drafts WHERE merchant_id = $1`, [merchantId]);"
+            },
+            {
+              "line": 966,
+              "text": "await target.query(`DELETE FROM processed_channel_events WHERE merchant_id = $1`, [merchantId]);"
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "sha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "hits": [
+            {
+              "line": 12,
+              "text": "\"audit_events\", \"manual_reply_requests\", \"notifications\", \"order_drafts\", \"processed_channel_events\","
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/residual-business-privacy-rls-postgres.integration.test.mjs",
+          "sha": "bbbd9abb8f828ab6335ebea2af1889f96dfe5bc4",
+          "hits": [
+            {
+              "line": 9,
+              "text": "const tables=['audit_events','manual_reply_requests','merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests','notifications','order_drafts','processed_channel_events'];"
+            },
+            {
+              "line": 43,
+              "text": "await admin.query(\"INSERT INTO order_drafts(id,merchant_id,conversation_id,customer_external_id,awaiting_field,expires_at) VALUES($1,$2,$3,'synthetic-customer','synthetic',now()+interval '1 hour')\",[r.row,r.merchant,r.conversation]);"
+            },
+            {
+              "line": 44,
+              "text": "await admin.query(\"INSERT INTO processed_channel_events(id,merchant_id,channel_id,external_event_id,event_type,payload_hash,processing_status) VALUES($1,$2,$3,$1,'synthetic',$4,'received')\",[r.row,r.merchant,r.channel,'b'.repeat(64)]);"
+            },
+            {
+              "line": 50,
+              "text": "const scopedTables=['audit_events','manual_reply_requests','notifications','order_drafts','processed_channel_events'];"
+            },
+            {
+              "line": 91,
+              "text": "[\"INSERT INTO order_drafts(id,merchant_id,conversation_id,customer_external_id,awaiting_field,expires_at) VALUES($1,$2,$3,'synthetic','synthetic',now()+interval '1 hour') ON CONFLICT(conversation_id) DO UPDATE SET awaiting_field=EXCLUDED.awaiting_field\",[id,b.merchant,b.conversation]],"
+            },
+            {
+              "line": 92,
+              "text": "[\"INSERT INTO processed_channel_events(id,merchant_id,channel_id,external_event_id,event_type,payload_hash,processing_status) VALUES($1,$2,$3,$1,'synthetic',$4,'received')\",[id,b.merchant,b.channel,'d'.repeat(64)]],"
+            }
+          ]
+        },
+        {
+          "path": "artifacts/api-server/tests/residual-merchant-privacy-authority-postgres.integration.test.mjs",
+          "sha": "7232daca947754572a4b0fbc314d1b09c8b22fd6",
+          "hits": [
+            {
+              "line": 9,
+              "text": "const tables=['audit_events','manual_reply_requests','merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests','notifications','order_drafts','processed_channel_events'];"
+            },
+            {
+              "line": 38,
+              "text": "await admin.query(\"INSERT INTO order_drafts(id,merchant_id,conversation_id,customer_external_id,awaiting_field,expires_at) VALUES($1,$2,$3,'synthetic-customer','synthetic',now()+interval '1 hour')\",[r.row,r.merchant,r.conversation]);"
+            },
+            {
+              "line": 39,
+              "text": "await admin.query(\"INSERT INTO processed_channel_events(id,merchant_id,channel_id,external_event_id,event_type,payload_hash,processing_status) VALUES($1,$2,$3,$1,'synthetic',$4,'received')\",[r.row,r.merchant,r.channel,'b'.repeat(64)]);"
+            }
+          ]
+        },
+        {
+          "path": "docs/meta-webhook-durable-pipeline.md",
+          "sha": "8886f88b27c9c92d0fa6f42f7163f56aea1116f9",
+          "hits": [
+            {
+              "line": 55,
+              "text": "| `processed-meta-events.json` | Event receive idempotency | `processed_channel_events` |"
+            }
+          ]
+        },
+        {
+          "path": "docs/postgresql-migration-inventory.md",
+          "sha": "2cb81027b77e49c1abfa918c5a3be0cc9f9acde7",
+          "hits": [
+            {
+              "line": 20,
+              "text": "| Legacy `bot-runtime.json` | older flat products, conversations, channels, orders and drafts | products, conversations, messages, merchant_channels, orders, order_items, order_drafts |"
+            },
+            {
+              "line": 21,
+              "text": "| Active `fawri-runtime-db.json` | map-based products, conversations, messages, Meta page connections, orders and order drafts | products, product_variants, conversations, messages, merchant_channels, orders, order_items, order_drafts |"
+            },
+            {
+              "line": 22,
+              "text": "| `processed-meta-events.json` | transitional Meta webhook idempotency identifiers and receive timestamps | processed_channel_events |"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+          "sha": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "hits": [
+            {
+              "line": 309,
+              "text": "CREATE TABLE \"processed_channel_events\" ("
+            },
+            {
+              "line": 322,
+              "text": "CREATE TABLE \"order_drafts\" ("
+            },
+            {
+              "line": 634,
+              "text": "ALTER TABLE \"processed_channel_events\" ADD CONSTRAINT \"processed_channel_events_merchant_id_merchants_id_fk\" FOREIGN KEY (\"merchant_id\") REFERENCES \"public\".\"merchants\"(\"id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 635,
+              "text": "ALTER TABLE \"processed_channel_events\" ADD CONSTRAINT \"processed_channel_events_channel_id_merchant_channels_id_fk\" FOREIGN KEY (\"channel_id\") REFERENCES \"public\".\"merchant_channels\"(\"id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 636,
+              "text": "ALTER TABLE \"order_drafts\" ADD CONSTRAINT \"order_drafts_merchant_id_merchants_id_fk\" FOREIGN KEY (\"merchant_id\") REFERENCES \"public\".\"merchants\"(\"id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 637,
+              "text": "ALTER TABLE \"order_drafts\" ADD CONSTRAINT \"order_drafts_conversation_id_conversations_id_fk\" FOREIGN KEY (\"conversation_id\") REFERENCES \"public\".\"conversations\"(\"id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 719,
+              "text": "CREATE UNIQUE INDEX \"processed_channel_events_channel_external_unique\" ON \"processed_channel_events\" USING btree (\"channel_id\",\"external_event_id\");--> statement-breakpoint"
+            },
+            {
+              "line": 720,
+              "text": "CREATE INDEX \"processed_channel_events_status_received_idx\" ON \"processed_channel_events\" USING btree (\"processing_status\",\"received_at\");--> statement-breakpoint"
+            },
+            {
+              "line": 721,
+              "text": "CREATE UNIQUE INDEX \"order_drafts_conversation_unique\" ON \"order_drafts\" USING btree (\"conversation_id\");--> statement-breakpoint"
+            },
+            {
+              "line": 722,
+              "text": "CREATE INDEX \"order_drafts_expiry_idx\" ON \"order_drafts\" USING btree (\"expires_at\");--> statement-breakpoint"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0001_military_proteus.sql",
+          "sha": "0631349cad0075d927bfcf67a96180111555a5a4",
+          "hits": [
+            {
+              "line": 207,
+              "text": "ALTER TABLE \"processed_channel_events\" DROP CONSTRAINT \"processed_channel_events_channel_id_merchant_channels_id_fk\";"
+            },
+            {
+              "line": 209,
+              "text": "ALTER TABLE \"order_drafts\" DROP CONSTRAINT \"order_drafts_conversation_id_conversations_id_fk\";"
+            },
+            {
+              "line": 262,
+              "text": "ALTER TABLE \"processed_channel_events\" ADD CONSTRAINT \"processed_channel_events_channel_merchant_fk\" FOREIGN KEY (\"channel_id\",\"merchant_id\") REFERENCES \"public\".\"merchant_channels\"(\"id\",\"merchant_id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 263,
+              "text": "ALTER TABLE \"order_drafts\" ADD CONSTRAINT \"order_drafts_conversation_merchant_fk\" FOREIGN KEY (\"conversation_id\",\"merchant_id\") REFERENCES \"public\".\"conversations\"(\"id\",\"merchant_id\") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint"
+            },
+            {
+              "line": 298,
+              "text": "ALTER TABLE \"processed_channel_events\" ADD CONSTRAINT \"processed_channel_events_completed_time_check\" CHECK (\"processed_channel_events\".\"completed_at\" IS NULL OR \"processed_channel_events\".\"completed_at\" >= \"processed_channel_events\".\"received_at\");--> statement-breakpoint"
+            },
+            {
+              "line": 299,
+              "text": "ALTER TABLE \"order_drafts\" ADD CONSTRAINT \"order_drafts_time_check\" CHECK (\"order_drafts\".\"updated_at\" >= \"order_drafts\".\"created_at\" AND \"order_drafts\".\"expires_at\" > \"order_drafts\".\"created_at\");--> statement-breakpoint"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+          "sha": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "hits": [
+            {
+              "line": 20,
+              "text": "ALTER TABLE public.\"order_drafts\" ENABLE ROW LEVEL SECURITY;"
+            },
+            {
+              "line": 22,
+              "text": "DROP POLICY IF EXISTS \"order_drafts_privacy_boundary\" ON public.\"order_drafts\";"
+            },
+            {
+              "line": 24,
+              "text": "CREATE POLICY \"order_drafts_privacy_boundary\" ON public.\"order_drafts\" AS PERMISSIVE FOR ALL TO public USING ((CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"order_drafts\".\"merchant_id\") END)) WITH CHECK ((CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"order_drafts\".\"merchant_id\") END));"
+            },
+            {
+              "line": 26,
+              "text": "ALTER TABLE public.\"processed_channel_events\" ENABLE ROW LEVEL SECURITY;"
+            },
+            {
+              "line": 28,
+              "text": "DROP POLICY IF EXISTS \"processed_channel_events_privacy_boundary\" ON public.\"processed_channel_events\";"
+            },
+            {
+              "line": 30,
+              "text": "CREATE POLICY \"processed_channel_events_privacy_boundary\" ON public.\"processed_channel_events\" AS PERMISSIVE FOR ALL TO public USING ((CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"processed_channel_events\".\"merchant_id\") END)) WITH CHECK ((CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\"processed_channel_events\".\"merchant_id\") END));"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/conversations.ts",
+          "sha": "26a3b8c0921d77d1d3e9daca581b5d33a2edea5d",
+          "hits": [
+            {
+              "line": 151,
+              "text": "export const processedChannelEvents = pgTable("
+            },
+            {
+              "line": 152,
+              "text": "\"processed_channel_events\","
+            },
+            {
+              "line": 171,
+              "text": "name: \"processed_channel_events_channel_merchant_fk\","
+            },
+            {
+              "line": 176,
+              "text": "\"processed_channel_events_channel_external_unique\","
+            },
+            {
+              "line": 178,
+              "text": "statusReceivedIndex: index(\"processed_channel_events_status_received_idx\").on("
+            },
+            {
+              "line": 183,
+              "text": "\"processed_channel_events_completed_time_check\","
+            },
+            {
+              "line": 191,
+              "text": "export type ProcessedChannelEvent = typeof processedChannelEvents.$inferSelect;"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/orders.ts",
+          "sha": "1343264314a660311ef261c2c95eddb3bc70f490",
+          "hits": [
+            {
+              "line": 341,
+              "text": "\"order_drafts\","
+            },
+            {
+              "line": 354,
+              "text": "conversationTenantForeignKey: foreignKey({ name: \"order_drafts_conversation_merchant_fk\", columns: [table.conversationId, table.merchantId], foreignColumns: [conversations.id, conversations.merchantId] }).onDelete(\"cascade\"),"
+            },
+            {
+              "line": 355,
+              "text": "conversationUnique: uniqueIndex(\"order_drafts_conversation_unique\").on(table.conversationId),"
+            },
+            {
+              "line": 356,
+              "text": "expiryIndex: index(\"order_drafts_expiry_idx\").on(table.expiresAt),"
+            },
+            {
+              "line": 357,
+              "text": "timeCheck: check(\"order_drafts_time_check\", sql`${table.updatedAt} >= ${table.createdAt} AND ${table.expiresAt} > ${table.createdAt}`),"
+            }
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "sha": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "hits": [
+            {
+              "line": 167,
+              "text": "import { processedChannelEvents } from \"./conversations\";"
+            },
+            {
+              "line": 171,
+              "text": "export const orderDraftsPrivacyPolicy = pgPolicy(\"order_drafts_privacy_boundary\", { as: \"permissive\", for: \"all\", to: \"public\", using: sql.raw(\"(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\\\"order_drafts\\\".\\\"merchant_id\\\") END)\"), withCheck: sql.raw(\"(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\\\"order_drafts\\\".\\\"merchant_id\\\") END)\") }).link(orderDrafts);"
+            },
+            {
+              "line": 172,
+              "text": "export const processedChannelEventsPrivacyPolicy = pgPolicy(\"processed_channel_events_privacy_boundary\", { as: \"permissive\", for: \"all\", to: \"public\", using: sql.raw(\"(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\\\"processed_channel_events\\\".\\\"merchant_id\\\") END)\"), withCheck: sql.raw(\"(CASE WHEN (has_function_privilege(session_user, 'public.fawri_authentication_runtime()', 'EXECUTE') AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname = session_user AND r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole))) THEN true WHEN has_function_privilege(session_user, 'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE') THEN false ELSE public.fawri_tenant_or_audited_admin(\\\"processed_channel_events\\\".\\\"merchant_id\\\") END)\") }).link(processedChannelEvents);"
+            }
+          ]
+        },
+        {
+          "path": "scripts/audit-fawri-json-data.mjs",
+          "sha": "32fa2970cbeebf17ed0b381f21d6e8391c836e84",
+          "hits": [
+            {
+              "line": 28,
+              "text": "\"order_drafts\","
+            },
+            {
+              "line": 255,
+              "text": "const drafts = asRecord(value?.orderDraftsByConversation);"
+            }
+          ]
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "sha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "hits": [
+            {
+              "line": 53,
+              "text": "order_drafts: \"runtime\","
+            },
+            {
+              "line": 67,
+              "text": "processed_channel_events: \"transitional_processedEvents\","
+            },
+            {
+              "line": 320,
+              "text": "processed_channel_events: \"transitional_processedEvents\","
+            },
+            {
+              "line": 431,
+              "text": "const drafts = asRecord(runtime.orderDraftsByConversation);"
+            },
+            {
+              "line": 446,
+              "text": "mergeRow(report, \"order_drafts\", row, \"transitional_runtime\", item, { replaceExisting: true });"
+            }
+          ]
+        },
+        {
+          "path": "scripts/lib/transitional-migration-readiness.mjs",
+          "sha": "531ba69304aa6651968f07ea449b538e65d73548",
+          "hits": [
+            {
+              "line": 280,
+              "text": "rows.processed_channel_events.push({"
+            },
+            {
+              "line": 287,
+              "text": "targetRows.processed_channel_events.push({"
+            },
+            {
+              "line": 566,
+              "text": "processed_channel_events: [],"
+            },
+            {
+              "line": 573,
+              "text": "processed_channel_events: [],"
+            }
+          ]
+        },
+        {
+          "path": "scripts/plan-postgresql-migration.mjs",
+          "sha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "hits": [
+            {
+              "line": 138,
+              "text": "\"order_drafts\","
+            },
+            {
+              "line": 337,
+              "text": "runtime.orderDrafts || runtime.order_drafts,"
+            },
+            {
+              "line": 338,
+              "text": "\"order_drafts\","
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/audit-fawri-data.test.mjs",
+          "sha": "6a2c2614a970c424be2bff4c3358d829d8308302",
+          "hits": [
+            {
+              "line": 43,
+              "text": "orderDraftsByConversation: {},"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/audit-transitional-migration-readiness.test.mjs",
+          "sha": "0383093f4f87bad41fd0f8c8b7f5549762eb0d7c",
+          "hits": [
+            {
+              "line": 172,
+              "text": "processed_channel_events: 1,"
+            },
+            {
+              "line": 179,
+              "text": "processed_channel_events: 1,"
+            },
+            {
+              "line": 184,
+              "text": "assert.deepEqual(report.rows.processed_channel_events[0], {"
+            },
+            {
+              "line": 200,
+              "text": "const processedEvent = report.target_rows.processed_channel_events[0];"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+          "sha": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+          "hits": [
+            {
+              "line": 68,
+              "text": "orderDraftsByConversation: {},"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/locked-migration-operational-safety.test.mjs",
+          "sha": "5cda1ef54d7d2840b137015f226d91892ec269f6",
+          "hits": [
+            {
+              "line": 45,
+              "text": "orderDraftsByConversation: {},"
+            },
+            {
+              "line": 184,
+              "text": "orderDraftsByConversation: {},"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/plan-postgresql-migration.test.mjs",
+          "sha": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "hits": [
+            {
+              "line": 351,
+              "text": "assert.equal(report.table_counts.order_drafts, 1);"
+            }
+          ]
+        },
+        {
+          "path": "scripts/tests/validated-order-operations-gate.test.mjs",
+          "sha": "1d282aeb9c7044661b8a5bb7c33bcc013473b794",
+          "hits": [
+            {
+              "line": 45,
+              "text": "orderDraftsByConversation: {},"
+            }
+          ]
+        }
+      ],
+      "manualExpansion": "Followed actual import/dataflow into cross-lane reconciler, dynamic generic SQL writer, dry-run/rehearsal/guarded real runner and current Meta worker. Literal table matches alone miss generic INSERT writers and are not an absence theorem."
+    },
+    "inputPins": [
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "gitBlobSha": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/index.ts",
+        "gitBlobSha": "3fd350d160c59c6226989ac3348c20e64424ea4e",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+        "gitBlobSha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts",
+        "gitBlobSha": "e65c4bb6f81ee3709acbca2742e302a76e250371",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/metaWebhookSecurity.ts",
+        "gitBlobSha": "60942cf828703803277536198ea62888162ceec5",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresDurableJobQueue.ts",
+        "gitBlobSha": "05922f957a12bd09d6671082c52f8f5085ee0723",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "gitBlobSha": "9ea596dd997d4536f41402e65950d60cc12479a4",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaWebhookReplyTransport.ts",
+        "gitBlobSha": "c67b40e192b9a10da342ba1b107d50f3bf7efa06",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+        "gitBlobSha": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+        "gitBlobSha": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+        "gitBlobSha": "2704c0a99970c736e0de2a91ef7901f961614ec4",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts",
+        "gitBlobSha": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/src/schema/orders.ts",
+        "gitBlobSha": "1343264314a660311ef261c2c95eddb3bc70f490",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/src/schema/conversations.ts",
+        "gitBlobSha": "26a3b8c0921d77d1d3e9daca581b5d33a2edea5d",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+        "gitBlobSha": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+        "gitBlobSha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/lib/transitional-migration-readiness.mjs",
+        "gitBlobSha": "531ba69304aa6651968f07ea449b538e65d73548",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+        "gitBlobSha": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/plan-postgresql-migration.mjs",
+        "gitBlobSha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/run-postgresql-migration-cutover.mjs",
+        "gitBlobSha": "bfc5f1f286cfb4828906673784ece8cc8fb0dc8b",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/cutover-migration.mjs",
+        "gitBlobSha": "07877fb153f2167ec9bf04d47cfd5d55d1c1a30e",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/commit-migration.mjs",
+        "gitBlobSha": "e8c2c2e2bc52444547ccc968bc5bd6d990db502d",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/rollback-migration.mjs",
+        "gitBlobSha": "3da314e5a6bb507eb1114e88d0f13418a38738a2",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/lib/migration-write.mjs",
+        "gitBlobSha": "79da34fb56320055f3e1a92aea153c04fff39e72",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/scripts/run-complete-migration-with-operational-locks.mjs",
+        "gitBlobSha": "7b577beb842514f95864d413fd13861112b6475e",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/tests/fixtures/create-postgresql-migration-fixture.mjs",
+        "gitBlobSha": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+        "gitBlobSha": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/consumer-full-app-privacy-http-postgres.integration.test.mjs",
+        "gitBlobSha": "ec2522b2fa2309c3dfe6433ab9ecc9bf9c22227d",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/residual-business-privacy-rls-postgres.integration.test.mjs",
+        "gitBlobSha": "bbbd9abb8f828ab6335ebea2af1889f96dfe5bc4",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/residual-merchant-privacy-authority-postgres.integration.test.mjs",
+        "gitBlobSha": "7232daca947754572a4b0fbc314d1b09c8b22fd6",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "artifacts/api-server/tests/meta-job-identity-postgres.integration.test.mjs",
+        "gitBlobSha": "0440efa021c35395ee71150867fac3fc375416bb",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "docs/postgresql-migration-inventory.md",
+        "gitBlobSha": "2cb81027b77e49c1abfa918c5a3be0cc9f9acde7",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "docs/meta-webhook-durable-pipeline.md",
+        "gitBlobSha": "8886f88b27c9c92d0fa6f42f7163f56aea1116f9",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "docs/postgresql-cutover-runbook.md",
+        "gitBlobSha": "de8d97798760c831926e74e698673d05f441b16c",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/drizzle/meta/_journal.json",
+        "gitBlobSha": "dc3906bbe29d0b100a29bbdaaf026d8bb5696d1a",
+        "unchangedFromAccepted": true
+      },
+      {
+        "path": "lib/db/drizzle/meta/0052_snapshot.json",
+        "gitBlobSha": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535",
+        "unchangedFromAccepted": true
+      }
+    ],
+    "migrationAuthority": [
+      {
+        "source": "docs/postgresql-migration-inventory.md:20-22",
+        "finding": "Existing declared migration destinations: flat/map-based JSON drafts -> order_drafts; processed-meta-events identifiers/timestamps -> processed_channel_events. This is established migration mapping, not evidence that these tables drive current online conversation processing."
+      },
+      {
+        "source": "scripts/plan-postgresql-migration.mjs:336",
+        "finding": "Base planner maps legacy orderDrafts/order_drafts to rows.order_drafts; in-memory planning only."
+      },
+      {
+        "source": "scripts/lib/postgresql-migration-plan-complete.mjs:431-446",
+        "finding": "mergeOperationalRuntime maps orderDraftsByConversation into order_drafts with merchant/conversation/customer/awaiting_field/draft_data/expiry/timestamps and stable ID fallback. The top-level planner preserves nonempty target rows and lineage."
+      },
+      {
+        "source": "scripts/lib/transitional-migration-readiness.mjs:250-301",
+        "finding": "Maps event receive IDs/timestamps after page->merchant/channel checks into processed_channel_events completed rows. payload_hash is SHA256(JSON{event_id,received_at}), not the original webhook body hash."
+      },
+      {
+        "source": "scripts/lib/postgresql-migration-plan-complete.mjs:308-327",
+        "finding": "mergeTransitionalRows retains processed_channel_events and rewrites channel references to merged channel ID."
+      },
+      {
+        "source": "scripts/lib/postgresql-cross-lane-reconciliation.mjs:191-235,628-649",
+        "finding": "The cross-lane planner imports the complete planner, reconciles identity/channels/jobs/etc, ensures channel_inbound_events exists as an array but does not bridge legacy processed IDs into it in the traced path. It can mark a plan write_ready with retained legacy processed rows and no current inbound rows (local probe below)."
+      },
+      {
+        "source": "lib/db/scripts/lib/migration-write.mjs:107-127,233-256",
+        "finding": "prepareInsert constructs quoted, parameterized INSERT into a snapshot-validated table; insertValidatedRows iterates nonempty plan rows in FK order. No literal INSERT INTO order_drafts or processed_channel_events string is needed for these to be SQL write targets."
+      },
+      {
+        "source": "lib/db/scripts/commit-migration.mjs:24-101",
+        "finding": "Existing local fawri_ci-only opt-in rehearsal uses the validated cross-lane plan, generic writer, transaction, reconciliation, identity revalidation and second-pass idempotency. Not a production writer authorization."
+      },
+      {
+        "source": "scripts/run-postgresql-migration-cutover.mjs:19-26",
+        "finding": "Public wrapper --write deliberately throws REAL_CUTOVER_NOT_IMPLEMENTED; default dry-run does not use DB; explicit rehearsal modes use existing locked local writer. Existing runbook's statement about this wrapper is correct, not a newly confirmed documentation bug."
+      },
+      {
+        "source": "lib/db/scripts/cutover-migration.mjs:71-130,313-342,523-628",
+        "finding": "Separate guarded real cutover runner exists in source, requiring opt-in, target/environment/exact SHA, source locks, schema-present empty target, validated plan, transaction/reconciliation/revalidation and rollback. It also uses generic prepareInsert for supported plan rows. Presence is source reachability only; it was not invoked and current restrictions do not authorize it."
+      }
+    ],
+    "currentRuntimeAuthority": [
+      {
+        "source": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts:962-966",
+        "finding": "Current server's named residual-table mutations are tenant-scoped deletion in existing merchant purge. Existing deletion is not newly authorized or changed; retention/lifecycle gate remains separate."
+      },
+      {
+        "source": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts:12",
+        "finding": "Both residual tables remain in production RLS readiness inventory, not retired storage."
+      },
+      {
+        "source": "artifacts/api-server/src/middleware/metaWebhookSecurity.ts:110-139",
+        "finding": "Required mode neither writes processed-meta-events.json nor relies on its duplicate filter; legacy JSON marker is no-op in required mode."
+      },
+      {
+        "source": "artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts:78-152",
+        "finding": "Per-request processed Set; required-mode enqueues through enqueueDurableJobAuthoritative. It does not query residual processed_channel_events."
+      },
+      {
+        "source": "artifacts/api-server/src/services/postgresDurableJobQueue.ts:264-325",
+        "finding": "Current enqueue deduplicates by merchant/type/dedupe_key in background_jobs and writes encrypted payload. It does not certify imported residual history by itself."
+      },
+      {
+        "source": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts:112-180",
+        "finding": "Worker creates/reads channel_inbound_events and checks exact current webhook-body payload hash/channel. No bridge from metadata-only processed_channel_events established; direct substitution of hashes would misrepresent event provenance."
+      },
+      {
+        "source": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts:5-15",
+        "finding": "Required-mode debug disabled410 before legacy Map projection; existing accepted HTTP proof retained."
+      }
+    ],
+    "localPlannerProbe": {
+      "exactSourceSha256": "993f6167c44c569990c6b4c273855693e7fed3971c50ffce2a9095f7912233d6",
+      "resultFileSha256": "86b7c304c9d72ab2c85a38a473adaff71a556d850c881c84655c9c1abe552cf6",
+      "reproduction": "Run embedded source from repository parent as field004-plan-probe.mjs with checkout directory named fawri. Uses two existing synthetic fixture generators, adds one map-based draft and one processed legacy ID, calls actual cross-lane buildValidatedMigrationPlan(includeRows:true), verifies source fixture fingerprints unchanged, cleans generated fixture. No DB/HTTP/provider call. Probe result is a local planner observation, not an application regression PASS.",
+      "source": "import fs from 'node:fs';\nimport os from 'node:os';\nimport path from 'node:path';\nimport {spawnSync} from 'node:child_process';\nimport {createHash} from 'node:crypto';\nimport assert from 'node:assert/strict';\nimport {buildValidatedMigrationPlan} from './fawri/scripts/lib/postgresql-cross-lane-reconciliation.mjs';\nconst root=path.resolve('fawri'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'fawri-field004-probe-'));\nconst hash=s=>createHash('sha256').update(s).digest('hex');\nconst read=n=>JSON.parse(fs.readFileSync(path.join(dir,n),'utf8'));\nconst write=(n,v)=>fs.writeFileSync(path.join(dir,n),JSON.stringify(v,null,2)+'\\n');\nconst fingerprint=()=>Object.fromEntries(fs.readdirSync(dir).sort().map(n=>[n,hash(fs.readFileSync(path.join(dir,n)))]));\ntry {\n for(const name of ['create-postgresql-migration-fixture.mjs','create-transitional-migration-fixture.mjs']){\n  const r=spawnSync(process.execPath,[path.join(root,'scripts/tests/fixtures',name),dir],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);\n }\n const runtime=read('fawri-runtime-db.json');\n runtime.orderDraftsByConversation['conversation-1']={id:'field004-synthetic-draft',merchant_id:'merchant-1',customer_external_id:'customer-1',awaiting_field:'customer_phone',draft_data:{synthetic_marker:'field004-owned'},created_at:'2026-08-06T12:00:00.000Z',updated_at:'2026-08-06T12:00:00.000Z',expires_at:'2026-08-06T13:00:00.000Z'};\n write('fawri-runtime-db.json',runtime);\n write('processed-meta-events.json',{events:{'meta:page-1:field004-synthetic-event':'2026-08-06T12:00:00.000Z'}});\n const before=fingerprint();\n const {report,snapshot}=buildValidatedMigrationPlan({dataDirectory:dir,includeRows:true});\n assert.deepEqual(fingerprint(),before,'planner must preserve fixture files');\n const result={probe:'FIELD004_EXISTING_MIGRATION_DESTINATIONS_AND_CURRENT_LEDGER_RECONCILIATION',sourceOnly:false,layer:'LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER',toolVersion:report.tool_version,planOk:report.ok,writeReady:report.write_readiness?.ok,snapshot:snapshot.name,snapshotSha256:snapshot.sha256,errors:report.errors.map(x=>x.code),counts:{order_drafts:report.rows.order_drafts?.length||0,processed_channel_events:report.rows.processed_channel_events?.length||0,channel_inbound_events:report.rows.channel_inbound_events?.length||0},draftMapped:report.rows.order_drafts?.some(x=>x.id==='field004-synthetic-draft'&&x.draft_data?.synthetic_marker==='field004-owned'),eventMapped:report.rows.processed_channel_events?.some(x=>x.external_event_id==='meta:page-1:field004-synthetic-event'&&x.processing_status==='completed'),matchingCurrentInbound:report.rows.channel_inbound_events?.filter(x=>x.external_event_id==='meta:page-1:field004-synthetic-event').length||0,sourceFilesUnchanged:true,sourceFileFingerprints:before,writesPerformed:false,databaseConnectionUsed:false,interpretation:'Planner destination preservation only; no proof of historical-event suppression by current ingress/worker, live draft continuation, migration SQL commit or actual provider replay.'};\n fs.writeFileSync('field004-plan-probe-result.json',JSON.stringify(result,null,2)+'\\n');\n console.log(JSON.stringify(result));\n} finally {fs.rmSync(dir,{recursive:true,force:true});}\n",
+      "result": {
+        "probe": "FIELD004_EXISTING_MIGRATION_DESTINATIONS_AND_CURRENT_LEDGER_RECONCILIATION",
+        "sourceOnly": false,
+        "layer": "LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER",
+        "toolVersion": "7",
+        "planOk": true,
+        "writeReady": true,
+        "snapshot": "0052_snapshot.json",
+        "snapshotSha256": "993461e7bdccce8a2c7386054ce43e57b6eab73e7f80d87d13dc5e693651c9e4",
+        "errors": [],
+        "counts": {
+          "order_drafts": 2,
+          "processed_channel_events": 1,
+          "channel_inbound_events": 0
+        },
+        "draftMapped": true,
+        "eventMapped": true,
+        "matchingCurrentInbound": 0,
+        "sourceFilesUnchanged": true,
+        "sourceFileFingerprints": {
+          "background-jobs.json": "df7106e362a50c468ee11b6b4cee7522ef0a9e7e921e8aceb90670f146e54b71",
+          "bot-runtime.json": "e5e5c238a1a9aa01e3307289124ebf68a3ccb78082b7dff7d7bed88c7793397b",
+          "emergency-read-access.json": "243cbf5f198c3d60fbd13708c37a77c36766eb55fef03ec1b3f9d755e698adf1",
+          "fawri-runtime-db.json": "056b0c733980358758c092eb2dd018d7b3454a8902e55c20c5c5568d43ebb7de",
+          "learned-answers.json": "f9009c13ccfe170905da885f692b0d92c1d65f39e1bf9f6d845fd0e13a76fbc1",
+          "manual-conversation-operations.json": "cc1d7696d5d7b8b0a830d55a4866dbfc8369a09b4d26f4e7e7075421313cd8e9",
+          "merchant-settings.json": "3f09f51ef66a051ad53e0b2e186ff30883ab56c3496f0caa5d55fcdae2b4c560",
+          "merchants.json": "be2417c61d0e0e92e275d3b4c72c68c94742ace877c9e9689463e48f75ae6abf",
+          "order-operations.json": "182637d93abf5100c4b178221cc3f18e426c105c6e558e9a75befd95a269494b",
+          "processed-meta-events.json": "312c37dd065e5896e5c1b25f2703fa3a39c4ed021fb090bb0669e853df105bde",
+          "reply-reservations.json": "472848634486d08ed16020937115ed04f428ab97cdd87a28bf9ee714bf74db8e",
+          "saved-answers.json": "14355c07e6ae9d8b8dddd4e9b95a34cfc2fe2a38abe62fd7730fbb16e68e1405",
+          "support-preview-sessions.json": "4330c6285e686e7a20f99524691a9d43e5233af02323e2aafc0be503683bea00",
+          "training-requests.json": "d8ec91f20cd66f8a35d0299bd6e57802e941b862ead706716b1ad008bdc1d972"
+        },
+        "writesPerformed": false,
+        "databaseConnectionUsed": false,
+        "interpretation": "Planner destination preservation only; no proof of historical-event suppression by current ingress/worker, live draft continuation, migration SQL commit or actual provider replay."
+      },
+      "distinction": "2 draft rows = one pre-existing flat fixture draft + one added map-based draft. 1 legacy processed event,0 current inbound rows; report.ok/write_ready true. No SQL commit, signed webhook replay or downstream effect executed. Write-ready is planner structural validation, not a historical replay-safety certificate."
+    },
+    "reusedEvidence": {
+      "currentNotificationLane": {
+        "run": 40571069056,
+        "job": 122425088862,
+        "totalTap": 80,
+        "files": 6,
+        "relevant": [
+          {
+            "suite": "meta-job-identity-postgres.integration.test.mjs",
+            "auditBatch": "notification-privacy-http",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 26,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          },
+          {
+            "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+            "auditBatch": "notification-privacy-http",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 9,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "scope": "Existing current-event identity/redelivery and two retired-debug app cases only; no migration-to-current pipeline certification."
+      },
+      "currentBroaderLane": {
+        "run": 40571069527,
+        "job": 122425251636,
+        "totalTap": 829,
+        "invocations": 97,
+        "uniqueFiles": 94,
+        "relevant": [
+          {
+            "suite": "residual-business-privacy-rls-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 6,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          },
+          {
+            "suite": "residual-merchant-privacy-authority-postgres.integration.test.mjs",
+            "auditBatch": "priority",
+            "runtime": "v24.22.1",
+            "exit": 0,
+            "passed": 4,
+            "failed": 0,
+            "skipped": 0,
+            "cancelled": 0,
+            "summaryComplete": true
+          }
+        ],
+        "scope": "SQL scoped own/foreign/unscoped/auth/directory boundaries for both tables retained. Does not prove imported-record consumption or current replay continuity."
+      },
+      "pointers": [
+        "evidence/P0-FIELD004-DEBUG-HTTP-20261025.json",
+        "evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+        "evidence/P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json",
+        "evidence/P0-0051-VERIFICATION-20261024.json"
+      ],
+      "newRuns": false,
+      "notAdditive": "Lane totals include parents and can overlap; do not sum into unique acceptance count."
+    },
+    "finiteRemainder": {
+      "F004_R1": {
+        "state": "OPEN_NARROWED_EXISTING_MIGRATION_MAPPING_CONFIRMED_RUNTIME_CONTINUATION_UNPROVED",
+        "established": "Existing code/documents support legacy migration storage; do not ask user to reinvent this mapping or declare tables unused/retired.",
+        "missing": "What preserves completed legacy event suppression when current required-mode ingress/worker resumes, and how retained draft state is resumed/disposed? The imported-row-to-current-runtime compatibility proof is absent from the reviewed accepted cases. No actual duplicate-send/financial defect claimed without the missing runtime reproduction.",
+        "nextMissingCase": "A completed legacy processed ID with no matching current job/inbound state, followed by an otherwise valid signed webhook in the existing owned fixture; admission/dedup and downstream state must be observed independently of current-event redelivery."
+      },
+      "F004_R2": {
+        "state": "BLOCKED_HOSTED_VERIFICATION",
+        "requirement": "Authorized revision-bound actual row/deployed writer inventory and migration consistency; remains unavailable under GitHub-only restriction."
+      }
+    },
+    "limits": [
+      "958-file pinned lexical/manual review plus54 metadata pins; not formal whole-program/external-writer absence proof.",
+      "No real cutover, generic SQL import/reconciliation rehearsal or current-ingress imported-history replay executed in this batch.",
+      "Local synthetic planner result does not prove a deployed duplicate, historical exposure, current draft completeness or actual provider delivery.",
+      "Existing schema/RLS protection and migration destination remain intact; no new lifecycle, deletion, preservation duration or event provenance policy adopted.",
+      "No new gate/count changes or FIELD002/FIELD003/SEQ-R2 approval inferred."
+    ],
+    "nextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption."
+  },
+  "previousNextExactAction": "Within existing FIELD004/F004-R1, reproduce the missing legacy-migration-to-current-Meta duplicate boundary in the existing isolated actual-app Meta fixture. Reuse the accepted current-event redelivery cases; distinguish a completed legacy processed_channel_events record without matching current job/inbound state from a currently processed event. Verify admission/queue and no provider execution or financial/notification mutations before selecting any correction. Do not manufacture raw webhook hashes or infer a current job/reply from legacy metadata-only hashes. Keep draft continuation/lifecycle and F004-R2 actual hosted inventory explicit; no new public CRUD, table retirement, migration execution or policy adoption.",
+  "currentReviewPointer": "decisionProposal20261031",
+  "previousNewRuntimeExecuted": false,
+  "newRuntimeLayer": "OWNED_OFFLINE_POSTGRES_ACTUAL_SIGNED_HTTP_AND_ORIGINAL_RESTRICTED_WORKER",
+  "legacyReplayAdmissionAcceptance20261028": {
+    "date": "2026-10-28",
+    "gate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+    "parentInventoryGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+    "existingCell": "RESIDUAL-FIELD-004/F004-R1",
+    "status": "BOUNDED_LEGACY_META_HISTORY_ADMISSION_AND_QUEUED_REPLY_HOLD_SOURCE_ACCEPTED",
+    "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+    "sourceTree": "d9b62fca87b34fe063008e5d1b4ad1ce8ca88cc9",
+    "previousAcceptedExecutable": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+    "parentGateClosed": false,
+    "fieldCellClosed": false,
+    "newGateCount": 0,
+    "knownRegisterCountChanged": false,
+    "closureCondition": "Prevent automatic new processing of an existing legacy event whose current job/inbound/reply state has not been reconciled, while preserving current-event deduplication, legitimate tenant operations, historical rows and peer isolation. This closes a bounded source safety prerequisite, not all migration/lifecycle or hosted requirements.",
+    "confirmedFinding": {
+      "reproductionSource": "17ee9c4f6becb82f66e369357736cfde7b59478a",
+      "run": 40632454577,
+      "job": 122631748858,
+      "checkout": "431b277a9af2853fd9616e0a87a27ba1751af8ef",
+      "tree": "11dc9c92361076f20923fbfa3313bd2082f49781",
+      "sourceTreeMatches": true,
+      "layer": "REAL_SIGNED_HTTP_ACTUAL_APP_RESTRICTED_PRIMARY_AND_SEPARATE_AUTH_OWNED_OFFLINE_POSTGRES",
+      "observation": {
+        "status": 200,
+        "legacyRows": 1,
+        "currentJobs": 1,
+        "currentInboundRows": 0,
+        "providerCallsBefore": 4,
+        "providerCallsAfter": 4,
+        "workerInvoked": false
+      },
+      "metaFileTap": {
+        "passed": 25,
+        "failed": 3,
+        "skipped": 0,
+        "cancelled": 0,
+        "includesFailedParents": true
+      },
+      "interpretation": "Confirmed admission as a new job despite completed legacy history; not proof of an actual duplicate send, debit or hosted incident. The target event's worker was deliberately not invoked in this reproduction."
+    },
+    "invalidFixtureAttempt": {
+      "source": "0ced964f6f1690cbeed10b5c8b60f26840106d6f",
+      "run": 40631957280,
+      "job": 122630154628,
+      "classification": "TEST_NESTING_DEADLOCK_NOT_APPLICATION_FAILURE",
+      "observation": "Initial insertion placed await parent t.test inside another child and before its closing brace; parent/root scheduling deadlocked until120s.21PASS/3FAIL/3CANCELLED in the modified file; target legacy observation never executed.",
+      "correction": "Rebuilt from exact original file, preserved all existing tests unchanged and appended legacy group before the actual final parent closure. No timeout increase, assertion weakening or fabricated application evidence."
+    },
+    "implementation": {
+      "applicationChanged": true,
+      "schemaChanged": false,
+      "aclChanged": false,
+      "newPublicEndpoint": false,
+      "newIssuerOrPairing": false,
+      "helper": {
+        "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+        "lines": [
+          16,
+          22,
+          29
+        ],
+        "behavior": "Existing admission module gains a query-only helper, called inside current merchant-scoped transactions. Checks only merchant_id+external_event_id; returns no raw row to callers/API. Any matching legacy row remains unreconciled until explicitly resolved; no inference of current job/reply or raw webhook hash from migration metadata hash."
+      },
+      "enqueue": {
+        "path": "artifacts/api-server/src/services/postgresDurableJobQueue.ts",
+        "lines": [
+          264,
+          292
+        ],
+        "behavior": "Preserves existing current-job deduplication first; before creating a new meta.webhook.reply/meta.webhook.event job, refuses matching legacy history. Existing HTTP error handler returns sanitized503 META_WEBHOOK_QUEUE_UNAVAILABLE. Other queue types and normal current events retained."
+      },
+      "worker": {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "lines": [
+          124
+        ],
+        "behavior": "Checks after normal job identity parsing, before inbound/conversation/message/notification/knowledge/financial work. Covers a job queued before history was restored or learned."
+      },
+      "disposition": {
+        "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+        "lines": [
+          217
+        ],
+        "behavior": "Specific unresolved-history failure uses existing nonretryable, requeue-unsafe DLQ path; no automatic requeue or refund. Preserves generic transient-error handling. This is a safety hold, not a newly approved reviewer, repair, retention or history-reset policy."
+      },
+      "currentFieldConsumer": "processed_channel_events now has an explicit internal boolean guard reader (id with merchant/event predicates). This does not expose its rows/metadata via public HTTP. Older source-only 'no active row reader' observations remain historical at their pinned source, not a description of the new source.",
+      "inputPins": [
+        {
+          "path": "artifacts/api-server/tests/meta-job-identity-postgres.integration.test.mjs",
+          "gitBlobSha": "7994991b8c162871d66e6b5c097d8f2e91ceef98"
+        },
+        {
+          "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+          "gitBlobSha": "5b3c856cae817b625e52eda978bf994283775505"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresDurableJobQueue.ts",
+          "gitBlobSha": "22638f632eb845da91fafe74c02abe41e8d8ee70"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+          "gitBlobSha": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2"
+        },
+        {
+          "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+          "gitBlobSha": "4d0a819ba19148e9a8471e710f6bbdfc413bc04b"
+        }
+      ]
+    },
+    "fixture": {
+      "test": "artifacts/api-server/tests/meta-job-identity-postgres.integration.test.mjs",
+      "newFunctionalCases": 4,
+      "newTapIncludingGroup": 5,
+      "currentFileTap": 31,
+      "setup": "Uses actual buildTransitionalMigrationReadiness on five owned synthetic JSON files, verifies their fingerprints unchanged, obtains completed legacy target row and uses existing prepareInsert with latest committed snapshot. Bootstrap explicitly reconciles its legacy channel anchor to existing fixture's same merchant/page canonical channel. This is not a full migration commit or production channel-reconciliation proof.",
+      "cases": [
+        {
+          "name": "signed completed legacy redelivery holds before enqueue and preserves legacy and domain state",
+          "lines": [
+            289
+          ],
+          "assertions": "Valid signed HTTP503 then repeated503,0new jobs/inbound rows, legacy row and nine domain-table hashes unchanged, provider count unchanged; direct authoritative enqueue also refuses with META_LEGACY_EVENT_HISTORY_UNRECONCILED."
+        },
+        {
+          "name": "pre-existing queued legacy event holds in the original worker before domain writes and cannot be requeued",
+          "lines": [
+            301
+          ],
+          "assertions": "Job is enqueued while legacy history absent, then legacy row restored; actual original restricted worker runs, marks DLQ with exact code and blocked requeue; existing requeue authority refuses DURABLE_JOB_REQUEUE_BLOCKED. Legacy row, nine domain surfaces and provider count unchanged."
+        },
+        {
+          "name": "foreign legacy history does not suppress current merchant enqueue and preserves peer history",
+          "lines": [
+            315
+          ],
+          "assertions": "Same external ID in a foreign merchant/channel SQL fixture does not block server-derived current merchant queue admission; one owned encrypted queued job, no inbound/domain/provider changes, foreign row unchanged. Deliberately synthetic collision, not proof of a legitimate historical cross-page mapping."
+        },
+        {
+          "name": "legacy history lookup SQL denial fails closed without queue payload or business writes",
+          "lines": [
+            327
+          ],
+          "assertions": "Matching row absent; revoke SELECT only for owned child runtime role, verify has_table_privilege=false, signed request503 and unchanged queue/domain/provider snapshots; restore grant in finally. No primary/auth production grant changes."
+        }
+      ],
+      "reused": "Original current positive sends/debits,16 identity denials, tenant context reset, customer/gap notice fields, peer access denial and current-event redelivery proofs remain in the same fixture and pass at the new source.",
+      "cleanup": "PASS: owned role/children/fixture cleanup and targeted/broader workflow container teardown completed."
+    },
+    "targeted": {
+      "run": 40632669573,
+      "job": 122632436356,
+      "url": "https://github.com/nora953/fawri-production-source/actions/runs/40632669573/job/122632436356",
+      "status": "PASS",
+      "tapPassed": 85,
+      "files": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "suites": [
+        {
+          "suite": "meta-job-identity-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 31,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        }
+      ],
+      "checkout": "11f9292297a684f9ef2bbfd890a8352d24b92fac",
+      "sourceTreeMatches": true,
+      "after": {
+        "status": 503,
+        "legacyRows": 1,
+        "currentJobs": 0,
+        "currentInboundRows": 0,
+        "providerCallsBefore": 4,
+        "providerCallsAfter": 4,
+        "workerInvoked": false
+      }
+    },
+    "limits": [
+      "Owned synthetic offline PostgreSQL and loopback Graph provider only; no external/provider credential/customer or deployed data tested.",
+      "Does not repair, delete, rehash or release historical rows; no automatic legacy-to-current hash/job/reply fabrication.",
+      "No proof of full legacy import, draft resume/expiry, backup restoration completeness or historical receive marker meaning delivered.",
+      "No live migration racing current processing theorem; guarded real cutover and hosted adoption remain unauthorized.",
+      "Existing current job dedup remains; queued reply preparation is separately guarded. No complete certification of every alternate worker/recovery/disconnect path.",
+      "Full actor/field inventory and F004-R1/R2 remain open; no product/retention/SEQ-R2 approval inferred."
+    ],
+    "nextExactAction": "Reconcile the next existing actor/field inventory remainder against current source and accepted proofs, starting with FIELD005 requesting-admin snapshot readers and their deletion lifecycle. Establish actual owner/assistant/merchant readers and existing redaction/denials before proposing any retention choice; reuse the finite F005 checklist and accepted emergency/deletion/concurrency tests without automatic reruns. Keep FIELD004 legacy disposition, draft continuation and hosted row inventory open; no historical-row deletion/rehash, automatic release from HOLD, FIELD002/FIELD003/SEQ-R2 policy adoption, new pairing/OTP or hosted actions.",
+    "broader": {
+      "run": 40632669293,
+      "job": 122632437920,
+      "status": "PASS",
+      "tapPassed": 834,
+      "suiteInvocations": 97,
+      "uniqueFiles": 94,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "11f9292297a684f9ef2bbfd890a8352d24b92fac",
+      "sourceTreeMatches": true,
+      "includesNewMetaCases": true,
+      "suites": [
+        {
+          "suite": "residual-business-privacy-rls-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-management-privacy-rls-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "residual-merchant-privacy-authority-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "emergency-privacy-remediation-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "emergency-privacy-authority-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "emergency-read-access-postgres.integration.test.ts",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "support-privacy-tenant-rls-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "tenant-transaction-scope-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 16,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "authentication-operator-pool-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 63,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-credential-housekeeping-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-manager-pin-persistence-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-permission-session-authority-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-staff-lock-boundary-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-identity-tenant-rls-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-alternate-privilege-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-discount-policy-integrity-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-approval-provenance-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-discount-settings-authority-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "admin-audit-boundary-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-central-scope-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-settings-clock.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "queue-expired-lease-race.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-operator-login-concurrency-hardening.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "subscription-tenant-transaction-unit.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "billing-merchant-context-unit.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "operational-postgres-transaction-lifecycle.test.ts",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "failed-setup-cleanup-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "global-merchant-auth-bootstrap-postgres.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "global-merchant-golden-journey.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "global-merchant-postgres-http-journey.integration.test.ts",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-deletion-tenant-rls.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "meta-webhook-postgres-ingress-cutover.integration.test.ts",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "meta-page-directory-restricted-rls.integration.test.mjs",
+          "auditBatch": "priority",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-stream-enrollment-proposal-postgres.integration.test.mjs",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-stream-storage-proposal-postgres.integration.test.mjs",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-stream-storage-readiness-postgres.integration.test.mjs",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 16,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-operator-profit-http-postgres.integration.test.mjs",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-historical-compensation-http-postgres.integration.test.mjs",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 28,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-closed-shift-recovery-http-postgres.integration.test.mjs",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-sync-multidevice-postgres.integration.test.mjs",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-billing-negative-failure-cases.integration.test.mjs",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-full-lifecycle-postgres.integration.test.ts",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-subscription-postgres.integration.test.ts",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-billing-postgres.integration.test.ts",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-downgrade-grace-postgres.integration.test.ts",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-historical-operation-postgres.integration.test.ts",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-operator-logout-pin-postgres.integration.test.ts",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-operator-own-history-scope-postgres.integration.test.ts",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "catalog-cashier-compensation-history-postgres.integration.test.ts",
+          "auditBatch": "cashier",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-billing-context-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "receipt-operator-pool-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "receipt-review-operator-pool-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "receipt-execution-operator-pool-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "receipt-resolver-inflight-phantom-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "receipt-cross-authority-phantom-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "billing-provider-discovery-restricted-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 19,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "postgres-autocommit-response-proxy.unit.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "verified-inbox-wire-recovery-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "operator-replay-wire-recovery-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 17,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 20,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "verified-receipt-replay-review-http-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 20,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "verified-receipt-operator-http-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "verified-provider-receipt-inbox-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "billing-receipt-process-recovery-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "billing-external-checkout-rollback-postgres.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "saas-billing-sql-failure-recovery.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "saas-billing-negative-failure-cases.integration.test.mjs",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "saas-billing-authority.integration.test.ts",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "superqi-sandbox-billing.integration.test.ts",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "subscription-entitlement-postgres.integration.test.ts",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-customer-payment-authority-postgres.integration.test.ts",
+          "auditBatch": "billing",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "admin-auth-router-postgres.integration.test.ts",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "support-postgres-cutover.integration.test.ts",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-session-restricted-http-postgres.integration.test.mjs",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "auth-cutover-contract.test.mjs",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-password-recovery-postgres.integration.test.ts",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "reply-addon-refund-postgres.integration.test.mjs",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "reply-cross-cycle-refund-postgres.integration.test.mjs",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "production-postgres-rls-security.integration.test.ts",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 89,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "knowledge-tenant-rls.integration.test.mjs",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "knowledge-management-postgres-cutover.integration.test.ts",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "knowledge-postgres-lifecycle.integration.test.ts",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-management-tenant-rls.integration.test.mjs",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "subscription-reminder-rls.integration.test.mjs",
+          "auditBatch": "tenant",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "meta-worker-precommit-restart-postgres.integration.test.mjs",
+          "auditBatch": "meta-bot",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "meta-job-identity-postgres.integration.test.mjs",
+          "auditBatch": "meta-bot",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 31,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "meta-worker-deadletter-restart-postgres.integration.test.mjs",
+          "auditBatch": "meta-bot",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "meta-restore-wire-recovery-postgres.integration.test.mjs",
+          "auditBatch": "meta-bot",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "meta-full-app-restricted-postgres.integration.test.mjs",
+          "auditBatch": "meta-bot",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 13,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "knowledge-learning-cycle-postgres.integration.test.ts",
+          "auditBatch": "meta-bot",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "meta-live-reply-postgres.integration.test.ts",
+          "auditBatch": "meta-bot",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 54,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "full-schema-restore-postgres.integration.test.mjs",
+          "auditBatch": "full-restore",
+          "runtime": "v24.22.1",
+          "phase": "seed",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "full-schema-restore-postgres.integration.test.mjs",
+          "auditBatch": "full-restore",
+          "runtime": "v24.22.1",
+          "phase": "verify",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-combined-proposal-restore-postgres.integration.test.mjs",
+          "auditBatch": "financial-proposal-restore",
+          "runtime": "v24.22.1",
+          "phase": "seed",
+          "exit": 0,
+          "passed": 31,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "cashier-combined-proposal-restore-postgres.integration.test.mjs",
+          "auditBatch": "financial-proposal-restore",
+          "runtime": "v24.22.1",
+          "phase": "verify",
+          "exit": 0,
+          "passed": 12,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "global-merchant-postgres-http-journey.integration.test.ts",
+          "auditBatch": "node22-http",
+          "runtime": "v22.23.4",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        }
+      ],
+      "counting": "Includes parent TAP and repeated suite invocations; new31-TAP Meta file appears here and in targeted85. Do not add lane totals as unique tests."
+    },
+    "allCi": {
+      "total": 58,
+      "success": 58,
+      "failed": 0,
+      "cancelled": 0,
+      "pending": 0,
+      "source": "e3d7d721c341cee557aa427cd83fe11ea134eec6",
+      "workflowRuns": [
+        {
+          "id": 40632669172,
+          "name": "Cashier dashboard surface regression",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669135,
+          "name": "Observability mounted routes",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669260,
+          "name": "Billing provider readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669244,
+          "name": "Complete migration safety",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669419,
+          "name": "Pre-release performance smoke gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669526,
+          "name": "AWS KMS production adapter readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669298,
+          "name": "Meta OAuth operational cutoff",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669363,
+          "name": "Browser storage authority audit",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669173,
+          "name": "Backup and restore drill",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669444,
+          "name": "Staging container contract",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669480,
+          "name": "P0 cashier IndexedDB browser regression",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669463,
+          "name": "Knowledge embedding readiness",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669449,
+          "name": "Merchant deletion audit PII",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669466,
+          "name": "Global subscription golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669259,
+          "name": "Clean deployment golden gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669326,
+          "name": "PostgreSQL outage recovery proof",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669414,
+          "name": "Bot logic adversarial matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669315,
+          "name": "Cashier native IndexedDB engineering audit",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669649,
+          "name": "Auth PostgreSQL concurrency proof",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669324,
+          "name": "Merchant regional PostgreSQL authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669165,
+          "name": "Isolated Neon preflight static safety",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669250,
+          "name": "Product catalog UI cutover",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669303,
+          "name": "P0 Support privacy authority diagnostic",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669198,
+          "name": "Complete schema candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669235,
+          "name": "Merchant deletion provider identifiers",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669231,
+          "name": "Commerce cashier closeout",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669335,
+          "name": "P0 management privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669566,
+          "name": "Merchant deletion physical media lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669158,
+          "name": "Auth OTP contract continuity",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669296,
+          "name": "Catalog variant signature schema contract",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669573,
+          "name": "P0 notification privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669104,
+          "name": "Final quality gates",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669502,
+          "name": "PostgreSQL migration candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669547,
+          "name": "Location inventory authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669459,
+          "name": "Merchant access security",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669304,
+          "name": "P0 conversation privacy HTTP matrix",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669283,
+          "name": "Subscription service guarantee validation",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669318,
+          "name": "P0 signed cashier offline authority",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669398,
+          "name": "Location routing engine",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669337,
+          "name": "Order operations",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669300,
+          "name": "Merchant account security UI",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669446,
+          "name": "Cashier operational cutoff",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669333,
+          "name": "Global merchant golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632668946,
+          "name": "Merchant deletion cashier lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669331,
+          "name": "Merchant settings",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669242,
+          "name": "Meta webhook PostgreSQL ingress cutover",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669474,
+          "name": "Global admin golden journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669141,
+          "name": "Dashboard channel coherence",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669489,
+          "name": "Global Merchant PostgreSQL HTTP Journey",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669387,
+          "name": "P0 dependency security upgrade candidate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632668945,
+          "name": "Meta webhook pipeline",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669408,
+          "name": "Cashier subscription lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669373,
+          "name": "Foundation integration final gate",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669023,
+          "name": "Merchant deletion promotions lifecycle",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669522,
+          "name": "SEQ D2 canonical storage acceptance",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669029,
+          "name": "PostgreSQL schema validation",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669293,
+          "name": "Isolated PostgreSQL engineering audit",
+          "conclusion": "success"
+        },
+        {
+          "id": 40632669261,
+          "name": "Final security and supply chain",
+          "conclusion": "success"
+        }
+      ]
+    },
+    "security": {
+      "run": 40632669261,
+      "job": 122633950932,
+      "status": "PASS",
+      "scannedFiles": 2543,
+      "scannedHistoricalBlobs": 10608,
+      "findings": 0,
+      "dependencyAudit": "PASS",
+      "dependencyReview": "PASS",
+      "lockfileIntegrity": "PASS"
+    },
+    "quality": {
+      "run": 40632669104,
+      "jobs": [
+        {
+          "id": 122632434606,
+          "name": "full-typecheck",
+          "conclusion": "success"
+        },
+        {
+          "id": 122632434884,
+          "name": "translation-structure-audit",
+          "conclusion": "success"
+        },
+        {
+          "id": 122632434920,
+          "name": "quality-tool-tests",
+          "conclusion": "success"
+        },
+        {
+          "id": 122632435037,
+          "name": "full-build",
+          "conclusion": "success"
+        }
+      ],
+      "typecheck": "PASS_API_FRONTEND_LIBS_SCRIPTS",
+      "build": "PASS",
+      "local": "node --check passed for changed .mjs fixture. Plain node --check does not parse the TypeScript annotations in this environment; actual complete CI TypeScript/build acceptance used instead."
+    },
+    "acceptedAt": "2026-10-28"
+  },
+  "currentApplicationChanged": false,
+  "previousApplicationChanged": false,
+  "draftContinuityReconciliation20261028": {
+    "date": "2026-10-28",
+    "sourceReviewed": "c45f5cff8f8f093758830efb17dbcd21a943c647",
+    "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+    "status": "ACTUAL_LEGACY_DRAFT_SHAPE_BLOCKED_BY_CURRENT_PLANNER_CONTINUATION_CONTRACT_OPEN",
+    "gates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    ],
+    "existingCell": "RESIDUAL-FIELD-004/F004-R1",
+    "acceptanceCondition": "Reconcile actual old draft producer shape with migration schema and current required-mode consumer before declaring legacy draft continuity, retirement or new CRUD necessary. A named read-only planner gap may be probed without SQL/provider/hosted mutation. Source/migration prerequisite only; no parent-gate closure.",
+    "applicationChanged": false,
+    "testCodeChanged": false,
+    "newCiRuns": 0,
+    "newSqlOrHttpRuntime": 0,
+    "newLocalPlannerProbes": 1,
+    "fieldCellClosed": false,
+    "parentGateClosed": false,
+    "newGate": false,
+    "userActionRequiredNow": false,
+    "policyAdopted": false,
+    "sourceVerification": {
+      "filesVerified": 954,
+      "metadataJsonVerified": 54,
+      "totalInputs": 1008,
+      "localSourceView": "Exact current Git-pinned bytes materialized for analysis; no stale local source substituted. All source and metadata pins rechecked against current HEAD and Git blob bytes,0 mismatch.",
+      "sourceManifestSha256": "f608319ddb48aba41cffc7d99e4863e3b85914b5bec976ce92e295b6eb058190",
+      "scanSha256": "4ef1749f67cde059fa606c76856573b5146664f5516c2d16ba916a34287d9045",
+      "pattern": "order_drafts|orderDraftsByConversation|getActiveOrderDraft|setOrderDraft|DRAFT_TTL_MINUTES",
+      "candidateFiles": 17,
+      "candidatePins": [
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+          "gitBlobSha": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+          "lines": [
+            55,
+            173,
+            235,
+            247,
+            338,
+            377,
+            379,
+            401,
+            402,
+            419,
+            432
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "gitBlobSha": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "lines": [
+            41,
+            45,
+            46,
+            51,
+            280,
+            281,
+            289,
+            311,
+            364,
+            482,
+            705,
+            709
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "gitBlobSha": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "lines": [
+            962
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "gitBlobSha": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "lines": [
+            12
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+          "gitBlobSha": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "lines": [
+            322,
+            636,
+            637,
+            721,
+            722
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0001_military_proteus.sql",
+          "gitBlobSha": "0631349cad0075d927bfcf67a96180111555a5a4",
+          "lines": [
+            209,
+            263,
+            299
+          ]
+        },
+        {
+          "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+          "gitBlobSha": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "lines": [
+            20,
+            22,
+            24
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/orders.ts",
+          "gitBlobSha": "1343264314a660311ef261c2c95eddb3bc70f490",
+          "lines": [
+            341,
+            354,
+            355,
+            356,
+            357
+          ]
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "gitBlobSha": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "lines": [
+            171
+          ]
+        },
+        {
+          "path": "scripts/audit-fawri-json-data.mjs",
+          "gitBlobSha": "32fa2970cbeebf17ed0b381f21d6e8391c836e84",
+          "lines": [
+            28,
+            255
+          ]
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "gitBlobSha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "lines": [
+            53,
+            431,
+            446
+          ]
+        },
+        {
+          "path": "scripts/plan-postgresql-migration.mjs",
+          "gitBlobSha": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "lines": [
+            138,
+            337,
+            338
+          ]
+        },
+        {
+          "path": "scripts/tests/audit-fawri-data.test.mjs",
+          "gitBlobSha": "6a2c2614a970c424be2bff4c3358d829d8308302",
+          "lines": [
+            43
+          ]
+        },
+        {
+          "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+          "gitBlobSha": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+          "lines": [
+            68
+          ]
+        },
+        {
+          "path": "scripts/tests/locked-migration-operational-safety.test.mjs",
+          "gitBlobSha": "5cda1ef54d7d2840b137015f226d91892ec269f6",
+          "lines": [
+            45,
+            184
+          ]
+        },
+        {
+          "path": "scripts/tests/plan-postgresql-migration.test.mjs",
+          "gitBlobSha": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "lines": [
+            351
+          ]
+        },
+        {
+          "path": "scripts/tests/validated-order-operations-gate.test.mjs",
+          "gitBlobSha": "1d282aeb9c7044661b8a5bb7c33bcc013473b794",
+          "lines": [
+            45
+          ]
+        }
+      ],
+      "expandedTracePins": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+          "gitBlobSha": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2"
+        },
+        {
+          "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+          "gitBlobSha": "5b3c856cae817b625e52eda978bf994283775505"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts",
+          "gitBlobSha": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+          "gitBlobSha": "7083e4a5038dfa8f9b9586a490ae272b119c17fb"
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "gitBlobSha": "96edbe04ad56360e8fa53c9f66df71c0add5464d"
+        },
+        {
+          "path": "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+          "gitBlobSha": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf"
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "gitBlobSha": "232f9b3784ac6ce5a7ff550e67a817b49be337ee"
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-safe.mjs",
+          "gitBlobSha": "73bb96d8398239e555f42294f6a7d54fd4b97b84"
+        },
+        {
+          "path": "scripts/tests/fixtures/create-postgresql-migration-fixture.mjs",
+          "gitBlobSha": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3"
+        },
+        {
+          "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+          "gitBlobSha": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5"
+        },
+        {
+          "path": "lib/db/src/schema/orders.ts",
+          "gitBlobSha": "1343264314a660311ef261c2c95eddb3bc70f490"
+        },
+        {
+          "path": "lib/db/drizzle/meta/0052_snapshot.json",
+          "gitBlobSha": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535"
+        }
+      ],
+      "limits": "Literal catalogue plus manual dataflow; not a dynamic/external-consumer absence theorem or complete P0 inventory."
+    },
+    "actualProducer": {
+      "type": "routes/indexModulePart1.ts OrderDraft",
+      "fields": [
+        "merchant_id",
+        "conversation_id",
+        "customer_id",
+        "awaiting",
+        "product_id?",
+        "product_name?",
+        "unit_price?",
+        "quantity?",
+        "started_at",
+        "updated_at"
+      ],
+      "awaitingValues": [
+        "product",
+        "customer_info"
+      ],
+      "constructor": "routes/indexModulePart3.ts setOrderDraft/productReply/order_create. Map keyed by conversation; saves full runtime JSON and updates updated_at.",
+      "expiry": "getActiveOrderDraft reads updated_at||started_at against current DRAFT_TTL_MINUTES; default60 from BOT_DRAFT_TTL_MINUTES. Producer does not persist explicit expires_at or the effective configured TTL. Do not infer actual historical environment configuration or convert invalid/missing time to a guessed deadline.",
+      "oldConsumer": "Legacy handleBotMessage/getActiveOrderDraft uses the Map. Required-mode retired debug aliases do not thereby become a public SQL draft continuation endpoint."
+    },
+    "migration": {
+      "source": "postgresql-migration-plan-complete.mjs apply runtime overlay",
+      "fields": "customer_external_id <- item.customer_external_id; awaiting_field <- item.awaiting_field; expires_at <- item.expires_at||NULL; draft_data <- item.draft_data||item; created_at <- item.created_at||NULL; updated_at <- item.updated_at||item.created_at||NULL",
+      "difference": "Actual customer_id/awaiting/started_at are not those destination inputs. No intervening alias/expiry conversion found in reviewed plan chain. Original full legacy object remains inside draft_data; the planning failure is not erasure of source state.",
+      "target": "order_drafts canonical required customer_external_id/awaiting_field/expires_at, tenant/conversation FK, unique conversation and SQL time checks. No SQL commit tested by local probe.",
+      "writer": "Existing generic prepareInsert/validated migration writer remains the supported mapping writer; no assertion the table is unused/empty or ready for deletion."
+    },
+    "currentRequiredMode": {
+      "meta": "Existing current worker selects channel_inbound_events, conversation/message SQL and decideMetaKnowledgeReply. No direct order_drafts SQL read/consumer identified. Matching message history is not an established draft continuation decoder.",
+      "safety": "Accepted e3d legacy processed-event history admission/queued-reply guard remains in current source. That guard is not a new SQL draft hold or continuity implementation.",
+      "privacy": "Current residual-table RLS/readiness and tenant-specific purge stay intact. Existing debug410 acceptance and bounded0051 SQL denial are reused within original scope.",
+      "notClaimed": [
+        "Current SQL-shaped drafts are automatically resumed or automatically blocked by a new guard",
+        "New order creation/online-order completeness",
+        "Supported expiry/disposition/repair policy",
+        "Real deployed legacy draft count or state"
+      ]
+    },
+    "localProbe": {
+      "layer": "ONE_LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER",
+      "scriptSha256": "c8f07ca537d9721a8c824d45c8e77f8d1235f25f413562a8454c22c7a8a7d718",
+      "resultSha256": "420c9d721710b68c74514b0f71d73f64b531d7038ca93ab7da078c8bddec9f9d",
+      "reproduction": "Materialize pinned current repository sources/metadata as field005-current. Run this exact Node script from its parent directory. It builds existing canonical+transitional fixture files, removes only fixture canonical orderDrafts arrays to isolate one actual-producer-shaped transitional row, calls current buildValidatedMigrationPlan and checks complete before/after fixture fingerprints; disposable fixture directory is removed in finally.",
+      "source": "import fs from 'node:fs';\nimport os from 'node:os';\nimport path from 'node:path';\nimport {spawnSync} from 'node:child_process';\nimport {createHash} from 'node:crypto';\nimport assert from 'node:assert/strict';\nimport {buildValidatedMigrationPlan} from './field005-current/scripts/lib/postgresql-cross-lane-reconciliation.mjs';\nconst root=path.resolve('field005-current'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'fawri-field004-probe-'));\nconst hash=s=>createHash('sha256').update(s).digest('hex');\nconst read=n=>JSON.parse(fs.readFileSync(path.join(dir,n),'utf8'));\nconst write=(n,v)=>fs.writeFileSync(path.join(dir,n),JSON.stringify(v,null,2)+'\\n');\nconst fingerprint=()=>Object.fromEntries(fs.readdirSync(dir).sort().map(n=>[n,hash(fs.readFileSync(path.join(dir,n)))]));\ntry {\n for(const name of ['create-postgresql-migration-fixture.mjs','create-transitional-migration-fixture.mjs']){\n  const r=spawnSync(process.execPath,[path.join(root,'scripts/tests/fixtures',name),dir],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);\n }\n const canonical=read('bot-runtime.json');canonical.orderDrafts=[];canonical.order_drafts=[];write('bot-runtime.json',canonical);\n const runtime=read('fawri-runtime-db.json');\n runtime.orderDraftsByConversation['conversation-1']={merchant_id:'merchant-1',conversation_id:'conversation-1',customer_id:'customer-1',awaiting:'customer_info',product_id:'product-1',product_name:'Synthetic Product',unit_price:10000,quantity:1,started_at:'2026-08-06T12:00:00.000Z',updated_at:'2026-08-06T12:00:00.000Z'};\n write('fawri-runtime-db.json',runtime);\n const before=fingerprint();\n const {report,snapshot}=buildValidatedMigrationPlan({dataDirectory:dir,includeRows:true});\n assert.deepEqual(fingerprint(),before,'planner must preserve fixture files');\n const result={probe:'FIELD004_ACTUAL_LEGACY_DRAFT_SHAPE',layer:'LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER',planOk:report.ok,writeReady:report.write_readiness?.ok,snapshot:snapshot.name,snapshotSha256:snapshot.sha256,errors:report.errors,counts:{order_drafts:report.rows.order_drafts?.length||0},draftRows:report.rows.order_drafts,sourceFilesUnchanged:true,sourceFileFingerprints:before,databaseConnectionUsed:false};\n fs.writeFileSync('field004-legacy-draft-shape-result.json',JSON.stringify(result,null,2)+'\\n');\n console.log(JSON.stringify(result));\n} finally {fs.rmSync(dir,{recursive:true,force:true});}\n",
+      "result": {
+        "probe": "FIELD004_ACTUAL_LEGACY_DRAFT_SHAPE",
+        "layer": "LOCAL_SYNTHETIC_READ_ONLY_PLANNER_NO_SQL_HTTP_PROVIDER",
+        "planOk": false,
+        "writeReady": false,
+        "snapshot": "0052_snapshot.json",
+        "snapshotSha256": "993461e7bdccce8a2c7386054ce43e57b6eab73e7f80d87d13dc5e693651c9e4",
+        "errors": [
+          {
+            "code": "REQUIRED_TARGET_VALUE_MISSING",
+            "table": "order_drafts",
+            "record_id": "runtime-order-draft:413055e0cb3a7c6d79b6b446a98e0ad1",
+            "column": "customer_external_id"
+          },
+          {
+            "code": "REQUIRED_TARGET_VALUE_MISSING",
+            "table": "order_drafts",
+            "record_id": "runtime-order-draft:413055e0cb3a7c6d79b6b446a98e0ad1",
+            "column": "awaiting_field"
+          },
+          {
+            "code": "REQUIRED_TARGET_VALUE_MISSING",
+            "table": "order_drafts",
+            "record_id": "runtime-order-draft:413055e0cb3a7c6d79b6b446a98e0ad1",
+            "column": "expires_at"
+          }
+        ],
+        "counts": {
+          "order_drafts": 1
+        },
+        "draftRows": [
+          {
+            "id": "runtime-order-draft:413055e0cb3a7c6d79b6b446a98e0ad1",
+            "merchant_id": "merchant-1",
+            "conversation_id": "conversation-1",
+            "customer_external_id": "",
+            "awaiting_field": "",
+            "draft_data": {
+              "merchant_id": "merchant-1",
+              "conversation_id": "conversation-1",
+              "customer_id": "customer-1",
+              "awaiting": "customer_info",
+              "product_id": "product-1",
+              "product_name": "Synthetic Product",
+              "unit_price": 10000,
+              "quantity": 1,
+              "started_at": "2026-08-06T12:00:00.000Z",
+              "updated_at": "2026-08-06T12:00:00.000Z"
+            },
+            "expires_at": null,
+            "created_at": null,
+            "updated_at": "2026-08-06T12:00:00.000Z"
+          }
+        ],
+        "sourceFilesUnchanged": true,
+        "sourceFileFingerprints": {
+          "background-jobs.json": "df7106e362a50c468ee11b6b4cee7522ef0a9e7e921e8aceb90670f146e54b71",
+          "bot-runtime.json": "e7dfd5d99b7103d9dcf53608715fec00a8906108c6970d89ac422352420a5efa",
+          "emergency-read-access.json": "243cbf5f198c3d60fbd13708c37a77c36766eb55fef03ec1b3f9d755e698adf1",
+          "fawri-runtime-db.json": "356f84fe341c1e37365cf323ea7553d204161a4c5aa28fed2ab79ae37b332daa",
+          "learned-answers.json": "f9009c13ccfe170905da885f692b0d92c1d65f39e1bf9f6d845fd0e13a76fbc1",
+          "manual-conversation-operations.json": "cc1d7696d5d7b8b0a830d55a4866dbfc8369a09b4d26f4e7e7075421313cd8e9",
+          "merchant-settings.json": "3f09f51ef66a051ad53e0b2e186ff30883ab56c3496f0caa5d55fcdae2b4c560",
+          "merchants.json": "be2417c61d0e0e92e275d3b4c72c68c94742ace877c9e9689463e48f75ae6abf",
+          "order-operations.json": "182637d93abf5100c4b178221cc3f18e426c105c6e558e9a75befd95a269494b",
+          "processed-meta-events.json": "12f27eb128c401b4099d2bf574f6fb9228f535e2bad53798493701f784372d7c",
+          "reply-reservations.json": "472848634486d08ed16020937115ed04f428ab97cdd87a28bf9ee714bf74db8e",
+          "saved-answers.json": "14355c07e6ae9d8b8dddd4e9b95a34cfc2fe2a38abe62fd7730fbb16e68e1405",
+          "support-preview-sessions.json": "4330c6285e686e7a20f99524691a9d43e5233af02323e2aafc0be503683bea00",
+          "training-requests.json": "d8ec91f20cd66f8a35d0299bd6e57802e941b862ead706716b1ad008bdc1d972"
+        },
+        "databaseConnectionUsed": false
+      },
+      "interpretation": "Observed planOk=false/writeReady=false with exactly3 REQUIRED_TARGET_VALUE_MISSING columns customer_external_id,awaiting_field,expires_at. One mapped draft retains original shape in draft_data. All14 synthetic source fingerprints unchanged by planner; no SQL/HTTP/provider connection. Node command succeeded because this was an observation probe, not an assertion that migration succeeded.",
+      "priorProbeCorrection": "Previous currentLifecycleReconciliation20261028.localPlannerProbe supplied SQL-shaped customer_external_id/awaiting_field/expires_at and verified destination preservation. Its earlier successful plan is retained, but never promoted to acceptance of the actual Map producer layout. This new counterexample narrows that evidence explicitly."
+    },
+    "finiteRemainder": {
+      "F004_R1": {
+        "status": "OPEN_INTENDED_AUTHORITY_CONTRACT",
+        "namedMissingConditions": [
+          {
+            "id": "draft-field-normalization",
+            "state": "UNRESOLVED_SOURCE_CONTRACT",
+            "need": "Declared mapping of customer_id/awaiting/started_at and any duplicate canonical/transitional ownership; preserve source state and fail closed on ambiguity."
+          },
+          {
+            "id": "draft-expiry-provenance",
+            "state": "UNRESOLVED_ACTUAL_CONFIGURATION_AND_TIME_CONTRACT",
+            "need": "Trusted expiry/time contract for actual old drafts. Current default60 is not evidence of the effective deployed historical TTL. No automatic fresh deadline, NOW-based revival or silently dropping expired/unknown drafts."
+          },
+          {
+            "id": "draft-current-consumer",
+            "state": "UNRESOLVED_LIFECYCLE_DECISION",
+            "need": "Explicit intended supported storage/continuation/manual disposition and corresponding current consumer/ownership/expiry proof before implementing any runtime bridge; no CRUD invented from scan absence."
+          }
+        ],
+        "notNewReleaseGates": true
+      },
+      "F004_R2": {
+        "status": "BLOCKED_HOSTED_VERIFICATION",
+        "need": "Authorized revision-bound actual row/external writer/effective configuration and migration consistency inventory. No hosted permissions granted."
+      }
+    },
+    "reusedEvidence": {
+      "acceptedExecutable": "94090776025da649cede64f253fea58a1dff15f2",
+      "allCiSuccess": 58,
+      "broader": {
+        "run": 40657885831,
+        "job": 122713784974,
+        "tap": 836,
+        "invocations": 97,
+        "uniqueFiles": 94
+      },
+      "notification": {
+        "run": 40657885295,
+        "job": 122713272897,
+        "tap": 85,
+        "files": 6,
+        "metaIdentityFileTap": 31
+      },
+      "legacyMetaSafety": "legacyReplayAdmissionAcceptance20261028 remains bounded accepted, not historical release/repair policy.",
+      "debug": "P0-FIELD004-DEBUG-HTTP-20261025.json retired aliases and scoped snapshots; not actual legacy-draft continuation.",
+      "sqlBoundary": "P0-0051-VERIFICATION-20261024.json original bounded RLS authority evidence; no new run.",
+      "noNewCiClaim": true,
+      "noUniqueTapSum": true
+    },
+    "limits": [
+      "A representative fixture of the actual producer field layout was passed to the real planner; legacy bot producer/HTTP or SQL migration was not executed.",
+      "Fail-closed unsupported migration is not a confirmed data-loss or unauthorized-disclosure incident.",
+      "No alias repair, TTL guessing, new CRUD/bridge/guard, expiry cleanup or historical row rewrite performed.",
+      "No new denominator/status change, retention/SEQ-R2 policy, pairing/OTP, hosted, merge or deployment approval."
+    ],
+    "nextExactAction": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies."
+  },
+  "previousCurrentReviewPointer": "legacyReplayAdmissionAcceptance20261028",
+  "previousNextExactActionBeforeDecision20261031": "Continue existing P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX with the unreviewed current GET/PATCH /api/settings catalogue rows: reconcile actual auth-cutover middleware, response fields/write body and assertions/runtime proof in existing merchant-settings-postgres-http and global merchant HTTP fixtures before choosing any test or fix. Reuse accepted evidence; no automatic new route/test. F004-R1 draft normalization/expiry/current-consumer contract remains open and hosted historical/config inventory blocked; preserve legacy Meta safety hold and all unapproved retention/SEQ-R2 policies.",
+  "previousCurrentReviewPointerBeforeDecision20261031": "draftContinuityReconciliation20261028",
+  "decisionProposal20261031": {
+    "id": "F004-R1-CONDITIONAL_OFFLINE_DRAFT_MIGRATION_ONLY-20261031",
+    "date": "2026-10-31",
+    "status": "OWNER_APPROVED_BOUNDED_OFFLINE_PLANNER_IMPLEMENTATION_PENDING",
+    "approval": "APPROVED_BY_OWNER_2026-10-31",
+    "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+    "workItem": "MATRIX-C07",
+    "sourceReviewed": "f5eefaa8481157e38963d64960e12764e8f34af3",
+    "acceptedExecutable": "49eeb8990513e562bb2a823742229d16c0f13a18",
+    "recommendedChoice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
+    "businessMeaningArabic": "ندعم نقل مسودات الطلبات القديمة إلى التخزين الجديد عندما يمكن إثبات التاجر والعميل والوقت الأصليين. النقل وحده لا يستكمل طلبًا ولا يرسل رسالة ولا يحجز مخزونًا. السجلات الغامضة توقف جاهزية الترحيل وتبقى أصولها محفوظة دون حذف أو مهلة جديدة.",
+    "sourceVerification": {
+      "method": "Reconcile24 existing candidate/expanded pins against exact current Git tree; reread producer, expiry, schema, migration overlay and current Meta authority. Reuse prior actual-shape planner observation, no rerun.",
+      "pins": [
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+          "previousBlob": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+          "currentBlob": "7083e4a5038dfa8f9b9586a490ae272b119c17fb",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "previousBlob": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "currentBlob": "96edbe04ad56360e8fa53c9f66df71c0add5464d",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "previousBlob": "db0d8d4cdbdc4c05505fe772e8e849675b4f6338",
+          "currentBlob": "479baa1d64dc679d8608d7462c25de0aaca372ad",
+          "unchanged": false
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+          "previousBlob": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "currentBlob": "5870c0b09d5734aa676e3d5f299e9965a22912a6",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+          "previousBlob": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "currentBlob": "0c9920caee6ea03d4f4776354bfdecd172234969",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/drizzle/0001_military_proteus.sql",
+          "previousBlob": "0631349cad0075d927bfcf67a96180111555a5a4",
+          "currentBlob": "0631349cad0075d927bfcf67a96180111555a5a4",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql",
+          "previousBlob": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "currentBlob": "d915ed6dbcfaf3628c8500cee9928f75b99326bc",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/src/schema/orders.ts",
+          "previousBlob": "1343264314a660311ef261c2c95eddb3bc70f490",
+          "currentBlob": "1343264314a660311ef261c2c95eddb3bc70f490",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "previousBlob": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "currentBlob": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/audit-fawri-json-data.mjs",
+          "previousBlob": "32fa2970cbeebf17ed0b381f21d6e8391c836e84",
+          "currentBlob": "32fa2970cbeebf17ed0b381f21d6e8391c836e84",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-complete.mjs",
+          "previousBlob": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "currentBlob": "232f9b3784ac6ce5a7ff550e67a817b49be337ee",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/plan-postgresql-migration.mjs",
+          "previousBlob": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "currentBlob": "9c17d4ba2822d3324ddab1e58a8b6ce8970a1c80",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/audit-fawri-data.test.mjs",
+          "previousBlob": "6a2c2614a970c424be2bff4c3358d829d8308302",
+          "currentBlob": "6a2c2614a970c424be2bff4c3358d829d8308302",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/fixtures/create-transitional-migration-fixture.mjs",
+          "previousBlob": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+          "currentBlob": "1e3959287bd2953a4727c1392fcc7d4b2c4e57c5",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/locked-migration-operational-safety.test.mjs",
+          "previousBlob": "5cda1ef54d7d2840b137015f226d91892ec269f6",
+          "currentBlob": "5cda1ef54d7d2840b137015f226d91892ec269f6",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/plan-postgresql-migration.test.mjs",
+          "previousBlob": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "currentBlob": "bb2610a732fcf870458cd1eec1dda93b9ad21878",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/validated-order-operations-gate.test.mjs",
+          "previousBlob": "1d282aeb9c7044661b8a5bb7c33bcc013473b794",
+          "currentBlob": "1d282aeb9c7044661b8a5bb7c33bcc013473b794",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+          "previousBlob": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2",
+          "currentBlob": "06608abcb30466288ccaa1fbde38bf80d1ef9eb2",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+          "previousBlob": "5b3c856cae817b625e52eda978bf994283775505",
+          "currentBlob": "5b3c856cae817b625e52eda978bf994283775505",
+          "unchanged": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts",
+          "previousBlob": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70",
+          "currentBlob": "6ac8d2005d9e8a001185e2b41724f9b571fc2d70",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+          "previousBlob": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf",
+          "currentBlob": "af93bb97a6b60fc36e2fcf84a70505a0883dbddf",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/lib/postgresql-migration-plan-safe.mjs",
+          "previousBlob": "73bb96d8398239e555f42294f6a7d54fd4b97b84",
+          "currentBlob": "73bb96d8398239e555f42294f6a7d54fd4b97b84",
+          "unchanged": true
+        },
+        {
+          "path": "scripts/tests/fixtures/create-postgresql-migration-fixture.mjs",
+          "previousBlob": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3",
+          "currentBlob": "60b90eb0d05302b207f0e7e72baf7285bd6a6da3",
+          "unchanged": true
+        },
+        {
+          "path": "lib/db/drizzle/meta/0052_snapshot.json",
+          "previousBlob": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535",
+          "currentBlob": "ee715f3dc44dbe6d5cfd6ffab477917754fb5535",
+          "unchanged": true
+        }
+      ],
+      "unchanged": 23,
+      "changed": 1,
+      "changedExplanation": "Only postgresMerchantManagementAuthority.ts differs; exact compare from accepted940907 to current shows listAdminLogsPostgres FIELD003 options/predicate changes only. Draft purge behavior is unchanged.",
+      "fullInventory": false
+    },
+    "currentBehavior": {
+      "legacyShape": "customer_id / awaiting ('product'|'customer_info') / started_at / updated_at; no stored expiry or effective TTL.",
+      "expiry": "getActiveOrderDraft uses current process BOT_DRAFT_TTL_MINUTES (default60) and updated_at||started_at; finite elapsed beyond TTL clears legacy Map draft. Invalid times do not establish trusted expiry. Do not copy permissive invalid-time behavior into migration.",
+      "planner": "Runtime overlay currently reads SQL-shaped names, preserves item in draft_data, and replaces same-id canonical rows. Existing actual-shape fixture fails3 required fields; no SQL write accepted.",
+      "runtime": "Current required-mode Meta path has no identified order_drafts continuation decoder. Existing SQL-shaped storage and RLS/purge do not prove automatic continuation."
+    },
+    "proposedContract": {
+      "lifecycle": "Supported compatibility storage via offline reviewed migration; no new HTTP CRUD, timer, runtime draft bridge or automatic legacy bot activation.",
+      "identity": "merchant_id must resolve to the same tenant as the canonical conversation; customer_id is a candidate external sender identifier, not a trusted internal account ID. Map to customer_external_id only after equality with that conversation's external customer identity and channel ownership are validated. Do not derive authority from messenger-<customer> alone.",
+      "awaiting": "Map only exact product or customer_info to awaiting_field unchanged, retaining the original payload. Unknown, conflicting or empty values block readiness; do not infer a new conversational state.",
+      "timestamps": "started_at -> created_at and updated_at -> updated_at only with valid, ordered, source-bound instants; no migration NOW/defaultNow repair. Missing/invalid/inconsistent inputs block readiness.",
+      "expiry": "Accept a validated explicit original expires_at, or derive it from the last valid old activity timestamp plus a proven effective old-reader TTL bound to the frozen source/configuration checkpoint. Require trusted cutoff time/provenance; an environment default/current TTL alone is not historical evidence. Never create a fresh deadline from migration time. If both expiry sources exist and disagree, block readiness.",
+      "expired": "Preserve proven historical expiry in the mapped record; expired status never becomes active merely because data is imported. No expiry deletion, cleanup or retention duration is authorized.",
+      "duplicates": "If canonical and transitional drafts describe the same target draft/conversation, require matching tenant/customer/state/time/payload provenance or stop with an explicit conflict. Do not silently replace canonical ownership/state based on input order.",
+      "failure": "Any unsupported/ambiguous record makes the complete plan not write-ready. Return bounded diagnostic codes/record references without dumping draft PII to general logs. Preserve all source bytes; no silent row omission/quarantine destination/import side effect.",
+      "consumer": "Mapped storage is not a supported automatic runtime continuation consumer. Any future continuation requires separately reviewed current tenant/channel/customer ownership, original expiry, product/price/stock validity and idempotent order rules before activation; this choice does not approve that feature.",
+      "sideEffects": "No order creation, stock/payment mutation, outbound message, SQL permission grant, retention/hash rewrite or source-file mutation."
+    },
+    "compatibilityImpact": [
+      "The actual old shape could become plan-ready only when all declared identity/time evidence exists; today's missing-field failure would be superseded only under that bounded mapping.",
+      "Conflicting same-draft canonical/transitional rows would stop readiness instead of transitional replacement. Existing identical non-draft lane behavior is outside the change.",
+      "Incomplete/expired/unknown drafts are never silently discarded or made active. Missing real provenance may continue to block an actual migration.",
+      "No promise that real datasets satisfy this contract; F004-R2 remains blocked under GitHub-only restriction."
+    ],
+    "implementationAfterApproval": {
+      "phase": "Offline planner normalization and explicit caller-supplied source-bound provenance validation only; no hosted import or runtime continuation.",
+      "files": [
+        "scripts/lib/postgresql-migration-plan-complete.mjs",
+        "scripts/lib/postgresql-cross-lane-reconciliation.mjs",
+        "scripts/tests/plan-postgresql-migration.test.mjs",
+        "scripts/tests/run-postgresql-migration-plan.test.mjs"
+      ],
+      "preImplementationCheck": "Confirm existing source snapshot and caller options can carry the declared provenance without weakening locked/checksum/reconciliation contracts. Define the exact manifest interface before editing; refuse ambient environment TTL or hidden defaults.",
+      "acceptance": [
+        "Real planner positive actual legacy shape with verified tenant/customer mapping, both awaiting states and deterministic original times/expiry; payload/source bytes preserved.",
+        "Reject mismatched tenant/channel/customer, ambiguous identity and conflicting canonical/transitional records; preserve accepted unrelated migration lanes.",
+        "Reject missing/invalid/future-inconsistent time or unproven TTL; no60 fallback/NOW/deadline refresh. Trusted expired draft retains expired time and cannot imply activation.",
+        "Rejected plan not write-ready and no source mutation; diagnostic output does not reveal full customer draft data.",
+        "Exact-source targeted migration checks and relevant broader checks. Reuse accepted residual RLS/debug410/Meta history holds; do not relabel synthetic planning as SQL import/hosted or runtime continuation."
+      ]
+    },
+    "alternatives": [
+      {
+        "choice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
+        "effect": "Adopt this storage/lifecycle contract, then implement and test its bounded offline mapping only."
+      },
+      {
+        "choice": "DEFER_KEEP_CURRENT_FAIL_CLOSED_PLANNER",
+        "effect": "Keep existing rejection/source preservation, F004-R1 open, and continue independent work. No legacy retirement is inferred."
+      }
+    ],
+    "approvalBoundary": [
+      "No actual source snapshot/config/TTL value supplied or certified by approval",
+      "No supported runtime continuation/automatic reply/new order feature",
+      "No retirement/deletion/quarantine/retention schedule",
+      "No FIELD002/FIELD005/SEQ/receipt ownership/repair policy",
+      "No hosted/provider/credentials/import/merge/deploy or complete P0 acceptance"
+    ],
+    "decisionNeeded": "The remaining question is intended support for old draft compatibility storage, not a request to guess technical field names or TTL. Plan/continuation approval alone does not choose this new lifecycle contract.",
+    "applicationChanged": false,
+    "newRuntimeTests": 0,
+    "newCiRuns": 0,
+    "parentGateClosed": false,
+    "newGate": false,
+    "ownerApprovalScope": "Conditional source-bound offline legacy draft mapping/planner tests only; no actual import, automatic order continuation, TTL guessing, hosted access, deployment, retention changes or P0 gate closure."
+  }
+}

@@ -32,6 +32,8 @@ import {
   getCashierEntitlementAuthoritative,
 } from '../services/cashierEntitlementAuthority';
 
+import { withMerchantAuthenticationTransaction } from '../services/authenticationPostgresAuthority';
+
 const router = Router();
 
 type StaffVersionRow = Record<string, unknown> & {
@@ -133,7 +135,7 @@ router.put(
     try {
       const id = merchantId(res);
       await requireActiveCashierSubscription(id);
-      const discountSetting = await withMerchantOperationalTransaction(
+      const discountSetting = await withMerchantAuthenticationTransaction(
         id,
         (client) => updateMerchantCashierDiscountSetting(client, {
           merchantId: id,
@@ -167,7 +169,7 @@ router.put(
         return;
       }
       const policy = normalizeCashierManualDiscountPolicy(req.body?.discount_policy);
-      const result = await withMerchantOperationalTransaction(id, async (client) => {
+      const result = await withMerchantAuthenticationTransaction(id, async (client) => {
         const rows = await operationalQueryRows<StaffPolicyTargetRow>(
           client,
           `SELECT id, version, status, role

@@ -40,6 +40,9 @@ test(
       FAWRI_SAAS_BILLING_PROVIDERS: "test_fake",
     });
 
+    const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    // Application imports below use the actual tenant LOGIN, never this root inspector.
     const [
       { pool },
       { hashPassword },
@@ -50,7 +53,7 @@ test(
       historical,
       operational,
     ] = await Promise.all([
-      import("@workspace/db"),
+      Promise.resolve({pool:runtimeFixture.admin}),
       import("../src/services/authPasswordService.js"),
       import("../src/services/postgresMerchantAccountAuthority.js"),
       import("../src/services/cashierBillingAuthority.js"),
@@ -63,11 +66,12 @@ test(
     let merchantId = "";
     t.after(async () => {
       if (merchantId) {
+        await pool.query("DELETE FROM cashier_device_streams WHERE merchant_id = $1", [merchantId]);
         await pool
           .query("DELETE FROM accounts WHERE id = $1", [merchantId])
           .catch(() => undefined);
       }
-      await pool.end();
+      await runtimeFixture.dispose();
     });
 
     const merchant = await merchants.upsertPendingMerchantAuthoritative({
@@ -105,7 +109,7 @@ test(
     assert.equal(activation.order.billing_period_start, "2026-10-01T00:00:00.000Z");
     assert.equal(activation.order.billing_period_end, "2026-11-01T00:00:00.000Z");
 
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: activation.order.merchant_id,
       provider: "test_fake",
       providerEventId: "full-lifecycle-activate-event",
       orderId: activation.order.id,
@@ -127,9 +131,96 @@ test(
       merchantId,
       stationId: stationOne.id,
     });
+    // P0: a pairing code must stay revoked after disabling and re-enabling the station.
+    await cashier.updateCashierStationAuthoritative({
+      merchantId, stationId: stationOne.id, status: "disabled",
+    });
+    await cashier.updateCashierStationAuthoritative({
+      merchantId, stationId: stationOne.id, status: "active",
+    });
+    const staleChallenge = await pool.query(
+      "SELECT status FROM cashier_station_pairing_challenges WHERE merchant_id = $1 AND station_id = $2",
+      [merchantId, stationOne.id],
+    );
+    assert.deepEqual(staleChallenge.rows.map((row: { status: string }) => row.status), ["revoked"]);
+
+    await assert.rejects(
+      () => cashier.redeemCashierStationPairingAuthoritative({
+        pairingCode: pairingOne.pairing_code,
+        deviceId: "stale-" + crypto.randomUUID(),
+      }),
+      (error: unknown) => Boolean(error && typeof error === "object" &&
+        "code" in error && (error as { code?: unknown }).code === "CASHIER_PAIRING_INVALID"),
+    );
+    // Two-session regression: station disable holds the station row lock while
+    // redemption waits. Revocation must commit before redemption can accept code.
+    const concurrentPairing = await cashier.beginCashierStationPairingAuthoritative({
+      merchantId, stationId: stationOne.id,
+    });
+    const disablingClient = await pool.connect();
+    let disablingTransactionOpen = false;
+    try {
+      await disablingClient.query("BEGIN");
+      disablingTransactionOpen = true;
+      await disablingClient.query("SET LOCAL statement_timeout = '10000ms'");
+      await disablingClient.query(
+        "SELECT id FROM merchant_cashier_stations WHERE merchant_id = $1 AND id = $2 FOR UPDATE",
+        [merchantId, stationOne.id],
+      );
+      const redeemAttempt = cashier.redeemCashierStationPairingAuthoritative({
+        pairingCode: concurrentPairing.pairing_code,
+        deviceId: "concurrent-" + crypto.randomUUID(),
+      });
+      // Attach the rejection handler immediately so a database failure cannot
+      // become an unhandled rejection while the disabling transaction commits.
+      const redemptionResult = redeemAttempt.then(
+        () => ({ accepted: true as const }),
+        (error: unknown) => ({ accepted: false as const, error }),
+      );
+      // The redeem path first acquires a merchant operational row lock and
+      // only then the station row lock. A test holding only the station lock
+      // cannot reliably observe a station wait via pg_stat_activity: the
+      // redemption may still be waiting on the merchant row. Verify the
+      // externally important invariant instead: redemption must remain
+      // unresolved until disable and challenge revocation commit.
+      const earlyOutcome = await Promise.race([
+        redemptionResult.then(() => "settled" as const),
+        new Promise<"pending">((resolve) => setTimeout(() => resolve("pending"), 150)),
+      ]);
+      assert.equal(earlyOutcome, "pending",
+        "redemption must not settle before station revocation commits");
+      await disablingClient.query(
+        `UPDATE merchant_cashier_stations
+            SET status = 'disabled', updated_at = now()
+          WHERE merchant_id = $1 AND id = $2`,
+        [merchantId, stationOne.id],
+      );
+      await disablingClient.query(
+        `UPDATE cashier_station_pairing_challenges
+            SET status = 'revoked', revoked_at = now()
+          WHERE merchant_id = $1 AND station_id = $2 AND status = 'active'`,
+        [merchantId, stationOne.id],
+      );
+      await disablingClient.query("COMMIT");
+      disablingTransactionOpen = false;
+      const outcome = await redemptionResult;
+      assert.equal(outcome.accepted, false, "revoked concurrent pairing must not be redeemed");
+      if (!outcome.accepted) {
+        assert.equal((outcome.error as { code?: string }).code, "CASHIER_PAIRING_INVALID");
+      }
+    } finally {
+      if (disablingTransactionOpen) await disablingClient.query("ROLLBACK");
+      disablingClient.release();
+    }
+    await cashier.updateCashierStationAuthoritative({
+      merchantId, stationId: stationOne.id, status: "active",
+    });
+    const freshPairing = await cashier.beginCashierStationPairingAuthoritative({
+      merchantId, stationId: stationOne.id,
+    });
     const deviceOne = `lifecycle-device-1-${crypto.randomUUID()}`;
     await cashier.redeemCashierStationPairingAuthoritative({
-      pairingCode: pairingOne.pairing_code,
+      pairingCode: freshPairing.pairing_code,
       deviceId: deviceOne,
     });
 
@@ -155,7 +246,7 @@ test(
       provider: "test_fake",
       now: addAt,
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: addSeat.order.merchant_id,
       provider: "test_fake",
       providerEventId: "full-lifecycle-add-seat-event",
       orderId: addSeat.order.id,
@@ -246,7 +337,7 @@ test(
       provider: "test_fake",
       now: renewalAt,
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: renewal.order.merchant_id,
       provider: "test_fake",
       providerEventId: "full-lifecycle-renew-event",
       orderId: renewal.order.id,
@@ -340,5 +431,109 @@ test(
         }
       },
     );
+
+    // Pairing is the existing merchant-controlled identity flow. A successful
+    // repair must not reset or certify an existing sequence history.
+    const streamId = "pairing-continuity-" + crypto.randomUUID();
+    await pool.query(
+      "INSERT INTO cashier_device_streams(id,merchant_id,device_id,state) VALUES($1,$2,$3,'review')",
+      [streamId, merchantId, deviceOne],
+    );
+    const protectedTables = [
+      "cashier_device_streams", "cashier_operation_receipts",
+      "cashier_device_operation_timeline", "cashier_operation_attribution",
+      "orders", "order_items", "inventory_mutations",
+    ];
+    async function protectedSnapshot() {
+      const rows: Record<string, unknown> = {};
+      for (const table of protectedTables) {
+        rows[table] = (await pool.query(
+          "SELECT to_jsonb(t) AS row FROM " + table +
+          " t WHERE merchant_id=$1 ORDER BY to_jsonb(t)::text",
+          [merchantId],
+        )).rows;
+      }
+      return rows;
+    }
+    const beforePairing = await protectedSnapshot();
+    assert.equal((beforePairing.cashier_device_operation_timeline as unknown[]).length, 1);
+    let repairedToken = "";
+    await t.test("same-device merchant pairing rotates credentials without changing stream or legacy history", async () => {
+      const pairing = await cashier.beginCashierStationPairingAuthoritative({
+        merchantId, stationId: stationOne.id,
+      });
+      const repaired = await cashier.redeemCashierStationPairingAuthoritative({
+        pairingCode: pairing.pairing_code, deviceId: deviceOne,
+      });
+      repairedToken = repaired.station_token;
+      const authenticated = await cashier.authenticateCashierStationAuthoritative({
+        stationToken: repairedToken, deviceId: deviceOne,
+      });
+      assert.equal(authenticated.merchant_id, merchantId);
+      assert.equal(authenticated.station_id, stationOne.id);
+      assert.equal(authenticated.device_id, deviceOne);
+      assert.deepEqual(await protectedSnapshot(), beforePairing);
+      const stream = (await pool.query(
+        "SELECT state,last_sequence::text,version,enrollment_evidence_hash FROM cashier_device_streams WHERE id=$1",
+        [streamId],
+      )).rows[0];
+      assert.deepEqual(stream, {state:"review",last_sequence:"0",version:1,enrollment_evidence_hash:null});
+    });
+
+    let usedPairingCode = "";
+    const replacementDevice = "replacement-" + crypto.randomUUID();
+    await t.test("replacement pairing keeps old device history and refuses the revoked old credential", async () => {
+      const pairing = await cashier.beginCashierStationPairingAuthoritative({
+        merchantId, stationId: stationOne.id,
+      });
+      usedPairingCode = pairing.pairing_code;
+      const replacement = await cashier.redeemCashierStationPairingAuthoritative({
+        pairingCode: usedPairingCode, deviceId: replacementDevice,
+      });
+      await assert.rejects(
+        () => cashier.authenticateCashierStationAuthoritative({
+          stationToken: repairedToken, deviceId: deviceOne,
+        }),
+        (error: unknown) => (error as {code?: string})?.code === "CASHIER_STATION_CREDENTIAL_INVALID",
+      );
+      const authenticated = await cashier.authenticateCashierStationAuthoritative({
+        stationToken: replacement.station_token, deviceId: replacementDevice,
+      });
+      assert.equal(authenticated.device_id, replacementDevice);
+      assert.deepEqual(await protectedSnapshot(), beforePairing);
+      assert.equal((await pool.query(
+        "SELECT device_id FROM cashier_device_streams WHERE id=$1", [streamId],
+      )).rows[0].device_id, deviceOne);
+      assert.equal((await pool.query(
+        "SELECT count(*)::int AS n FROM cashier_device_streams WHERE merchant_id=$1 AND device_id=$2",
+        [merchantId, replacementDevice],
+      )).rows[0].n, 0, "pairing must not silently enroll a replacement stream");
+    });
+
+    await t.test("used pairing code cannot transfer the station or alter preserved sequence history", async () => {
+      const stationBefore = (await pool.query(
+        "SELECT to_jsonb(t) AS row FROM merchant_cashier_stations t WHERE id=$1",
+        [stationOne.id],
+      )).rows;
+      const credentialsBefore = (await pool.query(
+        "SELECT to_jsonb(t) AS row FROM cashier_station_credentials t WHERE merchant_id=$1 ORDER BY id",
+        [merchantId],
+      )).rows;
+      await assert.rejects(
+        () => cashier.redeemCashierStationPairingAuthoritative({
+          pairingCode: usedPairingCode, deviceId: "unexpected-" + crypto.randomUUID(),
+        }),
+        (error: unknown) => (error as {code?: string})?.code === "CASHIER_PAIRING_INVALID",
+      );
+      assert.deepEqual((await pool.query(
+        "SELECT to_jsonb(t) AS row FROM merchant_cashier_stations t WHERE id=$1",
+        [stationOne.id],
+      )).rows, stationBefore);
+      assert.deepEqual((await pool.query(
+        "SELECT to_jsonb(t) AS row FROM cashier_station_credentials t WHERE merchant_id=$1 ORDER BY id",
+        [merchantId],
+      )).rows, credentialsBefore);
+      assert.deepEqual(await protectedSnapshot(), beforePairing);
+    });
   },
 );

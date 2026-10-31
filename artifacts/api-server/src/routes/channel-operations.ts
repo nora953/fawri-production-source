@@ -40,13 +40,22 @@ router.get(
   "/channels",
   requireMerchantSession,
   async (_req: Request, res: Response) => {
-    const merchantId = await requireOperationalMerchant(res);
-    if (!merchantId) return;
-    res.setHeader("Cache-Control", "no-store");
-    return res.json({
-      ok: true,
-      channels: await listMetaChannelsAuthoritative(merchantId),
-    });
+    try {
+      const merchantId = await requireOperationalMerchant(res);
+      if (!merchantId) return;
+      res.setHeader("Cache-Control", "no-store");
+      return res.json({
+        ok: true,
+        channels: await listMetaChannelsAuthoritative(merchantId),
+      });
+    } catch {
+      return sendError(
+        res,
+        503,
+        "META_CHANNEL_LIST_UNAVAILABLE",
+        "Meta channel list is unavailable",
+      );
+    }
   },
 );
 

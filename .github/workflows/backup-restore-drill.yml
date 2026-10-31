@@ -103,6 +103,19 @@ jobs:
           pg_dump --version
           pg_restore --version
           psql --version
+          # Install the matching client from PostgreSQL's apt repository.
+          # Runner PG18 pg_dump emits transaction_timeout unsupported by PG16.
+          sudo install -d -m 0755 /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-16
+          test -x /usr/lib/postgresql/16/bin/pg_dump
+          test -x /usr/lib/postgresql/16/bin/pg_restore
+          echo /usr/lib/postgresql/16/bin >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
+          /usr/lib/postgresql/16/bin/pg_restore --version
 
       - name: Run backup and restore unit safety tests
         run: >-
@@ -139,6 +152,20 @@ jobs:
             (1, 'safe-fixture-one'),
             (2, 'safe-fixture-two'),
             (3, 'safe-fixture-three');
+          create role drill_retire_owner nologin nosuperuser nobypassrls nocreatedb nocreaterole noinherit;
+          create role drill_reader nologin nosuperuser nobypassrls nocreatedb nocreaterole noinherit;
+          grant usage on schema public to drill_retire_owner,drill_reader;
+          grant select on restore_drill_records to drill_retire_owner,drill_reader;
+          grant update(value) on restore_drill_records to drill_retire_owner;
+          alter table restore_drill_records enable row level security;
+          create policy owner_read on restore_drill_records for select to drill_retire_owner using(true);
+          create policy owner_retire on restore_drill_records for update to drill_retire_owner using(true) with check(value='retired');
+          create policy reader_scope on restore_drill_records for select to drill_reader using(id=1);
+          create function public.drill_retire_record(integer) returns void language sql security definer set search_path=pg_catalog as 'update public.restore_drill_records set value=''retired'' where id=$1';
+          grant create on schema public to drill_retire_owner;
+          alter function public.drill_retire_record(integer) owner to drill_retire_owner;
+          revoke create on schema public from drill_retire_owner;
+          revoke all on function public.drill_retire_record(integer) from public;
           SQL
           psql "postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/postgres" \
             -v ON_ERROR_STOP=1 -c 'create database fawri_restore_target'
@@ -161,7 +188,7 @@ jobs:
           const manifest = JSON.parse(fs.readFileSync(root + '/manifest.json', 'utf8'));
           const bytes = fs.readFileSync(dump);
           const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
-          if (manifest.format !== 'fawri-postgresql-backup-v1') throw new Error('unexpected backup format');
+          if (manifest.format !== 'fawri-postgresql-backup-v2' || manifest.security_model !== 'preserve-owners-acls' || manifest.role_bootstrap !== 'preprovision-global-roles-before-restore') throw new Error('unexpected backup format');
           if (manifest.size !== bytes.length) throw new Error('backup size verification failed');
           if (manifest.sha256 !== sha256) throw new Error('backup checksum verification failed');
           if (/postgres(?:ql)?:\/\//i.test(JSON.stringify(manifest))) throw new Error('database URL leaked into manifest');
@@ -173,6 +200,18 @@ jobs:
           fi
           echo "PostgreSQL dump secret-safety scan passed"
 
+      - name: Recreate non-login roles after losing source and role definitions
+        run: |
+          psql "$SOURCE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select md5(string_agg(id::text || ':' || value, ',' order by id)) from restore_drill_records" > "$RUNNER_TEMP/source-data-hash"
+          psql "postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 <<'SQL'
+          drop database fawri_backup_source;
+          drop role drill_retire_owner;
+          drop role drill_reader;
+          create role drill_retire_owner nologin nosuperuser nobypassrls nocreatedb nocreaterole noinherit;
+          create role drill_reader nologin nosuperuser nobypassrls nocreatedb nocreaterole noinherit;
+          SQL
+          echo 'RESTORE_EXPLICIT_NONLOGIN_ROLE_BOOTSTRAP_PASS'
+
       - name: Restore and verify disposable PostgreSQL target
         run: |
           node scripts/restore-postgresql.mjs \
@@ -182,11 +221,20 @@ jobs:
             --verify-sql "select count(*) from restore_drill_records" \
             --expect "3"
 
-          source_hash="$(psql "$SOURCE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select md5(string_agg(id::text || ':' || value, ',' order by id)) from restore_drill_records")"
+          source_hash="$(cat "$RUNNER_TEMP/source-data-hash")"
           restore_hash="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select md5(string_agg(id::text || ':' || value, ',' order by id)) from restore_drill_records")"
           test -n "$source_hash"
           test "$source_hash" = "$restore_hash"
           echo "PostgreSQL source/restore consistency hash matched"
+          test "$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select pg_get_userbyid(proowner)='drill_retire_owner' from pg_proc where oid='public.drill_retire_record(integer)'::regprocedure")" = t
+          test "$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select not rolcanlogin and not rolsuper and not rolbypassrls and not rolcreaterole from pg_roles where rolname='drill_retire_owner'")" = t
+          test "$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select has_column_privilege('drill_retire_owner','restore_drill_records','value','UPDATE') and not has_column_privilege('drill_retire_owner','restore_drill_records','id','UPDATE') and not has_function_privilege('drill_reader','public.drill_retire_record(integer)','EXECUTE')")" = t
+          test "$(psql "$RESTORE_DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 -c 'set role drill_reader; select count(*) from restore_drill_records')" = 1
+          test "$(psql "$RESTORE_DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 -c 'set role drill_reader; select count(*) from restore_drill_records where id=2')" = 0
+          psql "$RESTORE_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -c 'select public.drill_retire_record(1)' >/dev/null
+          test "$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select value from restore_drill_records where id=1")" = retired
+          echo 'RESTORE_OWNER_COLUMN_ACL_RLS_AND_DEFINER_PASS'
+
 
       - name: Back up, restore, and verify disposable object storage
         env:

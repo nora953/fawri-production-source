@@ -1,7 +1,14 @@
 import {
+  IndexedDbCashierAuthority,
+  type CashierLocalRecoverySnapshot,
+} from './cashierIndexedDbAuthority';
+import {
   persistCashierEntitlementAuthority,
+  assertCashierSaleEntitlementFromCache,
+  clearCashierEntitlementAuthority,
   type CashierServerEntitlementSnapshot,
 } from './cashierOfflineEntitlementAuthority';
+import type { CashierOfflineEnvelope } from './cashierOfflineEntitlementSignature.mjs';
 import {
   bindCashierOperation,
   getCashierPendingEnvelopeCountForIdentity,
@@ -116,7 +123,7 @@ function randomId(prefix: string): string {
   return `${prefix}-${value}`;
 }
 
-function openBootstrapDatabase(): Promise<IDBDatabase> {
+function openBootstrapDatabase(existingOnly = false): Promise<IDBDatabase> {
   if (typeof indexedDB === 'undefined') {
     throw new CashierOperatorSessionClientError(
       'CASHIER_INDEXEDDB_UNAVAILABLE',
@@ -126,6 +133,10 @@ function openBootstrapDatabase(): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(BOOTSTRAP_DATABASE, 1);
     request.onupgradeneeded = () => {
+      if (existingOnly) {
+        request.transaction!.abort();
+        return;
+      }
       if (!request.result.objectStoreNames.contains(BOOTSTRAP_STORE)) {
         request.result.createObjectStore(BOOTSTRAP_STORE, { keyPath: 'id' });
       }
@@ -208,6 +219,87 @@ export async function getCashierStationBinding(): Promise<CashierStationBinding 
   return stationBinding(await getOrCreateCashierDeviceIdentity());
 }
 
+
+export type CashierDeviceRecoveryInspection = CashierLocalRecoverySnapshot & {
+  /** Observed equal local values only; not authentication or an atomic lease. */
+  binding_observed_unchanged: boolean;
+};
+
+async function readExistingCashierRecoveryIdentity(): Promise<CashierDeviceIdentity | undefined> {
+  const database = await openBootstrapDatabase(true);
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readonly');
+    const completion = transactionDone(transaction);
+    // Await both request and transaction; an aborted read is never a snapshot.
+    const [identity] = await Promise.all([
+      requestResult(transaction.objectStore(BOOTSTRAP_STORE).get('default')) as Promise<CashierDeviceIdentity | undefined>,
+      completion,
+    ]);
+    return identity;
+  } finally {
+    database.close();
+  }
+}
+
+/**
+ * Local diagnostic prerequisite for recovery. Does not call getOrCreate,
+ * stationBinding, session cleanup, legacy binding refresh or any HTTP route.
+ * Before/after equality detects observed drift across the separate databases;
+ * it cannot certify authenticity, ABA absence or stability after return.
+ */
+export async function inspectCashierDeviceRecovery(
+  options: { maxRecords?: number } = {},
+): Promise<CashierDeviceRecoveryInspection> {
+  const held = (reason: string): CashierDeviceRecoveryInspection => ({
+    status: 'HOLD', inspection_complete: false, local_counter: null,
+    inspected_envelopes: 0, reasons: [reason], operations: [],
+    enrollment_authorized: false, server_history_verified: false,
+    binding_observed_unchanged: false,
+  });
+  const bindingKey = (identity: CashierDeviceIdentity | undefined): string | null => {
+    if (!identity || identity.id !== 'default') return null;
+    const required = [
+      identity.local_merchant_id, identity.cloud_merchant_id, identity.device_id,
+      identity.station_id, identity.location_id, identity.branch_key,
+      identity.station_token, identity.station_credential_expires_at,
+    ];
+    if (required.some(value => typeof value !== 'string' || !value ||
+        value.length > 200 || value !== value.normalize('NFKC').trim() ||
+        /[\u0000-\u001f\u007f]/.test(value))) return null;
+    if (!Number.isFinite(Date.parse(identity.station_credential_expires_at!))) return null;
+    // Credential values are compared in memory, never included in the result.
+    // Expiry metadata is not treated as a server authentication decision here.
+    return JSON.stringify([
+      ...required, identity.created_at, identity.cloud_bound_at,
+      identity.offline_inventory_authority,
+    ]);
+  };
+  let authority: IndexedDbCashierAuthority | undefined;
+  try {
+    const before = await readExistingCashierRecoveryIdentity();
+    const beforeKey = bindingKey(before);
+    if (!before || !beforeKey) return held('BOOTSTRAP_RECOVERY_BINDING_MISSING_OR_INVALID');
+    authority = new IndexedDbCashierAuthority({
+      localMerchantId: before.local_merchant_id,
+      cloudMerchantId: before.cloud_merchant_id,
+      deviceId: before.device_id,
+      existingOnly: true,
+    });
+    const snapshot = await authority.inspectLocalRecoverySnapshot(options);
+    const after = await readExistingCashierRecoveryIdentity();
+    const afterKey = bindingKey(after);
+    if (!afterKey || beforeKey !== afterKey) {
+      // Discard the old view rather than exposing it as the new identity's view.
+      return held('BOOTSTRAP_RECOVERY_BINDING_CHANGED');
+    }
+    return { ...snapshot, binding_observed_unchanged: true };
+  } catch {
+    return held('BOOTSTRAP_RECOVERY_READ_FAILED');
+  } finally {
+    if (authority) await authority.close().catch(() => undefined);
+  }
+}
+
 function parseOperatorSession(value: string | null): CashierOperatorSession | null {
   if (!value) return null;
   try {
@@ -281,9 +373,10 @@ async function responsePayload(
     : {};
 }
 
-async function persistEntitlementFromPayload(
+export async function persistEntitlementFromPayload(
   payload: Record<string, unknown>,
   stationId: string,
+  context: CashierOperatorContext,
 ): Promise<void> {
   const raw = payload.cashier_entitlement;
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
@@ -298,17 +391,16 @@ async function persistEntitlementFromPayload(
     await persistCashierEntitlementAuthority({
       snapshot,
       stationId,
+      deviceId: context.device_id,
+      locationId: context.location_id,
+      credentialVersion: context.credential_version,
+      envelope: payload.cashier_offline_entitlement as CashierOfflineEnvelope | null,
     });
-  } catch (error) {
-    throw new CashierOperatorSessionClientError(
-      error instanceof Error && 'code' in error
-        ? String((error as { code?: unknown }).code || 'CASHIER_ENTITLEMENT_CACHE_FAILED')
-        : 'CASHIER_ENTITLEMENT_CACHE_FAILED',
-      error instanceof Error
-        ? error.message
-        : 'Cashier subscription authority could not be cached safely',
-      503,
-    );
+  } catch {
+    // Online authentication was established by the server response. A client
+    // awaiting public-key rollout must remain online-capable, with no offline
+    // privilege retained from an old or unverifiable envelope.
+    await clearCashierEntitlementAuthority();
   }
 }
 
@@ -559,7 +651,7 @@ export async function loginCashierOperator(
     operator_token: operatorToken,
     context,
   };
-  await persistEntitlementFromPayload(payload, context.station_id);
+  await persistEntitlementFromPayload(payload, context.station_id, context);
   if (typeof sessionStorage === 'undefined') {
     throw new CashierOperatorSessionClientError(
       'CASHIER_OPERATOR_STORAGE_UNAVAILABLE',
@@ -571,10 +663,12 @@ export async function loginCashierOperator(
   return session;
 }
 
-export async function validateCashierOperatorSession(): Promise<CashierOperatorSession | null> {
+export async function validateCashierOperatorSession(options: { requireOnline?: boolean } = {}): Promise<CashierOperatorSession | null> {
   const session = await getCashierOperatorSession();
   if (!session) return null;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    if (options.requireOnline) throw new TypeError('Cashier is offline');
+    await assertSignedCashierOfflineSession(session);
     return session;
   }
 
@@ -584,13 +678,14 @@ export async function validateCashierOperatorSession(): Promise<CashierOperatorS
       headers: cashierOperatorHeaders(session),
     });
   } catch (cause) {
-    if (!(cause instanceof TypeError)) throw cause;
+    if (!(cause instanceof TypeError) || options.requireOnline) throw cause;
     const fallback = await getCashierOperatorSession();
     if (
       fallback &&
       fallback.operator_token === session.operator_token &&
       fallback.context.operator_session_id === session.context.operator_session_id
     ) {
+      await assertSignedCashierOfflineSession(fallback);
       return fallback;
     }
     return null;
@@ -609,8 +704,37 @@ export async function validateCashierOperatorSession(): Promise<CashierOperatorS
       'Could not validate cashier operator session',
     );
   }
-  await persistEntitlementFromPayload(payload, session.context.station_id);
-  return session;
+  const { applyCashierOperatorPolicyFromPayload } = await import('./cashierOperatorPolicyRefresh');
+  return applyCashierOperatorPolicyFromPayload(session, payload);
+}
+
+async function assertSignedCashierOfflineSession(session: CashierOperatorSession): Promise<void> {
+  await assertCashierSaleEntitlementFromCache({
+    merchantId: session.context.merchant_id,
+    stationId: session.context.station_id,
+    deviceId: session.context.device_id,
+    locationId: session.context.location_id,
+    credentialVersion: session.context.credential_version,
+  });
+}
+
+export async function assertCashierOperatorSaleAuthorization(
+  session: CashierOperatorSession,
+): Promise<void> {
+  try {
+    const current = await validateCashierOperatorSession({ requireOnline: true });
+    if (!current || current.operator_token !== session.operator_token ||
+        current.context.operator_session_id !== session.context.operator_session_id ||
+        !current.context.permissions.includes('sale.create')) {
+      throw new CashierOperatorSessionClientError('CASHIER_OPERATOR_LOGIN_REQUIRED',
+        'Current online sale authorization is required', 401);
+    }
+    // A successful authenticated online response authorizes this online sale even
+    // when optional offline signing is not configured. HTTP denials never fallback.
+  } catch (cause) {
+    if (!(cause instanceof TypeError)) throw cause;
+    await assertSignedCashierOfflineSession(session);
+  }
 }
 
 export function cashierOperatorCan(

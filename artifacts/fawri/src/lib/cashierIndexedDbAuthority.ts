@@ -39,11 +39,31 @@ type CatalogRecord = CashierCatalogLookup & {
 type PromotionRecord = CashierPromotionRule & { local_updated_at: string };
 type OutboxRecord = CashierSyncEnvelope & { outbox_id: string };
 
+
+/** Local diagnostic only; never an enrollment, receipt, ACK or server grant. */
+export type CashierLocalRecoverySnapshot = {
+  status: 'INSPECTED' | 'HOLD';
+  inspection_complete: boolean;
+  local_counter: number | null;
+  inspected_envelopes: number;
+  reasons: string[];
+  operations: Array<{
+    operation_id: string;
+    device_sequence: number;
+    kind: 'sale' | 'return' | 'void' | 'unsupported';
+    envelope_count: number;
+  }>;
+  enrollment_authorized: false;
+  server_history_verified: false;
+};
+
 export type IndexedDbCashierConfig = {
   localMerchantId: string;
   cloudMerchantId?: string;
   deviceId: string;
   databaseName?: string;
+  /** Diagnostic readers must never create or upgrade a missing/old database. */
+  existingOnly?: boolean;
   now?: () => Date;
 };
 
@@ -208,7 +228,7 @@ function createSchema(database: IDBDatabase): void {
   }
 }
 
-function openDatabase(name: string): Promise<IDBDatabase> {
+function openDatabase(name: string, existingOnly = false): Promise<IDBDatabase> {
   if (typeof indexedDB === 'undefined') {
     throw new CashierIndexedDbError(
       'CASHIER_INDEXEDDB_UNAVAILABLE',
@@ -218,7 +238,13 @@ function openDatabase(name: string): Promise<IDBDatabase> {
 
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(name, DATABASE_VERSION);
-    request.onupgradeneeded = () => createSchema(request.result);
+    request.onupgradeneeded = () => {
+      if (existingOnly) {
+        request.transaction!.abort();
+        return;
+      }
+      createSchema(request.result);
+    };
     request.onsuccess = () => {
       const database = request.result;
       database.onversionchange = () => database.close();
@@ -408,6 +434,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     // Keep the original database name so schema v1 installations upgrade in place.
     this.databasePromise = openDatabase(
       config.databaseName || `fawri-cashier-${this.localMerchantId}-v1`,
+      config.existingOnly === true,
     );
   }
 
@@ -621,6 +648,42 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         operationId,
       );
       if (replay) {
+        // Compare original caller-controlled facts, not today's catalog/pricing
+        // or mutable sale status/return history. An operation ID is no license
+        // to acknowledge a different local sale request.
+        const saved = replay.sale;
+        const optionalText = (value: string | undefined) => String(value || '').trim();
+        const optionalNumber = (value: number | undefined) =>
+          value === undefined ? undefined : Number(value);
+        const sameLines = saved.lines.length === input.lines.length &&
+          saved.lines.every((line, index) => {
+            const requested = input.lines[index];
+            return catalogKey(line.product_id, line.variant_id) ===
+              catalogKey(requested.product_id, requested.variant_id) &&
+              line.quantity === requested.quantity;
+          });
+        if (saved.local_merchant_id !== this.localMerchantId ||
+            saved.cloud_merchant_id !== this.cloudMerchantId ||
+            saved.device_id !== this.deviceId || !sameLines ||
+            saved.payment_method !== input.payment_method ||
+            saved.payment_status !== input.payment_status ||
+            (saved.manual_discount_minor || 0) !== Number(input.manual_discount_minor || 0) ||
+            saved.manual_discount_kind !== input.manual_discount_kind ||
+            optionalText(saved.manual_discount_reason) !==
+              String(input.manual_discount_reason || '').normalize('NFKC').trim() ||
+            optionalText(saved.manual_discount_override_approval_id) !==
+              (input.manual_discount_override_approval_id
+                ? requiredIdentifier(input.manual_discount_override_approval_id, 'manual discount override approval id') : '') ||
+            saved.cash_tendered_minor !== optionalNumber(input.cash_tendered_minor) ||
+            saved.change_due_minor !== optionalNumber(input.change_due_minor) ||
+            optionalText(saved.payment_provider) !== optionalText(input.payment_provider) ||
+            optionalText(saved.payment_reference) !== optionalText(input.payment_reference) ||
+            optionalText(saved.note) !== optionalText(input.note)) {
+          throw new CashierIndexedDbError(
+            'CASHIER_SALE_OPERATION_ID_CONFLICT',
+            'Operation id is already bound to different sale input',
+          );
+        }
         await completion;
         return replay;
       }
@@ -1063,6 +1126,156 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     return sales
       .sort((left, right) => right.occurred_at.localeCompare(left.occurred_at))
       .slice(0, safeLimit);
+  }
+
+
+  /**
+   * Bounded, coherent view of this authority's device database. Bootstrap
+   * identity/operator bindings live elsewhere and are NOT authenticated here.
+   * INSPECTED means only the selected local structural checks completed.
+   * No server checkpoint comparison, fresh-empty proof or mutation occurs.
+   */
+  async inspectLocalRecoverySnapshot(options: {
+    maxRecords?: number;
+  } = {}): Promise<CashierLocalRecoverySnapshot> {
+    const result: CashierLocalRecoverySnapshot = {
+      status: 'HOLD', inspection_complete: false, local_counter: null,
+      inspected_envelopes: 0, reasons: [], operations: [],
+      enrollment_authorized: false, server_history_verified: false,
+    };
+    const hold = (reason: string) => {
+      if (!result.reasons.includes(reason)) result.reasons.push(reason);
+    };
+    const limit = options.maxRecords ?? 1000;
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000) {
+      hold('INSPECTION_LIMIT_INVALID');
+      return result;
+    }
+    let transaction: IDBTransaction | undefined;
+    let completion: Promise<void> | undefined;
+    try {
+      const database = await this.databasePromise;
+      transaction = database.transaction(
+        [STORE_META, STORE_OUTBOX, STORE_SALES, STORE_MOVEMENTS], 'readonly',
+      );
+      completion = writeTransactionDone(transaction);
+      // Attach immediately: an abort may reject completion before requests.
+      const settled = completion.then(() => null, error => error);
+      const [counter, envelopes, sales, movements] = await Promise.all([
+        requestResult(transaction.objectStore(STORE_META).get(META_DEVICE_SEQUENCE)) as Promise<MetaRecord | undefined>,
+        requestResult(transaction.objectStore(STORE_OUTBOX).getAll(undefined, limit + 1)) as Promise<OutboxRecord[]>,
+        requestResult(transaction.objectStore(STORE_SALES).getAll(undefined, limit + 1)) as Promise<CashierSaleSnapshot[]>,
+        requestResult(transaction.objectStore(STORE_MOVEMENTS).getAll(undefined, limit + 1)) as Promise<CashierInventoryMovement[]>,
+      ]);
+      if (await settled) throw new Error('Local inspection transaction failed');
+      if (typeof counter?.value !== 'number' || !isNonNegativeSafeInteger(counter.value)) {
+        hold('LOCAL_COUNTER_MISSING_OR_INVALID');
+      } else result.local_counter = counter.value;
+      result.inspected_envelopes = Math.min(envelopes.length, limit);
+      if ([envelopes, sales, movements].some(rows => rows.length > limit)) {
+        hold('INSPECTION_LIMIT_REACHED');
+        return result; // No prefix group is presented as complete.
+      }
+      result.inspection_complete = true;
+      const object = (value: unknown): Record<string, unknown> =>
+        value !== null && typeof value === 'object' && !Array.isArray(value)
+          ? value as Record<string, unknown> : {};
+      const id = (value: unknown): value is string =>
+        typeof value === 'string' && value.length > 0 && value.length <= 200 &&
+        value === value.normalize('NFKC').trim() && !/[\u0000-\u001f\u007f]/.test(value);
+      const owns = (payload: Record<string, unknown>) =>
+        payload.local_merchant_id === this.localMerchantId &&
+        payload.cloud_merchant_id === this.cloudMerchantId;
+      const groups = new Map<string, OutboxRecord[]>();
+      const sequences = new Map<number, string>();
+      for (const envelope of envelopes) {
+        if (!id(envelope.operation_id) || !isPositiveSafeInteger(envelope.device_sequence) ||
+            envelope.device_id !== this.deviceId ||
+            envelope.schema_version !== CASHIER_LOCAL_SCHEMA_VERSION ||
+            (result.local_counter !== null && envelope.device_sequence > result.local_counter)) {
+          hold('ENVELOPE_IDENTITY_OR_SEQUENCE_INVALID');
+          continue;
+        }
+        const previous = sequences.get(envelope.device_sequence);
+        if (previous && previous !== envelope.operation_id) hold('SEQUENCE_IDENTITY_CONFLICT');
+        sequences.set(envelope.device_sequence, envelope.operation_id);
+        const group = groups.get(envelope.operation_id) || [];
+        if (group.some(item => item.device_sequence !== envelope.device_sequence)) {
+          hold('OPERATION_SEQUENCE_CONFLICT');
+        }
+        group.push(envelope);
+        groups.set(envelope.operation_id, group);
+      }
+      for (const [operationId, group] of groups) {
+        const primary = group.filter(e => e.entity_type !== 'inventory_movement');
+        let kind: 'sale' | 'return' | 'void' | 'unsupported' = 'unsupported';
+        const anchor = primary[0], payload = object(anchor?.payload);
+        if (primary.length === 1 && anchor.entity_type === 'sale' && anchor.operation === 'append') kind = 'sale';
+        if (primary.length === 1 && anchor.entity_type === 'sale' && anchor.operation === 'void') kind = 'void';
+        if (primary.length === 1 && anchor.entity_type === 'return' && anchor.operation === 'append') kind = 'return';
+        const sequence = group[0].device_sequence;
+        result.operations.push({
+          operation_id: operationId, device_sequence: sequence,
+          kind, envelope_count: group.length,
+        });
+        if (kind === 'unsupported') {
+          // A movement-only group may be a real adjustment OR a damaged sale.
+          // Neither can be skipped, acknowledged or converted to a no-op.
+          hold('UNSUPPORTED_OR_INCOMPLETE_OPERATION');
+          continue;
+        }
+        const sourceSale = sales.find(sale => sale.sale_id ===
+          payload.sale_id);
+        const core = kind === 'void' ? object(payload.void) : payload;
+        const storedCore = kind === 'void' ? object(sourceSale?.void)
+          : kind === 'return'
+            ? object(sourceSale?.returns?.find(item => item.operation_id === operationId))
+            : object(sourceSale);
+        const entityId = kind === 'return' ? payload.return_id : payload.sale_id;
+        if (!sourceSale || !owns(payload) || !owns(object(sourceSale)) ||
+            anchor.entity_id !== entityId || !id(anchor.entity_id) ||
+            core.operation_id !== operationId || core.device_sequence !== sequence ||
+            core.device_id !== this.deviceId ||
+            storedCore.operation_id !== operationId || storedCore.device_sequence !== sequence ||
+            storedCore.device_id !== this.deviceId ||
+            typeof anchor.occurred_at !== 'string' || !Number.isFinite(Date.parse(anchor.occurred_at)) ||
+            core.occurred_at !== anchor.occurred_at) {
+          hold('PRIMARY_RECORD_MISMATCH');
+        }
+        const expectedMovements = movements.filter(m => m.operation_id === operationId);
+        const pendingMovements = group.filter(e => e.entity_type === 'inventory_movement');
+        const entityIds = new Set(group.map(e => e.entity_type + ':' + e.entity_id));
+        if (entityIds.size !== group.length || expectedMovements.length !== pendingMovements.length) {
+          hold('MOVEMENT_GROUP_INCOMPLETE');
+        }
+        const expectedReason = kind === 'sale' ? 'sale' : kind === 'return' ? 'return' : 'sale_void';
+        for (const movement of expectedMovements) {
+          const envelope = pendingMovements.find(e => e.entity_id === movement.movement_id);
+          const p = object(envelope?.payload);
+          if (!envelope || envelope.operation !== 'append' ||
+              !owns(object(movement)) || movement.device_id !== this.deviceId ||
+              movement.device_sequence !== sequence || movement.reason !== expectedReason ||
+              movement.related_sale_id !== sourceSale?.sale_id ||
+              !Number.isSafeInteger(movement.delta) || movement.delta === 0 ||
+              JSON.stringify(p) !== JSON.stringify(movement) ||
+              envelope.occurred_at !== movement.occurred_at) {
+            hold('MOVEMENT_RECORD_MISMATCH');
+          }
+        }
+      }
+      result.operations.sort((a, b) => a.device_sequence - b.device_sequence ||
+        a.operation_id.localeCompare(b.operation_id));
+      if (result.reasons.length === 0) result.status = 'INSPECTED';
+      return result;
+    } catch {
+      if (transaction && completion) await abortAndDrain(transaction, completion);
+      result.status = 'HOLD';
+      result.inspection_complete = false;
+      result.local_counter = null;
+      result.operations = [];
+      hold('LOCAL_RECOVERY_READ_FAILED');
+      return result;
+    }
   }
 
   async listPendingSync(limit = 100): Promise<CashierSyncEnvelope[]> {

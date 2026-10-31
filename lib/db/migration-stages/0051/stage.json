@@ -1,0 +1,15 @@
+{
+  "index": 51,
+  "name": "residual_merchant_privacy_scoped_authority",
+  "when": 1791936000023,
+  "mode": "reviewed_sql",
+  "sql_sha256": "1773f8314f11c832a1c03453204af2896b204b80695066ebc06cded7b11e62ea",
+  "preimage_files": [
+    "audit.ts",
+    "manual-conversations.ts",
+    "notifications.ts",
+    "orders.ts",
+    "conversations.ts",
+    "tenant-security.ts"
+  ]
+}

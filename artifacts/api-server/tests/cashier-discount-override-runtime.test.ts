@@ -23,7 +23,7 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
       _values: unknown[] = [],
     ) {
       const compact = sql.replace(/\s+/g, ' ').trim();
-      if (compact.includes('FROM merchant_cashier_discount_settings')) {
+      if ((compact.includes('FROM merchant_cashier_discount_settings') || compact.includes('FROM public.fawri_lock_cashier_discount_setting('))) {
         return {
           rows: [{
             discount_kind: fixture.discountKind ?? 'amount',
@@ -31,7 +31,7 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
           }] as unknown as T[],
         };
       }
-      if (compact.includes('FROM merchant_cashier_discount_override_approvals')) {
+      if (compact.includes('FROM public.fawri_lock_cashier_discount_approval(')) {
         return {
           rows: [{
             id: 'approval-1',
@@ -48,16 +48,14 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
           }] as unknown as T[],
         };
       }
-      if (compact.includes('FROM merchant_cashier_staff ') && compact.includes('WHERE merchant_id')) {
+      if (compact.includes('FROM public.fawri_lock_cashier_approver($1::text, $2::text)')) {
+        assert.deepEqual(_values, ['merchant-1', 'manager-1']);
         return {
           rows: [{
             id: 'manager-1',
             display_name: 'Manager One',
             role: 'manager',
             status: 'active',
-            pin_hash: 'unused-during-consume',
-            failed_pin_attempts: 0,
-            pin_locked_until: null,
             revoked_at: null,
           }] as unknown as T[],
         };
@@ -80,9 +78,9 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
           }] as unknown as T[],
         };
       }
-      if (compact.startsWith('UPDATE merchant_cashier_discount_override_approvals')) {
+      if (compact.includes('FROM public.fawri_consume_cashier_discount_approval(')) {
         updates.push(compact);
-        return { rows: [] as T[] };
+        return { rows: [{ decision_code: 'OK', manager_limit_minor: 300 }] as unknown as T[] };
       }
       throw new Error(`Unexpected SQL in override runtime test: ${compact}`);
     },
@@ -112,7 +110,7 @@ test('approved percentage discount at the exact manager percentage limit remains
     saleOccurredAt: '2026-09-09T10:03:00.000Z',
   });
   assert.equal(updates.length, 1);
-  assert.match(updates[0], /SET consumed_at = now\(\)/);
+  assert.match(updates[0], /public\.fawri_consume_cashier_discount_approval/);
 });
 
 test('manager percentage ceiling ignores the manager fixed amount limit and rejects one unit above 50%', async () => {

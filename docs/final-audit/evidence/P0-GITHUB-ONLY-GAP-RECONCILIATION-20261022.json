@@ -1,0 +1,131 @@
+{
+  "timestamp": "2026-10-22T03:58:28.887Z",
+  "source_sha": "43065bda4b032244016d0fc78823f5579b01deca",
+  "harness_sha": "43065bda4b032244016d0fc78823f5579b01deca",
+  "reviewed_branch_head": "accf522b0d70e9ccf7b8a73176b387b54880c2f8",
+  "release": "NO-GO",
+  "scope": "GitHub-only bounded review; no new runtime tests or source changes",
+  "new_unique_cases_executed": 0,
+  "new_unique_cases_accepted": 0,
+  "records": [
+    {
+      "review_id": "P0-RECON-AUTH-READ-20261022",
+      "canonical_reference": "docs/final-audit/evidence/P0-AUTHENTICATION-ROLE-BOUNDARY-20261020.json:security_findings.authentication_select_privacy_not_closed",
+      "domain": "authentication privacy",
+      "priority": "P0",
+      "status": "TRIAGE",
+      "proof_layer": "source/static",
+      "source_anchors": [
+        "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts:getProductionDatabaseRlsReadiness/authentication_mutation_roles",
+        "artifacts/api-server/tests/authentication-operator-pool-postgres.integration.test.mjs:tenant role setup",
+        "lib/db/src/schema/accounts.ts:password_hash",
+        "lib/db/src/schema/sessions.ts:token_hash"
+      ],
+      "observed": "Readiness checks INSERT/UPDATE/DELETE/TRUNCATE/TRIGGER/REFERENCES and column mutations on authentication tables, not SELECT. Existing dedicated auth fixture grants tenant no auth-table access and tests mutations; it does not test accidental table/column SELECT grants against sensitive fields.",
+      "existing_evidence": {
+        "run": 39713145055,
+        "job": 119608939313,
+        "suite": "authentication-operator-pool-postgres.integration.test.mjs",
+        "passed": 10,
+        "limit": "mutation separation and legitimate auth journeys; not complete SELECT privacy acceptance"
+      },
+      "next": "Inventory legitimate primary-role auth SELECT consumers, define minimal column permissions, add disposable actual-LOGIN sensitive-read negatives and readiness grant/revoke cases while preserving signup/session positives.",
+      "required_proof": "native SQL restricted LOGIN; inherited/SET-reachable table and column grants; positive legitimate consumers; HTTP privacy",
+      "new_runtime_execution": false
+    },
+    {
+      "review_id": "P0-RECON-CASHIER-CREDENTIALS-20261022",
+      "canonical_reference": "docs/final-audit/evidence/P0-AUTHENTICATION-ROLE-BOUNDARY-20261020.json:security_findings.cashier_specific_credential_table_integrity_not_fully_gated",
+      "domain": "cashier credentials",
+      "priority": "P0",
+      "status": "TRIAGE",
+      "proof_layer": "source/static",
+      "source_anchors": [
+        "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts:AUTHENTICATION_INTEGRITY_TABLES/PRODUCTION_PROTECTED_RLS_TABLES",
+        "lib/db/src/schema/cashier-staff.ts:merchant_cashier_staff.pin_hash/cashier_station_credentials.token_hash/cashier_operator_sessions.token_hash"
+      ],
+      "observed": "Cashier-specific credential/session tables are absent from the readiness authentication integrity table list and protected RLS table list. This is a catalog-admission coverage gap; legitimate same-merchant cashier management writes must be traced before forbidding all such mutations.",
+      "next": "Trace station pairing/PIN/login/revocation service ownership and required tenant permissions; prove cross-tenant SELECT/mutation denial on actual LOGINs and test unsafe inherited/SET grants without breaking authorized management.",
+      "required_proof": "native SQL and actual cashier HTTP under intended separated roles",
+      "new_runtime_execution": false
+    },
+    {
+      "review_id": "P0-RECON-OFFLINE-GRACE-20261022",
+      "canonical_reference": "CASHIER-OFFLINE-001; docs/final-audit/P0_CASHIER_BPLUS_IMPLEMENTATION_GAP_20261017.md",
+      "domain": "offline entitlement",
+      "priority": "P0",
+      "status": "TRIAGE",
+      "proof_layer": "source/static",
+      "source_anchors": [
+        "artifacts/fawri/src/lib/cashierOperatorPosRuntime.ts:createOperatorScopedCashierPosRuntime/commitSale",
+        "artifacts/fawri/src/lib/cashierOfflineEntitlementAuthority.ts:assertCashierSaleEntitlementFromCache"
+      ],
+      "observed": "Operator sale invokes cached entitlement before local commit without a primary-role exception at that call. Cache accepts only active/grace and throws CASHIER_SUBSCRIPTION_RESTRICTED when estimatedNow>=grace_until. This is source evidence of a conflict candidate with the recorded B+ free-primary policy, not an executed browser failure or proof all alternate paths are blocked.",
+      "policy_reference": "Repository B+ document records primary free local basic mode after grace; earlier A/B decision document is historical. No new policy selected or changed in this batch.",
+      "next": "Trace all operator/local sale entry points and required free-basic operations, then actual browser/IndexedDB primary vs secondary before/exactly-at/after grace and reconnect tests with current identity/expiry/tamper controls.",
+      "required_proof": "native browser with IndexedDB + restricted HTTP sync; preserve subscription independence",
+      "new_runtime_execution": false
+    },
+    {
+      "review_id": "P0-RECON-SEQUENCE-RECOVERY-20261022",
+      "canonical_reference": "CASHIER-SYNC-SEQUENCE-001",
+      "domain": "sync recovery",
+      "priority": "P0",
+      "status": "TRIAGE",
+      "proof_layer": "source/static plus reused isolated SQL observation",
+      "source_anchors": [
+        "artifacts/api-server/tests/cashier-sync-multidevice-postgres.integration.test.mjs:SQL observation gap test"
+      ],
+      "observed": "Exact-source accepted SQL suite observes accepted sequence1, accepted3, rejected2 with CASHIER_OPERATION_SEQUENCE_CONFLICT and durable rows[1,3]. Passing observation explicitly does not approve missing-operation rejection. No gap-policy remediation or whole-sync acceptance inferred.",
+      "existing_evidence": {
+        "run": 39713145055,
+        "job": 119608939313,
+        "suite": "cashier-sync-multidevice-postgres.integration.test.mjs",
+        "passed": 3,
+        "limit": "parent+two subtests; not three distinct P0 requirements"
+      },
+      "next": "Trace durable outbox ordering and non-commerce sequence consumption; define gap/tombstone/bounded reordering contract before repair; preserve exact/altered replay and final-stock race protections.",
+      "required_proof": "actual IndexedDB outbox plus isolated SQL for1→3→2, initial>1, skipped local adjustments, concurrency, rollback and replay",
+      "new_runtime_execution": false
+    },
+    {
+      "review_id": "P0-RECON-DENOMINATOR-20261022",
+      "canonical_reference": "docs/final-audit/AUDIT_MANIFEST_SCHEMA_AND_DOMAIN_QUEUE_20261014.md",
+      "domain": "P0 requirement inventory",
+      "priority": "P0",
+      "status": "NOT_RUN",
+      "proof_layer": "inventory reconciliation",
+      "source_anchors": [
+        "docs/final-audit/evidence/audit_case_manifest_v1_ui_import_20261014.csv",
+        "docs/final-audit/evidence/audit_ui_case_proof_reconciliation_20261014.csv"
+      ],
+      "observed": "Parsed existing UI manifest:222 records,222 unique case IDs,84 TRIAGE,138 NOT_RUN; all222 markedP1. It is not a complete P0 denominator. No UI/P1 execution or acceptance performed.",
+      "next": "Preserve existing IDs. Build non-UI P0 requirement/proof mapping from canonical findings, actual routes, grants, migrations, jobs and device flows. Keep this bounded review queue separate from a frozen complete denominator.",
+      "required_proof": "versioned reconciled P0 requirement inventory; no percent until complete",
+      "new_runtime_execution": false
+    }
+  ],
+  "ui_import_summary": {
+    "rows": 222,
+    "unique": 222,
+    "statuses": {
+      "TRIAGE": 84,
+      "NOT_RUN": 138
+    },
+    "priorities": {
+      "P1": 222
+    }
+  },
+  "hosted_gates": {
+    "railway": "BLOCKED_BY_RAILWAY",
+    "database": "NOT_RUN_SESSION_RESTRICTION_GITHUB_ONLY"
+  },
+  "publication_recovery": {
+    "published_acceptance_commit": "accf522b0d70e9ccf7b8a73176b387b54880c2f8",
+    "tree": "7eb997cf2130c81b4b537064eb590d0d3fc85181",
+    "matches_prepared_tree": true,
+    "working_method": "Contents create/update with branch refs/heads/fix/p0-provider-receipt-order-discovery-20261015",
+    "do_not_update_ref_to_orphan": "d990ee89e7bfe1f5755a33bbdf963bfa03b88850"
+  },
+  "limits": "Review IDs are queue record keys, not replacement case IDs, unique test counts, accepted findings or an approved denominator. No new duplicated issue created. Existing46 workflows and75 invocations remain exact-source evidence only."
+}

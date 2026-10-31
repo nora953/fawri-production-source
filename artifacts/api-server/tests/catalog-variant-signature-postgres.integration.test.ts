@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from "./helpers/disposable-knowledge-runtime.mjs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import test from "node:test";
@@ -6,8 +7,8 @@ process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = "required";
 process.env.FAWRI_AUTH_SECURITY_SECRET =
   "catalog-variant-signature-secret-over-thirty-two-characters";
 
-const dbModule = await import("@workspace/db");
-const pool = dbModule.pool;
+const runtime=await createDisposableKnowledgeRuntime();
+const pool=runtime.admin;
 const accounts = await import(
   "../src/services/postgresMerchantAccountAuthority.js"
 );
@@ -161,5 +162,5 @@ test("oversized canonical variant options are reduced to the same bounded signat
 });
 
 test.after(async () => {
-  await pool.end();
+  await runtime.dispose();
 });

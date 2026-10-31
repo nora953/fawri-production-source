@@ -1,3 +1,5 @@
+import { withOperationalTransaction } from "../operationalPostgresAuthority.js";
+import { issueMerchantTransactionScope } from "../tenantTransactionScope.js";
 import {
   isSavedAnswerCategory,
   type KnowledgeAuditEvent,
@@ -74,34 +76,21 @@ class PostgresKnowledgeSqlClient implements KnowledgeSqlClient {
     if (!this.merchantId) {
       throw new KnowledgeRuntimeGateError("KNOWLEDGE_MERCHANT_REQUIRED", "merchant is required", 400);
     }
-    const { pool } = await import("@workspace/db");
-    const connection = await pool.connect();
-    const executor: KnowledgeSqlExecutor = {
-      async query<Row extends Record<string, unknown>>(
-        sql: string,
-        values: readonly unknown[] = [],
-      ): Promise<KnowledgeSqlResult<Row>> {
-        const result = await connection.query(sql, Array.from(values));
-        return { rows: result.rows as Row[] };
-      },
-    };
-
-    try {
-      await connection.query("BEGIN");
-      await connection.query("SELECT set_config('fawri.tenant_id', $1, true)", [this.merchantId]);
-      const result = await operation(executor);
-      await connection.query("COMMIT");
-      return result;
-    } catch (error) {
-      try {
-        await connection.query("ROLLBACK");
-      } catch {
-        // Preserve the original safe failure. A rollback failure must not expose DB state.
-      }
-      throw error;
-    } finally {
-      connection.release();
-    }
+    return withOperationalTransaction(async connection => {
+      // Issue and commit on the trusted auth connection before any merchant/FK
+      // row locks. Keep this primary lease until the outer transaction ends.
+      await issueMerchantTransactionScope(connection, this.merchantId!);
+      const executor: KnowledgeSqlExecutor = {
+        async query<Row extends Record<string, unknown>>(
+          sql: string,
+          values: readonly unknown[] = [],
+        ): Promise<KnowledgeSqlResult<Row>> {
+          const result = await connection.query<Row>(sql, Array.from(values));
+          return { rows: result.rows };
+        },
+      };
+      return operation(executor);
+    });
   }
 }
 

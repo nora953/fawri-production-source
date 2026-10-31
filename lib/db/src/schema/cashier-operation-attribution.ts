@@ -81,7 +81,7 @@ export const cashierOperationAttribution = pgTable(
       sql`char_length(${table.operationId}) BETWEEN 1 AND 200 AND char_length(${table.saleId}) BETWEEN 1 AND 200 AND char_length(${table.deviceId}) BETWEEN 1 AND 200 AND char_length(${table.stationCredentialId}) BETWEEN 1 AND 200 AND char_length(${table.operatorSessionId}) BETWEEN 1 AND 200`,
     ),
   }),
-);
+).enableRLS();
 
 export type CashierOperationAttribution =
   typeof cashierOperationAttribution.$inferSelect;

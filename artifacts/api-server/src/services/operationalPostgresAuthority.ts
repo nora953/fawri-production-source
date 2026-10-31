@@ -22,7 +22,7 @@ export type OperationalQueryTarget = {
 export type OperationalSqlClient = OperationalQueryTarget;
 
 export type OperationalTransactionClient = OperationalQueryTarget & {
-  release(): void;
+  release(error?: Error | boolean): void;
 };
 
 export type OperationalDatabasePool = OperationalQueryTarget & {
@@ -67,19 +67,32 @@ export async function operationalQueryRows<T extends Record<string, unknown>>(
 
 export async function withOperationalTransaction<T>(
   work: (client: OperationalTransactionClient) => Promise<T>,
+  poolOverride?: OperationalDatabasePool,
 ): Promise<T> {
-  const pool = await operationalDatabasePool();
+  const pool = poolOverride ?? await operationalDatabasePool();
   const client = await pool.connect();
+  let discardClient = false;
+  let transactionStarted = false;
+  let commitAttempted = false;
   try {
     await client.query("BEGIN");
+    transactionStarted = true;
     const result = await work(client);
+    commitAttempted = true;
     await client.query("COMMIT");
     return result;
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
+    // An unsuccessful BEGIN, COMMIT, or ROLLBACK leaves connection state
+    // uncertain. Never return such a connection to the shared pool.
+    if (!transactionStarted || commitAttempted) discardClient = true;
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      discardClient = true;
+    }
     throw error;
   } finally {
-    client.release();
+    client.release(discardClient);
   }
 }
 
@@ -96,10 +109,11 @@ export async function withMerchantOperationalTransaction<T>(
     );
   }
   return withOperationalTransaction(async (client) => {
-    await client.query(
-      "SELECT set_config('fawri.tenant_id', $1, true)",
-      [merchantId],
-    );
+    // Load after BEGIN to avoid the issuer/authentication module cycle. Only
+    // merchant transactions mint; generic and authentication leases never do.
+    // The separate issuer must commit before merchant or foreign-key locks.
+    const { issueMerchantTransactionScope } = await import("./tenantTransactionScope");
+    await issueMerchantTransactionScope(client, merchantId);
     return work(client);
   });
 }

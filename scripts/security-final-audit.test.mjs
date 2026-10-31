@@ -6,11 +6,13 @@ import test from "node:test";
 import { findSensitiveText, parseAuditSeverityCounts, redactSensitiveText } from "./security-ci-lib.mjs";
 import {
   evaluateDependencyAudit,
+  summarizeBlockingAdvisories,
   isKnownTestFixtureCredentialUrl,
   isKnownHistoricalScannerSelfTestCredentialUrl,
   isKnownHistoricalRestoreRejectionFixture,
   isKnownHistoricalDisposableGuardFixture,
   isKnownHistoricalEntrypointFenceFixture,
+  isKnownHistoricalFreshRoleRecoveryFenceFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -351,4 +353,53 @@ test("historical entrypoint rejection fixture exception is pinned to one immutab
   ]) {
     assert.equal(isKnownHistoricalEntrypointFenceFixture(changedFinding, file, blob), false);
   }
+});
+
+test("blocking advisory diagnostics expose only public bounded identifiers", () => {
+  const raw = makeToken("EAA", 45);
+  const report = summarizeBlockingAdvisories({ advisories: {
+    a: { severity: "high", module_name: "@scope/pkg", github_advisory_id: "GHSA-cfgh-jmpq-rvwx",
+      title: raw, url: "https://example.invalid/private", findings: [{ paths: [raw] }], overview: raw },
+    b: { severity: "moderate", module_name: "not-blocking" },
+    c: { severity: "critical", module_name: "package-name" },
+  } });
+  assert.deepEqual(report, [
+    { severity: "high", package: "@scope/pkg", ghsa: "GHSA-cfgh-jmpq-rvwx" },
+    { severity: "critical", package: "package-name" },
+  ]);
+  assert.equal(JSON.stringify(report).includes(raw), false);
+  assert.equal(JSON.stringify(report).includes("https:"), false);
+  assert.equal(evaluateDependencyAudit({ high: 1, critical: 1 }, 1).status, "fail");
+});
+
+test("malformed advisory identifier fields are omitted without changing audit failure", () => {
+  assert.deepEqual(summarizeBlockingAdvisories({ advisories: {
+    a: { severity: "high", module_name: "../bad\nname", github_advisory_id: "not-an-id", raw: "private" },
+  } }), [{ severity: "high" }]);
+  for (const payload of [null, {}, { advisories: [] }, { advisories: "unexpected" }]) {
+    assert.deepEqual(summarizeBlockingAdvisories(payload), []);
+  }
+  assert.equal(evaluateDependencyAudit({ high: 1, critical: 0 }, 1).status, "fail");
+});
+
+test("advisory diagnostics stay bounded for oversized registry lists", () => {
+  const advisories = Object.fromEntries(Array.from({length: 100}, (_, i) => [i, {
+    severity: "high", module_name: "package-name",
+  }]));
+  assert.equal(summarizeBlockingAdvisories({ advisories }).length, 50);
+});
+
+test("historical fresh role rejection fixture classification is bound to one immutable finding", () => {
+  const file = "scripts/tests/disposable-cashier-role-recovery.test.mjs";
+  const blob = "5b2ebc7b8262d8cc44fda859a2bab52337bafb59";
+  const target = new URL("postgresql://outside.invalid/fawri_ci");
+  target.username = "example";
+  target.password = ["private", "synthetic"].join("-");
+  const text = " ".repeat(2607) + target.toString();
+  const finding = findSensitiveText(text, { includePrivateData: false, includeAssignments: false }).find(x => x.rule === "credential-url");
+  assert.equal(finding.index, 2607);assert.equal(finding.length, 54);
+  assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, file, blob), true);
+  for(const otherBlob of [undefined, "0".repeat(40)])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, file, otherBlob), false);
+  for(const otherFile of ["scripts/restore-postgresql.mjs", "scripts/tests/other.test.mjs"])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, otherFile, blob), false);
+  for(const changed of [{...finding,index:finding.index+1},{...finding,length:finding.length+1},{...finding,rule:"private-key"}])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(changed, file, blob), false);
 });

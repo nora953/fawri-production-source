@@ -1,10 +1,10 @@
+import { authenticationDatabasePool, withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   type OperationalQueryTarget,
   withMerchantOperationalTransaction,
-  withOperationalTransaction,
 } from "./operationalPostgresAuthority";
 
 export type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
@@ -419,6 +419,7 @@ export async function addMerchantSupportMessagePostgres(input: {
       `UPDATE support_tickets
           SET waiting_on = 'admin', waiting_since = now(),
               assistant_reminder_sent_at = NULL, owner_escalated_at = NULL,
+              merchant_reminder_sent_at = NULL,
               updated_at = now()
         WHERE id = $1`,
       [ticketId],
@@ -429,7 +430,7 @@ export async function addMerchantSupportMessagePostgres(input: {
 
 export async function listAdminSupportTicketsPostgres() {
   await assertPostgresRequired();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const result = await pool.query<TicketRow>(
     `SELECT t.id, t.merchant_id, t.subject, t.category, t.status,
             t.assigned_admin_account_id, ap.display_name AS assigned_admin_name,
@@ -462,7 +463,7 @@ export async function claimSupportTicketPostgres(input: { ticketId: string; admi
   await assertPostgresRequired();
   const ticketId = text(input.ticketId);
   const adminId = text(input.adminId);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     await adminDisplayName(client, adminId);
     const result = await client.query<{ assigned_admin_account_id: string | null }>(
       `SELECT assigned_admin_account_id
@@ -497,7 +498,7 @@ export async function addAdminSupportMessagePostgres(input: {
   const ticketId = text(input.ticketId);
   const adminId = text(input.adminId);
   const body = requiredText(input.body, "message", 1, 5000);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const ticket = await assertAssignedToAdmin(client, ticketId, adminId);
     if (!ACTIVE_TICKET_STATUSES.has(ticket.status)) {
       throw new SupportPostgresError("SUPPORT_TICKET_NOT_ACTIVE", "support ticket is not active", 409);
@@ -513,7 +514,8 @@ export async function addAdminSupportMessagePostgres(input: {
     await client.query(
       `UPDATE support_tickets
           SET waiting_on = 'merchant', waiting_since = now(),
-              merchant_reminder_sent_at = NULL, updated_at = now()
+              merchant_reminder_sent_at = NULL, assistant_reminder_sent_at = NULL,
+              owner_escalated_at = NULL, updated_at = now()
         WHERE id = $1`,
       [ticketId],
     );
@@ -553,7 +555,7 @@ export async function updateSupportTicketStatusPostgres(input: {
   if (!["open", "in_progress", "resolved", "closed"].includes(status)) {
     throw new SupportPostgresError("SUPPORT_STATUS_INVALID", "support ticket status is invalid", 400);
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     await assertAssignedToAdmin(client, ticketId, adminId);
     await client.query(
       `UPDATE support_tickets
@@ -586,7 +588,7 @@ export async function createInspectionRequestPostgres(input: {
   const ticketId = text(input.ticketId);
   const adminId = text(input.adminId);
   const reason = requiredText(input.reason, "reason", 5, 500);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const ticket = await assertAssignedToAdmin(client, ticketId, adminId);
     if (!ACTIVE_TICKET_STATUSES.has(ticket.status)) {
       throw new SupportPostgresError("SUPPORT_TICKET_NOT_ACTIVE", "support ticket is not active", 409);
@@ -745,7 +747,7 @@ export async function startSupportPreviewSessionPostgres(input: {
   const requestId = text(input.requestId);
   const adminId = text(input.adminId);
   const adminSessionId = text(input.adminSessionId);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const requestResult = await client.query<{
       merchant_id: string;
       admin_account_id: string;
@@ -840,7 +842,7 @@ export async function validateSupportPreviewSessionPostgres(input: {
   await assertPostgresRequired();
   const sessionId = text(input.sessionId);
   const adminId = text(input.adminId);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const result = await client.query<{
       id: string;
       request_id: string;
@@ -909,7 +911,7 @@ export async function endSupportPreviewSessionPostgres(input: {
 }) {
   await assertPostgresRequired();
   const reason = text(input.reason) || "admin_ended";
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const result = await client.query<{ admin_account_id: string; status: string }>(
       `SELECT admin_account_id, status FROM support_preview_sessions WHERE id = $1 FOR UPDATE`,
       [text(input.sessionId)],
@@ -1041,7 +1043,7 @@ export async function markAllMerchantNotificationsReadPostgres(merchantIdValue: 
 
 export async function refreshSupportLifecyclePostgres(now = new Date()) {
   await assertPostgresRequired();
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const expiredRequests = await client.query<{ id: string; merchant_id: string; ticket_id: string }>(
       `UPDATE support_inspection_requests
           SET status = 'expired', expired_at = now(), ended_at = COALESCE(ended_at, now()),
@@ -1162,7 +1164,7 @@ export async function createSupportAttachmentMetadataPostgres(input: {
 
 export async function getSupportAttachmentPostgres(attachmentIdValue: string) {
   await assertPostgresRequired();
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const result = await pool.query<{
     id: string;
     message_id: string;

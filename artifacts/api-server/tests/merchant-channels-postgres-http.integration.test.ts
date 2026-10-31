@@ -1,3 +1,4 @@
+import {createDisposableKnowledgeRuntime} from "./helpers/disposable-knowledge-runtime.mjs";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -78,8 +79,9 @@ test("merchant channel routes use secure PostgreSQL authority and tenant-scoped 
     FAWRI_META_TOKEN_KEY_BASE64: META_KEY,
   });
 
+  const runtime=await createDisposableKnowledgeRuntime();
+  const pool=runtime.admin;
   const [
-    { pool },
     { authPostgresSessionAuthority },
     { MERCHANT_SESSION_COOKIE },
     { connectMetaChannelAuthoritative },
@@ -87,7 +89,6 @@ test("merchant channel routes use secure PostgreSQL authority and tenant-scoped 
     { default: cookieParser },
     { default: channelOperationsRouter },
   ] = await Promise.all([
-    import("@workspace/db"),
     import("../src/services/authPostgresSessionAuthority.js"),
     import("../src/middleware/authSession.js"),
     import("../src/services/postgresMetaChannelAuthority.js"),
@@ -127,7 +128,7 @@ test("merchant channel routes use secure PostgreSQL authority and tenant-scoped 
       await new Promise<void>((resolve) => server?.close(() => resolve()));
     }
     if (seeded) await cleanup();
-    await pool.end();
+    await runtime.dispose();
     await rm(runtimeDirectory, { recursive: true, force: true });
   });
 

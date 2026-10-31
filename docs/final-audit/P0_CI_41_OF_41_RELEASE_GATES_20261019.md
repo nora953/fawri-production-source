@@ -1,0 +1,94 @@
+# P0 CI completion and remaining release gates — 2026-10-19
+
+**Repository:** `nora953/fawri-production-source`  
+**Audit branch:** `fix/p0-provider-receipt-order-discovery-20261015`  
+**Verified commit:** `8ef8984df135740c0da0742b4d18988fbbf0b545`  
+**Decision:** **P0 NO-GO** (CI green is not production acceptance).
+
+## GitHub Actions evidence
+
+A read-only GitHub workflow-run query for the exact commit returned **41 completed / 41 success / 0 failed or in progress**. The isolated PostgreSQL engineering audit workflow run was `39193911550`, with the `disposable-audit` job completed successfully.
+
+The job reported success for:
+- Migrations and selected tests without external network.
+- Cashier licensing, compensation and historical operator proofs.
+- Billing, refunds and duplicate-event proofs with fake providers.
+- Restricted-role tenant, knowledge and retention proofs.
+- Meta bot and AI lifecycle with injected providers only.
+- Full committed schema and restricted tenant restore drill.
+- Node.js 22 offline HTTP compatibility journey.
+- Cleanup of owned containers and anonymous volumes.
+
+The repository security workflow also completed successfully. These are **CI step results**, not proof that hosted runtime identity or live tenant boundaries are safe.
+
+### Specific two-session race evidence
+
+- Source: `artifacts/api-server/tests/receipt-cross-authority-phantom-postgres.integration.test.mjs`.
+- Runner inclusion: `scripts/execute-disposable-postgres-audit.mjs`, `billing` suite.
+- The test opens `owner` and `contender` connections and transactions, confirms blocking via `pg_blocking_pids`, commits the owner, and expects the contender to fail with SQLSTATE `23514`; it asserts only one order owns the identity afterward.
+- The isolated PostgreSQL audit job's billing step completed successfully. This is real disposable PostgreSQL concurrency evidence for the tested **UPDATE** scenario; do not mislabel it as source-only. It does not prove every INSERT, key-combination, deadlock or hosted rollout scenario.
+
+## Release blockers requiring separate evidence
+
+1. **Hosted runtime identity:** Railway's application `DATABASE_URL` role is not verified. On the isolated Neon audit branch, `fawri_staging_runtime` was observed with `BYPASSRLS`, `CREATEDB` and `CREATEROLE`; do not infer that Railway uses this role. Verify only the role name and effective privileges, without exposing credentials.
+2. **Hosted schema alignment:** The isolated Neon branch previously had 28 migration ledger rows while the checked-in journal contains 35 entries (0000–0034). Reconcile identifiers and hashes and rehearse the unapplied candidates in a disposable environment before any hosted migration.
+3. **Migration 0034 race acceptance — partially evidenced:** The billing suite in `scripts/execute-disposable-postgres-audit.mjs` includes `receipt-cross-authority-phantom-postgres.integration.test.mjs`. Its source explicitly opens two PostgreSQL sessions, checks `pg_blocking_pids`, commits the first transaction, and asserts SQLSTATE `23514` for the losing UPDATE. The isolated audit billing step succeeded on this commit. **Therefore a two-session cross-authority UPDATE race has been tested in disposable CI**, not merely specified. Remaining: independent INSERT race cases, opposite-order updates/deadlock coverage, and pre-activation duplicate detection. Payment-only versus request-only collision coverage was added and passed in the follow-up commit documented below.
+4. **Non-RLS sensitive tables:** `account_sessions`, `cashier_operator_sessions`, `order_items` and `support_messages` need real API-level cross-merchant negative tests, regardless of the restricted-role CI pass.
+5. **Release revision and deployment:** The audited branch has not been approved for merge or deployment; verify the intended commit and Railway runtime health at release time.
+
+## Controls
+
+No hosted migration, privilege change, deployment or merge is authorized by this report. Preserve separate bot/intelligent-replies and cashier subscription authorities; shared inventory is not a shared billing entitlement.
+
+**Acceptance rule:** Do not mark P0 GO until each blocker has a linkable test result or read-only evidence, owner review and explicit deployment approval.
+
+## Follow-up verification: identity-key regression commit 425f639 (2026-10-19)
+
+A second exact-SHA GitHub Actions read confirmed **41 completed / 41 success / 0 failed** for commit `425f639254df6757dcdce6e65846f8657831823e`. The isolated PostgreSQL audit workflow run `39194796136` completed successfully, including the billing, restricted-role, Meta/AI, schema restore and Node.js 22 steps. This revision adds independent request-only and payment-only collision assertions to the disposable PostgreSQL billing test, each expecting SQLSTATE `23514` and a single surviving owner. These are **UPDATE-based collision tests**, not INSERT-race proofs.
+
+**Remaining migration 0034 gaps:** simultaneous cross-authority INSERT collisions, reverse-order two-key advisory-lock deadlock resistance, and pre-activation duplicate detection. These are not cleared by the green CI. Hosted identity, schema alignment, non-RLS API isolation and deployment approval blockers above remain open. No production rollout is authorized.
+
+## Read-only Railway staging check — 2026-10-19
+
+- Railway project `fawri-staging`, environment `production`, service `fawri-web` was inventoried read-only.
+- Live source is repository `nora953/fawri-production-source`, branch `main`; latest deployment `11f22954-446b-49ef-adc6-38aca7c08bff` reported `SUCCESS`, created `2026-10-10T22:22:49.599Z`.
+- Railway environment status returned one service, zero issues and zero failures; no pending staged work was reported.
+- The connected Railway integration returned environment-variable names only (`valuesRedacted=true`). It exposed the name `DATABASE_URL` but not its value, so the effective database role and privileges **could not be verified**. No credentials were read back or exposed, and no variables/configuration were changed.
+- This environment is named `production` inside the Railway project `fawri-staging`; do not assume it represents the actual customer-facing production environment without owner confirmation.
+
+**Disposition:** runtime health snapshot is clean, but database identity remains NOT VERIFIED. This does not close the hosted runtime privilege gate. No deployment or hosted database change was made.
+
+## Hosted runtime role check prepared — 2026-10-19
+
+Added `docs/final-audit/sql/p0_hosted_runtime_role_readonly_check.sql`, a read-only SELECT intended to run through the application's actual `DATABASE_URL` in a controlled operator session. It reports the connected role's superuser, CREATEDB, CREATEROLE, BYPASSRLS and INHERIT attributes plus direct role memberships, without displaying credentials. This query has **not** been executed against Railway because the connected Railway integration redacts variable values; the actual runtime role remains **NOT VERIFIED**.
+
+The documentation-only commit `3f094baaacd9ee8ce07a6f559c55d61aab0be920` has no workflow runs returned for its exact SHA. Do not claim CI passed for this docs-only commit. The previously tested code revision `d11387d1cd608f8fe412a132f3117286ecb7e0f8` had 41/41 successful workflows.
+
+## Concurrent cross-authority INSERT test added — 2026-10-19
+
+Commit `70950ca0774b9d78ebaea50c5a4267c38dc1ce9b` adds a disposable-PostgreSQL integration scenario to `artifacts/api-server/tests/receipt-cross-authority-phantom-postgres.integration.test.mjs`. It creates synthetic cloned order rows in separate transactions across SaaS and cashier authorities, uses the same fresh SuperQi payment and request references, asserts the contender blocks on the trigger's transaction-scoped advisory lock, commits the first transaction, then expects the second INSERT to fail with SQLSTATE `23514` and verifies exactly one owner remains. This is **test code added, not yet verified by CI**: the GitHub workflow lookup returned no workflow runs for this exact SHA at the time of recording. Re-check CI and fix any test/runtime/schema issues before treating the scenario as passed.
+
+The test does not yet prove reverse-order multi-key lock behavior under a controlled two-transaction UPDATE/UPDATE schedule or exercise a deliberate deadlock timeout matrix. Preflight SQL and hosted role query are prepared but have not been run against hosted databases. P0 remains NO-GO.
+
+## Billing integration failure diagnosed and corrected — 2026-10-19
+
+The disposable PostgreSQL billing step failed in the newly added concurrent cross-authority INSERT scenario with PostgreSQL error `could not determine data type of parameter $5`. The failing expression used the untyped parameter as a variadic `jsonb_build_object` value in both authority INSERT statements. Commit `46124a3646365982a226bb55ba825ce7b2bd32e2` adds an explicit `$5::text` cast in both statements. This is a targeted test SQL fix; it is **not yet considered verified** until the new commit's billing workflow reruns successfully.
+
+Prior in the same billing job, existing resolver in-flight and concurrent first-writer proofs logged successful outcomes (`P0_RESOLVER_INFLIGHT_RACE_GUARDED`, `P0_CONCURRENT_FIRST_WRITERS_GUARDED`); the later added INSERT test was the failure. Recheck all 41 workflows and inspect the isolated audit billing step after commit `46124a3` before closing this blocker.
+
+## Verified regression closure — 2026-10-19
+
+- Code commit: `c2d13827184d2917a767b1584c44ef47e38f0eb8`.
+- GitHub Actions: **41/41 workflows completed successfully**, including isolated PostgreSQL engineering audit run [39197137370](https://github.com/nora953/fawri-production-source/actions/runs/39197137370).
+- Isolated audit job `disposable-audit`: **success**. Its billing/refunds/duplicate-event step, migration/selected tests, restricted-role tenant proofs, Meta/AI lifecycle, full schema restore drill, and Node22 staging compatibility all concluded **success**.
+- The concurrent cross-authority INSERT regression was corrected by explicitly typing the request-id parameter and avoiding a separate merchant-pending uniqueness conflict in synthetic fixture rows. This confirms the CI suite is green; it does **not** verify hosted deployment schema, actual Railway runtime DB role, or production tenant isolation.
+- **P0 release decision remains NO-GO** pending hosted read-only role/schema verification, authorization-negative acceptance evidence, and deployment readiness. No hosted migrations, privilege changes, merge, or deployment were performed.
+
+## Latest exact-commit CI verification — 2026-10-19
+
+- Code commit: `0efbfee20ba997940c4334be6604e40c4faf6d86`.
+- GitHub Actions exact-commit query: **41 completed / 41 successful / 0 failed / 0 pending**.
+- Isolated PostgreSQL engineering audit: [run 39198982292](https://github.com/nora953/fawri-production-source/actions/runs/39198982292), **completed / success**.
+- This revision adds a transactional provider-identity transfer and rollback regression to `artifacts/api-server/tests/receipt-cross-authority-phantom-postgres.integration.test.mjs`. The audit job completed its migrations, cashier licensing, billing/refunds/duplicate-event, Meta/AI, restricted schema restore, and Node.js 22 compatibility stages successfully. The green billing stage is CI-level evidence for the newly included regression, not evidence of a hosted rollout.
+- **P0 remains NO-GO:** hosted Railway runtime role is unverified; hosted migration ledger and 0034 trigger state are unverified; actual API-level cross-tenant negative acceptance for sensitive non-RLS tables is open; release deployment and owner approval are pending.
+- No hosted migrations, role changes, merge, or deployment were performed as part of this verification.
