@@ -1,3 +1,7 @@
+## FIELD004: اكتمال CI لنسخة المخطط المقيد — 2026-10-31
+
+تحقق GitHub Actions على commit `aa26341462b6e6ddf70a53d5e4fc69984e67752a`: **58/58 SUCCESS**، بلا فشل أو إلغاء أو انتظار، وتشمل `Complete migration safety` و`PostgreSQL migration candidate` و`Final quality gates` و`Isolated PostgreSQL engineering audit`. شمل آخر إصلاح منع توليد `updated_at` من `started_at` عند غياب المصدر الأصلي، مع اختبار رفض مستقل. هذا قبول لاختبارات المصدر والبيئة المعزولة فقط، وليس إثبات ترحيل مستضاف أو صلاحية TTL تاريخية أو استكمال تلقائي للمسودات. **FIELD004 OPEN؛ F004-R2 BLOCKED؛ P0 NO-GO.** لم تُغيّر أعداد بوابات الإغلاق.
+
 
 ## FIELD004: تنفيذ مخطط التوافق المحدود والتحقق المصدرّي — 2026-10-31
 
