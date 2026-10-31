@@ -567,3 +567,38 @@ test("dry-run rejects invalid legacy draft timezone offsets without source mutat
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("dry-run blocks legacy drafts when channel ownership is unverified", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "legacy-draft-channel-unverified",
+        merchant_id: "merchant-1",
+        customer_id: "customer-1",
+        awaiting: "product",
+        started_at: "2026-02-28T12:00:00.000Z",
+        updated_at: "2026-02-28T12:00:00.000Z",
+        expires_at: "2026-03-01T00:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: runtime.orderDraftsByConversation,
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "LEGACY_DRAFT_CHANNEL_OWNERSHIP_UNVERIFIED",
+    ), "draft without proven merchant channel must block migration");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
