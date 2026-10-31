@@ -471,6 +471,7 @@ test("dry-run rejects impossible legacy draft calendar dates without source muta
         expires_at: "2026-03-01T00:00:00.000Z",
       },
     };
+    runtime.conversations[0].channel_id = "channel-1";
     writeJson(directory, "bot-runtime.json", runtime);
     writeJson(directory, "fawri-runtime-db.json", { orderDraftsByConversation: runtime.orderDraftsByConversation });
     const before = directorySnapshot(directory);
@@ -508,6 +509,7 @@ test("dry-run rejects invalid legacy draft clock values without source mutation"
         expires_at: "2026-03-01T00:00:00.000Z",
       },
     };
+    runtime.conversations[0].channel_id = "channel-1";
     writeJson(directory, "bot-runtime.json", runtime);
     writeJson(directory, "fawri-runtime-db.json", { orderDraftsByConversation: runtime.orderDraftsByConversation });
     const before = directorySnapshot(directory);
@@ -545,6 +547,7 @@ test("dry-run rejects invalid legacy draft timezone offsets without source mutat
         expires_at: "2026-03-01T00:00:00.000Z",
       },
     };
+    runtime.conversations[0].channel_id = "channel-1";
     writeJson(directory, "bot-runtime.json", runtime);
     writeJson(directory, "fawri-runtime-db.json", { orderDraftsByConversation: runtime.orderDraftsByConversation });
     const before = directorySnapshot(directory);
