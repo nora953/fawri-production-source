@@ -2489,5 +2489,32 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_KNOWLEDGE_READ_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,merchants:2,freshActorPrechecks:2,positiveReads:positives,deniedReads:denials,exactNonemptyDto:true,intendedPreviewHashVersionRetained:true,normalizedAuditDecisionCodeRetained:true,foreignIdentityHintsIgnored:true,ownedFiveTableStateStable:true,peerPreservedAfterRevocation:true,ownedCleanup:true,hosted:false}));
   });
 
+
+  await t.test('MATRIX-C06 inactive Meta callback gate matches Express case slash and HEAD semantics',async()=>{
+    const keys=['FAWRI_META_CUTOVER_READY','META_REDIRECT_URI','META_APP_ID','META_APP_SECRET','META_CONFIG_ID','META_VERIFY_TOKEN'];
+    const saved=Object.fromEntries(keys.map(key=>[key,process.env[key]])),nativeFetch=globalThis.fetch;
+    const paths=['/api/meta/callback','/api/meta/callback/','/API/MeTa/CaLlBaCk','/API/MeTa/CaLlBaCk/'];
+    let denied=0,configured=0,remoteAttempts=0;
+    const before=await snapshot();
+    try{
+      Object.assign(process.env,{FAWRI_META_CUTOVER_READY:'0',META_REDIRECT_URI:'https://management.example.invalid/api/meta/callback',META_APP_ID:'synthetic-gate-app',META_APP_SECRET:'synthetic-gate-secret',META_CONFIG_ID:'synthetic-gate-config',META_VERIFY_TOKEN:'synthetic-gate-verify'});
+      globalThis.fetch=async(url,init)=>{if(!String(url).startsWith(origin+'/')){remoteAttempts++;throw new Error('external transport forbidden in activation gate proof');}return nativeFetch(url,init);};
+      for(const path of paths)for(const method of ['GET','HEAD']){
+        const r=await fetch(origin+path,{method});assert.equal(r.status,503,path+' '+method);assert.equal(r.headers.get('cache-control'),'no-store');
+        const body=await r.text();if(method==='HEAD')assert.equal(body,'');else assert.deepEqual(JSON.parse(body),{ok:false,code:'META_CHANNEL_CONNECTION_CUTOVER_PENDING',error:'Meta channel connection is disabled until production-safe OAuth configuration is complete'});
+        denied++;
+      }
+      // Complete synthetic configuration reaches the existing callback validation
+      // without any OAuth code, state, token exchange or provider connection.
+      process.env.FAWRI_META_CUTOVER_READY='1';
+      for(const path of paths){const r=await fetch(origin+path);assert.equal(r.status,400);assert.equal(await r.text(),'Missing code from Meta');configured++;}
+      assert.equal(remoteAttempts,0);assert.deepEqual(await snapshot(),before);
+    }finally{
+      globalThis.fetch=nativeFetch;
+      for(const key of keys){if(saved[key]===undefined)delete process.env[key];else process.env[key]=saved[key];}
+    }
+    console.log('P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:1,inactiveDenials:denied,configuredValidationResponses:configured,remoteAttempts,headBodyEmpty:true,caseAndTrailingSlash:true,ownedStateStable:true,providerActivated:false,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });

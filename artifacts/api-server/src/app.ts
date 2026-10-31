@@ -184,9 +184,10 @@ function enforceMetaConnectionActivationGate(
   res: Response,
   next: NextFunction,
 ): void {
+  const pathname = req.path.toLowerCase().replace(/\/+$/, "");
   const isConnectionPath =
-    req.method === "GET" &&
-    (req.path === "/api/meta/login" || req.path === "/api/meta/callback");
+    (req.method === "GET" || req.method === "HEAD") &&
+    (pathname === "/api/meta/login" || pathname === "/api/meta/callback");
 
   if (!isConnectionPath || metaConnectionActivationConfigured(process.env)) {
     next();
