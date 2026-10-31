@@ -164,9 +164,27 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       return {status: response.status, body: await response.json()};
     }
     const before = await snapshot();
-    const challenge = await staff.beginCashierStationPairingAuthoritative({
-      merchantId: f.merchantId, stationId: station.stationId,
+    const {authPostgresSessionAuthority: sessionAuthority} =
+      await import('../src/services/authPostgresSessionAuthority.ts');
+    const {MERCHANT_SESSION_COOKIE} = await import('../src/middleware/authSession.ts');
+    const device = 'pairing-merchant-' + randomUUID();
+    const session = await sessionAuthority.issueSession({
+      accountId: f.merchantId, accountKind: 'merchant', tenantId: f.merchantId,
+      deviceId: device,
     });
+    async function issuePairing() {
+      const response = await fetch(
+        base + '/api/cashier/management/stations/' + encodeURIComponent(station.stationId) + '/pairing',
+        {method: 'POST', signal: AbortSignal.timeout(15000),
+          headers: {Cookie: MERCHANT_SESSION_COOKIE + '=' + session.token,
+            'X-Fawri-Device-Id': device, 'Content-Type': 'application/json'},
+          body: JSON.stringify({})},
+      );
+      return {status: response.status, body: await response.json()};
+    }
+    const challengeResponse = await issuePairing();
+    assert.equal(challengeResponse.status, 201, JSON.stringify(challengeResponse.body));
+    const challenge = challengeResponse.body;
     const paired = await redeem(challenge.pairing_code, station.deviceId);
     assert.equal(paired.status, 200, JSON.stringify(paired.body));
     assert.equal(paired.body.merchant_id, f.merchantId);
@@ -177,10 +195,9 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
     assert.equal(reused.body.code, 'CASHIER_PAIRING_INVALID');
     assert.deepEqual(await snapshot(), before, 'reused pairing code must not rewrite financial history');
     const replacement = 'replacement-' + randomUUID();
-    const second = await staff.beginCashierStationPairingAuthoritative({
-      merchantId: f.merchantId, stationId: station.stationId,
-    });
-    const replaced = await redeem(second.pairing_code, replacement);
+    const secondResponse = await issuePairing();
+    assert.equal(secondResponse.status, 201, JSON.stringify(secondResponse.body));
+    const replaced = await redeem(secondResponse.body.pairing_code, replacement);
     assert.equal(replaced.status, 200, JSON.stringify(replaced.body));
     assert.deepEqual(await snapshot(), before, 'replacement must not reset original financial history');
     const stream = await pool.query(
