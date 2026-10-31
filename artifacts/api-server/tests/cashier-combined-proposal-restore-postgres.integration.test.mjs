@@ -310,6 +310,13 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     await assert.rejects(pool.query("UPDATE cashier_stream_enrollment_reviews SET evidence_sha256=repeat('a',64) WHERE stream_id=$1",[own.streamId]),e=>e.code==='23514');
     const changed=structuredClone(own.body);changed.envelopes[0].payload.note='changed after restore';
     await assert.rejects(sell(own,changed),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT');
+    // A restored client may have lost its original receipt or skipped local operations.
+    // Neither a fresh operation at an old sequence nor a future gap can reset the
+    // server checkpoint, create financial rows, or affect another merchant.
+    const stale=saleBody(own.f,own.f.stations[0],own.body.envelopes[0].occurred_at,1);
+    await assert.rejects(sell(own,stale),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_STREAM_RECONCILIATION_REQUIRED');
+    const gap=saleBody(own.f,own.f.stations[0],own.body.envelopes[0].occurred_at,4);
+    await assert.rejects(sell(own,gap),e=>e.code==='CASHIER_STREAM_SEQUENCE_GAP');
     assert.deepEqual(await data(),initial.data);
   });
   if(phase==='verify')await t.test('restored canonical writer commits next sequence once and retains peer and review evidence',async()=>{
