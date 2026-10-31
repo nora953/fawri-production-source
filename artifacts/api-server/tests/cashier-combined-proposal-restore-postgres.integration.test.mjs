@@ -351,9 +351,9 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     // Once sequence 3 is committed, a restored device cannot reissue it
     // with a new operation identity or silently skip sequence 4.
     const staleAfterCommit=saleBody(own.f,own.f.stations[0],body.envelopes[0].occurred_at,3);
-    await assert.rejects(sell(own,staleAfterCommit));
+    await assert.rejects(sell(own,staleAfterCommit),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_STREAM_RECONCILIATION_REQUIRED');
     const gapAfterCommit=saleBody(own.f,own.f.stations[0],body.envelopes[0].occurred_at,5);
-    await assert.rejects(sell(own,gapAfterCommit));
+    await assert.rejects(sell(own,gapAfterCommit),e=>e.code==='CASHIER_STREAM_SEQUENCE_GAP');
     assert.deepEqual(await data(),after);
   });
 
