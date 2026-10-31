@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+      "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -4261,6 +4261,29 @@
         "broaderUniqueFiles": 94,
         "testBlob": "a644e56aeea1af66415ef63ddbf4d7f1bce07de9",
         "applicationBlob": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22"
+      },
+      "currentC05C06ClosureReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+        "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+        "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+        "questions": 4,
+        "sourcePins": 21,
+        "distinctImplementationBuckets": 2,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false
+      },
+      "currentStartupCandidateClassification": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
+        "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+        "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+        "candidateRows": 22,
+        "sourceFiles": 13,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false
       }
     },
     {
@@ -6713,7 +6736,7 @@
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "deliverable": "Exact unmatched current P0 actor/entrypoint/field-to-evidence rows; bounded existing residual8/86 is not whole P0.",
         "completedPrerequisite": "POST catalog image source/client/parser reconciled with6matched pins. One actual-full-app case after66TAP reproduced foreign-Origin201 plus1physical file; existing guard applied after merchant auth and before raw parser in2application lines. Final403/no files, allowed/omitted-Origin own/peer upload, exact asset/file/preview, MIME/empty/JSON/oversize denials, provider and real filesystem write error/recovery/session-revoke pass: target98/full-app67, broader836, all58CI. No schema/production grants/ownership policies or parent/count change. Next reconcile promotion write family source/evidence.",
-        "nextNamedReview": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+        "nextNamedReview": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
         "latestAcceptedBoundary": {
           "status": "BOUNDED_META_INACTIVE_CALLBACK_EXPRESS_PATH_AND_HEAD_GATE_FULL_APP_ACCEPTED",
           "source": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
@@ -7363,7 +7386,7 @@
         "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
         "executableNowWithinGitHub": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
         "externalDependency": "Related field policies and hosted inventory can block final acceptance.",
-        "nextAction": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+        "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
         "dependsOn": [
           "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
         ],
@@ -11429,6 +11452,29 @@
           "broaderUniqueFiles": 94,
           "testBlob": "a644e56aeea1af66415ef63ddbf4d7f1bce07de9",
           "applicationBlob": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22"
+        },
+        "currentC05C06ClosureReview": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+          "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+          "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+          "questions": 4,
+          "sourcePins": 21,
+          "distinctImplementationBuckets": 2,
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "newGate": false,
+          "parentGateClosed": false
+        },
+        "currentStartupCandidateClassification": {
+          "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
+          "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+          "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+          "candidateRows": 22,
+          "sourceFiles": 13,
+          "newRuntimeTests": 0,
+          "newCiRuns": 0,
+          "newGate": false,
+          "parentGateClosed": false
         }
       },
       {
@@ -15730,7 +15776,7 @@
           ],
           "status": "SSE_AND_KNOWLEDGE_READ_ACCEPTED_REMAINING_FAMILY_EVIDENCE_CONSOLIDATION",
           "condition": "Current named read/mutation/Origin/idempotency/version/failure proofs retain their exact bounds. Sibling order/Knowledge/realtime/other field conditions require existing assertion review before deciding a missing runtime cell.",
-          "next": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
+          "next": "MATRIX-C08 bounded inventory closure prerequisite: classify the22 existing startupCallCandidates by actual current role (startup bootstrap, background worker/reconciler, per-request operation, legacy/unreachable); bind existing proof layers and identify only actual unclassified P0 producer/consumer authority. Do not add22 tests or regenerate accepted catalogs. Then schedule the two recorded C05 implementation buckets (grouped Knowledge writes/response-style and own-order mutation) against finalized inventory. C07 policy and physical/hosted dependencies remain in deliveryControl gate cards; no implied approvals, external access, merge/deploy.",
           "newGate": false,
           "currentMerchantRealtimeFullAppProof": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
@@ -15897,6 +15943,27 @@
             "infrastructureRetryWorkflows": 2,
             "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
             "checkoutTreeMatched": true
+          },
+          "currentC05C06ClosureReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+            "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+            "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+            "questions": 4,
+            "sourcePins": 21,
+            "distinctImplementationBuckets": 2,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "newGate": false,
+            "parentGateClosed": false
+          },
+          "unmetImplementationConditions": {
+            "C05-KNOWLEDGE-WRITE-AUTHORITY": [
+              "C05-Q1",
+              "C05-Q2"
+            ],
+            "C05-OWN-ORDER-MUTATION-AUTHORITY": [
+              "C05-Q3"
+            ]
           }
         },
         {
@@ -15909,7 +15976,7 @@
           ],
           "status": "BOUNDED_META_ACTIVATION_MATCHER_ACCEPTED_SHARED_ALIAS_PROVIDER_REMAINDER",
           "condition": "Resolve shared-router alias/webhook/debug/compatibility registrations and fake billing/receipt/provider boundaries to effective middleware and preserved ownership. Real provider or live OAuth acceptance remains outside current GitHub authority.",
-          "next": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+          "next": "MATRIX-C08 bounded inventory closure prerequisite: classify the22 existing startupCallCandidates by actual current role (startup bootstrap, background worker/reconciler, per-request operation, legacy/unreachable); bind existing proof layers and identify only actual unclassified P0 producer/consumer authority. Do not add22 tests or regenerate accepted catalogs. Then schedule the two recorded C05 implementation buckets (grouped Knowledge writes/response-style and own-order mutation) against finalized inventory. C07 policy and physical/hosted dependencies remain in deliveryControl gate cards; no implied approvals, external access, merge/deploy.",
           "dependencies": [
             "P0-RECEIPT-OWNERSHIP-POLICY",
             "P0-HOSTED-PROVIDER-PAYMENT",
@@ -15957,6 +16024,18 @@
             "broaderUniqueFiles": 94,
             "testBlob": "a644e56aeea1af66415ef63ddbf4d7f1bce07de9",
             "applicationBlob": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22"
+          },
+          "currentC05C06ClosureReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+            "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+            "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+            "questions": 4,
+            "sourcePins": 21,
+            "distinctImplementationBuckets": 2,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "newGate": false,
+            "parentGateClosed": false
           }
         },
         {
@@ -15989,7 +16068,18 @@
           "status": "CURRENT_CATALOGUE_CLASSIFIED_COMPLETENESS_NOT_ESTABLISHED",
           "condition": "Every relevant P0 actor/field/background/alternate producer or consumer must have evidence or a named unmet condition. Static362 registrations/54 files/236 method-path keys are neither the current complete runtime surface nor a P0 denominator.",
           "next": "After C01-C07 reconciliation, reconcile startup/background and sensitive export/consumer candidates to actual effective authority. Unknown surfaces remain explicit. Any newly confirmed critical addition needs source/evidence and count impact; never silently expand the45 known release rows or demand one test per registration.",
-          "newGate": false
+          "newGate": false,
+          "currentStartupCandidateClassification": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
+            "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+            "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+            "candidateRows": 22,
+            "sourceFiles": 13,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "newGate": false,
+            "parentGateClosed": false
+          }
         }
       ],
       "supersession": [
@@ -16105,7 +16195,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+      "nextCurrentAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -16676,7 +16766,7 @@
       ],
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "currentWorkItem": "MATRIX-C05",
-      "nextAction": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+      "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
       "knownRemainingGates": [
         {
           "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -16690,7 +16780,7 @@
           "missingEvidenceOrDecision": "Current eight-table/86-column inventory is bounded; complete actor/field/producer/consumer acceptance remains false. Existing manifest imports are historical evidence, not current whole-P0 acceptance.",
           "executableNow": "Reconcile existing manifests and evidence first; enumerate exact unmatched P0 entrypoint/actor/field rows without inventing cases or executing UI/P1 work.",
           "dependency": "Related field policies and hosted inventory can block final acceptance.",
-          "nextAction": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy."
+          "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy."
         },
         {
           "gate": "CASHIER-SYNC-SEQUENCE-001",
@@ -17086,6 +17176,29 @@
         "broaderUniqueFiles": 94,
         "testBlob": "a644e56aeea1af66415ef63ddbf4d7f1bce07de9",
         "applicationBlob": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22"
+      },
+      "currentC05C06ClosureReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+        "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+        "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+        "questions": 4,
+        "sourcePins": 21,
+        "distinctImplementationBuckets": 2,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false
+      },
+      "currentStartupCandidateClassification": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
+        "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+        "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+        "candidateRows": 22,
+        "sourceFiles": 13,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false
       }
     },
     "currentMetaActivationPathMatchingProof": {
@@ -17129,6 +17242,29 @@
       "broaderUniqueFiles": 94,
       "testBlob": "a644e56aeea1af66415ef63ddbf4d7f1bce07de9",
       "applicationBlob": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22"
+    },
+    "currentC05C06ClosureReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+      "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+      "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+      "questions": 4,
+      "sourcePins": 21,
+      "distinctImplementationBuckets": 2,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "newGate": false,
+      "parentGateClosed": false
+    },
+    "currentStartupCandidateClassification": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
+      "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+      "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+      "candidateRows": 22,
+      "sourceFiles": 13,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "newGate": false,
+      "parentGateClosed": false
     }
   }
 }

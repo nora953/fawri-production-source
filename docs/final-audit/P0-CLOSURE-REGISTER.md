@@ -1,3 +1,9 @@
+## المتابعة الحالية — 2026-10-31
+
+اكتملت مطابقة أربعة أسئلة ضمن C05/C06 وتصنيف22 من استدعاءات البداية القائمة. المتبقي التنفيذي المحدد: كتابات Knowledge وإعداد أسلوب الرد، ونجاح تعديل طلب التاجر عبر التطبيق الكامل وPostgreSQL. لم يُنفذا في هذه الدفعة، وليسا بوابتين جديدتين.
+
+التفاصيل والحدود في PROGRESS.md وactor-map: currentC05C06FourQuestionClosureReconciliation وcurrentStartupCallCandidateClassification20261031. مؤشر التنفيذ الحالي في closurePlan.deliveryControl20261031. لا إغلاق بوابة رئيسية أو CI جديد؛ NO-GO و29CLOSED_SOURCE/7OPEN/9BLOCKED محفوظة.
+
 ## الحالة الحالية — 2026-10-31
 
 قُبل إصلاح تطابق بوابةMetaعندca2d779b:58/58CIمنالمحاولةالأولى؛target110/full77 وbroad836/97/94. تفاصيلالنتائج فيPROGRESS.md وactor-map#currentMetaActivationPathMatchingFullApp. قواعدالتنفيذوبطاقاتالمتبقي ومؤشرالمتابعة الحالي فيclosurePlan.deliveryControl20261031. أُنجز شرطتعطيلمحدود؛بوابةالمصفوفةOPEN وNO-GO،29CLOSED_SOURCE/7OPEN/9BLOCKED. لاخدماتمستضافة أونشرأودمج. نقاطالانتظارالأقدم أدناه تاريخية.

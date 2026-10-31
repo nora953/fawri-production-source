@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+    "nextExactAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -45984,6 +45984,433 @@
           }
         },
         "accepted": true
+      },
+      {
+        "boundary": "currentC05C06FourQuestionClosureReconciliation",
+        "date": "2026-10-31",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+        "acceptedExecutable": "ca2d779b2590c52af7dd2a208a3b65a62e27921e",
+        "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/knowledge-operations.ts",
+            "gitBlobSha": "1b655329d08ada28c531d0277338c4913d9fe137"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/training-operations.ts",
+            "gitBlobSha": "4476518b3b5af45c0f3839f1db0ea7352068d88f"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/saved-answer-operations.ts",
+            "gitBlobSha": "7b862281e94507455f20a91535acd15fdc5c5c47"
+          },
+          {
+            "path": "artifacts/api-server/tests/knowledge-management-postgres-cutover.integration.test.ts",
+            "gitBlobSha": "d54665da74470f707c32133e6ed920ef29cefb6f"
+          },
+          {
+            "path": "artifacts/api-server/tests/conversation-correction-approval-http-postgres.integration.test.mjs",
+            "gitBlobSha": "6f41bb1cd155e5cc1cd879e041426d1d0a9c8fd3"
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-response-style.test.ts",
+            "gitBlobSha": "eb2cf87298f2e5a3f70ff3a8a86b6a524647a023"
+          },
+          {
+            "path": "artifacts/api-server/src/services/merchantResponseStyle.ts",
+            "gitBlobSha": "84b8164d46a73e0dfdaae0b6b869095ac664ec6e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/order-operations.ts",
+            "gitBlobSha": "20e26c8a1b0cf5705084bbe563349e4b5c3f89ae"
+          },
+          {
+            "path": "artifacts/api-server/tests/global-merchant-postgres-http-journey.integration.test.ts",
+            "gitBlobSha": "fcb8599be27018d19c66f8ce530133e5073faa9e"
+          },
+          {
+            "path": "artifacts/api-server/tests/order-operations.integration.test.mjs",
+            "gitBlobSha": "b8f82cced37db75e8de83a0119adfb94ea3e79bb"
+          },
+          {
+            "path": "artifacts/api-server/tests/order-payment-hardening.integration.test.mjs",
+            "gitBlobSha": "16dbb6f70d954f8b8ac3525929408facb973d3ce"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+            "gitBlobSha": "96edbe04ad56360e8fa53c9f66df71c0add5464d"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+            "gitBlobSha": "2704c0a99970c736e0de2a91ef7901f961614ec4"
+          },
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "gitBlobSha": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22"
+          },
+          {
+            "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+            "gitBlobSha": "a644e56aeea1af66415ef63ddbf4d7f1bce07de9"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/saas-billing.ts",
+            "gitBlobSha": "3665c398beb2822853b4e83a158b714380a2410e"
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts",
+            "gitBlobSha": "3e13c1291187dc254a1bbeee09dda6755f411e2d"
+          },
+          {
+            "path": "artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs",
+            "gitBlobSha": "110362c2cd7d8b654823f82214995603f4133939"
+          },
+          {
+            "path": "artifacts/api-server/tests/meta-full-app-restricted-postgres.integration.test.mjs",
+            "gitBlobSha": "d9122a09802e650a93b807c5885379d32aac4a2f"
+          },
+          {
+            "path": "artifacts/api-server/src/index.ts",
+            "gitBlobSha": "3fd350d160c59c6226989ac3348c20e64424ea4e"
+          },
+          {
+            "path": "artifacts/api-server/src/services/runtimeProviderBootstrap.ts",
+            "gitBlobSha": "5c24ecac17a6be30423a38532ec0f2818206e8ee"
+          }
+        ],
+        "questions": [
+          {
+            "id": "C05-Q1",
+            "question": "Current Knowledge mutations versus SQL/correction HTTP evidence",
+            "result": "PARTIAL_RUNTIME_TWO_PROOF_LAYERS_NOT_INTERCHANGEABLE",
+            "currentRoutes": [
+              "POST/PATCH/DELETE /api/knowledge/saved-answers",
+              "POST /api/knowledge/training-requests and propose/approve/revoke/reject"
+            ],
+            "existingEvidence": [
+              "currentLegacyKnowledgeRetirementFullApp: current saved-answer GET and revoked-session, legacy410",
+              "knowledge-management-postgres-cutover.integration.test.ts: management/decision SQL cycle, pagination and tenant isolation",
+              "conversation-correction-approval-http-postgres.integration.test.mjs: mounted conversation router approval, rollback/replay/revoked-session"
+            ],
+            "finding": "The correction HTTP caller is not the dedicated Knowledge HTTP family. Current wrappers derive tenant from secure session and parse expectedVersion; service SQL success alone does not prove actual-app request-to-command authority for those writes.",
+            "remainingCondition": "One grouped actual-app Knowledge management journey: legitimate own saved-answer/training write transitions, foreign identity/ID denial and preserved peer state, expectedVersion mapping/conflict and current-session revocation; reuse service SQL rollback/learning/AI evidence, do not repeat all SQL CRUD or each route as an independent gate.",
+            "implementationBucket": "C05-KNOWLEDGE-WRITE-AUTHORITY"
+          },
+          {
+            "id": "C05-Q2",
+            "question": "Runtime/response-style mapper and write authority",
+            "result": "RUNTIME_METADATA_REUSED_STYLE_MUTATION_RUNTIME_BOUNDARY_REMAINS",
+            "existingEvidence": [
+              "merchant-response-style.test.ts: defaults/namespace/fallback/policy resolver and constrained fake-AI presentation tests; the API contract case reads source text",
+              "currentKnowledgeReadFullApp: actual family session guard and intended Knowledge DTOs"
+            ],
+            "finding": "GET runtime returns engine configuration metadata under the same family guard, not a new tenant-record reader; no standalone runtime test is admitted just for a route count. Response-style reads/writes private merchant metadata through merchant-scoped transaction, SELECT FOR UPDATE and expectedVersion; unit/source checks do not exercise the real mutation.",
+            "remainingCondition": "Include response-style own read/write/version and peer/unrelated metadata preservation in the grouped C05-KNOWLEDGE-WRITE-AUTHORITY condition. Preserve fallback and presentation-only semantics; no real AI transport or new policy.",
+            "implementationBucket": "C05-KNOWLEDGE-WRITE-AUTHORITY"
+          },
+          {
+            "id": "C05-Q3",
+            "question": "Legitimate own-order mutations versus accepted negative/order/SQL proofs",
+            "result": "CURRENT_PG_FOREIGN_DENIAL_ACCEPTED_OLD_POSITIVE_JSON_LAYER_RETAINED",
+            "existingEvidence": [
+              "global-merchant-postgres-http-journey.integration.test.ts: actual app+secure login+PostgreSQL own detail/list and five foreign mutation denials, status/payment/version preserved",
+              "order-operations.integration.test.mjs and order-payment-hardening.integration.test.mjs: legitimate confirm/concurrency behavior with legacy JSON fixture",
+              "currentMerchantOrderList/currentOrderOptionalPaymentReadFields: current actual-app read projection and SQL-read-failure proofs"
+            ],
+            "finding": "Do not relabel legacy JSON success as current required-PostgreSQL HTTP mutation success. Do not repeat global foreign/order/cashier exclusion denials as new gaps.",
+            "remainingCondition": "Bounded legitimate non-cashier current PostgreSQL merchant mutation through actual app with server-derived tenant, expected version/conflict and durable payment/order attribution; preserve peer and reuse prior SQL financial/fault/provider cases. No provider confirmation or arbitrary receipt repair is admitted.",
+            "implementationBucket": "C05-OWN-ORDER-MUTATION-AUTHORITY"
+          },
+          {
+            "id": "C06-Q4",
+            "question": "Shared aliases and activation versus current interceptors and fake provider layers",
+            "result": "SOURCE_AUTHORITY_AND_FAKE_VS_REAL_CLASSIFIED_EXTERNAL_GATES_UNCHANGED",
+            "existingEvidence": [
+              "currentMetaActivationPathMatchingFullApp: accepted exact-source actual app config gate case/slash/HEAD",
+              "currentLegacyKnowledgeRetirementFullApp and current catalog/conversation/order overlays: earlier effective handlers/retirement",
+              "meta-full-app-restricted-postgres.integration.test.mjs: actual app/worker/queue with loopback Graph server and synthetic keys",
+              "verified-receipt-replay-execution-http-postgres.integration.test.mjs: real mounted receipt router and restricted SQL, intercepted sandbox status fetch"
+            ],
+            "finding": "app.ts mounts corrected catalog/order/conversation/Knowledge handlers before the shared legacy router. Required-mode legacy webhook handler is retired after the upstream queue path; the Meta full-app proof covers upstream signed ingress/worker with injected transport. meta/pages selects current authoritative tenant channel summary; source review is not a fresh runtime acceptance for every alias. Receipt tests' sandbox names/fake response remain fake provider evidence.",
+            "dependencies": [
+              "P0-HOSTED-PROVIDER-PAYMENT",
+              "P0-HOSTED-PROVIDER-META",
+              "P0-RECEIPT-OWNERSHIP-POLICY",
+              "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+            ],
+            "remainingCondition": "Retain historical/current alias limits for C08 inventory; real provider activation and original ownership/retention decisions stay with existing gates. Do not create extra fake-provider or ordinary pairing tests to simulate external acceptance."
+          }
+        ],
+        "distinctImplementationBuckets": 2,
+        "noStandaloneRuntimeMetadataTest": true,
+        "noDuplicateForeignOrderOrPairingTest": true,
+        "sourceOnly": true,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false,
+        "fullP0InventoryAccepted": false,
+        "nextExactAction": "MATRIX-C08 bounded inventory closure prerequisite: classify the22 existing startupCallCandidates by actual current role (startup bootstrap, background worker/reconciler, per-request operation, legacy/unreachable); bind existing proof layers and identify only actual unclassified P0 producer/consumer authority. Do not add22 tests or regenerate accepted catalogs. Then schedule the two recorded C05 implementation buckets (grouped Knowledge writes/response-style and own-order mutation) against finalized inventory. C07 policy and physical/hosted dependencies remain in deliveryControl gate cards; no implied approvals, external access, merge/deploy."
+      },
+      {
+        "boundary": "currentStartupCallCandidateClassification20261031",
+        "date": "2026-10-31",
+        "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C08",
+        "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+        "rows": [
+          {
+            "path": "artifacts/api-server/src/app.ts",
+            "historicalCatalogueLine": 356,
+            "callee": "startMerchantRetentionPolicyScheduler",
+            "currentFileGitBlob": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22",
+            "classification": "IMPORT_TIME_RETENTION_SCHEDULER",
+            "finding": "app.ts import starts current retention policy scheduler; required mode delegates to PostgreSQL refresh, also refreshed per request. Retention schedule approval remains FIELD005.",
+            "existingGate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/index.ts",
+            "historicalCatalogueLine": 44,
+            "callee": "bootstrapRuntimeAndLoadApplication",
+            "currentFileGitBlob": "3fd350d160c59c6226989ac3348c20e64424ea4e",
+            "classification": "PROCESS_BOOTSTRAP",
+            "finding": "index.main validates production config/RLS/stream storage/owner before provider bootstrap and app import; listener starts only afterwards.",
+            "existingGate": "P0-ACCESS-HOSTED-ROLLOUT",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/index.ts",
+            "historicalCatalogueLine": 81,
+            "callee": "startEarlyWarningIncidentMonitor",
+            "currentFileGitBlob": "3fd350d160c59c6226989ac3348c20e64424ea4e",
+            "classification": "POST_LISTEN_BACKGROUND_MONITOR",
+            "finding": "Early warning monitor starts after listen; unlike media/Meta it is not inside FAWRI_DISABLE_JOB_WORKERS branch. Do not claim this flag disables every background function.",
+            "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/index.ts",
+            "historicalCatalogueLine": 96,
+            "callee": "startMerchantPhysicalMediaCleanupReconciler",
+            "currentFileGitBlob": "3fd350d160c59c6226989ac3348c20e64424ea4e",
+            "classification": "POST_LISTEN_MEDIA_RECONCILER",
+            "finding": "Starts only when job workers not explicitly disabled; postcommit manifest retry/local storage path; actual hosted storage acceptance separate.",
+            "existingGate": "P0-HOSTED-STORAGE-DELETION",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/index.ts",
+            "historicalCatalogueLine": 108,
+            "callee": "startMetaWebhookWorker",
+            "currentFileGitBlob": "3fd350d160c59c6226989ac3348c20e64424ea4e",
+            "classification": "POST_LISTEN_META_WORKER",
+            "finding": "Starts only when workers enabled and META_CUTOVER_READY=1; stop/dispose and server close on startup failure; actual Graph delivery external.",
+            "existingGate": "P0-HOSTED-PROVIDER-META",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-security.ts",
+            "historicalCatalogueLine": 32,
+            "callee": "startPostgresSupportRuntimeCutover",
+            "currentFileGitBlob": "add79d620b2b6e5fe0a73a2baf7532db17b2a56e",
+            "classification": "IMPORT_TIME_SUPPORT_LIFECYCLE_TIMER",
+            "finding": "auth-security import starts required-mode Support runtime timer, once; legacy callback registration does not authorize legacy JSON in required mode.",
+            "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+            "historicalCatalogueLine": 381,
+            "callee": "startSupportPreviewSessionPostgres",
+            "currentFileGitBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+            "classification": "REQUEST_OPERATION_NOT_BACKGROUND_STARTUP",
+            "finding": "Authenticated admin Support preview request creates session; naming start is business operation. Existing C03 preview layers retained.",
+            "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+            "historicalCatalogueLine": 832,
+            "callee": "startMerchantRetentionScheduler",
+            "currentFileGitBlob": "5d2c161fb3e04dfbd5055149929f01bc160b48e9",
+            "classification": "LEGACY_IMPORT_TIMER_DISABLED_REQUIRED_MODE",
+            "finding": "Legacy retention scheduler returns immediately when operational PostgreSQL required; current app retention scheduler is a distinct path.",
+            "existingGate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/routes/cashier-subscription-operations.ts",
+            "historicalCatalogueLine": 199,
+            "callee": "scheduleCashierDowngradeAuthoritative",
+            "currentFileGitBlob": "d61c6e4ef6731563a80baae8e21e9e8a42f43a8f",
+            "classification": "REQUEST_OPERATION_NOT_BACKGROUND_STARTUP",
+            "finding": "Schedule downgrade is authenticated cashier-subscription business command, not a process scheduler boot.",
+            "existingGate": "CASHIER-SYNC-SEQUENCE-001",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/routes/cashier-sync-operations.ts",
+            "historicalCatalogueLine": 27,
+            "callee": "reconcileCashierRuntimeExpirationsAuthoritative",
+            "currentFileGitBlob": "d733b922d53bf70fbb8d68c4f631bdfa3bdb60bf",
+            "classification": "REQUEST_MIDDLEWARE_RECONCILIATION",
+            "finding": "Cashier sync middleware reconciles only matching /cashier paths reaching that router. Earlier direct mounts can terminate before it; retain C04 effective-mount distinction.",
+            "existingGate": "CASHIER-SYNC-SEQUENCE-001",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/awsKmsMetaCredentialKeyProvider.ts",
+            "historicalCatalogueLine": 271,
+            "callee": "bootstrapAwsKmsMetaCredentialKeyProvider",
+            "currentFileGitBlob": "560403dc90ce8841aa98983882263307690884bc",
+            "classification": "PROVIDER_BOOTSTRAP_HELPER",
+            "finding": "KMS environment adapter delegates to bootstrap with a concrete client and destroys client finally; not an independent worker. Actual key/provider evidence external.",
+            "existingGate": "P0-OFFLINE-KEY-RELEASE",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/durableJobQueue.ts",
+            "historicalCatalogueLine": 641,
+            "callee": "reconcileExpired",
+            "currentFileGitBlob": "bc7b4d5ea0358465fd3515ab6cd6456aa7b05b7c",
+            "classification": "EXISTING_WORKER_TICK_CALLBACK",
+            "finding": "Legacy durable worker calls reconcileExpired before claiming; nested in a tick, not another process worker.",
+            "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts",
+            "historicalCatalogueLine": 396,
+            "callee": "reconcileMerchantPhysicalMediaCleanup",
+            "currentFileGitBlob": "19e2ee74aea667b7a606aae2f0803d96886c66d4",
+            "classification": "POST_COMMIT_MEDIA_OPERATION",
+            "finding": "Deletion path invokes media reconciliation after commit; failure retains manifest for retry and does not restore access.",
+            "existingGate": "P0-HOSTED-STORAGE-DELETION",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts",
+            "historicalCatalogueLine": 429,
+            "callee": "reconcileMerchantPhysicalMediaCleanup",
+            "currentFileGitBlob": "19e2ee74aea667b7a606aae2f0803d96886c66d4",
+            "classification": "MANIFEST_BATCH_CALLBACK",
+            "finding": "Pending manifest scan calls same reconciler per owned pending manifest; completed records do not count toward inspected batch limit.",
+            "existingGate": "P0-HOSTED-STORAGE-DELETION",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts",
+            "historicalCatalogueLine": 457,
+            "callee": "reconcilePendingMerchantPhysicalMediaCleanups",
+            "currentFileGitBlob": "19e2ee74aea667b7a606aae2f0803d96886c66d4",
+            "classification": "MEDIA_WORKER_TICK_CALLBACK",
+            "finding": "Scheduled media tick scans pending manifests; nested callback of existing media reconciler.",
+            "existingGate": "P0-HOSTED-STORAGE-DELETION",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts",
+            "historicalCatalogueLine": 468,
+            "callee": "reconcileOrphanSupportImagesPostgres",
+            "currentFileGitBlob": "19e2ee74aea667b7a606aae2f0803d96886c66d4",
+            "classification": "MEDIA_WORKER_TICK_CALLBACK",
+            "finding": "Same media tick runs orphan support-image reconciliation; no separate standalone startup worker proven by this call.",
+            "existingGate": "P0-HOSTED-STORAGE-DELETION",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+            "historicalCatalogueLine": 311,
+            "callee": "reconcilePostgresMetaReplyJob",
+            "currentFileGitBlob": "4d0a819ba19148e9a8471e710f6bbdfc413bc04b",
+            "classification": "META_EXPIRED_JOB_LIVE_CALLBACK",
+            "finding": "Expired job dispatcher chooses PostgreSQL live-reply reconciliation in live mode.",
+            "existingGate": "P0-HOSTED-PROVIDER-META",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+            "historicalCatalogueLine": 319,
+            "callee": "reconcileMetaReplyJob",
+            "currentFileGitBlob": "4d0a819ba19148e9a8471e710f6bbdfc413bc04b",
+            "classification": "META_EXPIRED_JOB_INJECTED_CALLBACK",
+            "finding": "Non-live expired reply path requires injected reply transport; not proof of actual provider delivery.",
+            "existingGate": "P0-HOSTED-PROVIDER-META",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+            "historicalCatalogueLine": 425,
+            "callee": "startDurableJobWorkerAuthoritative",
+            "currentFileGitBlob": "4d0a819ba19148e9a8471e710f6bbdfc413bc04b",
+            "classification": "META_WORKER_CONSTRUCTOR_DELEGATION",
+            "finding": "Meta starts authoritative durable worker with handlers/recovery/dead-letter callbacks; composition, not a second Meta startup.",
+            "existingGate": "P0-HOSTED-PROVIDER-META",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+            "historicalCatalogueLine": 467,
+            "callee": "reconcileExpiredMetaJob",
+            "currentFileGitBlob": "4d0a819ba19148e9a8471e710f6bbdfc413bc04b",
+            "classification": "META_WORKER_RECOVERY_CALLBACK",
+            "finding": "reconcileExpiredJob option delegates to expired Meta job dispatcher after recovery guard; not separate scheduler.",
+            "existingGate": "P0-HOSTED-PROVIDER-META",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresDurableJobQueue.ts",
+            "historicalCatalogueLine": 839,
+            "callee": "startDurableJobWorker",
+            "currentFileGitBlob": "22638f632eb845da91fafe74c02abe41e8d8ee70",
+            "classification": "AUTHORITY_SELECTOR_LEGACY_FALLBACK",
+            "finding": "PostgreSQL worker wrapper calls legacy startDurableJobWorker only when operational authority is not required; required mode has SQL worker implementation.",
+            "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+            "newRuntimeAcceptance": false
+          },
+          {
+            "path": "artifacts/api-server/src/services/runtimeProviderBootstrap.ts",
+            "historicalCatalogueLine": 231,
+            "callee": "bootstrapAwsKmsMetaCredentialKeyProviderFromEnvironment",
+            "currentFileGitBlob": "5c24ecac17a6be30423a38532ec0f2818206e8ee",
+            "classification": "PROVIDER_BOOTSTRAP_DEPENDENCY_FACTORY",
+            "finding": "Default dependency supplies KMS initialization to selected runtime bootstrap. Configuration selects use; factory definition alone is not startup execution.",
+            "existingGate": "P0-HOSTED-PROVIDER-META",
+            "newRuntimeAcceptance": false
+          }
+        ],
+        "supportingSourcePins": [
+          {
+            "path": "artifacts/api-server/src/services/merchantRetentionScheduler.ts",
+            "gitBlobSha": "1e85d7ebdea7bc9413d4bfc43c138e3c4cc8d149"
+          },
+          {
+            "path": "artifacts/api-server/src/services/merchantRetentionPolicy.ts",
+            "gitBlobSha": "80e765b539e616273c1e7b3c07aa968b48a38baa"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresSupportRuntimeCutover.ts",
+            "gitBlobSha": "7ccad7a7082360515d687a11f7fccbff1a618bb2"
+          },
+          {
+            "path": "artifacts/api-server/tests/merchant-media-cleanup-retry-scan.test.ts",
+            "gitBlobSha": "ad7cdf2359a68e0552c5a62a206ba874dbccd3b8"
+          }
+        ],
+        "bounds": [
+          "Classifies existing22 catalogue candidates from13files only; not an exhaustive current startup/export/consumer scan.",
+          "Historical line numbers and counts retained as catalogue input, not refreshed runtime anchors or a P0 denominator.",
+          "No KMS/provider invocation, workers started, SQL or hosted environment touched; source-only classification.",
+          "Sensitive export/consumer completeness and existing physical/hosted/policy requirements remain open."
+        ],
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false,
+        "completeP0Inventory": false,
+        "nextExactAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy."
       }
     ],
     "currentTestOverlay": {
@@ -49628,7 +50055,7 @@
           ],
           "status": "SSE_AND_KNOWLEDGE_READ_ACCEPTED_REMAINING_FAMILY_EVIDENCE_CONSOLIDATION",
           "condition": "Current named read/mutation/Origin/idempotency/version/failure proofs retain their exact bounds. Sibling order/Knowledge/realtime/other field conditions require existing assertion review before deciding a missing runtime cell.",
-          "next": "MATRIX-C05: consolidate remaining sibling-family evidence against the frozen queue after accepted SSE and three Knowledge GET projections. Inspect current named Knowledge write/runtime/response-style and order mutation proofs before selecting any genuinely unmet condition; reuse C01 saved-answer/legacy, global merchant order/pairing and SQL Knowledge proofs. Do not add one test per route or reopen accepted boundaries. Then proceed to MATRIX-C06 existing shared-alias/provider/billing fake-vs-real reconciliation. FIELD002/003/004/005, SEQ policy/device and hosted blockers remain unchanged; GitHub-only, no merge/deploy.",
+          "next": "MATRIX-C08 bounded inventory closure prerequisite: classify the22 existing startupCallCandidates by actual current role (startup bootstrap, background worker/reconciler, per-request operation, legacy/unreachable); bind existing proof layers and identify only actual unclassified P0 producer/consumer authority. Do not add22 tests or regenerate accepted catalogs. Then schedule the two recorded C05 implementation buckets (grouped Knowledge writes/response-style and own-order mutation) against finalized inventory. C07 policy and physical/hosted dependencies remain in deliveryControl gate cards; no implied approvals, external access, merge/deploy.",
           "newGate": false,
           "currentMerchantRealtimeFullAppProof": {
             "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMerchantRealtimeFullApp]",
@@ -49795,6 +50222,27 @@
             "infrastructureRetryWorkflows": 2,
             "checkout": "fef0fee4bb3cd836322df099a21768e72c772fa1",
             "checkoutTreeMatched": true
+          },
+          "currentC05C06ClosureReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+            "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+            "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+            "questions": 4,
+            "sourcePins": 21,
+            "distinctImplementationBuckets": 2,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "newGate": false,
+            "parentGateClosed": false
+          },
+          "unmetImplementationConditions": {
+            "C05-KNOWLEDGE-WRITE-AUTHORITY": [
+              "C05-Q1",
+              "C05-Q2"
+            ],
+            "C05-OWN-ORDER-MUTATION-AUTHORITY": [
+              "C05-Q3"
+            ]
           }
         },
         {
@@ -49807,7 +50255,7 @@
           ],
           "status": "BOUNDED_META_ACTIVATION_MATCHER_ACCEPTED_SHARED_ALIAS_PROVIDER_REMAINDER",
           "condition": "Resolve shared-router alias/webhook/debug/compatibility registrations and fake billing/receipt/provider boundaries to effective middleware and preserved ownership. Real provider or live OAuth acceptance remains outside current GitHub authority.",
-          "next": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+          "next": "MATRIX-C08 bounded inventory closure prerequisite: classify the22 existing startupCallCandidates by actual current role (startup bootstrap, background worker/reconciler, per-request operation, legacy/unreachable); bind existing proof layers and identify only actual unclassified P0 producer/consumer authority. Do not add22 tests or regenerate accepted catalogs. Then schedule the two recorded C05 implementation buckets (grouped Knowledge writes/response-style and own-order mutation) against finalized inventory. C07 policy and physical/hosted dependencies remain in deliveryControl gate cards; no implied approvals, external access, merge/deploy.",
           "dependencies": [
             "P0-RECEIPT-OWNERSHIP-POLICY",
             "P0-HOSTED-PROVIDER-PAYMENT",
@@ -49855,6 +50303,18 @@
             "broaderUniqueFiles": 94,
             "testBlob": "a644e56aeea1af66415ef63ddbf4d7f1bce07de9",
             "applicationBlob": "0c1968089cf7211f9e8e60f9f506d9784ccb9b22"
+          },
+          "currentC05C06ClosureReview": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+            "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+            "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+            "questions": 4,
+            "sourcePins": 21,
+            "distinctImplementationBuckets": 2,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "newGate": false,
+            "parentGateClosed": false
           }
         },
         {
@@ -49887,7 +50347,18 @@
           "status": "CURRENT_CATALOGUE_CLASSIFIED_COMPLETENESS_NOT_ESTABLISHED",
           "condition": "Every relevant P0 actor/field/background/alternate producer or consumer must have evidence or a named unmet condition. Static362 registrations/54 files/236 method-path keys are neither the current complete runtime surface nor a P0 denominator.",
           "next": "After C01-C07 reconciliation, reconcile startup/background and sensitive export/consumer candidates to actual effective authority. Unknown surfaces remain explicit. Any newly confirmed critical addition needs source/evidence and count impact; never silently expand the45 known release rows or demand one test per registration.",
-          "newGate": false
+          "newGate": false,
+          "currentStartupCandidateClassification": {
+            "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
+            "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+            "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+            "candidateRows": 22,
+            "sourceFiles": 13,
+            "newRuntimeTests": 0,
+            "newCiRuns": 0,
+            "newGate": false,
+            "parentGateClosed": false
+          }
         }
       ],
       "supersession": [
@@ -50003,7 +50474,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+      "nextCurrentAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -50636,11 +51107,34 @@
       "evidence": "evidence/P0-CLOSURE-REGISTER.json#closurePlan.deliveryControl20261031",
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "currentWorkItem": "MATRIX-C05",
-      "nextAction": "Complete one finite C05/C06 reconciliation output for four remaining evidence questions: (1) current Knowledge mutations versus existing management SQL/correction HTTP proofs; (2) runtime/response-style mapper and write authority versus unit/source/runtime evidence; (3) legitimate own-order mutations versus accepted global negative/order/SQL proofs; (4) shared aliases and Meta/billing activation versus current interceptors and fake-provider proof layers. For each output an existing accepted link, exact unmet P0 condition, or existing policy/external dependency; do not generate a test for every limitation. Then consolidate C07 dependencies and C08 startup/background/consumer inventory. Reuse accepted C01-C04, Knowledge GET/SSE/order/pairing and Meta matcher proof. No new policy/gate/hosted/provider/merge/deploy.",
+      "nextAction": "Execute one coherent existing-gate source batch for the two C05 runtime gaps identified by currentC05C06FourQuestionClosureReconciliation: grouped Knowledge write/response-style actor+tenant+request-version journey, and legitimate own-order current-PostgreSQL mutation authority. Use existing full-app restricted-primary/separate-auth fixture, reuse SQL rollback/AI/provider and foreign-order/pairing proofs, do not add one test per route. Verify relevant targeted+broad exact-source CI once for the coherent candidate. After these two bounded conditions, continue C08 sensitive export/producer/consumer completeness (22 startup candidates already classified; do not repeat). C07 and physical/hosted/policy blockers unchanged; no merge/deploy.",
       "staleActivePointersCorrected": 5,
       "gateStatusesChanged": false,
       "newRuntimeTests": 0,
-      "newCiRuns": 0
+      "newCiRuns": 0,
+      "currentC05C06ClosureReview": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+        "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+        "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+        "questions": 4,
+        "sourcePins": 21,
+        "distinctImplementationBuckets": 2,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false
+      },
+      "currentStartupCandidateClassification": {
+        "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
+        "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+        "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+        "candidateRows": 22,
+        "sourceFiles": 13,
+        "newRuntimeTests": 0,
+        "newCiRuns": 0,
+        "newGate": false,
+        "parentGateClosed": false
+      }
     },
     "currentMetaActivationPathMatchingProof": {
       "status": "BOUNDED_META_INACTIVE_CALLBACK_EXPRESS_PATH_AND_HEAD_GATE_FULL_APP_ACCEPTED",
@@ -50690,6 +51184,29 @@
       "gitBlob": "b6a500871f2d1567b87723654cc68c4517f33043",
       "catalogueRegenerated": false,
       "interpretation": "Accepted one actual-app three-GET Knowledge read case: nonempty exact DTOs for two merchants,15positive reads/21denials, intended preview/hash/version and audit decisionCode retained, owned state and peer preserved. target109/full76; broad836/97/94;58CI success with two documented Docker502 infrastructure retries, no application change or parent closure."
+    },
+    "currentC05C06ClosureReview": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentC05C06FourQuestionClosureReconciliation]",
+      "status": "FOUR_EVIDENCE_QUESTIONS_CLASSIFIED_TWO_EXISTING_GATE_RUNTIME_CONDITIONS_RETAINED",
+      "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+      "questions": 4,
+      "sourcePins": 21,
+      "distinctImplementationBuckets": 2,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "newGate": false,
+      "parentGateClosed": false
+    },
+    "currentStartupCandidateClassification": {
+      "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentStartupCallCandidateClassification20261031]",
+      "status": "EXISTING22_CALL_CANDIDATES_CLASSIFIED_NOT22_WORKERS_OR_COMPLETE_CONSUMER_INVENTORY",
+      "sourceReviewed": "57bee6c83b31a563cbd9b14884d51d1896d29333",
+      "candidateRows": 22,
+      "sourceFiles": 13,
+      "newRuntimeTests": 0,
+      "newCiRuns": 0,
+      "newGate": false,
+      "parentGateClosed": false
     }
   },
   "componentScopes": {
