@@ -467,6 +467,16 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       });
       continue;
     }
+    const channel = asArray(report.rows.merchant_channels).filter(
+      (candidate) => text(candidate.id) === text(conversation.channel_id) &&
+        text(candidate.merchant_id) === merchantId,
+    );
+    if (!text(conversation.channel_id) || channel.length !== 1) {
+      addError(report, "LEGACY_DRAFT_CHANNEL_OWNERSHIP_UNVERIFIED", {
+        table: "order_drafts", target_record_id: row.id,
+      });
+      continue;
+    }
     if (!["product", "customer_info"].includes(text(row.awaiting_field))) {
       addError(report, "LEGACY_DRAFT_STATE_UNSUPPORTED", {
         table: "order_drafts",
