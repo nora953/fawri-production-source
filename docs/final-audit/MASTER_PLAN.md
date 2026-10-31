@@ -1,3 +1,7 @@
+## الحالة الحالية — 2026-10-31
+
+قُبل إصلاح تطابق بوابةMetaعندca2d779b:58/58CIمنالمحاولةالأولى؛target110/full77 وbroad836/97/94. تفاصيلالنتائج فيPROGRESS.md وactor-map#currentMetaActivationPathMatchingFullApp. قواعدالتنفيذوبطاقاتالمتبقي ومؤشرالمتابعة الحالي فيclosurePlan.deliveryControl20261031. أُنجز شرطتعطيلمحدود؛بوابةالمصفوفةOPEN وNO-GO،29CLOSED_SOURCE/7OPEN/9BLOCKED. لاخدماتمستضافة أونشرأودمج. نقاطالانتظارالأقدم أدناه تاريخية.
+
 ## نقطة التنفيذ الحالية — 2026-10-31
 
 إصلاح بوابة تعطيلMeta مرشحCI_PENDING عند ca2d779b2590c52af7dd2a208a3b65a62e27921e. قواعدالإنجازوبطاقاتالمتبقي وتصحيحالمؤشرات في evidence/P0-CLOSURE-REGISTER.json#closurePlan.deliveryControl20261031؛ تفاصيلالمرشح فيPROGRESS.md وأدلةactor-map. لا قبولبوابةأونسبةتقدمجديدة؛NO-GO والقيودمحفوظة. الفقراتالأقدم أدناه تاريخية؛مؤشرالمتابعةالحالي داخلdeliveryControl.

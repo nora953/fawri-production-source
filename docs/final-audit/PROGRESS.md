@@ -1,3 +1,15 @@
+## قبول إصلاح بوابة تعطيل Meta — 2026-10-31
+
+أُنجز شرط محدد ضمن P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX/C06: بوابة تعطيل ربطMeta تطابق الآن سلوكExpress لاختلاف الأحرف والشرطة الأخيرة وGET/HEAD. المصدر [ca2d779b](https://github.com/nora953/fawri-production-source/commit/ca2d779b2590c52af7dd2a208a3b65a62e27921e) مقبول: **58/58workflowSUCCESS من المحاولةالأولى، دون إعادة**. التغيير في مصنّف البوابة فقط واختبار واحد بالملف الحالي؛ لا تغيير متطلباتالتفعيل أوالصلاحيات أوالمخطط.
+
+[المستهدف41172764272/job124454049688](https://github.com/nora953/fawri-production-source/actions/runs/41172764272/job/124454049688): **110TAP/6ملفات، full-app77**؛0فشل/تخطٍّ/إلغاء. marker P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED يثبت8طلباتتعطيل503،4استجابات400بالإعدادالاصطناعيالكامللنقصcode،0محاولةfetchخارجي،جسمHEADفارغ وثباتالبيانات. اختبارcallbackدونcode/state لا يفعّلMeta أويسلّمOAuth أويثبت كلدورةالاتصال؛ أصلالإعدادالقائم محفوظ.
+
+[الأوسع41172763995/job124454048471](https://github.com/nora953/fawri-production-source/actions/runs/41172763995/job/124454048471): **836TAP/97استدعاء/94ملفًا**،كل97summaryComplete،0فشل/تخطٍّ/إلغاء. checkout fb38d6091e3255082e1be5d7a787b99bb7049c65 وشجرتهbc6372468bb5dd8d1b5f1b167c941429471c2770 مطابقانللمصدر فيالحزمتين. applicationBlob0c1968089cf7211f9e8e60f9f506d9784ccb9b22 وtestBloba644e56aeea1af66415ef63ddbf4d7f1bce07de9.
+
+ثُبّتت قواعدالتنفيذ فيAGENTS وخطةالتنفيذ وclosurePlan.deliveryControl20261031:16بطاقةللأبوابالقائمة،5تصحيحاتلمؤشراتالعملالقديمة،وقياسالتقدمبشروطالإغلاق والعوائق. لم يُغلق بندرئيسي بهذهالدفعة؛أُصلح وقُبل شرطتعطيلمحدود. التالي ناتج مطابقة واحد لأربعأسئلةC05/C06المحددةداخلdeliveryControl،ثمC07/C08؛ لااختبارتلقائي لكلحدموثق. حُفظت أدلةالربطوالطلبات وKnowledge/SSEوالشروطالسابقة لإعادةاستخدامها.
+
+لا تغييرلحالاتالسجل:45بندًا،29CLOSED_SOURCE/7OPEN/9BLOCKED؛completeP0Inventory=false وoverallPercentage=null وNO-GO. لاقبولOAuth/مزودحقيقي أوسياسةاستثنائية أوhosted،ولاmerge/deploy أوP1/P2. الفقراتCI_PENDINGالأقدم تاريخية؛هذهالفقرة والأدلةالمحدثةهيالحالية.
+
 ## إصلاح محدد لبوابة Meta وضبط تنفيذ الإغلاق — 2026-10-31
 
 المصدر المرشح [ca2d779b](https://github.com/nora953/fawri-production-source/commit/ca2d779b2590c52af7dd2a208a3b65a62e27921e) يوحّد مطابقة بوابة تعطيل اتصالMeta مع Express لاختلاف الأحرف والشرطة الأخيرة وGET/HEAD. أضيف اختبار واحد عبرapp.ts:8طلبات تعطيل متوقعة503 و4طلبات بإعداد اصطناعي كامل متوقعة400لنقصcode؛ يمنع أيfetchخارجي ويتحقق من ثبات البيانات. CI_PENDING؛ لا قبولruntimeقبل النتائج. لا اتصالMeta أوتفعيلمزود أوتغييرمتطلباتالإعداد. الدليل التفصيلي في evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentMetaActivationPathMatchingFullApp].
