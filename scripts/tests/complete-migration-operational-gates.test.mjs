@@ -134,3 +134,34 @@ test("invalid operational settings fail closed before database use", () => {
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("FIELD004 rejects conflicting duplicate draft IDs", () => {
+  const directory = createFixture();
+  try {
+    const runtime = readJson(directory, "fawri-runtime-db.json");
+    const draft = {
+      id: "draft-collision",
+      merchant_id: "merchant-1",
+      customer_external_id: "customer-1",
+      awaiting_field: "product",
+      created_at: "2026-08-02T00:00:00.000Z",
+      updated_at: "2026-08-02T00:00:00.000Z",
+      expires_at: "2026-08-03T00:00:00.000Z",
+    };
+    runtime.orderDraftsByConversation = {
+      "conversation-1": { ...draft, draft_data: { name: "first" } },
+      "conversation-2": { ...draft, draft_data: { name: "second" } },
+    };
+    writeJson(directory, "fawri-runtime-db.json", runtime);
+    const { report } = buildValidatedMigrationPlan({ dataDirectory: directory, includeRows: true });
+    assert.equal(report.write_readiness.ok, false);
+    assert.ok(report.errors.some((issue) =>
+      issue.code === "DUPLICATE_TARGET_IDENTITY_CONFLICT" &&
+      issue.table === "order_drafts"
+    ));
+    assert.equal(report.rows.order_drafts.find((row) => row.id === "draft-collision").conversation_id, "conversation-1");
+    assert.throws(() => assertCompleteMigrationWritable(report));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
