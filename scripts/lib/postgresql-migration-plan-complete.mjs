@@ -455,6 +455,20 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       });
       continue;
     }
+    const parseInstant = (value) =>
+      typeof value === "string" && value.trim() &&
+      Number.isFinite(Date.parse(value)) ? Date.parse(value) : null;
+    const created = parseInstant(row.created_at);
+    const updated = parseInstant(row.updated_at);
+    const expires = parseInstant(row.expires_at);
+    if (created === null || updated === null || expires === null ||
+        updated < created || expires < updated) {
+      addError(report, "LEGACY_DRAFT_TIME_PROVENANCE_INVALID", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
     mergeRow(report, "order_drafts", row, "transitional_runtime", item);
   }
 }
