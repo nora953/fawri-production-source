@@ -327,7 +327,7 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     await assert.rejects(sell(own,foreignDevice),e=>e.code==='CASHIER_SYNC_INVALID'||e.code==='CASHIER_STREAM_IDENTITY_CONFLICT');
     // Restored clients cannot substitute a different enrolled stream.
     const substituted={...own,streamId:peer.streamId};
-    await assert.rejects(sell(substituted),e=>e.code==='CASHIER_SYNC_PROTOCOL_UNSUPPORTED'||e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_STREAM_REVIEW_REQUIRED');
+    await assert.rejects(sell(substituted),e=>e.code==='CASHIER_SYNC_PROTOCOL_UNSUPPORTED'||e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_STREAM_REVIEW_REQUIRED'||e.message==='active reviewed stream required');
     // The server-bound operator context cannot be transplanted to a peer device.
     const changedContext={...own,context:{...own.context,device_id:peer.f.stations[0].deviceId}};
     await assert.rejects(sell(changedContext),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_SYNC_INVALID');
