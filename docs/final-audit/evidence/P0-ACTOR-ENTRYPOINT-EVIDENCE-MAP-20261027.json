@@ -29943,7 +29943,7 @@
       }
     ],
     "unreviewedCatalogueInterpretation": "Remaining route/test-reference candidates require assertion, effective middleware and producer/nested-field reconciliation. They are not newly confirmed defects, new gates or a demand for one new test per source row.",
-    "nextExactAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred.",
+    "nextExactAction": "FIELD003 merchant-incident generic-audit permission rule is implemented and verified at the linked accepted source; do not repeat its tests or request its approval again. Continue MATRIX-C07 using existing FIELD004 F004-R1 draft continuity/lifecycle packet: prepare one concrete disposition/continuation contract with actual legacy customer mapping, awaiting-field semantics and expiry/time provenance; do not invent TTL, revive expired drafts, add CRUD or normalize historical rows before that contract. FIELD002 compatibility/producer scope, FIELD005 record-specific retention, SEQ and hosted requirements remain separately unresolved and unapproved.",
     "namedBoundaryReconciliation": [
       {
         "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -48658,9 +48658,9 @@
         "sourceReviewed": "c554deaa39cabde0089b59af17b5b2feb217708b",
         "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
         "workItem": "MATRIX-C07",
-        "status": "FIELD003_PERMISSION_CHOICE_READY_OTHER_CONTRACTS_UNADOPTED",
+        "status": "FIELD003_SPECIFIED_PERMISSION_RULE_ACCEPTED_OTHER_CONTRACTS_UNADOPTED",
         "proposal": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031",
-        "approval": "UNAPPROVED",
+        "approval": "AUTHORIZED_SPECIFIC_RECOMMENDED_RULE_BY_CONTEXTUAL_CONTINUE",
         "sourcePins": [
           {
             "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
@@ -48684,15 +48684,86 @@
         "newCiRuns": 0,
         "newGate": false,
         "parentGateClosed": false,
-        "nextExactAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred."
+        "nextExactAction": "FIELD003 merchant-incident generic-audit permission rule is implemented and verified at the linked accepted source; do not repeat its tests or request its approval again. Continue MATRIX-C07 using existing FIELD004 F004-R1 draft continuity/lifecycle packet: prepare one concrete disposition/continuation contract with actual legacy customer mapping, awaiting-field semantics and expiry/time provenance; do not invent TTL, revive expired drafts, add CRUD or normalize historical rows before that contract. FIELD002 compatibility/producer scope, FIELD005 record-specific retention, SEQ and hosted requirements remain separately unresolved and unapproved.",
+        "previousStatus": "FIELD003_PERMISSION_CHOICE_READY_OTHER_CONTRACTS_UNADOPTED",
+        "implementationSource": "49eeb8990513e562bb2a823742229d16c0f13a18",
+        "implementationEvidence": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#permissionRuleAcceptance20261031"
+      },
+      {
+        "boundary": "currentField003IncidentAuditPermissionFullApp",
+        "date": "2026-10-31",
+        "status": "BOUNDED_FIELD003_MERCHANT_INCIDENT_AUDIT_PERMISSION_FULL_APP_ACCEPTED",
+        "source": "49eeb8990513e562bb2a823742229d16c0f13a18",
+        "sourceTree": "df0af16c8d36a527c2dfa3c6acfecab2bbf5607f",
+        "accepted": true,
+        "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+        "workItem": "MATRIX-C07",
+        "applicationFilesChanged": 2,
+        "testFilesChanged": 1,
+        "newFunctionalCases": 1,
+        "policyAdopted": true,
+        "authorization": {
+          "date": "2026-10-31",
+          "userReply": "اكمل",
+          "context": "Direct reply to the concrete FIELD003 recommended rule and the question asking to implement and test it; treated as authorization to proceed with that specified rule only.",
+          "scope": "REQUIRE_VIEW_LOGS_AND_VIEW_MERCHANTS_FOR_MERCHANT_INCIDENT_ROWS",
+          "otherFieldSeqRetentionHostedMergeDeployAuthorized": false
+        },
+        "targetRun": 41183246870,
+        "targetJob": 124484812215,
+        "targetedTap": 113,
+        "fullAppTap": 80,
+        "targetFiles": 6,
+        "broaderRun": 41183246888,
+        "broaderJob": 124484812417,
+        "checkout": "9d50ead059af00233c1f740ee623cefea518672e",
+        "checkoutTree": "df0af16c8d36a527c2dfa3c6acfecab2bbf5607f",
+        "checkoutTreeMatched": true,
+        "reads": 5,
+        "denials": 1,
+        "currentSqlPermissionRemoval": true,
+        "requestHintsIgnored": true,
+        "ownerAndBothPermissionsAllowed": true,
+        "ordinaryAuditPreserved": true,
+        "ownedAuditStateUnchanged": true,
+        "ownedCleanup": true,
+        "parentGateClosed": false,
+        "newGate": false,
+        "hosted": false,
+        "sourcePins": [
+          {
+            "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+            "gitBlobSha": "e91889346e6d047ef3ba16500a7bb76e3d59866c"
+          },
+          {
+            "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+            "gitBlobSha": "479baa1d64dc679d8608d7462c25de0aaca372ad"
+          },
+          {
+            "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+            "gitBlobSha": "24909f6395632d2ed04bfe8445f5ee34faf7ad24"
+          }
+        ],
+        "totalCi": 58,
+        "allCiSuccess": 58,
+        "firstAttemptSuccess": 58,
+        "retries": 0,
+        "broaderTap": 836,
+        "broaderInvocations": 97,
+        "broaderUniqueFiles": 94,
+        "boundedConditionClosed": true,
+        "fieldCellClosed": false,
+        "testBlob": "24909f6395632d2ed04bfe8445f5ee34faf7ad24",
+        "evidence": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#permissionRuleAcceptance20261031",
+        "nextExactAction": "FIELD003 merchant-incident generic-audit permission rule is implemented and verified at the linked accepted source; do not repeat its tests or request its approval again. Continue MATRIX-C07 using existing FIELD004 F004-R1 draft continuity/lifecycle packet: prepare one concrete disposition/continuation contract with actual legacy customer mapping, awaiting-field semantics and expiry/time provenance; do not invent TTL, revive expired drafts, add CRUD or normalize historical rows before that contract. FIELD002 compatibility/producer scope, FIELD005 record-specific retention, SEQ and hosted requirements remain separately unresolved and unapproved."
       }
     ],
     "currentTestOverlay": {
-      "source": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+      "source": "49eeb8990513e562bb2a823742229d16c0f13a18",
       "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
-      "gitBlob": "2b5cbd7ee8a1d517557f623dc7fa8d2f0a3345c9",
+      "gitBlob": "24909f6395632d2ed04bfe8445f5ee34faf7ad24",
       "catalogueRegenerated": false,
-      "interpretation": "Accepted two named actual-app conditions in one candidate: Knowledge/style9writes20denials and own-order4positive4denials, correct body/If-Match/request versions, approval/revoke, preserved peers/metadata, one attributed delivered COD decision and immutable exact replay. target112/full79;broader836/97/94;all58first attempt. No application/schema/ACL change or parent/hosted/provider/fulfillment acceptance."
+      "interpretation": "Specified FIELD003 rule accepted: actual app owner/both access, logs-only ordinary audit without merchant incident, merchants-only403, forged query ignored, current SQL permission removal, unchanged owned rows and cleanup. Target113/full80;broader836/97/94;all58first attempt. Not complete field or parent-gate acceptance."
     },
     "adminFamilyRouteLedger20261027": {
       "acceptedOn": "2026-10-28",
@@ -53838,12 +53909,12 @@
     },
     "currentC07DecisionSelection": {
       "sourceReviewed": "c554deaa39cabde0089b59af17b5b2feb217708b",
-      "status": "FIELD003_PERMISSION_CHOICE_READY_OTHER_CONTRACTS_UNADOPTED",
+      "status": "FIELD003_SPECIFIED_PERMISSION_RULE_ACCEPTED_OTHER_CONTRACTS_UNADOPTED",
       "selectedDecision": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031",
-      "approval": "UNAPPROVED",
-      "applicationChanged": false,
-      "newRuntimeTests": 0,
-      "newCiRuns": 0,
+      "approval": "AUTHORIZED_SPECIFIC_RECOMMENDED_RULE_BY_CONTEXTUAL_CONTINUE",
+      "applicationChanged": true,
+      "newRuntimeTests": 1,
+      "newCiRuns": 58,
       "field002": {
         "projection": "UNAPPROVED_PRIOR_PREMATURE_REQUEST_REMAINS_WITHDRAWN",
         "finding": {
@@ -53870,7 +53941,89 @@
         "historyCopies": "BLOCKED_HOSTED_INVENTORY_RECOVERY"
       },
       "newGate": false,
-      "parentGateClosed": false
+      "parentGateClosed": false,
+      "authorization": {
+        "date": "2026-10-31",
+        "userReply": "اكمل",
+        "context": "Direct reply to the concrete FIELD003 recommended rule and the question asking to implement and test it; treated as authorization to proceed with that specified rule only.",
+        "scope": "REQUIRE_VIEW_LOGS_AND_VIEW_MERCHANTS_FOR_MERCHANT_INCIDENT_ROWS",
+        "otherFieldSeqRetentionHostedMergeDeployAuthorized": false
+      },
+      "source": "49eeb8990513e562bb2a823742229d16c0f13a18",
+      "nextAction": "FIELD003 merchant-incident generic-audit permission rule is implemented and verified at the linked accepted source; do not repeat its tests or request its approval again. Continue MATRIX-C07 using existing FIELD004 F004-R1 draft continuity/lifecycle packet: prepare one concrete disposition/continuation contract with actual legacy customer mapping, awaiting-field semantics and expiry/time provenance; do not invent TTL, revive expired drafts, add CRUD or normalize historical rows before that contract. FIELD002 compatibility/producer scope, FIELD005 record-specific retention, SEQ and hosted requirements remain separately unresolved and unapproved.",
+      "implementationEvidence": "evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#permissionRuleAcceptance20261031",
+      "accepted": true
+    },
+    "currentField003IncidentAuditPermissionProof": {
+      "status": "BOUNDED_FIELD003_MERCHANT_INCIDENT_AUDIT_PERMISSION_FULL_APP_ACCEPTED",
+      "source": "49eeb8990513e562bb2a823742229d16c0f13a18",
+      "sourceTree": "df0af16c8d36a527c2dfa3c6acfecab2bbf5607f",
+      "accepted": true,
+      "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "workItem": "MATRIX-C07",
+      "applicationFilesChanged": 2,
+      "testFilesChanged": 1,
+      "newFunctionalCases": 1,
+      "policyAdopted": true,
+      "authorization": {
+        "date": "2026-10-31",
+        "userReply": "اكمل",
+        "context": "Direct reply to the concrete FIELD003 recommended rule and the question asking to implement and test it; treated as authorization to proceed with that specified rule only.",
+        "scope": "REQUIRE_VIEW_LOGS_AND_VIEW_MERCHANTS_FOR_MERCHANT_INCIDENT_ROWS",
+        "otherFieldSeqRetentionHostedMergeDeployAuthorized": false
+      },
+      "targetRun": 41183246870,
+      "targetJob": 124484812215,
+      "targetedTap": 113,
+      "fullAppTap": 80,
+      "targetFiles": 6,
+      "broaderRun": 41183246888,
+      "broaderJob": 124484812417,
+      "checkout": "9d50ead059af00233c1f740ee623cefea518672e",
+      "checkoutTree": "df0af16c8d36a527c2dfa3c6acfecab2bbf5607f",
+      "checkoutTreeMatched": true,
+      "reads": 5,
+      "denials": 1,
+      "currentSqlPermissionRemoval": true,
+      "requestHintsIgnored": true,
+      "ownerAndBothPermissionsAllowed": true,
+      "ordinaryAuditPreserved": true,
+      "ownedAuditStateUnchanged": true,
+      "ownedCleanup": true,
+      "parentGateClosed": false,
+      "newGate": false,
+      "hosted": false,
+      "sourcePins": [
+        {
+          "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "gitBlobSha": "e91889346e6d047ef3ba16500a7bb76e3d59866c"
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "gitBlobSha": "479baa1d64dc679d8608d7462c25de0aaca372ad"
+        },
+        {
+          "path": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+          "gitBlobSha": "24909f6395632d2ed04bfe8445f5ee34faf7ad24"
+        }
+      ],
+      "totalCi": 58,
+      "allCiSuccess": 58,
+      "firstAttemptSuccess": 58,
+      "retries": 0,
+      "broaderTap": 836,
+      "broaderInvocations": 97,
+      "broaderUniqueFiles": 94,
+      "boundedConditionClosed": true,
+      "fieldCellClosed": false,
+      "testBlob": "24909f6395632d2ed04bfe8445f5ee34faf7ad24"
+    },
+    "previousTestOverlayBeforeField003Permission20261031": {
+      "source": "74d3b349871ec51bdc7a1ade4cc0cd1883ab5ea7",
+      "test": "artifacts/api-server/tests/management-full-app-privacy-http-postgres.integration.test.mjs",
+      "gitBlob": "2b5cbd7ee8a1d517557f623dc7fa8d2f0a3345c9",
+      "catalogueRegenerated": false,
+      "interpretation": "Accepted two named actual-app conditions in one candidate: Knowledge/style9writes20denials and own-order4positive4denials, correct body/If-Match/request versions, approval/revoke, preserved peers/metadata, one attributed delivered COD decision and immutable exact replay. target112/full79;broader836/97/94;all58first attempt. No application/schema/ACL change or parent/hosted/provider/fulfillment acceptance."
     }
   },
   "componentScopes": {

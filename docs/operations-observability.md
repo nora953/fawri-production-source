@@ -13,6 +13,8 @@ The runtime uses one process-wide metrics registry. The canonical application cu
 
 The authenticated administrator Early Warning control plane is exposed at `/api/auth/admin/early-warning`. It derives aggregate system state from PostgreSQL plus bounded current-process HTTP and AI telemetry. The endpoint requires the `view_logs` permission. Merchant-identifying health rows are returned only when the authenticated administrator also has `view_merchants`; aggregate system health remains available without merchant identifiers.
 
+In the PostgreSQL-authoritative application, the general audit reader at `/api/auth/admin/logs` also requires both `view_logs` and `view_merchants` for merchant-linked `early_warning_incident` rows. Owners retain access through the existing permission model. A `view_logs`-only assistant still receives ordinary merchant audit rows, while `view_merchants` alone does not grant log access. The server reads current SQL-backed permissions and filters incident rows before the result limit; query parameters do not grant access. The separate owner-only emergency-audit boundary is unchanged. This response visibility rule does not delete or rewrite stored incidents.
+
 ## Fail-closed contracts
 
 ### Health
