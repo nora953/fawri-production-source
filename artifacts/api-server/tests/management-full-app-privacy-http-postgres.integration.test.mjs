@@ -2516,5 +2516,109 @@ test('full application management privacy preserves cutover ordering and current
     console.log('P0_META_ACTIVATION_GATE_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:1,inactiveDenials:denied,configuredValidationResponses:configured,remoteAttempts,headBodyEmpty:true,caseAndTrailingSlash:true,ownedStateStable:true,providerActivated:false,hosted:false}));
   });
 
+
+  await t.test('MATRIX-C05 Knowledge writes and response style preserve request version and tenant authority through actual app',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant'),tenantIds=[x.id,y.id];
+    const kt=['knowledge_embeddings','knowledge_audit_events','learned_answers','training_requests','saved_answers'];
+    const state=async()=>Object.fromEntries(await Promise.all(kt.map(async table=>[table,(await admin.query('SELECT to_jsonb(t) AS row FROM '+table+' t WHERE merchant_id=ANY($1::text[]) ORDER BY to_jsonb(t)::text',[tenantIds])).rows])));
+    const metadata=async()=>(await admin.query('SELECT id,metadata FROM merchants WHERE id=ANY($1::text[]) ORDER BY id',[tenantIds])).rows;
+    const send=(path,who,method,body,headers={})=>req(path,who,method,body,{Origin:'https://management.example.invalid',...headers});
+    const saved='/api/knowledge/saved-answers',training='/api/knowledge/training-requests',style='/api/knowledge/response-style';
+    let writes=0,denials=0,passed=false;
+    try{
+      for(const who of [x,y]){
+        await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected',metadata=$2::jsonb WHERE id=$1",[who.id,JSON.stringify({unrelated:{owner:who.id,keep:true}})]);
+        who.session=await auth.issueSession({accountId:who.id,accountKind:'merchant',tenantId:who.id,deviceId:who.device});who.cookie=MERCHANT_SESSION_COOKIE+'='+who.session.token;
+        assert.equal((await req('/api/auth/me',who)).status,200);
+      }
+      const createBody={category:'custom',questionPattern:'Synthetic authority '+randomUUID(),answerText:'Own saved answer',language:'en',merchantId:y.id,merchant_id:y.id};
+      const records=[];
+      for(const who of [x,y]){const r=await send(saved,who,'POST',createBody);assert.equal(r.status,201,JSON.stringify(r.body));assert.equal(r.body.answer.merchantId,who.id);assert.equal(r.body.answer.version,1);records.push(r.body.answer);writes++;}
+      const [sx,sy]=records,peerBefore=(await admin.query('SELECT to_jsonb(t) AS row FROM saved_answers t WHERE merchant_id=$1',[y.id])).rows;
+      let before=await state(),metaBefore=await metadata();
+      for(const [path,method,body] of [[saved,'POST',createBody],[training,'POST',{customerText:'Training authority question',detectedLanguage:'en'}],[style,'PATCH',{expectedVersion:1,style:{tone:'warm'}}]]){
+        for(const [who,headers] of [[undefined,{}],[owner,{}],[x,{'X-Fawri-Device-Id':'wrong-write-device'}],[x,{Cookie:x.cookie+'; '+owner.cookie}]]){
+          const r=await send(path,who,method,body,headers);assert.equal(r.status,401,JSON.stringify(r.body));denials++;
+          assert.deepEqual(await state(),before);assert.deepEqual(await metadata(),metaBefore);
+        }
+      }
+      const foreign=await send(saved+'/'+sy.id,x,'PATCH',{expectedVersion:1,answerText:'foreign edit'});assert.equal(foreign.status,404);denials++;assert.deepEqual(await state(),before);
+      const missing=await send(saved+'/'+sx.id,x,'PATCH',{answerText:'missing version'});assert.equal(missing.status,428);denials++;assert.deepEqual(await state(),before);
+      const updated=await send('/API/KnOwLeDgE/SaVeD-AnSwErS/'+sx.id+'/?merchant_id='+y.id,x,'PATCH',{answerText:'Updated own answer',merchantId:y.id},{'If-Match':'"1"'});
+      assert.equal(updated.status,200,JSON.stringify(updated.body));assert.equal(updated.body.answer.merchantId,x.id);assert.equal(updated.body.answer.version,2);assert.equal(updated.body.answer.answerText,'Updated own answer');writes++;
+      before=await state();const stale=await send(saved+'/'+sx.id,x,'PATCH',{expectedVersion:1,answerText:'stale edit'});assert.equal(stale.status,409);assert.equal(stale.body.code,'VERSION_CONFLICT');denials++;assert.deepEqual(await state(),before);
+      const tr=await send(training+'?merchant_id='+y.id,x,'POST',{customerText:'Synthetic training question',detectedIntent:'availability',detectedLanguage:'en',reason:'actual_app_authority',merchantId:y.id});
+      assert.equal(tr.status,201,JSON.stringify(tr.body));assert.equal(tr.body.request.merchantId,x.id);assert.equal(tr.body.request.version,1);const tid=tr.body.request.id;writes++;
+      before=await state();const foreignApproval=await send(training+'/'+tid+'/approve',y,'POST',{expectedVersion:1,approvedAnswer:'foreign approved'});assert.equal(foreignApproval.status,404);denials++;assert.deepEqual(await state(),before);
+      const proposal=await send(training+'/'+tid+'/propose',x,'POST',{suggestedReply:'Approved synthetic reply',merchantId:y.id},{'If-Match':'W/"1"'});
+      assert.equal(proposal.status,200,JSON.stringify(proposal.body));assert.equal(proposal.body.request.version,2);assert.equal(proposal.body.request.suggestedReplySource,'merchant_draft');writes++;
+      const approval=await send(training+'/'+tid+'/approve',x,'POST',{expectedVersion:2,merchantId:y.id});
+      assert.equal(approval.status,200,JSON.stringify(approval.body));assert.equal(approval.body.request.version,3);assert.equal(approval.body.request.status,'approved');assert.equal(approval.body.learnedAnswer.merchantId,x.id);assert.equal(approval.body.learnedAnswer.safeToAutoReply,true);writes++;
+      const revoke=await send(training+'/'+tid+'/revoke',x,'POST',{expectedVersion:3});assert.equal(revoke.status,200,JSON.stringify(revoke.body));assert.equal(revoke.body.request.version,4);assert.equal(revoke.body.request.status,'rejected');writes++;
+      const learned=(await admin.query('SELECT merchant_id,approval_status::text AS approval_status,safe_to_auto_reply FROM learned_answers WHERE training_request_id=$1',[tid])).rows;assert.deepEqual(learned,[{merchant_id:x.id,approval_status:'rejected',safe_to_auto_reply:false}]);
+      const initial=await req(style,x);assert.equal(initial.status,200);assert.equal(initial.cache,'no-store');assert.equal(initial.body.style.version,1);
+      const styled=await send(style+'?merchantId='+y.id,x,'PATCH',{expectedVersion:1,style:{tone:'warm',brevity:'concise',emojiStyle:'none',customInstructions:'Synthetic presentation only'},merchantId:y.id});
+      assert.equal(styled.status,200,JSON.stringify(styled.body));assert.equal(styled.cache,'no-store');assert.equal(styled.body.style.version,2);assert.equal(styled.body.style.tone,'warm');writes++;
+      const stored=await metadata();assert.deepEqual(stored.find(r=>r.id===x.id).metadata.unrelated,{owner:x.id,keep:true});assert.deepEqual(stored.find(r=>r.id===y.id).metadata,{unrelated:{owner:y.id,keep:true}});
+      before=await state();metaBefore=await metadata();
+      const styleStale=await send(style,x,'PATCH',{expectedVersion:1,style:{tone:'direct'}});assert.equal(styleStale.status,409);denials++;assert.deepEqual(await metadata(),metaBefore);
+      const deleted=await send(saved+'/'+sx.id,x,'DELETE',{}, {'If-Match':'"2"'});assert.equal(deleted.status,200,JSON.stringify(deleted.body));assert.equal(deleted.body.deletedId,sx.id);writes++;
+      assert.deepEqual((await admin.query('SELECT to_jsonb(t) AS row FROM saved_answers t WHERE merchant_id=$1',[y.id])).rows,peerBefore);
+      before=await state();metaBefore=await metadata();assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      for(const [path,method,body] of [[saved,'POST',createBody],[training,'POST',{customerText:'revoked training'}],[style,'PATCH',{expectedVersion:2,style:{tone:'direct'}}]]){
+        assert.equal((await send(path,x,method,body)).status,401);denials++;assert.deepEqual(await state(),before);assert.deepEqual(await metadata(),metaBefore);
+      }
+      assert.equal((await req(style,y)).status,200);passed=true;
+    }finally{
+      for(const table of kt)await admin.query('DELETE FROM '+table+' WHERE merchant_id=ANY($1::text[])',[tenantIds]);
+      for(const rows of Object.values(await state()))assert.deepEqual(rows,[]);
+    }
+    console.log('P0_KNOWLEDGE_WRITE_STYLE_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,writes,denials,freshMerchantPrechecks:2,bodyAndIfMatchVersion:true,trainingApprovalRevocation:true,peerAndUnrelatedMetadataPreserved:true,ownedCleanup:true,realAiOrProvider:false,hosted:false}));
+  });
+
+  await t.test('MATRIX-C05 legitimate own order changes and delivered cash confirmation persist exact merchant attribution',async()=>{
+    const x=await actor('merchant'),y=await actor('merchant'),tenantIds=[x.id,y.id];
+    const pending='Own-pending-'+randomUUID(),cash='Own-cash-'+randomUUID(),peer='Peer-cash-'+randomUUID(),orderIds=[pending,cash,peer];
+    const tables=['orders','order_payment_decisions','order_terminal_decision_links'];
+    const state=async()=>Object.fromEntries(await Promise.all(tables.map(async table=>[table,(await admin.query('SELECT to_jsonb(t) AS row FROM '+table+' t WHERE '+(table==='orders'?'id':'order_id')+'=ANY($1::text[]) ORDER BY to_jsonb(t)::text',[orderIds])).rows])));
+    const send=(path,method,body,headers={})=>req(path,x,method,body,{Origin:'https://management.example.invalid',...headers});
+    let positive=0,denials=0,passed=false;
+    try{
+      for(const who of [x,y]){
+        await admin.query("UPDATE merchants SET status='approved',account_status='approved',onboarding_status='channel_connected' WHERE id=$1",[who.id]);
+        who.session=await auth.issueSession({accountId:who.id,accountKind:'merchant',tenantId:who.id,deviceId:who.device});who.cookie=MERCHANT_SESSION_COOKIE+'='+who.session.token;
+        assert.equal((await req('/api/auth/me',who)).status,200);
+      }
+      for(const [id,who,status] of [[pending,x,'pending_confirmation'],[cash,x,'delivered'],[peer,y,'delivered']])await admin.query("INSERT INTO orders(id,merchant_id,customer_name,status,payment_method,payment_status,subtotal_iqd,delivery_fee_iqd,total_iqd,source_channel,version,metadata) VALUES($1,$2,'Owned synthetic order',$3,'cash_on_delivery','cash_on_delivery',12000,0,12000,'online',1,'{}'::jsonb)",[id,who.id,status]);
+      const peerBefore=(await admin.query('SELECT to_jsonb(t) AS row FROM orders t WHERE id=$1',[peer])).rows;
+      const path='/api/orders/'+pending+'/status';
+      let before=await state();
+      const absent=await send(path,'PATCH',{status:'waiting_customer_approval'});assert.equal(absent.status,400);assert.equal(absent.body.code,'ORDER_VERSION_REQUIRED');denials++;assert.deepEqual(await state(),before);
+      const status=await send('/API/OrDeRs/'+pending+'/StAtUs/?merchant_id='+y.id,'PATCH',{expected_version:1,status:'waiting_customer_approval',merchant_id:y.id});
+      assert.equal(status.status,200,JSON.stringify(status.body));assert.equal(status.body.order.merchant_id,x.id);assert.equal(status.body.order.version,2);assert.equal(status.body.order.status,'waiting_customer_approval');positive++;
+      before=await state();
+      const stale=await send(path,'PATCH',{expected_version:1,status:'pending_confirmation'});assert.equal(stale.status,409);denials++;assert.deepEqual(await state(),before);
+      const noop=await send(path,'PATCH',{expected_version:2,status:'waiting_customer_approval'});assert.equal(noop.status,200);assert.equal(noop.body.order.version,2);positive++;assert.deepEqual(await state(),before);
+      const requestId='Own-payment-'+randomUUID(),confirm='/api/orders/'+cash+'/payment/confirm';
+      const paid=await send(confirm+'?merchant_id='+y.id,'POST',{expected_version:1,actor_id:y.id,merchant_id:y.id},{'X-Request-Id':requestId});
+      assert.equal(paid.status,200,JSON.stringify(paid.body));assert.equal(paid.body.order.merchant_id,x.id);assert.equal(paid.body.order.status,'delivered');assert.equal(paid.body.order.payment_status,'paid');assert.equal(paid.body.order.version,2);assert.equal(paid.body.order.payment_verified_by,x.id);positive++;
+      const decisions=(await admin.query('SELECT merchant_id,order_id,actor_type::text AS actor_type,actor_account_id,request_id,expected_version,resulting_version,operation::text AS operation FROM order_payment_decisions WHERE order_id=$1',[cash])).rows;
+      assert.deepEqual(decisions,[{merchant_id:x.id,order_id:cash,actor_type:'merchant',actor_account_id:x.id,request_id:requestId,expected_version:1,resulting_version:2,operation:'confirm'}]);
+      before=await state();
+      const replay=await send(confirm,'POST',{expected_version:1},{'X-Request-Id':requestId});assert.equal(replay.status,200);assert.equal(replay.body.order.version,2);positive++;assert.deepEqual(await state(),before);
+      const conflict=await send(confirm,'POST',{expected_version:1},{'X-Request-Id':'Different-'+randomUUID()});assert.equal(conflict.status,409);denials++;assert.deepEqual(await state(),before);
+      assert.deepEqual((await admin.query('SELECT to_jsonb(t) AS row FROM orders t WHERE id=$1',[peer])).rows,peerBefore);
+      assert.equal(await auth.revokeSession(x.session.token,'merchant','logout'),true);
+      assert.equal((await send(path,'PATCH',{expected_version:2,status:'pending_confirmation'})).status,401);denials++;assert.deepEqual(await state(),before);
+      assert.equal((await req('/api/order/'+peer,y)).status,200);passed=true;
+    }finally{
+      await admin.query('DELETE FROM order_terminal_decision_links WHERE order_id=ANY($1::text[])',[orderIds]);
+      await admin.query('DELETE FROM order_payment_decisions WHERE order_id=ANY($1::text[])',[orderIds]);
+      await admin.query('DELETE FROM orders WHERE id=ANY($1::text[])',[orderIds]);
+      for(const rows of Object.values(await state()))assert.deepEqual(rows,[]);
+    }
+    console.log('P0_OWN_ORDER_MUTATION_FULL_APP_OBSERVED '+JSON.stringify({actualApp:true,restrictedPrimary:true,separateAuthLogin:true,passedCases:passed?1:0,positiveResponses:positive,denials,freshMerchantPrechecks:2,deliveredCashConfirmation:true,oneAttributedDecision:true,exactReplayNoMutation:true,staleVersionNoMutation:true,peerPreserved:true,ownedCleanup:true,providerConfirmation:false,hosted:false}));
+  });
+
   console.log('P0_MANAGEMENT_FULL_APP_HTTP '+JSON.stringify({actualApp:true,syntheticMerchants:merchants.length,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,caseVariants:true,pathIdentityPreserved:true,legacyFallthroughDenied:true,sqlPermissionAndSessionRevocation:true,legacyJsonCreated:false,fullEightTableMatrix:false,hostedAccepted:false}));
 });
