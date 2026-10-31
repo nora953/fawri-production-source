@@ -1,3 +1,16 @@
+## SEQ-R3 isolated HTTP pairing acceptance evidence — 2026-10-31
+
+Verified source checkpoint: `c4bf93d4f29abc7cef6c6ca8377c76374b864a15`. GitHub Actions: **58/58 successful**, including **Isolated PostgreSQL engineering audit** run `41196960053` (success). Evidence is limited to the isolated synthetic PostgreSQL/HTTP test suite, not hosted-device acceptance.
+
+`artifacts/api-server/tests/cashier-historical-compensation-http-postgres.integration.test.mjs` covers:
+- Authenticated merchant HTTP issuance of station pairing and cashier HTTP redemption; same-device re-pair and replacement-device credential rotation.
+- Anonymous issuance rejected with `SESSION_REQUIRED` (401) and no pairing challenge.
+- A different authenticated merchant denied access to the target merchant station (404), without creating a foreign pairing challenge.
+- Single-use code replay rejected; financial history snapshot unchanged across authorized re-pair, replacement, and denied attempts.
+- Replacement pairing does **not** silently enroll a new financial device stream.
+
+This closes only the **bounded HTTP pairing proof** in the SEQ-R3 acceptance list. **SEQ-R3 remains OPEN / PROPOSAL ONLY**: no proof yet of serialized concurrent financial enrollment/writer behavior, trusted empty-history provenance, matching/conflicting restored-device reconciliation, physical device acceptance, or exceptional recovery approval. Merchant pairing is not authority to reset financial sequence or activate v2. Release remains **NO-GO**.
+
 ## SEQ-R3 device admission decision packet — 2026-10-31
 
 Status: PROPOSAL ONLY, not authorized for production or protocol v2.
