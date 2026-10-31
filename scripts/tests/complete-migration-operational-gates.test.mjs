@@ -340,3 +340,28 @@ test("FIELD004 rejects legacy draft expiry earlier than its last update", () => 
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("FIELD004 rejects draft whose customer does not own its conversation", () => {
+  const directory = createFixture();
+  try {
+    const runtime = readJson(directory, "fawri-runtime-db.json");
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "wrong-customer",
+        merchant_id: "merchant-1",
+        customer_id: "customer-other",
+        awaiting: "product",
+        started_at: "2026-08-02T00:00:00.000Z",
+        updated_at: "2026-08-02T00:10:00.000Z",
+        expires_at: "2026-08-02T01:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", runtime);
+    const { report } = buildValidatedMigrationPlan({ dataDirectory: directory, includeRows: true });
+    assert.equal(report.write_readiness.ok, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_CONVERSATION_IDENTITY_UNVERIFIED"));
+    assert.equal(report.rows.order_drafts.some((row) => row.id === "wrong-customer"), false);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
