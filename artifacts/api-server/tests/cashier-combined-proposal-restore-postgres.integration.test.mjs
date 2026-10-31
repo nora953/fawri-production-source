@@ -317,6 +317,14 @@ test('combined enrollment and financial receipt proposals survive owned offline 
     await assert.rejects(sell(own,stale),e=>e.code==='CASHIER_STREAM_IDENTITY_CONFLICT'||e.code==='CASHIER_STREAM_RECONCILIATION_REQUIRED');
     const gap=saleBody(own.f,own.f.stations[0],own.body.envelopes[0].occurred_at,4);
     await assert.rejects(sell(own,gap),e=>e.code==='CASHIER_STREAM_SEQUENCE_GAP');
+    // A restored local envelope must not be accepted under another merchant,
+    // device, or stream even when its operation id and sequence are unchanged.
+    const foreignMerchant=structuredClone(own.body);
+    foreignMerchant.envelopes[0].payload.cloud_merchant_id=peer.f.merchantId;
+    await assert.rejects(sell(own,foreignMerchant),e=>e.code==='CASHIER_SYNC_INVALID'||e.code==='CASHIER_SYNC_TENANT_MISMATCH'||e.code==='CASHIER_STREAM_IDENTITY_CONFLICT');
+    const foreignDevice=structuredClone(own.body);
+    foreignDevice.envelopes[0].device_id=peer.f.stations[0].deviceId;
+    await assert.rejects(sell(own,foreignDevice),e=>e.code==='CASHIER_SYNC_INVALID'||e.code==='CASHIER_STREAM_IDENTITY_CONFLICT');
     assert.deepEqual(await data(),initial.data);
   });
   if(phase==='verify')await t.test('restored canonical writer commits next sequence once and retains peer and review evidence',async()=>{
