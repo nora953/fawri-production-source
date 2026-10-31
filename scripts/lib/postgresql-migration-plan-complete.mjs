@@ -479,6 +479,26 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       typeof value === "string" &&
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) &&
       Number.isFinite(Date.parse(value)) ? Date.parse(value) : null;
+    // A syntactically valid offset timestamp is not sufficient provenance for
+    // a legacy draft. Reject impossible calendar dates that Date.parse may
+    // normalize (for example, February 30) instead of importing a shifted TTL.
+    const validCalendarInstant = (value) => {
+      if (parseInstant(value) === null) return false;
+      const match = value.match(/^(\\d{4})-(\\d{2})-(\\d{2})T/);
+      if (!match) return false;
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth;
+    };
+    if (![row.created_at, row.updated_at, row.expires_at].every(validCalendarInstant)) {
+      addError(report, "LEGACY_DRAFT_TIME_PROVENANCE_INVALID", {
+        table: "order_drafts",
+        target_record_id: row.id,
+      });
+      continue;
+    }
     const created = parseInstant(row.created_at);
     const updated = parseInstant(row.updated_at);
     const expires = parseInstant(row.expires_at);
