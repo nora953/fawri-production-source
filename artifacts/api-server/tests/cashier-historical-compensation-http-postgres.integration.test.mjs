@@ -184,6 +184,30 @@ test('isolated HTTP historical return and void scope and privileged recovery', a
       );
       return {status: response.status, body: await response.json()};
     }
+    const peer = await fixture();
+    const peerDevice = 'pairing-peer-' + randomUUID();
+    const peerSession = await sessionAuthority.issueSession({
+      accountId: peer.merchantId, accountKind: 'merchant',
+      tenantId: peer.merchantId, deviceId: peerDevice,
+    });
+    const beforePeer = await snapshot();
+    const foreign = await fetch(
+      base + '/api/cashier/management/stations/' + encodeURIComponent(station.stationId) + '/pairing',
+      {method: 'POST', signal: AbortSignal.timeout(15000),
+        headers: {Cookie: MERCHANT_SESSION_COOKIE + '=' + peerSession.token,
+          'X-Fawri-Device-Id': peerDevice, 'Content-Type': 'application/json'},
+        body: JSON.stringify({})},
+    );
+    const foreignBody = await foreign.json();
+    assert.equal(foreign.status, 404, JSON.stringify(foreignBody));
+    assert.equal(foreignBody.ok, false);
+    assert.deepEqual(await snapshot(), beforePeer, 'foreign merchant must not mutate target financial history');
+    const foreignChallenges = await pool.query(
+      'SELECT id FROM cashier_station_pairing_challenges WHERE merchant_id=$1 AND station_id=$2',
+      [peer.merchantId, station.stationId],
+    );
+    assert.equal(foreignChallenges.rows.length, 0, 'foreign merchant must not issue a pairing challenge');
+    assert.deepEqual(await snapshot(), before, 'cross-tenant rejection must preserve financial history');
     const challengeResponse = await issuePairing();
     assert.equal(challengeResponse.status, 201, JSON.stringify(challengeResponse.body));
     const challenge = challengeResponse.body;
