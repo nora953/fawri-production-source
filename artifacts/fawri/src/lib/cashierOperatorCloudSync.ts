@@ -800,6 +800,9 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     // Reject the entire bounded batch before network I/O when an earlier
     // operation belongs to a different shift or staff. A later operation must
     // not be uploaded while the original historical binding needs recovery.
+    // This is only a best-effort preflight: IndexedDB can change between
+    // awaits, so the per-operation binding check below remains mandatory.
+    // Neither check authorizes historical-shift recovery or rewrites binding.
     for (const [operationId, envelopes] of groups) {
       const binding = await getCashierOperationBinding(operationId);
       if (!binding) {
