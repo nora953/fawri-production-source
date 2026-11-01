@@ -910,11 +910,19 @@ export async function applyVerifiedSaasBillingProviderEvent(
         order.status === "refunded" ||
         order.status === "paid_reconciliation_required"
       ) {
-        fail(
-          "SAAS_BILLING_TERMINAL_CONFLICT",
-          "paid billing order cannot be failed or cancelled",
-          409,
-        );
+        // Persist the verified rejection before surfacing the domain conflict.
+        // Throwing inside this transaction would roll back its audit receipt.
+        try {
+          fail(
+            "SAAS_BILLING_TERMINAL_CONFLICT",
+            "paid billing order cannot be failed or cancelled",
+            409,
+          );
+        } catch (error) {
+          terminalConflictFailure = error;
+        }
+        await eventRecord("rejected", null);
+        return { status: "duplicate" as const, order };
       }
       const nextStatus =
         input.eventType === "payment_failed" ? "failed" : "cancelled";
