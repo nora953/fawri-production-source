@@ -75,6 +75,18 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
     assert.deepEqual((await req('/notifications?unread=1',a)).body.notifications,[]);
     assert.deepEqual((await req('/notifications?unread=1',b)).body.notifications.map(x=>x.id),[`${b.id}-own`]);
   });
+  await t.test('mixed merchant and administrative cookies fail closed for notification reads and writes',async()=>{
+    const before=await snapshot();
+    for(const actor of sessions){
+      const mixedCookie=`${actor.cookie}; ${ADMIN_SESSION_COOKIE}=${ownerSession.token}`;
+      for(const [path,method] of [['/notifications','GET'],[`/notifications/${actor.id}-own/read`,'PATCH']]){
+        const r=await req(path,actor,method,{Cookie:mixedCookie});
+        assert.equal(r.status,401,`${method} ${path}`);
+        assert.doesNotMatch(JSON.stringify(r.body),/private-|sentinel/);
+      }
+    }
+    assert.deepEqual(await snapshot(),before,'mixed-role cookies must not mutate notification rows');
+  });
   await t.test('wrong device and role-confused token fail before SQL mutations',async()=>{
     const before=await snapshot();
     assert.equal((await req('/notifications',a,'GET',{'X-Fawri-Device-Id':'wrong'})).status,401);
