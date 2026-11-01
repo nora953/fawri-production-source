@@ -811,13 +811,12 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
       }
       const kind = operationKind(envelopes);
       if (
-        kind !== 'skip' &&
-        (binding.operation_kind !== kind ||
-          binding.merchant_id !== session.context.merchant_id ||
-          binding.station_id !== session.context.station_id ||
-          binding.staff_id !== session.context.staff_id ||
-          binding.shift_id !== session.context.shift_id ||
-          binding.device_id !== session.context.device_id)
+        binding.operation_kind !== kind ||
+        binding.merchant_id !== session.context.merchant_id ||
+        binding.station_id !== session.context.station_id ||
+        binding.staff_id !== session.context.staff_id ||
+        binding.shift_id !== session.context.shift_id ||
+        binding.device_id !== session.context.device_id
       ) {
         throw new CashierOperatorCloudSyncError(
           'CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT',
