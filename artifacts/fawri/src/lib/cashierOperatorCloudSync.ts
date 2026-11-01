@@ -813,6 +813,9 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
         );
       }
       const kind = operationKind(envelopes);
+      if (kind === 'skip') {
+        throw new CashierOperatorCloudSyncError('CASHIER_OPERATOR_UNSUPPORTED_OPERATION', 'Pending operation requires reconciliation', 409);
+      }
       if (
         binding.operation_kind !== kind ||
         binding.merchant_id !== session.context.merchant_id ||
