@@ -329,7 +329,28 @@ function mergeTransitionalRows(report, transitionalReport) {
   return channelByPage;
 }
 
-function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
+// F004-R1: caller-supplied, source-pinned offline evidence only. Never use ambient TTL.
+function validateLegacyDraftProvenance(report, runtimeSource, evidence) {
+  if (evidence === undefined) return null;
+  const entry = asRecord(evidence);
+  const valid = entry.version === 1 &&
+    /^[a-f0-9]{64}$/.test(entry.runtime_sha256 || "") &&
+    entry.runtime_sha256 === runtimeSource.sha256 &&
+    /^[a-f0-9]{64}$/.test(entry.configuration_sha256 || "") &&
+    /^[a-f0-9]{40}$/.test(entry.source_commit || "") &&
+    Number.isSafeInteger(entry.ttl_minutes) && entry.ttl_minutes > 0 &&
+    typeof entry.cutoff_at === "string" &&
+    /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(entry.cutoff_at) &&
+    Number.isFinite(Date.parse(entry.cutoff_at)) &&
+    new Date(entry.cutoff_at).toISOString() === entry.cutoff_at;
+  if (!valid) {
+    addError(report, "LEGACY_DRAFT_TTL_EVIDENCE_UNVERIFIED");
+    return null;
+  }
+  return entry;
+}
+
+function mergeOperationalRuntime(report, runtimeSource, channelByPage, ttlEvidence = null) {
   const runtime = asRecord(runtimeSource.value);
   const productsByMerchant = asRecord(runtime.productsByMerchant);
   for (const [merchantId, products] of Object.entries(productsByMerchant)) {
@@ -511,6 +532,20 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
       return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth &&
         hour <= 23 && minute <= 59 && second <= 59;
     };
+    if (!row.expires_at && ttlEvidence && validCalendarInstant(row.updated_at)) {
+      const updatedMs = parseInstant(row.updated_at);
+      const cutoffMs = Date.parse(ttlEvidence.cutoff_at);
+      const expiryMs = updatedMs + ttlEvidence.ttl_minutes * 60000;
+      if (updatedMs <= cutoffMs && Number.isFinite(expiryMs) &&
+          expiryMs > updatedMs && expiryMs <= 8640000000000000) {
+        row.expires_at = new Date(expiryMs).toISOString();
+      } else {
+        addError(report, "LEGACY_DRAFT_TTL_EVIDENCE_UNVERIFIED", {
+          table: "order_drafts", target_record_id: row.id,
+        });
+        continue;
+      }
+    }
     if (![row.created_at, row.updated_at, row.expires_at].every(validCalendarInstant)) {
       addError(report, "LEGACY_DRAFT_TIME_PROVENANCE_INVALID", {
         table: "order_drafts",
@@ -808,7 +843,20 @@ export function buildValidatedMigrationPlan(options) {
 
   const transitional = buildTransitionalMigrationReadiness({ dataDirectory });
   const channelByPage = mergeTransitionalRows(report, transitional.report);
-  mergeOperationalRuntime(report, transitional.sources.runtime, channelByPage);
+  const ttlEvidence = validateLegacyDraftProvenance(
+    report, transitional.sources.runtime, options.legacyDraftTtlProvenance,
+  );
+  if (options.legacyDraftTtlProvenance !== undefined) {
+    report.source_files = {
+      ...(report.source_files || {}),
+      legacyDraftTtlProvenance: {
+        file: null, exists: true,
+        sha256: sha256(canonicalJson(options.legacyDraftTtlProvenance)),
+        runtime_sha256: transitional.sources.runtime.sha256,
+      },
+    };
+  }
+  mergeOperationalRuntime(report, transitional.sources.runtime, channelByPage, ttlEvidence);
 
   for (const definition of audits) {
     mergeAudit(
