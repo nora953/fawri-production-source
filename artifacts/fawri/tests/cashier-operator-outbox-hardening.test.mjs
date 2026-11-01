@@ -139,6 +139,17 @@ test('unsupported operations are rejected across the batch before binding lookup
   assert.ok(bindingRead < upload, 'binding validation must still precede upload');
 });
 
+test('all historical bindings are checked before the first network upload', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('const groups = groupByOperation(uploadable)');
+  const bindingLoop = sync.indexOf('for (const [operationId, envelopes] of groups)', start);
+  const bindingConflict = sync.indexOf('CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT', bindingLoop);
+  const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
+  assert.ok(start >= 0 && bindingLoop > start, 'batch binding validation must exist');
+  assert.ok(bindingConflict > bindingLoop && bindingConflict < upload, 'cross-shift or staff mismatch must reject before network upload');
+  assert.doesNotMatch(sync.slice(bindingLoop, upload), /await postOperation\\(/, 'preflight must not upload any operation');
+});
+
 test('historical shift binding is never rewritten to match a later login before upload', async () => {
   const sync = await source('src/lib/cashierOperatorCloudSync.ts');
   const start = sync.indexOf('const binding = await getCashierOperationBinding(operationId)');
