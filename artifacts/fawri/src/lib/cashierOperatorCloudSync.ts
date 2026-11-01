@@ -804,6 +804,10 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     // awaits, so the per-operation binding check below remains mandatory.
     // Neither check authorizes historical-shift recovery or rewrites binding.
     for (const [operationId, envelopes] of groups) {
+      const kind = operationKind(envelopes);
+      if (kind === 'skip') {
+        throw new CashierOperatorCloudSyncError('CASHIER_OPERATOR_UNSUPPORTED_OPERATION', 'Pending operation requires reconciliation', 409);
+      }
       const binding = await getCashierOperationBinding(operationId);
       if (!binding) {
         throw new CashierOperatorCloudSyncError(
@@ -811,10 +815,6 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
           'Pending cashier operation has no operator binding',
           409,
         );
-      }
-      const kind = operationKind(envelopes);
-      if (kind === 'skip') {
-        throw new CashierOperatorCloudSyncError('CASHIER_OPERATOR_UNSUPPORTED_OPERATION', 'Pending operation requires reconciliation', 409);
       }
       if (
         binding.operation_kind !== kind ||
