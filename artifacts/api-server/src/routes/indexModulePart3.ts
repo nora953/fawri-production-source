@@ -682,6 +682,9 @@ router.get(
 );
 
 router.get("/bot/debug", requireMerchantSession, (req: Request, res: Response) => {
+  if (operationalPostgresAuthorityRequired()) {
+    return res.status(410).json({ ok: false, code: "LEGACY_RUNTIME_AUTHORITY_DISABLED" });
+  }
   const merchantId = getMerchantIdFromSession(res);
   const testText = getQueryString(req.query.text);
   const products = readBotProductsForHttp(res, merchantId);
