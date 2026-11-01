@@ -815,7 +815,7 @@ test("F004-R1 rejects unverified historical TTL evidence without touching source
       'const { report } = buildValidatedMigrationPlan({ dataDirectory: process.argv[1], legacyDraftTtlProvenance: { version: 1, runtime_sha256: "0".repeat(64), configuration_sha256: "1".repeat(64), source_commit: "2".repeat(40), ttl_minutes: 60, cutoff_at: "2026-03-01T00:00:00.000Z" } });',
       'process.stdout.write(JSON.stringify(report));',
       'process.exitCode = report.ok ? 0 : 2;',
-    ].join("\\n");
+    ].join("\n");
     const result = spawnSync(process.execPath, ["--input-type=module", "-e", program, directory], {
       cwd: repositoryRoot, encoding: "utf8",
       env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" },
