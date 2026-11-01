@@ -474,9 +474,11 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage, ttlEviden
       });
       continue;
     }
-    const conversation = asArray(report.rows.conversations).find(
+    const matchingConversations = asArray(report.rows.conversations).filter(
       (candidate) => candidate.id === conversationId && candidate.merchant_id === merchantId,
     );
+    // Never select an arbitrary first match when conversation ownership is ambiguous.
+    const conversation = matchingConversations.length === 1 ? matchingConversations[0] : null;
     if (!conversation || !merchantId ||
         !text(row.customer_external_id) ||
         text(conversation.customer_external_id) !== text(row.customer_external_id)) {
