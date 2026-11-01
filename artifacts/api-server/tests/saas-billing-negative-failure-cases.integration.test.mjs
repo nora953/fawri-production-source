@@ -80,11 +80,8 @@ test('verified SaaS payments preserve terminal state and recover after proactive
       billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent),
       { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
     );
-    await assert.rejects(
-      billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent),
-      { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
-      're-delivery of the rejected conflict must not be treated as an applied payment',
-    );
+    const redelivery = await billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent);
+    assert.equal(redelivery.status, 'duplicate', 're-delivery must be idempotent and must not apply payment');
     const rejectedReceipts = (await pool.query('SELECT status, signature_verified FROM saas_billing_events WHERE provider_event_id=$1', [rejectedEvent.providerEventId])).rows;
     assert.equal(rejectedReceipts.length, 1, 'refund conflict and re-delivery must preserve one durable rejection receipt');
     assert.equal(rejectedReceipts[0].status, 'rejected');
