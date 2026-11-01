@@ -167,9 +167,9 @@ test('prior-shift recovery retains original binding and requires the same staff 
   const start = sync.indexOf('const groups = groupByOperation(uploadable)');
   const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
   const preflight = sync.slice(start, upload);
-  assert.match(preflight, /binding\.staff_id !== session\\.context\\.staff_id/);
-  assert.match(preflight, /binding\.station_id !== session\\.context\\.station_id/);
-  assert.doesNotMatch(preflight, /binding\.shift_id (?:===|!==) session\\.context\\.shift_id/);
+  assert.match(preflight, /binding\.staff_id !== session\.context\.staff_id/);
+  assert.match(preflight, /binding\.station_id !== session\.context\.station_id/);
+  assert.doesNotMatch(preflight, /binding\.shift_id (?:===|!==) session\.context\.shift_id/);
   assert.doesNotMatch(preflight, /(?:binding\.shift_id|binding\.staff_id)\s*=(?!=)/);
 });
 
