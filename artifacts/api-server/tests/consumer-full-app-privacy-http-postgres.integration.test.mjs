@@ -116,6 +116,7 @@ test('actual app isolates notification and conversation consumers across aliases
         const r=await req(`${path}?merchant_id=${peer.id}&text=synthetic-private-probe`,actor);
         assert.equal(r.status,410,JSON.stringify(r));
         if(r.status===410)assert.equal(r.body.code,'LEGACY_BOT_DEBUG_DISABLED');
+        assert.equal(r.cache,'no-store','retired debug responses must not be cached');
         assert.doesNotMatch(JSON.stringify(r.body),/db_path|drafts_for_merchant|drafts_count|meta_pages_for_merchant|product_names|private-page-/);
         assert.equal(JSON.stringify(r.body).includes(peer.id),false);
       }
