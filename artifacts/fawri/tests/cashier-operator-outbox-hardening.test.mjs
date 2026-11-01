@@ -127,6 +127,18 @@ test('operator outbox preflights unsupported operations before any network uploa
 });
 
 
+test('unsupported operations are rejected across the batch before binding lookups', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('const groups = groupByOperation(uploadable)');
+  const firstPreflight = sync.indexOf('for (const [, envelopes] of groups)', start);
+  const rejection = sync.indexOf('CASHIER_OPERATOR_UNSUPPORTED_OPERATION', firstPreflight);
+  const bindingRead = sync.indexOf('await getCashierOperationBinding(operationId)', start);
+  const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
+  assert.ok(start >= 0 && firstPreflight > start, 'full-batch preflight must follow grouping');
+  assert.ok(rejection > firstPreflight && rejection < bindingRead, 'unsupported operation must be detected before any binding lookup');
+  assert.ok(bindingRead < upload, 'binding validation must still precede upload');
+});
+
 test('historical shift binding is never rewritten to match a later login before upload', async () => {
   const sync = await source('src/lib/cashierOperatorCloudSync.ts');
   const start = sync.indexOf('const binding = await getCashierOperationBinding(operationId)');
