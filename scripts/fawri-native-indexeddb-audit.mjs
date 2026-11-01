@@ -593,7 +593,7 @@ finally {
     if (browser.exitCode === null) { browser.kill('SIGKILL'); await stopped; }
   }
   if (server) await new Promise((ok, no) => server.close(e => e ? no(e) : ok()));
-  await rm(profile, { recursive: true, force: true });
+  await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }
 if (infrastructureError) evidence.infrastructureError = infrastructureError;
 console.log('AUDIT_NATIVE_INDEXEDDB_RESULT ' + JSON.stringify(evidence));
