@@ -882,6 +882,55 @@ test("F004-R1 refuses self-consistent but untrusted historical TTL claims", () =
   }
 });
 
+test("F004-R1 preserves explicit expired legacy drafts for both supported states", () => {
+  for (const awaiting of ["product", "customer_info"]) {
+    const directory = makeDataDirectory();
+    try {
+      createCompleteFixture(directory);
+      const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+      runtime.conversations[0].channel_id = "channel-1";
+      writeJson(directory, "bot-runtime.json", runtime);
+      writeJson(directory, "fawri-runtime-db.json", {
+        orderDraftsByConversation: {
+          "conversation-1": {
+            id: "explicit-expired-draft", merchant_id: "merchant-1",
+            customer_id: "customer-1", awaiting,
+            started_at: "2026-02-28T10:00:00.000Z",
+            updated_at: "2026-02-28T11:00:00.000Z",
+            expires_at: "2026-02-28T12:00:00.000Z",
+          },
+        },
+      });
+      const before = directorySnapshot(directory);
+      const program = [
+        'import { buildValidatedMigrationPlan } from "./scripts/lib/postgresql-migration-plan-complete.mjs";',
+        'const { report } = buildValidatedMigrationPlan({ dataDirectory: process.argv[1], includeRows: true });',
+        'process.stdout.write(JSON.stringify(report));',
+        'process.exitCode = report.ok ? 0 : 2;',
+      ].join("\n");
+      const result = spawnSync(process.execPath,
+        ["--input-type=module", "-e", program, directory],
+        { cwd: repositoryRoot, encoding: "utf8",
+          env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" } });
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      const report = JSON.parse(result.stdout);
+      const row = report.rows.order_drafts.find((draft) => draft.id === "explicit-expired-draft");
+      assert.ok(row, "explicitly expired draft must remain in the offline plan");
+      assert.equal(row.awaiting_field, awaiting);
+      assert.equal(row.customer_external_id, "customer-1");
+      assert.equal(row.expires_at, "2026-02-28T12:00:00.000Z");
+      assert.equal(row.created_at, "2026-02-28T10:00:00.000Z");
+      assert.equal(row.updated_at, "2026-02-28T11:00:00.000Z");
+      assert.equal(row.draft_data.awaiting, awaiting);
+      assert.equal(report.writes_performed, false);
+      assert.equal(report.database_connection_used, false);
+      assert.deepEqual(directorySnapshot(directory), before);
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  }
+});
+
 test("dry-run rejects legacy draft without historical expiry even with verified channel", () => {
   const directory = makeDataDirectory();
   try {
