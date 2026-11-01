@@ -147,7 +147,7 @@ test('all historical bindings are checked before the first network upload', asyn
   const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
   assert.ok(start >= 0 && bindingLoop > start, 'batch binding validation must exist');
   assert.ok(bindingConflict > bindingLoop && bindingConflict < upload, 'cross-shift or staff mismatch must reject before network upload');
-  assert.doesNotMatch(sync.slice(bindingLoop, upload), /await postOperation\\(/, 'preflight must not upload any operation');
+  assert.doesNotMatch(sync.slice(bindingLoop, upload), /await postOperation\(/, 'preflight must not upload any operation');
 });
 
 test('historical shift binding is never rewritten to match a later login before upload', async () => {
