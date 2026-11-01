@@ -200,7 +200,11 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
   // A sale bundle sent to a compensation endpoint must be rejected before
   // any mutation, even when its original-shift attribution is otherwise valid.
   const wrongKindReturn = await request('/api/cashier/operator/sync/return', restored.operator_token, body);
-  assert.notEqual(wrongKindReturn.status, 200, 'sale evidence must not be accepted as a return');
+  assert.ok(wrongKindReturn.status >= 400 && wrongKindReturn.status < 500,
+    'sale evidence must be rejected as a client authorization or validation error');
+  const wrongKindVoid = await request('/api/cashier/operator/sync/void', restored.operator_token, body);
+  assert.ok(wrongKindVoid.status >= 400 && wrongKindVoid.status < 500,
+    'sale evidence must not be accepted as a void');
   assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
     'wrong-kind compensation request must not create an order');
   const accepted = await request('/api/cashier/operator/sync/sale', restored.operator_token, body);
