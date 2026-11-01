@@ -167,10 +167,10 @@ test('prior-shift recovery retains original binding and requires the same staff 
   const start = sync.indexOf('const groups = groupByOperation(uploadable)');
   const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
   const preflight = sync.slice(start, upload);
-  assert.match(preflight, /binding\\.staff_id !== session\\.context\\.staff_id/);
-  assert.match(preflight, /binding\\.station_id !== session\\.context\\.station_id/);
-  assert.doesNotMatch(preflight, /binding\\.shift_id (?:===|!==) session\\.context\\.shift_id/);
-  assert.doesNotMatch(preflight, /(?:binding\\.shift_id|binding\\.staff_id)\\s*=(?!=)/);
+  assert.match(preflight, /binding\.staff_id !== session\\.context\\.staff_id/);
+  assert.match(preflight, /binding\.station_id !== session\\.context\\.station_id/);
+  assert.doesNotMatch(preflight, /binding\.shift_id (?:===|!==) session\\.context\\.shift_id/);
+  assert.doesNotMatch(preflight, /(?:binding\.shift_id|binding\.staff_id)\s*=(?!=)/);
 });
 
 test('operator login cannot silently clear pending outbox or rewrite original shift attribution', async () => {
@@ -240,7 +240,7 @@ test('historical operation recovery cannot bypass missing binding or upload unde
   const gate = sync.slice(start, end);
   assert.match(gate, /if \(!binding\)/);
   assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_MISSING/);
-  for (const field of ['merchant_id', 'station_id', 'device_id', 'staff_id', 'shift_id']) {
+  for (const field of ['merchant_id', 'station_id', 'device_id', 'staff_id']) {
     assert.ok(gate.includes(`binding.${field} !== session.context.${field}`) || gate.includes(`binding.${field} === session.context.${field}`), `missing ${field} isolation`);
   }
   assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
@@ -271,7 +271,7 @@ test('entire cashier batch preflights historical bindings before any network upl
   assert.match(gate, /getCashierOperationBinding\(operationId\)/);
   assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_MISSING/);
   assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
-  for (const field of ['merchant_id', 'station_id', 'staff_id', 'shift_id', 'device_id']) {
+  for (const field of ['merchant_id', 'station_id', 'staff_id', 'device_id']) {
     assert.ok(gate.includes(`binding.${field} !== session.context.${field}`),
       `batch preflight must reject mismatched ${field}`);
   }
