@@ -340,7 +340,7 @@ function validateLegacyDraftProvenance(report, runtimeSource, evidence) {
     /^[a-f0-9]{40}$/.test(entry.source_commit || "") &&
     Number.isSafeInteger(entry.ttl_minutes) && entry.ttl_minutes > 0 &&
     typeof entry.cutoff_at === "string" &&
-    /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(entry.cutoff_at) &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(entry.cutoff_at) &&
     Number.isFinite(Date.parse(entry.cutoff_at)) &&
     new Date(entry.cutoff_at).toISOString() === entry.cutoff_at;
   if (!valid) {
