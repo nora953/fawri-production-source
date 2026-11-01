@@ -832,6 +832,56 @@ test("F004-R1 rejects unverified historical TTL evidence without touching source
   }
 });
 
+test("F004-R1 refuses self-consistent but untrusted historical TTL claims", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          merchant_id: "merchant-1", customer_id: "customer-1",
+          awaiting: "customer_info", started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const configuration_json = JSON.stringify({
+      BOT_DRAFT_TTL_MINUTES: 60, source_commit: "2".repeat(40),
+    });
+    const evidence = {
+      version: 1,
+      runtime_sha256: before["fawri-runtime-db.json"].sha256,
+      configuration_json,
+      configuration_sha256: crypto.createHash("sha256").update(configuration_json).digest("hex"),
+      source_commit: "2".repeat(40),
+      ttl_minutes: 60, cutoff_at: "2026-03-01T00:00:00.000Z",
+    };
+    const program = [
+      'import { buildValidatedMigrationPlan } from "./scripts/lib/postgresql-migration-plan-complete.mjs";',
+      'const { report } = buildValidatedMigrationPlan({ dataDirectory: process.argv[1], legacyDraftTtlProvenance: JSON.parse(process.argv[2]) });',
+      'process.stdout.write(JSON.stringify(report));',
+      'process.exitCode = report.ok ? 0 : 2;',
+    ].join("\n");
+    const result = spawnSync(process.execPath,
+      ["--input-type=module", "-e", program, directory, JSON.stringify(evidence)],
+      { cwd: repositoryRoot, encoding: "utf8",
+        env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" } });
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_TTL_EVIDENCE_UNVERIFIED"));
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.deepEqual(directorySnapshot(directory), before);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("dry-run rejects legacy draft without historical expiry even with verified channel", () => {
   const directory = makeDataDirectory();
   try {
