@@ -214,59 +214,6 @@ test(
         });
         assert.deepEqual(firstTimeline, { allowed: true, replayed: false });
 
-        // A higher device sequence currently admits a gap. Once admitted, the
-        // missing lower sequence cannot be backfilled: preserve this as a
-        // regression observation until the client/server gap protocol is agreed.
-        const gapAt = new Date(validGraceAt.getTime() + 1000);
-        const gapSequence = await historical.recordCashierOperationTimelineInTransaction({
-          target: client,
-          merchantId,
-          deviceId,
-          deviceSequence: 102,
-          operationId: "history-gap-102",
-          operationKind: "sale",
-          occurredAt: gapAt.toISOString(),
-          authority: valid,
-        });
-        assert.deepEqual(gapSequence, { allowed: true, replayed: false },
-          "current server accepts a higher device sequence without a contiguous predecessor");
-        const missingSequence = await historical.recordCashierOperationTimelineInTransaction({
-          target: client,
-          merchantId,
-          deviceId,
-          deviceSequence: 101,
-          operationId: "history-missing-101",
-          operationKind: "sale",
-          occurredAt: gapAt.toISOString(),
-          authority: valid,
-        });
-        assert.equal(missingSequence.allowed, false,
-          "later delivery of a missing lower sequence is rejected after the gap");
-        if (!missingSequence.allowed) assert.equal(missingSequence.code, "CASHIER_OPERATION_SEQUENCE_CONFLICT");
-        const exactGapReplay = await historical.recordCashierOperationTimelineInTransaction({
-          target: client,
-          merchantId,
-          deviceId,
-          deviceSequence: 102,
-          operationId: "history-gap-102",
-          operationKind: "sale",
-          occurredAt: gapAt.toISOString(),
-          authority: valid,
-        });
-        assert.deepEqual(exactGapReplay, { allowed: true, replayed: true });
-        const alteredGapReplay = await historical.recordCashierOperationTimelineInTransaction({
-          target: client,
-          merchantId,
-          deviceId,
-          deviceSequence: 102,
-          operationId: "history-altered-gap-102",
-          operationKind: "sale",
-          occurredAt: gapAt.toISOString(),
-          authority: valid,
-        });
-        assert.equal(alteredGapReplay.allowed, false);
-        if (!alteredGapReplay.allowed) assert.equal(alteredGapReplay.code, "CASHIER_OPERATION_SEQUENCE_CONFLICT");
-
         const duplicateTimeline = await historical.recordCashierOperationTimelineInTransaction({
           target: client,
           merchantId,
@@ -354,6 +301,59 @@ test(
           assert.equal(ahead.allowed, false);
           if (!ahead.allowed) assert.equal(ahead.code, "CASHIER_OPERATION_CLOCK_AHEAD");
         }
+        // A higher device sequence currently admits a gap. Once admitted, the
+        // missing lower sequence cannot be backfilled: preserve this as a
+        // regression observation until the client/server gap protocol is agreed.
+        const gapAt = new Date(validGraceAt.getTime() + 1000);
+        const gapSequence = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 103,
+          operationId: "history-gap-103",
+          operationKind: "sale",
+          occurredAt: gapAt.toISOString(),
+          authority: valid,
+        });
+        assert.deepEqual(gapSequence, { allowed: true, replayed: false },
+          "current server accepts a higher device sequence without a contiguous predecessor");
+        const missingSequence = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 102,
+          operationId: "history-missing-102",
+          operationKind: "sale",
+          occurredAt: gapAt.toISOString(),
+          authority: valid,
+        });
+        assert.equal(missingSequence.allowed, false,
+          "later delivery of a missing lower sequence is rejected after the gap");
+        if (!missingSequence.allowed) assert.equal(missingSequence.code, "CASHIER_OPERATION_SEQUENCE_CONFLICT");
+        const exactGapReplay = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 103,
+          operationId: "history-gap-103",
+          operationKind: "sale",
+          occurredAt: gapAt.toISOString(),
+          authority: valid,
+        });
+        assert.deepEqual(exactGapReplay, { allowed: true, replayed: true });
+        const alteredGapReplay = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 103,
+          operationId: "history-altered-gap-103",
+          operationKind: "sale",
+          occurredAt: gapAt.toISOString(),
+          authority: valid,
+        });
+        assert.equal(alteredGapReplay.allowed, false);
+        if (!alteredGapReplay.allowed) assert.equal(alteredGapReplay.code, "CASHIER_OPERATION_SEQUENCE_CONFLICT");
+
       },
     );
   },
