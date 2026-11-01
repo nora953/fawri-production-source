@@ -185,6 +185,14 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
   const restored = nextLogin.body;
   assert.notEqual(restored.context.shift_id, original.context.shift_id);
   assert.equal((await request('/api/cashier/operator/sync/sale', restored.operator_token, body, 'wrong-device')).status, 401);
+  const otherStaff = await staff.createCashierStaffAuthoritative({ merchantId: f.merchantId,
+    displayName: 'Synthetic second cashier', role: 'cashier', pin: '1357', permissions: ['sale.create', 'sale.view_own'] });
+  const otherLogin = await request('/api/cashier/operator/login', null, { staff_id: otherStaff.id, pin: '1357' });
+  assert.equal(otherLogin.status, 200, JSON.stringify(otherLogin.body));
+  const crossStaff = await request('/api/cashier/operator/sync/sale', otherLogin.body.operator_token, body);
+  assert.equal(crossStaff.status, 403, JSON.stringify(crossStaff.body));
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
+    'cross-staff recovery must not create a sale');
   const accepted = await request('/api/cashier/operator/sync/sale', restored.operator_token, body);
   assert.equal(accepted.status, 200, JSON.stringify(accepted.body));
   assert.equal(accepted.body.operation_id, body.operation_id);
