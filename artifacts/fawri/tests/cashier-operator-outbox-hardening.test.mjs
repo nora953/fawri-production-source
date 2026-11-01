@@ -136,7 +136,7 @@ test('historical shift binding is never rewritten to match a later login before 
   assert.match(gate, /binding\.shift_id (?:===|!==) session\.context\.shift_id/);
   assert.match(gate, /binding\.staff_id (?:===|!==) session\.context\.staff_id/);
   assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
-  assert.doesNotMatch(gate, /(?:binding\.shift_id|binding\.staff_id)\s*=/, 'original shift and staff must not be reassigned');
+  assert.doesNotMatch(gate, /(?:binding\.shift_id|binding\.staff_id)\s*=(?!=)/, 'original shift and staff must not be reassigned');
   assert.doesNotMatch(gate, /(?:updateCashierOperationBinding|rewriteCashierOperationBinding|setCashierOperationBinding)\s*\(/);
 });
 
