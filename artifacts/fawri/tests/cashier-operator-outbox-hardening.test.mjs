@@ -27,7 +27,6 @@ test('operator outbox binds every upload to the active merchant station staff sh
   assert.match(sync, /binding\.merchant_id === session\.context\.merchant_id/);
   assert.match(sync, /binding\.station_id === session\.context\.station_id/);
   assert.match(sync, /binding\.staff_id === session\.context\.staff_id/);
-  assert.match(sync, /binding\.shift_id === session\.context\.shift_id/);
   assert.match(sync, /binding\.device_id === session\.context\.device_id/);
   assert.match(sync, /CASHIER_OPERATOR_OPERATION_BINDING_MISSING/);
   assert.match(sync, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
@@ -146,7 +145,7 @@ test('all historical bindings are checked before the first network upload', asyn
   const bindingConflict = sync.indexOf('CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT', bindingLoop);
   const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
   assert.ok(start >= 0 && bindingLoop > start, 'batch binding validation must exist');
-  assert.ok(bindingConflict > bindingLoop && bindingConflict < upload, 'cross-shift or staff mismatch must reject before network upload');
+  assert.ok(bindingConflict > bindingLoop && bindingConflict < upload, 'cross-staff or station mismatch must reject before network upload');
   assert.doesNotMatch(sync.slice(bindingLoop, upload), /await postOperation\(/, 'preflight must not upload any operation');
 });
 
@@ -156,11 +155,22 @@ test('historical shift binding is never rewritten to match a later login before 
   const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
   assert.ok(start >= 0 && upload > start, 'binding validation must precede upload');
   const gate = sync.slice(start, upload);
-  assert.match(gate, /binding\.shift_id (?:===|!==) session\.context\.shift_id/);
+  assert.doesNotMatch(gate, /binding\.shift_id (?:===|!==) session\.context\.shift_id/, 'same-staff prior shifts rely on historical server attribution');
   assert.match(gate, /binding\.staff_id (?:===|!==) session\.context\.staff_id/);
   assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
   assert.doesNotMatch(gate, /(?:binding\.shift_id|binding\.staff_id)\s*=(?!=)/, 'original shift and staff must not be reassigned');
   assert.doesNotMatch(gate, /(?:updateCashierOperationBinding|rewriteCashierOperationBinding|setCashierOperationBinding)\s*\(/);
+});
+
+test('prior-shift recovery retains original binding and requires the same staff and station', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('const groups = groupByOperation(uploadable)');
+  const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
+  const preflight = sync.slice(start, upload);
+  assert.match(preflight, /binding\\.staff_id !== session\\.context\\.staff_id/);
+  assert.match(preflight, /binding\\.station_id !== session\\.context\\.station_id/);
+  assert.doesNotMatch(preflight, /binding\\.shift_id (?:===|!==) session\\.context\\.shift_id/);
+  assert.doesNotMatch(preflight, /(?:binding\\.shift_id|binding\\.staff_id)\\s*=(?!=)/);
 });
 
 test('operator login cannot silently clear pending outbox or rewrite original shift attribution', async () => {
