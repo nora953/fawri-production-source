@@ -15,6 +15,7 @@ import {
   syncCashierSaleAuthoritative,
 } from "./postgresCashierSyncAuthority";
 import { syncCashierCompensationAuthoritative } from "./postgresCashierCompensationSyncAuthority";
+import { validateCashierCompensationSyncBundle } from "./cashierCompensationSyncValidation";
 import type { CashierOperatorContext } from "./postgresCashierStaffAuthority";
 import {
   operationalQueryRows,
@@ -549,7 +550,7 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
   // Validate the bundle kind before any compensation mutation is attempted.
   // The endpoint permission is kind-specific; a mismatched payload must never
   // reach the authoritative inventory or refund transaction.
-  const { validateCashierCompensationSyncBundle } = await import("./cashierCompensationSyncValidation");
+
   const validated = validateCashierCompensationSyncBundle(input.body);
   if (validated.kind !== input.kind) {
     throw new CashierSyncError(
