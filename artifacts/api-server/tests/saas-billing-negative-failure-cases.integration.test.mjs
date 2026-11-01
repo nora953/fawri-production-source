@@ -44,11 +44,11 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     const fixture = await checkout();
     const first = event(fixture.order);
     assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(first)).status, 'applied');
-    try {
-      await billing.applyVerifiedSaasBillingProviderEvent(event(fixture.order, { providerPaymentRef: first.providerPaymentRef, amountIqd: 1 }));
-    } catch (error) {
-      assert.ok(['SAAS_BILLING_TERMINAL_CONFLICT', 'SAAS_BILLING_AMOUNT_MISMATCH'].includes(error.code), 'only explicit terminal/amount rejection is acceptable');
-    }
+    await assert.rejects(
+      billing.applyVerifiedSaasBillingProviderEvent(event(fixture.order, { providerPaymentRef: first.providerPaymentRef, amountIqd: 1 })),
+      { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
+      'conflicting payment must be rejected',
+    );
     const stored = (await pool.query('SELECT status,provider_payment_ref FROM saas_billing_orders WHERE id=$1', [fixture.order.id])).rows[0];
     assert.equal(stored.status, 'paid', 'verified terminal paid state must not be overwritten by mismatched replay');
     assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
