@@ -816,9 +816,6 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     }
     for (const [operationId, envelopes] of groups) {
       const kind = operationKind(envelopes);
-      if (kind === 'skip') {
-        throw new CashierOperatorCloudSyncError('CASHIER_OPERATOR_UNSUPPORTED_OPERATION', 'Pending operation requires reconciliation', 409);
-      }
       const binding = await getCashierOperationBinding(operationId);
       if (!binding) {
         throw new CashierOperatorCloudSyncError(
