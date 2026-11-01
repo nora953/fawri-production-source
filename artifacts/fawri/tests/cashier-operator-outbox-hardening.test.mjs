@@ -125,3 +125,29 @@ test('operator outbox preflights unsupported operations before any network uploa
   assert.ok(preflight >= 0 && rejection > preflight, 'unsupported operation preflight must reject');
   assert.ok(uploadLoop > rejection && upload > uploadLoop, 'preflight must precede every network upload');
 });
+
+
+test('historical shift binding is never rewritten to match a later login before upload', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('const binding = await getCashierOperationBinding(operationId)');
+  const upload = sync.indexOf('const uploadedResult = await postOperation(', start);
+  assert.ok(start >= 0 && upload > start, 'binding validation must precede upload');
+  const gate = sync.slice(start, upload);
+  assert.match(gate, /binding\.shift_id === session\.context\.shift_id/);
+  assert.match(gate, /binding\.staff_id === session\.context\.staff_id/);
+  assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
+  assert.doesNotMatch(gate, /(?:binding\.shift_id|binding\.staff_id)\s*=/, 'original shift and staff must not be reassigned');
+  assert.doesNotMatch(gate, /(?:updateCashierOperationBinding|rewriteCashierOperationBinding|setCashierOperationBinding)\s*\(/);
+});
+
+test('operator login cannot silently clear pending outbox or rewrite original shift attribution', async () => {
+  const session = await source('src/lib/cashierOperatorSessionRuntime.ts');
+  const start = session.indexOf('export async function loginCashierOperator(');
+  const end = session.indexOf('\nexport async function ', start + 1);
+  assert.ok(start >= 0, 'operator login must exist');
+  const login = session.slice(start, end < 0 ? undefined : end);
+  assert.match(login, /sessionStorage\.setItem\(OPERATOR_STORAGE_KEY, JSON\.stringify\(session\)\)/);
+  assert.doesNotMatch(login, /acknowledgeSynced\s*\(/);
+  assert.doesNotMatch(login, /(?:clear|delete|remove)Pending(?:Sync|Outbox|Operation)/);
+  assert.doesNotMatch(login, /(?:updateCashierOperationBinding|rewriteCashierOperationBinding|setCashierOperationBinding)\s*\(/);
+});
