@@ -803,6 +803,17 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     // This is only a best-effort preflight: IndexedDB can change between
     // awaits, so the per-operation binding check below remains mandatory.
     // Neither check authorizes historical-shift recovery or rewrites binding.
+    // Reject every unsupported operation before inspecting historical bindings.
+    // This prevents a missing earlier binding from masking a later gap.
+    for (const [, envelopes] of groups) {
+      if (operationKind(envelopes) === 'skip') {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_UNSUPPORTED_OPERATION',
+          'Pending cashier operation requires reconciliation before the outbox can sync',
+          409,
+        );
+      }
+    }
     for (const [operationId, envelopes] of groups) {
       const kind = operationKind(envelopes);
       if (kind === 'skip') {
