@@ -197,3 +197,30 @@ test('historical outbox cannot be acknowledged without matching operation sequen
   assert.match(validation, /acceptedEntityIds\.length !== expectedEntityIds\.length/);
   assert.match(validation, /compensationKind !== kind/);
 });
+
+
+test('historical operation recovery cannot bypass missing binding or upload under a different station', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('const binding = await getCashierOperationBinding(operationId)');
+  const end = sync.indexOf('const uploadedResult = await postOperation(', start);
+  assert.ok(start >= 0 && end > start);
+  const gate = sync.slice(start, end);
+  assert.match(gate, /if \(!binding\)/);
+  assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_MISSING/);
+  for (const field of ['merchant_id', 'station_id', 'device_id', 'staff_id', 'shift_id']) {
+    assert.ok(gate.includes(`binding.${field} === session.context.${field}`), `missing ${field} isolation`);
+  }
+  assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
+});
+
+test('pending historical operations cannot be acknowledged before a complete server ACK', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('for (const [operationId, envelopes] of groups)');
+  const ack = sync.indexOf('await authority.acknowledgeSynced([operationId])', start);
+  assert.ok(start >= 0 && ack > start);
+  const gate = sync.slice(start, ack);
+  assert.match(gate, /const uploadedResult = await postOperation\(/);
+  assert.match(gate, /uploadedResult.operation_id !== operationId/);
+  assert.match(gate, /CASHIER_OPERATOR_ACK_INVALID/);
+  assert.doesNotMatch(gate, /acknowledgeSynced\s*\(/);
+});
