@@ -800,6 +800,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
     : replay ? requiredText(replay.merchantId,180)
     : requiredText(input.merchantId,180);
   let sqlFailure: unknown;
+  let terminalConflictFailure: unknown;
   const processEvent = async (client: SubscriptionPlanCycleTransaction, receiptOnly: boolean): Promise<SaasBillingApplicationOutcome> => {
     // Replay already issues on its operator lease; confirmed callbacks own a fresh primary transaction.
     if(confirmed) await issueMerchantTransactionScope(client,merchantId);
@@ -1008,11 +1009,19 @@ export async function applyVerifiedSaasBillingProviderEvent(
         (order.provider_payment_ref &&
           order.provider_payment_ref !== paymentRef)
       ) {
-        fail(
-          "SAAS_BILLING_TERMINAL_CONFLICT",
-          "settled billing order cannot be changed by a conflicting payment event",
-          409,
-        );
+        // Commit the verified rejection receipt without mutating the settled order.
+        // Re-throw the original domain error only after the transaction commits.
+        try {
+          fail(
+            "SAAS_BILLING_TERMINAL_CONFLICT",
+            "settled billing order cannot be changed by a conflicting payment event",
+            409,
+          );
+        } catch (error) {
+          terminalConflictFailure = error;
+        }
+        await eventRecord("rejected", null);
+        return { status: "duplicate" as const, order };
       }
     }
     if (input.amountIqd !== order.amount_iqd) {
@@ -1242,6 +1251,7 @@ export async function applyVerifiedSaasBillingProviderEvent(
     }
   };
   const admitted = await runTransaction((client) => processEvent(client, true));
+  if (terminalConflictFailure) throw terminalConflictFailure;
   if (admitted.status !== "reconciliation_required" ||
       admitted.reasonCode !== "SAAS_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;
   const outcome = await runTransaction((client) => processEvent(client, false));
