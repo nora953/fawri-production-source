@@ -522,7 +522,7 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage) {
     const updated = parseInstant(row.updated_at);
     const expires = parseInstant(row.expires_at);
     if (created === null || updated === null || expires === null ||
-        updated < created || expires < updated) {
+        updated < created || expires <= created || expires < updated) {
       addError(report, "LEGACY_DRAFT_TIME_PROVENANCE_INVALID", {
         table: "order_drafts",
         target_record_id: row.id,
