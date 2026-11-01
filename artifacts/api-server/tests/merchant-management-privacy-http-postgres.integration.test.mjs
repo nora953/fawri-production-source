@@ -123,6 +123,18 @@ test('management HTTP privacy uses current SQL roles, permissions and session au
     const logs=await req('/admin/logs',manager);assert.equal(logs.status,200);assert.ok(logs.body.logs.some(x=>x.id===r.body.log.id));
     assert.equal((await runtime.runtimePool.query('SELECT id FROM audit_events WHERE id=$1',[r.body.log.id])).rowCount,0);
   });
+  await t.test('mixed merchant and admin cookies cannot reach private management actions',async()=>{
+    const before=await snapshot();
+    for(const actor of [owner,manager]){
+      const mixedCookie=`${actor.cookie}; ${a.cookie}`;
+      for(const route of routes){
+        const result=await req(route.path,actor,route.method,route.body,{Cookie:mixedCookie});
+        assert.equal(result.status,401,`${route.method} ${route.path}`);
+        assert.doesNotMatch(JSON.stringify(result.body),/private-note-|private-deletion-/);
+      }
+    }
+    assert.deepEqual(await snapshot(),before,'mixed-role cookies must not mutate private SQL rows');
+  });
   await t.test('wrong device and forbidden origin deny without mutations',async()=>{
     const before=await snapshot();
     assert.equal((await req(`/merchants/${a.id}/note`,owner,'GET',undefined,{'X-Fawri-Device-Id':'wrong'})).status,401);
