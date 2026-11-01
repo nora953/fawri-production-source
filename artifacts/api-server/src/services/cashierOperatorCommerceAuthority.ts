@@ -546,6 +546,18 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
       403,
     );
   }
+  // Validate the bundle kind before any compensation mutation is attempted.
+  // The endpoint permission is kind-specific; a mismatched payload must never
+  // reach the authoritative inventory or refund transaction.
+  const { validateCashierCompensationSyncBundle } = await import("./cashierCompensationSyncValidation");
+  const validated = validateCashierCompensationSyncBundle(input.body);
+  if (validated.kind !== input.kind) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_SYNC_KIND_MISMATCH",
+      "cashier compensation kind does not match authorized endpoint",
+      403,
+    );
+  }
   const result = await syncCashierCompensationAuthoritative({
     merchantId: input.context.merchant_id,
     body: input.body,
