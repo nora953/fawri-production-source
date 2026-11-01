@@ -56,7 +56,10 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     );
     const stored = (await pool.query('SELECT status,provider_payment_ref FROM saas_billing_orders WHERE id=$1', [fixture.order.id])).rows[0];
     assert.equal(stored.status, 'paid', 'verified terminal paid state must not be overwritten by mismatched replay');
-    assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_billing_events WHERE provider_event_id=$1', [rejectedEvent.providerEventId])).rows[0].count, 0, 'terminal conflict currently rejects before durable event admission; document audit gap explicitly');
+    const audit = (await pool.query('SELECT status, signature_verified FROM saas_billing_events WHERE provider_event_id=$1', [rejectedEvent.providerEventId])).rows;
+    assert.equal(audit.length, 1, 'terminal conflict must persist one durable rejection receipt');
+    assert.equal(audit[0].status, 'rejected');
+    assert.equal(audit[0].signature_verified, true);
     assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 1);
   });
