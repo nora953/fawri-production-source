@@ -887,8 +887,19 @@ test("F004-R1 preserves explicit expired legacy drafts for both supported states
     const directory = makeDataDirectory();
     try {
       createCompleteFixture(directory);
+      // Isolate this acceptance case from unrelated fixture-only blockers.
+      const merchants = JSON.parse(fs.readFileSync(path.join(directory, "merchants.json"), "utf8"));
+      merchants.merchants[0].activity_type = "retail";
+      writeJson(directory, "merchants.json", merchants);
+      const requests = JSON.parse(fs.readFileSync(path.join(directory, "training-requests.json"), "utf8"));
+      requests.requests = [];
+      writeJson(directory, "training-requests.json", requests);
+      const learned = JSON.parse(fs.readFileSync(path.join(directory, "learned-answers.json"), "utf8"));
+      learned.answers = [];
+      writeJson(directory, "learned-answers.json", learned);
       const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
       runtime.conversations[0].channel_id = "channel-1";
+      runtime.orderDrafts = [];
       writeJson(directory, "bot-runtime.json", runtime);
       writeJson(directory, "fawri-runtime-db.json", {
         orderDraftsByConversation: {
