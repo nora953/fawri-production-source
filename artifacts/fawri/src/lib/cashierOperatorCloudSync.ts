@@ -797,6 +797,35 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     const pending = await authority.listPendingSync(MAX_PENDING_ENVELOPES);
     const uploadable = completeOperationWindow(pending);
     const groups = groupByOperation(uploadable);
+    // Reject the entire bounded batch before network I/O when an earlier
+    // operation belongs to a different shift or staff. A later operation must
+    // not be uploaded while the original historical binding needs recovery.
+    for (const [operationId, envelopes] of groups) {
+      const binding = await getCashierOperationBinding(operationId);
+      if (!binding) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_OPERATION_BINDING_MISSING',
+          'Pending cashier operation has no operator binding',
+          409,
+        );
+      }
+      const kind = operationKind(envelopes);
+      if (
+        kind !== 'skip' &&
+        (binding.operation_kind !== kind ||
+          binding.merchant_id !== session.context.merchant_id ||
+          binding.station_id !== session.context.station_id ||
+          binding.staff_id !== session.context.staff_id ||
+          binding.shift_id !== session.context.shift_id ||
+          binding.device_id !== session.context.device_id)
+      ) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT',
+          'Pending cashier operation belongs to another operator or shift',
+          409,
+        );
+      }
+    }
     let uploaded = 0;
     let replayed = 0;
     let skipped = 0;
