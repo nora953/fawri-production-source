@@ -82,6 +82,7 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
       for(const [path,method] of [['/notifications','GET'],[`/notifications/${actor.id}-own/read`,'PATCH']]){
         const r=await req(path,actor,method,{Cookie:mixedCookie});
         assert.equal(r.status,401,`${method} ${path}`);
+        assert.equal(r.body.code,'ROLE_SESSION_CONFUSION',`${method} ${path}`);
         assert.doesNotMatch(JSON.stringify(r.body),/private-|sentinel/);
       }
     }
