@@ -78,6 +78,10 @@ test(
     );
 
     const subscriptionId = `cashier-sub-${crypto.randomUUID()}`;
+    // Keep the initial subscription active regardless of the calendar date.
+    // Later in this test the period is explicitly moved into grace.
+    const initialPeriodStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const initialPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await pool.query(
       `INSERT INTO merchant_cashier_subscriptions (
          id, merchant_id, status, licensed_seats, price_per_seat_iqd,
@@ -85,11 +89,10 @@ test(
          version, created_at, updated_at
        ) VALUES (
          $1,$2,'active',3,3900,
-         '2026-10-01T00:00:00.000Z',
-         '2026-11-01T00:00:00.000Z',
+         $3,$4,
          604800,1,now(),now()
        )`,
-      [subscriptionId, merchantId],
+      [subscriptionId, merchantId, initialPeriodStart, initialPeriodEnd],
     );
 
     const stations = [];
