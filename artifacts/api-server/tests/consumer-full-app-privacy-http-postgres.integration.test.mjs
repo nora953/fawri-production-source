@@ -90,7 +90,7 @@ test('actual app isolates notification and conversation consumers across aliases
     const before=await snapshot();
     for(const [label,actor,headers] of [['anonymous',undefined,{}],['admin',ownerActor,{}],['wrong-device',a,{'X-Fawri-Device-Id':'wrong'}],['combined',a,{Cookie:`${a.cookie}; ${ownerActor.cookie}`} ]]){
       for(const [path,method] of [['/API/AUTH/Notifications/','GET'],[`/API/AUTH/Notifications/${a.id}-own/Read/`,'PATCH'],['/API/Conversations/','GET'],[`/API/Conversations/${a.conversation}/Takeover/`,'POST']]){
-        const r=await req(path,actor,method,undefined,headers);assert.equal(r.status,401,label+' '+path);assert.doesNotMatch(JSON.stringify(r.body),/private-customer-|private-message-|sentinel/);assert.deepEqual(await snapshot(),before,label);
+        const r=await req(path,actor,method,undefined,headers);assert.equal(r.status,401,label+' '+path);if(label==='combined')assert.equal(r.body.code,'ROLE_SESSION_CONFUSION',path);assert.doesNotMatch(JSON.stringify(r.body),/private-customer-|private-message-|sentinel/);assert.deepEqual(await snapshot(),before,label);
       }
     }
     assert.equal((await req('/api/auth/notifications',b)).status,200);assert.equal((await req('/api/conversations',b)).status,200);
