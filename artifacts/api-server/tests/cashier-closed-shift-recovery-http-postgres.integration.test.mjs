@@ -197,6 +197,12 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
     'cross-staff recovery must not persist attribution');
   assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
     'cross-staff recovery must not create a sale');
+  // A sale bundle sent to a compensation endpoint must be rejected before
+  // any mutation, even when its original-shift attribution is otherwise valid.
+  const wrongKindReturn = await request('/api/cashier/operator/sync/return', restored.operator_token, body);
+  assert.notEqual(wrongKindReturn.status, 200, 'sale evidence must not be accepted as a return');
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
+    'wrong-kind compensation request must not create an order');
   const accepted = await request('/api/cashier/operator/sync/sale', restored.operator_token, body);
   assert.equal(accepted.status, 200, JSON.stringify(accepted.body));
   assert.equal(accepted.body.operation_id, body.operation_id);
