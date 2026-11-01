@@ -170,3 +170,30 @@ test('operator outbox never treats a failed or incomplete server ACK as permissi
   assert.match(between, /CASHIER_OPERATOR_ACK_INVALID/);
   assert.doesNotMatch(between, /acknowledgeSynced\s*\(/);
 });
+
+
+test('historical shift recovery must not bypass the live operator authorization endpoint', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('async function postOperation(');
+  const end = sync.indexOf('export async function syncCashierOperatorOutboxToCloud(', start);
+  assert.ok(start >= 0 && end > start);
+  const post = sync.slice(start, end);
+  assert.match(post, /fetch\(`\/api\/cashier\/operator\/sync\/\$\{kind\}`/);
+  assert.match(post, /cashierOperatorHeaders\(session\)/);
+  assert.match(post, /credentials:\s*'omit'/);
+  assert.doesNotMatch(post, /(?:fetch|postOperation)\s*\([^\n]*\/api\/cashier\/sync\//);
+  assert.doesNotMatch(post, /(?:operator_token|station_token)\s*:\s*(?:null|undefined|''|""|false)/);
+});
+
+test('historical outbox cannot be acknowledged without matching operation sequence and entities', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const ack = sync.indexOf('const acknowledgementInvalid =');
+  const throwAt = sync.indexOf('if (acknowledgementInvalid)', ack);
+  const localDelete = sync.indexOf('await authority.acknowledgeSynced([operationId])', throwAt);
+  assert.ok(ack >= 0 && throwAt > ack && localDelete > throwAt);
+  const validation = sync.slice(ack, throwAt);
+  assert.match(validation, /operationId !== expectedOperationId/);
+  assert.match(validation, /deviceSequence !== expectedDeviceSequence/);
+  assert.match(validation, /acceptedEntityIds\.length !== expectedEntityIds\.length/);
+  assert.match(validation, /compensationKind !== kind/);
+});
