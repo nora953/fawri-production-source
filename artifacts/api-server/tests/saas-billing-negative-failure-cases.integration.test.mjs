@@ -91,6 +91,49 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 1);
   });
+  await t.test('failed and cancelled verified events cannot reverse paid or refunded orders and leave durable rejected receipts', async () => {
+    for (const terminalStatus of ['paid', 'refunded']) {
+      for (const eventType of ['payment_failed', 'payment_cancelled']) {
+        const fixture = await checkout();
+        const paidEvent = event(fixture.order);
+        assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(paidEvent)).status, 'applied');
+        if (terminalStatus === 'refunded') {
+          const refund = await billing.applyVerifiedSaasBillingProviderEvent({
+            ...event(fixture.order),
+            eventType: 'refund_settled',
+            providerPaymentRef: undefined,
+            providerRefundRef: randomUUID(),
+            reasonCode: 'service_guarantee_manual_refund',
+          });
+          assert.equal(refund.status, 'refunded');
+        }
+        const rejectedEvent = event(fixture.order, {
+          eventType,
+          providerPaymentRef: undefined,
+        });
+        await assert.rejects(
+          billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent),
+          { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
+        );
+        assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent)).status, 'duplicate');
+        const receipts = (await pool.query(
+          'SELECT status, event_type, signature_verified FROM saas_billing_events WHERE provider_event_id=$1',
+          [rejectedEvent.providerEventId],
+        )).rows;
+        assert.deepEqual(receipts, [{ status: 'rejected', event_type: eventType, signature_verified: true }]);
+        const stored = (await pool.query(
+          'SELECT status,provider_payment_ref FROM saas_billing_orders WHERE id=$1',
+          [fixture.order.id],
+        )).rows[0];
+        assert.equal(stored.status, terminalStatus);
+        assert.equal(stored.provider_payment_ref, paidEvent.providerPaymentRef);
+        assert.equal((await pool.query(
+          'SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1',
+          [fixture.order.id],
+        )).rows[0].count, 1);
+      }
+    }
+  });
   await t.test('simultaneous identical checkout requests return one durable order for both callers', async () => {
     for (let attempt = 0; attempt < 6; attempt++) {
       const fixture = await checkout(new Date(Date.now() - 60 * 60 * 1000));
