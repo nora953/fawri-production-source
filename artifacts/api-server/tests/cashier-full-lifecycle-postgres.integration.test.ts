@@ -122,6 +122,18 @@ test(
       providerPaymentRef: "full-lifecycle-activate-payment",
     });
 
+    // Station APIs use the real clock, unlike the historical billing quote.
+    // Temporarily extend only this disposable fixture's entitlement for pairing
+    // assertions, then restore the exact October period before billing checks.
+    const restoreHistoricalBillingPeriod = async () => pool.query(
+      "UPDATE merchant_cashier_subscriptions SET billing_period_end = $2 WHERE merchant_id = $1",
+      [merchantId, new Date("2026-11-01T00:00:00.000Z")],
+    );
+    const enableCurrentStationEntitlement = async () => pool.query(
+      "UPDATE merchant_cashier_subscriptions SET billing_period_end = $2 WHERE merchant_id = $1",
+      [merchantId, new Date(Date.now() + 35 * 24 * 60 * 60 * 1000)],
+    );
+    await enableCurrentStationEntitlement();
     const stationOne = await cashier.createCashierStationAuthoritative({
       merchantId,
       name: "Lifecycle Station 1",
@@ -224,6 +236,7 @@ test(
       deviceId: deviceOne,
     });
 
+    await restoreHistoricalBillingPeriod();
     // 10 Oct: add exactly one more seat. It must keep the same renewal date.
     const addAt = new Date("2026-10-10T00:00:00.000Z");
     const addQuote = await billing.quoteCashierBillingChange({
@@ -259,6 +272,7 @@ test(
       providerPaymentRef: "full-lifecycle-add-seat-payment",
     });
 
+    await enableCurrentStationEntitlement();
     const stationTwo = await cashier.createCashierStationAuthoritative({
       merchantId,
       name: "Lifecycle Station 2",
@@ -290,6 +304,7 @@ test(
         ),
     );
 
+    await restoreHistoricalBillingPeriod();
     const subscriptionRow = await pool.query(
       `SELECT id, merchant_id, status, licensed_seats, price_per_seat_iqd,
               billing_period_start, billing_period_end, grace_duration_seconds,
