@@ -500,6 +500,13 @@ export async function syncCashierOperatorSaleAuthoritative(input: {
     deviceId: identity.deviceId,
     occurredAt: identity.occurredAt,
   });
+  if (historicalContext.staff_id !== input.context.staff_id || historicalContext.station_id !== input.context.station_id) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_HISTORICAL_OPERATOR_MISMATCH",
+      "historical cashier operation requires the original staff and station",
+      403,
+    );
+  }
   const verifiedBody = prepareOperatorSaleBody(input.context, input.body);
   const result = await syncCashierSaleAuthoritative({
     merchantId: input.context.merchant_id,
@@ -532,6 +539,13 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
     deviceId: identity.deviceId,
     occurredAt: identity.occurredAt,
   });
+  if (historicalContext.staff_id !== input.context.staff_id || historicalContext.station_id !== input.context.station_id) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_HISTORICAL_OPERATOR_MISMATCH",
+      "historical cashier operation requires the original staff and station",
+      403,
+    );
+  }
   const result = await syncCashierCompensationAuthoritative({
     merchantId: input.context.merchant_id,
     body: input.body,
