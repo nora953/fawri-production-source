@@ -793,6 +793,41 @@ test("dry-run blocks legacy drafts when channel belongs to another merchant", ()
   }
 });
 
+test("F004-R1 rejects duplicate matching conversations instead of choosing the first", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    runtime.conversations.push({ ...runtime.conversations[0] });
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-ambiguous-conversation", merchant_id: "merchant-1",
+          customer_id: "customer-1", awaiting: "product",
+          started_at: "2026-02-28T10:00:00.000Z",
+          updated_at: "2026-02-28T11:00:00.000Z",
+          expires_at: "2026-02-28T12:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some((issue) =>
+      issue.code === "LEGACY_DRAFT_CONVERSATION_IDENTITY_UNVERIFIED"),
+      "duplicate matching conversation ownership must fail closed");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("F004-R1 rejects unverified historical TTL evidence without touching source", () => {
   const directory = makeDataDirectory();
   try {
