@@ -191,6 +191,10 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
   assert.equal(otherLogin.status, 200, JSON.stringify(otherLogin.body));
   const crossStaff = await request('/api/cashier/operator/sync/sale', otherLogin.body.operator_token, body);
   assert.equal(crossStaff.status, 403, JSON.stringify(crossStaff.body));
+  assert.equal(crossStaff.body.code, 'CASHIER_OPERATOR_HISTORICAL_OPERATOR_MISMATCH',
+    'cross-staff recovery must be rejected by historical attribution authorization');
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM cashier_operation_attribution WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
+    'cross-staff recovery must not persist attribution');
   assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
     'cross-staff recovery must not create a sale');
   const accepted = await request('/api/cashier/operator/sync/sale', restored.operator_token, body);
