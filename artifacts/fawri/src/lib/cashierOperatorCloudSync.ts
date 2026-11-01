@@ -798,8 +798,8 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     const uploadable = completeOperationWindow(pending);
     const groups = groupByOperation(uploadable);
     // Reject the entire bounded batch before network I/O when an earlier
-    // operation belongs to a different shift or staff. A later operation must
-    // not be uploaded while the original historical binding needs recovery.
+    // operation belongs to another staff member or station. Same-staff prior
+    // shifts may upload only after the server verifies historical attribution.
     // This is only a best-effort preflight: IndexedDB can change between
     // awaits, so the per-operation binding check below remains mandatory.
     // Neither check authorizes historical-shift recovery or rewrites binding.
@@ -829,7 +829,6 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
         binding.merchant_id !== session.context.merchant_id ||
         binding.station_id !== session.context.station_id ||
         binding.staff_id !== session.context.staff_id ||
-        binding.shift_id !== session.context.shift_id ||
         binding.device_id !== session.context.device_id
       ) {
         throw new CashierOperatorCloudSyncError(
@@ -870,7 +869,6 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
         binding.merchant_id === session.context.merchant_id &&
         binding.station_id === session.context.station_id &&
         binding.staff_id === session.context.staff_id &&
-        binding.shift_id === session.context.shift_id &&
         binding.device_id === session.context.device_id;
       if (!bindingMatches) {
         throw new CashierOperatorCloudSyncError(
