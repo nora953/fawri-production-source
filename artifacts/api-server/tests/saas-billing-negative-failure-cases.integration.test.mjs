@@ -75,10 +75,20 @@ test('verified SaaS payments preserve terminal state and recover after proactive
       reasonCode: 'service_guarantee_manual_refund',
     });
     assert.equal(refund.status, 'refunded');
+    const rejectedEvent = event(fixture.order, { providerPaymentRef: first.providerPaymentRef, amountIqd: 1 });
     await assert.rejects(
-      billing.applyVerifiedSaasBillingProviderEvent(event(fixture.order, { providerPaymentRef: first.providerPaymentRef, amountIqd: 1 })),
+      billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent),
       { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
     );
+    await assert.rejects(
+      billing.applyVerifiedSaasBillingProviderEvent(rejectedEvent),
+      { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
+      're-delivery of the rejected conflict must not be treated as an applied payment',
+    );
+    const rejectedReceipts = (await pool.query('SELECT status, signature_verified FROM saas_billing_events WHERE provider_event_id=$1', [rejectedEvent.providerEventId])).rows;
+    assert.equal(rejectedReceipts.length, 1, 'refund conflict and re-delivery must preserve one durable rejection receipt');
+    assert.equal(rejectedReceipts[0].status, 'rejected');
+    assert.equal(rejectedReceipts[0].signature_verified, true);
     const stored = (await pool.query('SELECT status,provider_payment_ref FROM saas_billing_orders WHERE id=$1', [fixture.order.id])).rows[0];
     assert.equal(stored.status, 'refunded');
     assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
