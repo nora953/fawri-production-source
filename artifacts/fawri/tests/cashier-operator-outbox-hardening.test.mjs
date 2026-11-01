@@ -224,3 +224,24 @@ test('pending historical operations cannot be acknowledged before a complete ser
   assert.match(gate, /CASHIER_OPERATOR_ACK_INVALID/);
   assert.doesNotMatch(gate, /acknowledgeSynced\s*\(/);
 });
+
+
+test('entire cashier batch preflights historical bindings before any network upload', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const start = sync.indexOf('export async function syncCashierOperatorOutboxToCloud()');
+  const body = sync.slice(start);
+  const group = body.indexOf('const groups = groupByOperation(uploadable)');
+  const firstPreflight = body.indexOf('for (const [operationId, envelopes] of groups)', group);
+  const firstUpload = body.indexOf('const uploadedResult = await postOperation(', group);
+  assert.ok(group >= 0 && firstPreflight > group && firstUpload > firstPreflight);
+  const gate = body.slice(firstPreflight, firstUpload);
+  assert.match(gate, /getCashierOperationBinding\(operationId\)/);
+  assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_MISSING/);
+  assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
+  for (const field of ['merchant_id', 'station_id', 'staff_id', 'shift_id', 'device_id']) {
+    assert.ok(gate.includes(`binding.${field} !== session.context.${field}`),
+      `batch preflight must reject mismatched ${field}`);
+  }
+  assert.doesNotMatch(gate, /postOperation\s*\(/, 'preflight cannot upload an earlier operation');
+  assert.doesNotMatch(gate, /acknowledgeSynced\s*\(/, 'preflight cannot delete an earlier operation');
+});
