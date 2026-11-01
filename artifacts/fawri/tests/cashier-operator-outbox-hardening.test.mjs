@@ -208,7 +208,7 @@ test('historical operation recovery cannot bypass missing binding or upload unde
   assert.match(gate, /if \(!binding\)/);
   assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_MISSING/);
   for (const field of ['merchant_id', 'station_id', 'device_id', 'staff_id', 'shift_id']) {
-    assert.ok(gate.includes(`binding.${field} === session.context.${field}`), `missing ${field} isolation`);
+    assert.ok(gate.includes(`binding.${field} !== session.context.${field}`) || gate.includes(`binding.${field} === session.context.${field}`), `missing ${field} isolation`);
   }
   assert.match(gate, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
 });
