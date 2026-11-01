@@ -54,6 +54,27 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 1);
   });
+  await t.test('conflicting payment after refund cannot rewrite refunded terminal order', async () => {
+    const fixture = await checkout();
+    const first = event(fixture.order);
+    assert.equal((await billing.applyVerifiedSaasBillingProviderEvent(first)).status, 'applied');
+    const refund = await billing.applyVerifiedSaasBillingProviderEvent({
+      ...event(fixture.order),
+      eventType: 'refund_settled',
+      providerPaymentRef: undefined,
+      providerRefundRef: randomUUID(),
+      reasonCode: 'service_guarantee_manual_refund',
+    });
+    assert.equal(refund.status, 'refunded');
+    await assert.rejects(
+      billing.applyVerifiedSaasBillingProviderEvent(event(fixture.order, { providerPaymentRef: first.providerPaymentRef, amountIqd: 1 })),
+      { code: 'SAAS_BILLING_TERMINAL_CONFLICT' },
+    );
+    const stored = (await pool.query('SELECT status,provider_payment_ref FROM saas_billing_orders WHERE id=$1', [fixture.order.id])).rows[0];
+    assert.equal(stored.status, 'refunded');
+    assert.equal(stored.provider_payment_ref, first.providerPaymentRef);
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 1);
+  });
   await t.test('simultaneous identical checkout requests return one durable order for both callers', async () => {
     for (let attempt = 0; attempt < 6; attempt++) {
       const fixture = await checkout(new Date(Date.now() - 60 * 60 * 1000));
