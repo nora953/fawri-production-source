@@ -777,6 +777,7 @@ router.get("/meta/pages", requireMerchantSession, async (_req: Request, res: Res
 });
 
 router.get("/conversations", requireMerchantSession, (_req: Request, res: Response) => {
+  if (operationalPostgresAuthorityRequired()) return res.status(410).json({ ok: false, code: "LEGACY_RUNTIME_AUTHORITY_DISABLED" });
   const merchantId = getMerchantIdFromSession(res);
   const conversations = getConversationsForMerchant(merchantId);
   return res.json({
@@ -788,6 +789,7 @@ router.get("/conversations", requireMerchantSession, (_req: Request, res: Respon
 });
 
 router.get("/conversations/:merchantId", requireMerchantSession, (req: Request, res: Response) => {
+  if (operationalPostgresAuthorityRequired()) return res.status(410).json({ ok: false, code: "LEGACY_RUNTIME_AUTHORITY_DISABLED" });
   const merchantId = getMerchantIdFromSession(res);
   if (rejectCrossMerchantPath(req, res, merchantId)) return;
   const conversations = getConversationsForMerchant(merchantId);
@@ -800,6 +802,7 @@ router.get("/conversations/:merchantId", requireMerchantSession, (req: Request, 
 });
 
 router.get("/conversation/:conversationId", requireMerchantSession, (req: Request, res: Response) => {
+  if (operationalPostgresAuthorityRequired()) return res.status(410).json({ ok: false, code: "LEGACY_RUNTIME_AUTHORITY_DISABLED" });
   const merchantId = getMerchantIdFromSession(res);
   const conversationId = getParamString(req.params.conversationId);
   const conversation = getConversationsForMerchant(merchantId).find(
@@ -811,6 +814,7 @@ router.get("/conversation/:conversationId", requireMerchantSession, (req: Reques
 });
 
 router.get("/orders", requireMerchantSession, (_req: Request, res: Response) => {
+  if (operationalPostgresAuthorityRequired()) return res.status(410).json({ ok: false, code: "LEGACY_RUNTIME_AUTHORITY_DISABLED" });
   const merchantId = getMerchantIdFromSession(res);
   const orders = getOrdersForMerchant(merchantId);
   return res.json({
@@ -822,6 +826,7 @@ router.get("/orders", requireMerchantSession, (_req: Request, res: Response) => 
 });
 
 router.get("/orders/:merchantId", requireMerchantSession, (req: Request, res: Response) => {
+  if (operationalPostgresAuthorityRequired()) return res.status(410).json({ ok: false, code: "LEGACY_RUNTIME_AUTHORITY_DISABLED" });
   const merchantId = getMerchantIdFromSession(res);
   if (rejectCrossMerchantPath(req, res, merchantId)) return;
   const orders = getOrdersForMerchant(merchantId);
