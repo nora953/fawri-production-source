@@ -833,7 +833,7 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
       ) {
         throw new CashierOperatorCloudSyncError(
           'CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT',
-          'Pending cashier operation belongs to another operator or shift',
+          'Pending cashier operation belongs to another operator, station, or device',
           409,
         );
       }
@@ -873,7 +873,7 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
       if (!bindingMatches) {
         throw new CashierOperatorCloudSyncError(
           'CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT',
-          'Pending cashier operation belongs to another operator or shift',
+          'Pending cashier operation belongs to another operator, station, or device',
           409,
         );
       }
