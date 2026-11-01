@@ -182,9 +182,12 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
     expectedVersion: disabled.version, status: 'active' });
   const nextLogin = await request('/api/cashier/operator/login', null, { staff_id: member.id, pin: '2468' });
   assert.equal(nextLogin.status, 200, JSON.stringify(nextLogin.body));
-  const restored = nextLogin.body;
+  let restored = nextLogin.body;
   assert.notEqual(restored.context.shift_id, original.context.shift_id);
   assert.equal((await request('/api/cashier/operator/sync/sale', restored.operator_token, body, 'wrong-device')).status, 401);
+  // Release the station before a different employee signs in. The station
+  // exclusivity rule is part of the security contract, not a test bypass.
+  await staff.logoutCashierOperatorAuthoritative(restored.context);
   const otherStaff = await staff.createCashierStaffAuthoritative({ merchantId: f.merchantId,
     displayName: 'Synthetic second cashier', role: 'cashier', pin: '1357', permissions: ['sale.create', 'sale.view_own'] });
   const otherLogin = await request('/api/cashier/operator/login', null, { staff_id: otherStaff.id, pin: '1357' });
@@ -197,6 +200,10 @@ test('isolated HTTP recovers original-shift sale after staff disable and re-enab
     'cross-staff recovery must not persist attribution');
   assert.equal((await pool.query('SELECT count(*)::int AS n FROM orders WHERE merchant_id=$1', [f.merchantId])).rows[0].n, 0,
     'cross-staff recovery must not create a sale');
+  await staff.logoutCashierOperatorAuthoritative(otherLogin.body.context);
+  const finalLogin = await request('/api/cashier/operator/login', null, { staff_id: member.id, pin: '2468' });
+  assert.equal(finalLogin.status, 200, JSON.stringify(finalLogin.body));
+  restored = finalLogin.body;
   // A sale bundle sent to a compensation endpoint must be rejected before
   // any mutation, even when its original-shift attribution is otherwise valid.
   const wrongKindReturn = await request('/api/cashier/operator/sync/return', restored.operator_token, body);
