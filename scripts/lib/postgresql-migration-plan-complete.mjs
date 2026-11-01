@@ -333,9 +333,25 @@ function mergeTransitionalRows(report, transitionalReport) {
 function validateLegacyDraftProvenance(report, runtimeSource, evidence) {
   if (evidence === undefined) return null;
   const entry = asRecord(evidence);
+  // A caller-provided checksum alone is self-asserted, not historical configuration proof.
+  // Keep derived expiry disabled until a separately verified frozen config artifact
+  // and its effective historical reader version are bound to this source.
   const valid = entry.version === 1 &&
     /^[a-f0-9]{64}$/.test(entry.runtime_sha256 || "") &&
     entry.runtime_sha256 === runtimeSource.sha256 &&
+    // No implicit acceptance of a claimed historical configuration hash.
+    // The caller must supply frozen configuration bytes whose digest matches.
+    typeof entry.configuration_json === "string" &&
+    sha256(entry.configuration_json) === entry.configuration_sha256 &&
+    (() => {
+      try {
+        const config = JSON.parse(entry.configuration_json);
+        return asRecord(config).BOT_DRAFT_TTL_MINUTES === entry.ttl_minutes &&
+          asRecord(config).source_commit === entry.source_commit;
+      } catch {
+        return false;
+      }
+    })() &&
     /^[a-f0-9]{64}$/.test(entry.configuration_sha256 || "") &&
     /^[a-f0-9]{40}$/.test(entry.source_commit || "") &&
     Number.isSafeInteger(entry.ttl_minutes) && entry.ttl_minutes > 0 &&
