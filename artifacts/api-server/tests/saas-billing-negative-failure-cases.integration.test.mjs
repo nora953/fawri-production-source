@@ -38,7 +38,11 @@ test('verified SaaS payments preserve terminal state and recover after proactive
     const stored = (await pool.query('SELECT status FROM saas_billing_orders WHERE id=$1', [fixture.order.id])).rows[0];
     assert.equal(stored.status, 'paid_reconciliation_required');
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_entitlement_applications WHERE order_id=$1', [fixture.order.id])).rows[0].count, 0);
-    assert.equal((await pool.query('SELECT count(*)::int AS count FROM saas_billing_events WHERE provider_event_id=$1', [paidEvent.providerEventId])).rows[0].count, 1);
+    const recorded = (await pool.query('SELECT status, event_type, signature_verified FROM saas_billing_events WHERE provider_event_id=$1', [paidEvent.providerEventId])).rows;
+    assert.equal(recorded.length, 1, 'verified late payment must leave exactly one durable receipt');
+    assert.equal(recorded[0].status, 'rejected', 'expired payment must be held for reconciliation, not applied');
+    assert.equal(recorded[0].event_type, 'payment_succeeded');
+    assert.equal(recorded[0].signature_verified, true);
   });
   await t.test('new mismatched-amount event cannot rewrite already paid order', async () => {
     const fixture = await checkout();
