@@ -151,3 +151,22 @@ test('operator login cannot silently clear pending outbox or rewrite original sh
   assert.doesNotMatch(login, /(?:clear|delete|remove)Pending(?:Sync|Outbox|Operation)/);
   assert.doesNotMatch(login, /(?:updateCashierOperationBinding|rewriteCashierOperationBinding|setCashierOperationBinding)\s*\(/);
 });
+
+
+test('operator outbox never treats a failed or incomplete server ACK as permission to delete local history', async () => {
+  const sync = await source('src/lib/cashierOperatorCloudSync.ts');
+  const postStart = sync.indexOf('async function postOperation(');
+  const postEnd = sync.indexOf('export async function syncCashierOperatorOutboxToCloud()', postStart);
+  assert.ok(postStart >= 0 && postEnd > postStart);
+  const post = sync.slice(postStart, postEnd);
+  assert.match(post, /if \(!response\.ok \|\| payload\.ok !== true\)/);
+  assert.match(post, /if \(acknowledgementInvalid\)/);
+  assert.match(post, /CASHIER_OPERATOR_ACK_INVALID/);
+  const uploadStart = sync.indexOf('const uploadedResult = await postOperation(', postEnd);
+  const ack = sync.indexOf('await authority.acknowledgeSynced([operationId])', uploadStart);
+  assert.ok(uploadStart > postEnd && ack > uploadStart, 'local acknowledgement must follow awaited upload');
+  const between = sync.slice(uploadStart, ack);
+  assert.match(between, /uploadedResult\.operation_id !== operationId/);
+  assert.match(between, /CASHIER_OPERATOR_ACK_INVALID/);
+  assert.doesNotMatch(between, /acknowledgeSynced\s*\(/);
+});
