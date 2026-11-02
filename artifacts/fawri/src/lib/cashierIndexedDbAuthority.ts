@@ -1279,7 +1279,8 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
   }
 
   async listPendingSync(limit = 100): Promise<CashierSyncEnvelope[]> {
-    const safeLimit = Math.max(1, Math.min(1000, Math.floor(limit || 100)));
+    // Allow one lookahead envelope so uploaders can detect a truncated operation boundary.
+    const safeLimit = Math.max(1, Math.min(1001, Math.floor(limit || 100)));
     const database = await this.databasePromise;
     const transaction = database.transaction(STORE_OUTBOX, 'readonly');
     const records = (await requestResult(
