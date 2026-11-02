@@ -86,7 +86,7 @@ try {
   await check('SEQ-R2 opt-in v2 refuses manual adjustment without changing legacy IndexedDB state', async () => {
     const before = await evaluate(a, 'Promise.all([authority.getCatalogItem("product"),authority.listPendingSync(),authority.inspectLocalRecoverySnapshot()])');
     const refused = await evaluate(a, `(async()=>{
-      const guarded = new FawriAudit.IndexedDbCashierAuthority({...{"localMerchantId":"synthetic-native","deviceId":"synthetic-device"},databaseName:"placeholder",v2AdjustmentGuard:'refuse-independent-adjustments'});
+      const guarded = new FawriAudit.IndexedDbCashierAuthority({...{"localMerchantId":"synthetic-native","deviceId":"synthetic-device"},databaseName:${JSON.stringify(config.databaseName)},v2AdjustmentGuard:'refuse-independent-adjustments'});
       try { return await guarded.adjustInventory({operation_id:'v2-refused-adjustment',product_id:'product',delta:1,reason:'manual_adjustment'}).then(()=>({accepted:true}),e=>({accepted:false,code:e.code})); }
       finally { await guarded.close(); }
     })()`);
