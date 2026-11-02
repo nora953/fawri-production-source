@@ -64,6 +64,8 @@ export type IndexedDbCashierConfig = {
   databaseName?: string;
   /** Diagnostic readers must never create or upgrade a missing/old database. */
   existingOnly?: boolean;
+  /** Explicit source-only v2 compatibility guard; never enables v2 synchronization. */
+  v2AdjustmentGuard?: 'refuse-independent-adjustments';
   now?: () => Date;
 };
 
@@ -419,6 +421,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
   private readonly cloudMerchantId?: string;
   private readonly deviceId: string;
   private readonly now: () => Date;
+  private readonly refuseV2IndependentAdjustments: boolean;
   private readonly databasePromise: Promise<IDBDatabase>;
 
   constructor(config: IndexedDbCashierConfig) {
@@ -431,6 +434,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       : undefined;
     this.deviceId = requiredIdentifier(config.deviceId, 'device id');
     this.now = config.now || (() => new Date());
+    this.refuseV2IndependentAdjustments = config.v2AdjustmentGuard === 'refuse-independent-adjustments';
     // Keep the original database name so schema v1 installations upgrade in place.
     this.databasePromise = openDatabase(
       config.databaseName || `fawri-cashier-${this.localMerchantId}-v1`,
@@ -994,6 +998,15 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
   async adjustInventory(
     input: CashierInventoryAdjustmentInput,
   ): Promise<CashierInventoryMovement> {
+    // Refuse before opening a write transaction, reading or incrementing the
+    // device sequence, or touching stock, movements and outbox. Legacy mode
+    // deliberately retains its existing behavior until a separate v2 rollout.
+    if (this.refuseV2IndependentAdjustments) {
+      throw new CashierIndexedDbError(
+        'CASHIER_V2_INDEPENDENT_ADJUSTMENT_UNSUPPORTED',
+        'Independent offline inventory adjustment is not supported by v2',
+      );
+    }
     const operationId = requiredIdentifier(input.operation_id, 'operation id');
     if (!Number.isSafeInteger(input.delta) || input.delta === 0) {
       throw new CashierIndexedDbError(
