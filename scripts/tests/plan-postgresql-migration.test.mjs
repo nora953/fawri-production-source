@@ -719,6 +719,41 @@ test("dry-run rejects conflicting legacy draft field aliases without source muta
   }
 });
 
+test("F004-R1 rejects a legacy draft whose embedded conversation differs from its Map key", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-key-conflict",
+          merchant_id: "merchant-1",
+          conversation_id: "conversation-other",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_CONVERSATION_KEY_CONFLICT"));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("dry-run blocks legacy drafts when channel ownership is unverified", () => {
   const directory = makeDataDirectory();
   try {
