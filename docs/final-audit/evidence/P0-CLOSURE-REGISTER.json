@@ -18000,7 +18000,7 @@
       ],
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "currentWorkItem": "MATRIX-C07",
-      "nextAction": "Review the concrete F004-R1 conditional offline draft migration contract in evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031. Recommended: support source-bound legacy identity/state/time normalization for reviewed compatibility storage only, with no automatic runtime continuation, no guessed TTL and whole-plan refusal on ambiguity. Implement bounded offline planner validation only after this specified contract is selected; no source/configuration evidence, actual import, hosted, retention, SEQ or new runtime authority is authorized by that choice. If deferred, preserve current fail-closed behavior and continue independent authorized work.",
+      "nextAction": "Continue P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX actor/field/producer/consumer reconciliation against accepted evidence. F004-R1 bounded offline planner was owner-approved and implemented with 53-pass source CI; do not request reapproval. Missing historical TTL attestation blocks missing-expiry drafts, F004-R2 hosted remains blocked; no release approval.",
       "knownRemainingGates": [
         {
           "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -18896,20 +18896,23 @@
       "testBlob": "24909f6395632d2ed04bfe8445f5ee34faf7ad24"
     },
     "currentField004ContractReadiness": {
-      "evidence": "evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031",
-      "status": "CONCRETE_BOUNDED_LIFECYCLE_CHOICE_READY_NOT_ADOPTED",
+      "evidence": "evidence/P0-FIELD004-PLANNER-CI-20261102.md",
+      "status": "OWNER_APPROVED_BOUNDED_OFFLINE_PLANNER_IMPLEMENTED_SOURCE_ONLY",
       "sourceReviewed": "f5eefaa8481157e38963d64960e12764e8f34af3",
-      "approval": "UNAPPROVED",
+      "approval": "APPROVED_BY_OWNER_2026-10-31",
       "recommendedChoice": "SUPPORT_CONDITIONAL_OFFLINE_LEGACY_DRAFT_MAPPING_WITHOUT_AUTOMATIC_RUNTIME_CONTINUATION",
       "sourcePins": 24,
       "unchangedPins": 23,
       "explainedDrift": 1,
-      "applicationChanged": false,
+      "applicationChanged": true,
       "newRuntimeTests": 0,
       "newCiRuns": 0,
       "parentGateClosed": false,
       "newGate": false,
-      "userActionRequiredNow": true
+      "userActionRequiredNow": false,
+      "latestVerifiedSource": "16b9dfd20dc696abe80f230a80e1cd057a3d0b1a",
+      "verifiedCi": "Complete migration safety 41444785327: 53 passed, 0 failed; Final quality gates 41444785691: success",
+      "remainingBlocker": "Historical effective TTL attestation for missing-expiry drafts not available; F004-R2 hosted proof excluded; full P0 actor/field coverage remains OPEN"
     }
   }
 }
