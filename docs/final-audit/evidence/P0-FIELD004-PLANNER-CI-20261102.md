@@ -24,3 +24,9 @@
 - [Complete migration safety run 41440735812](https://github.com/nora953/fawri-production-source/actions/runs/41440735812), job 125261734426: completed/success, 52 passed, 0 failed; named channel conflict regression passed.
 - [Final quality gates run 41440735821](https://github.com/nora953/fawri-production-source/actions/runs/41440735821): completed/success.
 - F004-R1 OPEN; F004-R2 BLOCKED_HOSTED_VERIFICATION; parent P0 OPEN; release NO-GO. No hosted/import/runtime continuation accepted.
+
+## Positive-path compatibility verification — 2026-11-02
+
+- Commit `f9c26032c752144b516dd8cacdd4bddf730dc059` extends the existing F004-R1 positive-path regression for both supported awaiting states with explicit matching conversation_id and channel_id. This ensures conflict checks do not reject verified matching identities.
+- [Complete migration safety run 41441522686](https://github.com/nora953/fawri-production-source/actions/runs/41441522686), job 125264291462: completed/success; 52 tests passed, 0 failed; named positive-path test passed.
+- No database connection, writes or source mutation were asserted by the regression. F004-R1 remains OPEN pending remaining contract acceptance; F004-R2 BLOCKED; NO-GO.
