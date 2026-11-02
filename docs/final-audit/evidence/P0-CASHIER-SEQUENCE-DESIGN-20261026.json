@@ -4688,25 +4688,31 @@
         "workflowConclusion": "FAILURE_DUE_TO_STALE_EXPECTED_TEST_COUNT_28",
         "correctionCommit": "a1a34361757ec0626ba3d47e7746d2ad3bc9c701"
       },
-      "exactHeadCi": "PARTIAL_VERIFIED_20_SUCCESS_39_CANCELLED_NOT_FULL_ACCEPTANCE",
+      "exactHeadCi": "ACCEPTED_BOUNDED_SOURCE_CI_AT_A1A3436_NOT_V2_ACTIVATION",
       "remaining": [
-        "Verify newer exact-source superseding native audit and quality CI, or rerun required checks on a stable candidate",
-        "No v2 activation; original-device, sequence admission and remaining release prerequisites still open"
+        "Original-device provenance and trusted enrollment authority remain unresolved",
+        "Legacy movement-only records must remain held for supervised reconciliation; no tombstone/skip",
+        "v2 protocol activation, end-to-end admission and full P0 release prerequisites remain open"
       ],
       "verifiedWorkflowObservation": {
         "commit": "a1a34361757ec0626ba3d47e7746d2ad3bc9c701",
         "observedOn": "2026-11-02",
-        "prTriggeredFirstPageRuns": 59,
-        "success": 20,
-        "cancelled": 39,
+        "nativeIndexedDbEngineeringRun": 41481913819,
+        "nativeIndexedDbEngineeringConclusion": "success",
+        "nativeIndexedDbEngineeringJob": 125440234224,
+        "finalQualityRun": 41481913248,
+        "finalQualityConclusion": "success",
+        "finalQualityJobs": {
+          "qualityToolTests": 125459749253,
+          "fullTypecheck": 125459750462,
+          "fullBuild": 125459806407,
+          "translationStructureAudit": 125459746699
+        },
+        "allFourQualityJobs": "success",
         "indexedDbBrowserRun": 41481913475,
         "indexedDbBrowserConclusion": "success",
-        "nativeIndexedDbEngineeringRun": 41481913819,
-        "nativeIndexedDbEngineeringConclusion": "cancelled",
-        "finalQualityRun": 41481913248,
-        "finalQualityConclusion": "cancelled",
-        "acceptance": "BOUNDED_BROWSER_PASS_ONLY_NO_FULL_CI_ACCEPTANCE",
-        "note": "First-page PR-triggered runs only; do not infer no later superseding runs or current branch HEAD."
+        "acceptance": "BOUNDED_SOURCE_AND_CI_PROOF_ACCEPTED_NO_V2_ACTIVATION",
+        "limits": "Rerun acceptance is on original source commit a1a3436; does not certify current branch head, original-device enrollment, legacy movement-only recovery, hosted behavior or overall P0."
       }
     }
   }
