@@ -789,6 +789,42 @@ test("F004-R1 rejects a draft with conflicting embedded channel identity", () =>
   }
 });
 
+test("F004-R1 rejects a legacy draft claiming another customer's identity", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-customer-conflict",
+          merchant_id: "merchant-1",
+          conversation_id: "conversation-1",
+          channel_id: "channel-1",
+          customer_id: "customer-foreign",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_CONVERSATION_IDENTITY_UNVERIFIED"));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("dry-run blocks legacy drafts when channel ownership is unverified", () => {
   const directory = makeDataDirectory();
   try {
