@@ -292,7 +292,18 @@ export async function syncCashierOutboxToCloud(): Promise<CashierCloudOutboxSync
   const authority = new IndexedDbCashierAuthority(config);
   try {
     await authority.getCatalogItem('__fawri_outbox_schema_probe__');
-    const pending = await authority.listPendingSync(MAX_PENDING_ENVELOPES);
+    const batch = await authority.listPendingSync(MAX_PENDING_ENVELOPES + 1);
+    const pending = batch.slice(0, MAX_PENDING_ENVELOPES);
+    if (batch.length > MAX_PENDING_ENVELOPES) {
+      const last = pending[pending.length - 1];
+      const next = batch[MAX_PENDING_ENVELOPES];
+      if (last.operation_id === next.operation_id || last.device_sequence === next.device_sequence) {
+        throw new CashierCloudOutboxSyncError(
+          'CASHIER_OUTBOX_BATCH_BOUNDARY_INCOMPLETE',
+          'Pending cashier batch ends inside an operation',
+        );
+      }
+    }
     const operations = groupPending(pending);
     let uploadedOperations = 0;
     let replayedOperations = 0;
