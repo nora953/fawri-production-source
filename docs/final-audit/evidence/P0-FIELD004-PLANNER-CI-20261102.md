@@ -9,3 +9,10 @@
 - Owner-approved scope remains bounded to source-bound offline legacy draft mapping. Historical TTL/config attestation has **not** been certified; planner must fail closed when missing. Current consumer/retention/hosted inventory and F004-R2 remain unresolved. No automatic continuation, order creation, TTL guessing, or source deletion authorized.
 - Closure status: **F004-R1 OPEN (CI evidence improved; final source-contract and lifecycle acceptance reconciliation pending)**; **F004-R2 BLOCKED_HOSTED_VERIFICATION**; parent `P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX` OPEN; release **NO-GO**. Do not interpret 50 passing synthetic tests as hosted data acceptance.
 - Next exact action: reconcile this current-source proof against F004-R1 acceptance checklist and consumer/disposition contract; do not duplicate already-passing tests. Preserve separate hosted F004-R2 block and existing approved boundaries.
+
+## Follow-up: embedded conversation identity conflict — 2026-11-02
+
+- Source fix: `674980ca81fd41be61dd39ecef171505a4c6e1c9` rejects a legacy Map draft if its embedded `conversation_id` conflicts with the source Map conversation key. This prevents silent normalization of contradictory source identity.
+- Regression test: `b70b6081ec450caefeaa7627f2dc149d1a591a4e` verifies explicit `LEGACY_DRAFT_CONVERSATION_KEY_CONFLICT`, rejected plan, no source mutation, no database connection or writes.
+- Exact-head CI: [Complete migration safety run 41440103104](https://github.com/nora953/fawri-production-source/actions/runs/41440103104), job `125259527459`, **completed/success; 51 tests passed, 0 failed**. The new named regression passed in the job log.
+- Scope remains synthetic offline planning only; no real historical data, hosted SQL, consumer continuation or release signoff. F004-R1 remains OPEN pending full contract acceptance; F004-R2 remains BLOCKED; release NO-GO.
