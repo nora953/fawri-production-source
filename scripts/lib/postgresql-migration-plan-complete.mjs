@@ -500,6 +500,12 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage, ttlEviden
       (candidate) => text(candidate.id) === text(conversation.channel_id) &&
         text(candidate.merchant_id) === merchantId,
     );
+    if (item.channel_id != null && text(item.channel_id) !== text(conversation.channel_id)) {
+      addError(report, "LEGACY_DRAFT_CHANNEL_ALIAS_CONFLICT", {
+        table: "order_drafts", target_record_id: row.id,
+      });
+      continue;
+    }
     if (!text(conversation.channel_id) || channel.length !== 1) {
       addError(report, "LEGACY_DRAFT_CHANNEL_OWNERSHIP_UNVERIFIED", {
         table: "order_drafts", target_record_id: row.id,
