@@ -16,3 +16,11 @@
 - Regression test: `b70b6081ec450caefeaa7627f2dc149d1a591a4e` verifies explicit `LEGACY_DRAFT_CONVERSATION_KEY_CONFLICT`, rejected plan, no source mutation, no database connection or writes.
 - Exact-head CI: [Complete migration safety run 41440103104](https://github.com/nora953/fawri-production-source/actions/runs/41440103104), job `125259527459`, **completed/success; 51 tests passed, 0 failed**. The new named regression passed in the job log.
 - Scope remains synthetic offline planning only; no real historical data, hosted SQL, consumer continuation or release signoff. F004-R1 remains OPEN pending full contract acceptance; F004-R2 remains BLOCKED; release NO-GO.
+
+## Follow-up: embedded channel identity conflict — 2026-11-02
+
+- Source fix `55ae3ed010df6617d2d9858eb1ac4ac774915aed` rejects an explicit draft channel_id that contradicts its verified conversation channel.
+- Regression commit `1516734056aeee74b488540403ce41409dac1788` verifies LEGACY_DRAFT_CHANNEL_ALIAS_CONFLICT, rejected plan, unchanged source files and no DB writes/connection.
+- [Complete migration safety run 41440735812](https://github.com/nora953/fawri-production-source/actions/runs/41440735812), job 125261734426: completed/success, 52 passed, 0 failed; named channel conflict regression passed.
+- [Final quality gates run 41440735821](https://github.com/nora953/fawri-production-source/actions/runs/41440735821): completed/success.
+- F004-R1 OPEN; F004-R2 BLOCKED_HOSTED_VERIFICATION; parent P0 OPEN; release NO-GO. No hosted/import/runtime continuation accepted.
