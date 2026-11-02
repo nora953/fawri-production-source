@@ -37,3 +37,10 @@
 - Source inspection confirms `validateLegacyDraftProvenance` deliberately rejects self-declared historical TTL claims. Thus a legacy draft without an explicit original expiry cannot be made plan-ready from an assumed 60-minute default. This is a deliberate remaining evidence blocker, not an authorization to weaken the guard.
 - Exact-head CI for `abde75fb26bd590718cbacbcd59d72ecc5935395`: [Complete migration safety 41441964546](https://github.com/nora953/fawri-production-source/actions/runs/41441964546) SUCCESS and [Final quality gates 41441965649](https://github.com/nora953/fawri-production-source/actions/runs/41441965649) SUCCESS. Earlier quality-gates run 41441522435 was CANCELLED and must not be called a passing run.
 - R1 source-only acceptance remains limited to the verified explicit-expiry positive path and fail-closed negative paths; historical TTL provenance for missing-expiry drafts remains unavailable. Do not claim general migration readiness, actual data acceptance, hosted verification, or P0 closure.
+
+## Cross-customer legacy draft isolation regression — 2026-11-02
+
+- Commit `16b9dfd20dc696abe80f230a80e1cd057a3d0b1a` adds a negative offline fixture where a draft has matching conversation/channel IDs but its `customer_id` disagrees with the verified conversation's external customer identity.
+- Exact-head [Complete migration safety 41444785327](https://github.com/nora953/fawri-production-source/actions/runs/41444785327), job 125275095272: SUCCESS; 53 tests passed, 0 failed, including named cross-customer rejection.
+- Exact-head [Final quality gates 41444785691](https://github.com/nora953/fawri-production-source/actions/runs/41444785691): SUCCESS.
+- The regression asserts rejection with `LEGACY_DRAFT_CONVERSATION_IDENTITY_UNVERIFIED`, unchanged source files and no DB connection/writes. This is synthetic source-only evidence, not actual tenant dataset verification. F004-R1 remains OPEN; F004-R2 BLOCKED; NO-GO.
