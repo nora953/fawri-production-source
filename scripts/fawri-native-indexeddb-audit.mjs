@@ -609,4 +609,4 @@ finally {
 }
 if (infrastructureError) evidence.infrastructureError = infrastructureError;
 console.log('AUDIT_NATIVE_INDEXEDDB_RESULT ' + JSON.stringify(evidence));
-if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 28) process.exitCode = 1;
+if (infrastructureError || evidence.results.some(r => r.status !== 'PASS') || evidence.results.length !== 29) process.exitCode = 1;
