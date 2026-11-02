@@ -83,6 +83,23 @@ try {
   const sale = id => ({ operation_id: id, payment_method: 'cash', payment_status: 'paid', lines: [{ product_id: 'product', quantity: 1 }] });
   for (const cdp of [a, b]) await evaluate(cdp, `globalThis.authority=new FawriAudit.IndexedDbCashierAuthority(${JSON.stringify(config)}); true`);
   await evaluate(a, `authority.upsertCatalogSnapshot([${JSON.stringify(item)}], {preserveLocalInventory:false}).then(()=>true)`);
+  await check('SEQ-R2 opt-in v2 refuses manual adjustment without changing legacy IndexedDB state', async () => {
+    const before = await evaluate(a, 'Promise.all([authority.getCatalogItem("product"),authority.listPendingSync(),authority.inspectLocalRecoverySnapshot()])');
+    const result = await evaluate(a, `(async()=>{
+      const guarded = new FawriAudit.IndexedDbCashierAuthority({...{"localMerchantId":"synthetic-native","deviceId":"synthetic-device"},databaseName:"placeholder",v2AdjustmentGuard:'refuse-independent-adjustments'});
+      return true;
+    })()`.replace('databaseName:"placeholder"', 'databaseName:' + JSON.stringify(config.databaseName)));
+    assert.equal(result, true);
+    const refused = await evaluate(a, `(async()=>{
+      const guarded = new FawriAudit.IndexedDbCashierAuthority({...{"localMerchantId":"synthetic-native","deviceId":"synthetic-device"},databaseName:"placeholder",v2AdjustmentGuard:'refuse-independent-adjustments'});
+      try { return await guarded.adjustInventory({operation_id:'v2-refused-adjustment',product_id:'product',delta:1,reason:'manual_adjustment'}).then(()=>({accepted:true}),e=>({accepted:false,code:e.code})); }
+      finally { await guarded.close(); }
+    })()`.replace('databaseName:"placeholder"', 'databaseName:' + JSON.stringify(config.databaseName)));
+    assert.deepEqual(refused,{accepted:false,code:'CASHIER_V2_INDEPENDENT_ADJUSTMENT_UNSUPPORTED'});
+    const after = await evaluate(a, 'Promise.all([authority.getCatalogItem("product"),authority.listPendingSync(),authority.inspectLocalRecoverySnapshot()])');
+    assert.deepEqual(after,before);
+    return {refused:true,stockOutboxAndSequenceUnchanged:true};
+  });
   await check('two tabs race for final stock: exactly one complete operation', async () => {
     const attempts = await Promise.all([a, b].map((cdp, i) => evaluate(cdp, `authority.commitSale(${JSON.stringify(sale('race-' + i))}).then(r=>({ok:true,sale:r.sale}),e=>({ok:false,code:e.code,name:e.name}))`)));
     assert.equal(attempts.filter(r => r.ok).length, 1, JSON.stringify(attempts));
