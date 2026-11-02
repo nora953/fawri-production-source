@@ -1010,6 +1010,7 @@ test("F004-R1 preserves explicit expired legacy drafts for both supported states
         orderDraftsByConversation: {
           "conversation-1": {
             id: "explicit-expired-draft", merchant_id: "merchant-1",
+            conversation_id: "conversation-1", channel_id: "channel-1",
             customer_id: "customer-1", awaiting,
             started_at: "2026-02-28T10:00:00.000Z",
             updated_at: "2026-02-28T11:00:00.000Z",
