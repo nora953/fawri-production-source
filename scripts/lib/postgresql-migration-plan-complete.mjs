@@ -462,6 +462,14 @@ function mergeOperationalRuntime(report, runtimeSource, channelByPage, ttlEviden
       created_at: item.created_at || item.started_at || null,
       updated_at: item.updated_at || null,
     };
+    // The Map key is the source conversation authority. An embedded different
+    // conversation ID must not be silently normalized into that key.
+    if (item.conversation_id != null && text(item.conversation_id) !== conversationId) {
+      addError(report, "LEGACY_DRAFT_CONVERSATION_KEY_CONFLICT", {
+        table: "order_drafts", target_record_id: row.id,
+      });
+      continue;
+    }
     if ((item.customer_external_id && item.customer_id &&
          text(item.customer_external_id) !== text(item.customer_id)) ||
         (item.awaiting_field && item.awaiting &&
