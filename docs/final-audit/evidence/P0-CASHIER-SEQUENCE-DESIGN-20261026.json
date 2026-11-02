@@ -4623,21 +4623,21 @@
     "date": "2026-10-27",
     "gate": "CASHIER-SYNC-SEQUENCE-001",
     "condition": "SEQ-R2 intended independent local manual-adjustment API and retained outbox compatibility",
-    "status": "CONCRETE_PRODUCT_CHOICE_READY_NOT_ADOPTED",
+    "status": "OWNER_APPROVED_BOUNDED_SOURCE_IMPLEMENTATION_PENDING",
     "sourceReviewed": "242821b938b3a7183831ee043ca77cb815ffbb9b",
     "existingContractOnly": true,
     "newGateCount": 0,
-    "selectedModel": null,
+    "selectedModel": "FUTURE_V2_SALE_RETURN_VOID_WITH_PRESERVED_LEGACY_HOLD",
     "approval": {
-      "status": "UNAPPROVED",
-      "approvedBy": null,
-      "approvedAt": null,
-      "evidence": null
+      "status": "APPROVED_BY_OWNER",
+      "approvedBy": "FAWRI owner (explicit chat approval)",
+      "approvedAt": "2026-11-02",
+      "evidence": "User explicitly replied نعم موافق to recommended SEQ-R2 model after explanation"
     },
     "definition": "Independent local manual adjustment is a stock-changing movement-only operation from IndexedDbCashierAuthority.adjustInventory. Stock movements belonging to supported sale/return/void remain parts of their normal operation.",
     "recommended": {
       "id": "FUTURE_V2_SALE_RETURN_VOID_WITH_PRESERVED_LEGACY_HOLD",
-      "status": "PROPOSED_NOT_ADOPTED",
+      "status": "APPROVED_FOR_BOUNDED_SOURCE_IMPLEMENTATION_NOT_ACTIVATED",
       "futureSupportedKinds": [
         "sale",
         "return",
@@ -4670,6 +4670,6 @@
     ],
     "userQuestionArabic": "هل نعتمد للمزامنة الجديدة البيع والإرجاع والإلغاء فقط، مع منع التعديل اليدوي المحلي المستقل قبل أي كتابة جديدة في وضعv2، وحفظ تعديلات المخزون المحلية القديمة للمراجعة دون إسقاطها؟",
     "approvalRule": "AGENTS.md: Plan approval does not approve policies, hosted actions, merge or deployment. This explicit product choice is not inferred from اكمل or the already-approved closure method.",
-    "nextExactAction": "Obtain the explicit SEQ-R2 product compatibility choice in the existing recovery contract: recommended future v2 sale/return/void-only with atomic pre-write refusal of independent local adjustments and preserved legacy movement-only HOLD. Approval covers this source contract only, not financial repair, retention, reviewer/grants, v2 activation or hosted actions. If deferred, keep it unadopted and continue independent known P0 work; do not infer approval from a continuation request."
+    "nextExactAction": "Implement and verify the approved bounded v2 pre-write refusal for independent local manual adjustments; preserve legacy movement-only outbox records as HOLD without ACK/delete/skip/recode. Keep current legacy behavior and v2 public activation unchanged. No hosted, merge, deploy, grants, financial repair or retention authorization."
   }
 }
