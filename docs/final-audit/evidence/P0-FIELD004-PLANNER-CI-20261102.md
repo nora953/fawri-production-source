@@ -30,3 +30,10 @@
 - Commit `f9c26032c752144b516dd8cacdd4bddf730dc059` extends the existing F004-R1 positive-path regression for both supported awaiting states with explicit matching conversation_id and channel_id. This ensures conflict checks do not reject verified matching identities.
 - [Complete migration safety run 41441522686](https://github.com/nora953/fawri-production-source/actions/runs/41441522686), job 125264291462: completed/success; 52 tests passed, 0 failed; named positive-path test passed.
 - No database connection, writes or source mutation were asserted by the regression. F004-R1 remains OPEN pending remaining contract acceptance; F004-R2 BLOCKED; NO-GO.
+
+## R1 acceptance boundary reconciliation — 2026-11-02
+
+- The owner-approved 2026-10-31 decision limits implementation to offline legacy draft mapping; it does not attest a historical TTL or approve hosted import, runtime continuation, or source deletion.
+- Source inspection confirms `validateLegacyDraftProvenance` deliberately rejects self-declared historical TTL claims. Thus a legacy draft without an explicit original expiry cannot be made plan-ready from an assumed 60-minute default. This is a deliberate remaining evidence blocker, not an authorization to weaken the guard.
+- Exact-head CI for `abde75fb26bd590718cbacbcd59d72ecc5935395`: [Complete migration safety 41441964546](https://github.com/nora953/fawri-production-source/actions/runs/41441964546) SUCCESS and [Final quality gates 41441965649](https://github.com/nora953/fawri-production-source/actions/runs/41441965649) SUCCESS. Earlier quality-gates run 41441522435 was CANCELLED and must not be called a passing run.
+- R1 source-only acceptance remains limited to the verified explicit-expiry positive path and fail-closed negative paths; historical TTL provenance for missing-expiry drafts remains unavailable. Do not claim general migration readiness, actual data acceptance, hosted verification, or P0 closure.
