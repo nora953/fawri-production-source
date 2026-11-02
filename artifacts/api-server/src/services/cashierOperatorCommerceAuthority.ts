@@ -16,6 +16,7 @@ import {
 } from "./postgresCashierSyncAuthority";
 import { syncCashierCompensationAuthoritative } from "./postgresCashierCompensationSyncAuthority";
 import { validateCashierCompensationSyncBundle } from "./cashierCompensationSyncValidation";
+import { prepareInternalCashierStreamBody } from "./cashierStreamAdmissionAuthority";
 import type { CashierOperatorContext } from "./postgresCashierStaffAuthority";
 import {
   operationalQueryRows,
@@ -551,7 +552,13 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
   // The endpoint permission is kind-specific; a mismatched payload must never
   // reach the authoritative inventory or refund transaction.
 
-  const validated = validateCashierCompensationSyncBundle(input.body);
+  const validationBody = input.versionedStreamId
+    ? prepareInternalCashierStreamBody(input.body, {
+        streamId: input.versionedStreamId,
+        attribution: historicalContext,
+      })
+    : input.body;
+  const validated = validateCashierCompensationSyncBundle(validationBody);
   if (validated.kind !== input.kind) {
     throw new CashierSyncError(
       "CASHIER_OPERATOR_SYNC_KIND_MISMATCH",
