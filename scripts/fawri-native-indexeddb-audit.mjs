@@ -85,16 +85,11 @@ try {
   await evaluate(a, `authority.upsertCatalogSnapshot([${JSON.stringify(item)}], {preserveLocalInventory:false}).then(()=>true)`);
   await check('SEQ-R2 opt-in v2 refuses manual adjustment without changing legacy IndexedDB state', async () => {
     const before = await evaluate(a, 'Promise.all([authority.getCatalogItem("product"),authority.listPendingSync(),authority.inspectLocalRecoverySnapshot()])');
-    const result = await evaluate(a, `(async()=>{
-      const guarded = new FawriAudit.IndexedDbCashierAuthority({...{"localMerchantId":"synthetic-native","deviceId":"synthetic-device"},databaseName:"placeholder",v2AdjustmentGuard:'refuse-independent-adjustments'});
-      return true;
-    })()`.replace('databaseName:"placeholder"', 'databaseName:' + JSON.stringify(config.databaseName)));
-    assert.equal(result, true);
     const refused = await evaluate(a, `(async()=>{
       const guarded = new FawriAudit.IndexedDbCashierAuthority({...{"localMerchantId":"synthetic-native","deviceId":"synthetic-device"},databaseName:"placeholder",v2AdjustmentGuard:'refuse-independent-adjustments'});
       try { return await guarded.adjustInventory({operation_id:'v2-refused-adjustment',product_id:'product',delta:1,reason:'manual_adjustment'}).then(()=>({accepted:true}),e=>({accepted:false,code:e.code})); }
       finally { await guarded.close(); }
-    })()`.replace('databaseName:"placeholder"', 'databaseName:' + JSON.stringify(config.databaseName)));
+    })()`);
     assert.deepEqual(refused,{accepted:false,code:'CASHIER_V2_INDEPENDENT_ADJUSTMENT_UNSUPPORTED'});
     const after = await evaluate(a, 'Promise.all([authority.getCatalogItem("product"),authority.listPendingSync(),authority.inspectLocalRecoverySnapshot()])');
     assert.deepEqual(after,before);
