@@ -17429,7 +17429,7 @@
         "originalSourceOnlySnapshotPreserved": true,
         "nextAction": "Continue MATRIX-C02 from manualReconciliation.actorRouteEvidenceConsolidation20261029.workQueue. Reconcile existing public auth, merchant self-session, owner recovery/admin device OTP and overlapping admin PG/compatibility routes against accepted18-route admin ledger and original aggregate/router/session tests; trace effective required/incomplete cutover ordering before selecting a real unmet actor/field condition. Reuse accepted MATRIX-C01 legacy Knowledge retirement proof; do not rerun it or reopen catalog48-linked cells. No new policy/OTP pairing authority, gate, hosted/provider, merge or deployment."
       },
-      "nextCurrentAction": "Obtain the explicit FIELD003 choice from evidence/P0-AUDIT-CROSS-CONSUMER-POLICY-20261025.json#decisionProposal20261031 before changing generic audit incident visibility. Recommended: merchant incident rows require both view_logs and view_merchants (owner retained); ordinary logs and emergency owner-only boundary unchanged. On approval implement the bounded route/reader predicate and changed-rule actual-app regressions with exact-source CI. If deferred, retain OPEN and continue independent authorized work; no field/SEQ/retention/hosted approval inferred.",
+      "nextCurrentAction": "MATRIX-C07 FIELD003 incident audit permission is already accepted at source 49eeb8990513e562bb2a823742229d16c0f13a18; do not request approval or repeat its accepted tests. Continue MATRIX-C08 actor/field/producer/consumer reconciliation: 64 opaque references / 46 method-paths and FIELD002 compatibility policy remain unaccepted; reconcile concrete consumer impact before proposing a change. No new source/hosted/release approval.",
       "currentAuthFollowup": {
         "source": "00930e6945221b67c7a21f05aec5c0c1b432ad02",
         "proof": {
@@ -17464,7 +17464,7 @@
         "sourceEvidenceSection": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentAdminIncompleteCutoverFullApp].sourceReconciliation",
         "ownerRecoveryRuntimeClaimed": false
       },
-      "nextWorkItem": "MATRIX-C07"
+      "nextWorkItem": "MATRIX-C08"
     },
     "currentLegacyKnowledgeRetirementFullAppProof": {
       "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json#manualReconciliation.namedBoundaryReconciliation[boundary=currentLegacyKnowledgeRetirementFullApp]",
@@ -17999,8 +17999,8 @@
         "Use existing register and evidence documents. Do not create overlapping progress packets or repeat the same long status narrative across all documents; keep authoritative details in one location and concise references elsewhere."
       ],
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
-      "currentWorkItem": "MATRIX-C07",
-      "nextAction": "Continue P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX actor/field/producer/consumer reconciliation against accepted evidence. F004-R1 bounded offline planner was owner-approved and implemented with 53-pass source CI; do not request reapproval. Missing historical TTL attestation blocks missing-expiry drafts, F004-R2 hosted remains blocked; no release approval.",
+      "currentWorkItem": "MATRIX-C08",
+      "nextAction": "MATRIX-C07 FIELD003 incident audit permission is already accepted at source 49eeb8990513e562bb2a823742229d16c0f13a18; do not request approval or repeat its accepted tests. Continue MATRIX-C08 actor/field/producer/consumer reconciliation: 64 opaque references / 46 method-paths and FIELD002 compatibility policy remain unaccepted; reconcile concrete consumer impact before proposing a change. No new source/hosted/release approval.",
       "knownRemainingGates": [
         {
           "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
