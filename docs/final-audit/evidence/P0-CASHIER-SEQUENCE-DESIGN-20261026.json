@@ -4623,7 +4623,7 @@
     "date": "2026-10-27",
     "gate": "CASHIER-SYNC-SEQUENCE-001",
     "condition": "SEQ-R2 intended independent local manual-adjustment API and retained outbox compatibility",
-    "status": "OWNER_APPROVED_BOUNDED_SOURCE_IMPLEMENTATION_PENDING",
+    "status": "OWNER_APPROVED_BOUNDED_SOURCE_GUARD_IMPLEMENTED_CI_PENDING",
     "sourceReviewed": "242821b938b3a7183831ee043ca77cb815ffbb9b",
     "existingContractOnly": true,
     "newGateCount": 0,
@@ -4670,6 +4670,29 @@
     ],
     "userQuestionArabic": "هل نعتمد للمزامنة الجديدة البيع والإرجاع والإلغاء فقط، مع منع التعديل اليدوي المحلي المستقل قبل أي كتابة جديدة في وضعv2، وحفظ تعديلات المخزون المحلية القديمة للمراجعة دون إسقاطها؟",
     "approvalRule": "AGENTS.md: Plan approval does not approve policies, hosted actions, merge or deployment. This explicit product choice is not inferred from اكمل or the already-approved closure method.",
-    "nextExactAction": "Implement and verify the approved bounded v2 pre-write refusal for independent local manual adjustments; preserve legacy movement-only outbox records as HOLD without ACK/delete/skip/recode. Keep current legacy behavior and v2 public activation unchanged. No hosted, merge, deploy, grants, financial repair or retention authorization."
+    "nextExactAction": "Verify exact-head CI for native browser 29-test audit and final quality gate. If green, record bounded source guard accepted only; do not claim v2 activation, legacy movement-only reconciliation, or SEQ-R1/R3 closure.",
+    "sourceImplementation20261102": {
+      "status": "IMPLEMENTED_NOT_ACTIVATED",
+      "sourceCommit": "403ac01e1505ca55234540da430de7883acfcfec",
+      "latestTestGateCommit": "a1a34361757ec0626ba3d47e7746d2ad3bc9c701",
+      "sourceFile": "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+      "nativeBrowserAudit": "scripts/fawri-native-indexeddb-audit.mjs",
+      "sourceContractTest": "artifacts/fawri/tests/cashier-v2-adjustment-prewrite-contract.test.mjs",
+      "refusalCode": "CASHIER_V2_INDEPENDENT_ADJUSTMENT_UNSUPPORTED",
+      "activation": "OPT_IN_CONFIG_ONLY_NOT_WIRED_TO_PRODUCTION",
+      "legacyBehavior": "UNCHANGED",
+      "evidenceFromPriorHead": {
+        "runId": 41481400253,
+        "head": "2573635470b6977a0cb12e02eedad531e849b32d",
+        "nativeBrowserAssertions": "29/29 PASS including SEQ-R2",
+        "workflowConclusion": "FAILURE_DUE_TO_STALE_EXPECTED_TEST_COUNT_28",
+        "correctionCommit": "a1a34361757ec0626ba3d47e7746d2ad3bc9c701"
+      },
+      "exactHeadCi": "PENDING_VERIFICATION",
+      "remaining": [
+        "Verify native IndexedDB workflow and quality gate on exact head",
+        "No v2 activation; original-device, sequence admission and remaining release prerequisites still open"
+      ]
+    }
   }
 }
