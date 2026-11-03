@@ -71,12 +71,12 @@ function sha256(file) {
   return createHash("sha256").update(readFileSync(file)).digest("hex");
 }
 
-function run(command, args, capture = false) {
+function run(command, args, capture = false, password = "") {
   const result = spawnSync(command, args, {
     stdio: ["ignore", "pipe", "pipe"],
     encoding: "utf8",
     // PGHOSTADDR/PGSERVICE/PGOPTIONS must not override the disposable URL.
-    env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))),
+    env: { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), ...(password ? { PGPASSWORD: password } : {}) },
   });
   if (result.error) throw new Error(`${command} could not start: ${redact(result.error.message)}`);
   if (result.status !== 0) {
@@ -98,6 +98,9 @@ function main() {
     );
   }
   assertDisposableRestoreUrl(url);
+  const connection = new URL(url);
+  const password = decodeURIComponent(connection.password);
+  connection.password = "";
   assertSafeVerificationSql(verifySql);
 
   const backupPath = path.resolve(backup);
@@ -118,14 +121,14 @@ function main() {
 
   run("pg_restore", [
     "--dbname",
-    url,
+    connection.toString(),
     "--clean",
     "--if-exists",
     "--exit-on-error",
     backupPath,
-  ]);
+  ], false, password);
 
-  const actual = run("psql", [url, "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", verifySql], true);
+  const actual = run("psql", [connection.toString(), "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", verifySql], true, password);
   if (actual !== expect) {
     throw new Error("PostgreSQL restore consistency verification failed");
   }
