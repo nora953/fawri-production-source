@@ -95,6 +95,19 @@ test('management HTTP privacy uses current SQL roles, permissions and session au
   await t.test('unauthenticated caller denied across ten mounted actions',()=>expectDenied(undefined,401));
   await t.test('both merchant cookies deny administrative reads and mutations for own and foreign records',async()=>{await expectDenied(a,401);await expectDenied(b,401);});
   await t.test('assistant without current permissions cannot use administrative actions',()=>expectDenied(denied,403));
+  await t.test('channel-only assistant can inspect channel overrides but not private merchant administration',async()=>{
+    const before=await snapshot();
+    const channels=await req('/admin/channels',channelOnly);
+    assert.equal(channels.status,200);
+    for(const merchant of merchants)assert.equal(channels.body.channel_overrides[merchant].messenger,'connected');
+    for(const path of [`/merchants/${a.id}/note`,'/admin/deletion-requests','/admin/logs']){
+      const deniedRead=await req(path,channelOnly);
+      assert.equal(deniedRead.status,403,path);
+      assert.equal(deniedRead.body.code,'ADMIN_PERMISSION_REQUIRED');
+      assert.doesNotMatch(JSON.stringify(deniedRead.body),/private-note-|private-deletion-/);
+    }
+    assert.deepEqual(await snapshot(),before,'channel-only inspection and denied private reads must not mutate SQL state');
+  });
   await t.test('channel-only assistant loses directory access after SQL permission revocation',async()=>{
     const before=await snapshot();
     // The successful directory read requires the separate operator database
