@@ -13148,10 +13148,14 @@
     },
     "seqR2ProductChoice20261027": {
       "evidence": "evidence/P0-CASHIER-SEQUENCE-DESIGN-20261026.json#seqR2OperationCompatibilityDecision20261027",
-      "status": "CONCRETE_PRODUCT_CHOICE_READY_NOT_ADOPTED",
-      "selectedModel": null,
-      "approval": "UNAPPROVED",
-      "approvalDoesNotActivateV2": true
+      "status": "OWNER_APPROVED_BOUNDED_SOURCE_GUARD_CI_ACCEPTED_NOT_ACTIVATED",
+      "selectedModel": "FUTURE_V2_SALE_RETURN_VOID_WITH_PRESERVED_LEGACY_HOLD",
+      "approval": "APPROVED_BY_OWNER_2026-11-02",
+      "sourceCommit": "403ac01e1505ca55234540da430de7883acfcfec",
+      "ciCommit": "a1a34361757ec0626ba3d47e7746d2ad3bc9c701",
+      "nativeBrowserRun": 41481913819,
+      "approvalDoesNotActivateV2": true,
+      "remaining": "SEQ-R1/R3 trusted provenance, legacy movement reconciliation and positive public HTTP/native v2 admission remain open"
     },
     "independentWorkSelection20261027": {
       "sourceReviewed": "775bbe50424e5f9bd5dcefa99978d670e73dcad3",
