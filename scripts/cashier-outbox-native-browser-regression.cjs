@@ -82,7 +82,7 @@ async function browserPhase({phase, saved}) {
     ackMode='valid';
     const positiveResult=await syncCashierOutboxToCloud();
     assert(positiveResult.uploaded_operations===1&&positiveResult.replayed_operations===1&&positiveResult.acknowledged_operations===2&&positiveResult.pending_after===0,'supported queue uploads and ACKs completely');
-    same(calls.map(x=>x.sequence),[1,1,1,2],'invalid ACK retries and positive transport order');same(await snapshot(gap.config),expected,'positive other identity does not clear held queue');
+    same(calls.map(x=>x.sequence),[1,1,1,1,2],'invalid ACK retries and positive transport order');same(await snapshot(gap.config),expected,'positive other identity does not clear held queue');
     const authority=new IndexedDbCashierAuthority(positive.config);
     try{assert((await authority.getCatalogItem('product')).stock_quantity===3,'ACK leaves committed stock intact');for(const op of positive.ops)assert(await authority.getSale('sale:'+op),'ACK leaves committed sale intact');}finally{await authority.close();}
     return {nativeIndexedDb:true,realLegacyDrain:true,realOperatorPreflight:true,operatorSessionSynthetic:true,syntheticTransport:true,syntheticLedger:true,postCommitAckLoss:true,actualPageReload:true,heldSequences:[2,3],heldEnvelopes:3,exactReplayPayload:true,peerPreserved:true,positiveUploaded:2,sqlServerProof:false,httpAuthenticationProof:false,recoveryContractAccepted:false,hostedAccepted:false};
