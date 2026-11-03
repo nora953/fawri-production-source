@@ -106,7 +106,16 @@ test('management HTTP privacy uses current SQL roles, permissions and session au
       assert.equal(deniedRead.body.code,'ADMIN_PERMISSION_REQUIRED');
       assert.doesNotMatch(JSON.stringify(deniedRead.body),/private-note-|private-deletion-/);
     }
-    assert.deepEqual(await snapshot(),before,'channel-only inspection and denied private reads must not mutate SQL state');
+    for(const route of [
+      {path:`/merchants/${a.id}/note`,method:'PUT',body:{note:'forbidden-channel-only-edit'}},
+      {path:`/merchants/${b.id}/deletion-requests`,method:'POST',body:{reason:'policy_violation',details:'forbidden-channel-only-deletion'}},
+      {path:'/admin/logs',method:'POST',body:{merchant_id:a.id,action_type:'plan_activated',details:'forbidden-channel-only-audit'}},
+    ]){
+      const deniedWrite=await req(route.path,channelOnly,route.method,route.body);
+      assert.equal(deniedWrite.status,403,`${route.method} ${route.path}`);
+      assert.equal(deniedWrite.body.code,'ADMIN_PERMISSION_REQUIRED');
+    }
+    assert.deepEqual(await snapshot(),before,'channel-only inspection and denied private reads/writes must not mutate SQL state');
   });
   await t.test('channel-only assistant loses directory access after SQL permission revocation',async()=>{
     const before=await snapshot();
