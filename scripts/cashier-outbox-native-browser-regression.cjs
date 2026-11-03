@@ -37,7 +37,7 @@ async function browserPhase({phase, saved}) {
   }
   async function denied(work,code){let seen;try{await work();}catch(error){seen=error.code;}assert(seen===code,'expected '+code+', got '+seen);}
   const originalFetch=globalThis.fetch,calls=[],ledger=new Map(saved?.ledger||[]);
-  let loseAck=phase==='prepare';
+  let loseAck=phase==='prepare', ackMode='valid';
   globalThis.fetch=async(url,options)=>{
     assert(String(url)==='/api/cashier/sync/sale','only expected synthetic sale transport');
     const body=JSON.parse(options.body);calls.push({operation_id:body.operation_id,sequence:body.device_sequence});
@@ -45,7 +45,9 @@ async function browserPhase({phase, saved}) {
     if(prior!==undefined)assert(prior===serialized,'retry payload must match synthetic accepted operation');
     ledger.set(body.operation_id,serialized);
     if(loseAck){loseAck=false;throw new TypeError('Synthetic response lost after synthetic acceptance');}
-    return new Response(JSON.stringify({ok:true,operation_id:body.operation_id,device_sequence:body.device_sequence,order_id:'synthetic-order-'+body.operation_id,replayed:prior!==undefined,accepted_entity_ids:body.envelopes.map(x=>x.entity_id)}),{status:200,headers:{'Content-Type':'application/json'}});
+    const entityIds=body.envelopes.map(x=>x.entity_id);
+    const acknowledgedIds=ackMode==='duplicate'?[...entityIds,entityIds[0]]:ackMode==='missing'?entityIds.slice(0,-1):entityIds;
+    return new Response(JSON.stringify({ok:true,operation_id:body.operation_id,device_sequence:body.device_sequence,order_id:'synthetic-order-'+body.operation_id,replayed:prior!==undefined,accepted_entity_ids:acknowledgedIds}),{status:200,headers:{'Content-Type':'application/json'}});
   };
   try {
     if(phase==='prepare'){
@@ -70,9 +72,17 @@ async function browserPhase({phase, saved}) {
     for(let attempt=0;attempt<2;attempt++)await denied(syncCashierOutboxToCloud,'CASHIER_OUTBOX_UNSUPPORTED_OPERATION');
     assert(calls.length===1,'retries at unsupported2 never upload3');same(await snapshot(gap.config),expected,'retries preserve native held operations');same(await snapshot(peer.config),peerBefore,'peer remains exact');
     const positive=await seed(false);await identityRuntime.writeCashierDeviceIdentity(positive.identity);
+    const positiveBefore=await snapshot(positive.config);
+    for(const mode of ['duplicate','missing']){
+      ackMode=mode;
+      await denied(syncCashierOutboxToCloud,'CASHIER_OUTBOX_ACK_INVALID');
+      same(await snapshot(positive.config),positiveBefore,mode+' ACK must preserve every native record');
+      assert(calls.at(-1).operation_id===positive.ops[0],mode+' ACK must not advance sequence');
+    }
+    ackMode='valid';
     const positiveResult=await syncCashierOutboxToCloud();
     assert(positiveResult.uploaded_operations===2&&positiveResult.acknowledged_operations===2&&positiveResult.pending_after===0,'supported queue uploads and ACKs completely');
-    same(calls.map(x=>x.sequence),[1,1,2],'positive transport order');same(await snapshot(gap.config),expected,'positive other identity does not clear held queue');
+    same(calls.map(x=>x.sequence),[1,1,1,1,2],'invalid ACK retries and positive transport order');same(await snapshot(gap.config),expected,'positive other identity does not clear held queue');
     const authority=new IndexedDbCashierAuthority(positive.config);
     try{assert((await authority.getCatalogItem('product')).stock_quantity===3,'ACK leaves committed stock intact');for(const op of positive.ops)assert(await authority.getSale('sale:'+op),'ACK leaves committed sale intact');}finally{await authority.close();}
     return {nativeIndexedDb:true,realLegacyDrain:true,realOperatorPreflight:true,operatorSessionSynthetic:true,syntheticTransport:true,syntheticLedger:true,postCommitAckLoss:true,actualPageReload:true,heldSequences:[2,3],heldEnvelopes:3,exactReplayPayload:true,peerPreserved:true,positiveUploaded:2,sqlServerProof:false,httpAuthenticationProof:false,recoveryContractAccepted:false,hostedAccepted:false};
