@@ -3384,6 +3384,9 @@
                 "SEQ-R3"
               ],
               "seqR2Decision": "UNAPPROVED",
+              "seqR2DecisionHistoricalAsOf": "2026-10-27",
+              "seqR2CurrentAuthority": "closurePlan.seqR2ProductChoice20261027",
+              "seqR2CurrentStatus": "OWNER_APPROVED_BOUNDED_SOURCE_GUARD_CI_ACCEPTED_NOT_ACTIVATED",
               "existingMerchantPairingPreserved": true,
               "newRuntimeTests": 0,
               "newCiRuns": 0,
