@@ -257,10 +257,12 @@ async function uploadOperation(input: {
     );
   }
   const expectedEntityIds = new Set(input.envelopes.map(item => item.entity_id));
-  const acceptedEntityIds = new Set(
-    Array.isArray(payload.accepted_entity_ids) ? payload.accepted_entity_ids : [],
-  );
+  const acceptedEntityIdList = Array.isArray(payload.accepted_entity_ids)
+    ? payload.accepted_entity_ids
+    : [];
+  const acceptedEntityIds = new Set(acceptedEntityIdList);
   if (
+    acceptedEntityIdList.length !== expectedEntityIds.size ||
     acceptedEntityIds.size !== expectedEntityIds.size ||
     [...expectedEntityIds].some(id => !acceptedEntityIds.has(id))
   ) {
