@@ -171,6 +171,12 @@ test('management HTTP privacy uses current SQL roles, permissions and session au
     assert.equal(ownerLogs.status,200);
     assert.ok(ownerLogs.body.logs.some(log=>log.id===incidentId));
   });
+  await t.test('ordinary audit remains readable after merchant incident filtering',async()=>{
+    const response=await req('/admin/logs',manager);
+    assert.equal(response.status,200);
+    assert.ok(Array.isArray(response.body.logs));
+    assert.ok(response.body.logs.some(log=>log.action_type==='note_saved'));
+  });
   await t.test('mixed merchant and admin cookies cannot reach private management actions',async()=>{
     const before=await snapshot();
     for(const actor of [owner,manager]){
