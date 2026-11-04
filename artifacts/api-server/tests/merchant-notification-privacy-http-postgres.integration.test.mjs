@@ -135,6 +135,7 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
     }
   });
   await t.test('seven hosted-observed historical notification types retain canonical HTTP fields without leaking stored extensions',async()=>{
+    const {isMerchantNotificationRecord}=await import('../../fawri/src/lib/merchantNotificationsAuthority.ts');
     // Historical type set was independently observed in read-only Neon staging.
     // All test rows here are synthetic and stay in disposable CI PostgreSQL.
     // Field names below are the complete key union observed in 28 historical
@@ -143,7 +144,7 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
       {type:'inspection_session_request',visible:{
         ticket_id:'legacy-ticket',inspection_request_id:'legacy-request',
         ticket_subject:'Synthetic inspection',admin_name:'Synthetic admin',
-        mode:'read_only',request_expires_at:'2026-12-01T00:00:00.000Z',
+        mode:'independent_read_only',request_expires_at:'2026-12-01T00:00:00.000Z',
         action_url:'/support/inspection/fixture',
       }},
       {type:'subscription_balance_purchase',visible:{
@@ -154,22 +155,22 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
         addon_batch_expires_at:'2026-12-01T00:00:00.000Z',
       }},
       {type:'subscription_plan_event',visible:{
-        operation:'upgrade',plan_name:'Gold',start_date:'2026-10-01T00:00:00.000Z',
+        operation:'change',plan_name:'gold',start_date:'2026-10-01T00:00:00.000Z',
         expires_at:'2026-12-01T00:00:00.000Z',emergency_debt_paid:2,
         emergency_debt_remaining:1,base_replies_remaining:9,
         addon_replies_remaining:7,total_replies_available:19,
-        previous_plan_name:'Silver',
+        previous_plan_name:'silver',
       }},
       {type:'subscription_emergency_activated',visible:{
         addon_batch_id:'emergency-batch',emergency_replies_added:20,
         emergency_debt:5,expires_at:'2026-12-01T00:00:00.000Z',
       }},
       {type:'subscription_expired',visible:{
-        plan_name:'Silver',expired_at:'2026-10-01T00:00:00.000Z',
+        plan_name:'silver',expired_at:'2026-10-01T00:00:00.000Z',
         addon_replies_remaining:0,
       }},
       {type:'subscription_expiry_reminder',visible:{
-        plan_name:'Gold',expires_at:'2026-12-01T00:00:00.000Z',
+        plan_name:'gold',expires_at:'2026-12-01T00:00:00.000Z',
         days_remaining:3,
       }},
       {type:'support_reply_reminder',visible:{
@@ -203,6 +204,17 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
         assert.deepEqual(Object.keys(projected).sort(),
           ['id','type','created_at',...Object.keys(item.visible)].sort());
         for(const [key,value] of Object.entries(item.visible))assert.equal(projected[key],value);
+        if(item.type==='inspection_session_request'){
+          // Source-less legacy inspection rows must not fabricate a live
+          // decision. Real source-linked inspection rows have separate passing
+          // HTTP+frontend lifecycle proof in operational-notification-field.
+          assert.equal(isMerchantNotificationRecord(projected),false,
+            'unlinked inspection cannot impersonate a live approved request');
+          assert.equal(Object.hasOwn(projected,'request_status'),false);
+        }else{
+          assert.equal(isMerchantNotificationRecord(projected),true,
+            'historic SQL->HTTP row must pass the actual frontend validator: '+item.type);
+        }
         assert.equal(projected.read_at,undefined,'stored read_at must not forge canonical read state');
       }
       assert.doesNotMatch(JSON.stringify(list.body),/historical-only-private-sentinel|forged-identity|forged-type|1999-01-01/);
@@ -220,7 +232,9 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
       const accepted=await req('/notifications/'+encodeURIComponent(plan.id)+'/read',b,'PATCH');
       assert.equal(accepted.status,200);
       assert.equal(accepted.body.notification.id,plan.id);
-      assert.equal(accepted.body.notification.plan_name,'Gold');
+      assert.equal(accepted.body.notification.plan_name,'gold');
+      assert.equal(isMerchantNotificationRecord(accepted.body.notification),true,
+        'historical plan read must pass frontend validation');
       assert.ok(accepted.body.notification.read_at);
       assert.deepEqual(Object.keys(accepted.body.notification).sort(),
         ['id','type','created_at','read_at',...Object.keys(plan.visible)].sort());
