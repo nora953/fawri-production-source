@@ -1,5 +1,23 @@
 # P0 residual merchant HTTP privacy — executable closure checklist (2026-11-04)
 
+## FIELD002 — actual restricted LOGIN SQL denial and cleanup (2026-11-05)
+
+**Stage:** P0 residual merchant HTTP privacy, isolated Neon clone `br-young-hill-b1x9vhlz` in project `round-fire-18493605`. Prior accepted EXECUTE-ACL remediation and SET ROLE RLS-negative proof reused. **A new real-login SQL-negative requirement is now evidenced; whole FIELD002 remains OPEN.** No original Neon, Railway, merge or deploy.
+
+**Preflight:** original role list on clone contained only `neondb_owner`, `fawri_staging_rls_runtime` (NOLOGIN), `fawri_staging_runtime` (legacy elevated LOGIN); new `fawri_field002_probe_20261105` confirmed absent. Clone Drizzle=52, eight exact inventory tables RLS-enabled and at least one policy each.
+
+**Executed on clone only:**
+1. Created a **temporary LOGIN** `fawri_field002_probe_20261105` using Neon's `read_only` access, limited to database `neondb` and schema `public`; explicitly did **not** use the default `admin` role. No password was copied into source or progress evidence.
+2. Connected **directly as this login**, not `SET ROLE`. SQL confirmed `current_user=session_user=fawri_field002_probe_20261105`, `rolcanlogin=true`, `BYPASSRLS=false`, `CREATEROLE=false`, both trusted marker function EXECUTE privileges=false, and `row_security_active(...)=true` for **8/8** listed tables.
+3. `SELECT count(*)` against all eight returned **zero visible rows** without a trusted transaction scope. This is meaningful on four nonempty tables (historical owner-side baseline: 283 audit, 28 notifications, 2 overrides, 1 deletion request); four others had zero stored rows.
+4. In a separate transaction of the same genuine limited LOGIN, applied transaction-local **untrusted GUC hints**: `fawri.merchant_id` set to an actually present merchant ID retrieved privately by an owner read-only SELECT, plus forged `fawri.admin_account_id` and `fawri.admin_audit_id`. All eight scoped counts again returned zero; session identity remained the restricted login with both marker function privileges=false. No merchant value was printed into GitHub.
+5. A separate attempt to call `fawri_security.allows_merchant` was denied **at schema permission check**, aborting that SQL transaction. This is recorded as a denial, **not** successful invocation or proof of the function's return value; it was then omitted from the completed GUC-read batch.
+6. Deleted the *newly created test role* via branch-explicit Neon role cleanup. Independent owner SELECT proved `pg_roles` no longer contains it; final clone aggregates remained **8/8 RLS+policy, 52 migrations, 283 audit, 28 notifications, 2 overrides, 1 deletion request; 2/2 trusted functions still deny both old roles**. No source, schema, durable data or existing role/ACL mutation was made. No HTTP, new GitHub Actions or source unit tests were run.
+
+**Interpretation:** This is a real PostgreSQL LOGIN **unauthorized/forged-context denial** acceptance cell, stronger than prior effective-role-only evidence. It is **not** a legitimate same-merchant positive, an authenticated foreign-merchant negative under a valid issued scope, or a revoked-session mounted HTTP acceptance. Those require an explicitly controlled trusted issuer + a separate scoped runtime connection/session, test-only merchant fixtures as necessary and an actual mounted isolated HTTP service. Do not simulate with an owner/BYPASSRLS connection, assume the forged GUC is a valid session, or label a failed test precondition as an application defect.
+
+**Gate accounting:** previous closure reused; one bounded hosted negative-login proof added, zero whole-gate closures. FIELD002-R1 response contract decision and R3 producer policy remain OPEN; R2 historical alternate-writer/client disposition and hosted runtime signoff remain incomplete, and 0052 remains BLOCKED. Register **29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED**, denominator not established, overall percentage unknown, release **NO-GO**. PR #550 remains Draft and unmerged.
+
 ## FIELD002 — clone SQL RLS negative execution checkpoint (2026-11-04)
 
 **Actual isolated Neon SQL executed; bounded negative result only.** Project `round-fire-18493605`, explicit clone `br-young-hill-b1x9vhlz` (`neondb`); GitHub source HEAD observed before execution: `4c3ce1373973448b61be61eafc41323ffdbecc44`. No original Neon/Railway, deployment, migration or user-data mutation in this batch.
