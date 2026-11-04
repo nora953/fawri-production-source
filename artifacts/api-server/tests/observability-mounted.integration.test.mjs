@@ -233,7 +233,7 @@ test("real runtime readiness refuses auth-bypass EXECUTE despite eight active RL
   assert.match(databaseUrl, /^postgres(?:ql)?:\/\//i);
   const parsed = new URL(databaseUrl);
   assert.ok(["127.0.0.1", "localhost"].includes(parsed.hostname), "local disposable PostgreSQL required");
-  assert.equal(decodeURIComponent(parsed.pathname), "/fawri_ci", "CI-only fawri_ci database required");
+  assert.equal(decodeURIComponent(parsed.pathname), "/fawri_observability_test", "dedicated disposable observability CI database required");
   const restrictedUrl = await restrictedTestDatabaseUrl(databaseUrl);
   const admin = new pg.Client({ connectionString: databaseUrl });
   const privacyTables = [
