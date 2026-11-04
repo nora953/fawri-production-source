@@ -137,14 +137,45 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
   await t.test('seven hosted-observed historical notification types retain canonical HTTP fields without leaking stored extensions',async()=>{
     // Historical type set was independently observed in read-only Neon staging.
     // All test rows here are synthetic and stay in disposable CI PostgreSQL.
+    // Field names below are the complete key union observed in 28 historical
+    // Neon staging rows, without exporting any original values or merchant IDs.
     const historical=[
-      {type:'inspection_session_request',visible:{ticket_id:'legacy-ticket',inspection_request_id:'legacy-request'}},
-      {type:'subscription_balance_purchase',visible:{purchased_replies:12,addon_replies_added:7}},
-      {type:'subscription_plan_event',visible:{operation:'upgrade',plan_name:'Gold'}},
-      {type:'subscription_emergency_activated',visible:{emergency_replies_added:20}},
-      {type:'subscription_expired',visible:{plan_name:'Silver',expired_at:'2026-10-01T00:00:00.000Z'}},
-      {type:'subscription_expiry_reminder',visible:{plan_name:'Gold',days_remaining:3}},
-      {type:'support_reply_reminder',visible:{ticket_id:'legacy-support',ticket_subject:'Support request'}},
+      {type:'inspection_session_request',visible:{
+        ticket_id:'legacy-ticket',inspection_request_id:'legacy-request',
+        ticket_subject:'Synthetic inspection',admin_name:'Synthetic admin',
+        mode:'read_only',request_expires_at:'2026-12-01T00:00:00.000Z',
+        action_url:'/support/inspection/fixture',
+      }},
+      {type:'subscription_balance_purchase',visible:{
+        purchased_replies:12,emergency_debt_paid:2,addon_replies_added:7,
+        emergency_debt_remaining:1,base_replies_remaining:9,
+        emergency_replies_remaining:3,addon_replies_remaining:7,
+        total_replies_available:19,addon_batch_id:'synthetic-batch',
+        addon_batch_expires_at:'2026-12-01T00:00:00.000Z',
+      }},
+      {type:'subscription_plan_event',visible:{
+        operation:'upgrade',plan_name:'Gold',start_date:'2026-10-01T00:00:00.000Z',
+        expires_at:'2026-12-01T00:00:00.000Z',emergency_debt_paid:2,
+        emergency_debt_remaining:1,base_replies_remaining:9,
+        addon_replies_remaining:7,total_replies_available:19,
+        previous_plan_name:'Silver',
+      }},
+      {type:'subscription_emergency_activated',visible:{
+        addon_batch_id:'emergency-batch',emergency_replies_added:20,
+        emergency_debt:5,expires_at:'2026-12-01T00:00:00.000Z',
+      }},
+      {type:'subscription_expired',visible:{
+        plan_name:'Silver',expired_at:'2026-10-01T00:00:00.000Z',
+        addon_replies_remaining:0,
+      }},
+      {type:'subscription_expiry_reminder',visible:{
+        plan_name:'Gold',expires_at:'2026-12-01T00:00:00.000Z',
+        days_remaining:3,
+      }},
+      {type:'support_reply_reminder',visible:{
+        ticket_id:'legacy-support',ticket_subject:'Synthetic support request',
+        action_url:'/support/tickets/fixture',
+      }},
     ];
     const records=historical.map(({type,visible})=>({
       id:'historical-seven-'+randomUUID(),type,visible,
