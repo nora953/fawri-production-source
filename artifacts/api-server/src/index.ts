@@ -33,14 +33,21 @@ function safeStartupErrorCode(error: unknown): string {
     : "RUNTIME_PROVIDER_INITIALIZATION_FAILED";
 }
 
+type StartupStage = "runtime_configuration" | "database_rls" | "cashier_storage" | "owner_admin" | "provider_or_application" | "listener";
+let startupStage: StartupStage = "runtime_configuration";
+
 async function main(): Promise<void> {
   // Production fails closed before any provider bootstrap, listener, worker,
   // or application traffic. Staging/development must opt out explicitly.
   assertProductionRuntimeConfiguration(process.env);
+  startupStage = "database_rls";
   await assertProductionDatabaseRlsReady(process.env);
+  startupStage = "cashier_storage";
   await assertProductionCashierStreamStorageReady(process.env);
+  startupStage = "owner_admin";
   await assertProductionOwnerAdminReady(process.env);
 
+  startupStage = "provider_or_application";
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
     loadApplication: async () => {
       const [
@@ -74,6 +81,7 @@ async function main(): Promise<void> {
   let merchantMediaCleanupReconciler: MerchantPhysicalMediaCleanupReconciler | null = null;
   let shuttingDown = false;
 
+  startupStage = "listener";
   const server = app.listen(port, () => {
     logger.info({ port, dataDir: getFawriDataDir() }, "Server listening");
 
@@ -163,7 +171,7 @@ async function main(): Promise<void> {
 
 void main().catch((error) => {
   logger.fatal(
-    { code: safeStartupErrorCode(error) },
+    { code: safeStartupErrorCode(error), startupStage },
     "Production runtime provider bootstrap failed",
   );
   process.exit(1);
