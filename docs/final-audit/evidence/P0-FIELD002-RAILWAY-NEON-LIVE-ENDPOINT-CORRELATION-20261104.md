@@ -39,3 +39,17 @@
 - Railway `describe_service` / `list_deployments` for `fawri-web`; `get_logs` with **types `dns` + `network-flow`**, compare `dns[].qname` to `list_postgres_endpoints[].host` from Neon; count outbound flow records for the resolved endpoint IPs and `dstPort=5432`, without publishing the IPs.
 - Neon read-only: `list_postgres_endpoints({project_id:'round-fire-18493605'})`, `list_branches`, and `SELECT rolname,rolcanlogin,rolbypassrls,rolcreaterole FROM pg_roles WHERE rolname IN ('fawri_staging_runtime','fawri_staging_rls_runtime')`.
 - Railway variable values are redacted on OAuth by design; do **not** claim app username or runtime-role variable contents from name-only inventory.
+
+## 6. Exact deployed-code readiness delta — code review against deployed commit
+
+Read-only fetched the **actual Railway deployed commit prefix** `d38d29229bed` and compared matching source paths with the current PR branch. The deployed artifact's `source.repo` and `source.branch` are `nora953/fawri-production-source` and `main`; its reported deployed commit prefix matches the GitHub source ref fetched.
+
+| Source path | Deployed source blob SHA | PR #550 source blob SHA | Specific observable delta |
+|---|---|---|---|
+| `artifacts/api-server/src/observability/runtime.ts` | `a694f6c8f59fe8d5fe04731786e0c0f7d838ec33` | `7a1118b658ad1ab89f7118068eb810e757a1bbd9` | Deployed `postgresql_authority` readiness queries **`SELECT current_user as role_name`** and compares to `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE`; it has **no `rolcreaterole` inventory / SET-or-USAGE privileged role chain check**. PR version adds them. |
+| `artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts` | `38daaca5c8082bdb7e92b9ac5a216b7346706f4f` | `8ddb62f7d133a31d4c5e9a5f2dd3c20376c63fbb` | Deployed production RLS gate checks `rolsuper` and `rolbypassrls` on effective role but **does not check current or SET/USAGE-reachable `CREATEROLE`**. PR version does. |
+| `lib/db/scripts/preflight-isolated-neon-migrations.mjs` | Absent at deployed commit | `4f1896edde918ab77f75037b02839e8490b27d4d` | The fail-closed `0052` zero-membership ownership preflight is source work newer than deployed commit. |
+
+**Interpretation:** Current Railway `fawri-web` is a **stale deployed build** compared to validated PR #550; the newer effective-role/reachable-`CREATEROLE` readiness controls are **not running in that deployed commit**. This is a source/deployment mismatch, **not proof** that the current production gate always passes (its older `BYPASSRLS` check may still reject an unsafe role if active). Do not assert the exact live `/ops/readiness` HTTP outcome without an actual reachable response and configuration evidence. GitHub 59/59 PASS applies to **new source**, not to deployed 2026-10-10 commit.
+
+No deployment was triggered, no DB schema/role changed, and no secret was exposed. Remediation requires a staged rollout plan (source, migrations, roles, app health and rollback) before moving `fawri-web` off `main`; use the existing NO-GO gate.
