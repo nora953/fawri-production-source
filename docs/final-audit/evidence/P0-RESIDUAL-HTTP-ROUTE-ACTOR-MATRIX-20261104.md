@@ -47,3 +47,8 @@ Canonical P0 29/45 CLOSED_SOURCE (64.4%), 7 OPEN, 9 BLOCKED; overall percentage 
 - Commit `ccc0a695f8a4146f732fd536c14e234c4ca07ade` added actual HTTP + disposable PostgreSQL regression `view_logs alone does not expose merchant incident records` in `artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs`.
 - GitHub Actions `P0 management privacy HTTP matrix` run `41758815504`, job `126341301468`: SUCCESS; new subtest `ok 10`; focused suite 16 PASS/0 FAIL, six suites **118 PASS/0 FAIL** (80+16+6+14+1+1); cleanup SUCCESS.
 - This proves one missing incident record boundary. It does **not** settle generic audit metadata/details field policy, all eight tables, hosted acceptance, or FIELD003 as a whole. Gate stays OPEN, P0 29/45, NO-GO.
+
+## FIELD003 ordinary-audit positive preservation — 2026-11-04
+- Commit `53c15255b041529a5db44d47b253d0c59a1aec04` added mounted HTTP regression `ordinary audit remains readable after merchant incident filtering`.
+- GitHub Actions `P0 management privacy HTTP matrix` run `41759404801`, job `126343235150` SUCCESS: focused suite **17 PASS / 0 FAIL**, six suites **119 PASS / 0 FAIL** (80+17+6+14+1+1). New subtest `ok 11` in logs.
+- This is bounded positive preservation alongside earlier incident exclusion. No claim of generic audit metadata/details policy closure, eight-table acceptance or hosted GO. Gate OPEN; P0 29/45, NO-GO.
