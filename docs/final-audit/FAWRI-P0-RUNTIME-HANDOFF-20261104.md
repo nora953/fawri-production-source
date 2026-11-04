@@ -84,3 +84,6 @@ Authoritative register `evidence/P0-CLOSURE-REGISTER.json` reports 29 CLOSED_SOU
 
 ### Last verified bounded regression
 `db117422c6bd2c6b693e721e9f818f1597665f0f`, GitHub Actions management HTTP matrix `41760160353`: 120 passed / 0 failed / 0 skipped. This does not close FIELD003 or the eight-table matrix.
+
+## 2026-11-04 — PRIORITY CORRECTION (user-directed; supersedes previous execution order)
+The previous blocker-first note incorrectly switched immediate work to cashier SEQ-R3. **Do not execute that priority switch.** Current selected gate is **`P0-RESIDUAL-MERCHANT-PRIVACY-001/http`**, with linked `P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX` and FIELD002–FIELD005. Continue the eight-table / 86-column / 19-HTTP-route actor/field/alternate-path closure from `evidence/P0-RESIDUAL-HTTP-ROUTE-ACTOR-MATRIX-20261104.md`. Next: inspect outstanding FIELD003 generic `audit_events` producer metadata/details and FIELD002 notifications provenance, close exact testable gaps, and retain explicit policy/hosted blockers. No cashier work until user changes scope. The previous 16-gate inventory remains context only, **not the active execution queue**. Current gate OPEN / NO-GO.
