@@ -30,7 +30,7 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
     non_row_privilege_roles: [],
-    cashier_staff_lock_ready:true, cashier_approval_authority_ready:true, authentication_authority_present:true, authentication_mutation_roles:[], audit_access_roles:[],
+    cashier_staff_lock_ready:true, cashier_approval_authority_ready:true, authentication_authority_present:true, authentication_marker_reachable_roles:[], authentication_mutation_roles:[], audit_access_roles:[],
     authentication_sensitive_columns_present:true, authentication_sensitive_read_roles:[],
     directory_issuer_present: true,
     operator_authority_roles: [],
@@ -104,6 +104,23 @@ test("production refuses a CREATEROLE effective role even behind a restricted lo
       session_role_create_role: false,
     }),
   );
+});
+
+test("production rejects reachable trusted authentication marker under complete RLS", async () => {
+  for (const reachable of [
+    ["tenant_runtime"], ["trusted_auth"], ["tenant_runtime", "trusted_auth"],
+  ]) {
+    await rejectsWith(
+      "PRODUCTION_AUTHENTICATION_MARKER_REACHABLE",
+      safeRow({ authentication_marker_reachable_roles: reachable }),
+    );
+  }
+  for (const malformed of [undefined, null, "[]", [null], [""]]) {
+    await rejectsWith(
+      "PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED",
+      safeRow({ authentication_marker_reachable_roles: malformed }),
+    );
+  }
 });
 
 test("production rejects runtime ownership of tenant tables", async () => {
