@@ -62,7 +62,7 @@ async function main(): Promise<void> {
         const { startMerchantPhysicalMediaCleanupReconciler } = await import("./services/merchantPhysicalMediaCleanup");
         return { app, startMetaWebhookWorker, startEarlyWarningIncidentMonitor, startMerchantPhysicalMediaCleanupReconciler };
       } catch (error) {
-        logger.error({ importTarget, code: safeStartupErrorCode(error) }, "Application module import failed");
+        logger.error({ importTarget, code: safeStartupErrorCode(error), errorType: error instanceof Error ? error.name : "unknown" }, "Application module import failed");
         throw error;
       }
     },
