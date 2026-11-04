@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { assertSafePostgresRuntimeRole } from "../src/observability/runtime";
 
-const safe = { role_name: "fawri_runtime", is_superuser: false, bypass_rls: false, owns_unforced_rls_table: false, session_role_name: "fawri_login", session_is_superuser: false, session_bypass_rls: false, session_can_create_role: false, session_inherits_privileged_role: false, session_can_set_privileged_role: false };
+const safe = { role_name: "fawri_runtime", is_superuser: false, can_create_role: false, bypass_rls: false, owns_unforced_rls_table: false, session_role_name: "fawri_login", session_is_superuser: false, session_bypass_rls: false, session_can_create_role: false, session_inherits_privileged_role: false, session_can_set_privileged_role: false };
 
 test("readiness accepts a non-owner non-bypass runtime role", () => {
   assert.doesNotThrow(() => assertSafePostgresRuntimeRole(safe));
@@ -15,6 +15,8 @@ test("readiness rejects unsafe PostgreSQL runtime identities", () => {
     { ...safe, role_name: "" },
     { ...safe, role_name: "   " },
     { ...safe, is_superuser: true },
+    { ...safe, can_create_role: true },
+    { ...safe, can_create_role: undefined },
     { ...safe, bypass_rls: true },
     { ...safe, owns_unforced_rls_table: true },
     { ...safe, owns_unforced_rls_table: undefined },
@@ -60,4 +62,14 @@ test("readiness rejects a non-bypass login that can SET ROLE into BYPASSRLS or S
 test("readiness rejects CREATEROLE and inherited privileged membership even without SET ROLE", () => {
   assert.throws(() => assertSafePostgresRuntimeRole({ ...safe, session_can_create_role: true }), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
   assert.throws(() => assertSafePostgresRuntimeRole({ ...safe, session_inherits_privileged_role: true }), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
+});
+
+test("effective current role cannot carry CREATEROLE even if login is restricted", () => {
+  assert.throws(() => assertSafePostgresRuntimeRole({
+    ...safe,
+    role_name: "createrole_current",
+    can_create_role: true,
+    session_role_name: "restricted_login",
+    session_can_create_role: false,
+  }), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
 });
