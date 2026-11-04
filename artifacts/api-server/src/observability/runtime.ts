@@ -6,6 +6,16 @@ import type { ReadinessCheck } from "./types";
 const SAFE_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 const MIN_INTERNAL_TOKEN_BYTES = 32;
 
+// Even an otherwise restricted LOGIN must not be admitted as a hosted tenant
+// runtime before the known residual merchant privacy tables have active RLS.
+// This protects a future staged NOLOGIN -> LOGIN cutover from relying on
+// unprotected broad legacy table GRANTs.
+export const CRITICAL_POSTGRES_PRIVACY_RLS_TABLES = [
+  "audit_events", "manual_reply_requests", "merchant_admin_notes",
+  "merchant_channel_overrides", "merchant_deletion_requests",
+  "notifications", "order_drafts", "processed_channel_events",
+] as const;
+
 export const processMetricsRegistry = new MetricsRegistry();
 export const observabilityService = "fawri-api";
 
@@ -26,7 +36,7 @@ export function assertExpectedPostgresRuntimeRole(
 }
 
 export function assertSafePostgresRuntimeRole(row: {
-  role_name?: unknown; is_superuser?: unknown; can_create_role?: unknown;
+  role_name?: unknown; is_superuser?: unknown; can_create_role?: unknown; critical_privacy_rls_ready_count?: unknown;
   bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
   session_role_name?: unknown; session_is_superuser?: unknown; session_bypass_rls?: unknown;
   session_can_create_role?: unknown; session_inherits_privileged_role?: unknown;
@@ -36,6 +46,14 @@ export function assertSafePostgresRuntimeRole(row: {
     throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
   }
   assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
+  // Only the explicitly configured hosted runtime gate requires all eight
+  // tables. Generic local/dev readiness can run without migration fixtures.
+  if (
+    String(process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim() &&
+    row.critical_privacy_rls_ready_count !== CRITICAL_POSTGRES_PRIVACY_RLS_TABLES.length
+  ) {
+    throw new Error("POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY");
+  }
 }
 
 export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
@@ -66,11 +84,19 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
           WHERE n.nspname = 'public'
             AND c.relkind IN ('r', 'p') AND c.relrowsecurity
             AND NOT c.relforcerowsecurity AND c.relowner = r.oid
-        ) AS owns_unforced_rls_table
+        ) AS owns_unforced_rls_table,
+        (SELECT count(*)::int FROM pg_class protected
+          JOIN pg_namespace privacy_ns ON privacy_ns.oid = protected.relnamespace
+          WHERE privacy_ns.nspname = 'public'
+            AND protected.relkind IN ('r', 'p')
+            AND protected.relname = ANY($1::text[])
+            AND protected.relrowsecurity
+            AND EXISTS (SELECT 1 FROM pg_policy policy WHERE policy.polrelid = protected.oid)
+        ) AS critical_privacy_rls_ready_count
         FROM pg_roles r JOIN pg_roles session_role ON session_role.rolname = session_user
-        WHERE r.rolname = current_user`);
+        WHERE r.rolname = current_user`, [Array.from(CRITICAL_POSTGRES_PRIVACY_RLS_TABLES)]);
       const row = result.rows[0] as {
-        role_name?: unknown; is_superuser?: unknown; can_create_role?: unknown;
+        role_name?: unknown; is_superuser?: unknown; can_create_role?: unknown; critical_privacy_rls_ready_count?: unknown;
         bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
       } | undefined;
       assertSafePostgresRuntimeRole(row);
