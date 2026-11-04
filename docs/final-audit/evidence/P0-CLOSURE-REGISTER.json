@@ -163,7 +163,7 @@
         "F004-R2"
       ],
       "closurePlanPointer": "closurePlan.entries[gate=P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX]",
-      "nextAction": "Review the concrete F004-R1 conditional offline draft migration contract in evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031. Recommended: support source-bound legacy identity/state/time normalization for reviewed compatibility storage only, with no automatic runtime continuation, no guessed TTL and whole-plan refusal on ambiguity. Implement bounded offline planner validation only after this specified contract is selected; no source/configuration evidence, actual import, hosted, retention, SEQ or new runtime authority is authorized by that choice. If deferred, preserve current fail-closed behavior and continue independent authorized work.",
+      "nextAction": "Use a role-accurate two-session harness on the isolated clone for authenticated own/foreign/revoked SQL and mounted HTTP; do not enable LOGIN or create/change runtime/issuer roles without a separately reviewed bounded plan. Preserve 0052 and original rollout blockers.",
       "currentEntrypointReconciliation": {
         "evidence": "evidence/P0-ACTOR-ENTRYPOINT-EVIDENCE-MAP-20261027.json",
         "generator": "tools/build_p0_actor_entrypoint_map.cjs",
@@ -4489,6 +4489,11 @@
         "parentGateClosed": false,
         "newGate": false,
         "userActionRequiredNow": true
+      },
+      "currentField002IsolatedAclRepair20261104": {
+        "status": "ISOLATED_ACL_REPAIR_VERIFIED_FIELD002_OPEN",
+        "evidence": "evidence/P0-FIELD002-ISOLATED-ACL-REPAIR-RUNBOOK-20261104.md",
+        "parentGateClosed": false
       }
     },
     {
@@ -6419,7 +6424,7 @@
       "status": "OPEN",
       "evidence": "evidence/P0-0051-VERIFICATION-20261024.json",
       "blocker": "Strict SQL/services and eight-table zero-foreign diagnostic do not cover full HTTP actor matrix.",
-      "nextAction": "Review the concrete F004-R1 conditional offline draft migration contract in evidence/P0-FIELD004-AUTHORITY-MAP-20261025.json#decisionProposal20261031. Recommended: support source-bound legacy identity/state/time normalization for reviewed compatibility storage only, with no automatic runtime continuation, no guessed TTL and whole-plan refusal on ambiguity. Implement bounded offline planner validation only after this specified contract is selected; no source/configuration evidence, actual import, hosted, retention, SEQ or new runtime authority is authorized by that choice. If deferred, preserve current fail-closed behavior and continue independent authorized work.",
+      "nextAction": "Use a role-accurate two-session harness on the isolated clone for authenticated own/foreign/revoked SQL and mounted HTTP; do not enable LOGIN or create/change runtime/issuer roles without a separately reviewed bounded plan. Preserve 0052 and original rollout blockers.",
       "boundedHttpEvidence": "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
       "boundedHttpStatus": "PARTIAL_HTTP_VERIFIED",
       "conversationHttpEvidence": "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
@@ -6831,6 +6836,11 @@
         "parentGateClosed": false,
         "newGate": false,
         "userActionRequiredNow": true
+      },
+      "currentField002IsolatedAclRepair20261104": {
+        "status": "ISOLATED_ACL_REPAIR_VERIFIED_FIELD002_OPEN",
+        "evidence": "evidence/P0-FIELD002-ISOLATED-ACL-REPAIR-RUNBOOK-20261104.md",
+        "parentGateClosed": false
       }
     },
     {
@@ -18010,7 +18020,7 @@
       ],
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "currentWorkItem": "MATRIX-C08",
-      "nextAction": "MATRIX-C07 FIELD003 incident audit permission is already accepted at source 49eeb8990513e562bb2a823742229d16c0f13a18; do not request approval or repeat its accepted tests. Continue MATRIX-C08 actor/field/producer/consumer reconciliation: 64 opaque references / 46 method-paths and FIELD002 compatibility policy remain unaccepted; reconcile concrete consumer impact before proposing a change. No new source/hosted/release approval.",
+      "nextAction": "Use a role-accurate two-session harness on the isolated clone for authenticated own/foreign/revoked SQL and mounted HTTP; do not enable LOGIN or create/change runtime/issuer roles without a separately reviewed bounded plan. Preserve 0052 and original rollout blockers.",
       "knownRemainingGates": [
         {
           "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -18642,6 +18652,11 @@
         "newTests": 0,
         "newCiRuns": 0,
         "result": "CONCRETE_FIELD004_CONDITIONAL_OFFLINE_MIGRATION_CHOICE_PREPARED"
+      },
+      "currentField002IsolatedAclRepair20261104": {
+        "status": "ISOLATED_ACL_REPAIR_VERIFIED_FIELD002_OPEN",
+        "evidence": "evidence/P0-FIELD002-ISOLATED-ACL-REPAIR-RUNBOOK-20261104.md",
+        "parentGateClosed": false
       }
     },
     "currentMetaActivationPathMatchingProof": {
@@ -18923,6 +18938,116 @@
       "latestVerifiedSource": "16b9dfd20dc696abe80f230a80e1cd057a3d0b1a",
       "verifiedCi": "Complete migration safety 41444785327: 53 passed, 0 failed; Final quality gates 41444785691: success",
       "remainingBlocker": "Historical effective TTL attestation for missing-expiry drafts not available; F004-R2 hosted proof excluded; full P0 actor/field coverage remains OPEN"
+    },
+    "currentField002IsolatedAclRepair20261104": {
+      "date": "2026-11-04",
+      "observedAtUtc": "2026-11-04T16:50:36.893Z",
+      "status": "ISOLATED_ACL_REPAIR_VERIFIED_FIELD002_OPEN",
+      "sourceReviewed": "93fd3bc001b4cc6c1a8eea2a2041ca3261da6d78",
+      "pr": 550,
+      "evidence": "evidence/P0-FIELD002-ISOLATED-ACL-REPAIR-RUNBOOK-20261104.md",
+      "project": "round-fire-18493605",
+      "branch": "br-young-hill-b1x9vhlz",
+      "authorization": "Explicit user approval in this session for EXECUTE ACL repair on this isolated branch only; original/Railway/no merge/no deploy excluded.",
+      "reusedEvidence": [
+        "Existing eight-table source/HTTP proofs remain accepted only in their documented bounds",
+        "Existing clone migrations 0028–0051 and read-only ACL SQL reused verbatim"
+      ],
+      "rollback": {
+        "expectedFailure": "FIELD002_EXPECTED_ROLLBACK_PROBE",
+        "transactionFailedAsExpected": true,
+        "aclAndDefaultsRestored": true
+      },
+      "before": [
+        {
+          "tag": "0038_role_bound_admin_directory_issuer",
+          "function_present": true,
+          "legacy_runtime_execute": [
+            "fawri_staging_rls_runtime",
+            "fawri_staging_runtime"
+          ],
+          "public_execute": false,
+          "nonowner_default_function_execute_grants": 2,
+          "post_migration_acl_pass": false
+        },
+        {
+          "tag": "0039_role_bound_authentication_runtime",
+          "function_present": true,
+          "legacy_runtime_execute": [
+            "fawri_staging_rls_runtime",
+            "fawri_staging_runtime"
+          ],
+          "public_execute": false,
+          "nonowner_default_function_execute_grants": 2,
+          "post_migration_acl_pass": false
+        }
+      ],
+      "after": [
+        {
+          "tag": "0038_role_bound_admin_directory_issuer",
+          "function_present": true,
+          "legacy_runtime_execute": [],
+          "public_execute": false,
+          "nonowner_default_function_execute_grants": 0,
+          "post_migration_acl_pass": true
+        },
+        {
+          "tag": "0039_role_bound_authentication_runtime",
+          "function_present": true,
+          "legacy_runtime_execute": [],
+          "public_execute": false,
+          "nonowner_default_function_execute_grants": 0,
+          "post_migration_acl_pass": true
+        }
+      ],
+      "reachabilityAfter": {
+        "reachable_entries": 14,
+        "unsafe_entries": 0
+      },
+      "invariants": {
+        "eightTableRowsAndFingerprintsUnchanged": true,
+        "ledgerUnchanged": true,
+        "rlsAndPolicyFingerprintsUnchanged": true,
+        "roleFlagsAndMembershipsUnchanged": true,
+        "originalSnapshotAndAclUnchanged": true,
+        "cloneMigrations": 52,
+        "originalMigrations": 28,
+        "notifications": 28,
+        "auditEvents": 283
+      },
+      "sourceChecks": {
+        "exactGitBlobsVerified": 66,
+        "node": "v24.22.1",
+        "staticBefore": {
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0
+        },
+        "staticAfter": {
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0
+        },
+        "sourceAssessor": "Before APPLIED_TRUSTED_FUNCTION_RUNTIME_EXECUTE_LEAK; after APPLIED_TRUSTED_FUNCTION_ACLS_SCOPED. Evaluator applied to actual catalog evidence; not full live CLI.",
+        "headCiRuns": 0,
+        "headCiNotClaimed": true
+      },
+      "boundedPrerequisiteAccepted": true,
+      "parentGateClosed": false,
+      "field002Closed": false,
+      "remainingOpen": [
+        "FIELD002-R2 actual two-principal same-tenant allowed / foreign-tenant denied / revoked-auth denied SQL plus mounted HTTP on clone remains unproven",
+        "FIELD002-R1 compatibility and R3 producer scope decisions unchanged; no policy adopted"
+      ],
+      "blocked": [
+        "0052 owner-bootstrap prerequisite unchanged; retirement owner absent",
+        "Original staged rollout and backup/restore require separate authorization; no original mutation",
+        "Legacy fawri_staging_runtime retains BYPASSRLS/CREATEROLE and neon_superuser reachability; ACL removal alone does not make it a safe tenant role"
+      ],
+      "nextAction": "Use a role-accurate two-session harness on the isolated clone for authenticated own/foreign/revoked SQL and mounted HTTP; do not enable LOGIN or create/change runtime/issuer roles without a separately reviewed bounded plan. Preserve 0052 and original rollout blockers.",
+      "completeP0Inventory": false,
+      "overallPercentage": null,
+      "release": "NO-GO"
     }
   }
 }
