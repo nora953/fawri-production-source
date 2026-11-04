@@ -414,10 +414,6 @@ export async function assertProductionDatabaseRlsReady(
       "production runtime database role must not be a superuser",
     );
   }
-  if (readiness.createRole) {
-    fail("PRODUCTION_DATABASE_RUNTIME_CREATEROLE_FORBIDDEN",
-      "production runtime effective role must not create or alter database roles");
-  }
   if (readiness.bypassRls) {
     fail(
       "PRODUCTION_DATABASE_RUNTIME_BYPASSRLS_FORBIDDEN",
@@ -443,6 +439,10 @@ export async function assertProductionDatabaseRlsReady(
   if (readiness.sessionCreateRole) {
     fail("PRODUCTION_DATABASE_SESSION_CREATEROLE_FORBIDDEN",
       "production authenticated database role must not create or alter roles");
+  }
+  if (readiness.createRole) {
+    fail("PRODUCTION_DATABASE_RUNTIME_CREATEROLE_FORBIDDEN",
+      "production runtime effective role must not create or alter database roles");
   }
   if (readiness.sessionReachablePrivilegedRoles.length > 0) {
     fail("PRODUCTION_DATABASE_PRIVILEGED_ROLE_REACHABLE",
