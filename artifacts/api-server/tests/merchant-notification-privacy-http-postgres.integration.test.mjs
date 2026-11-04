@@ -60,7 +60,7 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
     assert.deepEqual(await snapshot(),before);
   });
   await t.test('both merchants list only own live merchant audience despite foreign query hints',async()=>{
-    for(const actor of sessions){const foreign=actor===a?b:a;const r=await req(`/notifications?merchant_id=${foreign.id}&account_id=${owner}&audience=admin`,actor);assert.equal(r.status,200);assert.equal(r.cache,'no-store');assert.deepEqual(r.body.notifications.map(x=>x.id),[`${actor.id}-own`]);assert.equal(r.body.notifications[0].sentinel,`private-${actor.id}-own`);assert.doesNotMatch(JSON.stringify(r.body),new RegExp(foreign.id));}
+    for(const actor of sessions){const foreign=actor===a?b:a;const r=await req(`/notifications?merchant_id=${foreign.id}&account_id=${owner}&audience=admin`,actor);assert.equal(r.status,200);assert.equal(r.cache,'no-store');assert.deepEqual(r.body.notifications.map(x=>x.id),[`${actor.id}-own`]);assert.deepEqual(Object.keys(r.body.notifications[0]).sort(),['created_at','id','type']);assert.doesNotMatch(JSON.stringify(r.body),new RegExp(foreign.id));}
   });
   await t.test('forged tenant headers and foreign query hints cannot override authenticated merchant scope',async()=>{
     const before=await snapshot();
@@ -89,6 +89,36 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
     assert.deepEqual((await snapshot()).filter(x=>x.row.merchant_id===b.id||x.row.audience==='admin'),beforePeer);
     assert.deepEqual((await req('/notifications?unread=1',a)).body.notifications,[]);
     assert.deepEqual((await req('/notifications?unread=1',b)).body.notifications.map(x=>x.id),[`${b.id}-own`]);
+  });
+  await t.test('response field minimization preserves known shapes while hiding stored extensions and unknown types',async()=>{
+    const knownId='known-projection-'+randomUUID(),unknownId='unknown-projection-'+randomUUID();
+    const variables={conversation_id:'conversation-verified',action_url:'/conversations/verified',order_id:'extra-not-permitted',internal_note:'stored-only-sentinel'};
+    try{
+      for(const [id,type,fields] of [[knownId,'operational_customer_message',variables],[unknownId,'historical_custom',{internal_note:'stored-only-sentinel'}]]){
+        await admin.query("INSERT INTO notifications(id,audience,merchant_id,account_id,type,title_key,body_key,variables) VALUES($1,'merchant',$2,$2,$3,'synthetic','synthetic',$4::jsonb)",[id,b.id,type,JSON.stringify(fields)]);
+      }
+      const list=await req('/notifications?limit=50',b);
+      assert.equal(list.status,200);
+      const known=list.body.notifications.find(item=>item.id===knownId);
+      const unknown=list.body.notifications.find(item=>item.id===unknownId);
+      assert.ok(known);
+      assert.deepEqual(Object.keys(known).sort(),['action_url','conversation_id','created_at','id','type']);
+      assert.equal(known.conversation_id,'conversation-verified');
+      assert.equal(known.action_url,'/conversations/verified');
+      assert.ok(unknown);
+      assert.deepEqual(Object.keys(unknown).sort(),['created_at','id','type']);
+      assert.doesNotMatch(JSON.stringify(list.body),/stored-only-sentinel|extra-not-permitted/);
+      const foreign=await req('/notifications/'+knownId+'/read',a,'PATCH');
+      assert.equal(foreign.status,404);
+      const read=await req('/notifications/'+knownId+'/read',b,'PATCH');
+      assert.equal(read.status,200);
+      assert.ok(read.body.notification.read_at);
+      assert.deepEqual(Object.keys(read.body.notification).sort(),['action_url','conversation_id','created_at','id','read_at','type']);
+      const persisted=await admin.query('SELECT variables FROM notifications WHERE id=$1',[knownId]);
+      assert.deepEqual(persisted.rows[0].variables,variables,'response projection must not rewrite stored notifications');
+    }finally{
+      await admin.query('DELETE FROM notifications WHERE id=ANY($1::text[])',[[knownId,unknownId]]);
+    }
   });
   await t.test('mixed merchant and administrative cookies fail closed for notification reads and writes',async()=>{
     const before=await snapshot();
