@@ -69,7 +69,7 @@ test('actual app isolates notification and conversation consumers across aliases
       const peer=actor===a?b:a;
       for(const path of ['/api/auth/notifications','/API/AuTh/NoTiFiCaTiOnS/']){
         const r=await req(`${path}?merchant_id=${peer.id}&audience=admin&account_id=${owner}`,actor);assert.equal(r.status,200);assert.equal(r.cache,'no-store');
-        assert.deepEqual(r.body.notifications.map(n=>n.id),[`${actor.id}-own`]);assert.equal(r.body.notifications[0].sentinel,`private-${actor.id}-own`);assert.doesNotMatch(JSON.stringify(r.body),new RegExp(peer.id));
+        assert.deepEqual(r.body.notifications.map(n=>n.id),[`${actor.id}-own`]);assert.deepEqual(Object.keys(r.body.notifications[0]).sort(),['created_at','id','type']);assert.equal(r.body.notifications[0].sentinel,undefined,'unknown-type storage extras must not reach the response');assert.doesNotMatch(JSON.stringify(r.body),new RegExp(peer.id));
       }
     }
     const peer=await snapshot([b.id]);

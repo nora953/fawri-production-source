@@ -537,7 +537,7 @@ test('operational SQL producers round trip through actual app and frontend valid
     reservedActors.push({actor,id:result.notification_id,conversationId});
   }
   function canonicalReservedRecord(row){
-    const business={...row.variables};for(const key of ['id','type','created_at','read_at'])delete business[key];
+    const business={conversation_id:row.variables.conversation_id,action_url:row.variables.action_url};
     return {id:row.id,type:row.type,...business,created_at:new Date(row.created_at).toISOString(),...(row.read_at?{read_at:new Date(row.read_at).toISOString()}:{})};
   }
   for(const entry of reservedActors){
@@ -556,7 +556,7 @@ test('operational SQL producers round trip through actual app and frontend valid
         const notice=result.body.notifications.find(n=>n.conversation_id===row.variables.conversation_id);assert.ok(notice);
         console.log('P0_NOTIFICATION_RESERVED_OBSERVATION '+JSON.stringify({canonicalIdMatches:notice.id===row.id,canonicalTypeMatches:notice.type===row.type,canonicalCreatedAtMatches:notice.created_at===new Date(row.created_at).toISOString(),sqlUnread:row.read_at===null,hasProjectedReadAt:Object.hasOwn(notice,'read_at')}));
         assert.deepEqual(notice,canonicalReservedRecord(row));assert.equal(isMerchantNotificationRecord(notice),true);assert.equal(Object.hasOwn(notice,'read_at'),false);
-        assert.equal(notice.order_id,'synthetic-nonreserved-business-field');
+        assert.equal(Object.hasOwn(notice,'order_id'),false,'stored extra fields must not leave the response');
       }
     }
     assert.deepEqual(await snapshot(),before);
@@ -577,7 +577,7 @@ test('operational SQL producers round trip through actual app and frontend valid
         const notice=result.body.notifications.find(n=>n.conversation_id===variables.conversation_id);assert.deepEqual(notice,canonicalReservedRecord(row));assert.equal(isMerchantNotificationRecord(notice),true);assert.deepEqual(await snapshot(),before);
       }
     }
-    console.log('P0_NOTIFICATION_RESERVED_ACCEPTANCE '+JSON.stringify({newFunctionalCases:3,actualApp:true,actualFrontendValidator:true,merchants:2,canonicalSqlIdentity:true,canonicalSqlTimestamps:true,unreadOmitsStoredReadAt:true,peerDenied:true,readReplay:true,storedJsonUnchanged:true,nonReservedProjectionPreserved:true,syntheticBootstrapRowsOnly:true,attackerControlledInputProven:false,historicalRowsInspected:false,hostedAccepted:false,wholeCellAccepted:false}));
+    console.log('P0_NOTIFICATION_RESERVED_ACCEPTANCE '+JSON.stringify({newFunctionalCases:3,actualApp:true,actualFrontendValidator:true,merchants:2,canonicalSqlIdentity:true,canonicalSqlTimestamps:true,unreadOmitsStoredReadAt:true,peerDenied:true,readReplay:true,storedJsonUnchanged:true,nonReservedProjectionMinimized:true,syntheticBootstrapRowsOnly:true,attackerControlledInputProven:false,historicalRowsInspected:false,hostedAccepted:false,wholeCellAccepted:false}));
   });
 
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
