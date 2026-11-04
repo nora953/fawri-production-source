@@ -13,6 +13,7 @@ import {
   isKnownHistoricalDisposableGuardFixture,
   isKnownHistoricalEntrypointFenceFixture,
   isKnownHistoricalFreshRoleRecoveryFenceFixture,
+  isKnownHistoricalField002IllustrativeUrl,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -402,4 +403,32 @@ test("historical fresh role rejection fixture classification is bound to one imm
   for(const otherBlob of [undefined, "0".repeat(40)])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, file, otherBlob), false);
   for(const otherFile of ["scripts/restore-postgresql.mjs", "scripts/tests/other.test.mjs"])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, otherFile, blob), false);
   for(const changed of [{...finding,index:finding.index+1},{...finding,length:finding.length+1},{...finding,rule:"private-key"}])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(changed, file, blob), false);
+});
+
+test("FIELD002 historical documentation exception is one immutable synthetic span only", () => {
+  const file = "docs/final-audit/evidence/P0-FIELD002-RAILWAY-NEON-LIVE-ENDPOINT-CORRELATION-20261104.md";
+  const blob = "ed0250ab4e829f4317b189f3a1696c3940d3b42b";
+  const target = ["postgresql://role:", "password", "@host"].join("");
+  const historical = " ".repeat(13302) + target + "/...";
+  const findings = findSensitiveText(historical, { includePrivateData: false, includeAssignments: false });
+  assert.equal(findings.length, 1);
+  const finding = findings[0];
+  assert.deepEqual(finding, { rule: "credential-url", index: 13302, length: 31 });
+  assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file, blob), true);
+  for (const badBlob of [undefined, "0".repeat(40)]) {
+    assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file, badBlob), false);
+  }
+  for (const badPath of ["docs/final-audit/evidence/other.md", "scripts/tests/demo.test.mjs"]) {
+    assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, badPath, blob), false);
+  }
+  for (const changed of [
+    { ...finding, index: finding.index + 1 },
+    { ...finding, length: finding.length + 1 },
+    { ...finding, rule: "private-key" },
+  ]) {
+    assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, changed, file, blob), false);
+  }
+  const changedUrl = historical.replace("@host", "@real-database.example");
+  assert.equal(isKnownHistoricalField002IllustrativeUrl(changedUrl, finding, file, blob), false);
+  assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file.replaceAll("/", "\\\\"), blob), true);
 });
