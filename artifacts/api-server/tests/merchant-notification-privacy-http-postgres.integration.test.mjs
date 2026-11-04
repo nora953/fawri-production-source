@@ -92,9 +92,11 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
   });
   await t.test('response field minimization preserves known shapes while hiding stored extensions and unknown types',async()=>{
     const knownId='known-projection-'+randomUUID(),unknownId='unknown-projection-'+randomUUID();
+    const inheritedTypeRows=['constructor','__proto__','toString'].map(type=>({id:'historical-projection-'+randomUUID(),type}));
+    const insertedIds=[knownId,unknownId,...inheritedTypeRows.map(row=>row.id)];
     const variables={conversation_id:'conversation-verified',action_url:'/conversations/verified',order_id:'extra-not-permitted',internal_note:'stored-only-sentinel'};
     try{
-      for(const [id,type,fields] of [[knownId,'operational_customer_message',variables],[unknownId,'historical_custom',{internal_note:'stored-only-sentinel'}]]){
+      for(const [id,type,fields] of [[knownId,'operational_customer_message',variables],[unknownId,'historical_custom',{internal_note:'stored-only-sentinel'}],...inheritedTypeRows.map(row=>[row.id,row.type,{internal_note:'stored-only-sentinel'}])]){
         await admin.query("INSERT INTO notifications(id,audience,merchant_id,account_id,type,title_key,body_key,variables) VALUES($1,'merchant',$2,$2,$3,'synthetic','synthetic',$4::jsonb)",[id,b.id,type,JSON.stringify(fields)]);
       }
       const list=await req('/notifications?limit=50',b);
@@ -107,6 +109,12 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
       assert.equal(known.action_url,'/conversations/verified');
       assert.ok(unknown);
       assert.deepEqual(Object.keys(unknown).sort(),['created_at','id','type']);
+      for(const row of inheritedTypeRows){
+        const historical=list.body.notifications.find(item=>item.id===row.id);
+        assert.ok(historical,`historical notification type ${row.type} must not break the entire list`);
+        assert.equal(historical.type,row.type);
+        assert.deepEqual(Object.keys(historical).sort(),['created_at','id','type']);
+      }
       assert.doesNotMatch(JSON.stringify(list.body),/stored-only-sentinel|extra-not-permitted/);
       const foreign=await req('/notifications/'+knownId+'/read',a,'PATCH');
       assert.equal(foreign.status,404);
@@ -114,10 +122,16 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
       assert.equal(read.status,200);
       assert.ok(read.body.notification.read_at);
       assert.deepEqual(Object.keys(read.body.notification).sort(),['action_url','conversation_id','created_at','id','read_at','type']);
+      const historicalRead=await req('/notifications/'+inheritedTypeRows[0].id+'/read',b,'PATCH');
+      assert.equal(historicalRead.status,200);
+      assert.ok(historicalRead.body.notification.read_at);
+      assert.deepEqual(Object.keys(historicalRead.body.notification).sort(),['created_at','id','read_at','type']);
+      const historicalStored=await admin.query('SELECT variables FROM notifications WHERE id=$1',[inheritedTypeRows[0].id]);
+      assert.deepEqual(historicalStored.rows[0].variables,{internal_note:'stored-only-sentinel'});
       const persisted=await admin.query('SELECT variables FROM notifications WHERE id=$1',[knownId]);
       assert.deepEqual(persisted.rows[0].variables,variables,'response projection must not rewrite stored notifications');
     }finally{
-      await admin.query('DELETE FROM notifications WHERE id=ANY($1::text[])',[[knownId,unknownId]]);
+      await admin.query('DELETE FROM notifications WHERE id=ANY($1::text[])',[insertedIds]);
     }
   });
   await t.test('mixed merchant and administrative cookies fail closed for notification reads and writes',async()=>{
