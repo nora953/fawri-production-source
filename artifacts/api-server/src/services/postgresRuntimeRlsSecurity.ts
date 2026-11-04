@@ -105,6 +105,7 @@ export type ProductionDatabaseRlsReadiness = {
   cashierStaffLockReady: boolean;
   cashierApprovalAuthorityReady: boolean;
   authenticationAuthorityPresent: boolean;
+  authenticationMarkerReachableRoles: string[];
   authenticationMutationRoles: string[];
   authenticationSensitiveColumnsPresent: boolean;
   authenticationSensitiveReadRoles: string[];
@@ -171,6 +172,7 @@ export async function getProductionDatabaseRlsReadiness(
     cashier_staff_lock_ready: boolean;
     cashier_approval_authority_ready: boolean;
     authentication_authority_present: boolean;
+    authentication_marker_reachable_roles: string[] | null;
     authentication_mutation_roles: string[];
     authentication_sensitive_columns_present: boolean;
     authentication_sensitive_read_roles: string[];
@@ -279,6 +281,13 @@ export async function getProductionDatabaseRlsReadiness(
            OR EXISTS (SELECT 1 FROM reachable_roles r WHERE pg_has_role(r.oid,fn.proowner,'USAGE') OR pg_has_role(r.oid,fn.proowner,'SET'))
        ) AS cashier_approval_authority_ready,
        to_regprocedure('public.fawri_authentication_runtime()') IS NOT NULL AS authentication_authority_present,
+       -- The trusted auth marker makes RLS permit cross-tenant access and must
+       -- never be invokable by an effective or activatable tenant runtime role.
+       COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname)
+          FROM reachable_roles r
+          WHERE COALESCE(has_function_privilege(r.oid,
+            to_regprocedure('public.fawri_authentication_runtime()'), 'EXECUTE'), false)),
+         ARRAY[]::text[]) AS authentication_marker_reachable_roles,
        COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
          WHERE EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
            WHERE n.nspname='public' AND c.relname=ANY($3::text[]) AND c.relkind IN ('r','p')
@@ -358,6 +367,7 @@ export async function getProductionDatabaseRlsReadiness(
     cashierStaffLockReady: booleanValue(row.cashier_staff_lock_ready),
     cashierApprovalAuthorityReady: booleanValue(row.cashier_approval_authority_ready),
     authenticationAuthorityPresent: booleanValue(row.authentication_authority_present),
+    authenticationMarkerReachableRoles: stringArray(row.authentication_marker_reachable_roles),
     authenticationMutationRoles: stringArray(row.authentication_mutation_roles),
     authenticationSensitiveColumnsPresent: booleanValue(row.authentication_sensitive_columns_present),
     authenticationSensitiveReadRoles: stringArray(row.authentication_sensitive_read_roles),
@@ -473,6 +483,10 @@ export async function assertProductionDatabaseRlsReady(
   if (!readiness.cashierApprovalAuthorityReady) fail("PRODUCTION_CASHIER_APPROVAL_AUTHORITY_REQUIRED", "production requires protected cashier approval mutation capabilities");
   if (!readiness.cashierStaffLockReady) fail("PRODUCTION_CASHIER_STAFF_LOCK_REQUIRED", "production requires the protected cashier approver lock function");
   if (!readiness.authenticationAuthorityPresent) fail("PRODUCTION_AUTH_DATABASE_MIGRATION_REQUIRED", "production requires role-bound authentication migration");
+  if (readiness.authenticationMarkerReachableRoles.length) fail(
+    "PRODUCTION_AUTHENTICATION_MARKER_REACHABLE",
+    "tenant runtime must not invoke or activate the trusted authentication marker",
+  );
   if (readiness.authenticationMutationRoles.length) fail("PRODUCTION_AUTH_MUTATION_AUTHORITY_REACHABLE", "tenant runtime must not reach authentication mutation privileges");
   if (readiness.nonRowPrivilegeRoles.length > 0) {
     fail("PRODUCTION_DATABASE_NONROW_PRIVILEGE_REACHABLE",
