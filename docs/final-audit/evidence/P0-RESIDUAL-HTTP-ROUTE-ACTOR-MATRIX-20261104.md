@@ -42,3 +42,8 @@ Gate `P0-RESIDUAL-MERCHANT-PRIVACY-001/http`: OPEN; release NO-GO. This is a fin
 Reconcile FIELD003 `audit_events` producer metadata/details with `/api/auth/admin/logs` response for `view_logs`-only and `view_merchants`-capable actors. Identify a genuinely missing field cell before adding an actual-app PostgreSQL regression; do not duplicate accepted tests.
 
 Canonical P0 29/45 CLOSED_SOURCE (64.4%), 7 OPEN, 9 BLOCKED; overall percentage uncertified; NO-GO.
+
+## FIELD003 bounded runtime checkpoint — 2026-11-04
+- Commit `ccc0a695f8a4146f732fd536c14e234c4ca07ade` added actual HTTP + disposable PostgreSQL regression `view_logs alone does not expose merchant incident records` in `artifacts/api-server/tests/merchant-management-privacy-http-postgres.integration.test.mjs`.
+- GitHub Actions `P0 management privacy HTTP matrix` run `41758815504`, job `126341301468`: SUCCESS; new subtest `ok 10`; focused suite 16 PASS/0 FAIL, six suites **118 PASS/0 FAIL** (80+16+6+14+1+1); cleanup SUCCESS.
+- This proves one missing incident record boundary. It does **not** settle generic audit metadata/details field policy, all eight tables, hosted acceptance, or FIELD003 as a whole. Gate stays OPEN, P0 29/45, NO-GO.
