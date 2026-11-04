@@ -170,3 +170,48 @@ END $guard$;
 ```
 
 Machine-readable checkpoint: `P0-CLOSURE-REGISTER.json#closurePlan.currentField002IsolatedAclRepair20261104`. No customer row contents, identifiers, passwords or connection strings are recorded here.
+
+## Continuation from 7762938 — role-accurate SQL/HTTP admission blocked (2026-11-04)
+
+**FIELD002 OPEN / no new acceptance condition closed / NO-GO.** Source reviewed: `776293800322fa08d82ce5073afdf33075923b71`, Draft PR #550. The previous ACL repair is accepted and was **not repeated**. This stage executed branch metadata and SELECT-only role/authority admission checks on project `round-fire-18493605`, branch `br-young-hill-b1x9vhlz`, database `neondb` only. No original Neon or Railway calls, database writes, provisioning, deployment or merge occurred.
+
+### Observed prerequisite failure (not a tenant-test PASS)
+- Branch identity matched the approved child of `br-falling-dust-b1km4gix`, nondefault/nonprimary and ready.
+- Baseline: 52 migrations, 28 notifications, 283 audit events; zero transaction scope rows. These counts are an admission snapshot, **not a new fingerprint/invariant proof**.
+- `fawri_staging_rls_runtime` remains NOLOGIN, NOSUPERUSER, NOBYPASSRLS, NOCREATEROLE.
+- `fawri_staging_runtime` remains LOGIN, BYPASSRLS, CREATEROLE, with SET/INHERIT access to `neon_superuser`. It is unsuitable for tenant acceptance.
+- Catalog enumeration across existing roles found **0 restricted LOGIN candidates**, **0 trusted-authentication LOGIN candidates**, **0 tenant LOGIN candidates**, excluding all roles able to SET/USAGE any SUPERUSER/BYPASSRLS/CREATEROLE principal.
+- Both private scope functions are SECURITY DEFINER owned by `neondb_owner`. No ownership change was attempted.
+- Consequently same-tenant allowed, foreign-tenant denied, and revoked-auth denied **SQL and mounted HTTP were NOT RUN**. No product failure was demonstrated, no fix was made, no fresh CI or unit success is claimed.
+
+Reproducible clone-only candidate count (SELECT):
+```sql
+WITH eligible AS (
+ SELECT r.oid,r.rolname FROM pg_roles r
+ WHERE r.rolcanlogin AND NOT(r.rolsuper OR r.rolbypassrls OR r.rolcreaterole)
+ AND NOT EXISTS (
+  SELECT 1 FROM pg_roles p
+  WHERE (p.rolsuper OR p.rolbypassrls OR p.rolcreaterole)
+  AND (pg_has_role(r.oid,p.oid,'SET') OR pg_has_role(r.oid,p.oid,'USAGE'))
+ )
+)
+SELECT count(*) AS restricted_login_candidates,
+ count(*) FILTER (WHERE has_function_privilege(oid,'public.fawri_authentication_runtime()','EXECUTE')) AS trusted_auth_login_candidates,
+ count(*) FILTER (WHERE NOT has_function_privilege(oid,'public.fawri_authentication_runtime()','EXECUTE')) AS tenant_login_candidates
+FROM eligible;
+```
+
+### Existing harness boundary
+Reviewed exact source `artifacts/api-server/tests/helpers/disposable-knowledge-runtime.mjs` and `disposable-authentication-role.mjs`. They require `assertDisposablePostgres`, create separate actual runtime/auth LOGINs, and check real session_user/current_user. They grant CRUD across public tables for a disposable fixture; the auth helper explicitly says **“This is not a hosted grant plan.”** They must not be pointed at this data-bearing clone by bypassing the disposable guard. Connector single-query/transaction calls do not supply the application's two live pg pools; a local application runner with explicitly scoped clone connectivity is also required and was not established in this stage.
+
+### R1/R3 reconciliation: current code takes precedence over old proposal text
+- **R1 source implementation already exists:** current `postgresMerchantNotificationAuthority.ts` has the 12-type field allowlist, own-property type guard, canonical-only unknown records, and owned inspection lifecycle enrichment. Reuse bounded projection/historical HTTP acceptance in `P0-RESIDUAL-HTTP-ROUTE-ACTOR-MATRIX-20261104.md`; do not implement/retest the old candidate again. Older “candidate not implemented” text in the 20261025 producer map is historical and does not describe HEAD. Remaining compatibility/product acceptance and external custom consumers are not inferred approved or verified.
+- **R3 still requires a concrete product scope decision:** eight types have accepted canonical callers; `operational_new_order` has direct-helper evidence without an identified application caller; `subscription_balance_purchase`, `subscription_plan_event`, `subscription_emergency_activated` have legacy/read compatibility. Recommendation remains preserve read compatibility and historical rows without activating unproven producers. This recommendation was **not adopted** in this stage.
+- Existing historical aggregate evidence (28 rows/one merchant, 15 missing source references) is reused within its bounds, not a two-tenant acceptance result.
+
+### Next bounded work and required boundary
+The prerequisite now has concrete evidence: no existing usable LOGIN pair. Before changing roles, prepare and review a **clone-only least-privilege provisioning plan** with exact runtime/auth grants derived from actual mounted notification/session services, membership-reachability checks, cleanup of only run-owned fixtures/roles and preserved original data/ACL/ledger. Do not copy disposable blanket grants, enable the existing NOLOGIN, use the privileged legacy login, modify existing role memberships/owners, or weaken session_user checks. This is a required separate review under the prior checkpoint, not an assertion that the current user withheld ordinary testing authorization. No executable grant plan has yet been accepted.
+
+After provisioning and runner connectivity are available: use two actual restricted LOGIN pools; exercise authenticated A and B owning reads/writes, foreign read/write denial with unchanged peer rows, and revoked session denial at mounted HTTP and its SQL authorization boundary; verify scope binding/transaction cleanup and fixture cleanup. Revoked HTTP session denial must not be misrepresented as database-password revocation or retroactive cancellation of an already issued 3-minute scope.
+
+**Unchanged blockers:** 0052 owner bootstrap; original rollout/role transition/backup approval; R1 compatibility disposition and R3 scope decision. No new register gate or denominator. Known register 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; complete inventory false; P0 percentage unknown.

@@ -18020,7 +18020,7 @@
       ],
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "currentWorkItem": "MATRIX-C08",
-      "nextAction": "Use a role-accurate two-session harness on the isolated clone for authenticated own/foreign/revoked SQL and mounted HTTP; do not enable LOGIN or create/change runtime/issuer roles without a separately reviewed bounded plan. Preserve 0052 and original rollout blockers.",
+      "nextAction": "Prepare and review exact clone-only least-privilege two-LOGIN provisioning/cleanup plan and establish local mounted-app runner connectivity; preserve existing roles, ACL repair, original and Railway.",
       "knownRemainingGates": [
         {
           "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -19048,6 +19048,31 @@
       "completeP0Inventory": false,
       "overallPercentage": null,
       "release": "NO-GO"
+    },
+    "currentField002RoleAccurateAdmission20261104": {
+      "date": "2026-11-04",
+      "sourceReviewed": "776293800322fa08d82ce5073afdf33075923b71",
+      "status": "BLOCKED_NO_ROLE_ACCURATE_LOGIN_PAIR",
+      "evidence": "evidence/P0-FIELD002-ISOLATED-ACL-REPAIR-RUNBOOK-20261104.md",
+      "branch": "br-young-hill-b1x9vhlz",
+      "project": "round-fire-18493605",
+      "aclRepairReusedNotRepeated": true,
+      "restrictedLoginCandidates": 0,
+      "trustedAuthLoginCandidates": 0,
+      "tenantLoginCandidates": 0,
+      "migrations": 52,
+      "notifications": 28,
+      "auditEvents": 283,
+      "scopeRows": 0,
+      "sqlTenantMatrix": "NOT_RUN",
+      "mountedHttpTenantMatrix": "NOT_RUN",
+      "newProductFix": false,
+      "newGateClosed": false,
+      "r1": "Source projection already implemented; compatibility and custom-consumer acceptance unresolved. Old candidate-only wording is historical.",
+      "r3": "Product scope decision remains open; do not activate unproven callers or rewrite legacy history.",
+      "nextAction": "Prepare and review exact clone-only least-privilege two-LOGIN provisioning/cleanup plan and establish local mounted-app runner connectivity; preserve existing roles, ACL repair, original and Railway.",
+      "release": "NO-GO",
+      "overallPercentage": null
     }
   }
 }
