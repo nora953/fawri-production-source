@@ -226,6 +226,88 @@ test("configured runtime readiness blocks eight-table privacy RLS drift on real 
   }
 });
 
+test("real runtime readiness refuses auth-bypass EXECUTE despite eight active RLS policies", { timeout: 60_000 }, async () => {
+  // Destructive fixtures below are permitted ONLY inside the disposable local
+  // PostgreSQL fawri_ci service owned by CI. Never point this test to Neon.
+  const databaseUrl = String(process.env.DATABASE_URL || "").trim();
+  assert.match(databaseUrl, /^postgres(?:ql)?:\/\//i);
+  const parsed = new URL(databaseUrl);
+  assert.ok(["127.0.0.1", "localhost"].includes(parsed.hostname), "local disposable PostgreSQL required");
+  assert.equal(decodeURIComponent(parsed.pathname), "/fawri_ci", "CI-only fawri_ci database required");
+  const restrictedUrl = await restrictedTestDatabaseUrl(databaseUrl);
+  const admin = new pg.Client({ connectionString: databaseUrl });
+  const privacyTables = [
+    "audit_events", "manual_reply_requests", "merchant_admin_notes",
+    "merchant_channel_overrides", "merchant_deletion_requests",
+    "notifications", "order_drafts", "processed_channel_events",
+  ];
+  const createdTables = [];
+  let functionCreated = false;
+  let server;
+  await admin.connect();
+  try {
+    const existing = await admin.query(`
+      SELECT count(*)::int AS existing FROM pg_class
+      WHERE relnamespace = 'public'::regnamespace
+        AND relname = ANY($1::text[])
+    `, [privacyTables]);
+    assert.equal(existing.rows[0].existing, 0, "never alter an existing privacy table");
+    const existingFunction = await admin.query(
+      "SELECT to_regprocedure('public.fawri_authentication_runtime()') AS existing",
+    );
+    assert.equal(existingFunction.rows[0].existing, null, "never replace existing auth function");
+
+    for (const name of privacyTables) {
+      await admin.query(`CREATE TABLE public.${name} (id text PRIMARY KEY)`);
+      createdTables.push(name);
+      await admin.query(`ALTER TABLE public.${name} ENABLE ROW LEVEL SECURITY`);
+      await admin.query(
+        `CREATE POLICY ${name}_disposable_deny_all ON public.${name}
+         FOR ALL TO PUBLIC USING (false) WITH CHECK (false)`,
+      );
+    }
+    server = await startApi(restrictedUrl, {
+      FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_observability_ci_runtime",
+    });
+    const base = `http://127.0.0.1:${server.port}`;
+    const before = await readJson(`${base}/ops/readiness`);
+    assert.equal(before.response.status, 200, "RLS-protected restricted role must be ready");
+    await server.stop();
+    server = undefined;
+
+    await admin.query(`CREATE FUNCTION public.fawri_authentication_runtime()
+      RETURNS boolean LANGUAGE sql STABLE AS 'SELECT true'`);
+    functionCreated = true;
+    await admin.query("REVOKE ALL ON FUNCTION public.fawri_authentication_runtime() FROM PUBLIC");
+    await admin.query(
+      "GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO fawri_observability_ci_runtime",
+    );
+    const capability = await admin.query(`
+      SELECT has_function_privilege('fawri_observability_ci_runtime',
+        'public.fawri_authentication_runtime()', 'EXECUTE') AS granted
+    `);
+    assert.equal(capability.rows[0].granted, true, "real SQL capability grant verified");
+    server = await startApi(restrictedUrl, {
+      FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_observability_ci_runtime",
+    });
+    const blocked = await readJson(`http://127.0.0.1:${server.port}/ops/readiness`);
+    assert.equal(blocked.response.status, 503, "auth bypass must invalidate ready despite 8/8 RLS");
+    assert.equal(blocked.body.status, "not_ready");
+    assert.equal(blocked.body.checks.find(x => x.name === "postgresql_authority")?.status, "down");
+    assert.equal(JSON.stringify(blocked.body).includes(restrictedUrl), false);
+  } finally {
+    if (server) await server.stop();
+    if (functionCreated) {
+      await admin.query("REVOKE ALL ON FUNCTION public.fawri_authentication_runtime() FROM fawri_observability_ci_runtime");
+      await admin.query("DROP FUNCTION public.fawri_authentication_runtime()");
+    }
+    for (const name of createdTables.reverse()) {
+      await admin.query(`DROP TABLE public.${name}`);
+    }
+    await admin.end();
+  }
+});
+
 test("real readiness rejects a login that can SET ROLE into CREATEROLE", { timeout: 30_000 }, async () => {
   // The CI PostgreSQL service is disposable; no real credentials/roles are touched.
   const databaseUrl = String(process.env.DATABASE_URL || "").trim();
