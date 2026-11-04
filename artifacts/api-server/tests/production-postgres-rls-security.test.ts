@@ -35,6 +35,7 @@ function safeRow(overrides: Record<string, unknown> = {}) {
     directory_issuer_present: true,
     operator_authority_roles: [],
     role_name: "fawri_runtime",
+    role_create_role: false,
     session_role_name: "fawri_runtime",
     session_role_superuser: false,
     session_role_bypass_rls: false,
@@ -90,6 +91,18 @@ test("production rejects superuser and BYPASSRLS runtime roles", async () => {
   await rejectsWith(
     "PRODUCTION_DATABASE_RUNTIME_BYPASSRLS_FORBIDDEN",
     safeRow({ role_bypass_rls: true }),
+  );
+});
+
+test("production refuses a CREATEROLE effective role even behind a restricted login", async () => {
+  await rejectsWith(
+    "PRODUCTION_DATABASE_RUNTIME_CREATEROLE_FORBIDDEN",
+    safeRow({
+      role_name: "role_admin_activated",
+      role_create_role: true,
+      session_role_name: "restricted_login",
+      session_role_create_role: false,
+    }),
   );
 });
 
@@ -167,7 +180,7 @@ test("production rejects a session able to activate a privileged role", async ()
 test("production fails closed on absent or malformed role safety booleans", async () => {
   for (const field of [
     "cashier_staff_lock_ready", "cashier_approval_authority_ready", "authentication_sensitive_columns_present", "directory_issuer_present", "role_superuser", "role_bypass_rls", "session_role_superuser",
-    "session_role_bypass_rls", "session_role_create_role",
+    "session_role_bypass_rls", "session_role_create_role", "role_create_role",
   ]) {
     for (const value of [undefined, null, "false", "true", 0, 1, {}, []]) {
       await rejectsWith("PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED", safeRow({ [field]: value }));
@@ -252,4 +265,12 @@ test("cashier discount and attribution tables require tenant RLS",()=>{
 
  test("production requires scoped cashier approval mutation capabilities", async () => {
   await rejectsWith("PRODUCTION_CASHIER_APPROVAL_AUTHORITY_REQUIRED",safeRow({cashier_approval_authority_ready:false}));
+});
+ 
+test("production RLS SQL enumerates activatable and inherited CREATEROLE principals", () => {
+  const source = readFileSync(new URL("../src/services/postgresRuntimeRlsSecurity.ts", import.meta.url), "utf8");
+  assert.match(source, /COALESCE\(\(SELECT rolcreaterole FROM role_state\), TRUE\) AS role_create_role/);
+  const reachabilityChecks = source.match(/\(privileged\.rolsuper OR privileged\.rolbypassrls OR privileged\.rolcreaterole\)/g) || [];
+  assert.equal(reachabilityChecks.length, 2, "both SET and USAGE role reachability must cover CREATEROLE");
+  assert.match(source, /PRODUCTION_DATABASE_RUNTIME_CREATEROLE_FORBIDDEN/);
 });
