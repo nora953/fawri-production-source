@@ -62,6 +62,21 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
   await t.test('both merchants list only own live merchant audience despite foreign query hints',async()=>{
     for(const actor of sessions){const foreign=actor===a?b:a;const r=await req(`/notifications?merchant_id=${foreign.id}&account_id=${owner}&audience=admin`,actor);assert.equal(r.status,200);assert.equal(r.cache,'no-store');assert.deepEqual(r.body.notifications.map(x=>x.id),[`${actor.id}-own`]);assert.equal(r.body.notifications[0].sentinel,`private-${actor.id}-own`);assert.doesNotMatch(JSON.stringify(r.body),new RegExp(foreign.id));}
   });
+  await t.test('forged tenant headers and foreign query hints cannot override authenticated merchant scope',async()=>{
+    const before=await snapshot();
+    for(const actor of sessions){
+      const foreign=actor===a?b:a;
+      const headers={'X-Fawri-Merchant-Id':foreign.id,'X-Merchant-Id':foreign.id,'X-Tenant-Id':foreign.id};
+      const list=await req(`/notifications?merchant_id=${foreign.id}&account_id=${owner}&audience=admin`,actor,'GET',headers);
+      assert.equal(list.status,200);
+      assert.deepEqual(list.body.notifications.map(item=>item.id),[`${actor.id}-own`]);
+      assert.doesNotMatch(JSON.stringify(list.body),new RegExp(foreign.id));
+      const write=await req(`/notifications/${foreign.id}-own/read`,actor,'PATCH',headers);
+      assert.equal(write.status,404);
+      assert.equal(write.body.code,'NOTIFICATION_NOT_FOUND');
+    }
+    assert.deepEqual(await snapshot(),before,'forged tenant headers and query parameters must not change private SQL rows');
+  });
   await t.test('foreign and administrative notification IDs return 404 with unchanged SQL',async()=>{
     const before=await snapshot();
     for(const actor of sessions){const foreign=actor===a?b:a;for(const id of [`${foreign.id}-own`,`${actor.id}-admin`,`${foreign.id}-admin`]){const r=await req(`/notifications/${id}/read`,actor,'PATCH');assert.equal(r.status,404);assert.equal(r.body.code,'NOTIFICATION_NOT_FOUND');assert.doesNotMatch(JSON.stringify(r.body),/sentinel|private-/);}}
