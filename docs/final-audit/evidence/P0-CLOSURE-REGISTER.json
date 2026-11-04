@@ -18020,7 +18020,7 @@
       ],
       "currentGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
       "currentWorkItem": "MATRIX-C08",
-      "nextAction": "Prepare and review exact clone-only least-privilege two-LOGIN provisioning/cleanup plan and establish local mounted-app runner connectivity; preserve existing roles, ACL repair, original and Railway.",
+      "nextAction": "Run fixed-endpoint credential-free connectivity probe from an allowed runner; then build/execute bounded two-LOGIN mounted notification SQL/HTTP harness with catalog-rehearsed least-privilege grants and cleanup. Do not rerun ACL repair or the role-grant rehearsal unless evidence changes.",
       "knownRemainingGates": [
         {
           "gate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
@@ -19070,9 +19070,35 @@
       "newGateClosed": false,
       "r1": "Source projection already implemented; compatibility and custom-consumer acceptance unresolved. Old candidate-only wording is historical.",
       "r3": "Product scope decision remains open; do not activate unproven callers or rewrite legacy history.",
-      "nextAction": "Prepare and review exact clone-only least-privilege two-LOGIN provisioning/cleanup plan and establish local mounted-app runner connectivity; preserve existing roles, ACL repair, original and Railway.",
+      "nextAction": "Run fixed-endpoint credential-free connectivity probe from an allowed runner; then build/execute bounded two-LOGIN mounted notification SQL/HTTP harness with catalog-rehearsed least-privilege grants and cleanup. Do not rerun ACL repair or the role-grant rehearsal unless evidence changes.",
       "release": "NO-GO",
       "overallPercentage": null
+    },
+    "currentField002GrantRehearsal20261104": {
+      "date": "2026-11-04",
+      "sourceReviewed": "e4365a1719b09f09101f3e79c1eb06c702198fcb",
+      "status": "EXACT_ROLE_GRANTS_REHEARSED_AND_ROLLED_BACK_RUNNER_CONNECTIVITY_REQUIRED",
+      "evidence": "evidence/P0-FIELD002-ISOLATED-ACL-REPAIR-RUNBOOK-20261104.md",
+      "sql": "evidence/sql/P0-FIELD002-ISOLATED-ROLE-GRANT-REHEARSAL-20261104.sql",
+      "endpoint": "ep-soft-wildflower-b1i4j4xu",
+      "branch": "br-young-hill-b1x9vhlz",
+      "statements": 17,
+      "expectedException": "FIELD002_ROLE_REHEARSAL_ASSERTIONS_PASSED_EXPECTED_ROLLBACK",
+      "rollbackVerified": true,
+      "remainingProbeRoles": 0,
+      "scopeRows": 0,
+      "roleAndMembershipAndAclFingerprintsUnchanged": true,
+      "realLoginPerformed": false,
+      "tenantSqlMatrix": "NOT_RUN",
+      "mountedHttp": "NOT_RUN",
+      "connectivityProbe": "scripts/check-field002-isolated-connectivity.mjs",
+      "connectivityProbeSyntax": "node --check PASS; actual TLS probe NOT_RUN",
+      "networkBlocker": "Clone endpoint absent from supplied Work network allowlist; no out-of-policy connection attempted",
+      "nextAction": "Run fixed-endpoint credential-free connectivity probe from an allowed runner; then build/execute bounded two-LOGIN mounted notification SQL/HTTP harness with catalog-rehearsed least-privilege grants and cleanup. Do not rerun ACL repair or the role-grant rehearsal unless evidence changes.",
+      "field002Closed": false,
+      "parentGateClosed": false,
+      "overallPercentage": null,
+      "release": "NO-GO"
     }
   }
 }

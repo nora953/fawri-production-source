@@ -215,3 +215,44 @@ The prerequisite now has concrete evidence: no existing usable LOGIN pair. Befor
 After provisioning and runner connectivity are available: use two actual restricted LOGIN pools; exercise authenticated A and B owning reads/writes, foreign read/write denial with unchanged peer rows, and revoked session denial at mounted HTTP and its SQL authorization boundary; verify scope binding/transaction cleanup and fixture cleanup. Revoked HTTP session denial must not be misrepresented as database-password revocation or retroactive cancellation of an already issued 3-minute scope.
 
 **Unchanged blockers:** 0052 owner bootstrap; original rollout/role transition/backup approval; R1 compatibility disposition and R3 scope decision. No new register gate or denominator. Known register 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; complete inventory false; P0 percentage unknown.
+
+## 2026-11-04 — exact least-privilege grant rehearsal passed and fully rolled back
+
+Source baseline `e4365a1719b09f09101f3e79c1eb06c702198fcb`, PR #550. Existing ACL repair reused without repetition. User authorized continuing isolated tenant SQL/HTTP verification; this stage prepared and exercised a **rollback-only provisioning prerequisite** on the same approved clone. No original/Railway calls or deployment/merge.
+
+### Executed, not merely proposed
+The exact [rollback rehearsal SQL](sql/P0-FIELD002-ISOLATED-ROLE-GRANT-REHEARSAL-20261104.sql) was executed as **17 statements in one connector transaction**, explicitly bound to project `round-fire-18493605`, branch `br-young-hill-b1x9vhlz`, endpoint `ep-soft-wildflower-b1i4j4xu`, `neondb`/`neondb_owner`. It creates two temporary-in-transaction LOGIN roles with **NULL passwords** (no credential issued), applies only the listed grants, checks positive privileges and forbidden capabilities/membership reachability, and deliberately raises `FIELD002_ROLE_REHEARSAL_ASSERTIONS_PASSED_EXPECTED_ROLLBACK`. That exact final exception was received. It proves all preceding guards/assertions passed; it is the intended atomic rollback, not a tenant authentication test failure.
+
+Independent SELECT after rollback: **zero probe roles remain**, zero scope rows, 52 migrations and unchanged last migration hash. Before/after role, membership, public/private table-ACL and function-ACL fingerprints match:
+- Roles: `176593ea2b4af8143513190b5f5f8e99`.
+- Memberships: `6f54e4080d1ae60cc365eea4a251a001`.
+- Table ACLs: `940b8fc2d9e22c4b0bd6733cc4fc17ed`.
+- Function ACLs: `20f593db77947c69ebe1a95eab4e3ba5`.
+No application table DML, existing role alteration, function ownership change, default ACL repair or migration occurred. This stage did not rerun historical-row fingerprints.
+
+### Concrete bounded grants derived from actual notification path
+| Principal | Granted in rollback rehearsal | Source need |
+|---|---|---|
+| Tenant | CONNECT neondb; USAGE public/fawri_security; EXECUTE allows_merchant(text) | Real transaction-bound RLS |
+| Tenant | SELECT notifications, subscriptions, subscription_reply_batches, support_inspection_requests; SELECT(id,account_id) merchants | List/read, subscription refresh and owned inspection enrichment |
+| Tenant | INSERT notifications; UPDATE(read_at) notifications | Canonical refresher and own read marker |
+| Tenant | UPDATE(expiry_reminder_sent_at,expired_notification_sent_at,updated_at) subscriptions; UPDATE(expiry_reminder_sent_at) subscription_reply_batches | Existing refresher SELECT FOR UPDATE / exact state flags |
+| Authentication | CONNECT/USAGE as above; EXECUTE authentication marker and issue_scope | Separate validated issuer connection |
+| Authentication | SELECT accounts/merchants; UPDATE(id) accounts; SELECT/INSERT/UPDATE account_sessions | Real merchant lookup; PostgreSQL row lock in lockAccount; issue/validate/rotate/revoke sessions |
+
+`UPDATE(id)` is needed only to authorize the existing `SELECT ... FOR UPDATE` on accounts; the planned session workload never changes IDs. Authentication SELECT includes credential columns used by the existing trusted merchant-account mapper; these are **not** granted to the tenant. No DELETE, TRUNCATE, broad public-table CRUD, private scope-table CRUD, administrative audit issuer, SUPERUSER/BYPASSRLS/CREATEROLE, ownership or outgoing role membership granted. All role grants above rolled back, so no runnable credential pair currently exists.
+
+Source reviewed: `postgresMerchantNotificationAuthority.ts`, `postgresMerchantAccountAuthority.ts`, `authPostgresSessionAuthority.ts`, `authSession.ts`, `merchant-notifications-pg.ts`, `operationalPostgresAuthority.ts`, `authenticationPostgresAuthority.ts`, `tenantTransactionScope.ts`, `tenantScopePostgresBoundary.ts`, `operatorDirectoryPostgresAuthority.ts`. Disposable fixture blanket grants and disposable guard remain untouched.
+
+### Actual remaining execution blocker
+The Work session's supplied network allowlist does **not include** the clone endpoint. The managed network-policy file was absent and no cloud-environment configuration tool was exposed. No out-of-policy TCP connection, tunnel, credential fetch, or workaround was attempted. Connector SQL works, but does not run the local mounted Express app with two persistent pg pools.
+
+Prepared `scripts/check-field002-isolated-connectivity.mjs`: no credentials/SQL/application imports; fixed clone hostname, TCP/5432 PostgreSQL SSLRequest, TLS certificate/hostname verification and ten-second timeout. Local `node --check` passed on Node v24.22.1; **network probe not run here**. Run it from an allowed runner (for example the existing Replit checkout) to establish runner connectivity before issuing any persistent credentials:
+```sh
+node scripts/check-field002-isolated-connectivity.mjs
+```
+Expected connectivity-only result: `FIELD002_CLONE_TLS_OK`. This is not a login, query or HTTP acceptance result. No endpoint override is supported.
+
+Next: establish permitted runner connectivity, then finish a bounded mounted-route harness using these exact grants, random short-lived passwords, synthetic merchants A/B, app-issued/revoked sessions, owned fixture cleanup and post-cleanup baseline verification. Require same-tenant SQL/HTTP success, foreign-denial with no peer side effects, and revoked-session HTTP/SQL authorization denial. No weakening of production/disposable guards; no automatic migrations or production startup. The grants are **catalog-rehearsed**, not yet a fully runtime-validated provisioning recipe.
+
+**Acceptance delta:** exact grant provisioning and atomic rollback feasibility newly verified; **no FIELD002/parent register row closed**. SQL own/foreign/revoked and mounted HTTP still NOT RUN; no new CI or source regression suite claimed. R1 compatibility/custom-consumer acceptance and R3 producer-scope decision remain OPEN; 0052/original rollout remain separate BLOCKED dependencies. Known counts 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; full P0 percentage unknown; **NO-GO**.
