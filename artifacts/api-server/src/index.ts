@@ -23,6 +23,16 @@ if (!Number.isInteger(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+function safeStartupSourceLocation(error: unknown): string {
+  if (!(error instanceof Error)) return "unknown";
+  const frames = String(error.stack || "").split("\n").slice(1);
+  for (const frame of frames) {
+    const match = frame.match(/(?:src|dist)\/([a-zA-Z0-9_./-]+\.(?:ts|js|mjs)):(\d+):(\d+)/);
+    if (match) return match[1] + ":" + match[2];
+  }
+  return "unavailable";
+}
+
 function safeStartupErrorCode(error: unknown): string {
   const raw =
     error && typeof error === "object"
@@ -62,7 +72,7 @@ async function main(): Promise<void> {
         const { startMerchantPhysicalMediaCleanupReconciler } = await import("./services/merchantPhysicalMediaCleanup");
         return { app, startMetaWebhookWorker, startEarlyWarningIncidentMonitor, startMerchantPhysicalMediaCleanupReconciler };
       } catch (error) {
-        logger.error({ importTarget, code: safeStartupErrorCode(error), errorType: error instanceof Error ? error.name : "unknown" }, "Application module import failed");
+        logger.error({ importTarget, code: safeStartupErrorCode(error), errorType: error instanceof Error ? error.name : "unknown", sourceLocation: safeStartupSourceLocation(error) }, "Application module import failed");
         throw error;
       }
     },
