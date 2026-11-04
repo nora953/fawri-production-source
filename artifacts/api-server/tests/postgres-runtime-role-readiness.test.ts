@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertSafePostgresRuntimeRole } from "../src/observability/runtime";
+import { assertSafePostgresRuntimeRole, CRITICAL_POSTGRES_PRIVACY_RLS_TABLES } from "../src/observability/runtime";
 
-const safe = { role_name: "fawri_runtime", is_superuser: false, can_create_role: false, bypass_rls: false, owns_unforced_rls_table: false, session_role_name: "fawri_login", session_is_superuser: false, session_bypass_rls: false, session_can_create_role: false, session_inherits_privileged_role: false, session_can_set_privileged_role: false };
+const safe = { role_name: "fawri_runtime", is_superuser: false, can_create_role: false, bypass_rls: false, owns_unforced_rls_table: false, session_role_name: "fawri_login", session_is_superuser: false, session_bypass_rls: false, session_can_create_role: false, session_inherits_privileged_role: false, session_can_set_privileged_role: false, critical_privacy_rls_ready_count: 8 };
 
 test("readiness accepts a non-owner non-bypass runtime role", () => {
   assert.doesNotThrow(() => assertSafePostgresRuntimeRole(safe));
@@ -72,4 +72,41 @@ test("effective current role cannot carry CREATEROLE even if login is restricted
     session_role_name: "restricted_login",
     session_can_create_role: false,
   }), /POSTGRES_RUNTIME_ROLE_UNSAFE/);
+});
+
+test("privacy RLS inventory includes exactly the eight residual merchant tables", () => {
+  assert.deepEqual([...CRITICAL_POSTGRES_PRIVACY_RLS_TABLES], [
+    "audit_events", "manual_reply_requests", "merchant_admin_notes",
+    "merchant_channel_overrides", "merchant_deletion_requests",
+    "notifications", "order_drafts", "processed_channel_events",
+  ]);
+});
+
+test("configured hosted PostgreSQL role refuses missing RLS or policy on any privacy table", () => {
+  const old = process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+  try {
+    process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = "fawri_runtime";
+    for (const count of [0, 1, 7, 9, undefined, null, "8", NaN]) {
+      assert.throws(
+        () => assertSafePostgresRuntimeRole({ ...safe, critical_privacy_rls_ready_count: count }),
+        /POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY/,
+        "eight validated table-policy pairs required, not just matching role name",
+      );
+    }
+    assert.doesNotThrow(() => assertSafePostgresRuntimeRole(safe));
+  } finally {
+    if (old === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+    else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = old;
+  }
+});
+
+test("no hosted runtime role configuration preserves lightweight local readiness", () => {
+  const old = process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+  try {
+    delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+    assert.doesNotThrow(() => assertSafePostgresRuntimeRole({ ...safe, critical_privacy_rls_ready_count: 0 }));
+  } finally {
+    if (old === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+    else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = old;
+  }
 });
