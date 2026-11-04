@@ -51,23 +51,20 @@ async function main(): Promise<void> {
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
     loadApplication: async () => {
       startupStage = "application_import";
-      const [
-        { default: app },
-        { startMetaWebhookWorker },
-        { startEarlyWarningIncidentMonitor },
-        { startMerchantPhysicalMediaCleanupReconciler },
-      ] = await Promise.all([
-        import("./app"),
-        import("./services/metaWebhookWorker"),
-        import("./services/earlyWarningIncidentMonitor"),
-        import("./services/merchantPhysicalMediaCleanup"),
-      ]);
-      return {
-        app,
-        startMetaWebhookWorker,
-        startEarlyWarningIncidentMonitor,
-        startMerchantPhysicalMediaCleanupReconciler,
-      };
+      let importTarget = "app";
+      try {
+        const { default: app } = await import("./app");
+        importTarget = "meta_worker";
+        const { startMetaWebhookWorker } = await import("./services/metaWebhookWorker");
+        importTarget = "incident_monitor";
+        const { startEarlyWarningIncidentMonitor } = await import("./services/earlyWarningIncidentMonitor");
+        importTarget = "media_cleanup";
+        const { startMerchantPhysicalMediaCleanupReconciler } = await import("./services/merchantPhysicalMediaCleanup");
+        return { app, startMetaWebhookWorker, startEarlyWarningIncidentMonitor, startMerchantPhysicalMediaCleanupReconciler };
+      } catch (error) {
+        logger.error({ importTarget, code: safeStartupErrorCode(error) }, "Application module import failed");
+        throw error;
+      }
     },
   });
   const {
