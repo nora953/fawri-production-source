@@ -65,7 +65,7 @@ async function waitForServer(port, child, output) {
   throw new Error(`API server did not start.\n${output.join("").slice(-4000)}`);
 }
 
-async function startApi(databaseUrl) {
+async function startApi(databaseUrl, extraEnv = {}) {
   const port = await freePort();
   const dataDir = await mkdtemp(path.join(os.tmpdir(), "fawri-observability-"));
   const metricsToken = crypto.randomBytes(32).toString("hex");
@@ -81,6 +81,7 @@ async function startApi(databaseUrl) {
       FAWRI_DISABLE_JOB_WORKERS: "1",
       FAWRI_SERVICE_VERSION: "integration-test",
       FAWRI_OBSERVABILITY_BEARER_TOKEN: metricsToken,
+      ...extraEnv,
     },
     stdio: ["ignore", "pipe", "pipe"],
     detached: process.platform !== "win32",
@@ -201,6 +202,25 @@ test("real app readiness fails closed when PostgreSQL authority is unavailable",
       expectedReadyChecks[1],
     );
     assert.equal(JSON.stringify(readiness.body).includes(unavailableUrl.toString()), false);
+  } finally {
+    await server.stop();
+  }
+});
+
+test("configured runtime readiness blocks eight-table privacy RLS drift on real PostgreSQL", { timeout: 30_000 }, async () => {
+  const databaseUrl = String(process.env.DATABASE_URL || "").trim();
+  assert.match(databaseUrl, /^postgres(?:ql)?:\/\//i);
+  const restrictedUrl = await restrictedTestDatabaseUrl(databaseUrl);
+  const server = await startApi(restrictedUrl, {
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_observability_ci_runtime",
+  });
+  try {
+    const response = await readJson(`http://127.0.0.1:${server.port}/ops/readiness`);
+    assert.equal(response.response.status, 503);
+    assert.equal(response.body.status, "not_ready");
+    const postgresCheck = response.body.checks.find(check => check.name === "postgresql_authority");
+    assert.equal(postgresCheck?.status, "down");
+    assert.equal(JSON.stringify(response.body).includes(restrictedUrl), false);
   } finally {
     await server.stop();
   }
