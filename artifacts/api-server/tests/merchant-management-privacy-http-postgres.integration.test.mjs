@@ -161,6 +161,16 @@ test('management HTTP privacy uses current SQL roles, permissions and session au
     const logs=await req('/admin/logs',manager);assert.equal(logs.status,200);assert.ok(logs.body.logs.some(x=>x.id===r.body.log.id));
     assert.equal((await runtime.runtimePool.query('SELECT id FROM audit_events WHERE id=$1',[r.body.log.id])).rowCount,0);
   });
+  await t.test('view_logs alone does not expose merchant incident records',async()=>{
+    const incidentId='audit-'+randomUUID();
+    await admin.query("INSERT INTO audit_events(id,actor_kind,merchant_id,action_type,entity_type,entity_id,details,metadata,created_at) VALUES($1,'system',$2,'early_warning_incident','early_warning_incident',$2,'private incident','{}'::jsonb,now())",[incidentId,a.id]);
+    const managerLogs=await req('/admin/logs',manager);
+    assert.equal(managerLogs.status,200);
+    assert.ok(!managerLogs.body.logs.some(log=>log.id===incidentId));
+    const ownerLogs=await req('/admin/logs',owner);
+    assert.equal(ownerLogs.status,200);
+    assert.ok(ownerLogs.body.logs.some(log=>log.id===incidentId));
+  });
   await t.test('mixed merchant and admin cookies cannot reach private management actions',async()=>{
     const before=await snapshot();
     for(const actor of [owner,manager]){
