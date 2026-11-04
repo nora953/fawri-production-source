@@ -33,7 +33,7 @@ function safeStartupErrorCode(error: unknown): string {
     : "RUNTIME_PROVIDER_INITIALIZATION_FAILED";
 }
 
-type StartupStage = "runtime_configuration" | "database_rls" | "cashier_storage" | "owner_admin" | "provider_or_application" | "listener";
+type StartupStage = "runtime_configuration" | "database_rls" | "cashier_storage" | "owner_admin" | "provider_initialization" | "application_import" | "listener";
 let startupStage: StartupStage = "runtime_configuration";
 
 async function main(): Promise<void> {
@@ -47,9 +47,10 @@ async function main(): Promise<void> {
   startupStage = "owner_admin";
   await assertProductionOwnerAdminReady(process.env);
 
-  startupStage = "provider_or_application";
+  startupStage = "provider_initialization";
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
     loadApplication: async () => {
+      startupStage = "application_import";
       const [
         { default: app },
         { startMetaWebhookWorker },
