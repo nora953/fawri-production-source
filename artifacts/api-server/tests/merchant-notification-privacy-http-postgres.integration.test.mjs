@@ -134,6 +134,75 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
       await admin.query('DELETE FROM notifications WHERE id=ANY($1::text[])',[insertedIds]);
     }
   });
+  await t.test('seven hosted-observed historical notification types retain canonical HTTP fields without leaking stored extensions',async()=>{
+    // Historical type set was independently observed in read-only Neon staging.
+    // All test rows here are synthetic and stay in disposable CI PostgreSQL.
+    const historical=[
+      {type:'inspection_session_request',visible:{ticket_id:'legacy-ticket',inspection_request_id:'legacy-request'}},
+      {type:'subscription_balance_purchase',visible:{purchased_replies:12,addon_replies_added:7}},
+      {type:'subscription_plan_event',visible:{operation:'upgrade',plan_name:'Gold'}},
+      {type:'subscription_emergency_activated',visible:{emergency_replies_added:20}},
+      {type:'subscription_expired',visible:{plan_name:'Silver',expired_at:'2026-10-01T00:00:00.000Z'}},
+      {type:'subscription_expiry_reminder',visible:{plan_name:'Gold',days_remaining:3}},
+      {type:'support_reply_reminder',visible:{ticket_id:'legacy-support',ticket_subject:'Support request'}},
+    ];
+    const records=historical.map(({type,visible})=>({
+      id:'historical-seven-'+randomUUID(),type,visible,
+      stored:{...visible,internal_note:'historical-only-private-sentinel',
+        id:'forged-identity',type:'forged-type',created_at:'1999-01-01T00:00:00.000Z',
+        read_at:'1999-01-01T00:00:00.000Z',
+        ...(type==='inspection_session_request'?{request_status:'approved',
+          consent_decision:'allow',ended_at:'1999-01-01T00:00:00.000Z'}:{})},
+    }));
+    const ids=records.map(r=>r.id);
+    try{
+      for(const item of records){
+        await admin.query("INSERT INTO notifications(id,audience,merchant_id,account_id,type,title_key,body_key,variables) VALUES($1,'merchant',$2,$2,$3,'synthetic','synthetic',$4::jsonb)",[
+          item.id,b.id,item.type,JSON.stringify(item.stored),
+        ]);
+      }
+      const before=(await admin.query('SELECT id,type,variables,read_at FROM notifications WHERE id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+      assert.equal(before.length,7);
+      const list=await req('/notifications?limit=50',b);
+      assert.equal(list.status,200);
+      for(const item of records){
+        const projected=list.body.notifications.find(row=>row.id===item.id);
+        assert.ok(projected,'historical type missing from merchant HTTP: '+item.type);
+        assert.equal(projected.type,item.type);
+        assert.deepEqual(Object.keys(projected).sort(),
+          ['id','type','created_at',...Object.keys(item.visible)].sort());
+        for(const [key,value] of Object.entries(item.visible))assert.equal(projected[key],value);
+        assert.equal(projected.read_at,undefined,'stored read_at must not forge canonical read state');
+      }
+      assert.doesNotMatch(JSON.stringify(list.body),/historical-only-private-sentinel|forged-identity|forged-type|1999-01-01/);
+      const foreignList=await req('/notifications?limit=50',a);
+      assert.equal(foreignList.status,200);
+      for(const id of ids)assert.equal(foreignList.body.notifications.some(n=>n.id===id),false);
+      for(const item of records){
+        const denied=await req('/notifications/'+encodeURIComponent(item.id)+'/read',a,'PATCH');
+        assert.equal(denied.status,404);
+        assert.equal(denied.body.code,'NOTIFICATION_NOT_FOUND');
+      }
+      const afterDenials=(await admin.query('SELECT id,type,variables,read_at FROM notifications WHERE id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+      assert.deepEqual(afterDenials,before,'foreign read attempts must leave every historical SQL row unchanged');
+      const plan=records.find(r=>r.type==='subscription_plan_event');
+      const accepted=await req('/notifications/'+encodeURIComponent(plan.id)+'/read',b,'PATCH');
+      assert.equal(accepted.status,200);
+      assert.equal(accepted.body.notification.id,plan.id);
+      assert.equal(accepted.body.notification.plan_name,'Gold');
+      assert.ok(accepted.body.notification.read_at);
+      assert.deepEqual(Object.keys(accepted.body.notification).sort(),
+        ['id','type','created_at','read_at','operation','plan_name'].sort());
+      const afterOwn=(await admin.query('SELECT id,type,variables,read_at FROM notifications WHERE id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+      for(let i=0;i<before.length;i++){
+        assert.deepEqual(afterOwn[i].variables,before[i].variables,'stored historical variables must remain immutable');
+        assert.equal(afterOwn[i].read_at===null,before[i].id!==plan.id,
+          'only the selected own notification can change read state');
+      }
+    }finally{
+      await admin.query('DELETE FROM notifications WHERE id=ANY($1::text[])',[ids]);
+    }
+  });
   await t.test('mixed merchant and administrative cookies fail closed for notification reads and writes',async()=>{
     const before=await snapshot();
     for(const actor of sessions){
