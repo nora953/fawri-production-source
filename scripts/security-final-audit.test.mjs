@@ -430,5 +430,5 @@ test("FIELD002 historical documentation exception is one immutable synthetic spa
   }
   const changedUrl = historical.replace("@host", "@real-database.example");
   assert.equal(isKnownHistoricalField002IllustrativeUrl(changedUrl, finding, file, blob), false);
-  assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file.replaceAll("/", "\\\\"), blob), true);
+  assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file.replaceAll("/", String.fromCharCode(92)), blob), true);
 });
