@@ -205,3 +205,47 @@ test("real app readiness fails closed when PostgreSQL authority is unavailable",
     await server.stop();
   }
 });
+
+test("real readiness rejects a login that can SET ROLE into CREATEROLE", { timeout: 30_000 }, async () => {
+  // The CI PostgreSQL service is disposable; no real credentials/roles are touched.
+  const databaseUrl = String(process.env.DATABASE_URL || "").trim();
+  assert.match(databaseUrl, /^postgres(?:ql)?:\/\//i);
+  const restrictedUrl = await restrictedTestDatabaseUrl(databaseUrl);
+  const admin = new pg.Client({ connectionString: databaseUrl });
+  const roleName = "fawri_observability_ci_role_admin";
+  await admin.connect();
+  let server;
+  let provisioned = false;
+  try {
+    await admin.query(`CREATE ROLE ${roleName} NOLOGIN CREATEROLE`);
+    provisioned = true;
+    await admin.query(`GRANT ${roleName} TO fawri_observability_ci_runtime WITH INHERIT FALSE, SET TRUE`);
+    const roleState = await admin.query(`
+      SELECT pg_has_role('fawri_observability_ci_runtime', $1::name, 'SET') AS can_set,
+        (SELECT rolcreaterole FROM pg_roles WHERE rolname=$1::name) AS reachable_create_role,
+        (SELECT rolcreaterole FROM pg_roles WHERE rolname='fawri_observability_ci_runtime') AS login_create_role
+    `, [roleName]);
+    assert.deepEqual(roleState.rows[0], {
+      can_set: true,
+      reachable_create_role: true,
+      login_create_role: false,
+    });
+    server = await startApi(restrictedUrl);
+    const readiness = await readJson(`http://127.0.0.1:${server.port}/ops/readiness`);
+    assert.equal(readiness.response.status, 503);
+    assert.equal(readiness.body.status, "not_ready");
+    const roleCheck = readiness.body.checks.find(item => item.name === "postgresql_authority");
+    assert.equal(roleCheck?.status, "down");
+    assert.equal(JSON.stringify(readiness.body).includes(restrictedUrl), false);
+  } finally {
+    try {
+      if (server) await server.stop();
+    } finally {
+      if (provisioned) {
+        await admin.query(`REVOKE ${roleName} FROM fawri_observability_ci_runtime`);
+        await admin.query(`DROP ROLE ${roleName}`);
+      }
+      await admin.end();
+    }
+  }
+});
