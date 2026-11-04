@@ -113,6 +113,7 @@ export type ProductionDatabaseRlsReadiness = {
   operatorAuthorityRoles: string[];
   roleName: string;
   superuser: boolean;
+  createRole: boolean;
   bypassRls: boolean;
   sessionRoleName: string;
   sessionSuperuser: boolean;
@@ -178,6 +179,7 @@ export async function getProductionDatabaseRlsReadiness(
     operator_authority_roles: string[];
     role_name: string;
     role_superuser: boolean;
+    role_create_role: boolean;
     role_bypass_rls: boolean;
     session_role_name: string;
     session_role_superuser: boolean;
@@ -194,7 +196,7 @@ export async function getProductionDatabaseRlsReadiness(
        SELECT unnest($1::text[]) AS name
      ),
      role_state AS (
-       SELECT oid, rolsuper, rolbypassrls
+       SELECT oid, rolsuper, rolbypassrls, rolcreaterole
          FROM pg_roles
         WHERE rolname = current_user
      ),
@@ -310,12 +312,12 @@ export async function getProductionDatabaseRlsReadiness(
          ARRAY[]::text[]) AS operator_authority_roles,
        COALESCE((SELECT array_agg(privileged.rolname::text ORDER BY privileged.rolname)
          FROM pg_roles privileged
-         WHERE (privileged.rolsuper OR privileged.rolbypassrls)
+         WHERE (privileged.rolsuper OR privileged.rolbypassrls OR privileged.rolcreaterole)
            AND pg_has_role((SELECT oid FROM session_role_state), privileged.oid, 'SET')),
          ARRAY[]::text[]) AS session_reachable_privileged_roles,
        COALESCE((SELECT array_agg(privileged.rolname::text ORDER BY privileged.rolname)
          FROM pg_roles privileged
-         WHERE (privileged.rolsuper OR privileged.rolbypassrls)
+         WHERE (privileged.rolsuper OR privileged.rolbypassrls OR privileged.rolcreaterole)
            AND pg_has_role((SELECT oid FROM session_role_state), privileged.oid, 'USAGE')),
          ARRAY[]::text[]) AS session_inherited_privileged_roles,
        current_user AS role_name,
@@ -326,6 +328,7 @@ export async function getProductionDatabaseRlsReadiness(
        COALESCE((SELECT array_agg(name ORDER BY name) FROM table_state
          WHERE owned_by_session_role), ARRAY[]::text[]) AS session_owned_tables,
        COALESCE((SELECT rolsuper FROM role_state), TRUE) AS role_superuser,
+        COALESCE((SELECT rolcreaterole FROM role_state), TRUE) AS role_create_role,
        COALESCE((SELECT rolbypassrls FROM role_state), TRUE) AS role_bypass_rls,
        COALESCE(
          (SELECT array_agg(name ORDER BY name)
@@ -363,6 +366,7 @@ export async function getProductionDatabaseRlsReadiness(
     operatorAuthorityRoles: stringArray(row.operator_authority_roles),
     roleName: String(row.role_name).trim(),
     superuser: booleanValue(row.role_superuser),
+    createRole: booleanValue(row.role_create_role),
     bypassRls: booleanValue(row.role_bypass_rls),
     sessionRoleName: String(row.session_role_name).trim(),
     sessionSuperuser: booleanValue(row.session_role_superuser),
@@ -409,6 +413,10 @@ export async function assertProductionDatabaseRlsReady(
       "PRODUCTION_DATABASE_RUNTIME_SUPERUSER_FORBIDDEN",
       "production runtime database role must not be a superuser",
     );
+  }
+  if (readiness.createRole) {
+    fail("PRODUCTION_DATABASE_RUNTIME_CREATEROLE_FORBIDDEN",
+      "production runtime effective role must not create or alter database roles");
   }
   if (readiness.bypassRls) {
     fail(
