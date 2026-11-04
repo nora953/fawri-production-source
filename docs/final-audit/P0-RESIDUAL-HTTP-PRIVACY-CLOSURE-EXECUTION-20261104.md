@@ -1,5 +1,17 @@
 # P0 residual merchant HTTP privacy — executable closure checklist (2026-11-04)
 
+## Latest execution checkpoint — isolated Neon migration and FIELD002-R2 verification (2026-11-04)
+
+**Authorization upgraded:** Owner approved an isolated clone of Neon `staging-runtime` for migration rehearsal; parent and production remain strictly unchanged. This supersedes the earlier **read-only only** limitation **on the clone**, not on original environments.
+
+- **Evidence:** [P0-FIELD002-NEON-STAGING-MIGRATION-REHEARSAL-20261104.md](evidence/P0-FIELD002-NEON-STAGING-MIGRATION-REHEARSAL-20261104.md). Project `Fawri-Staging`, parent `br-falling-dust-b1km4gix`; clone `fawri-p0-field002-rehearsal-20261104` / `br-young-hill-b1x9vhlz`.
+- **Executed:** migrations **0028–0051, 24/25**, atomically per source file plus SHA-256 Drizzle ledger; clone **52/53 journal entries match exactly**. Final `0052` rollback occurred because unmodified source requires `SET ROLE fawri_cashier_retirement_owner` but current Neon non-superuser migration role cannot. Temporary role-transfer grant/revoke test also **rolled back** because Neon automatically retains a `cloud_admin`-granted ADMIN membership and the final zero-membership assertion failed. **No lowering of security checks, no 0052 accepted**.
+- **Bounded FIELD002 progress:** eight privacy tables now RLS-enabled **8/8 with policy 8/8 on clone**; source branch **0/8**. All eight affected tables' original data fingerprints match parent exactly (including 28 historical SQL notifications). Authenticated no-tenant **read-only** probe login with `BYPASSRLS=false` saw **0/8 nonempty exposures** (0 rows across all eight); probe roles removed. The test does **not** establish real merchant positive or foreign negative application sessions. Existing `fawri_staging_runtime` login has `BYPASSRLS=true`, and actual deployed credential identity is unverified.
+- **Safety:** original `staging-runtime` still **28 migrations**, unchanged data/policies; no deploy, backup mutation, role/credential changes on original. Clone currently **52 migrations**, 0052 target role/tables absent.
+- **Next technical blocker:** role/owner bootstrap for 0052 must be reproducible in Neon without permanent elevated or member privileges. Then test actual scoped own/foreign/revoked SQL+HTTP and determine service runtime identity before future controlled staging change. FIELD002 and parent privacy gate **OPEN**; canonical register **29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED**; full P0 percent unknown; **NO-GO**. No new CI recorded; prior full source commit `7e138211` CI 59/59 success is separate evidence.
+
+---
+
 Gate: `P0-RESIDUAL-MERCHANT-PRIVACY-001/http`
 Status: OPEN. This is an execution checklist, not closure evidence or approval.
 
