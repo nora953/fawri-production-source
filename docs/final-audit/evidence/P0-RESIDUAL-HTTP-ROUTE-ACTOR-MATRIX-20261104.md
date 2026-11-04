@@ -57,3 +57,8 @@ Canonical P0 29/45 CLOSED_SOURCE (64.4%), 7 OPEN, 9 BLOCKED; overall percentage 
 - Source commit `db117422c6bd2c6b693e721e9f818f1597665f0f` adds `audit metadata is restricted to permitted readers` to actual management HTTP suite.
 - GitHub Actions management matrix run `41760160353`, job `126345695351`: **IN_PROGRESS at observation**, not accepted as PASS. Isolated PostgreSQL engineering run `41760160340`: PENDING at observation.
 - Acceptance condition: confirm test TAP success, zero failures, disposable database cleanup; only then add bounded field evidence. Do not close FIELD003 or the eight-table gate from this test alone.
+
+## FIELD003 audit metadata access regression accepted — 2026-11-04
+- Commit `db117422c6bd2c6b693e721e9f818f1597665f0f`; management HTTP matrix run `41760160353`, job `126345695351` **SUCCESS**.
+- `audit metadata is restricted to permitted readers`: `ok 12`; focused suite **18 PASS, 0 FAIL**. Six suites **120 PASS, 0 FAIL, 0 SKIP** (80+18+6+14+1+1); post-job cleanup observed.
+- Bounded conclusion: permitted log reader sees a synthetic admin-log metadata field; nonpermitted assistants and merchant actor receive HTTP denial. This does **not** establish metadata allowlist/redaction across all audit producers, hosted historical data, or complete FIELD003 closure. Gate remains OPEN and release NO-GO.
