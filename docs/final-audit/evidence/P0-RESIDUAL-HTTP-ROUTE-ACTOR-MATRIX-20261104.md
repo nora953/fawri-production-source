@@ -52,3 +52,8 @@ Canonical P0 29/45 CLOSED_SOURCE (64.4%), 7 OPEN, 9 BLOCKED; overall percentage 
 - Commit `53c15255b041529a5db44d47b253d0c59a1aec04` added mounted HTTP regression `ordinary audit remains readable after merchant incident filtering`.
 - GitHub Actions `P0 management privacy HTTP matrix` run `41759404801`, job `126343235150` SUCCESS: focused suite **17 PASS / 0 FAIL**, six suites **119 PASS / 0 FAIL** (80+17+6+14+1+1). New subtest `ok 11` in logs.
 - This is bounded positive preservation alongside earlier incident exclusion. No claim of generic audit metadata/details policy closure, eight-table acceptance or hosted GO. Gate OPEN; P0 29/45, NO-GO.
+
+## FIELD003 metadata HTTP regression pending CI — 2026-11-04
+- Source commit `db117422c6bd2c6b693e721e9f818f1597665f0f` adds `audit metadata is restricted to permitted readers` to actual management HTTP suite.
+- GitHub Actions management matrix run `41760160353`, job `126345695351`: **IN_PROGRESS at observation**, not accepted as PASS. Isolated PostgreSQL engineering run `41760160340`: PENDING at observation.
+- Acceptance condition: confirm test TAP success, zero failures, disposable database cleanup; only then add bounded field evidence. Do not close FIELD003 or the eight-table gate from this test alone.
