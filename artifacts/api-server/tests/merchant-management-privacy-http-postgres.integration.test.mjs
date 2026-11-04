@@ -177,6 +177,18 @@ test('management HTTP privacy uses current SQL roles, permissions and session au
     assert.ok(Array.isArray(response.body.logs));
     assert.ok(response.body.logs.some(log=>log.action_type==='note_saved'));
   });
+  await t.test('audit metadata is restricted to permitted readers',async()=>{
+    const record=await req('/admin/logs',manager,'POST',{merchant_id:a.id,action_type:'plan_activated',details:'test-audit-field',meta:{source:'privacy-regression'}});
+    assert.equal(record.status,201);
+    const permitted=await req('/admin/logs',manager);
+    assert.equal(permitted.status,200);
+    assert.ok(permitted.body.logs.some(row=>row.id===record.body.log.id && row.meta?.source==='privacy-regression'));
+    for(const actor of [denied,channelOnly,a]){
+      const deniedResponse=await req('/admin/logs',actor);
+      assert.equal(deniedResponse.status,actor.kind==='merchant'?401:403);
+      assert.doesNotMatch(JSON.stringify(deniedResponse.body),/privacy-regression/);
+    }
+  });
   await t.test('mixed merchant and admin cookies cannot reach private management actions',async()=>{
     const before=await snapshot();
     for(const actor of [owner,manager]){
