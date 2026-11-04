@@ -223,7 +223,7 @@ test('notification HTTP privacy isolates tenant and administrative audiences on 
       assert.equal(accepted.body.notification.plan_name,'Gold');
       assert.ok(accepted.body.notification.read_at);
       assert.deepEqual(Object.keys(accepted.body.notification).sort(),
-        ['id','type','created_at','read_at','operation','plan_name'].sort());
+        ['id','type','created_at','read_at',...Object.keys(plan.visible)].sort());
       const afterOwn=(await admin.query('SELECT id,type,variables,read_at FROM notifications WHERE id=ANY($1::text[]) ORDER BY id',[ids])).rows;
       for(let i=0;i<before.length;i++){
         assert.deepEqual(afterOwn[i].variables,before[i].variables,'stored historical variables must remain immutable');
