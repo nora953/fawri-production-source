@@ -251,6 +251,37 @@ export async function refreshSubscriptionNotificationsPostgres(
   });
 }
 
+// FIELD002: Only display fields declared for each notification type. Stored
+// variables remain unchanged and may contain older or external writer keys.
+// Unknown types keep canonical identity fields so callers can reject them.
+const NOTIFICATION_RESPONSE_VARIABLE_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  "subscription_expiry_reminder": ["plan_name","expires_at","days_remaining"],
+  "subscription_expired": ["plan_name","expired_at","addon_replies_remaining"],
+  "addon_expiry_reminder": ["addon_batch_id","source","remaining_replies","expires_at","days_remaining"],
+  "operational_new_order": ["order_id","action_url","conversation_id"],
+  "operational_payment_conflict": ["order_id","action_url","conversation_id","provider"],
+  "operational_knowledge_gap": ["training_request_id","action_url","conversation_id"],
+  "operational_customer_message": ["conversation_id","action_url"],
+  "inspection_session_request": ["ticket_id","inspection_request_id","ticket_subject","admin_name","mode","request_expires_at","action_url","request_status","consent_decision","responded_at","session_expires_at","ended_at","end_reason"],
+  "support_reply_reminder": ["ticket_id","ticket_subject","action_url"],
+  "subscription_balance_purchase": ["purchased_replies","emergency_debt_paid","addon_replies_added","emergency_debt_remaining","base_replies_remaining","emergency_replies_remaining","addon_replies_remaining","total_replies_available","addon_batch_id","addon_batch_expires_at"],
+  "subscription_plan_event": ["operation","plan_name","start_date","expires_at","emergency_debt_paid","emergency_debt_remaining","base_replies_remaining","addon_replies_remaining","total_replies_available","previous_plan_name"],
+  "subscription_emergency_activated": ["addon_batch_id","emergency_replies_added","emergency_debt","expires_at"],
+};
+
+function projectNotificationResponseFields(notification: Record<string, unknown>): Record<string, unknown> {
+  const projected: Record<string, unknown> = {
+    id: notification.id,
+    type: notification.type,
+    created_at: notification.created_at,
+  };
+  if (Object.hasOwn(notification, "read_at")) projected.read_at = notification.read_at;
+  for (const key of NOTIFICATION_RESPONSE_VARIABLE_FIELDS[String(notification.type)] || []) {
+    if (Object.hasOwn(notification, key)) projected[key] = notification[key];
+  }
+  return projected;
+}
+
 function mapNotification(row: {
   id: string;
   type: string;
@@ -307,7 +338,7 @@ async function mapNotificationRows(
   const byId = new Map(requests.rows.map(request => [request.id, request]));
   return rows.map(row => {
     const mapped = mapNotification(row);
-    if (row.type !== "inspection_session_request") return mapped;
+    if (row.type !== "inspection_session_request") return projectNotificationResponseFields(mapped);
     const variables = record(row.variables);
     // Lifecycle keys are authoritative even if historical variables contain
     // stale values. Unlinked/legacy rows are not assigned a fabricated status.
@@ -315,8 +346,8 @@ async function mapNotificationRows(
     for (const key of ["request_status", "consent_decision", "responded_at", "session_expires_at", "ended_at", "end_reason"]) delete projected[key];
     const request = row.source_entity_type === "support_inspection_request"
       ? byId.get(text(row.source_entity_id)) : undefined;
-    if (!request || variables.inspection_request_id !== request.id || variables.ticket_id !== request.ticket_id) return projected;
-    return {
+    if (!request || variables.inspection_request_id !== request.id || variables.ticket_id !== request.ticket_id) return projectNotificationResponseFields(projected);
+    return projectNotificationResponseFields({
       ...projected,
       request_status: request.status,
       ...(request.consent_decision ? { consent_decision: request.consent_decision } : {}),
@@ -324,7 +355,7 @@ async function mapNotificationRows(
       ...(iso(request.session_expires_at) ? { session_expires_at: iso(request.session_expires_at) } : {}),
       ...(iso(request.ended_at) ? { ended_at: iso(request.ended_at) } : {}),
       ...(request.end_reason ? { end_reason: request.end_reason } : {}),
-    };
+    });
   });
 }
 
