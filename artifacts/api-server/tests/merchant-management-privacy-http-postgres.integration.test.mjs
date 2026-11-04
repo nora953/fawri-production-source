@@ -173,6 +173,26 @@ test('management HTTP privacy uses current SQL roles, permissions and session au
     }
     assert.deepEqual(await snapshot(),before,'mixed-role cookies must not mutate private SQL rows');
   });
+  await t.test('forged owner role and permission headers cannot elevate an assistant or merchant',async()=>{
+    const before=await snapshot();
+    const forged={'X-Fawri-Admin-Role':'owner_admin','X-Admin-Role':'owner_admin','X-Fawri-Permissions':'manage_merchant_status,view_logs,manage_subscriptions','X-Merchant-Id':a.id};
+    for(const actor of [denied,channelOnly,a]){
+      for(const route of [
+        {path:`/merchants/${a.id}/note`,method:'GET'},
+        {path:`/merchants/${a.id}/note`,method:'PUT',body:{note:'forged-owner-write'}},
+        {path:'/admin/logs',method:'GET'},
+        {path:'/admin/local-data-migration',method:'POST',body:{notes:{[a.id]:'forged-owner-import'}}},
+        {path:`/admin/deletion-requests/${requestB.id}/reject`,method:'POST'},
+      ]){
+        const response=await req(route.path,actor,route.method,route.body,forged);
+        assert.equal(response.status,actor.kind==='merchant'?401:403,`${actor.kind} ${route.method} ${route.path}`);
+        assert.equal(response.body.ok,false);
+        assert.doesNotMatch(JSON.stringify(response.body),/private-note-|private-deletion-/);
+      }
+    }
+    assert.deepEqual(await snapshot(),before,'forged identity and permission headers must not mutate merchant management rows');
+    assert.equal((await req(`/merchants/${a.id}/note`,owner)).status,200,'legitimate owner access remains available');
+  });
   await t.test('wrong device and forbidden origin deny without mutations',async()=>{
     const before=await snapshot();
     assert.equal((await req(`/merchants/${a.id}/note`,owner,'GET',undefined,{'X-Fawri-Device-Id':'wrong'})).status,401);
