@@ -35,3 +35,20 @@
 ## Next independent action
 
 Reconcile source-linked and legacy source-less notification frontend behavior against **supported product policy**, and verify actual deployed DB role/branch before any controlled hosted acceptance. Continue privacy actor/alternate-route coverage without duplicating already proven two-merchant SQL/HTTP cases. No original Neon changes or PR merge without separate explicit authorization.
+
+## Exact committed hosted read-only static client-shape check — 2026-11-04
+
+- **Reusable query:** [P0-FIELD002-HOSTED-HISTORICAL-STATIC-FRONTEND-READONLY-20261104.sql](sql/P0-FIELD002-HOSTED-HISTORICAL-STATIC-FRONTEND-READONLY-20261104.sql), committed SQL blob SHA **`482e1d128841ee4ce6c34921a269f6e63467fbe1`**, source commit **`c0d7cbc28e26c65cdc56f1f71c6bc6ea01dc4923`**. The **exact committed SQL text** was fetched from GitHub and executed against **both** the original Neon `staging-runtime` and isolated clone with SELECT only. There were no SELECT-returned private values, IDs or merchant details.
+- The query applies bounded, server-side static checks mirroring frontend type constraints for all **seven** observed types: required JSON number/string types, optional key types, parseable PostgreSQL timestamps, lower-case valid plan names, supported plan operations, supported inspection modes, strictly relative safe action paths, and canonical ID/SQL timestamp presence. Inspection checks additionally join `support_inspection_requests` by actual request ID, merchant and ticket; reject invalid status/decision/end-reason enums. The query is **not an execution of JavaScript `Date` parsing or the actual React/client validator on hosted row objects**, and cannot infer deployed application behavior from SQL alone.
+- **Results on original branch (28/28):**
+  - `inspection_session_request` **11/11 passed**, source-linked and status-enum checks included.
+  - `subscription_balance_purchase` **9/9 passed**.
+  - `subscription_plan_event` **3/3 passed**.
+  - `subscription_emergency_activated` **2/2 passed**.
+  - `subscription_expired` **1/1 passed**.
+  - `subscription_expiry_reminder` **1/1 passed**.
+  - `support_reply_reminder` **1/1 passed**.
+  - **Total: 28 passed, 0 failed**, reproduced identically by executing the same committed query on isolated clone.
+- Source branch rechecked immediately afterwards: **28 applied migrations, 28 notifications, 283 audit events**, no original writes or deployments. Isolated clone remained at 52/53 migrations; 0052 blocked.
+- Separate **real app + real frontend validator proof** of synthetic historical shapes: [P0 notification privacy HTTP matrix run 41811476341](https://github.com/nora953/fawri-production-source/actions/runs/41811476341) **11/11 parent tests passed**. Verified all **59/59** GitHub Actions workflows SUCCESS on code commit `e778a5c5ba8f95ef6b477ae6c11487705bcc1340`.
+- **Interpretation:** historical structural compatibility `FIELD002-R2` advanced with genuine hosted aggregate checks. **NOT full R2 closure**: missing provenance for 15 source references, external/custom clients, actual Railway database identity and two-merchant staged scoped operations remain unknown; not all eight privacy tables' complete actor/field matrix has been accepted. The historical dataset consists of **one merchant**, therefore no hosted cross-merchant denial can be claimed from these SQL aggregates. No historical row was rewritten, remapped or deleted. FIELD002 OPEN; known 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; release NO-GO.
