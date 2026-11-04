@@ -276,7 +276,13 @@ function projectNotificationResponseFields(notification: Record<string, unknown>
     created_at: notification.created_at,
   };
   if (Object.hasOwn(notification, "read_at")) projected.read_at = notification.read_at;
-  for (const key of NOTIFICATION_RESPONSE_VARIABLE_FIELDS[String(notification.type)] || []) {
+  // Historical notification types can match inherited object names such as
+  // constructor, __proto__ or toString; only own type contracts are allowed.
+  const notificationType = String(notification.type);
+  const allowedFields = Object.hasOwn(NOTIFICATION_RESPONSE_VARIABLE_FIELDS, notificationType)
+    ? NOTIFICATION_RESPONSE_VARIABLE_FIELDS[notificationType]
+    : [];
+  for (const key of allowedFields) {
     if (Object.hasOwn(notification, key)) projected[key] = notification[key];
   }
   return projected;
