@@ -41,8 +41,13 @@ export function assertSafePostgresRuntimeRole(row: {
   session_role_name?: unknown; session_is_superuser?: unknown; session_bypass_rls?: unknown;
   session_can_create_role?: unknown; session_inherits_privileged_role?: unknown;
   session_can_set_privileged_role?: unknown;
+  effective_has_authentication_runtime?: unknown;
+  effective_has_admin_directory_authority?: unknown;
+  session_has_authentication_runtime?: unknown;
+  session_has_admin_directory_authority?: unknown;
+  session_can_set_sensitive_function_role?: unknown;
 } | undefined): void {
-  if (!row || typeof row.role_name !== "string" || !row.role_name.trim() || row.is_superuser !== false || row.can_create_role !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false || typeof row.session_role_name !== "string" || !row.session_role_name.trim() || row.session_is_superuser !== false || row.session_bypass_rls !== false || row.session_can_create_role !== false || row.session_inherits_privileged_role !== false || row.session_can_set_privileged_role !== false) {
+  if (!row || typeof row.role_name !== "string" || !row.role_name.trim() || row.is_superuser !== false || row.can_create_role !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false || typeof row.session_role_name !== "string" || !row.session_role_name.trim() || row.session_is_superuser !== false || row.session_bypass_rls !== false || row.session_can_create_role !== false || row.session_inherits_privileged_role !== false || row.session_can_set_privileged_role !== false || row.effective_has_authentication_runtime !== false || row.effective_has_admin_directory_authority !== false || row.session_has_authentication_runtime !== false || row.session_has_admin_directory_authority !== false || row.session_can_set_sensitive_function_role !== false) {
     throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
   }
   assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
@@ -78,6 +83,31 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
           WHERE (privileged.rolsuper OR privileged.rolbypassrls OR privileged.rolcreaterole)
             AND pg_has_role(session_role.oid, privileged.oid, 'SET')
         ) AS session_can_set_privileged_role,
+        -- Trusted authentication and operator capabilities permit cross-merchant
+        -- access under some RLS policies. A tenant runtime must not hold them
+        -- directly, inherit them, or activate a role that can invoke them.
+        COALESCE(has_function_privilege(r.oid,
+          to_regprocedure('public.fawri_authentication_runtime()'), 'EXECUTE'), false)
+            AS effective_has_authentication_runtime,
+        COALESCE(has_function_privilege(r.oid,
+          to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)'), 'EXECUTE'), false)
+            AS effective_has_admin_directory_authority,
+        COALESCE(has_function_privilege(session_role.oid,
+          to_regprocedure('public.fawri_authentication_runtime()'), 'EXECUTE'), false)
+            AS session_has_authentication_runtime,
+        COALESCE(has_function_privilege(session_role.oid,
+          to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)'), 'EXECUTE'), false)
+            AS session_has_admin_directory_authority,
+        EXISTS (
+          SELECT 1 FROM pg_roles reachable
+          WHERE pg_has_role(session_role.oid, reachable.oid, 'SET')
+            AND (
+              COALESCE(has_function_privilege(reachable.oid,
+                to_regprocedure('public.fawri_authentication_runtime()'), 'EXECUTE'), false)
+              OR COALESCE(has_function_privilege(reachable.oid,
+                to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)'), 'EXECUTE'), false)
+            )
+        ) AS session_can_set_sensitive_function_role,
         EXISTS (
           SELECT 1 FROM pg_class c
           JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -98,6 +128,9 @@ export function createPostgresAuthorityReadinessCheck(): ReadinessCheck {
       const row = result.rows[0] as {
         role_name?: unknown; is_superuser?: unknown; can_create_role?: unknown; critical_privacy_rls_ready_count?: unknown;
         bypass_rls?: unknown; owns_unforced_rls_table?: unknown;
+        effective_has_authentication_runtime?: unknown; effective_has_admin_directory_authority?: unknown;
+        session_has_authentication_runtime?: unknown; session_has_admin_directory_authority?: unknown;
+        session_can_set_sensitive_function_role?: unknown;
       } | undefined;
       assertSafePostgresRuntimeRole(row);
     },
