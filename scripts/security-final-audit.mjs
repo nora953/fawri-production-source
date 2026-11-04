@@ -306,6 +306,26 @@ export function isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPa
     finding.rule === "credential-url" && finding.index === 2607 && finding.length === 54;
 }
 
+
+ // A 2026-11-04 FIELD002 documentation revision briefly contained a generic
+ // illustrative connection URL, without any real credential or endpoint.
+ // Its immutable historical Git blob remains reachable even after the current
+ // file was corrected. Recognize only that exact synthetic substring at its
+ // precise position in that one immutable blob, never other URLs or findings.
+ const FIELD002_ILLUSTRATIVE_CONNECTION = [
+   "postgresql://role:", "password", "@host",
+ ].join("");
+ export function isKnownHistoricalField002IllustrativeUrl(text, finding, objectPath, objectId) {
+   if (objectId !== "ed0250ab4e829f4317b189f3a1696c3940d3b42b" ||
+       normalizeRepositoryPath(objectPath) !==
+         "docs/final-audit/evidence/P0-FIELD002-RAILWAY-NEON-LIVE-ENDPOINT-CORRELATION-20261104.md" ||
+       finding.rule !== "credential-url" ||
+       finding.index !== 13302 ||
+       finding.length !== 31) return false;
+   return String(text).slice(finding.index, finding.index + finding.length) ===
+     FIELD002_ILLUSTRATIVE_CONNECTION;
+ }
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -385,7 +405,8 @@ function scanHistory(root) {
         isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId) ||
         isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId) ||
         isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId) ||
-        isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId)
+        isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalField002IllustrativeUrl(objectText, finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,
