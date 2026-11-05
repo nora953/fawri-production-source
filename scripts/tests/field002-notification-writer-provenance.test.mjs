@@ -103,3 +103,25 @@ test('FIELD002-R2 all generic SQL notification writers require complete source r
   }
   assert.match(at('services/postgresSupportInspectionAuthority.ts'),/['"]support_inspection_request['"]\s*,\s*\$4/);
 });
+
+test('FIELD002-R1 retired support notification reader cannot bypass canonical projection',()=>{
+  const oldAuthority=at('services/postgresSupportAuthority.ts');
+  const retired=/\b(?:listMerchantNotificationsPostgres|markMerchantNotificationReadPostgres|markAllMerchantNotificationsReadPostgres)\b/g;
+  const refs=files.filter(file=>file.path!=='services/postgresSupportAuthority.ts')
+    .flatMap(file=>[...file.source.matchAll(retired)].map(hit=>({path:file.path,name:hit[0]})));
+  assert.deepEqual(refs,[],'retired unfiltered notification reader regained an API import/call');
+  assert.match(oldAuthority,/\.\.\.record\(row\.variables\)/,'retired loose mapper must be removed or reviewed if refactored');
+  const secureRouter=at('routes/auth-security.ts');
+  const canonical=at('routes/merchant-notifications-pg.ts');
+  const support=at('routes/auth-support-postgres-routes.ts');
+  const canonicalMount=secureRouter.indexOf('router.use(merchantNotificationsPgRouter');
+  const supportMount=secureRouter.indexOf('router.use(supportPostgresRoutes');
+  assert.ok(canonicalMount>=0 && supportMount>canonicalMount,'canonical notification router must precede support routes');
+  for(const route of [canonical,support]) {
+    assert.match(route,/listMerchantNotificationsPostgresCanonical/);
+    assert.match(route,/markMerchantNotificationReadPostgresCanonical/);
+    assert.doesNotMatch(route,/\b(?:listMerchantNotificationsPostgres|markMerchantNotificationReadPostgres|markAllMerchantNotificationsReadPostgres)\b/);
+  }
+  assert.match(canonical,/router\.use\(postgresOnly\)/);
+  assert.match(canonical,/requireSecureMerchantSession/);
+});
