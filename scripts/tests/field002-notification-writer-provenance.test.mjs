@@ -3,6 +3,8 @@ import {readFileSync, readdirSync} from 'node:fs';
 import {join, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import test from 'node:test';
+import {validatePlanForWrite} from '../../lib/db/scripts/lib/migration-write.mjs';
+import {validateCutoverPlanForWrite} from '../../lib/db/scripts/cutover-migration.mjs';
 
 // FIELD002-R2 static source inventory. This does NOT attribute historical
 // PostgreSQL rows to a particular deployed writer or external SQL client.
@@ -124,4 +126,19 @@ test('FIELD002-R1 retired support notification reader cannot bypass canonical pr
   }
   assert.match(canonical,/router\.use\(postgresOnly\)/);
   assert.match(canonical,/requireSecureMerchantSession/);
+});
+
+test('FIELD002-R2 live cutover and disposable writer refuse unapproved historical notification imports',()=>{
+  const report={
+    ok:true,
+    write_readiness:{ok:true},
+    rows:{notifications:[{id:'synthetic-historical-notification'}]},
+    planned_row_count:1,
+    source_lineage:[{target_table:'notifications',target_record_id:'synthetic-historical-notification'}],
+    source_lineage_sha256:'a'.repeat(64),
+  };
+  const snapshot={tables:{'public.notifications':{}}};
+  for(const validator of [validatePlanForWrite,validateCutoverPlanForWrite]){
+    assert.throws(()=>validator(report,snapshot),/FIELD002_R2_NOTIFICATION_IMPORT_REQUIRES_SEPARATE_PROVENANCE_APPROVAL/,validator.name);
+  }
 });

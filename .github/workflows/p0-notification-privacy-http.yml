@@ -13,6 +13,8 @@ on:
       - 'artifacts/fawri/src/lib/merchantNotificationsAuthority.ts'
       - 'artifacts/api-server/src/**'
       - 'scripts/tests/field002-notification-writer-provenance.test.mjs'
+      - 'lib/db/scripts/cutover-migration.mjs'
+      - 'lib/db/scripts/lib/migration-write.mjs'
       - 'artifacts/api-server/tests/field002-notification-source-reference.test.ts'
       - 'docs/final-audit/evidence/sql/P0-FIELD002-LEGACY-ID-FINGERPRINT-READONLY-20261105.sql'
       - 'artifacts/fawri/tests/merchant-notifications-authority-client.test.ts'
