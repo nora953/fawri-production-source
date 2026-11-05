@@ -19099,6 +19099,17 @@
       "parentGateClosed": false,
       "overallPercentage": null,
       "release": "NO-GO"
+    },
+    "currentField002Runtime20261105": {
+      "head": "b2922cfd7f5e3df1accab00fc7336d7da9a8bf87",
+      "checkout": "fdd274e8c832c2c8e6e8afbfa6c584ba96141309",
+      "identicalSourceTree": "267deaffd4264b2f040c6e8656058a3662ef90ff",
+      "disposableSqlJob": 127129502515,
+      "disposableHttpJob": 127129502920,
+      "hostedAcceptance": false,
+      "gateClosed": false,
+      "nextAction": "Run the pinned clone-only Replit harness and verify cleanup. Resolve R1 custom-consumer compatibility, R2 historical provenance/disposition and R3 producer scope.",
+      "evidence": "docs/final-audit/evidence/P0-FIELD002-ISOLATED-TWO-PRINCIPAL-SQL-20261105.md"
     }
   }
 }
