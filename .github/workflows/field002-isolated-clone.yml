@@ -30,5 +30,35 @@ jobs:
           FAWRI_FIELD002_CLONE_ADMIN_URL: ${{ secrets.FAWRI_FIELD002_CLONE_ADMIN_URL }}
         run: |
           set -euo pipefail
-          test -n "$FAWRI_FIELD002_CLONE_ADMIN_URL" || { echo 'FIELD002_CLONE_SECRET_MISSING'; exit 1; }
-          pnpm exec tsx artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs --execute
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          import {CLONE_HOST,parseCloneAdminUrl} from './scripts/lib/field002-isolated-acceptance-plan.mjs';
+          function prepare(raw) {
+            let text = (raw || '').trim();
+            if (!text) throw Error('MISSING');
+            // Accept the single quoted URL copied from Neon's psql snippet; never invoke a shell.
+            const quoted = /^(?:psql\s+)?(['"])(postgres(?:ql)?:\/\/[^\s'"]+)\1$/.exec(text);
+            if (quoted) text = quoted[2];
+            let url;
+            try { url = new URL(text); } catch { throw Error('FORMAT'); }
+            if (!['postgresql:', 'postgres:'].includes(url.protocol)) throw Error('FORMAT');
+            const pooled = CLONE_HOST.replace('.', '-pooler.');
+            if (![CLONE_HOST, pooled].includes(url.hostname)) throw Error('WRONG_ENDPOINT');
+            if (url.username !== 'neondb_owner') throw Error('WRONG_ROLE');
+            if (url.pathname !== '/neondb') throw Error('WRONG_DATABASE');
+            if (!url.password || /^(?:\*+|<password>|\[password\])$/i.test(decodeURIComponent(url.password))) throw Error('PASSWORD_MISSING');
+            url.hostname = CLONE_HOST;
+            parseCloneAdminUrl(url.href);
+            return url.href;
+          }
+          let connection;
+          try { connection = prepare(process.env.FAWRI_FIELD002_CLONE_ADMIN_URL); }
+          catch (err) {
+            const codes = ['MISSING','FORMAT','WRONG_ENDPOINT','WRONG_ROLE','WRONG_DATABASE','PASSWORD_MISSING'];
+            console.error('FIELD002_INPUT_' + (codes.includes(err.message) ? err.message : 'OPTIONS_OR_ENCODING'));
+            process.exit(1);
+          }
+          process.env.FAWRI_FIELD002_CLONE_ADMIN_URL = connection;
+          const result = spawnSync('pnpm',['exec','tsx','artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs','--execute'],{stdio:'inherit'});
+          process.exit(result.status ?? 1);
+          NODE
