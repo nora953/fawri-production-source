@@ -14,6 +14,7 @@ import {
   isKnownHistoricalEntrypointFenceFixture,
   isKnownHistoricalFreshRoleRecoveryFenceFixture,
   isKnownHistoricalField002IllustrativeUrl,
+  isKnownHistoricalField002SyntheticBuilderFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -431,4 +432,28 @@ test("FIELD002 historical documentation exception is one immutable synthetic spa
   const changedUrl = historical.replace("@host", "@real-database.example");
   assert.equal(isKnownHistoricalField002IllustrativeUrl(changedUrl, finding, file, blob), false);
   assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file.replaceAll("/", String.fromCharCode(92)), blob), true);
+});
+
+test("FIELD002 synthetic connection builder historical findings are strictly pinned", () => {
+  const file = "scripts/tests/field002-isolated-acceptance-plan.test.mjs";
+  const fragment = ["postgresql://neondb_owner:", "encoded%40fixture", "@'"].join("");
+  const pairs = [
+    ["d739b637f04a36187727eed4714ea29958b27919", 280],
+    ["03acd56b7185a1be6b7ab0e3e4b0b997997009cc", 280],
+    ["65f004befa5e5d6c8e4c8cbf8f3d6777d5aeaef8", 255],
+  ];
+  for(const [blob,index] of pairs){
+    const content = " ".repeat(index) + fragment + " + CLONE_HOST;";
+    const matches = findSensitiveText(content, {includePrivateData:false,includeAssignments:false});
+    assert.deepEqual(matches, [{rule:"credential-url",index,length:45}]);
+    const finding=matches[0];
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,finding,file,blob),true);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,finding,file,"0".repeat(40)),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,finding,"scripts/tests/another.test.mjs",blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,{...finding,index:index+1},file,blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,{...finding,length:46},file,blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,{...finding,rule:"private-key"},file,blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content.replace("fixture","production"),finding,file,blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content.replace("@'", "@actual-host.example"),finding,file,blob),false);
+  }
 });

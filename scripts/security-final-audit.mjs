@@ -326,6 +326,31 @@ export function isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPa
      FIELD002_ILLUSTRATIVE_CONNECTION;
  }
 
+// These three immutable FIELD002 test blobs contained a deliberately fake
+// password fragment in a SOURCE-STRING BUILDER. The apparent credential URL
+// ends at a quote; the hostname was concatenated separately, never committed
+// as a credential-bearing URL. The test now builds the fixture at runtime.
+// Pin exact blob/path/regex-span and synthetic substring; all other findings
+// remain reportable, including real URLs or any future modified file.
+const FIELD002_SYNTHETIC_URL_FRAGMENT = [
+  "postgresql://neondb_owner:", "encoded%40fixture", "@'",
+].join("");
+export function isKnownHistoricalField002SyntheticBuilderFixture(text, finding, objectPath, objectId) {
+  if (normalizeRepositoryPath(objectPath) !==
+      "scripts/tests/field002-isolated-acceptance-plan.test.mjs" ||
+      finding.rule !== "credential-url") return false;
+  const locations = {
+    "d739b637f04a36187727eed4714ea29958b27919": [280, 45],
+    "03acd56b7185a1be6b7ab0e3e4b0b997997009cc": [280, 45],
+    "65f004befa5e5d6c8e4c8cbf8f3d6777d5aeaef8": [255, 45],
+  };
+  const expected = locations[objectId];
+  return !!expected && finding.index === expected[0] &&
+    finding.length === expected[1] &&
+    String(text).slice(finding.index, finding.index + finding.length) ===
+      FIELD002_SYNTHETIC_URL_FRAGMENT;
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -406,7 +431,8 @@ function scanHistory(root) {
         isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId) ||
         isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId) ||
         isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) ||
-        isKnownHistoricalField002IllustrativeUrl(objectText, finding, objectPath, objectId)
+        isKnownHistoricalField002IllustrativeUrl(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalField002SyntheticBuilderFixture(objectText, finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,
