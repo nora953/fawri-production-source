@@ -44,6 +44,8 @@ jobs:
             if (!['postgresql:', 'postgres:'].includes(url.protocol)) throw Error('FORMAT');
             const pooled = CLONE_HOST.replace('.', '-pooler.');
             if (![CLONE_HOST, pooled].includes(url.hostname)) throw Error('WRONG_ENDPOINT');
+            if (url.username === 'fawri_staging_runtime') throw Error('STAGING_RUNTIME_SELECTED');
+            if (url.username === 'fawri_staging_rls_runtime') throw Error('RLS_RUNTIME_SELECTED');
             if (url.username !== 'neondb_owner') throw Error('WRONG_ROLE');
             if (url.pathname !== '/neondb') throw Error('WRONG_DATABASE');
             if (!url.password || /^(?:\*+|<password>|\[password\])$/i.test(decodeURIComponent(url.password))) throw Error('PASSWORD_MISSING');
@@ -54,7 +56,7 @@ jobs:
           let connection;
           try { connection = prepare(process.env.FAWRI_FIELD002_CLONE_ADMIN_URL); }
           catch (err) {
-            const codes = ['MISSING','FORMAT','WRONG_ENDPOINT','WRONG_ROLE','WRONG_DATABASE','PASSWORD_MISSING'];
+            const codes = ['MISSING','FORMAT','WRONG_ENDPOINT','WRONG_ROLE','STAGING_RUNTIME_SELECTED','RLS_RUNTIME_SELECTED','WRONG_DATABASE','PASSWORD_MISSING'];
             console.error('FIELD002_INPUT_' + (codes.includes(err.message) ? err.message : 'OPTIONS_OR_ENCODING'));
             process.exit(1);
           }
