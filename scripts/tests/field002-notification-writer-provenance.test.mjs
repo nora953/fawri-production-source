@@ -1,0 +1,69 @@
+import assert from 'node:assert/strict';
+import {readFileSync, readdirSync} from 'node:fs';
+import {join, relative} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import test from 'node:test';
+
+// FIELD002-R2 static source inventory. This does NOT attribute historical
+// PostgreSQL rows to a particular deployed writer or external SQL client.
+const sourceRoot=fileURLToPath(new URL('../../artifacts/api-server/src/',import.meta.url));
+
+function listSourceFiles(directory) {
+  return readdirSync(directory,{withFileTypes:true}).flatMap(entry=>{
+    const full=join(directory,entry.name);
+    if(entry.isDirectory())return listSourceFiles(full);
+    return entry.isFile() && /\.(?:ts|tsx|js|mjs)$/.test(entry.name) ? [full] : [];
+  });
+}
+
+const files=listSourceFiles(sourceRoot).map(full=>({
+  path:relative(sourceRoot,full).replaceAll('\\','/'),
+  source:readFileSync(full,'utf8'),
+})).sort((a,b)=>a.path.localeCompare(b.path));
+
+function at(path) {
+  const found=files.find(file=>file.path===path);
+  assert.ok(found,'required SQL writer/route absent: '+path);
+  return found.source;
+}
+
+test('FIELD002-R2 enumerates every literal notification INSERT in current API source',()=>{
+  const results=[];
+  const orm=[];
+  for(const file of files){
+    // Include quoted/schema-qualified targets and multiline SQL literals.
+    const literal=[...file.source.matchAll(/\bINSERT\s+INTO\s+(?:"?public"?\s*\.\s*)?"?notifications"?\s*\(/gi)];
+    if(literal.length)results.push({path:file.path,count:literal.length});
+    if(/\.insert\s*\(\s*(?:\w+\.)?notifications\s*\)/i.test(file.source))orm.push(file.path);
+  }
+  assert.deepEqual(results.map(x=>x.path),[
+    'services/postgresMerchantNotificationAuthority.ts',
+    'services/postgresOperationalNotificationAuthority.ts',
+    'services/postgresSupportAuthority.ts',
+    'services/postgresSupportInspectionAuthority.ts',
+    'services/postgresSupportLifecycleAuthority.ts',
+  ].sort(), 'new or retired notification SQL INSERT site requires R2 review');
+  for(const hit of results)assert.equal(hit.count,1,'multiple notification INSERT sites in '+hit.path);
+  assert.deepEqual(orm,[],'new notifications ORM writer requires explicit R2 review');
+});
+
+test('FIELD002-R2 obsolete support SQL notification entrypoints have no active source references',()=>{
+  const obsolete=/\b(?:createInspectionRequestPostgres|refreshSupportLifecyclePostgres)\b/g;
+  const refs=files.filter(file=>file.path!=='services/postgresSupportAuthority.ts')
+    .flatMap(file=>[...file.source.matchAll(obsolete)].map(match=>({path:file.path,symbol:match[0]})));
+  assert.deepEqual(refs,[],'legacy support SQL notification helper regained a caller/import');
+  assert.match(at('routes/auth-support-postgres-routes.ts'),/\bcreateInspectionRequestCanonicalPostgres\s*\(/);
+  assert.match(at('routes/auth-support-postgres-routes.ts'),/\brefreshSupportLifecyclePostgresCanonical\s*\(/);
+  assert.match(at('routes/auth-support-admin-lifecycle-postgres-routes.ts'),/\brefreshSupportLifecyclePostgresCanonical\s*\(/);
+  assert.match(at('services/postgresSupportInspectionAuthority.ts'),/\bINSERT\s+INTO\s+notifications\s*\(/i);
+  assert.match(at('services/postgresSupportLifecycleAuthority.ts'),/\bINSERT\s+INTO\s+notifications\s*\(/i);
+});
+
+test('FIELD002-R2 source audit excludes route and test fixture writers from invented historical provenance',()=>{
+  const policy=JSON.parse(readFileSync(new URL('../../docs/final-audit/evidence/P0-FIELD002-APPROVED-NOTIFICATION-POLICY-20261105.json',import.meta.url),'utf8'));
+  assert.equal(policy.R2.historicalRows,'PRESERVE_UNCHANGED_DURING_SOURCE_REVIEW');
+  assert.equal(policy.R2.missingLinks,'DO_NOT_INVENT_RELATIONS_OR_BACKFILL_WITHOUT_PROVENANCE');
+  assert.equal(policy.R2.retention,'SEPARATE_LEGAL_BUSINESS_REVIEW_REQUIRED');
+  assert.equal(policy.release.field002,'OPEN');
+  assert.equal(policy.release.p0,'NO_GO');
+});
