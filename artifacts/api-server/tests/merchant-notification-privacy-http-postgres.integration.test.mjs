@@ -8,6 +8,36 @@ import {cleanupResources} from './helpers/cleanup-resources.mjs';
 
 await assertDisposablePostgres();
 
+test('FIELD002 approved product policy matches client compatibility and SQL producer scope', () => {
+  const policy=JSON.parse(readFileSync(new URL('../../../docs/final-audit/evidence/P0-FIELD002-APPROVED-NOTIFICATION-POLICY-20261105.json',import.meta.url),'utf8'));
+  const manifest=JSON.parse(readFileSync(new URL('../../../docs/final-audit/evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json',import.meta.url),'utf8'));
+  const client=readFileSync(new URL('../../fawri/src/lib/merchantNotificationsAuthority.ts',import.meta.url),'utf8');
+  const order=readFileSync(new URL('../src/routes/order-operations.ts',import.meta.url),'utf8');
+  const committed=readFileSync(new URL('../src/services/postgresOnlineOrderFulfillmentCommit.ts',import.meta.url),'utf8');
+  const pgSubscriptions=readFileSync(new URL('../src/services/postgresSubscriptionEntitlement.ts',import.meta.url),'utf8');
+  const reviewed=manifest.responseFieldContract.types.map(x=>x.type);
+  assert.equal(policy.approvedBy,'product_owner_in_current_conversation');
+  assert.equal(policy.R1.responseFields,'EXPLICIT_REVIEWED_12_TYPE_ALLOWLIST');
+  assert.deepEqual(policy.R1.reviewedTypes.sort(),reviewed.sort());
+  const match=client.match(/const SUPPORTED_MERCHANT_NOTIFICATION_TYPES = new Set\(\[\n([\s\S]*?)\n\]\);/);
+  assert.ok(match,'client supported-type list needs an explicit review if refactored');
+  assert.deepEqual(JSON.parse('['+match[1].replace(/,\s*$/,'')+']').sort(),reviewed.sort());
+  assert.match(client,/isSafeUnknownNotificationMetadata\(candidate\)/);
+  assert.match(client,/Object\.keys\(candidate\)\.every\(key => UNKNOWN_NOTIFICATION_METADATA_KEYS\.has\(key\)\)/);
+  assert.equal(policy.R2.historicalRows,'PRESERVE_UNCHANGED_DURING_SOURCE_REVIEW');
+  assert.equal(policy.R2.retention,'SEPARATE_LEGAL_BUSINESS_REVIEW_REQUIRED');
+  assert.deepEqual(policy.R3.legacyNotificationTypes.sort(),['subscription_balance_purchase','subscription_emergency_activated','subscription_plan_event']);
+  assert.equal(policy.R3.legacyPolicy,'READ_COMPATIBILITY_ONLY_NO_NEW_CANONICAL_POSTGRES_NOTIFICATION_WRITER');
+  assert.equal(policy.R3.newOrderNotification,'DEFERRED_NO_NEW_APPLICATION_CALLER');
+  assert.doesNotMatch(order,/\bnotifyMerchantNewOrderPostgres\b/);
+  assert.doesNotMatch(committed,/\bnotifyMerchantNewOrderPostgres\b/);
+  assert.doesNotMatch(pgSubscriptions,/INSERT\s+INTO\s+(?:public\.)?notifications\b/i);
+  assert.equal(policy.release.field002,'OPEN');
+  assert.equal(policy.release.p0,'NO_GO');
+});
+
+
+
 test('FIELD002 three legacy subscription notification writers remain behind PostgreSQL cutover', () => {
   const load = relative => readFileSync(new URL('../src/' + relative,import.meta.url),'utf8');
   const legacyFunctions=load('routes/authRuntimePart3.ts');

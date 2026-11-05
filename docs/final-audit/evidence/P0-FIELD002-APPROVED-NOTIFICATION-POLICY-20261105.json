@@ -1,0 +1,67 @@
+{
+  "policyId": "FAWRI_FIELD002_NOTIFICATION_POLICY_20261105",
+  "version": 1,
+  "approvedBy": "product_owner_in_current_conversation",
+  "approvedOn": "2026-11-05",
+  "appliesTo": "postgresql_required_notification_authority",
+  "R1": {
+    "status": "PRODUCT_APPROVED_WITH_BOUNDED_SOURCE_AND_HTTP_EVIDENCE",
+    "responseFields": "EXPLICIT_REVIEWED_12_TYPE_ALLOWLIST",
+    "unknownTypes": "CANONICAL_METADATA_ONLY_ON_SERVER_SKIP_IN_CLIENT_WHEN_SAFE",
+    "malformedKnownTypes": "CLIENT_FAIL_CLOSED",
+    "unknownWithExtraFields": "CLIENT_FAIL_CLOSED",
+    "historicalStorage": "NO_AUTOMATIC_REWRITE",
+    "breakingConsumerChanges": "REQUIRE_COMPATIBILITY_TESTS_AND_VERSIONED_API_WHEN_NEEDED",
+    "reviewedTypes": [
+      "subscription_expiry_reminder",
+      "subscription_expired",
+      "addon_expiry_reminder",
+      "operational_new_order",
+      "operational_payment_conflict",
+      "operational_knowledge_gap",
+      "operational_customer_message",
+      "inspection_session_request",
+      "support_reply_reminder",
+      "subscription_balance_purchase",
+      "subscription_plan_event",
+      "subscription_emergency_activated"
+    ]
+  },
+  "R2": {
+    "status": "PRESERVATION_APPROVED_PROVENANCE_INCOMPLETE",
+    "historicalRows": "PRESERVE_UNCHANGED_DURING_SOURCE_REVIEW",
+    "missingLinks": "DO_NOT_INVENT_RELATIONS_OR_BACKFILL_WITHOUT_PROVENANCE",
+    "unverifiedWriters": "NO_AUTOMATIC_DELETE_QUARANTINE_OR_REPAIR",
+    "retention": "SEPARATE_LEGAL_BUSINESS_REVIEW_REQUIRED",
+    "historicCountIsSnapshotNotInventoryGuarantee": true,
+    "historicalRowSnapshot": 28,
+    "missingCompleteSourceRefSnapshot": 15
+  },
+  "R3": {
+    "status": "PRODUCT_SCOPE_APPROVED_RUNTIME_ACTIVATION_NOT_APPROVED",
+    "legacyNotificationTypes": [
+      "subscription_balance_purchase",
+      "subscription_plan_event",
+      "subscription_emergency_activated"
+    ],
+    "legacyPolicy": "READ_COMPATIBILITY_ONLY_NO_NEW_CANONICAL_POSTGRES_NOTIFICATION_WRITER",
+    "markReadPolicy": "EXISTING_AUTHORIZED_MARK_AS_READ_REMAINS_ALLOWED",
+    "legacyJsonPaths": "RETIRED_IN_POSTGRES_REQUIRED_MODE",
+    "newOrderNotification": "DEFERRED_NO_NEW_APPLICATION_CALLER",
+    "newOrderActivationRequirements": [
+      "verified_order_commit_source",
+      "deduplication_and_replay",
+      "two_tenant_isolation",
+      "failure_rollback",
+      "product_explicit_activation"
+    ]
+  },
+  "release": {
+    "field002": "OPEN",
+    "migration0052": "BLOCKED",
+    "p0": "NO_GO",
+    "originalNeonTouched": false,
+    "railwayTouched": false,
+    "deploymentOrMergeApproved": false
+  }
+}
