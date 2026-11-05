@@ -45,3 +45,11 @@ test('snapshot fingerprints PostgreSQL sequences as scalar state, without losing
   ]) assert.throws(() => snapshotObjectStatement(object,0),/FIELD002_SNAPSHOT_OBJECT_REJECTED/);
   assert.throws(() => snapshotObjectStatement({nspname:'public',relname:'notifications',relkind:'r'},-1),/FIELD002_SNAPSHOT_OBJECT_REJECTED/);
 });
+
+test('clone preflight refuses competing active or transactional backends while tolerating parked autocommit sessions', () => {
+  const source=readFileSync(new URL('../../artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs',import.meta.url),'utf8');
+  assert.match(source,/state IS DISTINCT FROM 'idle'/);
+  assert.match(source,/backend_xid IS NOT NULL OR backend_xmin IS NOT NULL/);
+  assert.match(source,/pg_try_advisory_lock\(20261104,2002\)/);
+  assert.match(source,/assert\.deepEqual\(after, baseline/);
+});

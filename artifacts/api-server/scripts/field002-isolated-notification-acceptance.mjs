@@ -79,7 +79,11 @@ async function run() {
   async function noOtherClients(allowRoles = []) {
     const r = await admin.query(`SELECT count(*)::int AS count FROM pg_stat_activity
       WHERE datname=current_database() AND pid<>pg_backend_pid() AND backend_type='client backend'
-      AND NOT(usename::text=ANY($1::text[]))`, [allowRoles]);
+      AND NOT(usename::text=ANY($1::text[]))
+      -- Ignore only parked autocommit clients with no transaction snapshot.
+      -- Active queries, idle-in-transaction, aborted transactions, and null
+      -- state still reject the clone rehearsal before any fixture mutation.
+      AND (state IS DISTINCT FROM 'idle' OR backend_xid IS NOT NULL OR backend_xmin IS NOT NULL)`, [allowRoles]);
     assert.equal(r.rows[0].count, 0, 'unrelated client present');
   }
   async function snapshot() {
