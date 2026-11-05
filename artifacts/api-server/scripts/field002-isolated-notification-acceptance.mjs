@@ -7,14 +7,13 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { CLONE_HOST, CLONE_BRANCH, LEDGER_HASH, parseCloneAdminUrl,
-  compileRehearsedGrants, restrictedUrl } from '../../../scripts/lib/field002-isolated-acceptance-plan.mjs';
+  compileRehearsedGrants, restrictedUrl, snapshotObjectStatement } from '../../../scripts/lib/field002-isolated-acceptance-plan.mjs';
 
 // Explicit hosted harness. Never imports or weakens assertDisposablePostgres.
 // It mounts the actual notification router and actual session middleware only;
 // it does not boot workers, providers, production startup, or migrations.
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const require = createRequire(new URL('../package.json', import.meta.url));
-const quote = value => '"' + value.replaceAll('"', '""') + '"';
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 const mode = process.argv[2];
@@ -89,9 +88,7 @@ async function run() {
       ORDER BY n.nspname,c.relname`)).rows;
     assert.ok(objects.length > 8 && objects.length < 300);
     // Values stay in PostgreSQL; only row counts and deterministic digests leave it.
-    const statements = objects.map((o, i) => `SELECT ${i}::int AS ordinal,count(*)::text AS count,
-      md5(coalesce(string_agg(md5(to_jsonb(t)::text),'' ORDER BY md5(to_jsonb(t)::text)),'')) AS hash
-      FROM ${quote(o.nspname)}.${quote(o.relname)} t`);
+    const statements = objects.map((o, i) => snapshotObjectStatement(o, i));
     const data = (await admin.query(statements.join(' UNION ALL ') + ' ORDER BY ordinal')).rows;
     // Expand defaults: GRANT then REVOKE can turn NULL into an equivalent ACL.
     // Compare semantic ACLs, not their nullable on-disk representation.

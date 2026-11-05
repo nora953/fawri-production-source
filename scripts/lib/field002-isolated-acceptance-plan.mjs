@@ -54,3 +54,26 @@ export function restrictedUrl(role, password) {
   url.searchParams.set('sslmode', 'verify-full');
   return url.toString();
 }
+
+/**
+ * Snapshot catalogued tables and sequences without treating a PostgreSQL
+ * sequence (relkind S) as a composite table row (SQLSTATE 42809).
+ * Keep the sequence state in the same deterministic row-count/hash comparison.
+ */
+export function snapshotObjectStatement(object, ordinal) {
+  const { nspname, relname, relkind } = object ?? {};
+  if (!['public', 'fawri_security', 'drizzle'].includes(nspname) ||
+      !['r', 'p', 'S'].includes(relkind) ||
+      typeof relname !== 'string' || !relname || relname.length > 63 ||
+      !Number.isSafeInteger(ordinal) || ordinal < 0 || ordinal >= 300) {
+    throw Error('FIELD002_SNAPSHOT_OBJECT_REJECTED');
+  }
+  const q = name => '"' + name.replaceAll('"', '""') + '"';
+  const row = relkind === 'S'
+    ? "jsonb_build_object('last_value',t.last_value,'log_cnt',t.log_cnt,'is_called',t.is_called)"
+    : 'to_jsonb(t)';
+  const hash = `md5(${row}::text)`;
+  return `SELECT ${ordinal}::int AS ordinal,count(*)::text AS count,
+    md5(coalesce(string_agg(${hash},'' ORDER BY ${hash}),'')) AS hash
+    FROM ${q(nspname)}.${q(relname)} t`;
+}
