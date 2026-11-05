@@ -8,6 +8,55 @@ import {cleanupResources} from './helpers/cleanup-resources.mjs';
 
 await assertDisposablePostgres();
 
+test('FIELD002 three legacy subscription notification writers remain behind PostgreSQL cutover', () => {
+  const load = relative => readFileSync(new URL('../src/' + relative,import.meta.url),'utf8');
+  const legacyFunctions=load('routes/authRuntimePart3.ts');
+  const legacyPart1=load('routes/authRoutesPart1.ts');
+  const legacyPart3=load('routes/authRoutesPart3.ts');
+  const subscription=load('routes/subscription-entitlement-pg.ts');
+  const secureRouter=load('routes/auth-security.ts');
+  const app=load('app.ts');
+  const gate=load('middleware/legacyProductionFallbackGuard.ts');
+
+  const writers=[
+    ['subscription_balance_purchase','appendMerchantBalanceNotification',legacyPart3],
+    ['subscription_plan_event','appendMerchantSubscriptionPlanNotification',legacyPart3],
+    ['subscription_emergency_activated','appendMerchantEmergencyActivationNotification',legacyPart1],
+  ];
+  for(const [type,fn,routeSource] of writers){
+    assert.match(legacyFunctions,new RegExp('export function '+fn+'\\s*\\('),
+      type+': the legacy AuthDb producer is not proven');
+    assert.match(legacyFunctions,new RegExp('type: ["\\x27]'+type+'["\\x27]'),
+      type+': the legacy event-to-writer mapping changed');
+    assert.match(routeSource,new RegExp('\\b'+fn+'\\s*\\('),
+      type+': the old JSON route callsite changed; inspect policy before accepting');
+  }
+
+  // In PostgreSQL-required mode the actual secure authority must own all
+  // three corresponding endpoint paths before the legacy AuthDb router.
+  assert.match(subscription,/router\.use\(postgresOnly\)/);
+  assert.match(subscription,/!subscriptionPostgresAuthorityRequired\(\)/);
+  assert.match(subscription,/router\.post\(\s*"\/subscription\/emergency"/);
+  assert.match(subscription,/activateEmergencyCreditPostgres\(/);
+  assert.match(subscription,/router\.put\(\s*"\/merchants\/:id\/subscription"/);
+  assert.match(subscription,/applySubscriptionPlanOperationPostgres\(/);
+  assert.match(subscription,/router\.patch\(\s*"\/merchants\/:id\/subscription"/);
+  assert.match(subscription,/applySubscriptionActionPostgres\(/);
+  const pgMount=secureRouter.indexOf('router.use(subscriptionEntitlementPgRouter');
+  const publicMount=secureRouter.indexOf('router.use(publicRoutes');
+  assert.ok(pgMount>=0 && pgMount<publicMount,'PostgreSQL subscription routes must precede public fallback');
+  const securityMount=app.indexOf('app.use("/api/auth", authSecurityRouter)');
+  const fallbackGate=app.indexOf('app.use(enforceLegacyAuthProductionCutoverGate);');
+  const legacyMount=app.indexOf('app.use("/api", router);');
+  assert.ok(securityMount>=0 && securityMount<fallbackGate && fallbackGate<legacyMount,
+    'PG security router and last-resort legacy auth fence must precede JSON routes');
+  assert.match(gate,/if \(!operationalPostgresAuthorityRequired\(\)\)/);
+  assert.match(gate,/pathname\.startsWith\("\/api\/auth\/"\)/);
+  assert.match(gate,/res\.status\(410\)/);
+  assert.match(gate,/LEGACY_AUTH_ROUTE_RETIRED/);
+});
+
+
 // FIELD002 source regression: review an intentional type/field policy change
 // rather than silently drifting away from the previously reviewed contract.
 // This is a source/disposable test, not historical writer or policy sign-off.
