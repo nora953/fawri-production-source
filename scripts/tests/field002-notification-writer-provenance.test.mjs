@@ -67,3 +67,22 @@ test('FIELD002-R2 source audit excludes route and test fixture writers from inve
   assert.equal(policy.release.field002,'OPEN');
   assert.equal(policy.release.p0,'NO_GO');
 });
+
+test('FIELD002-R2 legacy ID fingerprint compatibility and read-only evidence stay bounded',()=>{
+  const legacy=at('routes/authRuntimePart1.ts');
+  const writers=at('routes/authRuntimePart3.ts');
+  const canonical=at('services/postgresMerchantNotificationAuthority.ts');
+  const sql=readFileSync(new URL('../../docs/final-audit/evidence/sql/P0-FIELD002-LEGACY-ID-FINGERPRINT-READONLY-20261105.sql',import.meta.url),'utf8');
+  assert.match(legacy,/export function makeId\(prefix: string\): string/);
+  assert.match(legacy,/Date\.now\(\)/);
+  assert.match(legacy,/Math\.random\(\)\.toString\(36\)\.slice\(2, 8\)/);
+  assert.ok(writers.includes('id: makeId("merchant-notification")'));
+  assert.ok(canonical.includes('return `notification-'));
+  assert.match(canonical,/createHash\("sha256"\)/);
+  assert.ok(sql.includes("^merchant-notification-([0-9]{13})-[a-z0-9]{6}$"));
+  assert.ok(sql.includes("^notification-[0-9a-f]{64}$"));
+  assert.ok(sql.includes('seconds_from_embedded_timestamp <= 5'));
+  assert.ok(sql.includes('GROUP BY type'));
+  assert.doesNotMatch(sql,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|ALTER|DROP|CREATE)\b/i);
+  assert.doesNotMatch(sql,/SELECT\s+(?:\*|id\b|merchant_id\b)/i);
+});

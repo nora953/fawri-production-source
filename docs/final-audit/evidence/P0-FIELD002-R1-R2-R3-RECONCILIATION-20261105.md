@@ -67,3 +67,7 @@ The product owner explicitly approved the adjusted four-part policy in the conve
 ## 2026-11-05 — FIELD002-R2 isolated clone source linkage and SQL writer audit
 
 [Detailed bounded writer inventory, 15 null-source reference proof and exact read-only SQL](P0-FIELD002-R2-SQL-WRITER-REACHABILITY-20261105.md). This adds a source-only regression check guarding five known SQL INSERT sites and obsolete support helper reachability. No historical writer was attributed without provenance; R2 remains OPEN for external/deployed writer evidence and separate retention decision.
+
+### 2026-11-05 — legacy-format fingerprint correlation
+
+[Historical R2 SQL-only cohort proof](P0-FIELD002-R2-SQL-WRITER-REACHABILITY-20261105.md#2026-11-05--historical-legacy-id-fingerprint-new-bounded-evidence): 27/28 notices match historical AuthDb six-base36 ID format and 5-second timestamp relationship. All 15 unlinked rows match that legacy format, 1 row has canonical SHA-256 form. Format correlation does NOT certify historical SQL writer, import mechanism or deployment provenance. No historical data changed; R2 remains OPEN.
