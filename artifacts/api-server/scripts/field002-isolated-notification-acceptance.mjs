@@ -64,6 +64,7 @@ async function run() {
   process.once('SIGINT', onSignal); process.once('SIGTERM', onSignal);
   const deadline = setTimeout(onSignal, 10 * 60 * 1000);
   const ensureRunning = () => { if (abort.signal.aborted) throw Error('FIELD002_INTERRUPTED'); };
+  const markStage = name => { report.stage = name; save(); console.log('FIELD002_STAGE', name); };
   async function check(name, work) {
     ensureRunning(); report.stage = name; save();
     try { await work(); report.tests.push({ name, result: 'PASS' }); }
@@ -82,6 +83,7 @@ async function run() {
     assert.equal(r.rows[0].count, 0, 'unrelated client present');
   }
   async function snapshot() {
+    markStage('preflight_snapshot_catalog');
     const objects = (await admin.query(`SELECT n.nspname,c.relname,c.relkind
       FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
       WHERE n.nspname IN ('public','fawri_security','drizzle') AND c.relkind IN ('r','p','S')
@@ -89,9 +91,11 @@ async function run() {
     assert.ok(objects.length > 8 && objects.length < 300);
     // Values stay in PostgreSQL; only row counts and deterministic digests leave it.
     const statements = objects.map((o, i) => snapshotObjectStatement(o, i));
+    markStage('preflight_snapshot_data');
     const data = (await admin.query(statements.join(' UNION ALL ') + ' ORDER BY ordinal')).rows;
     // Expand defaults: GRANT then REVOKE can turn NULL into an equivalent ACL.
     // Compare semantic ACLs, not their nullable on-disk representation.
+    markStage('preflight_snapshot_security');
     const security = (await admin.query(`WITH objects AS (
       SELECT 'relation:'||c.oid AS id,coalesce(c.relacl,acldefault(CASE WHEN c.relkind='S' THEN 'S'::"char" ELSE 'r'::"char" END,c.relowner)) AS acl
       FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','fawri_security','drizzle')
@@ -111,25 +115,31 @@ async function run() {
   try {
     await admin.connect(); connected = true;
     await admin.query("SET timezone='UTC'");
+    markStage('preflight_exclusive_lock');
     const lock = await admin.query('SELECT pg_try_advisory_lock(20261104,2002) AS locked');
     assert.equal(lock.rows[0].locked, true);
+    markStage('preflight_no_other_clients');
     await noOtherClients();
+    markStage('preflight_ledger_fingerprint');
     const b = (await admin.query(`SELECT current_database() AS db,session_user::text AS login,current_user::text AS active,
       (SELECT count(*)::int FROM drizzle.__drizzle_migrations) AS ledger,
       (SELECT hash FROM drizzle.__drizzle_migrations ORDER BY created_at DESC LIMIT 1) AS last_hash,
       (SELECT count(*)::int FROM notifications) AS notices,(SELECT count(*)::int FROM audit_events) AS audits,
       (SELECT count(*)::int FROM fawri_security.transaction_scopes) AS scopes`)).rows[0];
     assert.deepEqual(b, { db: 'neondb', login: 'neondb_owner', active: 'neondb_owner', ledger: 52, last_hash: LEDGER_HASH, notices: 28, audits: 283, scopes: 0 });
+    markStage('preflight_eight_rls_tables');
     const privacy = (await admin.query(`SELECT count(*)::int AS count FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
       WHERE n.nspname='public' AND c.relname=ANY($1::text[]) AND c.relrowsecurity
       AND EXISTS(SELECT 1 FROM pg_policy p WHERE p.polrelid=c.oid)`, [[
       'audit_events','manual_reply_requests','merchant_admin_notes','merchant_channel_overrides',
       'merchant_deletion_requests','notifications','order_drafts','processed_channel_events']])).rows[0];
     assert.equal(privacy.count, 8);
+    markStage('preflight_no_old_fixtures');
     const residual = await admin.query(`SELECT
       (SELECT count(*)::int FROM pg_roles WHERE rolname ~ '^field002_[ta]_[0-9a-f]{24}$') AS roles,
       (SELECT count(*)::int FROM merchants) AS merchants`);
     assert.deepEqual(residual.rows[0], { roles: 0, merchants: 1 });
+    markStage('preflight_full_snapshot');
     baseline = await snapshot(); report.baselineDigest = digest(baseline); report.baseline = baseline; save();
     if (mode === '--preflight') { report.status = 'PREFLIGHT_PASS'; return; }
     ensureRunning();
