@@ -1,11 +1,39 @@
 import assert from 'node:assert/strict';
 import {randomInt,randomUUID} from 'node:crypto';
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
 import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {cleanupResources} from './helpers/cleanup-resources.mjs';
 
 await assertDisposablePostgres();
+
+// FIELD002 source regression: review an intentional type/field policy change
+// rather than silently drifting away from the previously reviewed contract.
+// This is a source/disposable test, not historical writer or policy sign-off.
+test('FIELD002 twelve-type source projection allowlist matches reviewed response contract', () => {
+  const {readFileSync} = requireReadFileForField002();
+  const source = readFileSync(new URL('../src/services/postgresMerchantNotificationAuthority.ts',import.meta.url),'utf8');
+  const matrix = JSON.parse(readFileSync(new URL('../../../docs/final-audit/evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json',import.meta.url),'utf8')).responseFieldContract;
+  const match = source.match(/const NOTIFICATION_RESPONSE_VARIABLE_FIELDS:[^\n]* = \{\n([\s\S]*?)\n\};/);
+  assert.ok(match,'manual source-contract review required if the projection mapping is restructured');
+  const actual = JSON.parse('{' + match[1].replace(/,\s*$/,'') + '}');
+  assert.equal(matrix.types.length,12);
+  assert.deepEqual(Object.keys(actual).sort(),matrix.types.map(row=>row.type).sort());
+  const reserved=new Set(['id','type','created_at','read_at','merchant_id','account_id']);
+  for(const shape of matrix.types){
+    const allowed=[...shape.required,...shape.optional,...(shape.permittedExtraKeys??[])];
+    assert.equal(new Set(allowed).size,allowed.length,'duplicate response field: '+shape.type);
+    assert.ok(allowed.every(field=>!reserved.has(field)),'reserved field in '+shape.type);
+    assert.deepEqual(actual[shape.type],allowed,'unreviewed response field drift for '+shape.type);
+  }
+  assert.match(source,/Object\.hasOwn\(NOTIFICATION_RESPONSE_VARIABLE_FIELDS, notificationType\)/,
+    'unknown/inherited notification type lookup must remain own-property guarded');
+});
+
+// Avoid relying on TypeScript module loading just to inspect the review matrix.
+function requireReadFileForField002(){return {readFileSync};}
+
 Object.assign(process.env,{
   FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',
   FAWRI_AUTH_SECURITY_SECRET:'synthetic-notification-http-secret-over-32-characters',
