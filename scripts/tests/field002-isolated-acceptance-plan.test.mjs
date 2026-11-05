@@ -3,7 +3,12 @@ import test from 'node:test';
 import {readFileSync} from 'node:fs';
 import {CLONE_HOST, parseCloneAdminUrl, compileRehearsedGrants, restrictedUrl, snapshotObjectStatement} from '../lib/field002-isolated-acceptance-plan.mjs';
 
-const uri = 'postgresql://neondb_owner:encoded%40fixture@' + CLONE_HOST + '/neondb';
+// Construct a synthetic URI in memory so the repository contains no literal
+// credential-bearing URL, even with an explicitly fake password.
+const fixtureUrl = new URL('postgresql://' + CLONE_HOST + '/neondb');
+fixtureUrl.username = 'neondb_owner';
+fixtureUrl.password = 'encoded@fixture';
+const uri = fixtureUrl.toString();
 test('bootstrap accepts only the direct clone and verifies the server certificate', () => {
   const config = parseCloneAdminUrl(uri + '?sslmode=require&channel_binding=require');
   assert.equal(config.password, 'encoded@fixture');
