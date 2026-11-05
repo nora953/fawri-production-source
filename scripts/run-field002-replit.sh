@@ -13,6 +13,7 @@ cleanup() {
 original_dir=$PWD
 trap cleanup EXIT
 cd "$checkout"
+node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
 pnpm install --frozen-lockfile --ignore-scripts
 if [[ -z "${FAWRI_FIELD002_CLONE_ADMIN_URL:-}" ]]; then
   IFS= read -rs -p 'FIELD002 clone neondb_owner PASSWORD only (hidden): ' clone_password </dev/tty

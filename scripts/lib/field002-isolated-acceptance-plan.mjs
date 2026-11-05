@@ -27,7 +27,7 @@ export function roleNames(runId) {
 
 export function compileRehearsedGrants(source, runId) {
   if (createHash('sha256').update(source).digest('hex') !==
-      'd377904926b08a2a50b44ac02dcc05c37ce7e8d77d4d8668de8c344da434211e') {
+      '32abaf3d4d4394fede2214a7eae9324fa66192e1cd82a9b2effdf5cdd55aefe5') {
     throw Error('FIELD002_GRANT_SOURCE_REJECTED');
   }
   const names = roleNames(runId);
