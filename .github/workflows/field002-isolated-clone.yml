@@ -1,0 +1,34 @@
+name: FIELD002 isolated clone acceptance
+on:
+  push:
+    branches: [fix/p0-provider-receipt-order-discovery-20261015]
+    paths: ['docs/final-audit/evidence/field002-clone-run-request.json']
+permissions:
+  contents: read
+concurrency:
+  group: field002-isolated-clone
+  cancel-in-progress: false
+jobs:
+  acceptance:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 71949e8ae20f95227948157014bdccf2e23fe581
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Run loopback HTTP and SQL against the fixed clone
+        env:
+          FAWRI_FIELD002_EXPECTED_SOURCE: 71949e8ae20f95227948157014bdccf2e23fe581
+          FAWRI_FIELD002_CLONE_ADMIN_URL: ${{ secrets.FAWRI_FIELD002_CLONE_ADMIN_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$FAWRI_FIELD002_CLONE_ADMIN_URL" || { echo 'FIELD002_CLONE_SECRET_MISSING'; exit 1; }
+          pnpm exec tsx artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs --execute
