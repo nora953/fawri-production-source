@@ -71,5 +71,41 @@ test('classify residual merchant privacy authority with actual LOGIN and rollbac
     assert.deepEqual(await snapshot(),before);
     assert.deepEqual((await primary.query('SELECT public.fawri_tenant_or_audited_admin($1) AS a,public.fawri_tenant_or_audited_admin($2) AS b',merchants)).rows[0],{a:false,b:false});
   });
+  // Enforce the existing eight-table SQL result as a regression boundary.
+  // This remains disposable/SQL-only and does NOT certify hosted or HTTP privacy.
+  await t.test('enforce all eight residual table SQL tenant boundaries',async()=>{
+    const merchantReadable=new Set([
+      'audit_events','manual_reply_requests','notifications','order_drafts','processed_channel_events',
+    ]);
+    const adminOnly=new Set([
+      'merchant_admin_notes','merchant_channel_overrides','merchant_deletion_requests',
+    ]);
+    assert.equal(merchantReadable.size+adminOnly.size,tables.length);
+    assert.deepEqual([...observations.map(item=>item.table)].sort(),[...tables].sort());
+    for(const item of observations){
+      assert.ok(merchantReadable.has(item.table)||adminOnly.has(item.table),
+        `unclassified residual privacy table: ${item.table}`);
+      assert.equal(item.unscoped.ownRows,0,
+        `${item.table}: unscoped principal must not read own rows`);
+      assert.equal(item.unscoped.foreignRows,0,
+        `${item.table}: unscoped principal must not read foreign rows`);
+      assert.equal(item.tenantScoped.foreignRows,0,
+        `${item.table}: merchant scope must not reveal foreign rows`);
+      assert.equal(item.tenantScoped.ownRows,merchantReadable.has(item.table)?1:0,
+        `${item.table}: own visibility must match the existing role policy`);
+      assert.equal(item.trustedGlobal.ownRows,1,
+        `${item.table}: trusted authenticated service must preserve own read`);
+      assert.equal(item.trustedGlobal.foreignRows,1,
+        `${item.table}: trusted authenticated service must preserve global read`);
+      assert.ok(item.foreignUpdate?.denied===true||item.foreignUpdate?.rows===0,
+        `${item.table}: foreign mutation must be denied or affect zero rows`);
+    }
+    assert.deepEqual(await snapshot(),before,'cross-merchant checks must preserve all synthetic SQL rows');
+    console.log('P0_RESIDUAL_EIGHT_TABLE_SQL_ASSERTION '+JSON.stringify({
+      tables:tables.length,merchantReadable:merchantReadable.size,adminOnly:adminOnly.size,
+      noUnscopedReads:true,noForeignReads:true,noForeignMutations:true,exactRollback:true,
+      disposableOnly:true,hostedCertified:false,fullActorHttpMatrix:false,
+    }));
+  });
   console.log('P0_RESIDUAL_MERCHANT_PRIVACY_BASELINE '+JSON.stringify({diagnosticOnly:true,fixturePrimaryTableCrud:true,actualRestrictedPrimaryLogin:true,merchants:2,tables:metadata,observations,exactRollbackRestoration:true,pooledScopeReset:true,httpAuthorizationTested:false,hostedPrivilegePlanCertified:false,privacyAccepted:false,releaseAccepted:false}));
 });
