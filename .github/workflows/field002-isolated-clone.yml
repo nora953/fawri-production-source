@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: 8b31a94cc08d4b8cbbcd80ecff451aa968276866
+          ref: 801c80b8f7f5676af70d9f244e978949a6e15e83
           persist-credentials: false
       - run: corepack enable
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -26,7 +26,7 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Run loopback HTTP and SQL against the fixed clone
         env:
-          FAWRI_FIELD002_EXPECTED_SOURCE: 8b31a94cc08d4b8cbbcd80ecff451aa968276866
+          FAWRI_FIELD002_EXPECTED_SOURCE: 801c80b8f7f5676af70d9f244e978949a6e15e83
           FAWRI_FIELD002_CLONE_ADMIN_URL: ${{ secrets.FAWRI_FIELD002_CLONE_ADMIN_URL }}
         run: |
           set -euo pipefail
