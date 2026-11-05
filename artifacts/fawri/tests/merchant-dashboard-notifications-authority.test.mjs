@@ -25,11 +25,11 @@ test("notification authority validates records and rejects unsafe action URLs", 
   assert.match(authority, /export function isMerchantNotificationRecord/);
   // R1: known notices remain strictly validated; safe metadata-only unknown
   // history is skipped so it cannot disable the whole merchant feed.
-  assert.match(authority, /if \\(isMerchantNotificationRecord\\(candidate\\)\\)/);
-  assert.match(authority, /else if \\(!isSafeUnknownNotificationMetadata\\(candidate\\)\\)/);
-  assert.match(authority, /!SUPPORTED_MERCHANT_NOTIFICATION_TYPES\\.has\\(String\\(candidate\\.type\\)\\)/);
-  assert.match(authority, /Object\\.keys\\(candidate\\)\\.every\\(key => UNKNOWN_NOTIFICATION_METADATA_KEYS\\.has\\(key\\)\\)/);
-  assert.match(authority, /throw new Error\\("merchant notification authority unavailable"\\)/);
+  assert.match(authority, /if \(isMerchantNotificationRecord\(candidate\)\)/);
+  assert.match(authority, /else if \(!isSafeUnknownNotificationMetadata\(candidate\)\)/);
+  assert.match(authority, /!SUPPORTED_MERCHANT_NOTIFICATION_TYPES\.has\(String\(candidate\.type\)\)/);
+  assert.match(authority, /Object\.keys\(candidate\)\.every\(key => UNKNOWN_NOTIFICATION_METADATA_KEYS\.has\(key\)\)/);
+  assert.match(authority, /throw new Error\("merchant notification authority unavailable"\)/);
   assert.match(authority, /credentials: "same-origin"/);
   assert.match(authority, /cache: "no-store"/);
   assert.match(authority, /headers: \{ Accept: "application\/json" \}/);
