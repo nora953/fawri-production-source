@@ -7,7 +7,8 @@ WITH candidate AS (
   (id ~ '^notification-[0-9a-f]{64}$') AS canonical_sha256_id
  FROM public.notifications
 ), checked AS (
- SELECT *, CASE WHEN legacy_epoch_millis IS NOT NULL
+ SELECT type,created_at,source_entity_type,source_entity_id,legacy_epoch_millis,canonical_sha256_id,
+ CASE WHEN legacy_epoch_millis IS NOT NULL
   THEN abs(extract(epoch from created_at)-(legacy_epoch_millis::numeric/1000))
   ELSE NULL END AS seconds_from_embedded_timestamp
  FROM candidate
