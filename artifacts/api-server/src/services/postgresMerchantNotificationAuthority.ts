@@ -1,3 +1,4 @@
+import { requireNotificationSourceReference } from "./postgresNotificationSourceReference";
 import crypto from "node:crypto";
 import {
   operationalDatabasePool,
@@ -79,11 +80,12 @@ async function insertMerchantNotification(
     titleKey: string;
     bodyKey: string;
     variables: Record<string, string | number | boolean | null>;
-    sourceEntityType?: string;
-    sourceEntityId?: string;
+    sourceEntityType: string;
+    sourceEntityId: string;
     createdAt: string;
   },
 ): Promise<void> {
+  const source = requireNotificationSourceReference(input.sourceEntityType, input.sourceEntityId);
   await client.query(
     `INSERT INTO notifications
        (id, audience, merchant_id, account_id, type, title_key, body_key,
@@ -99,8 +101,8 @@ async function insertMerchantNotification(
       input.titleKey,
       input.bodyKey,
       JSON.stringify(input.variables),
-      input.sourceEntityType || null,
-      input.sourceEntityId || null,
+      source.sourceEntityType,
+      source.sourceEntityId,
       input.createdAt,
     ],
   );

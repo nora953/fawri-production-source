@@ -86,3 +86,20 @@ test('FIELD002-R2 legacy ID fingerprint compatibility and read-only evidence sta
   assert.doesNotMatch(sql,/\b(?:INSERT|UPDATE|DELETE|TRUNCATE|ALTER|DROP|CREATE)\b/i);
   assert.doesNotMatch(sql,/SELECT\s+(?:\*|id\b|merchant_id\b)/i);
 });
+
+test('FIELD002-R2 all generic SQL notification writers require complete source reference pair',()=>{
+  const writers=[
+    'services/postgresMerchantNotificationAuthority.ts',
+    'services/postgresSupportAuthority.ts',
+    'services/postgresSupportLifecycleAuthority.ts',
+    'services/postgresOperationalNotificationAuthority.ts',
+  ];
+  for(const file of writers){
+    const source=at(file);
+    assert.match(source,/requireNotificationSourceReference\(input\.sourceEntityType, (?:input\.sourceEntityId|sourceEntityId)\)/,file+' lacks reference guard');
+    assert.match(source,/source\.sourceEntityType/,file+' SQL source type not validated');
+    assert.match(source,/source\.sourceEntityId/,file+' SQL source id not validated');
+    assert.doesNotMatch(source,/input\.sourceEntity(?:Type|Id)\s*\|\|\s*null/,file+' permits future partial or missing source reference');
+  }
+  assert.match(at('services/postgresSupportInspectionAuthority.ts'),/['"]support_inspection_request['"]\s*,\s*\$4/);
+});

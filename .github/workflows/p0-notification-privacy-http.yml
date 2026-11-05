@@ -13,6 +13,7 @@ on:
       - 'artifacts/fawri/src/lib/merchantNotificationsAuthority.ts'
       - 'artifacts/api-server/src/**'
       - 'scripts/tests/field002-notification-writer-provenance.test.mjs'
+      - 'artifacts/api-server/tests/field002-notification-source-reference.test.ts'
       - 'docs/final-audit/evidence/sql/P0-FIELD002-LEGACY-ID-FINGERPRINT-READONLY-20261105.sql'
       - 'artifacts/fawri/tests/merchant-notifications-authority-client.test.ts'
       - 'docs/final-audit/evidence/P0-FIELD002-APPROVED-NOTIFICATION-POLICY-20261105.json'
@@ -59,6 +60,8 @@ jobs:
         run: pnpm exec tsx --test artifacts/fawri/tests/merchant-notifications-authority-client.test.ts
       - name: Verify FIELD002 SQL notification writer inventory and legacy support reachability
         run: node --test scripts/tests/field002-notification-writer-provenance.test.mjs
+      - name: Verify new PostgreSQL notification source reference preconditions
+        run: pnpm exec tsx --test artifacts/api-server/tests/field002-notification-source-reference.test.ts
       - name: Check audit execution syntax
         run: |
           node --check artifacts/api-server/tests/merchant-notification-privacy-http-postgres.integration.test.mjs
