@@ -28,6 +28,12 @@ export type ProductionLaunchReadiness = {
 
 const SAFE_SERVICE_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 const SAFE_DEK_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/;
+// FIELD002: never promote historical broad-grant staging roles or Neon
+// ownership identities as commercial tenant application logins.
+const FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES = new Set([
+  "fawri_staging_runtime", "fawri_staging_rls_runtime",
+  "neondb_owner", "neon_superuser",
+]);
 const AWS_KMS_KEY_ARN = /^arn:aws[a-z-]*:kms:[a-z0-9-]+:\d{12}:key\/[A-Fa-f0-9-]{16,}$/;
 
 function text(value: unknown): string {
@@ -166,8 +172,11 @@ export function getProductionRuntimeConfigurationIssues(
   // This is evaluated BEFORE the HTTP listener starts (index.ts). Production
   // must pin the exact tenant runtime LOGIN role, not merely advertise that
   // a database exists. Actual role privileges and RLS remain SQL-gated.
-  if (!/^[a-z_][a-z0-9_]{0,62}$/.test(text(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE))) {
+  const selectedRuntimeRole = text(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE);
+  if (!/^[a-z_][a-z0-9_]{0,62}$/.test(selectedRuntimeRole)) {
     issues.push(issue("database", "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"));
+  } else if (FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(selectedRuntimeRole)) {
+    issues.push(issue("database", "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"));
   }
   if (text(env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "SUBSCRIPTION_POSTGRES_AUTHORITY_REQUIRED"));
