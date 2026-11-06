@@ -17,6 +17,10 @@ on:
       - "scripts/restore-object-storage.mjs"
       - "scripts/backup-postgresql.test.mjs"
       - "scripts/restore-postgresql.test.mjs"
+      - "scripts/lib/field002-isolated-acceptance-plan.mjs"
+      - "scripts/tests/field002-isolated-acceptance-plan.test.mjs"
+      - "artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs"
+      - ".github/workflows/field002-clean-clone-acceptance.yml"
       - "scripts/backup-object-storage.test.mjs"
       - "docs/backup-restore-runbook.md"
       - "docs/observability-alerts.md"
@@ -36,6 +40,10 @@ on:
       - "artifacts/api-server/tests/field002-production-startup-policy-admission.test.ts"
       - "scripts/backup-*"
       - "scripts/restore-*"
+      - "scripts/lib/field002-isolated-acceptance-plan.mjs"
+      - "scripts/tests/field002-isolated-acceptance-plan.test.mjs"
+      - "artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs"
+      - ".github/workflows/field002-clean-clone-acceptance.yml"
       - "docs/backup-restore-runbook.md"
       - "docs/observability-alerts.md"
       - "docs/operations-observability.md"
@@ -79,6 +87,9 @@ jobs:
 
       - name: Test observability fail-closed and secret-safety contracts
         run: pnpm --filter @workspace/api-server exec tsx --test ./tests/observability-components.test.ts
+
+      - name: FIELD002 clone profile, authorization and cleanup contract tests
+        run: node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
 
       - name: FIELD002 production startup role and RLS policy admission tests
         run: >-

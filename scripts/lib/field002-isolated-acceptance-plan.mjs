@@ -2,11 +2,37 @@ import { createHash } from 'node:crypto';
 export const CLONE_HOST = 'ep-soft-wildflower-b1i4j4xu.c-5.eu-central-1.aws.neon.tech';
 export const CLONE_BRANCH = 'br-young-hill-b1x9vhlz';
 export const LEDGER_HASH = '1773f8314f11c832a1c03453204af2896b204b80695066ebc06cded7b11e62ea';
+export const CLEAN_CLONE_HOST = 'ep-withered-union-b1jh284c.c-5.eu-central-1.aws.neon.tech';
+export const CLEAN_CLONE_BRANCH = 'br-polished-mouse-b1proel7';
 
-export function parseCloneAdminUrl(value) {
+// Immutable, exact endpoint allowlist. Never build a target host from
+// environment variables, arbitrary URLs, a branch name, or the Neon default.
+const profiles = Object.freeze({
+  cleaned_20261104: Object.freeze({
+    name: 'cleaned_20261104', host: CLONE_HOST, branch: CLONE_BRANCH,
+    ledgerHash: LEDGER_HASH, notifications: 0,
+  }),
+  clean_20261106: Object.freeze({
+    name: 'clean_20261106', host: CLEAN_CLONE_HOST, branch: CLEAN_CLONE_BRANCH,
+    ledgerHash: LEDGER_HASH, notifications: 0,
+  }),
+});
+export function selectCloneProfile(name) {
+  if (typeof name !== 'string' || !Object.hasOwn(profiles, name)) {
+    throw Error('FIELD002_CLONE_PROFILE_REJECTED');
+  }
+  return profiles[name];
+}
+function assertAllowedProfile(profile) {
+  if (!Object.values(profiles).includes(profile)) throw Error('FIELD002_CLONE_PROFILE_REJECTED');
+}
+
+
+export function parseCloneAdminUrl(value, profile = selectCloneProfile('cleaned_20261104')) {
+  assertAllowedProfile(profile);
   let url;
   try { url = new URL(value); } catch { throw Error('FIELD002_CLONE_ADMIN_URL_REQUIRED'); }
-  if (!['postgres:', 'postgresql:'].includes(url.protocol) || url.hostname !== CLONE_HOST ||
+  if (!['postgres:', 'postgresql:'].includes(url.protocol) || url.hostname !== profile.host ||
       (url.port && url.port !== '5432') || url.pathname !== '/neondb' ||
       url.username !== 'neondb_owner' || !url.password || url.hash ||
       [...url.searchParams].some(([key, val]) =>
@@ -15,8 +41,8 @@ export function parseCloneAdminUrl(value) {
     throw Error('FIELD002_CLONE_TARGET_REJECTED');
   }
   // Deliberately do not forward arbitrary libpq options or inherited DATABASE_URL.
-  return { host: CLONE_HOST, port: 5432, database: 'neondb', user: 'neondb_owner',
-    password: decodeURIComponent(url.password), ssl: { rejectUnauthorized: true, servername: CLONE_HOST },
+  return { host: profile.host, port: 5432, database: 'neondb', user: 'neondb_owner',
+    password: decodeURIComponent(url.password), ssl: { rejectUnauthorized: true, servername: profile.host },
     enableChannelBinding: true, connectionTimeoutMillis: 5000, query_timeout: 15000, statement_timeout: 12000 };
 }
 
@@ -45,11 +71,12 @@ export function compileRehearsedGrants(source, runId) {
     revokes: [...mapped].reverse().map(s => s.replace(/^GRANT /, 'REVOKE ').replace(/ TO /, ' FROM ')) };
 }
 
-export function restrictedUrl(role, password) {
+export function restrictedUrl(role, password, profile = selectCloneProfile('cleaned_20261104')) {
+  assertAllowedProfile(profile);
   if (!/^field002_[ta]_[a-f0-9]{24}$/.test(role) || !/^[a-f0-9]{64}$/.test(password)) {
     throw Error('FIELD002_RUNTIME_CREDENTIAL_FORMAT_REJECTED');
   }
-  const url = new URL('postgresql://' + CLONE_HOST + '/neondb');
+  const url = new URL('postgresql://' + profile.host + '/neondb');
   url.username = role; url.password = password;
   url.searchParams.set('sslmode', 'verify-full');
   return url.toString();

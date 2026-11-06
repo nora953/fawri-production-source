@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFileSync} from 'node:fs';
-import {CLONE_HOST, parseCloneAdminUrl, compileRehearsedGrants, restrictedUrl, snapshotObjectStatement} from '../lib/field002-isolated-acceptance-plan.mjs';
+import {CLONE_HOST, CLEAN_CLONE_HOST, CLEAN_CLONE_BRANCH, selectCloneProfile, parseCloneAdminUrl, compileRehearsedGrants, restrictedUrl, snapshotObjectStatement} from '../lib/field002-isolated-acceptance-plan.mjs';
 
 // Construct a synthetic URI in memory so the repository contains no literal
 // credential-bearing URL, even with an explicitly fake password.
@@ -57,4 +57,39 @@ test('clone preflight refuses competing active or transactional backends while t
   assert.match(source,/backend_xid IS NOT NULL OR backend_xmin IS NOT NULL/);
   assert.match(source,/pg_try_advisory_lock\(20261104,2002\)/);
   assert.match(source,/assert\.deepEqual\(after, baseline/);
+});
+
+test('FIELD002 clean isolated clone requires explicit pinned branch, host and credential profile', () => {
+  const clean = selectCloneProfile('clean_20261106');
+  assert.equal(clean.host, CLEAN_CLONE_HOST);
+  assert.equal(clean.branch, CLEAN_CLONE_BRANCH);
+  assert.equal(clean.ledgerHash.length, 64);
+  assert.equal(clean.notifications, 0);
+  const url = new URL('postgresql://' + CLEAN_CLONE_HOST + '/neondb');
+  url.username = 'neondb_owner';
+  url.password = 'synthetic-fixture-only';
+  const accepted = parseCloneAdminUrl(url.href + '?sslmode=verify-full', clean);
+  assert.deepEqual(accepted.ssl, {rejectUnauthorized: true, servername: CLEAN_CLONE_HOST});
+  assert.equal(accepted.host, CLEAN_CLONE_HOST);
+  assert.throws(() => parseCloneAdminUrl(uri, clean), /FIELD002_CLONE_TARGET_REJECTED/);
+  assert.throws(() => parseCloneAdminUrl(url.href, selectCloneProfile('cleaned_20261104')), /FIELD002_CLONE_TARGET_REJECTED/);
+  assert.throws(() => selectCloneProfile('production'), /FIELD002_CLONE_PROFILE_REJECTED/);
+  assert.throws(() => selectCloneProfile(undefined), /FIELD002_CLONE_PROFILE_REJECTED/);
+  assert.throws(() => parseCloneAdminUrl(url.href, { ...clean, host: 'example.invalid' }), /FIELD002_CLONE_PROFILE_REJECTED/);
+  for (const name of ['?host=wrong', '?options=-csearch_path%3Dpublic', '#bad']) {
+    assert.throws(() => parseCloneAdminUrl(url.href + name, clean), /FIELD002_CLONE_TARGET_REJECTED/);
+  }
+  const tenant = restrictedUrl('field002_t_' + 'a'.repeat(24), 'b'.repeat(64), clean);
+  assert.equal(new URL(tenant).hostname, CLEAN_CLONE_HOST);
+});
+
+test('FIELD002 execution requires separately authorized exact hosted branch and original cleanup guarantees', () => {
+  const source = readFileSync(new URL('../../artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs', import.meta.url), 'utf8');
+  assert.match(source, /FAWRI_FIELD002_ALLOWED_EXECUTION_BRANCH/);
+  assert.match(source, /FIELD002_HOSTED_WRITE_NOT_AUTHORIZED/);
+  assert.match(source, /parseCloneAdminUrl\(process\.env\.FAWRI_FIELD002_CLONE_ADMIN_URL, profile\)/);
+  assert.match(source, /ledger: 52, last_hash: profile\.ledgerHash, notices: profile\.notifications/);
+  assert.match(source, /restrictedUrl\(tenantRole, passwords\[0\], profile\)/);
+  assert.match(source, /assert\.deepEqual\(after, baseline/);
+  assert.match(source, /DROP ROLE/);
 });

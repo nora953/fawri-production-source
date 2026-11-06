@@ -1,0 +1,17 @@
+# FIELD002 — clean hosted clone 8-table negative checks and opt-in SQL/HTTP acceptance harness
+
+## Actual non-mutating Neon SQL, 2026-11-06
+On `round-fire-18493605` / **nondefault** `br-polished-mouse-b1proel7` / `neondb`, inspected the role membership graph and critical table state. The clean clone has **52** migrations through 0051 and **0 notifications**, with critical 8/8 table RLS policies. `fawri_staging_rls_runtime` is NOLOGIN/non-BYPASSRLS/non-CREATEROLE; `fawri_staging_runtime` is a legacy LOGIN with BYPASSRLS.
+
+- Connecting as `neondb_owner` and attempting `SET LOCAL ROLE fawri_staging_rls_runtime` was **denied**. Catalog metadata independently confirmed owner cannot SET that role, whereas the legacy `fawri_staging_runtime` can. No role grants were changed.
+- Within read-only/transient SQL transactions authenticated as `fawri_staging_runtime`, `SET LOCAL ROLE fawri_staging_rls_runtime` worked. In **both** unscoped and forged transaction-local GUC variants (including a merchant ID obtained in-session without exporting it), `row_security_active` was TRUE on **8/8** tables and **all eight SELECT counts were zero**, including the nonempty audit/override/deletion tables.
+- **Strict limitation:** `session_user=fawri_staging_runtime` still retains historical elevated BYPASSRLS ability. These results are **effective-role negative tests only**, not independently authenticated least-privilege LOGIN, authorized-own, foreign-merchant under valid scope, session revocation, or deployed HTTP proof. No synthetic merchant, real customer, notification, role, ACL or stored table content was mutated. Neither original staging nor default production was queried in these tests.
+
+## New source-level next step
+The reviewed earlier [actual hosted SQL/HTTP harness](https://github.com/nora953/fawri-production-source/blob/4e82daec11044c751ff743c0108d90a73c504a11/artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs) had hardcoded the older clone endpoint and precleanup notification count (28). It could not legitimately certify this **fresh, cleaned** clone after its 52-migration rehearsal.
+
+A new exact-enumerated `clean_20261106` target profile now pins endpoint, branch, SQL ledger hash and **0 notices**; the reusable test harness binds all test URLs to that profile and keeps its existing full before/after data+ACL/role/sequence snapshots and run-unique temp role/fixture cleanup. A separate explicit `FAWRI_FIELD002_ALLOWED_EXECUTION_BRANCH` authorization and guarded manual GitHub Actions workflow ensure that providing a database URL alone **cannot** start hosted fixture mutation. Negative target/profile substitution regression tests are added to the backup/restore CI suite.
+
+**Not executed here:** new workflow's two-real-LOGIN / own-vs-foreign / revoked-session SQL and mounted HTTP tests, which create temporary roles and synthetic fixtures, require an explicitly configured isolated-clone credential secret and a separately intentional authorized invocation. No auto-dispatch or hosted mutation was attempted by this source checkpoint. Nothing in this source work authorizes production/default deployment, original staging migrations or 0052.
+
+**Status:** FIELD002 OPEN; R2 commercial restore/seed/import exclusion OPEN; parent eight-table privacy hosted acceptance OPEN; 0052 BLOCKED; P0 NO-GO. The new exact-branch harness closes preparation and allows a properly authorized fresh-clone SQL/HTTP acceptance, but passing its CI unit tests is not evidence of executing the hosted harness.

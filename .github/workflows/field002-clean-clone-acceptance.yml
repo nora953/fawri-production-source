@@ -1,0 +1,59 @@
+name: FIELD002 clean isolated Neon clone SQL + HTTP acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      authorization:
+        description: 'Enter exactly APPROVE_CLEAN_CLONE_TEST_FIXTURES to authorize temporary test roles, merchants and cleanup on the pinned isolated clone'
+        required: true
+        type: string
+      source_sha:
+        description: 'Enter exact current 40-character PR branch HEAD commit SHA'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: field002-clean-clone-exclusive
+  cancel-in-progress: false
+
+jobs:
+  clean-clone-acceptance:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && inputs.authorization == 'APPROVE_CLEAN_CLONE_TEST_FIXTURES'
+      && inputs.source_sha == github.sha
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout verified immutable source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Node 24 and dependencies
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Execute fresh clone only — temporary two-LOGIN real SQL and local mounted HTTP
+        env:
+          FAWRI_FIELD002_CLONE_PROFILE: clean_20261106
+          FAWRI_FIELD002_ALLOWED_EXECUTION_BRANCH: br-polished-mouse-b1proel7
+          FAWRI_FIELD002_EXPECTED_SOURCE: ${{ github.sha }}
+          FAWRI_FIELD002_CLONE_ADMIN_URL: ${{ secrets.FAWRI_FIELD002_CLEAN_CLONE_ADMIN_URL }}
+        run: |
+          set -euo pipefail
+          # The harness checks exact reviewed endpoint, pinned SHA, role,
+          # migration hash/52 ledger, zero historical notices, exclusive
+          # advisory lock, safe grants and full before/after cleanup.
+          # No target URL or credential is emitted to logs/artifacts.
+          pnpm exec tsx artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs --execute

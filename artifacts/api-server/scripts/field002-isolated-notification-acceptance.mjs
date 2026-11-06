@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { CLONE_HOST, CLONE_BRANCH, LEDGER_HASH, parseCloneAdminUrl,
+import { selectCloneProfile, parseCloneAdminUrl,
   compileRehearsedGrants, restrictedUrl, snapshotObjectStatement } from '../../../scripts/lib/field002-isolated-acceptance-plan.mjs';
 
 // Explicit hosted harness. Never imports or weakens assertDisposablePostgres.
@@ -20,7 +20,7 @@ const mode = process.argv[2];
 if (mode === '--help') {
   console.log('Run with tsx: --preflight (SELECT only) or --execute (temporary roles/fixtures).');
   console.log('Required: FAWRI_FIELD002_CLONE_ADMIN_URL and FAWRI_FIELD002_EXPECTED_SOURCE.');
-  console.log('Only the fixed FIELD002 clone endpoint is accepted. Credentials are never printed.');
+  console.log('Only explicitly reviewed, exact-name FIELD002 clone profiles are accepted. Credentials are never printed.');
 } else {
   try { await run(); }
   catch (error) { console.error('FIELD002_RUNNER_REJECTED', safeCode(error)); process.exitCode = 1; }
@@ -33,7 +33,14 @@ function safeCode(error) {
 }
 async function run() {
   if (!['--preflight', '--execute'].includes(mode)) throw Error('FIELD002_EXPLICIT_MODE_REQUIRED');
-  const config = parseCloneAdminUrl(process.env.FAWRI_FIELD002_CLONE_ADMIN_URL);
+  const profile = selectCloneProfile(process.env.FAWRI_FIELD002_CLONE_PROFILE);
+  const config = parseCloneAdminUrl(process.env.FAWRI_FIELD002_CLONE_ADMIN_URL, profile);
+  // Deliberate second authorization: a URL and --execute are insufficient
+  // to create disposable roles or merchants on any hosted database.
+  if (mode === '--execute' &&
+      process.env.FAWRI_FIELD002_ALLOWED_EXECUTION_BRANCH !== profile.branch) {
+    throw Error('FIELD002_HOSTED_WRITE_NOT_AUTHORIZED');
+  }
   const source = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   if (!/^[a-f0-9]{40}$/.test(process.env.FAWRI_FIELD002_EXPECTED_SOURCE || '') ||
       source !== process.env.FAWRI_FIELD002_EXPECTED_SOURCE) throw Error('FIELD002_SOURCE_MISMATCH');
@@ -46,7 +53,7 @@ async function run() {
   const noticeIds = merchants.map(id => `${id}-notice`);
   const work = mkdtempSync(join(tmpdir(), 'fawri-field002-'));
   const reportPath = join(work, 'result.json');
-  const report = { source, runId, branch: CLONE_BRANCH, host: CLONE_HOST, mode,
+  const report = { source, runId, branch: profile.branch, host: profile.host, mode,
     roles: plan.names, fixtureMerchants: merchants, status: 'PREFLIGHT', tests: [],
     cleanup: 'NOT_NEEDED', field002Closed: false, release: 'NO-GO' };
   const save = () => writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n', { mode: 0o600 });
@@ -130,7 +137,7 @@ async function run() {
       (SELECT hash FROM drizzle.__drizzle_migrations ORDER BY created_at DESC LIMIT 1) AS last_hash,
       (SELECT count(*)::int FROM notifications) AS notices,(SELECT count(*)::int FROM audit_events) AS audits,
       (SELECT count(*)::int FROM fawri_security.transaction_scopes) AS scopes`)).rows[0];
-    assert.deepEqual(b, { db: 'neondb', login: 'neondb_owner', active: 'neondb_owner', ledger: 52, last_hash: LEDGER_HASH, notices: 28, audits: 283, scopes: 0 });
+    assert.deepEqual(b, { db: 'neondb', login: 'neondb_owner', active: 'neondb_owner', ledger: 52, last_hash: profile.ledgerHash, notices: profile.notifications, audits: 283, scopes: 0 });
     markStage('preflight_eight_rls_tables');
     const privacy = (await admin.query(`SELECT count(*)::int AS count FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
       WHERE n.nspname='public' AND c.relname=ANY($1::text[]) AND c.relrowsecurity
@@ -161,7 +168,7 @@ async function run() {
     });
     report.roleOids = fixtureOids; save();
     Object.assign(process.env, { NODE_ENV: 'test', FAWRI_DATA_DIR: join(work, 'data'),
-      DATABASE_URL: restrictedUrl(tenantRole, passwords[0]), FAWRI_AUTH_DATABASE_URL: restrictedUrl(authRole, passwords[1]),
+      DATABASE_URL: restrictedUrl(tenantRole, passwords[0], profile), FAWRI_AUTH_DATABASE_URL: restrictedUrl(authRole, passwords[1], profile),
       FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: tenantRole,
       FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: 'required', FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: 'required',
       FAWRI_AUTH_SECURITY_SECRET: randomBytes(32).toString('hex'), FAWRI_PASSWORD_SALT: randomBytes(32).toString('hex') });
