@@ -34,7 +34,10 @@ test("notification authority validates records and rejects unsafe action URLs", 
   assert.match(authority, /cache: "no-store"/);
   assert.match(authority, /headers: \{ Accept: "application\/json" \}/);
   assert.match(authority, /value\.startsWith\("\/"\)/);
-  assert.match(authority, /!value\.startsWith\("\/\/"\)/);
+  // The negative double-slash check now lives inside the early-reject branch.
+  // Runtime tests cover newline/CR/tab URL-parser normalization and safe paths.
+  assert.match(authority, /value\.startsWith\("\/\/"\)/);
+  assert.match(authority, /new URL\(value, base\)\.origin === base/);
   assert.match(page, /readMerchantNotificationsAuthority\(\)/);
   assert.doesNotMatch(page, /as MerchantNotification\[\]/);
 });
