@@ -35,7 +35,16 @@
     "retention": "SEPARATE_LEGAL_BUSINESS_REVIEW_REQUIRED",
     "historicCountIsSnapshotNotInventoryGuarantee": true,
     "historicalRowSnapshot": 28,
-    "missingCompleteSourceRefSnapshot": 15
+    "missingCompleteSourceRefSnapshot": 15,
+    "isolatedTestCleanupOwnerOverride20261106": {
+      "status": "AUTHORIZED_AND_VERIFIED_ON_ONLY_THE_EXISTING_FIELD002_NONDEFAULT_REHEARSAL_CLONE",
+      "supersedesHistoricalPreservationOnlyFor": "br-young-hill-b1x9vhlz",
+      "deletedTestRows": 28,
+      "verifiedRemainingRows": 0,
+      "evidence": "P0-FIELD002-R2-ISOLATED-FIXTURE-DELETION-20261106.md",
+      "originalStagingOrProductionMutationApproved": false,
+      "fullR2Closure": false
+    }
   },
   "R3": {
     "status": "PRODUCT_SCOPE_APPROVED_RUNTIME_ACTIVATION_NOT_APPROVED",

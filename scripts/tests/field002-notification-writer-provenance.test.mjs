@@ -3,7 +3,7 @@ import {readFileSync, readdirSync} from 'node:fs';
 import {join, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import test from 'node:test';
-import {validatePlanForWrite} from '../../lib/db/scripts/lib/migration-write.mjs';
+import {assertNoHistoricalNotificationImports,validatePlanForWrite} from '../../lib/db/scripts/lib/migration-write.mjs';
 import {validateCutoverPlanForWrite} from '../../lib/db/scripts/cutover-migration.mjs';
 
 // FIELD002-R2 static source inventory. This does NOT attribute historical
@@ -147,4 +147,30 @@ test('FIELD002-R2 live cutover and disposable writer refuse unapproved historica
         /FIELD002_R2_NOTIFICATION_IMPORT_REQUIRES_SEPARATE_PROVENANCE_APPROVAL/,validator.name);
     }
   }
+});
+
+test('FIELD002-R2 rejects forged notification lineage even when notification rows are absent',()=>{
+  for(const variant of ['notifications','public.notifications',' PUBLIC.Notifications ']){
+    const report={
+      ok:true, write_readiness:{ok:true},
+      rows:{accounts:[{id:'synthetic-fixture-account'}]},
+      planned_row_count:1,
+      source_lineage:[{target_table:variant, target_record_id:'synthetic-fixture-notification'}],
+      source_lineage_sha256:'a'.repeat(64),
+    };
+    for(const validator of [validatePlanForWrite,validateCutoverPlanForWrite]){
+      assert.throws(()=>validator(report,{tables:{'public.accounts':{}}}),
+        /FIELD002_R2_NOTIFICATION_LINEAGE_IMPORT_FORBIDDEN/,validator.name+': '+variant);
+    }
+  }
+  // A legitimate unrelated table is not barred just because historical
+  // notifications are excluded from the cutover.
+  for(const rows of [{accounts:[{id:'synthetic-fixture-account'}]},{accounts:[{id:'synthetic-fixture-account'}],notifications:[]}]){
+    assert.doesNotThrow(()=>assertNoHistoricalNotificationImports({
+      rows, source_lineage:[{target_table:'accounts',target_record_id:'synthetic-fixture-account'}],
+    }));
+  }
+  assert.throws(()=>assertNoHistoricalNotificationImports({
+    rows:{notifications:[{id:'synthetic-forbidden'}]}, source_lineage:[],
+  }),/FIELD002_R2_NOTIFICATION_IMPORT_REQUIRES_SEPARATE_PROVENANCE_APPROVAL/);
 });
