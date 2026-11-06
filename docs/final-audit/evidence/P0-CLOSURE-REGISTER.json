@@ -4496,7 +4496,7 @@
       "field002Remaining20261106": {
         "sourceCodeSha": "6f7ab1cdb6fce50f0c082d168cdaddac7fe7d9f5",
         "R1": "ACCEPTED_BOUNDED_CANONICAL_SOURCE_CLIENT_AND_SQL_HTTP",
-        "R2": "OPEN_SOURCE_ROW_AND_LINEAGE_CUTOVER_GUARDS_ACCEPTED_AND_ISOLATED_CLONE_EMPTY_ORIGINAL_STAGING_DEPLOYMENT_RESTORE_EXCLUSION_UNVERIFIED",
+        "R2": "OPEN_ORIGINAL_STAGING_28_TEST_ROWS_PRESENT_WITH_15_MISSING_SOURCE_LINKS_NEEDS_SEPARATE_CLEANUP_APPROVAL_AND_REAL_RELEASE_RESTORE_EXCLUSION",
         "R3": "ACCEPTED_BOUNDED_SOURCE_LEGACY_READ_ONLY_NEW_ORDER_DEFERRED",
         "acceptedCI": {
           "notificationPrivacyRun": 42160825151,
@@ -4579,6 +4579,30 @@
         "sourceSubconditionAccepted": true,
         "hostedCutoverExclusionVerified": false,
         "noNewP0RowClosed": true
+      },
+      "field002R2OriginalStagingReadOnly20261106": {
+        "evidence": "evidence/P0-FIELD002-R2-ORIGINAL-STAGING-READONLY-20261106.md",
+        "authorizedScope": "SELECT_ONLY_ORIGINAL_STAGING_RUNTIME",
+        "projectId": "round-fire-18493605",
+        "branchId": "br-falling-dust-b1km4gix",
+        "metadataVerified": "NONDEFAULT_NONPRIMARY_BRANCH",
+        "totalStoredNotifications": 28,
+        "sourceReferencesMissingBoth": 15,
+        "sourceReferencesCompleteBoth": 13,
+        "sourceReferencesPartial": 0,
+        "unlinkedPayloadFieldCount": 115,
+        "unlinkedUnexpectedFieldCount": 0,
+        "unlinkedSensitiveHeuristicMatchCount": 0,
+        "distinctMerchantScopes": 1,
+        "dataChanged": false,
+        "originalStagingCleanupStatus": "NOT_AUTHORIZED_BY_SELECT_ONLY_PERMISSION",
+        "sourceCutoverRowsAndLineageGuard": "ACCEPTED_SOURCE_CI_NOT_DEPLOYMENT_PROOF",
+        "originalHostedRlsEnabled": false,
+        "originalHostedRlsPolicyCount": 0,
+        "loginNonsuperuserSelectPrivilegedRoleCount": 3,
+        "rlsAcceptance": "OPEN_SEPARATE_HOSTED_PRIVACY_CONDITION",
+        "releaseFixtureExclusion": "OPEN_ORIGINAL_HOSTED_ROWS_STILL_PRESENT",
+        "parentGateClosed": false
       }
     },
     {
