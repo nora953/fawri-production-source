@@ -226,7 +226,7 @@ test("configured runtime readiness blocks eight-table privacy RLS drift on real 
   }
 });
 
-test("real runtime readiness refuses auth-bypass EXECUTE despite eight active RLS policies", { timeout: 60_000 }, async () => {
+test("real runtime rejects unapproved synthetic RLS policies and auth-bypass EXECUTE", { timeout: 60_000 }, async () => {
   // Destructive fixtures below are permitted ONLY inside the disposable local
   // PostgreSQL fawri_ci service owned by CI. Never point this test to Neon.
   const databaseUrl = String(process.env.DATABASE_URL || "").trim();
@@ -271,7 +271,12 @@ test("real runtime readiness refuses auth-bypass EXECUTE despite eight active RL
     });
     const base = `http://127.0.0.1:${server.port}`;
     const before = await readJson(`${base}/ops/readiness`);
-    assert.equal(before.response.status, 200, "RLS-protected restricted role must be ready");
+    // A deny-all policy is safer than USING(true), but it is still NOT one
+    // of the eight reviewed hosted policies. The exact-policy gate must
+    // reject even this synthetic disposable fixture (previously it passed
+    // solely because a policy existed).
+    assert.equal(before.response.status, 503, "unapproved synthetic RLS policy must not be accepted");
+    assert.equal(before.body.checks.find(x => x.name === "postgresql_authority")?.status, "down");
     await server.stop();
     server = undefined;
 
@@ -291,7 +296,10 @@ test("real runtime readiness refuses auth-bypass EXECUTE despite eight active RL
       FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_observability_ci_runtime",
     });
     const blocked = await readJson(`http://127.0.0.1:${server.port}/ops/readiness`);
-    assert.equal(blocked.response.status, 503, "auth bypass must invalidate ready despite 8/8 RLS");
+    // The SQL grant is real, but this fixture is already intentionally
+    // unready due to policy mismatch. Separate unit tests verify that a
+    // valid catalog policy count cannot conceal trusted-function EXECUTE.
+    assert.equal(blocked.response.status, 503, "trusted auth EXECUTE remains unready");
     assert.equal(blocked.body.status, "not_ready");
     assert.equal(blocked.body.checks.find(x => x.name === "postgresql_authority")?.status, "down");
     assert.equal(JSON.stringify(blocked.body).includes(restrictedUrl), false);
