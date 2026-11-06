@@ -70,6 +70,25 @@ test('FIELD002-R2 source audit excludes route and test fixture writers from inve
   assert.equal(policy.release.p0,'NO_GO');
 });
 
+test('FIELD002-R2 original staging test-fixture deletion is explicitly scoped and does not imply production closure',()=>{
+  const policy=JSON.parse(readFileSync(new URL('../../docs/final-audit/evidence/P0-FIELD002-APPROVED-NOTIFICATION-POLICY-20261105.json',import.meta.url),'utf8'));
+  const cleaned=policy.R2.originalStagingTestCleanupOwnerOverride20261106;
+  assert.equal(cleaned.status,'OWNER_AUTHORIZED_ATOMIC_DELETE_AND_INDEPENDENT_ZERO_ROW_VERIFIED');
+  assert.equal(cleaned.scope.branchId,'br-falling-dust-b1km4gix');
+  assert.equal(cleaned.scope.nonDefault,true);
+  assert.equal(cleaned.scope.nonPrimary,true);
+  assert.equal(cleaned.deletedTestRows,28);
+  assert.equal(cleaned.verifiedRemainingRows,0);
+  assert.equal(cleaned.releaseImportRestoreExclusionVerified,false);
+  assert.equal(cleaned.fullR2Closure,false);
+  assert.equal(policy.R2.isolatedTestCleanupOwnerOverride20261106.verifiedRemainingRows,0);
+  assert.equal(policy.release.originalNeonTouched,true);
+  assert.equal(policy.release.productionNeonTouched,false);
+  assert.equal(policy.release.field002,'OPEN');
+  assert.equal(policy.release.migration0052,'BLOCKED');
+  assert.equal(policy.release.p0,'NO_GO');
+});
+
 test('FIELD002-R2 legacy ID fingerprint compatibility and read-only evidence stay bounded',()=>{
   const legacy=at('routes/authRuntimePart1.ts');
   const writers=at('routes/authRuntimePart3.ts');
