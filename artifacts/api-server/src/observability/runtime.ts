@@ -80,6 +80,11 @@ export function assertSafePostgresRuntimeRole(row: {
     throw new Error("POSTGRES_RUNTIME_ROLE_CONFIGURATION_REQUIRED");
   }
   assertExpectedPostgresRuntimeRole(String(row.role_name || ""), env);
+  // SET ROLE can make current_user appear approved while session_user still
+  // identifies a different authenticated LOGIN. Both identities must match
+  // the explicitly approved production tenant principal, even if neither
+  // account itself has an obviously elevated attribute.
+  assertExpectedPostgresRuntimeRole(String(row.session_role_name || ""), env);
   if (
     (productionMode || expectedRole) &&
     row.critical_privacy_rls_ready_count !== CRITICAL_POSTGRES_PRIVACY_RLS_TABLES.length

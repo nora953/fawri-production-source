@@ -148,6 +148,18 @@ test("FIELD002 hosted runtime rejects incomplete or altered eight-table privacy 
     assert.doesNotThrow(
       () => assertSafePostgresRuntimeRole(good, { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
     );
+    // FIELD002: a low-privilege but unapproved LOGIN must not mask its
+    // identity by SET ROLE into the expected tenant runtime.
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, session_role_name: "unexpected_login" },
+        { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+      /POSTGRES_RUNTIME_ROLE_MISMATCH/,
+    );
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, session_role_name: "unexpected_login" },
+        { NODE_ENV: "test", FAWRI_DEPLOYMENT_MODE: "staging", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+      /POSTGRES_RUNTIME_ROLE_MISMATCH/,
+    );
     assert.throws(
       () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 7 },
         { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
