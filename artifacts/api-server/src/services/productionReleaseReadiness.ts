@@ -30,7 +30,7 @@ const SAFE_SERVICE_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 const SAFE_DEK_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/;
 // FIELD002: never promote historical broad-grant staging roles or Neon
 // ownership identities as commercial tenant application logins.
-const FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES = new Set([
+export const FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES: ReadonlySet<string> = new Set([
   "fawri_staging_runtime", "fawri_staging_rls_runtime",
   "neondb_owner", "neon_superuser",
 ]);
