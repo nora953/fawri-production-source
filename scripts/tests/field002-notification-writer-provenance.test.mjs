@@ -169,7 +169,11 @@ test('FIELD002-R2 live cutover and disposable writer refuse unapproved historica
 });
 
 test('FIELD002-R2 rejects forged notification lineage even when notification rows are absent',()=>{
-  for(const variant of ['notifications','public.notifications',' PUBLIC.Notifications ']){
+  for(const variant of [
+    'notifications', 'public.notifications', ' PUBLIC.Notifications ',
+    '"notifications"', 'public."notifications"',
+    '"public"."notifications"', ' "PUBLIC" . "Notifications" ',
+  ]){
     const report={
       ok:true, write_readiness:{ok:true},
       rows:{accounts:[{id:'synthetic-fixture-account'}]},
@@ -180,6 +184,19 @@ test('FIELD002-R2 rejects forged notification lineage even when notification row
     for(const validator of [validatePlanForWrite,validateCutoverPlanForWrite]){
       assert.throws(()=>validator(report,{tables:{'public.accounts':{}}}),
         /FIELD002_R2_NOTIFICATION_LINEAGE_IMPORT_FORBIDDEN/,validator.name+': '+variant);
+    }
+  }
+  for(const malformed of [null, 'not-an-array', {}, [null], [{}], [{target_table:42}], [{target_table:'  '}]]) {
+    const report={
+      ok:true, write_readiness:{ok:true},
+      rows:{accounts:[{id:'synthetic-account'}]},
+      planned_row_count:1,
+      source_lineage:malformed,
+      source_lineage_sha256:'b'.repeat(64),
+    };
+    for(const validator of [validatePlanForWrite,validateCutoverPlanForWrite]){
+      assert.throws(()=>validator(report,{tables:{'public.accounts':{}}}),
+        /FIELD002_R2_NOTIFICATION_LINEAGE_MALFORMED/,validator.name);
     }
   }
   // A legitimate unrelated table is not barred just because historical
