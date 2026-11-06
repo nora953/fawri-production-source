@@ -152,6 +152,9 @@ jobs:
             (1, 'safe-fixture-one'),
             (2, 'safe-fixture-two'),
             (3, 'safe-fixture-three');
+          -- FIELD002: a precommercial restore source must not carry old notices.
+          -- The table exists but has zero rows; live notification writes are not disabled.
+          create table public.notifications (id integer primary key, type text not null);
           create role drill_retire_owner nologin nosuperuser nobypassrls nocreatedb nocreaterole noinherit;
           create role drill_reader nologin nosuperuser nobypassrls nocreatedb nocreaterole noinherit;
           grant usage on schema public to drill_retire_owner,drill_reader;
@@ -219,7 +222,8 @@ jobs:
             --backup "$RUNNER_TEMP/fawri-backup-drill/postgresql/backup.dump" \
             --manifest "$RUNNER_TEMP/fawri-backup-drill/postgresql/manifest.json" \
             --verify-sql "select count(*) from restore_drill_records" \
-            --expect "3"
+            --expect "3" \
+            --field002-require-empty-notifications "1"
 
           source_hash="$(cat "$RUNNER_TEMP/source-data-hash")"
           restore_hash="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select md5(string_agg(id::text || ':' || value, ',' order by id)) from restore_drill_records")"
@@ -275,6 +279,7 @@ jobs:
               restored: true,
               verified_rows: 3,
               consistency_match: true,
+              field002_empty_notifications_verified: true,
               backup_sha256: pg.sha256,
               backup_bytes: pg.size,
             },
