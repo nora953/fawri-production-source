@@ -65,15 +65,21 @@ export function assertSafePostgresRuntimeRole(row: {
   session_has_authentication_runtime?: unknown;
   session_has_admin_directory_authority?: unknown;
   session_can_set_sensitive_function_role?: unknown;
-} | undefined): void {
+} | undefined, env: NodeJS.ProcessEnv = process.env): void {
   if (!row || typeof row.role_name !== "string" || !row.role_name.trim() || row.is_superuser !== false || row.can_create_role !== false || row.bypass_rls !== false || row.owns_unforced_rls_table !== false || typeof row.session_role_name !== "string" || !row.session_role_name.trim() || row.session_is_superuser !== false || row.session_bypass_rls !== false || row.session_can_create_role !== false || row.session_inherits_privileged_role !== false || row.session_can_set_privileged_role !== false || row.effective_has_authentication_runtime !== false || row.effective_has_admin_directory_authority !== false || row.session_has_authentication_runtime !== false || row.session_has_admin_directory_authority !== false || row.session_can_set_sensitive_function_role !== false) {
     throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
   }
-  assertExpectedPostgresRuntimeRole(String(row.role_name || ""));
-  // Only the explicitly configured hosted runtime gate requires all eight
-  // tables. Generic local/dev readiness can run without migration fixtures.
+  const expectedRole = String(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim();
+  // FIELD002: deployments marked production must fail readiness when the
+  // expected least-privilege LOGIN role is missing. Otherwise an omitted
+  // optional setting silently skips the exact eight-policy admission gate.
+  // Local development and synthetic CI remain explicitly separate.
+  if (env.NODE_ENV === "production" && !expectedRole) {
+    throw new Error("POSTGRES_RUNTIME_ROLE_CONFIGURATION_REQUIRED");
+  }
+  assertExpectedPostgresRuntimeRole(String(row.role_name || ""), env);
   if (
-    String(process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim() &&
+    (env.NODE_ENV === "production" || expectedRole) &&
     row.critical_privacy_rls_ready_count !== CRITICAL_POSTGRES_PRIVACY_RLS_TABLES.length
   ) {
     throw new Error("POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY");
