@@ -16,3 +16,23 @@ Neon read-only branch metadata on 2026-11-06 independently confirmed seven known
 The actual deployment environment and any external/manual Neon branch restore, backup, seed or import process **must independently enforce** a source-provenance and hosted post-restore fixture-exclusion gate. The existing loopback-only test restore script cannot enforce this on Neon. Future legitimate **merchant recovery** is distinct from first-commercial-bootstrap and cannot use a blanket zero-notifications rule.
 
 Controlled original \`staging-runtime\` ACL repair/migration rollout, production restricted runtime identity, 0052 migration-owner bootstrap, real production backup/restore proof and hosted launch admission all remain separate. No original-staging/default-production SQL mutation, archived branch unarchive or merge is part of this commit. **FIELD002 OPEN / 0052 BLOCKED / P0 NO-GO**, historical 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED (overall P0% not certified).
+
+## Exact-SHA CI acceptance and independently observed hosted data
+
+On [source commit b2876094](https://github.com/nora953/fawri-production-source/commit/b287609459a72fbde88ec6e896b38152c5c664be), [Backup and restore drill run #42289185770](https://github.com/nora953/fawri-production-source/actions/runs/42289185770) completed **SUCCESS**. The disposable job's unit tests passed **29/29, zero failures**, including the five new FIELD002-R2 source-admission cases. The API role/RLS startup tests and disposable PostgreSQL restore also passed. [Complete migration safety](https://github.com/nora953/fawri-production-source/actions/runs/42289186142) returned **SUCCESS** on the exact source SHA. This is source/CI proof, not a commercial deploy.
+
+Read-only independent SQL on both Neon branches on 2026-11-06:
+
+| Guard | Original staging-runtime | Clean rehearsal clone |
+|---|---:|---:|
+| Applied Drizzle migrations | 28 | 52 |
+| Historical notification rows | 0 | 0 |
+| Critical RLS-covered tables | 0/8 | 8/8 |
+| Unsafe owner creator-default trusted function EXECUTE grants | 2 | 0 |
+| Audit-event rows | 283 | 283 |
+| Legacy fawri_staging_runtime LOGIN+BYPASSRLS | true | true |
+| Other active client transactions at sampling | 0 | 0 |
+
+The old privileged staging login is unsafe even on the clone; the successful hosted SQL/HTTP acceptance used two *temporary restricted LOGINs* and restored full baseline afterward. Metadata inspection is not deployment authorization.
+
+**Decision:** source-policy/CI subcondition ACCEPTED. R2 commercial deployment/restore enforcement OPEN, original staging ACL/migration rollout OPEN, FIELD002 OPEN, migration 0052 BLOCKED, release NO-GO.
