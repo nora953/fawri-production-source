@@ -4496,7 +4496,7 @@
       "field002Remaining20261106": {
         "sourceCodeSha": "6f7ab1cdb6fce50f0c082d168cdaddac7fe7d9f5",
         "R1": "ACCEPTED_BOUNDED_CANONICAL_SOURCE_CLIENT_AND_SQL_HTTP",
-        "R2": "OPEN_TEST_ONLY_OWNER_ATTESTATION_RECORDED_CONTENT_SENSITIVITY_HISTORIC_RETENTION_AND_DEPLOYMENT_ISOLATION_UNVERIFIED",
+        "R2": "OPEN_BOUNDED_15_OF_28_TEST_COHORT_SCREEN_PASSED_RETENTION_RELEASE_EXCLUSION_POLICY_PENDING",
         "R3": "ACCEPTED_BOUNDED_SOURCE_LEGACY_READ_ONLY_NEW_ORDER_DEFERRED",
         "acceptedCI": {
           "notificationPrivacyRun": 42160825151,
@@ -4506,6 +4506,36 @@
         },
         "remainingPrivacy": "Full eight-table role/actor/field and original-hosted release acceptance are separate; field002 is not a standalone P0 closed gate",
         "newClosedGate": false
+      },
+      "field002R2LiveReadOnly20261106": {
+        "evidence": "evidence/P0-FIELD002-R2-READONLY-CONTENT-SENSITIVITY-20261106.md",
+        "inspectedOn": "2026-11-06",
+        "environment": "isolated_neon_nondefault_rehearsal_branch_only",
+        "execution": "SELECT_ONLY_AGGREGATE_NO_RAW_VALUES",
+        "totalStoredNotifications": 28,
+        "fullSourceReferences": 13,
+        "noSourceReferences": 15,
+        "partialSourceReferences": 0,
+        "unlinkedCohortContract": {
+          "status": "BOUNDED_15_ROWS_COMPATIBLE_WITH_TEST_SUBSCRIPTION_TEMPLATES",
+          "unexpectedJsonKeys": 0,
+          "nestedJsonValues": 0,
+          "emailLikeMatches": 0,
+          "iraqiPhoneLikeMatches": 0,
+          "externalLinkLikeMatches": 0,
+          "sensitiveKeyMatches": 0,
+          "unrecognizedLegacyIdShapes": 0,
+          "missingMerchantScope": 0,
+          "rowsWithExplicitExpiry": 0
+        },
+        "privacyCaveat": "Heuristic checks cannot prove absence of all real-person names; 13 linked records have free-text admin_name/ticket_subject fields and were not read as values.",
+        "ownerAttestation": "No commercial launch or actual merchants; notification data test-only per product owner.",
+        "disposition": "PENDING_EXPLICIT_NONPRODUCTION_RETENTION_AND_COMMERCIAL_EXCLUSION_APPROVAL",
+        "noHistoricWriterAttribution": true,
+        "productionBranchUntouched": true,
+        "originalStagingBranchUntouched": true,
+        "dataChanged": false,
+        "gateClosed": false
       }
     },
     {
