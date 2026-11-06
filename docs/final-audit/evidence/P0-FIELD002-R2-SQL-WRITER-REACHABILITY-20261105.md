@@ -121,3 +121,14 @@ Current mounted NotificationsPage uses the validated stored \`notification.actio
 The fixed client predicate now refuses all raw ASCII control characters (0x00–0x1F and DEL), preserves its backslash and protocol-relative refusals and additionally requires WHATWG resolution against a fixed nonnetwork \`https://fawri.invalid\` base to remain same-origin. No network request is made by the validation. Both read-list and mark-as-read now fail validation on encoded JSON containing literal CR/LF/TAB in \`action_url\`; safe encoded query parameters and normal internal links stay accepted. Direct client regression covers all three control escape variants with URL-origin proof plus positive relative paths. Existing hosted notification row contents remain unchanged.
 
 **Scope:** FIELD002 R1 source/client repair only. CI result pending, no inference about staging/production deployment. Historical R2 content sensitivity, test-only classification and full 8-table privacy acceptance remain OPEN; no P0 gate status changed, 0052 BLOCKED, release NO-GO.
+
+## 2026-11-06 — accepted exact-code CI checkpoint for the R1 client navigation fix
+
+The original client navigation guard accepted a linefeed/carriage-return/tab escape which WHATWG URL normalization could turn into a different origin. That code path leads to `window.location.assign(notification.action_url)` on the mounted merchant NotificationsPage. A guarded same-origin WHATWG URL parse and rejection of raw ASCII control characters, with list/read-result negative assertions and positive paths, is now source-accepted at `6f7ab1cdb6fce50f0c082d168cdaddac7fe7d9f5`. A separate preexisting dashboard source test initially failed because it matched an exact negated source-text form rather than the new early-reject branch; its expectation was corrected and it is now run within the notification CI workflow alongside the actual client authority tests.
+
+- [Exact-code FIELD002 notification SQL/HTTP + client/source tests — SUCCESS](https://github.com/nora953/fawri-production-source/actions/runs/42160825151)
+- [Final quality gates — SUCCESS, including frontend source tests and full typecheck](https://github.com/nora953/fawri-production-source/actions/runs/42160825137)
+- R1 **accepted only within canonical current-source plus CI SQL/HTTP/client scope**; R3 **bounded source writer/read-only/deferred-new-order acceptance**.
+- R2 remains OPEN: owner-attested test-only history with 28 rows and 15 missing provenance pairs, sensitivity check not independently run, nonproduction retention disposition and actual future deployment isolation not accepted. No source-based post hoc writer attribution; no hosted writes/changes or secrets.
+- Canonical known P0 statuses unchanged: 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, complete inventory false, migration 0052 BLOCKED, P0 release NO-GO. Unrelated cashier CI failure remains its own workstream.
+

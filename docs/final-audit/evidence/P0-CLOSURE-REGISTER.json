@@ -130,7 +130,7 @@
       "notificationInspectionEndingEvidence": "evidence/P0-SUPPORT-NOTIFICATION-ENDING-20261025.json",
       "notificationInspectionEndingStatus": "BOUNDED_HTTP_LIFECYCLE_ACCEPTED_NOT_TIMER_OR_HISTORY",
       "notificationLegacyCompatibilityEvidence": "evidence/P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json",
-      "notificationLegacyCompatibilityStatus": "SOURCE_TRACE_AND_LOCAL_SYNTHETIC_CLIENT_CONTRACT_ONLY",
+      "notificationLegacyCompatibilityStatus": "R3_HISTORICAL_READ_ONLY_AND_NEW_ORDER_DEFERRED_SOURCE_CI_ACCEPTED_20261106",
       "notificationConcurrentRefreshEvidence": "evidence/P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json",
       "notificationConcurrentRefreshStatus": "BOUNDED_ACTUAL_HTTP_SQL_OVERLAP_ACCEPTED_NOT_CAPACITY_OR_ALL_PRODUCERS",
       "inspectionConcurrentCreationEvidence": "evidence/P0-INSPECTION-CONCURRENT-CREATE-20261025.json",
@@ -140,12 +140,10 @@
       "notificationFieldReconciliationEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
       "notificationFieldReconciliationStatus": "FINITE_CHECKLIST_RECONCILED_FIELD002_OPEN",
       "notificationFieldUnresolvedItems": [
-        "FIELD002-R1",
-        "FIELD002-R2",
-        "FIELD002-R3"
+        "FIELD002-R2"
       ],
       "notificationResponseFieldContractEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
-      "notificationResponseFieldContractStatus": "CANDIDATE_PREPARED_LOCAL_CLIENT_6PASS_NOT_ENFORCED",
+      "notificationResponseFieldContractStatus": "R1_APPROVED_BOUNDED_CANONICAL_SOURCE_CLIENT_HTTP_CI_ACCEPTED_20261106",
       "notificationResponseFieldContractTest": "evidence/p0-notification-response-field-contract.test.mjs",
       "notificationResponseFieldContractPointer": "responseFieldContract",
       "auditFieldBoundaryEvidence": "evidence/P0-AUDIT-FIELD-BOUNDARY-20261025.json",
@@ -4494,6 +4492,20 @@
         "status": "ISOLATED_ACL_REPAIR_VERIFIED_FIELD002_OPEN",
         "evidence": "evidence/P0-FIELD002-ISOLATED-ACL-REPAIR-RUNBOOK-20261104.md",
         "parentGateClosed": false
+      },
+      "field002Remaining20261106": {
+        "sourceCodeSha": "6f7ab1cdb6fce50f0c082d168cdaddac7fe7d9f5",
+        "R1": "ACCEPTED_BOUNDED_CANONICAL_SOURCE_CLIENT_AND_SQL_HTTP",
+        "R2": "OPEN_TEST_ONLY_OWNER_ATTESTATION_RECORDED_CONTENT_SENSITIVITY_HISTORIC_RETENTION_AND_DEPLOYMENT_ISOLATION_UNVERIFIED",
+        "R3": "ACCEPTED_BOUNDED_SOURCE_LEGACY_READ_ONLY_NEW_ORDER_DEFERRED",
+        "acceptedCI": {
+          "notificationPrivacyRun": 42160825151,
+          "qualityRun": 42160825137,
+          "notification": "success",
+          "quality": "success"
+        },
+        "remainingPrivacy": "Full eight-table role/actor/field and original-hosted release acceptance are separate; field002 is not a standalone P0 closed gate",
+        "newClosedGate": false
       }
     },
     {
