@@ -25,6 +25,14 @@ The drill must never use Production, Replit, hosted PostgreSQL, cloud object sto
 
 Failures are generic and database URLs/credentials are redacted from command errors.
 
+### FIELD002 precommercial notification fixture exclusion
+
+For an **isolated disposable copy of the precommercial release candidate**, the restore CLI supports an explicit optional `--field002-require-empty-notifications 1` argument. When enabled, after the ordinary row-count verification it runs the fixed read-only SQL `SELECT count(*) FROM public.notifications`, and fails closed unless the table exists and the result is exactly `0`. No user-provided SQL, arbitrary expected count, role elevation, or data deletion is accepted by this check.
+
+The GitHub `Backup and restore drill` now creates a real empty `public.notifications` table in its isolated PostgreSQL source and supplies the flag on a genuine `pg_restore` trial. Unit regressions additionally simulate a restored cohort of 28 notices and a missing table and require failure.
+
+**Critical limitation:** this flag is opt-in and the current restore command is restricted to loopback disposable databases. Neither it nor the workflow proves that an external/manual import, a commercial hosted restore, or the future deployment will invoke the check. It must not be wired to normal merchant backup recovery, which may legitimately contain live notification rows. Before launching the first merchant, release engineering must independently inventory all seed/restore/import paths and mandate a fail-closed fixture exclusion gate **before promoting any production candidate**, with evidence from the actual release topology. FIELD002-R2 remains OPEN until then.
+
 ## PostgreSQL drill order
 
 1. Start the GitHub Actions PostgreSQL service container.
