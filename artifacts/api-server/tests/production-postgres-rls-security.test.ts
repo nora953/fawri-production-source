@@ -83,6 +83,24 @@ test("staff discount policy mutations remain trusted authentication authority", 
   assert.ok((AUTHENTICATION_INTEGRITY_TABLES as readonly string[]).includes("merchant_cashier_staff_discount_policies"));
 });
 
+test("FIELD002 configured production SQL current/session role must match the approved runtime login", async () => {
+  const env = { ...productionEnv(), FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_runtime" };
+  await assert.doesNotReject(() => assertProductionDatabaseRlsReady(env, target(safeRow())));
+  for (const fields of [
+    { role_name: "fawri_unapproved" },
+    { session_role_name: "fawri_unapproved" },
+  ]) {
+    await assert.rejects(
+      () => assertProductionDatabaseRlsReady(env, target(safeRow(fields))),
+      (error: unknown) => {
+        assert.ok(error instanceof ProductionDatabaseRlsSecurityError);
+        assert.equal(error.code, "PRODUCTION_DATABASE_RUNTIME_ROLE_MISMATCH");
+        return true;
+      },
+    );
+  }
+});
+
 test("production rejects superuser and BYPASSRLS runtime roles", async () => {
   await rejectsWith(
     "PRODUCTION_DATABASE_RUNTIME_SUPERUSER_FORBIDDEN",
