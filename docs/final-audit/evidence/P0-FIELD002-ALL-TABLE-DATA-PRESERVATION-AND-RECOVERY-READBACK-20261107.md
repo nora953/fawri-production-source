@@ -47,3 +47,7 @@ Attached a *temporary read-only* Neon compute `ep-red-union-b1h7joxb` to the new
 **NOT yet an actual restore drill:** creating and reading a Neon copy is **not** proof of a successful reset/restore of a corrupted target, of PITR, of portable `pg_dump`/`pg_restore`, of all internal PostgreSQL storage objects, or of automatic server/client reconnection. The data-bearing recovery branch is **strictly forbidden as first-commercial deployment source** under FIELD002-R2. Any actual destructive disposable reset test requires separate explicit approval and a sacrificial target with verified identity. No restored target was switched into an operational service.
 
 **Still OPEN:** independently verified true recovery-to-target rehearsal; original 0028–0051 staged rollout and privileged-role/ACL cutover; actual target tenant SQL+HTTP positive/negative/revocation; first-commercial writer/import/promotion enforcement. `0052` separately BLOCKED; FIELD002 OPEN, PR #550 draft, commercial release NO-GO. No certified overall P0 percentage.
+
+
+### Independent native Neon full-schema diff check
+**Independent native Neon schema comparison:** queried `compare_database_schema` with recovery `br-empty-mud-b1it6mg9`, base original `br-falling-dust-b1km4gix`, database `neondb`. Neon returned `diff: ""` (empty SQL schema diff). This is an additional read-only cross-check of schema equality at inspection time, not an executable restore drill.
