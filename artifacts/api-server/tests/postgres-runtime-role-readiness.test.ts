@@ -177,3 +177,38 @@ test("unconfigured local runtime still refuses authentication bypass execution g
     else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = old;
   }
 });
+
+test("FIELD002 production SQL readiness refuses legacy identities even if their flags appear restricted", () => {
+  for (const forbidden of [
+    "fawri_staging_runtime", "fawri_staging_rls_runtime",
+    "neondb_owner", "neon_superuser",
+  ]) {
+    const env = {
+      NODE_ENV: "production",
+      FAWRI_DEPLOYMENT_MODE: "production",
+      FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: forbidden,
+    };
+    assert.throws(() => assertSafePostgresRuntimeRole({
+      ...safe, role_name: forbidden, session_role_name: forbidden,
+    }, env), /POSTGRES_RUNTIME_LEGACY_ROLE_FORBIDDEN/, forbidden);
+  }
+
+  // SET ROLE must not hide a legacy authenticated LOGIN behind a safe current_user.
+  const env = {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "production",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_tenant_runtime_v2",
+  };
+  assert.throws(() => assertSafePostgresRuntimeRole({
+    ...safe, role_name: "fawri_tenant_runtime_v2",
+    session_role_name: "fawri_staging_runtime",
+  }, env), /POSTGRES_RUNTIME_LEGACY_ROLE_FORBIDDEN/);
+  assert.throws(() => assertSafePostgresRuntimeRole({
+    ...safe, role_name: "fawri_staging_rls_runtime",
+    session_role_name: "fawri_tenant_runtime_v2",
+  }, env), /POSTGRES_RUNTIME_LEGACY_ROLE_FORBIDDEN/);
+  assert.doesNotThrow(() => assertSafePostgresRuntimeRole({
+    ...safe, role_name: "fawri_tenant_runtime_v2",
+    session_role_name: "fawri_tenant_runtime_v2",
+  }, env));
+});
