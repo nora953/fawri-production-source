@@ -1,4 +1,4 @@
-import { requireNotificationSourceReference } from "./postgresNotificationSourceReference";
+import { assertNotificationTypeWritable, requireNotificationSourceReference } from "./postgresNotificationSourceReference";
 import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
@@ -106,6 +106,7 @@ async function insertMerchantNotification(
     createdAt: string;
   },
 ): Promise<void> {
+  assertNotificationTypeWritable(input.type);
   const source = requireNotificationSourceReference(input.sourceEntityType, input.sourceEntityId);
   await target.query(
     `INSERT INTO notifications

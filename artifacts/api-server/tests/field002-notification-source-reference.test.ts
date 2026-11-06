@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { requireNotificationSourceReference } from "../src/services/postgresNotificationSourceReference";
+import { assertNotificationTypeWritable, requireNotificationSourceReference } from "../src/services/postgresNotificationSourceReference";
 
 test("FIELD002-R2 requires both new notification source reference fields", () => {
   assert.deepEqual(requireNotificationSourceReference("subscription", "sub-1"), {
@@ -19,4 +19,32 @@ test("FIELD002-R2 requires both new notification source reference fields", () =>
       (error as Error & { code?: string }).code === "NOTIFICATION_SOURCE_REFERENCE_REQUIRED",
     );
   }
+});
+
+test("FIELD002-R3 historic notification types cannot be issued again", () => {
+  for (const type of [
+    "subscription_balance_purchase",
+    "subscription_plan_event",
+    "subscription_emergency_activated",
+    " subscription_plan_event ",
+  ]) {
+    assert.throws(() => assertNotificationTypeWritable(type), (error: unknown) =>
+      error instanceof Error &&
+      (error as Error & { code?: string }).code === "NOTIFICATION_LEGACY_TYPE_READ_ONLY",
+    );
+  }
+  for (const type of [
+    "subscription_expiry_reminder",
+    "subscription_expired",
+    "addon_expiry_reminder",
+    "support_reply_reminder",
+    "inspection_session_request",
+    "operational_payment_conflict",
+    "operational_customer_message",
+    "operational_knowledge_gap",
+  ]) {
+    assert.doesNotThrow(() => assertNotificationTypeWritable(type));
+  }
+  // A direct helper test is not approval to activate a new-order caller.
+  assert.doesNotThrow(() => assertNotificationTypeWritable("operational_new_order"));
 });

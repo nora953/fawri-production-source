@@ -104,3 +104,12 @@ No historical data, hosted database, service deployment, or existing notificatio
 - Keep the separate current-writer inventory, fail-closed source references, R1/R3 approved policy, isolated 7/7 SQL/HTTP notification acceptance and 8-table release privacy gap distinct. Parent FIELD002 requires all its explicit actor/table/route and hosted production-readiness conditions, not just R2 fixture classification.
 - **No change to canonical P0 counts** (29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED), FIELD002 OPEN, 0052 BLOCKED, release NO-GO, full P0 percentage unknown. No original Neon, Railway, merchant data, merge or deploy touched in this checkpoint.
 
+
+## 2026-11-06 — fail-closed historical type emission and malformed-plan import (source candidate)
+
+FIELD002-R2/R3 implementation on the existing PR: all four current and retired generic merchant-notification SQL INSERT wrappers now call `assertNotificationTypeWritable` before any SQL. It refuses new `subscription_balance_purchase`, `subscription_plan_event`, `subscription_emergency_activated` writes (including whitespace-padded types), while preserving historical read/mark-read behavior and current active issuers. The fifth fixed-type inspection writer remains `inspection_session_request`. No direct new-order notification caller is activated; this change does not authorize one.
+
+Both `validatePlanForWrite` and `validateCutoverPlanForWrite` now reject any non-empty **or malformed** present `rows.notifications` collection, not just non-empty arrays. A missing key or an explicitly empty array remains allowed. Negative in-memory plan tests, direct unit tests for legacy and current types, and static guard coverage for all four generic SQL writers have been added. Exact-commit CI acceptance is pending; this does not establish historical actor attribution, real-person data absence or deployment isolation.
+
+No DB record, hosted Neon, Railway, migration 0052, live service, approval policy or release flag changed. Source containment prerequisite only; status FIELD002 OPEN, 0052 BLOCKED, P0 NO-GO, 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, overall percentage unknown.
+

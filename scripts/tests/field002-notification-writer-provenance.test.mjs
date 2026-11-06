@@ -98,6 +98,7 @@ test('FIELD002-R2 all generic SQL notification writers require complete source r
   ];
   for(const file of writers){
     const source=at(file);
+    assert.match(source,/assertNotificationTypeWritable\(input\.type\)/,file+' lacks legacy notification write guard');
     assert.match(source,/requireNotificationSourceReference\(input\.sourceEntityType, (?:input\.sourceEntityId|sourceEntityId)\)/,file+' lacks reference guard');
     assert.match(source,/source\.sourceEntityType/,file+' SQL source type not validated');
     assert.match(source,/source\.sourceEntityId/,file+' SQL source id not validated');
@@ -140,5 +141,10 @@ test('FIELD002-R2 live cutover and disposable writer refuse unapproved historica
   const snapshot={tables:{'public.notifications':{}}};
   for(const validator of [validatePlanForWrite,validateCutoverPlanForWrite]){
     assert.throws(()=>validator(report,snapshot),/FIELD002_R2_NOTIFICATION_IMPORT_REQUIRES_SEPARATE_PROVENANCE_APPROVAL/,validator.name);
+    // Malformed notification collections must never bypass cutover admission.
+    for(const invalid of [{id:'synthetic'},null,'synthetic',4]){
+      assert.throws(()=>validator({...report,rows:{notifications:invalid}},snapshot),
+        /FIELD002_R2_NOTIFICATION_IMPORT_REQUIRES_SEPARATE_PROVENANCE_APPROVAL/,validator.name);
+    }
   }
 });
