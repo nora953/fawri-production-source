@@ -131,34 +131,35 @@ test("no hosted runtime role configuration preserves lightweight local readiness
 });
 
 test("tenant runtime rejects RLS-bypassing function capabilities even with all eight policies", () => {
-  const old = process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
-  try {
-    process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = "fawri_staging_rls_runtime";
-    const restricted = {
-      ...safe,
-      role_name: "fawri_staging_rls_runtime",
-      session_role_name: "fawri_staging_rls_runtime",
-      critical_privacy_rls_ready_count: 8,
-    };
-    assert.doesNotThrow(() => assertSafePostgresRuntimeRole(restricted));
-    for (const unsafe of [
-      { session_has_authentication_runtime: true },
-      { session_has_admin_directory_authority: true },
-      { effective_has_authentication_runtime: true },
-      { effective_has_admin_directory_authority: true },
-      { session_can_set_sensitive_function_role: true },
-    ]) {
-      assert.throws(
-        () => assertSafePostgresRuntimeRole({ ...restricted, ...unsafe }),
-        /POSTGRES_RUNTIME_ROLE_UNSAFE/,
-        "function execution bypasses tenant boundaries regardless of RLS policy count",
-      );
-    }
-  } finally {
-    if (old === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
-    else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = old;
+  // The historical NOLOGIN staging role is an acceptance fixture only; it is
+  // deliberately prohibited as a production application LOGIN by FIELD002.
+  const env = {
+    NODE_ENV: "test",
+    FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_staging_rls_runtime",
+  };
+  const restricted = {
+    ...safe,
+    role_name: "fawri_staging_rls_runtime",
+    session_role_name: "fawri_staging_rls_runtime",
+    critical_privacy_rls_ready_count: 8,
+  };
+  assert.doesNotThrow(() => assertSafePostgresRuntimeRole(restricted, env));
+  for (const unsafe of [
+    { session_has_authentication_runtime: true },
+    { session_has_admin_directory_authority: true },
+    { effective_has_authentication_runtime: true },
+    { effective_has_admin_directory_authority: true },
+    { session_can_set_sensitive_function_role: true },
+  ]) {
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...restricted, ...unsafe }, env),
+      /POSTGRES_RUNTIME_ROLE_UNSAFE/,
+      "function execution bypasses tenant boundaries regardless of RLS policy count",
+    );
   }
 });
+
 
 test("unconfigured local runtime still refuses authentication bypass execution grants", () => {
   const old = process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
