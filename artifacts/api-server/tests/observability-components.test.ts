@@ -140,6 +140,28 @@ test("FIELD002 hosted runtime rejects incomplete or altered eight-table privacy 
   try {
     process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = good.role_name;
     assert.doesNotThrow(() => assertSafePostgresRuntimeRole(good));
+    // Explicit production settings must never silently skip the full RLS gate.
+    assert.throws(
+      () => assertSafePostgresRuntimeRole(good, { NODE_ENV: "production" }),
+      /POSTGRES_RUNTIME_ROLE_CONFIGURATION_REQUIRED/,
+    );
+    assert.doesNotThrow(
+      () => assertSafePostgresRuntimeRole(good, { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+    );
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 7 },
+        { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+      /POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY/,
+    );
+    assert.throws(
+      () => assertSafePostgresRuntimeRole(good,
+        { NODE_ENV: "production", FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "wrong_tenant_role" }),
+      /POSTGRES_RUNTIME_ROLE_MISMATCH/,
+    );
+    assert.doesNotThrow(
+      () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 0 },
+        { NODE_ENV: "test" }),
+    );
     for (const malformed of [0, 7, "8", null, undefined]) {
       assert.throws(
         () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: malformed }),
