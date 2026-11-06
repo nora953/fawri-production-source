@@ -17,6 +17,7 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     FAWRI_PRODUCTION_RELEASE_GATE: "required",
     DATABASE_URL: "postgresql://fawri:test@db.internal:5432/fawri",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_restricted_runtime",
     FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
     FAWRI_AUTH_SECURITY_SECRET: "auth-secret-at-least-thirty-two-characters-long",
@@ -58,6 +59,31 @@ test("NODE_ENV production fails closed even when the legacy release-gate variabl
     (error: unknown) =>
       (error as { code?: string }).code === "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
   );
+});
+
+test("FIELD002 production startup config requires an explicit approved tenant runtime role", () => {
+  for (const bad of ["", "  ", "<role>", "bad role", "neondb.owner"]) {
+    const env = productionEnv({ FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: bad });
+    const issues = getProductionRuntimeConfigurationIssues(env);
+    assert.ok(issues.some(issue => issue.code === "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"), bad);
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+    });
+  }
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
+  // NODE_ENV is not the sole source of deployment authority: an explicit
+  // production mode must still refuse a missing role even in a test process.
+  const explicit = productionEnv({
+    NODE_ENV: "test",
+    FAWRI_DEPLOYMENT_MODE: "production",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "",
+  });
+  assert.ok(getProductionRuntimeConfigurationIssues(explicit)
+    .some(issue => issue.code === "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"));
+  assert.deepEqual(getProductionRuntimeConfigurationIssues({
+    NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "",
+  }), []);
 });
 
 test("staging must opt out explicitly from production-only provider requirements", () => {
