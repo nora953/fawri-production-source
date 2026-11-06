@@ -88,8 +88,11 @@ jobs:
       - name: Test observability fail-closed and secret-safety contracts
         run: pnpm --filter @workspace/api-server exec tsx --test ./tests/observability-components.test.ts
 
-      - name: FIELD002 clone profile, authorization and cleanup contract tests
-        run: node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
+      - name: FIELD002 clone runner syntax and authorization contract tests
+        run: |
+          node --check artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs
+          node --check scripts/lib/field002-isolated-acceptance-plan.mjs
+          node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
 
       - name: FIELD002 production startup role and RLS policy admission tests
         run: >-
