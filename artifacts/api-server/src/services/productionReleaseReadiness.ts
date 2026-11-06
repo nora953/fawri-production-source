@@ -163,6 +163,12 @@ export function getProductionRuntimeConfigurationIssues(
   if (text(env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "OPERATIONAL_POSTGRES_AUTHORITY_REQUIRED"));
   }
+  // This is evaluated BEFORE the HTTP listener starts (index.ts). Production
+  // must pin the exact tenant runtime LOGIN role, not merely advertise that
+  // a database exists. Actual role privileges and RLS remain SQL-gated.
+  if (!/^[a-z_][a-z0-9_]{0,62}$/.test(text(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE))) {
+    issues.push(issue("database", "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"));
+  }
   if (text(env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "SUBSCRIPTION_POSTGRES_AUTHORITY_REQUIRED"));
   }
