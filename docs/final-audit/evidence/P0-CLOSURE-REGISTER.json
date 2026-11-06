@@ -4496,7 +4496,7 @@
       "field002Remaining20261106": {
         "sourceCodeSha": "6f7ab1cdb6fce50f0c082d168cdaddac7fe7d9f5",
         "R1": "ACCEPTED_BOUNDED_CANONICAL_SOURCE_CLIENT_AND_SQL_HTTP",
-        "R2": "OPEN_BOUNDED_15_OF_28_TEST_COHORT_SCREEN_PASSED_RETENTION_RELEASE_EXCLUSION_POLICY_PENDING",
+        "R2": "OPEN_ISOLATED_28_ROW_TEST_CLONE_CLEANUP_VERIFIED_ORIGINAL_STAGING_AND_RELEASE_EXCLUSION_NOT_VERIFIED",
         "R3": "ACCEPTED_BOUNDED_SOURCE_LEGACY_READ_ONLY_NEW_ORDER_DEFERRED",
         "acceptedCI": {
           "notificationPrivacyRun": 42160825151,
@@ -4535,6 +4535,24 @@
         "productionBranchUntouched": true,
         "originalStagingBranchUntouched": true,
         "dataChanged": false,
+        "gateClosed": false
+      },
+      "field002R2IsolatedCloneDeletion20261106": {
+        "evidence": "evidence/P0-FIELD002-R2-ISOLATED-FIXTURE-DELETION-20261106.md",
+        "ownerAuthorized": true,
+        "scope": "NONDEFAULT_NONPRIMARY_FIELD002_REHEARSAL_BRANCH_ONLY",
+        "projectId": "round-fire-18493605",
+        "branchId": "br-young-hill-b1x9vhlz",
+        "guardChecksPassed": true,
+        "expectedCohort": 28,
+        "actualDeleteCountGuard": 28,
+        "postDeleteRemainingRows": 0,
+        "postDeleteRemainingUnlinked": 0,
+        "postDeleteRemainingLinked": 0,
+        "originalStagingBranchUntouched": true,
+        "productionBranchUntouched": true,
+        "rowDeleteScope": "ISOLATED_TEST_CLONE_ONLY",
+        "releasePathDataDisposition": "OPEN_VERIFY_ORIGINAL_FIXTURE_IMPORT_RESTORE_DEPLOYMENT_EXCLUSION",
         "gateClosed": false
       }
     },
