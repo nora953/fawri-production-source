@@ -28,7 +28,7 @@
     ]
   },
   "R2": {
-    "status": "PRESERVATION_APPROVED_PROVENANCE_INCOMPLETE",
+    "status": "TEST_FIXTURE_DISPOSITION_ACCEPTED_RELEASE_IMPORT_RESTORE_EXCLUSION_PENDING",
     "historicalRows": "PRESERVE_UNCHANGED_DURING_SOURCE_REVIEW",
     "missingLinks": "DO_NOT_INVENT_RELATIONS_OR_BACKFILL_WITHOUT_PROVENANCE",
     "unverifiedWriters": "NO_AUTOMATIC_DELETE_QUARANTINE_OR_REPAIR",
@@ -43,6 +43,29 @@
       "verifiedRemainingRows": 0,
       "evidence": "P0-FIELD002-R2-ISOLATED-FIXTURE-DELETION-20261106.md",
       "originalStagingOrProductionMutationApproved": false,
+      "fullR2Closure": false
+    },
+    "originalStagingTestCleanupOwnerOverride20261106": {
+      "status": "OWNER_AUTHORIZED_ATOMIC_DELETE_AND_INDEPENDENT_ZERO_ROW_VERIFIED",
+      "scope": {
+        "projectId": "round-fire-18493605",
+        "branchId": "br-falling-dust-b1km4gix",
+        "branchName": "staging-runtime",
+        "database": "neondb",
+        "nonPrimary": true,
+        "nonDefault": true
+      },
+      "deletedTestRows": 28,
+      "missingCompleteSourceRefSnapshot": 15,
+      "completeSourceRefSnapshot": 13,
+      "verifiedRemainingRows": 0,
+      "evidence": "P0-FIELD002-R2-ORIGINAL-STAGING-FIXTURE-DELETION-20261106.md",
+      "postCleanupRlsReady": false,
+      "postCleanupRlsProtectedTables": 0,
+      "postCleanupRlsRequiredTables": 8,
+      "supersedesHistoricalPreservationOnlyFor": "br-falling-dust-b1km4gix",
+      "defaultOrProductionMutationApproved": false,
+      "releaseImportRestoreExclusionVerified": false,
       "fullR2Closure": false
     }
   },
@@ -69,8 +92,13 @@
     "field002": "OPEN",
     "migration0052": "BLOCKED",
     "p0": "NO_GO",
-    "originalNeonTouched": false,
+    "originalNeonTouched": true,
     "railwayTouched": false,
-    "deploymentOrMergeApproved": false
+    "deploymentOrMergeApproved": false,
+    "originalNeonTouchScope": "NONDEFAULT_STAGING_RUNTIME_TEST_NOTIFICATIONS_ONLY_OWNER_AUTHORIZED",
+    "productionNeonTouched": false,
+    "preCommercialNotificationFixturesOnOriginalStaging": 0,
+    "notificationImportRestoreExclusion": "OPEN_NOT_PROVEN_FOR_COMMERCIAL_DEPLOYMENT",
+    "hostedStagingRls": "OPEN_ZERO_OF_EIGHT_CRITICAL_TABLES_PROTECTED"
   }
 }
