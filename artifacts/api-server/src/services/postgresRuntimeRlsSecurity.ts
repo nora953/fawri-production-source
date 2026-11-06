@@ -418,6 +418,17 @@ export async function assertProductionDatabaseRlsReady(
     );
   }
 
+  // FIELD002: the config gate requires an explicit expected tenant LOGIN
+  // before the HTTP listener. Compare the *actual authenticated session* and
+  // active SQL role against it here; a configured label is not SQL evidence.
+  const expectedRuntimeRole = String(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim();
+  if (expectedRuntimeRole &&
+      (readiness.roleName !== expectedRuntimeRole ||
+       readiness.sessionRoleName !== expectedRuntimeRole)) {
+    fail("PRODUCTION_DATABASE_RUNTIME_ROLE_MISMATCH",
+      "production runtime SQL identities do not match the approved tenant login");
+  }
+
   if (readiness.superuser) {
     fail(
       "PRODUCTION_DATABASE_RUNTIME_SUPERUSER_FORBIDDEN",
