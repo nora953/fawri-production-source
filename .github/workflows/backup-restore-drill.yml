@@ -5,6 +5,10 @@ on:
     paths:
       - "artifacts/api-server/src/observability/**"
       - "artifacts/api-server/tests/observability-components.test.ts"
+      - "artifacts/api-server/src/services/productionReleaseReadiness.ts"
+      - "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts"
+      - "artifacts/api-server/tests/production-release-readiness.test.ts"
+      - "artifacts/api-server/tests/production-postgres-rls-security.test.ts"
       - "scripts/backup-postgresql.mjs"
       - "scripts/restore-postgresql.mjs"
       - "scripts/backup-object-storage.mjs"
@@ -22,6 +26,10 @@ on:
     paths:
       - "artifacts/api-server/src/observability/**"
       - "artifacts/api-server/tests/observability-components.test.ts"
+      - "artifacts/api-server/src/services/productionReleaseReadiness.ts"
+      - "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts"
+      - "artifacts/api-server/tests/production-release-readiness.test.ts"
+      - "artifacts/api-server/tests/production-postgres-rls-security.test.ts"
       - "scripts/backup-*"
       - "scripts/restore-*"
       - "docs/backup-restore-runbook.md"
@@ -67,6 +75,12 @@ jobs:
 
       - name: Test observability fail-closed and secret-safety contracts
         run: pnpm --filter @workspace/api-server exec tsx --test ./tests/observability-components.test.ts
+
+      - name: FIELD002 production startup role and RLS policy admission tests
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/production-release-readiness.test.ts
+          ./tests/production-postgres-rls-security.test.ts
 
   disposable-restore-drill:
     runs-on: ubuntu-latest
