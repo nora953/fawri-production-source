@@ -4496,7 +4496,7 @@
       "field002Remaining20261106": {
         "sourceCodeSha": "6f7ab1cdb6fce50f0c082d168cdaddac7fe7d9f5",
         "R1": "ACCEPTED_BOUNDED_CANONICAL_SOURCE_CLIENT_AND_SQL_HTTP",
-        "R2": "OPEN_ISOLATED_28_ROW_TEST_CLONE_CLEANUP_VERIFIED_ORIGINAL_STAGING_AND_RELEASE_EXCLUSION_NOT_VERIFIED",
+        "R2": "OPEN_SOURCE_ROW_AND_LINEAGE_CUTOVER_GUARDS_ACCEPTED_AND_ISOLATED_CLONE_EMPTY_ORIGINAL_STAGING_DEPLOYMENT_RESTORE_EXCLUSION_UNVERIFIED",
         "R3": "ACCEPTED_BOUNDED_SOURCE_LEGACY_READ_ONLY_NEW_ORDER_DEFERRED",
         "acceptedCI": {
           "notificationPrivacyRun": 42160825151,
@@ -4554,6 +4554,31 @@
         "rowDeleteScope": "ISOLATED_TEST_CLONE_ONLY",
         "releasePathDataDisposition": "OPEN_VERIFY_ORIGINAL_FIXTURE_IMPORT_RESTORE_DEPLOYMENT_EXCLUSION",
         "gateClosed": false
+      },
+      "field002R2SourceCutoverGuard20261106": {
+        "sourceCommit": "5ae7330af8a033b2a7475de00bc51fff2683bf9f",
+        "status": "ACCEPTED_BOUNDED_SOURCE_SQL_MIGRATION_GUARD",
+        "acceptedCI": {
+          "notificationPrivacyRun": 42165583054,
+          "notificationConclusion": "success",
+          "completeMigrationSafety": "success",
+          "postgresqlMigrationCandidate": "success"
+        },
+        "blockedAttemptModes": [
+          "rows.notifications with nonempty or malformed value",
+          "source_lineage.target_table notifications",
+          "source_lineage.target_table public.notifications"
+        ],
+        "positivePath": "unrelated table lineage accepted; no impact on live notification SQL producers",
+        "applicablePaths": [
+          "lib/db/scripts/lib/migration-write.mjs",
+          "lib/db/scripts/cutover-migration.mjs"
+        ],
+        "sourceSnapshotStatement": "scripts/run-postgresql-migration-cutover.mjs --write remains intentionally unavailable; scripts/restore-postgresql.mjs accepts only disposable localhost targets",
+        "branchScope": "source only; original staging and production hosted data untouched",
+        "sourceSubconditionAccepted": true,
+        "hostedCutoverExclusionVerified": false,
+        "noNewP0RowClosed": true
       }
     },
     {

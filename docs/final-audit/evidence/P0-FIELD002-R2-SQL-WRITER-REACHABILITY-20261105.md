@@ -132,3 +132,20 @@ The original client navigation guard accepted a linefeed/carriage-return/tab esc
 - R2 remains OPEN: owner-attested test-only history with 28 rows and 15 missing provenance pairs, sensitivity check not independently run, nonproduction retention disposition and actual future deployment isolation not accepted. No source-based post hoc writer attribution; no hosted writes/changes or secrets.
 - Canonical known P0 statuses unchanged: 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, complete inventory false, migration 0052 BLOCKED, P0 release NO-GO. Unrelated cashier CI failure remains its own workstream.
 
+
+## 2026-11-06 — exact-source accepted rejection of notification lineage entries in migration reports
+
+Pre-existing row validation rejected non-empty or malformed `report.rows.notifications` in both disposable and cutover writers, but did not independently reject `report.source_lineage` entries advertising target table `notifications` while a different permitted table was planned. That discrepancy permitted incorrect notification lineage to enter migration metadata even when the row-write guard barred the actual notifications table. It is a source integrity defect, **not** proof that historical notification rows reached production.
+
+At accepted code `5ae7330af8a033b2a7475de00bc51fff2683bf9f`, `assertNoHistoricalNotificationImports(report)` is shared by `lib/db/scripts/lib/migration-write.mjs` and `lib/db/scripts/cutover-migration.mjs` before insert planning, requiring `rows.notifications` to be an explicit empty array when present and rejecting `source_lineage.target_table` equal to `notifications` or `public.notifications` (case-insensitive; whitespace trimmed). Negative tests attempt three lineage spellings with zero notifications rows and verify both validators reject them. Positive tests show unrelated table lineage, with the notifications key absent or empty, remains permitted by this guard. Runtime application notification producers are unchanged.
+
+**Exact-commit CI evidence:**
+- [FIELD002 P0 notification privacy HTTP matrix — SUCCESS](https://github.com/nora953/fawri-production-source/actions/runs/42165583054), including static current-writer admission and actual disposable SQL/HTTP tenant/audience regression.
+- `Complete migration safety` — SUCCESS at the same SHA.
+- `PostgreSQL migration candidate` — SUCCESS at the same SHA.
+- An unrelated `Cashier subscription lifecycle` failure remains; do **not** claim all project CI green.
+
+**Restore/release boundary:** `scripts/restore-postgresql.mjs` is limited to disposable loopback restore targets and is not a commercial database restore tool. `scripts/run-postgresql-migration-cutover.mjs` rejects `--write` with `REAL_CUTOVER_NOT_IMPLEMENTED`. Full commercial release/data restore must still be separately verified. Owner-authorized deletion of the 28 historical notifications was only on the non-default isolated rehearsal Neon branch; original staging and production were not touched.
+
+**Status:** R2 source reimport/lineage guard prerequisite ACCEPTED, R2 complete hosted data/release exclusion OPEN; FIELD002 broader parent P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX OPEN, migration 0052 BLOCKED, P0 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, percentage undefined, release NO-GO.
+
