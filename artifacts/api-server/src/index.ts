@@ -3,10 +3,11 @@ import { getFawriDataDir } from "./lib/dataPaths";
 import type { DurableJobWorker } from "./services/durableJobQueue";
 import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningIncidentMonitor";
 import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
-import { assertProductionRuntimeConfiguration } from "./services/productionReleaseReadiness";
+import { assertProductionRuntimeConfiguration, productionReleaseGateRequired } from "./services/productionReleaseReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
 import { assertProductionCashierStreamStorageReady } from "./services/cashierStreamStorageReadiness";
 import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
+import { createPostgresAuthorityReadinessCheck } from "./observability/runtime";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
 
 const rawPort = process.env["PORT"];
@@ -52,6 +53,12 @@ async function main(): Promise<void> {
   assertProductionRuntimeConfiguration(process.env);
   startupStage = "database_rls";
   await assertProductionDatabaseRlsReady(process.env);
+  // FIELD002: readiness-only checks do not prevent ingress when a host
+  // ignores /ops/readiness. Admit the exact reviewed eight RLS policies on
+  // the same DATABASE_URL pool before loading the app or opening the listener.
+  if (productionReleaseGateRequired(process.env)) {
+    await createPostgresAuthorityReadinessCheck().check();
+  }
   startupStage = "cashier_storage";
   await assertProductionCashierStreamStorageReady(process.env);
   startupStage = "owner_admin";
