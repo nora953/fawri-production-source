@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type { Request } from "express";
 import { MetricsRegistry } from "./metrics";
-import { productionReleaseGateRequired } from "../services/productionReleaseReadiness";
+import { productionReleaseGateRequired, FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES } from "../services/productionReleaseReadiness";
 import type { ReadinessCheck } from "./types";
 
 const SAFE_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
@@ -76,6 +76,14 @@ export function assertSafePostgresRuntimeRole(row: {
   // designated staging run may opt out without weakening the live release.
   // A missing production role must never skip eight-policy readiness.
   const productionMode = productionReleaseGateRequired(env);
+  // Defense in depth: do not trust a formerly overprivileged role name merely
+  // because a catalog flag was removed. Check both effective and LOGIN roles.
+  if (productionMode && (
+    FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(row.role_name) ||
+    FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(row.session_role_name)
+  )) {
+    throw new Error("POSTGRES_RUNTIME_LEGACY_ROLE_FORBIDDEN");
+  }
   if (productionMode && !expectedRole) {
     throw new Error("POSTGRES_RUNTIME_ROLE_CONFIGURATION_REQUIRED");
   }
