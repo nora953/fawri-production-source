@@ -58,12 +58,22 @@ function plan(value: unknown): boolean {
 }
 
 export function isSafeMerchantNotificationActionUrl(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    value.startsWith("/") &&
-    !value.startsWith("//") &&
-    !value.includes("\\")
-  );
+  if (
+    typeof value !== "string" ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    /[\\\u0000-\u001f\u007f]/.test(value)
+  ) {
+    return false;
+  }
+  // URL parsing removes literal CR/LF/TAB: "/\n/attacker.example" can
+  // otherwise become a protocol-relative external navigation.
+  const base = "https://fawri.invalid";
+  try {
+    return new URL(value, base).origin === base;
+  } catch {
+    return false;
+  }
 }
 
 function common(record: JsonObject): boolean {

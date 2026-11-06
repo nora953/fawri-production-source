@@ -113,3 +113,11 @@ Both `validatePlanForWrite` and `validateCutoverPlanForWrite` now reject any non
 
 No DB record, hosted Neon, Railway, migration 0052, live service, approval policy or release flag changed. Source containment prerequisite only; status FIELD002 OPEN, 0052 BLOCKED, P0 NO-GO, 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, overall percentage unknown.
 
+
+## 2026-11-06 — FIELD002-R1 hidden-control external-link escape (pending exact-commit CI)
+
+Current mounted NotificationsPage uses the validated stored \`notification.action_url\` with \`window.location.assign\`. The prior \`isSafeMerchantNotificationActionUrl\` tested only initial slash, double slash and backslash. Its predicate returned true for a stored URL with the shape \`"/\n/attacker.example"\`: the WHATWG URL parser strips the newline and resolves the result to \`https://attacker.example/\`. This is a concrete client-side unsafe-navigation risk if an unverified writer can store that historical notification field; it is **not evidence of an actual historical attack**.
+
+The fixed client predicate now refuses all raw ASCII control characters (0x00–0x1F and DEL), preserves its backslash and protocol-relative refusals and additionally requires WHATWG resolution against a fixed nonnetwork \`https://fawri.invalid\` base to remain same-origin. No network request is made by the validation. Both read-list and mark-as-read now fail validation on encoded JSON containing literal CR/LF/TAB in \`action_url\`; safe encoded query parameters and normal internal links stay accepted. Direct client regression covers all three control escape variants with URL-origin proof plus positive relative paths. Existing hosted notification row contents remain unchanged.
+
+**Scope:** FIELD002 R1 source/client repair only. CI result pending, no inference about staging/production deployment. Historical R2 content sensitivity, test-only classification and full 8-table privacy acceptance remain OPEN; no P0 gate status changed, 0052 BLOCKED, release NO-GO.
