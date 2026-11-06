@@ -162,6 +162,25 @@ test("FIELD002 hosted runtime rejects incomplete or altered eight-table privacy 
       () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 0 },
         { NODE_ENV: "test" }),
     );
+    // Hosted mode is owned by the canonical deployment gate, not NODE_ENV
+    // alone. A production designation must fail closed even in a test process.
+    assert.throws(
+      () => assertSafePostgresRuntimeRole(good,
+        { NODE_ENV: "test", FAWRI_DEPLOYMENT_MODE: "production" }),
+      /POSTGRES_RUNTIME_ROLE_CONFIGURATION_REQUIRED/,
+    );
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 7 },
+        { NODE_ENV: "test", FAWRI_DEPLOYMENT_MODE: "production",
+          FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: good.role_name }),
+      /POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY/,
+    );
+    // A deliberate staging override is consistently excluded by the existing
+    // production startup gate; it does not authorize commercial deployment.
+    assert.doesNotThrow(
+      () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: 0 },
+        { NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "staging" }),
+    );
     for (const malformed of [0, 7, "8", null, undefined]) {
       assert.throws(
         () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: malformed }),
