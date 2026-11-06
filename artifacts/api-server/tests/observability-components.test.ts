@@ -150,6 +150,22 @@ test("FIELD002 hosted runtime rejects incomplete or altered eight-table privacy 
       () => assertSafePostgresRuntimeRole({ ...good, bypass_rls: true }),
       /POSTGRES_RUNTIME_ROLE_UNSAFE/,
     );
+    // Isolate the trusted-function capability restriction from actual
+    // PostgreSQL catalog fingerprints: even an otherwise approved 8/8
+    // policy set must never admit a tenant runtime with auth powers.
+    for (const unsafeCapability of [
+      "effective_has_authentication_runtime",
+      "effective_has_admin_directory_authority",
+      "session_has_authentication_runtime",
+      "session_has_admin_directory_authority",
+      "session_can_set_sensitive_function_role",
+    ] as const) {
+      assert.throws(
+        () => assertSafePostgresRuntimeRole({ ...good, [unsafeCapability]: true }),
+        /POSTGRES_RUNTIME_ROLE_UNSAFE/,
+        unsafeCapability,
+      );
+    }
   } finally {
     if (original === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
     else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = original;
