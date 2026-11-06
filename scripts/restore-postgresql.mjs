@@ -15,7 +15,7 @@ function parseArgs(argv) {
     if (!key?.startsWith("--") || !value || values.has(key)) throw new Error("Invalid restore argument list");
     values.set(key, value);
   }
-  const allowed = new Set(["--url", "--backup", "--manifest", "--verify-sql", "--expect"]);
+  const allowed = new Set(["--url", "--backup", "--manifest", "--verify-sql", "--expect", "--field002-require-empty-notifications"]);
   for (const key of values.keys()) {
     if (!allowed.has(key)) throw new Error("Unknown restore argument");
   }
@@ -25,6 +25,7 @@ function parseArgs(argv) {
     manifest: values.get("--manifest"),
     verifySql: values.get("--verify-sql"),
     expect: values.get("--expect"),
+    field002RequireEmptyNotifications: values.get("--field002-require-empty-notifications"),
   };
 }
 
@@ -91,7 +92,10 @@ function main() {
     throw new Error("PostgreSQL restore drill is disabled; explicit disposable guard is required");
   }
 
-  const { url, backup, manifest, verifySql, expect } = parseArgs(process.argv.slice(2));
+  const { url, backup, manifest, verifySql, expect, field002RequireEmptyNotifications } = parseArgs(process.argv.slice(2));
+  if (field002RequireEmptyNotifications !== undefined && field002RequireEmptyNotifications !== "1") {
+    throw new Error("FIELD002 release-fixture check requires explicit value 1");
+  }
   if (!url || !backup || !manifest || !verifySql || expect === undefined) {
     throw new Error(
       "Usage: node scripts/restore-postgresql.mjs --url <url> --backup <dump> --manifest <json> --verify-sql <sql> --expect <value>",
@@ -131,6 +135,16 @@ function main() {
   const actual = run("psql", [connection.toString(), "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", verifySql], true, password);
   if (actual !== expect) {
     throw new Error("PostgreSQL restore consistency verification failed");
+  }
+
+  // Release-preflight mode for a disposable restored copy only: never promote
+  // precommercial staging notifications into the commercial release target.
+  // An absent table, nonzero count or query failure MUST fail the check.
+  // This does not erase notifications, permit a hosted restore, or prove
+  // a future external import/deploy pipeline actually invokes this mode.
+  if (field002RequireEmptyNotifications === "1") {
+    const remaining = run("psql", [connection.toString(), "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", "SELECT count(*) FROM public.notifications"], true, password);
+    if (remaining !== "0") throw new Error("FIELD002 release-fixture exclusion failed: restored notifications must be empty");
   }
 
   process.stdout.write("PostgreSQL disposable restore completed and consistency verification passed\n");
