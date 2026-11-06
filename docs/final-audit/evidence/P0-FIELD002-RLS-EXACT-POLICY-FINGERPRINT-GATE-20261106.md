@@ -30,3 +30,21 @@ Executed one catalog-only SQL comparison on each explicitly pinned branch in Neo
 - The fresh clone remains at migration **0042**. Its 0043 SQL was blocked by the hosted execution tool's safety check; **no bypass or new 0043 attempt** in this batch. The original staging still lacks RLS and retains its old privileges; **no original SQL changes authorized or executed**.
 - Trusted hosted login and issuer separation, own/foreign/revoked for **all eight tables**, real commercial backup/import/seed/promotion isolation, migration 0052 owner bootstrap and actual deployment parity remain unproven.
 - `FIELD002` OPEN; parent merchant privacy gate OPEN; 0052 BLOCKED; known 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; no certified overall P0 percent; launch NO-GO; PR #550 draft/unmerged.
+
+
+## Exact-source CI acceptance and real 0043 schema-only preflight
+
+**CI source SHA:** `8638575d1c8f32f2bf563ecf58cda11a490fbcd2`. The first version of the new strict gate exposed a legitimate test-fixture mismatch: the existing disposable PostgreSQL 16 mounted-observability test supplied eight synthetic `USING(false)` policies and previously expected a **ready** response based solely on their existence. With reviewed hosted-policy attestation, these intentionally *unapproved* policies must cause readiness `503`. The mounted integration fixture was corrected in `50ca4d0128d310aa073086da1ece9b9295c477be` to expect the fail-closed `503`, without changing actual runtime admission logic. `8638575d1c8f32f2bf563ecf58cda11a490fbcd2` additionally covers separate unsafe trusted-function EXECUTE variations under otherwise valid 8/8 catalog coverage.
+
+At that exact tested source SHA, these GitHub Actions completed **SUCCESS**:
+- [Observability mounted routes, run 42212333769](https://github.com/nora953/fawri-production-source/actions/runs/42212333769), including the previously failing mounted PostgreSQL test.
+- [Final quality gates, run 42212333341](https://github.com/nora953/fawri-production-source/actions/runs/42212333341): full build, quality, type checks.
+- [P0 notification privacy HTTP matrix, run 42212333964](https://github.com/nora953/fawri-production-source/actions/runs/42212333964).
+- [Backup and restore drill, run 42212333678](https://github.com/nora953/fawri-production-source/actions/runs/42212333678).
+- [Complete migration safety, run 42212333541](https://github.com/nora953/fawri-production-source/actions/runs/42212333541).
+
+**Do not claim all GitHub Actions green:** `Cashier subscription lifecycle` failed on the exact commit, outside this FIELD002 runtime policy change. Other workflows were still in progress at this checkpoint.
+
+**0043 bounded SQL readiness inspection on new clone `br-polished-mouse-b1proel7`:** all seven required cashier-identity tables exist, each has exactly one merchant ownership column `merchant_id`, all seven have `relrowsecurity=false` and zero preexisting RLS policies (there is no partial 0043 apply), and the referenced `public.fawri_tenant_or_audited_admin(text)` function exists. An independent SELECT found Drizzle **43** entries, final 0042 timestamp `1791936000014`, **0** notifications, and no other active application client at inspection time. This rules out these particular schema prerequisites, **not** the execution tool's safety refusal. **No retry/bypass of 0043 was performed.**
+
+**Acceptance boundary:** the source+hosted-schema-attestation subcondition is now **ACCEPTED** with exact-source CI; full FIELD002 remains OPEN. The old clone (8/8 policy fingerprints) is not evidence that the new clone (0/8) or original staging (0/8) is ready. 0043–0051 are still unapplied on the clean clone; 0052 remains independently BLOCKED. No hosted migration, RLS/role/grant mutation, Railway deployment or PR merge was performed in this source hardening batch.
