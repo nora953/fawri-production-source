@@ -291,3 +291,31 @@ test("production env example stays aligned with the runtime release gate", () =>
   }
 });
 
+
+test("FIELD002 rejects historic broad-grant and owner identities as production runtime even if flags change", () => {
+  for (const role of [
+    "fawri_staging_runtime",
+    "fawri_staging_rls_runtime",
+    "neondb_owner",
+    "neon_superuser",
+  ]) {
+    const env = productionEnv({ FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: role });
+    assert.deepEqual(
+      getProductionRuntimeConfigurationIssues(env).filter(issue => issue.area === "database"),
+      [{ area: "database", code: "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN" }],
+      role,
+    );
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+      issueCodes: ["FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"],
+    });
+    // The original branch's staging mode remains usable for diagnostics,
+    // but it does not turn a legacy identity into a production tenant login.
+    assert.deepEqual(getProductionRuntimeConfigurationIssues({
+      ...env, FAWRI_DEPLOYMENT_MODE: "staging",
+    }), []);
+  }
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv({
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_tenant_runtime_v2",
+  })), []);
+});
