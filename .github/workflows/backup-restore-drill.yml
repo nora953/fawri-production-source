@@ -181,6 +181,19 @@ jobs:
             --output "$RUNNER_TEMP/fawri-backup-drill/postgresql/backup.dump" \
             --manifest "$RUNNER_TEMP/fawri-backup-drill/postgresql/manifest.json"
 
+      - name: Prepare separate synthetic legacy-notification rejection fixture
+        run: |
+          # Synthetic rows exist only in a disposable CI source, never in Neon.
+          psql "$SOURCE_DATABASE_URL" -X -v ON_ERROR_STOP=1 \
+            -c "insert into public.notifications (id,type) values (1,'subscription_plan_event')"
+          node scripts/backup-postgresql.mjs \
+            --url "$SOURCE_DATABASE_URL" \
+            --output "$RUNNER_TEMP/fawri-backup-drill/postgresql/synthetic-legacy.dump" \
+            --manifest "$RUNNER_TEMP/fawri-backup-drill/postgresql/synthetic-legacy.json"
+          psql "$SOURCE_DATABASE_URL" -X -v ON_ERROR_STOP=1 \
+            -c "delete from public.notifications"
+          test "$(psql "$SOURCE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select count(*) from public.notifications")" = 0
+
       - name: Verify PostgreSQL backup before restore
         run: |
           node - <<'NODE'
@@ -214,6 +227,26 @@ jobs:
           create role drill_reader nologin nosuperuser nobypassrls nocreatedb nocreaterole noinherit;
           SQL
           echo 'RESTORE_EXPLICIT_NONLOGIN_ROLE_BOOTSTRAP_PASS'
+
+      - name: FIELD002 rejects nonempty synthetic restored notification fixtures
+        run: |
+          # This deliberately restores only into the throwaway workflow-owned DB.
+          # Failure is the expected security result; then the clean backup resets it.
+          if node scripts/restore-postgresql.mjs \
+            --url "$RESTORE_DATABASE_URL" \
+            --backup "$RUNNER_TEMP/fawri-backup-drill/postgresql/synthetic-legacy.dump" \
+            --manifest "$RUNNER_TEMP/fawri-backup-drill/postgresql/synthetic-legacy.json" \
+            --verify-sql "select count(*) from restore_drill_records" \
+            --expect "3" \
+            --field002-require-empty-notifications "1" \
+            > "$RUNNER_TEMP/field002-rejected.stdout" 2> "$RUNNER_TEMP/field002-rejected.stderr"; then
+            echo "FIELD002 rejected fixture unexpectedly passed the release gate" >&2
+            exit 1
+          fi
+          grep -q "FIELD002 release-fixture exclusion failed" "$RUNNER_TEMP/field002-rejected.stderr"
+          test "$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select count(*) from public.notifications")" = 1
+          rm -f "$RUNNER_TEMP/field002-rejected.stdout" "$RUNNER_TEMP/field002-rejected.stderr"
+          echo "FIELD002 real PostgreSQL negative restored-notification gate PASS"
 
       - name: Restore and verify disposable PostgreSQL target
         run: |
