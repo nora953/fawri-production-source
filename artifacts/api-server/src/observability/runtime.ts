@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { Request } from "express";
 import { MetricsRegistry } from "./metrics";
+import { productionReleaseGateRequired } from "../services/productionReleaseReadiness";
 import type { ReadinessCheck } from "./types";
 
 const SAFE_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
@@ -70,16 +71,17 @@ export function assertSafePostgresRuntimeRole(row: {
     throw new Error("POSTGRES_RUNTIME_ROLE_UNSAFE");
   }
   const expectedRole = String(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim();
-  // FIELD002: deployments marked production must fail readiness when the
-  // expected least-privilege LOGIN role is missing. Otherwise an omitted
-  // optional setting silently skips the exact eight-policy admission gate.
-  // Local development and synthetic CI remain explicitly separate.
-  if (env.NODE_ENV === "production" && !expectedRole) {
+  // Reuse the startup deployment-mode decision: FAWRI_DEPLOYMENT_MODE can
+  // designate production even if NODE_ENV is not "production". A separately
+  // designated staging run may opt out without weakening the live release.
+  // A missing production role must never skip eight-policy readiness.
+  const productionMode = productionReleaseGateRequired(env);
+  if (productionMode && !expectedRole) {
     throw new Error("POSTGRES_RUNTIME_ROLE_CONFIGURATION_REQUIRED");
   }
   assertExpectedPostgresRuntimeRole(String(row.role_name || ""), env);
   if (
-    (env.NODE_ENV === "production" || expectedRole) &&
+    (productionMode || expectedRole) &&
     row.critical_privacy_rls_ready_count !== CRITICAL_POSTGRES_PRIVACY_RLS_TABLES.length
   ) {
     throw new Error("POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY");
