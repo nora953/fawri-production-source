@@ -93,3 +93,17 @@ test('FIELD002 execution requires separately authorized exact hosted branch and 
   assert.match(source, /assert\.deepEqual\(after, baseline/);
   assert.match(source, /DROP ROLE/);
 });
+
+test('clean clone workflow supports a branch-only approved request, no automatic release', () => {
+  const source = readFileSync(new URL('../../.github/workflows/field002-clean-clone-acceptance.yml', import.meta.url), 'utf8');
+  assert.match(source, /push:\s*\n\s*branches:\s*\n\s*- fix\/p0-provider-receipt-order-discovery-20261015/);
+  assert.match(source, /field002-clean-clone-run-request\.json/);
+  assert.match(source, /git diff-tree --no-commit-id --name-only -r HEAD/);
+  assert.match(source, /APPROVE_CLEAN_CLONE_TEST_FIXTURES/);
+  assert.match(source, /approved_parent_sha/);
+  assert.match(source, /github\.event_name == 'push'/);
+  assert.match(source, /github\.ref == 'refs\/heads\/fix\/p0-provider-receipt-order-discovery-20261015'/);
+  assert.match(source, /FAWRI_FIELD002_CLONE_PROFILE: clean_20261106/);
+  assert.match(source, /FAWRI_FIELD002_ALLOWED_EXECUTION_BRANCH: br-polished-mouse-b1proel7/);
+  assert.doesNotMatch(source, /schedule:/);
+});

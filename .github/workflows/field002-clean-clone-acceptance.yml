@@ -1,6 +1,14 @@
 name: FIELD002 clean isolated Neon clone SQL + HTTP acceptance
 
 on:
+  # Branch-local request path is necessary: GitHub only recognizes
+  # workflow_dispatch files already present on the default branch.
+  # No other source push can create roles/fixtures.
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - docs/final-audit/evidence/field002-clean-clone-run-request.json
   workflow_dispatch:
     inputs:
       authorization:
@@ -24,8 +32,14 @@ jobs:
     if: >-
       github.repository == 'nora953/fawri-production-source'
       && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
-      && inputs.authorization == 'APPROVE_CLEAN_CLONE_TEST_FIXTURES'
-      && inputs.source_sha == github.sha
+      && (
+        github.event_name == 'push'
+        || (
+          github.event_name == 'workflow_dispatch'
+          && inputs.authorization == 'APPROVE_CLEAN_CLONE_TEST_FIXTURES'
+          && inputs.source_sha == github.sha
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -34,12 +48,40 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 2
 
       - name: Node 24 and dependencies
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
+      - name: Verify clean clone owner-approval request and unchanged source
+        env:
+          EVENT_KIND: ${{ github.event_name }}
+          DISPATCH_APPROVAL: ${{ inputs.authorization }}
+          DISPATCH_SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_KIND" = push ]; then
+            # The authorization commit must introduce ONLY the one request file.
+            changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+            test "$changed" = 'docs/final-audit/evidence/field002-clean-clone-run-request.json'
+            node <<'NODE'
+          const fs = require('node:fs');
+          const cp = require('node:child_process');
+          const request = JSON.parse(fs.readFileSync('docs/final-audit/evidence/field002-clean-clone-run-request.json','utf8'));
+          const approved = ['approval','approved_branch','approved_parent_sha'];
+          const keys = Object.keys(request).sort();
+          if (JSON.stringify(keys) !== JSON.stringify(approved)) process.exit(2);
+          if (request.approval !== 'APPROVE_CLEAN_CLONE_TEST_FIXTURES' ||
+              request.approved_branch !== 'br-polished-mouse-b1proel7' ||
+              !/^[0-9a-f]{40}$/.test(request.approved_parent_sha) ||
+              request.approved_parent_sha !== cp.execFileSync('git',['rev-parse','HEAD^'],{encoding:'utf8'}).trim())
+            process.exit(2);
+          NODE
+          else
+            test "$DISPATCH_APPROVAL" = 'APPROVE_CLEAN_CLONE_TEST_FIXTURES'
+            test "$DISPATCH_SOURCE_SHA" = "$GITHUB_SHA"
+          fi
       - run: corepack enable
       - run: node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
       - run: pnpm install --frozen-lockfile --ignore-scripts
