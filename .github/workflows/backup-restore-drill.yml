@@ -17,6 +17,8 @@ on:
       - "scripts/restore-object-storage.mjs"
       - "scripts/backup-postgresql.test.mjs"
       - "scripts/restore-postgresql.test.mjs"
+      - "scripts/lib/field002-r2-precommercial-source-admission.mjs"
+      - "scripts/tests/field002-r2-precommercial-source-admission.test.mjs"
       - "scripts/lib/field002-isolated-acceptance-plan.mjs"
       - "scripts/tests/field002-isolated-acceptance-plan.test.mjs"
       - "artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs"
@@ -155,6 +157,7 @@ jobs:
           node --test
           scripts/backup-postgresql.test.mjs
           scripts/restore-postgresql.test.mjs
+          scripts/tests/field002-r2-precommercial-source-admission.test.mjs
           scripts/backup-object-storage.test.mjs
 
       - name: Verify workflow-owned fresh service before database writes
