@@ -7,7 +7,7 @@ import { createHealthSnapshot } from "../src/observability/health";
 import { FAWRI_METRICS, MetricsRegistry } from "../src/observability/metrics";
 import { createReadinessSnapshot } from "../src/observability/readiness";
 import { createObservabilityRouter } from "../src/observability/router";
-import { assertExpectedPostgresRuntimeRole } from "../src/observability/runtime";
+import { assertExpectedPostgresRuntimeRole, assertSafePostgresRuntimeRole, CRITICAL_POSTGRES_PRIVACY_RLS_TABLES, CRITICAL_POSTGRES_PRIVACY_POLICY_SHA256 } from "../src/observability/runtime";
 
 const fixedNow = () => new Date("2026-08-08T00:00:00.000Z");
 
@@ -105,6 +105,55 @@ test("expected PostgreSQL runtime role check is opt-in and fail-closed", () => {
       }),
     /POSTGRES_RUNTIME_ROLE_MISMATCH/,
   );
+});
+
+test("FIELD002 hosted runtime rejects incomplete or altered eight-table privacy policy coverage", () => {
+  const tables = Array.from(CRITICAL_POSTGRES_PRIVACY_RLS_TABLES);
+  assert.equal(tables.length, 8);
+  assert.equal(new Set(tables).size, 8);
+  assert.deepEqual(Object.keys(CRITICAL_POSTGRES_PRIVACY_POLICY_SHA256).sort(), tables.slice().sort());
+  for (const table of tables) {
+    assert.match(CRITICAL_POSTGRES_PRIVACY_POLICY_SHA256[table], /^[a-f0-9]{64}$/);
+  }
+
+  // The mocked catalog row otherwise satisfies every least-privilege check.
+  const good = {
+    role_name: "field002_restricted_test",
+    is_superuser: false,
+    can_create_role: false,
+    bypass_rls: false,
+    owns_unforced_rls_table: false,
+    session_role_name: "field002_restricted_test",
+    session_is_superuser: false,
+    session_bypass_rls: false,
+    session_can_create_role: false,
+    session_inherits_privileged_role: false,
+    session_can_set_privileged_role: false,
+    effective_has_authentication_runtime: false,
+    effective_has_admin_directory_authority: false,
+    session_has_authentication_runtime: false,
+    session_has_admin_directory_authority: false,
+    session_can_set_sensitive_function_role: false,
+    critical_privacy_rls_ready_count: 8,
+  };
+  const original = process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+  try {
+    process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = good.role_name;
+    assert.doesNotThrow(() => assertSafePostgresRuntimeRole(good));
+    for (const malformed of [0, 7, "8", null, undefined]) {
+      assert.throws(
+        () => assertSafePostgresRuntimeRole({ ...good, critical_privacy_rls_ready_count: malformed }),
+        /POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY/,
+      );
+    }
+    assert.throws(
+      () => assertSafePostgresRuntimeRole({ ...good, bypass_rls: true }),
+      /POSTGRES_RUNTIME_ROLE_UNSAFE/,
+    );
+  } finally {
+    if (original === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
+    else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = original;
+  }
 });
 
 test("readiness timeouts fail closed", async () => {
