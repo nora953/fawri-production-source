@@ -52,7 +52,12 @@ test("readiness still enforces configured runtime role identity", () => {
   try {
     process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = "expected_runtime";
     assert.throws(() => assertSafePostgresRuntimeRole(safe), /POSTGRES_RUNTIME_ROLE_MISMATCH/);
-    assert.doesNotThrow(() => assertSafePostgresRuntimeRole({ ...safe, role_name: "expected_runtime" }));
+    assert.doesNotThrow(() => assertSafePostgresRuntimeRole({
+      ...safe, role_name: "expected_runtime", session_role_name: "expected_runtime",
+    }));
+    assert.throws(() => assertSafePostgresRuntimeRole({
+      ...safe, role_name: "expected_runtime",
+    }), /POSTGRES_RUNTIME_ROLE_MISMATCH/, "SET ROLE cannot mask another authenticated login");
   } finally {
     if (old === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
     else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = old;
@@ -96,14 +101,18 @@ test("configured hosted PostgreSQL role refuses missing RLS or policy on any pri
   const old = process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
   try {
     process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = "fawri_runtime";
+    // The hosted passing fixture must use the same approved authenticated
+    // LOGIN for current_user and session_user. The local fixture intentionally
+    // keeps different values for legacy/local no-policy tests.
+    const hosted = { ...safe, session_role_name: "fawri_runtime" };
     for (const count of [0, 1, 7, 9, undefined, null, "8", NaN]) {
       assert.throws(
-        () => assertSafePostgresRuntimeRole({ ...safe, critical_privacy_rls_ready_count: count }),
+        () => assertSafePostgresRuntimeRole({ ...hosted, critical_privacy_rls_ready_count: count }),
         /POSTGRES_RUNTIME_PRIVACY_RLS_NOT_READY/,
         "eight validated table-policy pairs required, not just matching role name",
       );
     }
-    assert.doesNotThrow(() => assertSafePostgresRuntimeRole(safe));
+    assert.doesNotThrow(() => assertSafePostgresRuntimeRole(hosted));
   } finally {
     if (old === undefined) delete process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE;
     else process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE = old;
