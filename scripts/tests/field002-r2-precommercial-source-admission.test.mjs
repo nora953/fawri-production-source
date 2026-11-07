@@ -29,6 +29,7 @@ test("FIELD002-R2 accepts only fresh-schema-only source policy, NOT deployment a
 test("FIELD002-R2 blocks archived staging backups and every old or clean branch source",()=>{
   for(const source of [
     ...known.archived,known.staging,known.oldRehearsal,known.cleanRehearsal,
+    known.frozenRecovery,known.nativeResetDrill,
     known.production,"br-synthetic-unknown","",12,{},undefined
   ]){
     assert.throws(
@@ -72,6 +73,9 @@ const inventory=()=>[
   branch(known.staging,known.production),
   branch(known.oldRehearsal,known.staging),
   branch(known.cleanRehearsal,known.staging),
+  {...branch(known.frozenRecovery,known.staging),parent_lsn:"0/473AAE0"},
+  {...branch(known.nativeResetDrill,known.frozenRecovery),
+    parent_lsn:"0/473AAE0",last_reset_at:"2026-11-06T23:36:16Z"},
   branch(known.archived[0],known.staging,"archived"),
   branch(known.archived[1],known.staging,"archived"),
   branch(known.archived[2],known.archived[1],"archived"),
@@ -80,6 +84,8 @@ const inventory=()=>[
 test("FIELD002-R2 verifies pinned Neon lineage and three archived sources; never authorizes release",()=>{
   const value=assertField002KnownNeonLineage(inventory());
   assert.equal(value.archivedSourcesQuarantined,3);
+  assert.equal(value.stagingRecoveryLineageVerified,true);
+  assert.equal(value.disposableNativeResetLineageVerified,true);
   assert.equal(value.deploymentAuthorized,false);
   assert.equal(value.field002Closed,false);
 });
@@ -90,6 +96,14 @@ test("FIELD002-R2 rejects unarchived snapshots, moved default/parents, missing o
     inventory().map(x=>x.id===known.production?{...x,default:false}:x),
     inventory().map(x=>x.id===known.cleanRehearsal?{...x,parent_id:known.production}:x),
     inventory().filter(x=>x.id!==known.archived[2]),
+    inventory().filter(x=>x.id!==known.frozenRecovery),
+    inventory().filter(x=>x.id!==known.nativeResetDrill),
+    inventory().map(x=>x.id===known.frozenRecovery?{...x,parent_id:known.production}:x),
+    inventory().map(x=>x.id===known.nativeResetDrill?{...x,parent_id:known.staging}:x),
+    inventory().map(x=>x.id===known.frozenRecovery?{...x,parent_lsn:"0/473AAE1"}:x),
+    inventory().map(x=>x.id===known.nativeResetDrill?{...x,parent_lsn:"0/473AAE1"}:x),
+    inventory().map(x=>x.id===known.nativeResetDrill?{...x,last_reset_at:null}:x),
+    inventory().map(x=>x.id===known.nativeResetDrill?{...x,current_state:"resetting"}:x),
     [...inventory(),inventory()[0]],
     [...inventory(),{...branch("br-new",known.staging),default:true}],
     null,[],[null]
