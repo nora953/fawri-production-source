@@ -13,6 +13,10 @@ export const FIELD002_R2_BRANCHES = Object.freeze({
   staging: "br-falling-dust-b1km4gix",
   cleanRehearsal: "br-polished-mouse-b1proel7",
   oldRehearsal: "br-young-hill-b1x9vhlz",
+  // Verified prechange snapshot and its separate native reset target.
+  // Both contain precommercial staging data; neither is a first-launch seed.
+  frozenRecovery: "br-empty-mud-b1it6mg9",
+  nativeResetDrill: "br-nameless-base-b1vt822z",
   archived: Object.freeze([
     "br-square-night-b1l1x9zk",
     "br-snowy-voice-b1bovtwi",
@@ -105,6 +109,8 @@ export function assertField002KnownNeonLineage(branches) {
   const staging = byId.get(known.staging);
   const clean = byId.get(known.cleanRehearsal);
   const old = byId.get(known.oldRehearsal);
+  const frozen = byId.get(known.frozenRecovery);
+  const reset = byId.get(known.nativeResetDrill);
   if (!production || production.default !== true || production.primary !== true ||
       production.parent_id != null || production.current_state !== "ready" ||
       !staging || staging.parent_id !== known.production ||
@@ -115,7 +121,16 @@ export function assertField002KnownNeonLineage(branches) {
       clean.current_state !== "ready" ||
       !old || old.parent_id !== known.staging ||
       old.default !== false || old.primary !== false ||
-      old.current_state !== "ready") {
+      old.current_state !== "ready" ||
+      !frozen || frozen.parent_id !== known.staging ||
+      frozen.default !== false || frozen.primary !== false ||
+      frozen.current_state !== "ready" ||
+      frozen.parent_lsn !== "0/473AAE0" ||
+      !reset || reset.parent_id !== known.frozenRecovery ||
+      reset.default !== false || reset.primary !== false ||
+      reset.current_state !== "ready" ||
+      reset.parent_lsn !== frozen.parent_lsn ||
+      reset.last_reset_at !== "2026-11-06T23:36:16Z") {
     reject("FIELD002_R2_BRANCH_LINEAGE_CHANGED");
   }
   const expectedArchivedParent = new Map([
@@ -138,6 +153,8 @@ export function assertField002KnownNeonLineage(branches) {
   return Object.freeze({
     decision: "KNOWN_BRANCH_LINEAGE_OBSERVED",
     archivedSourcesQuarantined: known.archived.length,
+    stagingRecoveryLineageVerified: true,
+    disposableNativeResetLineageVerified: true,
     deploymentAuthorized: false,
     field002Closed: false,
   });
