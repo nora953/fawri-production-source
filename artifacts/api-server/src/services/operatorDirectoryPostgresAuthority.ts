@@ -3,6 +3,7 @@ import {
   OperationalPostgresAuthorityError,
   withOperationalTransaction,
   type OperationalDatabasePool,
+  type OperationalQueryTarget,
   type OperationalTransactionClient,
 } from "./operationalPostgresAuthority";
 import { productionReleaseGateRequired } from "./productionReleaseReadiness";
@@ -102,3 +103,59 @@ export function createOperatorDirectoryAuthority(options: {
 const authority = createOperatorDirectoryAuthority();
 export const withOperatorDirectoryTransaction = authority.transaction;
 export const closeOperatorDirectoryPool = authority.close;
+
+
+// FIELD002: prove the dedicated operator-directory LOGIN before admitting a
+// commercial listener. A configured URL alone cannot certify PostgreSQL grants.
+// The real transaction path also checks reachable owner/privileged roles and
+// the directory issuer signature. No secrets or raw SQL errors escape startup.
+export type OperatorStartupProbe = (
+  work: (client: OperationalQueryTarget) => Promise<void>,
+) => Promise<void>;
+
+export async function assertProductionOperatorDatabaseReady(
+  env: NodeJS.ProcessEnv = process.env,
+  runProbe?: OperatorStartupProbe,
+): Promise<void> {
+  if (!productionReleaseGateRequired(env)) return;
+  const deny = () => Object.assign(
+    new Error("production operator database is not ready"),
+    { code: "PRODUCTION_OPERATOR_DATABASE_IDENTITY_NOT_READY" },
+  );
+  try {
+    const url = new URL(String(env.FAWRI_OPERATOR_DATABASE_URL || "").trim());
+    const expectedLogin = decodeURIComponent(url.username);
+    const expectedDatabase = decodeURIComponent(url.pathname.slice(1));
+    if (!["postgres:", "postgresql:"].includes(url.protocol) ||
+        !/^[a-z_][a-z0-9_]{0,62}$/.test(expectedLogin) ||
+        !/^[A-Za-z0-9_]+$/.test(expectedDatabase)) throw deny();
+    const execute: OperatorStartupProbe = runProbe ??
+      (work => withOperatorDirectoryTransaction(work));
+    await execute(async client => {
+      const result = await client.query<{
+        login: string; active: string; database_name: string;
+        directory_ready: boolean; authentication_reachable: boolean;
+        scope_issuer_reachable: boolean;
+      }>(`SELECT session_user::text AS login, current_user::text AS active,
+        current_database()::text AS database_name,
+        has_function_privilege(session_user,
+          'public.fawri_issue_admin_directory_audit(text,text,text)',
+          'EXECUTE') AS directory_ready,
+        has_function_privilege(session_user,
+          'public.fawri_authentication_runtime()', 'EXECUTE')
+          AS authentication_reachable,
+        has_function_privilege(session_user,
+          'fawri_security.issue_scope(name,integer,bigint,text)',
+          'EXECUTE') AS scope_issuer_reachable`);
+      const row = result.rows[0];
+      if (!row || row.login !== expectedLogin ||
+          row.active !== expectedLogin ||
+          row.database_name !== expectedDatabase ||
+          row.directory_ready !== true ||
+          row.authentication_reachable !== false ||
+          row.scope_issuer_reachable !== false) throw deny();
+    });
+  } catch {
+    throw deny();
+  }
+}
