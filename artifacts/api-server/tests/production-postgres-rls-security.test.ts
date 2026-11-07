@@ -122,7 +122,7 @@ test("FIELD002 production admits only the exact reviewed trusted tenant predicat
   assert.ok(source.includes(
     "encode(sha256(convert_to(fn.prosrc,'UTF8')),'hex')='" + expectedSha256 + "'",
   ), "prelistener source admission must pin the actual reviewed SQL body");
-  const exactBody = migration.match(/AS \\$\\$([\\s\\S]*?)\\$\\$;/)?.[1];
+  const exactBody = migration.match(/AS \$\$([\s\S]*?)\$\$;/)?.[1];
   assert.ok(exactBody, "reviewed predicate SQL body must remain present");
   assert.equal(createHash("sha256").update(exactBody).digest("hex"), expectedSha256,
     "migration 0041 body must match the production admission fingerprint");
