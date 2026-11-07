@@ -67,3 +67,16 @@ The OAuth redaction of `DATABASE_URL` could be bypassed for **endpoint identity 
 **Updated decision:** Original `staging-runtime` is now positively identified as the endpoint consumed by the actual `fawri-web` deployment, whose pinned deployed source is old `main` SHA `d38d292...` and lacks the reviewed FIELD002 explicit eight-policy/legacy-identity admission. **Do not execute original ACL revocation, 0028–0051 migrations, role flag edits, disable login, terminate sessions, or swap database credentials until a reviewed safe service cutover and reconnection isolation is authorized and demonstrated.** The exact authenticated Railway `DATABASE_URL` login remains unproven by the secret-redacted Railway config (despite the independent observed legacy session). This closes the **live endpoint/consumer discovery** subquestion, *not* the final hosted privacy gate.
 
 **FIELD002 OPEN / original-hosted staging changes NO-GO / PR #550 draft.**
+
+
+## Clean clone current restricted-login admission, and safe bounded next stage
+
+New read-only independent SQL on surviving isolated `br-polished-mouse-b1proel7` returned **52 Drizzle migrations, zero historical notices, 8/8 critical RLS-enabled tables, zero `field002_%` probe roles, zero restricted LOGIN roles, zero other backend sessions and zero `fawri_security.transaction_scopes` rows**.
+
+**Consequence:** the clean isolated clone cannot yet provide an authentic tenant/auth LOGIN session matrix without provisioning **new segregated credentials and column-limited GRANT authority**. The formerly available `fawri_staging_rls_runtime` is NOLOGIN and has blanket CRUD across all tables; merely changing it to LOGIN is expressly unsafe. The production role denylist and SQL startup guard added at `72ce9320` now prevent that legacy shortcut even if role flags are later altered.
+
+### Proposed isolated-only execution, requiring targeted authorization
+
+The least-risk next acceptance sequence is to keep `fawri-web` and original `staging-runtime` untouched and create **new temporary least-privilege tenant/auth LOGIN roles only inside the already-migrated clean isolated Neon clone**, with fresh credentials handled as secrets (never GitHub text, logs or evidence). Verify exact role identities, no elevated reachable roles, minimum column/table grants, no unsafe SECURITY DEFINER EXECUTE, and 8 exact policy digests. Configure **only one isolated Railway test service** (not `fawri-web`) with that clean clone endpoint and the reviewed PR source after verifying startup guards; require a real healthy listener and mounted SQL/HTTP own/foreign/revoked-session tests. All new test roles/fixtures must be tracked for eventual cleanup. A separate trusted auth connection must not be accidentally reused for tenant runtime.
+
+**Do not carry out this stage without explicit owner approval for isolated DB role creation, credential generation and test-service configuration.** Such approval must not cover original staging or production. Original ACL+0028–0051 rollout, real service credential cutover, portable backup, 0052 and commercial data-source promotion remain separately gated. The evidence here is a readiness plan, not a completed login or HTTP acceptance.
