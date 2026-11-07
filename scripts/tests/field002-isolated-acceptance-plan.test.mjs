@@ -70,6 +70,38 @@ test('FIELD002 hosted three-principal acceptance remains fenced by source and gu
   assert.match(source, /assert\.deepEqual\(after, baseline/);
 });
 
+test('FIELD002 trusted tenant predicate rejects client-claimed GUC in migration source', () => {
+  const source = readFileSync(new URL('../../lib/db/drizzle/0041_private_tenant_predicate_cutover.sql', import.meta.url), 'utf8');
+  const predicate = source.split('--> statement-breakpoint')[0];
+  assert.match(predicate, /CREATE OR REPLACE FUNCTION public\.fawri_tenant_or_audited_admin/);
+  assert.match(predicate, /fawri_security\.allows_merchant\(p_merchant_id\)/);
+  assert.match(predicate, /SECURITY DEFINER/);
+  assert.doesNotMatch(predicate, /current_setting\('fawri\.tenant_id'/);
+});
+
+test('FIELD002 restricted LOGIN actively challenges both forged-GUC SQL forms and scope rebinding', () => {
+  const source = readFileSync(new URL('../../artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs', import.meta.url), 'utf8');
+  const first = source.indexOf("await check('sql_forged_guc_without_issuer_scope_denied'");
+  const second = source.indexOf("await check('sql_forged_guc_cannot_rebind_trusted_scope'");
+  const http = source.indexOf("const { default: express }");
+  assert.ok(first > 0 && second > first && http > second);
+  const threat = source.slice(first, http);
+  for (const required of [
+    "await assertTenantScopeSession(client, false)",
+    "for (const method of ['set_config', 'set_local'])",
+    "SELECT set_config('fawri.tenant_id',$1,true)",
+    "SET LOCAL fawri.tenant_id TO",
+    "current_setting('fawri.tenant_id', true)",
+    "SELECT id FROM notifications WHERE merchant_id=$1",
+    "UPDATE notifications SET read_at=now() WHERE id=$1",
+    "INSERT INTO notifications(id,audience,merchant_id,account_id,type,title_key,body_key,variables)",
+    "ROLLBACK TO SAVEPOINT attempted_forged_insert",
+    "await client.query('ROLLBACK')",
+    "await withMerchantOperationalTransaction(actor.id, async client =>",
+    "assert.deepEqual(await noticeSnapshot(), before)",
+  ]) assert.ok(threat.includes(required), required);
+});
+
 test('snapshot fingerprints PostgreSQL sequences as scalar state, without losing table row hashes', () => {
   const sequence = snapshotObjectStatement({nspname:'drizzle',relname:'__drizzle_migrations_id_seq',relkind:'S'},0);
   assert.match(sequence,/jsonb_build_object\('last_value',t\.last_value,'log_cnt',t\.log_cnt,'is_called',t\.is_called\)/);
