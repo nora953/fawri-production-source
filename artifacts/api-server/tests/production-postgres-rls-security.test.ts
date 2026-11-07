@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
 import type { OperationalQueryTarget } from "../src/services/operationalPostgresAuthority";
@@ -117,7 +118,14 @@ test("FIELD002 production admits only the exact reviewed trusted tenant predicat
   const migration = readFileSync(new URL(
     "../../../lib/db/drizzle/0041_private_tenant_predicate_cutover.sql",
     import.meta.url), "utf8");
-  assert.match(source, /md5\(fn\.prosrc\)='f0978dfce073f2546c2081467306e26d'/);
+  const expectedSha256 = "a871b1d9a76f90af0bdabedfda6026458585a3efa21e4857f9694c104a808da0";
+  assert.ok(source.includes(
+    "encode(sha256(convert_to(fn.prosrc,'UTF8')),'hex')='" + expectedSha256 + "'",
+  ), "prelistener source admission must pin the actual reviewed SQL body");
+  const exactBody = migration.match(/AS \\$\\$([\\s\\S]*?)\\$\\$;/)?.[1];
+  assert.ok(exactBody, "reviewed predicate SQL body must remain present");
+  assert.equal(createHash("sha256").update(exactBody).digest("hex"), expectedSha256,
+    "migration 0041 body must match the production admission fingerprint");
   assert.match(source, /fn\.prosecdef AND fn\.proisstrict/);
   assert.match(source, /tenant_predicate_trusted/);
   assert.match(migration, /fawri_security\.allows_merchant\(p_merchant_id\)/);
