@@ -146,3 +146,19 @@ test('clean clone workflow supports a branch-only approved request, no automatic
   assert.match(source, /FAWRI_FIELD002_ALLOWED_EXECUTION_BRANCH: br-polished-mouse-b1proel7/);
   assert.doesNotMatch(source, /schedule:/);
 });
+
+test('FIELD002 hosted workflow reports only a sanitized real runner verdict to draft PR', () => {
+  const source = readFileSync(new URL('../../.github/workflows/field002-clean-clone-acceptance.yml', import.meta.url), 'utf8');
+  assert.match(source, /id: hosted_probe/);
+  assert.match(source, /issues: write/);
+  assert.match(source, /if: \\$\\{\\{ always\\(\\) \\}\\}/);
+  assert.match(source, /STEP_OUTCOME: \\$\\{\\{ steps\\.hosted_probe\\.outcome \\}\\}/);
+  assert.match(source, /if \\[ "\\$STEP_OUTCOME" = success \\]; then/);
+  assert.match(source, /BOUNDED_SQL_HTTP_PASS_AND_CLEANUP/);
+  assert.match(source, /NOT_ACCEPTED_REVIEW_HOSTED_LOGS/);
+  assert.match(source, /issues\\/550\\/comments/);
+  assert.match(source, /github\\.com\\/nora953\\/fawri-production-source\\/actions\\/runs/);
+  assert.match(source, /No claim of original staging closure/);
+  assert.doesNotMatch(source, /echo \\"?\\$\\{?FAWRI_FIELD002_CLONE_ADMIN_URL/);
+  assert.doesNotMatch(source, /gh api.*--input/);
+});
