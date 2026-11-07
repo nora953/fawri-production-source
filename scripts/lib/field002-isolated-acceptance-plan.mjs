@@ -78,6 +78,28 @@ export function compileRehearsedGrants(source, runId) {
     revokes: [...mapped].reverse().map(s => s.replace(/^GRANT /, 'REVOKE ').replace(/ TO /, ' FROM ')) };
 }
 
+export function compileOperatorGrants(role) {
+  if (!/^field002_o_[a-f0-9]{24}$/.test(role)) {
+    throw Error('FIELD002_OPERATOR_ROLE_REJECTED');
+  }
+  const functions = Object.freeze([
+    'public.fawri_issue_admin_directory_audit(text,text,text)',
+    'public.fawri_read_verified_payment_receipts(text,integer,timestamptz,text,text,text)',
+    'public.fawri_review_verified_payment_receipt(text,text,text,text,text,text)',
+    'public.fawri_authorize_verified_receipt_replay(text,text,text,text,text,text,text,text)',
+  ]);
+  const grants = [
+    `GRANT CONNECT ON DATABASE neondb TO ${role}`,
+    `GRANT USAGE ON SCHEMA public TO ${role}`,
+    ...functions.map(fn => `GRANT EXECUTE ON FUNCTION ${fn} TO ${role}`),
+  ];
+  return {
+    functions, grants,
+    revokes: [...grants].reverse().map(sql =>
+      sql.replace(/^GRANT /, 'REVOKE ').replace(/ TO /, ' FROM ')),
+  };
+}
+
 export function restrictedUrl(role, password, profile = selectCloneProfile('cleaned_20261104')) {
   assertAllowedProfile(profile);
   if (!/^field002_[tao]_[a-f0-9]{24}$/.test(role) || !/^[a-f0-9]{64}$/.test(password)) {
