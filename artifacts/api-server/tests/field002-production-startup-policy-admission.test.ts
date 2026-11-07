@@ -10,11 +10,12 @@ const source = () => readFileSync(new URL("../src/index.ts", import.meta.url), "
 
 test("FIELD002 production startup validates reviewed RLS policies before app import and listener", () => {
   const startup = source();
-  assert.match(startup, /if \(productionReleaseGateRequired\(process\.env\)\) \{\s*await createPostgresAuthorityReadinessCheck\(\)\.check\(\);\s*\}/);
+  assert.match(startup, /if \(productionReleaseGateRequired\(process\.env\)\) \{\s*await createPostgresAuthorityReadinessCheck\(\)\.check\(\);[\s\S]*?await assertProductionAuthenticationDatabaseReady\(process\.env\);\s*\}/);
   const checkpoints = [
     "assertProductionRuntimeConfiguration(process.env);",
     "await assertProductionDatabaseRlsReady(process.env);",
     "await createPostgresAuthorityReadinessCheck().check();",
+    "await assertProductionAuthenticationDatabaseReady(process.env);",
     "await assertProductionCashierStreamStorageReady(process.env);",
     "await assertProductionOwnerAdminReady(process.env);",
     "await bootstrapRuntimeAndLoadApplication({",
@@ -22,7 +23,7 @@ test("FIELD002 production startup validates reviewed RLS policies before app imp
   ].map((part) => startup.indexOf(part));
   assert.ok(checkpoints.every((position) => position >= 0), "all production startup security checkpoints must exist");
   assert.ok(checkpoints.every((position, index) => index === 0 || position > checkpoints[index - 1]),
-    "exact RLS policy admission must precede providers and the HTTP listener");
+    "tenant RLS and auth issuer admission must precede providers and the HTTP listener");
 });
 
 test("FIELD002 startup policy admission rejects missing or mismatched policy inventory", () => {
