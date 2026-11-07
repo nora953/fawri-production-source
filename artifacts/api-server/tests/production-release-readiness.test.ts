@@ -388,5 +388,6 @@ test("FIELD002 rejects historic broad-grant and owner identities as production r
   }
   assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv({
     FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_tenant_runtime_v2",
+    DATABASE_URL: "postgresql://fawri_tenant_runtime_v2:synthetic@db.internal:5432/fawri",
   })), []);
 });
