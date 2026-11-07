@@ -134,10 +134,9 @@ BEGIN
                'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
           OR has_any_column_privilege(r.oid,c.oid,
                'SELECT,INSERT,UPDATE,REFERENCES'));
-    IF public_tables <> CASE r.rolname
-       WHEN 'fawri_field002_tenant_probe' THEN 5
-       WHEN 'fawri_field002_auth_probe' THEN 3
-       ELSE 0 END
+    IF (r.rolname='fawri_field002_tenant_probe' AND public_tables<>5)
+       OR (r.rolname='fawri_field002_auth_probe' AND public_tables<>3)
+       OR (r.rolname='fawri_field002_operator_probe' AND public_tables<>0)
     THEN RAISE EXCEPTION 'FIELD002_DIRECT_TABLE_GRANT_SCOPE_REJECTED'; END IF;
 
     IF r.rolname <> 'fawri_field002_auth_probe'
@@ -195,7 +194,7 @@ BEGIN
      OR has_function_privilege('fawri_field002_operator_probe',
          'fawri_security.issue_scope(name,integer,bigint,text)','EXECUTE')
   THEN RAISE EXCEPTION 'FIELD002_OPERATOR_CAPABILITY_REJECTED'; END IF;
-END
+END;
 $field002_verify$;
 
 COMMIT;
