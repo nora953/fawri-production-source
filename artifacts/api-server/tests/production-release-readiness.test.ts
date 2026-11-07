@@ -108,6 +108,7 @@ test("FIELD002 production requires auth and tenant to target the same PostgreSQL
   const neon = productionEnv({
     DATABASE_URL: fakePgUrl("fawri_restricted_runtime", "ep-test-case.c-5.eu-central-1.aws.neon.tech", "neondb"),
     FAWRI_AUTH_DATABASE_URL: fakePgUrl("fawri_auth_issuer", "ep-test-case-pooler.c-5.eu-central-1.aws.neon.tech", "neondb"),
+    FAWRI_OPERATOR_DATABASE_URL: fakePgUrl("fawri_operator_issuer", "ep-test-case.c-5.eu-central-1.aws.neon.tech", "neondb"),
   });
   assert.deepEqual(getProductionRuntimeConfigurationIssues(neon), []);
 });
