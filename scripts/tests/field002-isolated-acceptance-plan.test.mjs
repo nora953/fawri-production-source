@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFileSync} from 'node:fs';
-import {CLONE_HOST, CLEAN_CLONE_HOST, CLEAN_CLONE_BRANCH, selectCloneProfile, parseCloneAdminUrl, compileRehearsedGrants, restrictedUrl, snapshotObjectStatement} from '../lib/field002-isolated-acceptance-plan.mjs';
+import {CLONE_HOST, CLEAN_CLONE_HOST, CLEAN_CLONE_BRANCH, selectCloneProfile, parseCloneAdminUrl, compileRehearsedGrants, operatorRoleName, compileOperatorGrants, restrictedUrl, snapshotObjectStatement} from '../lib/field002-isolated-acceptance-plan.mjs';
 
 // Construct a synthetic URI in memory so the repository contains no literal
 // credential-bearing URL, even with an explicitly fake password.
@@ -29,6 +29,45 @@ test('grant plan requires the reviewed SQL and reversible grants to run-specific
   assert.throws(() => compileRehearsedGrants(rehearsal, 'unexpected;'));
   assert.throws(() => restrictedUrl('neondb_owner','1'.repeat(64)));
   for (const name of plan.names) assert.equal(new URL(restrictedUrl(name,'1'.repeat(64))).hostname, CLONE_HOST);
+});
+
+test('FIELD002 third ephemeral operator identity has only reversible directory and receipt functions', () => {
+  const run = 'c'.repeat(24);
+  const name = operatorRoleName(run);
+  assert.equal(name, 'field002_o_' + run);
+  const profile = selectCloneProfile('clean_20261106');
+  const url = restrictedUrl(name, 'a'.repeat(64), profile);
+  assert.equal(new URL(url).username, name);
+  assert.equal(new URL(url).hostname, CLEAN_CLONE_HOST);
+  const plan = compileOperatorGrants(name);
+  assert.equal(plan.grants.length, 6);
+  assert.equal(plan.functions.length, 4);
+  assert.deepEqual(plan.revokes.slice().reverse().map(sql =>
+    sql.replace(/^REVOKE /, 'GRANT ').replace(' FROM ', ' TO ')), plan.grants);
+  for (const fn of plan.functions) {
+    assert.ok(plan.grants.some(sql =>
+      sql === 'GRANT EXECUTE ON FUNCTION ' + fn + ' TO ' + name));
+  }
+  assert.ok(plan.grants.every(sql =>
+    !/GRANT (?:ALL|SELECT|INSERT|UPDATE|DELETE|TRUNCATE)/.test(sql)));
+  for (const unsafe of ['neondb_owner','field002_t_' + run, 'field002_a_' + run,
+    'field002_o_bad','field002_o_' + 'F'.repeat(24)]) {
+    assert.throws(() => compileOperatorGrants(unsafe), /FIELD002_OPERATOR_ROLE_REJECTED/);
+  }
+  assert.throws(() => operatorRoleName('bad'), /FIELD002_RUN_ID_REJECTED/);
+});
+
+test('FIELD002 hosted three-principal acceptance remains fenced by source and guaranteed cleanup', () => {
+  const source = readFileSync(new URL('../../artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs', import.meta.url), 'utf8');
+  assert.match(source, /const allRoles = \[\.\.\.plan\.names, operatorRole\]/);
+  assert.match(source, /operatorRoleName\(runId\)/);
+  assert.match(source, /compileOperatorGrants\(operatorRole\)/);
+  assert.match(source, /for \(const sql of operatorPlan\.grants\) await admin\.query\(sql\)/);
+  assert.match(source, /actual_third_operator_login_and_four_scoped_capabilities/);
+  assert.match(source, /'directory','receiptRead','receiptReview','receiptExecution'/);
+  assert.match(source, /for \(const sql of operatorPlan\.revokes\) await admin\.query\(sql\)/);
+  assert.match(source, /for \(const role of allRoles\) await admin\.query\('DROP ROLE ' \+ role\)/);
+  assert.match(source, /assert\.deepEqual\(after, baseline/);
 });
 
 test('snapshot fingerprints PostgreSQL sequences as scalar state, without losing table row hashes', () => {
