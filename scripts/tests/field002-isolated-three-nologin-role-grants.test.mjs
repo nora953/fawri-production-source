@@ -65,9 +65,9 @@ test("FIELD002 protects all three privilege domains and denies cross-role issuer
   assert.match(executable, /GRANT EXECUTE ON FUNCTION fawri_security\.allows_merchant\(text\)\s+TO fawri_field002_tenant_probe/);
   assert.match(executable, /fawri_security\.issue_scope\(name,integer,bigint,text\)\s+TO fawri_field002_auth_probe/);
   assert.match(executable, /public\.fawri_authorize_verified_receipt_replay\(text,text,text,text,text,text,text,text\)\s+TO fawri_field002_operator_probe/);
-  assert.match(executable, /WHEN 'fawri_field002_tenant_probe' THEN 5/);
-  assert.match(executable, /WHEN 'fawri_field002_auth_probe' THEN 3/);
-  assert.match(executable, /ELSE 0 END/);
+  assert.match(executable, /r\.rolname='fawri_field002_tenant_probe' AND public_tables<>5/);
+  assert.match(executable, /r\.rolname='fawri_field002_auth_probe' AND public_tables<>3/);
+  assert.match(executable, /r\.rolname='fawri_field002_operator_probe' AND public_tables<>0/);
   assert.match(executable, /r\.rolname <> 'fawri_field002_auth_probe'/);
   assert.match(executable, /r\.rolname <> 'fawri_field002_operator_probe'/);
   assert.match(executable, /public\.database_admin_access_audits/);
