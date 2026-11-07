@@ -101,6 +101,7 @@ export const AUTHENTICATION_SENSITIVE_COLUMNS = [
 ] as const;
 
 export type ProductionDatabaseRlsReadiness = {
+  tenantPredicateTrusted: boolean;
   nonRowPrivilegeRoles: string[];
   cashierStaffLockReady: boolean;
   cashierApprovalAuthorityReady: boolean;
@@ -168,6 +169,7 @@ export async function getProductionDatabaseRlsReadiness(
 ): Promise<ProductionDatabaseRlsReadiness> {
   const queryTarget = target || (await operationalDatabasePool());
   const rows = await operationalQueryRows<{
+    tenant_predicate_trusted: boolean;
     non_row_privilege_roles: string[];
     cashier_staff_lock_ready: boolean;
     cashier_approval_authority_ready: boolean;
@@ -250,6 +252,19 @@ export async function getProductionDatabaseRlsReadiness(
      )
      SELECT
        public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
+       -- FIELD002: policy names/hashes alone cannot guarantee the SECURITY
+       -- DEFINER predicate still uses the private committed-scope boundary.
+       -- Match the exact reviewed 0041 SQL function body (verified on two
+       -- independent 52-migration Neon candidates), owner-safe attributes
+       -- and locked search_path. Reject the legacy writable tenant GUC.
+       COALESCE((
+         SELECT fn.prosecdef AND fn.proisstrict AND fn.provolatile='s'
+           AND fn.prolang=(SELECT oid FROM pg_language WHERE lanname='sql')
+           AND fn.proconfig @> ARRAY['search_path=pg_catalog']::text[]
+           AND md5(fn.prosrc)='f0978dfce073f2546c2081467306e26d'
+         FROM pg_proc fn
+         WHERE fn.oid=to_regprocedure('public.fawri_tenant_or_audited_admin(text)')
+       ), false) AS tenant_predicate_trusted,
        -- RLS mediates row DML, not these table/constraint/trigger authorities.
        -- Include PUBLIC-effective, inherited and activatable role privileges.
        COALESCE((SELECT array_agg(r.rolname::text ORDER BY r.rolname) FROM reachable_roles r
@@ -363,6 +378,7 @@ export async function getProductionDatabaseRlsReadiness(
   }
 
   return {
+    tenantPredicateTrusted: booleanValue(row.tenant_predicate_trusted),
     nonRowPrivilegeRoles: stringArray(row.non_row_privilege_roles),
     cashierStaffLockReady: booleanValue(row.cashier_staff_lock_ready),
     cashierApprovalAuthorityReady: booleanValue(row.cashier_approval_authority_ready),
@@ -427,6 +443,11 @@ export async function assertProductionDatabaseRlsReady(
        readiness.sessionRoleName !== expectedRuntimeRole)) {
     fail("PRODUCTION_DATABASE_RUNTIME_ROLE_MISMATCH",
       "production runtime SQL identities do not match the approved tenant login");
+  }
+
+  if (!readiness.tenantPredicateTrusted) {
+    fail("PRODUCTION_TENANT_PREDICATE_SOURCE_UNTRUSTED",
+      "production tenant predicate must match the reviewed trusted-scope migration");
   }
 
   if (readiness.superuser) {
