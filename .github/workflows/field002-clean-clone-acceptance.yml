@@ -22,6 +22,8 @@ on:
 
 permissions:
   contents: read
+  # Reporting only: write a sanitized pass/fail checkpoint on draft PR #550.
+  issues: write
 
 concurrency:
   group: field002-clean-clone-exclusive
@@ -86,7 +88,8 @@ jobs:
       - run: node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Execute fresh clone only — temporary two-LOGIN real SQL and local mounted HTTP
+      - name: Execute fresh clone only — temporary three-LOGIN real SQL and local mounted HTTP
+        id: hosted_probe
         env:
           FAWRI_FIELD002_CLONE_PROFILE: clean_20261106
           FAWRI_FIELD002_ALLOWED_EXECUTION_BRANCH: br-polished-mouse-b1proel7
@@ -99,3 +102,29 @@ jobs:
           # advisory lock, safe grants and full before/after cleanup.
           # No target URL or credential is emitted to logs/artifacts.
           pnpm exec tsx artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs --execute
+
+      - name: Report sanitized hosted verdict to PR #550
+        # This is a real push-triggered hosted workflow, not a PR-only CI job.
+        # Only the exact safe outcome and run URL are ever published: never the
+        # PostgreSQL URL, auth credentials, fixture data, output or raw logs.
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STEP_OUTCOME: ${{ steps.hosted_probe.outcome }}
+          SOURCE_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ "$STEP_OUTCOME" = success ]; then
+            verdict=BOUNDED_SQL_HTTP_PASS_AND_CLEANUP
+          else
+            verdict=NOT_ACCEPTED_REVIEW_HOSTED_LOGS
+          fi
+          # No database URLs, credentials or raw runner result are read here.
+          body="FIELD002 isolated hosted 3-LOGIN SQL/HTTP evidence — run #${RUN_ID}. Source SHA: ${SOURCE_SHA}. Branch: br-polished-mouse-b1proel7. Probe verdict: ${verdict}. Hosted run: https://github.com/nora953/fawri-production-source/actions/runs/${RUN_ID}. No claim of original staging closure; PR #550 remains DRAFT, commercial NO-GO."
+          if gh api "repos/nora953/fawri-production-source/issues/550/comments" -f body="$body" >/dev/null 2>&1; then
+            echo "FIELD002_SANITIZED_VERDICT_RECORDED ${verdict}"
+          else
+            echo "FIELD002_SANITIZED_VERDICT_REPORT_UNAVAILABLE"
+          fi
