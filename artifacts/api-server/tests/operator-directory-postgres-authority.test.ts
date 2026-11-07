@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createOperatorDirectoryAuthority } from "../src/services/operatorDirectoryPostgresAuthority";
 import { assertProductionAuthenticationDatabaseReady } from "../src/services/authenticationPostgresAuthority";
+import type { OperationalQueryTarget } from "../src/services/operationalPostgresAuthority";
 
 const configured = {
   NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "production",
@@ -142,19 +143,20 @@ function authenticationProbe(
   const statements: string[] = [];
   return {
     statements,
-    async execute(work: (client: { query(sql: string): Promise<{ rows: Record<string, unknown>[] }> }) => Promise<void>) {
-      await work({
-        async query(sql: string) {
+    async execute(work: (client: OperationalQueryTarget) => Promise<void>) {
+      const client: OperationalQueryTarget = {
+        async query<T extends Record<string, unknown>>(sql: string) {
           statements.push(sql);
           if (sql.includes("WITH principal AS")) {
-            return { rows: scopeResult ? [scopeResult as Record<string, unknown>] : [] };
+            return { rows: (scopeResult ? [scopeResult] : []) as T[] };
           }
           if (sql.includes("SELECT session_user::text AS login")) {
-            return { rows: identityResult ? [identityResult as Record<string, unknown>] : [] };
+            return { rows: (identityResult ? [identityResult] : []) as T[] };
           }
           throw new Error("unexpected SQL in auth startup proof");
         },
-      });
+      };
+      await work(client);
     },
   };
 }
