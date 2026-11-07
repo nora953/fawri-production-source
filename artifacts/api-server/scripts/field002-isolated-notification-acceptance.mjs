@@ -231,13 +231,27 @@ async function run() {
               current_user::text AS active,current_database()::text AS db,
               has_function_privilege(session_user,
                 'public.fawri_authentication_runtime()','EXECUTE') AS auth_marker,
-              has_function_privilege(session_user,
-                'fawri_security.issue_scope(name,integer,bigint,text)','EXECUTE') AS scope_issuer,
+              -- The operator intentionally has NO fawri_security USAGE.
+              -- Resolve the private function by its catalog OID; parsing its
+              -- qualified signature under the operator LOGIN fails 42501.
+              has_function_privilege(session_user,(
+                SELECT p.oid FROM pg_proc p JOIN pg_namespace n
+                  ON n.oid=p.pronamespace
+                WHERE n.nspname='fawri_security' AND p.proname='issue_scope'
+                  AND p.pronargs=4
+                  AND p.proargtypes[0]='name'::regtype
+                  AND p.proargtypes[1]='integer'::regtype
+                  AND p.proargtypes[2]='bigint'::regtype
+                  AND p.proargtypes[3]='text'::regtype
+              ),'EXECUTE') AS scope_issuer,
+              has_schema_privilege(session_user,'fawri_security','USAGE')
+                AS private_schema_usage,
               has_table_privilege(session_user,
                 'public.notifications','SELECT,INSERT,UPDATE,DELETE') AS notices_access`)).rows[0];
             assert.deepEqual(row, {
               login:operatorRole,active:operatorRole,db:'neondb',
-              auth_marker:false,scope_issuer:false,notices_access:false,
+              auth_marker:false,scope_issuer:false,
+              private_schema_usage:false,notices_access:false,
             });
           });
         } finally {
