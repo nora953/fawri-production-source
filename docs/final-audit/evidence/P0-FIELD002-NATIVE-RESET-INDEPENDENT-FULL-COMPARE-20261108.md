@@ -76,6 +76,12 @@ This is a creator-default `EXECUTE` privilege grant for newly created functions 
 
 Targeted independent SELECT on the three branches confirmed **nonowner default FUNCTION EXECUTE grant counts: original=0, recovery parent=2, reset child=2**. This is not inferred solely from record-count differences.\n\nIndependent direct SELECT on the sole underlying sequence, `drizzle.__drizzle_migrations_id_seq`, verified `last_value=28`, `is_called=true` on all three branches; no `nextval` or sequence advance executed.
 
+## C. Fresh original-staging nonmutating rollout preflight
+
+A second, separate SELECT-only check directly on pinned original `br-falling-dust-b1km4gix` returned: **28** Drizzle migration rows; **0** notifications; **45** public tables with RLS switched on (this is NOT the missing eight-table acceptance check); **one** legacy `fawri_staging_runtime` LOGIN+BYPASSRLS; **one** `fawri_staging_rls_runtime` NOLOGIN without BYPASSRLS; **zero other visible client sessions at the instant of observation**; authentication marker absent; trusted admin issuer absent. The existing rollout preflight from 2026-11-06 remains unapproved for writes; the ACL baseline itself has changed since the earlier audit. One snapshot of `pg_stat_activity` does not establish a maintenance window, and 45 unrelated RLS-enabled tables do **not** prove the target 8/8 protected.
+
+The original-target deployment and rollback approval must use the **current** exact original ACL and session snapshot, not assume the earlier two-default-grants precondition still holds. Neon SQL log searches with both `ALTER DEFAULT PRIVILEGES` and `REVOKE EXECUTE` filters in a three-day window returned no matching lines; this is **not evidence that no change occurred**, since SQL/DDL logging completeness and retention have not been established.
+
 ## Decision and remaining gate
 
 - **ACCEPT as bounded PASS:** post-native-reset table-content parity **95/95** across original, parent and child; post-native-reset catalog parity **9/9** from parent to reset child; sequence current state matches.
