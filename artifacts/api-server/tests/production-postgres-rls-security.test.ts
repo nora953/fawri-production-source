@@ -29,6 +29,7 @@ function target(row: Record<string, unknown>): OperationalQueryTarget {
 
 function safeRow(overrides: Record<string, unknown> = {}) {
   return {
+    tenant_predicate_trusted: true,
     non_row_privilege_roles: [],
     cashier_staff_lock_ready:true, cashier_approval_authority_ready:true, authentication_authority_present:true, authentication_marker_reachable_roles:[], authentication_mutation_roles:[], audit_access_roles:[],
     authentication_sensitive_columns_present:true, authentication_sensitive_read_roles:[],
@@ -99,6 +100,28 @@ test("FIELD002 configured production SQL current/session role must match the app
       },
     );
   }
+});
+
+test("FIELD002 production admits only the exact reviewed trusted tenant predicate and fails closed on drift", async () => {
+  await assert.doesNotReject(() => assertProductionDatabaseRlsReady(
+    productionEnv(), target(safeRow()),
+  ));
+  await rejectsWith("PRODUCTION_TENANT_PREDICATE_SOURCE_UNTRUSTED",
+    safeRow({tenant_predicate_trusted: false}));
+  for (const malformed of [undefined, null, "true", "false", 0, 1]) {
+    await rejectsWith("PRODUCTION_DATABASE_RLS_READINESS_CHECK_FAILED",
+      safeRow({tenant_predicate_trusted: malformed}));
+  }
+  const source = readFileSync(new URL("../src/services/postgresRuntimeRlsSecurity.ts",
+    import.meta.url), "utf8");
+  const migration = readFileSync(new URL(
+    "../../../lib/db/drizzle/0041_private_tenant_predicate_cutover.sql",
+    import.meta.url), "utf8");
+  assert.match(source, /md5\\(fn\\.prosrc\\)='f0978dfce073f2546c2081467306e26d'/);
+  assert.match(source, /fn\\.prosecdef AND fn\\.proisstrict/);
+  assert.match(source, /tenant_predicate_trusted/);
+  assert.match(migration, /fawri_security\\.allows_merchant\\(p_merchant_id\\)/);
+  assert.doesNotMatch(migration, /fawri\\.tenant_id/);
 });
 
 test("production rejects superuser and BYPASSRLS runtime roles", async () => {
