@@ -270,6 +270,13 @@ test("FIELD002 production proves the actual dedicated operator issuer before HTT
   assert.equal(probe.queries.length, 1);
   assert.ok(probe.queries[0].includes("authentication_reachable"));
   assert.ok(probe.queries[0].includes("scope_issuer_reachable"));
+  // The operator is deliberately denied USAGE on private fawri_security.
+  // Looking up issue_scope by signature text under this user returns SQLSTATE
+  // 42501. The OID-based catalog probe must not require a schema grant.
+  assert.ok(probe.queries[0].includes("SELECT p.oid FROM pg_proc p"));
+  assert.ok(probe.queries[0].includes("n.nspname='fawri_security'"));
+  assert.ok(probe.queries[0].includes("p.proargtypes[0]='name'::regtype"));
+  assert.ok(!probe.queries[0].includes("'fawri_security.issue_scope(name,integer,bigint,text)'"));
 });
 
 test("FIELD002 operator prelistener SQL denies mismatched, switched, overprivileged, and incomplete roles", async () => {
