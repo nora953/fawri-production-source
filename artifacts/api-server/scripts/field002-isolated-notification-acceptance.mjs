@@ -299,6 +299,68 @@ async function run() {
       }
       assert.deepEqual(await noticeSnapshot(), before);
     });
+    // Explicit adversarial SQL: caller-controllable PostgreSQL settings must
+    // never mint a trusted tenant scope. Run only with synthetic clone fixtures,
+    // a real restricted LOGIN, and transaction-local settings (no pool leakage).
+    await check('sql_forged_guc_without_issuer_scope_denied', async () => {
+      const before = await noticeSnapshot();
+      const client = await runtimePool.connect();
+      try {
+        await assertTenantScopeSession(client, false);
+        for (const [i, id] of merchants.entries()) {
+          assert.match(id, /^field002-[ab]-[a-f0-9]{24}$/);
+          for (const method of ['set_config', 'set_local']) {
+            await client.query('BEGIN');
+            try {
+              if (method === 'set_config') {
+                await client.query("SELECT set_config('fawri.tenant_id',$1,true)", [id]);
+              } else {
+                // Interpolated value is generated locally and checked above.
+                await client.query(`SET LOCAL fawri.tenant_id TO '${id}'`);
+              }
+              assert.equal((await client.query(
+                "SELECT current_setting('fawri.tenant_id', true) AS tenant"
+              )).rows[0].tenant, id);
+              assert.equal((await client.query(
+                'SELECT id FROM notifications WHERE merchant_id=$1', [id]
+              )).rowCount, 0, 'forged GUC may not expose merchant notifications');
+              assert.equal((await client.query(
+                'UPDATE notifications SET read_at=now() WHERE id=$1', [noticeIds[i]]
+              )).rowCount, 0, 'forged GUC may not mutate merchant notifications');
+              await client.query('SAVEPOINT attempted_forged_insert');
+              await assert.rejects(() => client.query(
+                `INSERT INTO notifications(id,audience,merchant_id,account_id,type,title_key,body_key,variables)
+                  VALUES($1,'merchant',$2,$2,'synthetic','synthetic','synthetic','{}')`,
+                [id + '-forged-insert', id]
+              ), { code: '42501' });
+              await client.query('ROLLBACK TO SAVEPOINT attempted_forged_insert');
+            } finally {
+              await client.query('ROLLBACK');
+            }
+          }
+        }
+      } finally {
+        client.release();
+      }
+      assert.deepEqual(await noticeSnapshot(), before);
+    });
+    // Even after a real scope is issued to A, claiming B through the legacy
+    // GUC must not change the only visible/writable tenant of that transaction.
+    await check('sql_forged_guc_cannot_rebind_trusted_scope', async () => {
+      const before = await noticeSnapshot();
+      for (const [i, actor] of actors.entries()) {
+        await withMerchantOperationalTransaction(actor.id, async client => {
+          await client.query("SELECT set_config('fawri.tenant_id',$1,true)", [merchants[1-i]]);
+          assert.deepEqual((await client.query(
+            'SELECT id FROM notifications ORDER BY id'
+          )).rows.map(r => r.id), [noticeIds[i]]);
+          assert.equal((await client.query(
+            'UPDATE notifications SET read_at=now() WHERE id=$1', [noticeIds[1-i]]
+          )).rowCount, 0);
+        });
+      }
+      assert.deepEqual(await noticeSnapshot(), before);
+    });
     const { default: express } = await import('express');
     const { default: cookieParser } = await import('cookie-parser');
     const { default: router } = await import('../src/routes/merchant-notifications-pg.ts');
