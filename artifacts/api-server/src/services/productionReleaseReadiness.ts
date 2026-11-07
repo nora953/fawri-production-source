@@ -58,6 +58,20 @@ function isPostgresUrl(value: unknown): boolean {
   }
 }
 
+// FIELD002: production auth must use a separately authenticated LOGIN.
+// This is a syntactic pre-listener identity check, not SQL privilege proof.
+// Never log or include URL/user-info in issue codes.
+function postgresLoginName(value: unknown): string | null {
+  if (!isPostgresUrl(value)) return null;
+  try {
+    const valueUrl = new URL(text(value));
+    const username = decodeURIComponent(valueUrl.username);
+    return /^[a-z_][a-z0-9_]{0,62}$/.test(username) ? username : null;
+  } catch {
+    return null;
+  }
+}
+
 function isSafeAllowedOrigins(value: unknown): boolean {
   const origins = text(value)
     .split(",")
@@ -177,6 +191,19 @@ export function getProductionRuntimeConfigurationIssues(
     issues.push(issue("database", "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"));
   } else if (FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(selectedRuntimeRole)) {
     issues.push(issue("database", "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"));
+  }
+  const tenantUrlLogin = postgresLoginName(env.DATABASE_URL);
+  if (tenantUrlLogin && selectedRuntimeRole &&
+      tenantUrlLogin !== selectedRuntimeRole) {
+    issues.push(issue("database", "FIELD002_TENANT_DATABASE_LOGIN_MISMATCH"));
+  }
+  const authUrlLogin = postgresLoginName(env.FAWRI_AUTH_DATABASE_URL);
+  if (!authUrlLogin) {
+    issues.push(issue("auth", "FIELD002_AUTH_DATABASE_URL_REQUIRED"));
+  } else if (authUrlLogin === tenantUrlLogin ||
+      authUrlLogin === selectedRuntimeRole ||
+      FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(authUrlLogin)) {
+    issues.push(issue("auth", "FIELD002_AUTH_DATABASE_LOGIN_UNSAFE"));
   }
   if (text(env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "SUBSCRIPTION_POSTGRES_AUTHORITY_REQUIRED"));
