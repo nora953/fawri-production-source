@@ -147,6 +147,24 @@ test('clean clone workflow supports a branch-only approved request, no automatic
   assert.doesNotMatch(source, /schedule:/);
 });
 
+test('FIELD002 isolated operator privilege probe never requires private security schema USAGE', () => {
+  const source = readFileSync(new URL('../../artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs', import.meta.url), 'utf8');
+  const start = source.indexOf("await check('actual_third_operator_login_and_four_scoped_capabilities'");
+  const end = source.indexOf("await transaction(async () => {", start);
+  assert.ok(start >= 0 && end > start);
+  const proof = source.slice(start, end);
+  for (const checked of [
+    "has_function_privilege(session_user,(",
+    "n.nspname='fawri_security'",
+    "p.proname='issue_scope'",
+    "p.proargtypes[0]='name'::regtype",
+    "private_schema_usage:false",
+    "has_schema_privilege(session_user,'fawri_security','USAGE')",
+  ]) assert.ok(proof.includes(checked), checked);
+  assert.ok(!proof.includes("'fawri_security.issue_scope(name,integer,bigint,text)','EXECUTE'"));
+  assert.ok(!proof.includes("GRANT USAGE ON SCHEMA fawri_security"));
+});
+
 test('FIELD002 hosted workflow reports only a sanitized real runner verdict to draft PR', () => {
   const source = readFileSync(new URL('../../.github/workflows/field002-clean-clone-acceptance.yml', import.meta.url), 'utf8');
   for (const safe of [
