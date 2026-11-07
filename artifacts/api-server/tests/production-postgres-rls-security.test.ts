@@ -117,11 +117,11 @@ test("FIELD002 production admits only the exact reviewed trusted tenant predicat
   const migration = readFileSync(new URL(
     "../../../lib/db/drizzle/0041_private_tenant_predicate_cutover.sql",
     import.meta.url), "utf8");
-  assert.match(source, /md5\\(fn\\.prosrc\\)='f0978dfce073f2546c2081467306e26d'/);
-  assert.match(source, /fn\\.prosecdef AND fn\\.proisstrict/);
+  assert.match(source, /md5\(fn\.prosrc\)='f0978dfce073f2546c2081467306e26d'/);
+  assert.match(source, /fn\.prosecdef AND fn\.proisstrict/);
   assert.match(source, /tenant_predicate_trusted/);
-  assert.match(migration, /fawri_security\\.allows_merchant\\(p_merchant_id\\)/);
-  assert.doesNotMatch(migration, /fawri\\.tenant_id/);
+  assert.match(migration, /fawri_security\.allows_merchant\(p_merchant_id\)/);
+  assert.doesNotMatch(migration, /fawri\.tenant_id/);
 });
 
 test("production rejects superuser and BYPASSRLS runtime roles", async () => {
