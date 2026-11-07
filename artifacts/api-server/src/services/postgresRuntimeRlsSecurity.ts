@@ -261,7 +261,7 @@ export async function getProductionDatabaseRlsReadiness(
          SELECT fn.prosecdef AND fn.proisstrict AND fn.provolatile='s'
            AND fn.prolang=(SELECT oid FROM pg_language WHERE lanname='sql')
            AND fn.proconfig @> ARRAY['search_path=pg_catalog']::text[]
-           AND md5(fn.prosrc)='f0978dfce073f2546c2081467306e26d'
+           AND encode(sha256(convert_to(fn.prosrc,'UTF8')),'hex')='a871b1d9a76f90af0bdabedfda6026458585a3efa21e4857f9694c104a808da0'
          FROM pg_proc fn
          WHERE fn.oid=to_regprocedure('public.fawri_tenant_or_audited_admin(text)')
        ), false) AS tenant_predicate_trusted,
