@@ -19,6 +19,8 @@ test("FIELD002 original prechange probe has exact connection-target external pin
   assert.match(executable, /false AS authorized_to_write_original/);
   assert.match(executable, /SOURCE_READONLY_BASELINE_MATCH_NOT_A_WRITE_APPROVAL/);
   assert.match(executable, /FAIL_CLOSED_SOURCE_OR_ISOLATION_DRIFT/);
+  assert.match(executable, /FAIL_CLOSED_DEFAULT_FUNCTION_EXECUTE_ACL_DRIFT/);
+  assert.match(executable, /WHEN unsafe_function_exec_count<>2 THEN/);
   assert.match(executable, /FIELD002_OPEN_NO_GO_0052_BLOCKED/);
 });
 
@@ -39,6 +41,7 @@ test("FIELD002 original prechange probe refuses branch drift, role drift, extra 
     "residuals.present=8 AND residuals.rls_enabled=0",
     "residual_policies.policy_count=0",
     "legacy_defaults.unsafe_function_exec_count=2",
+    "WHEN unsafe_function_exec_count<>2 THEN",
     "roles.unsafe_legacy_login_count=1",
     "roles.nonlogin_legacy_runtime_count=1",
     "roles.field002_test_roles=0",

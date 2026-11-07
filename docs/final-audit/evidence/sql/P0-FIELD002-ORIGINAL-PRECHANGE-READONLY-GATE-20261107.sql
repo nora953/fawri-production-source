@@ -5,6 +5,9 @@
 -- THIS SQL CANNOT VERIFY THE NEON BRANCH ID FROM WITHIN POSTGRESQL.
 -- Never run this on default Neon production br-shiny-lab-b1vxj4wn.
 -- A matching query result is NOT approval for an original write, deploy or migration.
+-- If original EXECUTE default grants differ from the pinned 2, diagnose ACL drift.
+-- Even a measured 0 is NOT a write approval: investigate provenance and effective
+-- function permissions, including PostgreSQL's implicit PUBLIC EXECUTE defaults.
 -- Migration 0052 remains FORBIDDEN pending separate owner/bootstrap authorization.
 
 WITH
@@ -119,6 +122,8 @@ truth AS (
 SELECT *,
        CASE WHEN matches_exact_prechange_catalog THEN
          'SOURCE_READONLY_BASELINE_MATCH_NOT_A_WRITE_APPROVAL'
+       WHEN unsafe_function_exec_count<>2 THEN
+         'FAIL_CLOSED_DEFAULT_FUNCTION_EXECUTE_ACL_DRIFT'
        ELSE
          'FAIL_CLOSED_SOURCE_OR_ISOLATION_DRIFT'
        END AS prechange_status,

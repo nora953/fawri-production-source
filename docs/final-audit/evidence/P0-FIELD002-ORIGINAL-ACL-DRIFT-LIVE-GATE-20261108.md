@@ -1,0 +1,21 @@
+# FIELD002 — live original staging default-FUNCTION ACL drift: fail-closed diagnostic (2026-11-08)
+
+## Scope and exact target
+- Repository PR #550, source branch `fix/p0-provider-receipt-order-discovery-20261015`, audited previous HEAD `7b084d5594e1754d916b01fa83cc86af43b910b3`.
+- Neon project `round-fire-18493605`, explicit NONDEFAULT original `br-falling-dust-b1km4gix`, database `neondb`. Default production `br-shiny-lab-b1vxj4wn` **not queried or modified** in this checkpoint.
+- Frozen direct recovery parent `br-royal-fog-b1v7pdmr` and provider-native reset child `br-summer-bonus-b19rgpfn` independently queried SELECT-only.
+- **No Neon SQL writes, ACL updates, migrations, branch deletion/reset, Railway deployment/config changes or merge**.
+
+## New independent live readback
+1. `pg_default_acl` scoped to owner `neondb_owner`, `public` default function privileges: original has **ZERO matching ACL rows/zero explicit grants**; recovery parent and reset child each have **ONE** explicit ACL record with **TWO** legacy grants `fawri_staging_runtime=EXECUTE` and `fawri_staging_rls_runtime=EXECUTE`.
+2. All PostgreSQL *function default ACL* records (`pg_default_acl.defaclobjtype='f'`), including global, were enumerated in separate branch-pinned read-only queries: **original 0, recovery 1, rehearsed migrated derivative 0**. This does **not** prove new functions are safe: PostgreSQL function defaults may permit `PUBLIC EXECUTE`; actual post-migration function ACL and role-effective execution require explicit assessment. Never infer safe restoration solely from grant-count 0.
+3. Executed the proposed updated **single-SELECT** original prechange gate on the pinned original branch before committing. Observed exact fields: `applied=28`; last ledger hash `87a2a16f4278430b770f6e60a4da497ae8cc24cab11aeec6780febe119bd9b3f`; 8 critical residual tables with `rls_enabled=0` and `policy_count=0`; `unsafe_function_exec_count=0`; 1 old privileged LOGIN; 1 target NOLOGIN; 2 old memberships; 0 FIELD002 test roles; 0 other client sessions **at a sampled instant**; 0 notices, 283 audits, 1 merchant.
+4. Explicit live verdict: **`prechange_status=FAIL_CLOSED_DEFAULT_FUNCTION_EXECUTE_ACL_DRIFT`**, `matches_exact_prechange_catalog=false`, **`authorized_to_write_original=false`** and `commercial_gate=FIELD002_OPEN_NO_GO_0052_BLOCKED`.
+5. Separate earlier accepted provider-native reset: data 95/95 match among original, parent and reset child, all 437 rows and `8dcad805b36a3f8f8d33fd13a567e7cd` digest; parent-to-child catalog 9/9 match; original-versus-recovery catalog remains 8/9 due to ACL. No assumption that data equality resolves security catalog drift.
+
+## Source change, safe interpretation and next actions
+- Keep the **exact old 2-grant baseline check** for positive result intact. When count differs, report specific `FAIL_CLOSED_DEFAULT_FUNCTION_EXECUTE_ACL_DRIFT` rather than the generic failure. The new diagnostic **never authorizes** a write, even with zero old grants. The remaining prechange gate tests and no-write invariants remain mandatory.
+- Regression assertions require the new rejection label while retaining all original immutable branch naming, migration hash, role, 8-table, data baseline and read-only source checks.
+- Previous original audit counted 2 old grants; newest original counted 0 and older frozen recovery still has 2. **Do not attribute this change to any person, time or approved operation** without independent audit evidence; telemetry is not sufficient to prove absence/presence of an intervening SQL change.
+- Before any original migrations: reconcile the ACL timeline and effective `PUBLIC`/legacy function EXECUTE; update a new owner-reviewed canonical original baseline; confirm independent rollback/candidate replay will not reintroduce unsafe default grants; prove **exclusive no-reconnect maintenance**, credential separation and 3 permanent restricted LOGINs; apply source-pinned 0028–0051 only with fresh owner approval and rollback isolation. Then verify original mounted SQL/HTTP and commercial R2 seed/import guard. **Do not run 0052**.
+- **FIELD002 OPEN. PR #550 DRAFT. Commercial NO-GO.** The only new closure is specific live ACL drift diagnosis and protected detection, not the original deployment gate.
