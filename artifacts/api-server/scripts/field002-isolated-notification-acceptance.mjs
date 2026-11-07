@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { selectCloneProfile, parseCloneAdminUrl,
-  compileRehearsedGrants, restrictedUrl, snapshotObjectStatement } from '../../../scripts/lib/field002-isolated-acceptance-plan.mjs';
+  compileRehearsedGrants, operatorRoleName, compileOperatorGrants,
+  restrictedUrl, snapshotObjectStatement } from '../../../scripts/lib/field002-isolated-acceptance-plan.mjs';
 
 // Explicit hosted harness. Never imports or weakens assertDisposablePostgres.
 // It mounts the actual notification router and actual session middleware only;
@@ -49,12 +50,15 @@ async function run() {
   const rehearsal = readFileSync(join(root, 'docs/final-audit/evidence/sql/P0-FIELD002-ISOLATED-ROLE-GRANT-REHEARSAL-20261104.sql'), 'utf8');
   const plan = compileRehearsedGrants(rehearsal, runId);
   const [tenantRole, authRole] = plan.names;
+  const operatorRole = operatorRoleName(runId);
+  const operatorPlan = compileOperatorGrants(operatorRole);
+  const allRoles = [...plan.names, operatorRole];
   const merchants = [`field002-a-${runId}`, `field002-b-${runId}`];
   const noticeIds = merchants.map(id => `${id}-notice`);
   const work = mkdtempSync(join(tmpdir(), 'fawri-field002-'));
   const reportPath = join(work, 'result.json');
   const report = { source, runId, branch: profile.branch, host: profile.host, mode,
-    roles: plan.names, fixtureMerchants: merchants, status: 'PREFLIGHT', tests: [],
+    roles: allRoles, fixtureMerchants: merchants, status: 'PREFLIGHT', tests: [],
     cleanup: 'NOT_NEEDED', field002Closed: false, release: 'NO-GO' };
   const save = () => writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n', { mode: 0o600 });
   save();
@@ -147,7 +151,7 @@ async function run() {
     assert.equal(privacy.count, 8);
     markStage('preflight_no_old_fixtures');
     const residual = await admin.query(`SELECT
-      (SELECT count(*)::int FROM pg_roles WHERE rolname ~ '^field002_[ta]_[0-9a-f]{24}$') AS roles,
+      (SELECT count(*)::int FROM pg_roles WHERE rolname ~ '^field002_[tao]_[0-9a-f]{24}$') AS roles,
       (SELECT count(*)::int FROM merchants) AS merchants`);
     assert.deepEqual(residual.rows[0], { roles: 0, merchants: 1 });
     markStage('preflight_full_snapshot');
@@ -155,24 +159,48 @@ async function run() {
     if (mode === '--preflight') { report.status = 'PREFLIGHT_PASS'; return; }
     ensureRunning();
     // Short-lived random passwords exist only in this process; no original role is altered.
-    const passwords = plan.names.map(() => randomBytes(32).toString('hex'));
+    const passwords = allRoles.map(() => randomBytes(32).toString('hex'));
     const expires = new Date(Date.now() + 20 * 60 * 1000).toISOString();
     report.credentialExpiry = expires; report.cleanup = 'REQUIRED'; mutated = true; save();
     await transaction(async () => {
       await noOtherClients();
-      for (const [i, role] of plan.names.entries()) {
+      for (const [i, role] of allRoles.entries()) {
         await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${passwords[i]}' VALID UNTIL '${expires}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION CONNECTION LIMIT 4`);
       }
       for (const sql of plan.grants) await admin.query(sql);
-      fixtureOids = (await admin.query('SELECT oid::text,rolname FROM pg_roles WHERE rolname=ANY($1::text[]) ORDER BY rolname', [plan.names])).rows;
+      for (const sql of operatorPlan.grants) await admin.query(sql);
+      // Each temporary operator is a real LOGIN with four trusted functions,
+      // never direct protected-table access, shared authentication scope or owners.
+      const opGuard = (await admin.query(`SELECT
+        (r.rolcanlogin AND NOT (r.rolsuper OR r.rolbypassrls OR
+         r.rolcreaterole OR r.rolcreatedb OR r.rolinherit)
+         AND NOT EXISTS(SELECT 1 FROM pg_auth_members m WHERE m.member=r.oid)) AS safe,
+        (SELECT count(*)::int FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+          WHERE n.nspname='public' AND c.relkind IN ('r','p')
+            AND (has_table_privilege(r.oid,c.oid,
+              'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
+              OR has_any_column_privilege(r.oid,c.oid,
+              'SELECT,INSERT,UPDATE,REFERENCES'))) AS tables,
+        has_function_privilege(r.oid,
+          'public.fawri_authentication_runtime()','EXECUTE') AS auth,
+        has_function_privilege(r.oid,
+          'fawri_security.issue_scope(name,integer,bigint,text)','EXECUTE') AS scope
+        FROM pg_roles r WHERE r.rolname=$1`, [operatorRole])).rows[0];
+      assert.deepEqual(opGuard,{safe:true,tables:0,auth:false,scope:false});
+      for (const fn of operatorPlan.functions) {
+        const ok = (await admin.query('SELECT has_function_privilege($1,$2,\'EXECUTE\') AS yes',
+          [operatorRole,fn])).rows[0].yes;
+        assert.equal(ok,true);
+      }
+      fixtureOids = (await admin.query('SELECT oid::text,rolname FROM pg_roles WHERE rolname=ANY($1::text[]) ORDER BY rolname', [allRoles])).rows;
     });
     report.roleOids = fixtureOids; save();
     Object.assign(process.env, { NODE_ENV: 'test', FAWRI_DATA_DIR: join(work, 'data'),
       DATABASE_URL: restrictedUrl(tenantRole, passwords[0], profile), FAWRI_AUTH_DATABASE_URL: restrictedUrl(authRole, passwords[1], profile),
+      FAWRI_OPERATOR_DATABASE_URL: restrictedUrl(operatorRole, passwords[2], profile),
       FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: tenantRole,
       FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: 'required', FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: 'required',
       FAWRI_AUTH_SECURITY_SECRET: randomBytes(32).toString('hex'), FAWRI_PASSWORD_SALT: randomBytes(32).toString('hex') });
-    delete process.env.FAWRI_OPERATOR_DATABASE_URL;
     // No imported application's log may emit assertion values or driver detail.
     console.error = (...args) => savedConsoleError('FIELD002_APP_DIAGNOSTIC', safeCode(args.find(a => a instanceof Error)));
     ({ pool: runtimePool } = await import('@workspace/db'));
