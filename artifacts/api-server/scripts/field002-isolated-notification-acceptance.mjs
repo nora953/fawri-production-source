@@ -221,6 +221,31 @@ async function run() {
       });
     });
 
+    await check('actual_third_operator_login_and_four_scoped_capabilities', async () => {
+      const { createOperatorDirectoryAuthority } = await import('../src/services/operatorDirectoryPostgresAuthority.ts');
+      for (const capability of ['directory','receiptRead','receiptReview','receiptExecution']) {
+        const issuer = createOperatorDirectoryAuthority({ capability });
+        try {
+          await issuer.transaction(async client => {
+            const row = (await client.query(`SELECT session_user::text AS login,
+              current_user::text AS active,current_database()::text AS db,
+              has_function_privilege(session_user,
+                'public.fawri_authentication_runtime()','EXECUTE') AS auth_marker,
+              has_function_privilege(session_user,
+                'fawri_security.issue_scope(name,integer,bigint,text)','EXECUTE') AS scope_issuer,
+              has_table_privilege(session_user,
+                'public.notifications','SELECT,INSERT,UPDATE,DELETE') AS notices_access`)).rows[0];
+            assert.deepEqual(row, {
+              login:operatorRole,active:operatorRole,db:'neondb',
+              auth_marker:false,scope_issuer:false,notices_access:false,
+            });
+          });
+        } finally {
+          await issuer.close();
+        }
+      }
+    });
+
     await transaction(async () => {
       for (const [i, id] of merchants.entries()) {
         await admin.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'field002-synthetic','active',true)", [id, '+198' + randomInt(100000000, 999999999)]);
@@ -328,7 +353,7 @@ async function run() {
       await cleanupStep('owned_fixture_and_role_cleanup', async () => {
         await noOtherClients();
         await transaction(async () => {
-          const roles = (await admin.query('SELECT oid::text,rolname FROM pg_roles WHERE rolname=ANY($1::text[]) ORDER BY rolname', [plan.names])).rows;
+          const roles = (await admin.query('SELECT oid::text,rolname FROM pg_roles WHERE rolname=ANY($1::text[]) ORDER BY rolname', [allRoles])).rows;
           if (roles.length) assert.deepEqual(roles, fixtureOids);
           // Names and recorded OIDs are run-specific. Never DROP OWNED/CASCADE.
           if (fixturesAttempted) {
@@ -339,11 +364,12 @@ async function run() {
             await admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])', [merchants]);
           }
           if (roles.length) {
+            for (const sql of operatorPlan.revokes) await admin.query(sql);
             for (const sql of plan.revokes) await admin.query(sql);
-            for (const role of plan.names) await admin.query('DROP ROLE ' + role);
+            for (const role of allRoles) await admin.query('DROP ROLE ' + role);
           }
         });
-        assert.equal((await admin.query('SELECT count(*)::int AS count FROM pg_roles WHERE rolname=ANY($1::text[])', [plan.names])).rows[0].count, 0);
+        assert.equal((await admin.query('SELECT count(*)::int AS count FROM pg_roles WHERE rolname=ANY($1::text[])', [allRoles])).rows[0].count, 0);
         const after = await snapshot(); report.afterDigest = digest(after);
         assert.deepEqual(after, baseline, 'data/schema/security baseline must be restored');
       });
