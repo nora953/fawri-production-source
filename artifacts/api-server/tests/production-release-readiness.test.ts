@@ -80,6 +80,28 @@ test("FIELD002 production refuses missing, malformed or reused auth PostgreSQL l
   assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
 });
 
+test("FIELD002 production requires auth and tenant to target the same PostgreSQL branch/database", () => {
+  for (const auth of [
+    "postgresql://fawri_auth_issuer:test@other-db.internal:5432/fawri",
+    "postgresql://fawri_auth_issuer:test@db.internal:5432/other_db",
+    "postgresql://fawri_auth_issuer:test@db.internal:5433/fawri",
+  ]) {
+    const env = productionEnv({ FAWRI_AUTH_DATABASE_URL: auth });
+    assert.ok(getProductionRuntimeConfigurationIssues(env)
+      .some(item => item.code === "FIELD002_AUTH_DATABASE_TARGET_MISMATCH"), auth);
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+    });
+  }
+  // Neon pooled and direct endpoints identify the same compute; distinct
+  // arbitrary hosts and databases do not.
+  const neon = productionEnv({
+    DATABASE_URL: "postgresql://fawri_restricted_runtime:x@ep-test-case.c-5.eu-central-1.aws.neon.tech:5432/neondb",
+    FAWRI_AUTH_DATABASE_URL: "postgresql://fawri_auth_issuer:y@ep-test-case-pooler.c-5.eu-central-1.aws.neon.tech/neondb",
+  });
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(neon), []);
+});
+
 test("FIELD002 production enforces DATABASE_URL LOGIN matches reviewed tenant identity", () => {
   const mismatch = productionEnv({
     DATABASE_URL: "postgresql://another_restricted_role:dummy@db.internal:5432/fawri",
