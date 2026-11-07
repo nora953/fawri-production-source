@@ -149,16 +149,18 @@ test('clean clone workflow supports a branch-only approved request, no automatic
 
 test('FIELD002 hosted workflow reports only a sanitized real runner verdict to draft PR', () => {
   const source = readFileSync(new URL('../../.github/workflows/field002-clean-clone-acceptance.yml', import.meta.url), 'utf8');
-  assert.match(source, /id: hosted_probe/);
-  assert.match(source, /issues: write/);
-  assert.match(source, /if: \\$\\{\\{ always\\(\\) \\}\\}/);
-  assert.match(source, /STEP_OUTCOME: \\$\\{\\{ steps\\.hosted_probe\\.outcome \\}\\}/);
-  assert.match(source, /if \\[ "\\$STEP_OUTCOME" = success \\]; then/);
-  assert.match(source, /BOUNDED_SQL_HTTP_PASS_AND_CLEANUP/);
-  assert.match(source, /NOT_ACCEPTED_REVIEW_HOSTED_LOGS/);
-  assert.match(source, /issues\\/550\\/comments/);
-  assert.match(source, /github\\.com\\/nora953\\/fawri-production-source\\/actions\\/runs/);
-  assert.match(source, /No claim of original staging closure/);
-  assert.doesNotMatch(source, /echo \\"?\\$\\{?FAWRI_FIELD002_CLONE_ADMIN_URL/);
-  assert.doesNotMatch(source, /gh api.*--input/);
+  for (const safe of [
+    'id: hosted_probe',
+    'issues: write',
+    'if: ${{ always() }}',
+    'STEP_OUTCOME: ${{ steps.hosted_probe.outcome }}',
+    'if [ "$STEP_OUTCOME" = success ]; then',
+    'BOUNDED_SQL_HTTP_PASS_AND_CLEANUP',
+    'NOT_ACCEPTED_REVIEW_HOSTED_LOGS',
+    'issues/550/comments',
+    'github.com/nora953/fawri-production-source/actions/runs/',
+    'No claim of original staging closure',
+  ]) assert.ok(source.includes(safe), safe);
+  assert.ok(!source.includes('echo "$FAWRI_FIELD002_CLONE_ADMIN_URL"'));
+  assert.ok(!source.includes('gh api --input'));
 });
