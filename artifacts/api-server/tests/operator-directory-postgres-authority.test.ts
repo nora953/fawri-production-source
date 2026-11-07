@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createOperatorDirectoryAuthority } from "../src/services/operatorDirectoryPostgresAuthority";
+import { createOperatorDirectoryAuthority, assertProductionOperatorDatabaseReady } from "../src/services/operatorDirectoryPostgresAuthority";
+import type { OperationalQueryTarget } from "../src/services/operationalPostgresAuthority";
 import { assertProductionAuthenticationDatabaseReady } from "../src/services/authenticationPostgresAuthority";
 import type { OperationalQueryTarget } from "../src/services/operationalPostgresAuthority";
 
@@ -226,4 +227,95 @@ test("FIELD002 auth admission does not leak SQL or passwords and skips explicit 
     async () => { touched = true; },
   ), { code: "PRODUCTION_AUTH_DATABASE_IDENTITY_NOT_READY" });
   assert.equal(touched, false);
+});
+
+
+const operatorStartupEnv = {
+  NODE_ENV: "production",
+  FAWRI_DEPLOYMENT_MODE: "production",
+  FAWRI_OPERATOR_DATABASE_URL: configured.FAWRI_OPERATOR_DATABASE_URL,
+};
+const goodOperatorStartup = {
+  login: "synthetic_operator",
+  active: "synthetic_operator",
+  database_name: "operator_test",
+  directory_ready: true,
+  authentication_reachable: false,
+  scope_issuer_reachable: false,
+};
+function operatorStartupProbe(row: unknown = goodOperatorStartup) {
+  const queries: string[] = [];
+  return {
+    queries,
+    async execute(work: (client: OperationalQueryTarget) => Promise<void>): Promise<void> {
+      const client: OperationalQueryTarget = {
+        async query<T extends Record<string, unknown>>(sql: string) {
+          queries.push(sql);
+          if (!sql.includes("SELECT session_user::text AS login")) {
+            throw new Error("unexpected operator startup SQL");
+          }
+          return { rows: (row ? [row] : []) as T[] };
+        },
+      };
+      await work(client);
+    },
+  };
+}
+
+test("FIELD002 production proves the actual dedicated operator issuer before HTTP admission", async () => {
+  const probe = operatorStartupProbe();
+  await assert.doesNotReject(
+    assertProductionOperatorDatabaseReady(operatorStartupEnv, probe.execute),
+  );
+  assert.equal(probe.queries.length, 1);
+  assert.ok(probe.queries[0].includes("authentication_reachable"));
+  assert.ok(probe.queries[0].includes("scope_issuer_reachable"));
+});
+
+test("FIELD002 operator prelistener SQL denies mismatched, switched, overprivileged, and incomplete roles", async () => {
+  for (const row of [
+    null,
+    { ...goodOperatorStartup, login: "unexpected_login" },
+    { ...goodOperatorStartup, active: "neondb_owner" },
+    { ...goodOperatorStartup, database_name: "another_db" },
+    { ...goodOperatorStartup, directory_ready: false },
+    { ...goodOperatorStartup, directory_ready: "true" },
+    { ...goodOperatorStartup, authentication_reachable: true },
+    { ...goodOperatorStartup, scope_issuer_reachable: true },
+    { ...goodOperatorStartup, scope_issuer_reachable: undefined },
+  ]) {
+    await assert.rejects(
+      assertProductionOperatorDatabaseReady(operatorStartupEnv, operatorStartupProbe(row).execute),
+      { code: "PRODUCTION_OPERATOR_DATABASE_IDENTITY_NOT_READY" },
+    );
+  }
+  await assert.rejects(
+    assertProductionOperatorDatabaseReady(
+      { ...operatorStartupEnv, FAWRI_OPERATOR_DATABASE_URL: "" },
+      operatorStartupProbe().execute,
+    ),
+    { code: "PRODUCTION_OPERATOR_DATABASE_IDENTITY_NOT_READY" },
+  );
+});
+
+test("FIELD002 operator startup sanitizes transport errors and preserves explicit staging isolation", async () => {
+  await assert.rejects(
+    assertProductionOperatorDatabaseReady(operatorStartupEnv, async () => {
+      throw new Error("raw SQL diagnostic or synthetic secret must not leak");
+    }),
+    error => {
+      assert.equal((error as { code?: string }).code,
+        "PRODUCTION_OPERATOR_DATABASE_IDENTITY_NOT_READY");
+      assert.equal((error as Error).message, "production operator database is not ready");
+      return true;
+    },
+  );
+  let invoked = false;
+  await assert.doesNotReject(
+    assertProductionOperatorDatabaseReady(
+      { ...operatorStartupEnv, FAWRI_DEPLOYMENT_MODE: "staging" },
+      async () => { invoked = true; },
+    ),
+  );
+  assert.equal(invoked, false);
 });
