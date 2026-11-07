@@ -22,7 +22,9 @@ on:
       - "scripts/tests/field002-isolated-three-nologin-role-grants.test.mjs"
       - "docs/final-audit/evidence/sql/P0-FIELD002-ISOLATED-THREE-NOLOGIN-ROLE-GRANTS-20261107.sql"
       - "scripts/tests/field002-original-prechange-readonly-gate.test.mjs"
+      - "scripts/tests/field002-current-acl0-prechange-readonly-gate.test.mjs"
       - "docs/final-audit/evidence/sql/P0-FIELD002-ORIGINAL-PRECHANGE-READONLY-GATE-20261107.sql"
+      - "docs/final-audit/evidence/sql/P0-FIELD002-CURRENT-ACL0-ORIGINAL-PRECHANGE-READONLY-GATE-20261108.sql"
       - "scripts/lib/field002-isolated-acceptance-plan.mjs"
       - "scripts/tests/field002-isolated-acceptance-plan.test.mjs"
       - "artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs"
@@ -51,7 +53,9 @@ on:
       - "scripts/tests/field002-isolated-three-nologin-role-grants.test.mjs"
       - "docs/final-audit/evidence/sql/P0-FIELD002-ISOLATED-THREE-NOLOGIN-ROLE-GRANTS-20261107.sql"
       - "scripts/tests/field002-original-prechange-readonly-gate.test.mjs"
+      - "scripts/tests/field002-current-acl0-prechange-readonly-gate.test.mjs"
       - "docs/final-audit/evidence/sql/P0-FIELD002-ORIGINAL-PRECHANGE-READONLY-GATE-20261107.sql"
+      - "docs/final-audit/evidence/sql/P0-FIELD002-CURRENT-ACL0-ORIGINAL-PRECHANGE-READONLY-GATE-20261108.sql"
       - "artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs"
       - ".github/workflows/field002-clean-clone-acceptance.yml"
       - "docs/backup-restore-runbook.md"
@@ -168,6 +172,7 @@ jobs:
           scripts/tests/field002-r2-precommercial-source-admission.test.mjs
           scripts/tests/field002-isolated-three-nologin-role-grants.test.mjs
           scripts/tests/field002-original-prechange-readonly-gate.test.mjs
+          scripts/tests/field002-current-acl0-prechange-readonly-gate.test.mjs
           scripts/backup-object-storage.test.mjs
 
       - name: Verify workflow-owned fresh service before database writes
