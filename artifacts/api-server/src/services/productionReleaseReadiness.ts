@@ -212,7 +212,10 @@ export function getProductionRuntimeConfigurationIssues(
     issues.push(issue("database", "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"));
   }
   const tenantUrlLogin = postgresLoginName(env.DATABASE_URL);
-  if (tenantUrlLogin && selectedRuntimeRole &&
+  // Preserve a single primary rejection for an already forbidden role;
+  // a secondary mismatch must not obscure the unsafe-role reason.
+  if (tenantUrlLogin && /^[a-z_][a-z0-9_]{0,62}$/.test(selectedRuntimeRole) &&
+      !FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(selectedRuntimeRole) &&
       tenantUrlLogin !== selectedRuntimeRole) {
     issues.push(issue("database", "FIELD002_TENANT_DATABASE_LOGIN_MISMATCH"));
   }
