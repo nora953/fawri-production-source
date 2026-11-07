@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createOperatorDirectoryAuthority } from "../src/services/operatorDirectoryPostgresAuthority";
+import { assertProductionAuthenticationDatabaseReady } from "../src/services/authenticationPostgresAuthority";
 
 const configured = {
   NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "production",
@@ -118,4 +119,109 @@ test("authentication validates its own LOGIN capability and dedicated URL",async
     makePool:async selected=>{assert.equal(selected,url);return fake as never;}});
   assert.equal(await authority.transaction(async()=>"auth"),"auth");
   assert.deepEqual(fake.parameters,[["public.fawri_authentication_runtime()"]]);await authority.close();
+});
+
+
+const productionAuthenticationEnv = {
+  NODE_ENV: "production",
+  FAWRI_DEPLOYMENT_MODE: "production",
+  FAWRI_AUTH_DATABASE_URL: "postgresql://synthetic_auth@127.0.0.1/neondb",
+};
+const safeAuthLogin = {
+  login: "synthetic_auth",
+  active: "synthetic_auth",
+  database_name: "neondb",
+  authentication_ready: true,
+  issuer_ready: true,
+  tenant_data_reachable: false,
+};
+function authenticationProbe(
+  identityResult: unknown = safeAuthLogin,
+  scopeResult: unknown = { present: true, safe: true },
+) {
+  const statements: string[] = [];
+  return {
+    statements,
+    async execute(work: (client: { query(sql: string): Promise<{ rows: Record<string, unknown>[] }> }) => Promise<void>) {
+      await work({
+        async query(sql: string) {
+          statements.push(sql);
+          if (sql.includes("WITH principal AS")) {
+            return { rows: scopeResult ? [scopeResult as Record<string, unknown>] : [] };
+          }
+          if (sql.includes("SELECT session_user::text AS login")) {
+            return { rows: identityResult ? [identityResult as Record<string, unknown>] : [] };
+          }
+          throw new Error("unexpected SQL in auth startup proof");
+        },
+      });
+    },
+  };
+}
+
+test("FIELD002 production startup admits only live restricted auth issuer matching its own DB URL", async () => {
+  const fake = authenticationProbe();
+  await assert.doesNotReject(
+    assertProductionAuthenticationDatabaseReady(productionAuthenticationEnv, fake.execute),
+  );
+  assert.equal(fake.statements.length, 2);
+  assert.ok(fake.statements[0].includes("WITH principal AS"));
+  assert.ok(fake.statements[1].includes("tenant_data_reachable"));
+});
+
+test("FIELD002 production auth startup fails closed on role switching, wrong DB, missing grants or tenant access", async () => {
+  const unsafe = [
+    null,
+    { ...safeAuthLogin, login: "legacy_login" },
+    { ...safeAuthLogin, active: "switched_owner" },
+    { ...safeAuthLogin, database_name: "another_branch_db" },
+    { ...safeAuthLogin, authentication_ready: false },
+    { ...safeAuthLogin, issuer_ready: false },
+    { ...safeAuthLogin, tenant_data_reachable: true },
+    { ...safeAuthLogin, tenant_data_reachable: undefined },
+    { ...safeAuthLogin, issuer_ready: "true" },
+  ];
+  for (const row of unsafe) {
+    const fake = authenticationProbe(row);
+    await assert.rejects(
+      assertProductionAuthenticationDatabaseReady(productionAuthenticationEnv, fake.execute),
+      { code: "PRODUCTION_AUTH_DATABASE_IDENTITY_NOT_READY",
+        message: "production authentication database is not ready" },
+    );
+  }
+  for (const scope of [
+    null, { present: false, safe: true }, { present: true, safe: false },
+  ]) {
+    const fake = authenticationProbe(safeAuthLogin, scope);
+    await assert.rejects(
+      assertProductionAuthenticationDatabaseReady(productionAuthenticationEnv, fake.execute),
+      { code: "PRODUCTION_AUTH_DATABASE_IDENTITY_NOT_READY" },
+    );
+  }
+});
+
+test("FIELD002 auth admission does not leak SQL or passwords and skips explicit nonproduction", async () => {
+  const failed = authenticationProbe();
+  failed.execute = async () => {
+    throw new Error("postgresql credentials should never appear in an error");
+  };
+  await assert.rejects(
+    assertProductionAuthenticationDatabaseReady(productionAuthenticationEnv, failed.execute),
+    error => {
+      assert.equal((error as {code?:string}).code, "PRODUCTION_AUTH_DATABASE_IDENTITY_NOT_READY");
+      assert.equal((error as Error).message, "production authentication database is not ready");
+      return true;
+    },
+  );
+  let touched = false;
+  await assert.doesNotReject(assertProductionAuthenticationDatabaseReady(
+    { ...productionAuthenticationEnv, FAWRI_DEPLOYMENT_MODE: "staging" },
+    async () => { touched = true; },
+  ));
+  assert.equal(touched, false);
+  await assert.rejects(assertProductionAuthenticationDatabaseReady(
+    { ...productionAuthenticationEnv, FAWRI_AUTH_DATABASE_URL: "" },
+    async () => { touched = true; },
+  ), { code: "PRODUCTION_AUTH_DATABASE_IDENTITY_NOT_READY" });
+  assert.equal(touched, false);
 });
