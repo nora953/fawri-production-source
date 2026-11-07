@@ -15,7 +15,8 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     NODE_ENV: "production",
     FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_PRODUCTION_RELEASE_GATE: "required",
-    DATABASE_URL: "postgresql://fawri:test@db.internal:5432/fawri",
+    DATABASE_URL: "postgresql://fawri_restricted_runtime:tenant-synthetic@db.internal:5432/fawri",
+    FAWRI_AUTH_DATABASE_URL: "postgresql://fawri_auth_issuer:auth-synthetic@db.internal:5432/fawri",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
     FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_restricted_runtime",
     FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
@@ -49,6 +50,54 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     ...overrides,
   };
 }
+
+
+test("FIELD002 production refuses missing, malformed or reused auth PostgreSQL login before listener", () => {
+  for (const value of [
+    "", "  ", "not-a-url", "https://not-a-database.test",
+    "postgresql://db.internal:5432/fawri",
+    "postgresql://%2X:secret@db.internal:5432/fawri",
+  ]) {
+    const env = productionEnv({ FAWRI_AUTH_DATABASE_URL: value });
+    const issues = getProductionRuntimeConfigurationIssues(env);
+    assert.ok(issues.some(item => item.code === "FIELD002_AUTH_DATABASE_URL_REQUIRED"), value);
+    assert.throws(
+      () => assertProductionRuntimeConfiguration(env),
+      (error: unknown) => (error as { issueCodes?: string[] }).issueCodes
+        ?.includes("FIELD002_AUTH_DATABASE_URL_REQUIRED") === true,
+    );
+  }
+  for (const username of [
+    "fawri_restricted_runtime", "fawri_staging_runtime",
+    "fawri_staging_rls_runtime", "neondb_owner", "neon_superuser",
+  ]) {
+    const env = productionEnv({
+      FAWRI_AUTH_DATABASE_URL: `postgresql://${username}:not-a-secret@db.internal:5432/fawri`,
+    });
+    assert.ok(getProductionRuntimeConfigurationIssues(env)
+      .some(item => item.code === "FIELD002_AUTH_DATABASE_LOGIN_UNSAFE"), username);
+  }
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
+});
+
+test("FIELD002 production enforces DATABASE_URL LOGIN matches reviewed tenant identity", () => {
+  const mismatch = productionEnv({
+    DATABASE_URL: "postgresql://another_restricted_role:dummy@db.internal:5432/fawri",
+  });
+  assert.ok(getProductionRuntimeConfigurationIssues(mismatch)
+    .some(item => item.code === "FIELD002_TENANT_DATABASE_LOGIN_MISMATCH"));
+  assert.throws(() => assertProductionRuntimeConfiguration(mismatch), {
+    code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+  });
+  const valid = productionEnv({
+    DATABASE_URL: "postgresql://fawri_restricted_runtime:changed-not-real@db.internal:5432/fawri",
+    FAWRI_AUTH_DATABASE_URL: "postgresql://fawri_auth_issuer:changed-not-real@db.internal:5432/fawri",
+  });
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(valid), []);
+  const staging = { ...mismatch, FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_AUTH_DATABASE_URL: "" };
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(staging), []);
+});
 
 test("NODE_ENV production fails closed even when the legacy release-gate variable is omitted", () => {
   const env = { NODE_ENV: "production" } as NodeJS.ProcessEnv;
