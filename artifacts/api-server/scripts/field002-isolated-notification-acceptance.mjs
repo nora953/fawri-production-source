@@ -188,7 +188,7 @@ async function run() {
         FROM pg_roles r WHERE r.rolname=$1`, [operatorRole])).rows[0];
       assert.deepEqual(opGuard,{safe:true,tables:0,auth:false,scope:false});
       for (const fn of operatorPlan.functions) {
-        const ok = (await admin.query('SELECT has_function_privilege($1,$2,\'EXECUTE\') AS yes',
+        const ok = (await admin.query('SELECT has_function_privilege($1::name,$2::text,\'EXECUTE\') AS yes',
           [operatorRole,fn])).rows[0].yes;
         assert.equal(ok,true);
       }
