@@ -8,6 +8,7 @@ import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminPr
 import { assertProductionCashierStreamStorageReady } from "./services/cashierStreamStorageReadiness";
 import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
 import { createPostgresAuthorityReadinessCheck } from "./observability/runtime";
+import { assertProductionAuthenticationDatabaseReady } from "./services/authenticationPostgresAuthority";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
 
 const rawPort = process.env["PORT"];
@@ -58,6 +59,9 @@ async function main(): Promise<void> {
   // the same DATABASE_URL pool before loading the app or opening the listener.
   if (productionReleaseGateRequired(process.env)) {
     await createPostgresAuthorityReadinessCheck().check();
+    // FIELD002: verify the *authenticated* issuer pool too. Tenant RLS alone
+    // cannot certify that a separate auth LOGIN is safe or even reachable.
+    await assertProductionAuthenticationDatabaseReady(process.env);
   }
   startupStage = "cashier_storage";
   await assertProductionCashierStreamStorageReady(process.env);
