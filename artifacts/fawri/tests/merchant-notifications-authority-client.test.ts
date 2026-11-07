@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
 
 import {
+  isSafeMerchantNotificationActionUrl,
   markMerchantNotificationReadAuthority,
   readMerchantNotificationsAuthority,
 } from "../src/lib/merchantNotificationsAuthority";
@@ -148,4 +149,84 @@ test("knowledge-gap notification rejects a missing training request id", async (
     () => readMerchantNotificationsAuthority(),
     /merchant notification authority unavailable/,
   );
+});
+
+
+test("unknown metadata-only historical records do not hide valid merchant notifications", async () => {
+  const responseRows = [
+    { id: "unknown-legacy", type: "historical_custom", created_at: "2026-08-29T00:00:00.000Z" },
+    validNotification,
+    { id: "historical-inherited", type: "__proto__", created_at: "2026-08-29T00:00:00.000Z", read_at: "2026-08-29T00:01:00.000Z" },
+  ];
+  const before = structuredClone(responseRows);
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({ ok: true, notifications: responseRows }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  )) as typeof fetch;
+  const received = await readMerchantNotificationsAuthority();
+  assert.deepEqual(received, [validNotification]);
+  assert.deepEqual(responseRows, before, "read-only compatibility filter must not alter response records");
+});
+
+test("unsupported notice with private extension is rejected rather than silently dropped", async () => {
+  globalThis.fetch = (async () => new Response(
+    JSON.stringify({ ok: true, notifications: [
+      validNotification,
+      { id: "unknown-unsafe", type: "historical_custom", created_at: "2026-08-29T00:00:00.000Z", internal_note: "private" },
+    ] }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  )) as typeof fetch;
+  await assert.rejects(() => readMerchantNotificationsAuthority(), /merchant notification authority unavailable/);
+});
+
+test("unsupported notice with malformed timestamp and malformed known type both fail closed", async () => {
+  for (const unsafe of [
+    { id: "unknown-invalid", type: "historical_custom", created_at: "not-a-date" },
+    { id: "known-invalid", type: "operational_new_order", created_at: "2026-08-29T00:00:00.000Z" },
+  ]) {
+    globalThis.fetch = (async () => new Response(
+      JSON.stringify({ ok: true, notifications: [validNotification, unsafe] }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    )) as typeof fetch;
+    await assert.rejects(() => readMerchantNotificationsAuthority(), /merchant notification authority unavailable/);
+  }
+});
+
+test("FIELD002-R1 rejects hidden ASCII controls that normalize into external navigation", async () => {
+  const hiddenExternal = ["/\n/attacker.example", "/\r/attacker.example", "/\t/attacker.example"];
+  const base = "https://fawri.invalid";
+  for (const url of hiddenExternal) {
+    assert.equal(new URL(url, base).origin, "https://attacker.example");
+    assert.equal(isSafeMerchantNotificationActionUrl(url), false);
+    globalThis.fetch = (async () => new Response(
+      JSON.stringify({ ok: true, notifications: [{ ...validNotification, action_url: url }] }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    )) as typeof fetch;
+    await assert.rejects(() => readMerchantNotificationsAuthority(), /merchant notification authority unavailable/);
+    globalThis.fetch = (async () => new Response(
+      JSON.stringify({ ok: true, notification: {
+        ...validNotification, action_url: url, read_at: "2026-08-29T00:01:00.000Z",
+      } }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    )) as typeof fetch;
+    await assert.rejects(
+      () => markMerchantNotificationReadAuthority(validNotification.id),
+      /merchant notification read mutation failed/,
+    );
+  }
+  for (const safe of [
+    "/dashboard/orders?order=one%2Ftwo",
+    "/dashboard/conversations?conversation=one%0Atwo",
+    "/dashboard/support?ticket=synthetic-id",
+  ]) {
+    assert.equal(isSafeMerchantNotificationActionUrl(safe), true, safe);
+  }
+  for (const unsafe of [
+    "//attacker.example",
+    "/\\attacker.example",
+    "/\u0000/attacker.example",
+    "/\u007f/attacker.example",
+  ]) {
+    assert.equal(isSafeMerchantNotificationActionUrl(unsafe), false);
+  }
 });

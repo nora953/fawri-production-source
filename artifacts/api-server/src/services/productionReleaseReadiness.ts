@@ -28,6 +28,12 @@ export type ProductionLaunchReadiness = {
 
 const SAFE_SERVICE_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 const SAFE_DEK_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/;
+// FIELD002: never promote historical broad-grant staging roles or Neon
+// ownership identities as commercial tenant application logins.
+export const FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES: ReadonlySet<string> = new Set([
+  "fawri_staging_runtime", "fawri_staging_rls_runtime",
+  "neondb_owner", "neon_superuser",
+]);
 const AWS_KMS_KEY_ARN = /^arn:aws[a-z-]*:kms:[a-z0-9-]+:\d{12}:key\/[A-Fa-f0-9-]{16,}$/;
 
 function text(value: unknown): string {
@@ -49,6 +55,39 @@ function isPostgresUrl(value: unknown): boolean {
     return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:";
   } catch {
     return false;
+  }
+}
+
+// FIELD002: production auth must use a separately authenticated LOGIN.
+// This is a syntactic pre-listener identity check, not SQL privilege proof.
+// Never log or include URL/user-info in issue codes.
+function postgresLoginName(value: unknown): string | null {
+  if (!isPostgresUrl(value)) return null;
+  try {
+    const valueUrl = new URL(text(value));
+    const username = decodeURIComponent(valueUrl.username);
+    return /^[a-z_][a-z0-9_]{0,62}$/.test(username) ? username : null;
+  } catch {
+    return null;
+  }
+}
+
+// A trusted auth issuer and its tenant pool must address the same logical DB.
+// Neon offers pooled and direct hostnames for one compute; normalize only this
+// documented suffix. Exact endpoint identity still needs hosted verification.
+function postgresDatabaseTarget(value: unknown): string | null {
+  if (!isPostgresUrl(value)) return null;
+  try {
+    const parsed = new URL(text(value));
+    const rawHost = parsed.hostname.toLowerCase();
+    const host = rawHost.endsWith(".neon.tech")
+      ? rawHost.replace(/^([^.]+)-pooler(?=\.)/, "$1")
+      : rawHost;
+    const database = decodeURIComponent(parsed.pathname);
+    if (!host || !database || database === "/") return null;
+    return [host, parsed.port || "5432", database].join("\u0000");
+  } catch {
+    return null;
   }
 }
 
@@ -162,6 +201,57 @@ export function getProductionRuntimeConfigurationIssues(
   }
   if (text(env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "OPERATIONAL_POSTGRES_AUTHORITY_REQUIRED"));
+  }
+  // This is evaluated BEFORE the HTTP listener starts (index.ts). Production
+  // must pin the exact tenant runtime LOGIN role, not merely advertise that
+  // a database exists. Actual role privileges and RLS remain SQL-gated.
+  const selectedRuntimeRole = text(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE);
+  if (!/^[a-z_][a-z0-9_]{0,62}$/.test(selectedRuntimeRole)) {
+    issues.push(issue("database", "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"));
+  } else if (FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(selectedRuntimeRole)) {
+    issues.push(issue("database", "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"));
+  }
+  const tenantUrlLogin = postgresLoginName(env.DATABASE_URL);
+  // Preserve a single primary rejection for an already forbidden role;
+  // a secondary mismatch must not obscure the unsafe-role reason.
+  if (tenantUrlLogin && /^[a-z_][a-z0-9_]{0,62}$/.test(selectedRuntimeRole) &&
+      !FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(selectedRuntimeRole) &&
+      tenantUrlLogin !== selectedRuntimeRole) {
+    issues.push(issue("database", "FIELD002_TENANT_DATABASE_LOGIN_MISMATCH"));
+  }
+  const authUrlLogin = postgresLoginName(env.FAWRI_AUTH_DATABASE_URL);
+  if (!authUrlLogin) {
+    issues.push(issue("auth", "FIELD002_AUTH_DATABASE_URL_REQUIRED"));
+  } else if (authUrlLogin === tenantUrlLogin ||
+      authUrlLogin === selectedRuntimeRole ||
+      FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(authUrlLogin)) {
+    issues.push(issue("auth", "FIELD002_AUTH_DATABASE_LOGIN_UNSAFE"));
+  }
+  if (authUrlLogin && tenantUrlLogin) {
+    const tenantTarget = postgresDatabaseTarget(env.DATABASE_URL);
+    const authTarget = postgresDatabaseTarget(env.FAWRI_AUTH_DATABASE_URL);
+    if (!tenantTarget || !authTarget || tenantTarget !== authTarget) {
+      issues.push(issue("auth", "FIELD002_AUTH_DATABASE_TARGET_MISMATCH"));
+    }
+  }
+  // The operator directory and receipt-review issuer is a third authority,
+  // not an alias for tenant data or the authentication/session issuer.
+  // A syntactically valid URL alone is insufficient to accept a release.
+  const operatorUrlLogin = postgresLoginName(env.FAWRI_OPERATOR_DATABASE_URL);
+  if (!operatorUrlLogin) {
+    issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_URL_REQUIRED"));
+  } else if (operatorUrlLogin === tenantUrlLogin ||
+      operatorUrlLogin === selectedRuntimeRole ||
+      operatorUrlLogin === authUrlLogin ||
+      FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(operatorUrlLogin)) {
+    issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_LOGIN_UNSAFE"));
+  }
+  if (operatorUrlLogin && tenantUrlLogin) {
+    const tenantTarget = postgresDatabaseTarget(env.DATABASE_URL);
+    const operatorTarget = postgresDatabaseTarget(env.FAWRI_OPERATOR_DATABASE_URL);
+    if (!tenantTarget || !operatorTarget || tenantTarget !== operatorTarget) {
+      issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_TARGET_MISMATCH"));
+    }
   }
   if (text(env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "SUBSCRIPTION_POSTGRES_AUTHORITY_REQUIRED"));

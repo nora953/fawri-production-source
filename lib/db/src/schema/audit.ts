@@ -56,6 +56,6 @@ export const auditEvents = pgTable(
       table.createdAt,
     ),
   }),
-);
+).enableRLS();
 
 export type AuditEvent = typeof auditEvents.$inferSelect;

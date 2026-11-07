@@ -1,3 +1,4 @@
+import { authenticationDatabasePool, withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   authAccountRepository,
@@ -9,8 +10,6 @@ import {
 import {
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  operationalDatabasePool,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -109,7 +108,7 @@ export async function findMerchantByPhoneAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.findByPhone(phone, "merchant");
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const row = await selectMerchant(pool, "a.phone = $1", [phone]);
   return row ? toAuthAccount(row) : null;
 }
@@ -121,7 +120,7 @@ export async function findMerchantByIdAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.findById(accountId, "merchant");
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const row = await selectMerchant(pool, "a.id = $1", [accountId]);
   return row ? toAuthAccount(row) : null;
 }
@@ -147,7 +146,7 @@ export async function upsertPendingMerchantAuthoritative(input: {
   const timezone = String(input.timezone || "Asia/Baghdad").trim();
   const currencyCode = String(input.currencyCode || "IQD").trim().toUpperCase();
 
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const collision = await operationalQueryRows<{
       id: string;
       kind: "merchant" | "admin";
@@ -251,7 +250,7 @@ export async function markMerchantOtpVerifiedAuthoritative(
   if (!operationalPostgresAuthorityRequired()) {
     return authAccountRepository.markMerchantOtpVerified(accountId);
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const current = await selectMerchant(client, "a.id = $1", [accountId], true);
     if (!current) return null;
     await client.query(

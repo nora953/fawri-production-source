@@ -1,12 +1,11 @@
+import { authenticationDatabasePool, withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import {
   calculateRetentionStatus,
   MerchantRetentionStatus,
 } from "./merchantLifecycle";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withMerchantOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -127,7 +126,7 @@ export async function refreshMerchantRetentionPostgres(
   const merchantId = String(merchantIdValue || "").trim();
   if (!merchantId) return null;
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const merchant = await selectMerchantForUpdate(client, merchantId);
     if (!merchant || merchant.account_state === "closed") return null;
     const subscription = await selectSubscriptionForUpdate(client, merchantId);
@@ -252,7 +251,7 @@ export async function refreshAllMerchantRetentionPostgres(
   if (!operationalPostgresAuthorityRequired()) {
     return { checked: 0, suspended: 0 };
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<{ id: string }>(
     pool,
     `SELECT m.id
@@ -281,7 +280,7 @@ export async function isRetentionSuspendedPhonePostgres(
   if (!operationalPostgresAuthorityRequired()) return false;
   const phone = String(phoneValue || "").replace(/\D/g, "");
   if (!phone) return false;
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<{ suspended: boolean }>(
     pool,
     `SELECT (

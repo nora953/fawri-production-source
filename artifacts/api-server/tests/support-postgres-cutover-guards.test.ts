@@ -84,9 +84,18 @@ test("Support PostgreSQL route authority uses Auth v2 and has no JSON or legacy 
 test("Support text replies reset stale lifecycle reminder state in PostgreSQL", () => {
   const messages = source("../src/routes/auth-support-message-postgres-routes.ts");
 
-  assert.match(messages, /merchant_reminder_sent_at = NULL/);
-  assert.match(messages, /assistant_reminder_sent_at = NULL/);
-  assert.match(messages, /owner_escalated_at = NULL/);
+  const authority = source("../src/services/postgresSupportAuthority.ts");
+  const merchant = authority.slice(authority.indexOf("export async function addMerchantSupportMessagePostgres"), authority.indexOf("export async function listAdminSupportTicketsPostgres"));
+  const admin = authority.slice(authority.indexOf("export async function addAdminSupportMessagePostgres"), authority.indexOf("async function endActiveInspectionForTicket"));
+  for (const transaction of [merchant, admin]) {
+    assert.match(transaction, /merchant_reminder_sent_at = NULL/);
+    assert.match(transaction, /assistant_reminder_sent_at = NULL/);
+    assert.match(transaction, /owner_escalated_at = NULL/);
+    assert.match(transaction, /INSERT INTO support_messages/);
+  }
+  assert.match(merchant, /withMerchantOperationalTransaction/);
+  assert.match(admin, /withAuthenticationTransaction/);
+  assert.doesNotMatch(messages, /UPDATE support_tickets/);
   assert.match(messages, /addMerchantSupportMessagePostgres/);
   assert.match(messages, /addAdminSupportMessagePostgres/);
 });

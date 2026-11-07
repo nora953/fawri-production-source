@@ -633,6 +633,37 @@ export class IndexedDbCashierBackupAuthority {
     const transaction = database.transaction([...STORE_NAMES], 'readwrite');
     const completion = transactionDone(transaction);
     try {
+      // Fail closed if restoring this snapshot would discard newer local work.
+      // Read and replace within the same transaction to prevent a TOCTOU gap.
+      const [currentMeta, currentSales, currentMovements, currentOutbox] = await Promise.all([
+        requestResult(transaction.objectStore('meta').get('device_sequence')),
+        requestResult(transaction.objectStore('sales').getAllKeys()),
+        requestResult(transaction.objectStore('inventory_movements').getAllKeys()),
+        requestResult(transaction.objectStore('outbox').getAllKeys()),
+      ]);
+      const previousSequence = Number((currentMeta as RawRecord | undefined)?.value || 0);
+      const backupSequence = Number(
+        backup.stores.meta.find(record => record.key === 'device_sequence')?.value || 0,
+      );
+      if (previousSequence > backupSequence) {
+        throw new CashierBackupError(
+          'CASHIER_BACKUP_SEQUENCE_ROLLBACK',
+          'backup would rewind the local device sequence',
+        );
+      }
+      const backedUpSales = new Set(backup.stores.sales.map(record => String(record.sale_id)));
+      const backedUpMovements = new Set(backup.stores.inventory_movements.map(record => String(record.movement_id)));
+      const backedUpOutbox = new Set(backup.stores.outbox.map(record => String(record.outbox_id)));
+      if (
+        (currentSales as IDBValidKey[]).some(key => !backedUpSales.has(String(key))) ||
+        (currentMovements as IDBValidKey[]).some(key => !backedUpMovements.has(String(key))) ||
+        (currentOutbox as IDBValidKey[]).some(key => !backedUpOutbox.has(String(key)))
+      ) {
+        throw new CashierBackupError(
+          'CASHIER_BACKUP_STALE_RESTORE',
+          'backup would discard newer sales, inventory movements, or pending sync operations',
+        );
+      }
       for (const store of STORE_NAMES) {
         transaction.objectStore(store).clear();
       }

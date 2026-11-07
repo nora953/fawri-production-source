@@ -438,3 +438,755 @@ test("dry-run fails safely for invalid JSON", () => {
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+function runCompletePlanner(directory) {
+  const program = [
+    'import { buildValidatedMigrationPlan } from "./scripts/lib/postgresql-migration-plan-complete.mjs";',
+    'const { report } = buildValidatedMigrationPlan({ dataDirectory: process.argv[1] });',
+    'process.stdout.write(JSON.stringify(report));',
+    'process.exitCode = report.ok ? 0 : 2;',
+  ].join("\n");
+  return spawnSync(process.execPath, ["--input-type=module", "-e", program, directory], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+    env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" },
+  });
+}
+
+test("dry-run rejects impossible legacy draft calendar dates without source mutation", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtimePath = path.join(directory, "bot-runtime.json");
+    const runtime = JSON.parse(fs.readFileSync(runtimePath, "utf8"));
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "legacy-draft-invalid-calendar",
+        merchant_id: "merchant-1",
+        customer_id: "customer-1",
+        awaiting: "product",
+        started_at: "2026-02-30T00:00:00.000Z",
+        updated_at: "2026-02-30T00:00:00.000Z",
+        expires_at: "2026-03-01T00:00:00.000Z",
+      },
+    };
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", { orderDraftsByConversation: runtime.orderDraftsByConversation });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    const after = directorySnapshot(directory);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    assert.deepEqual(after, before, "rejected draft mutated source files");
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(
+      report.errors.some((issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID"),
+      "invalid calendar day must be rejected by the complete migration planner",
+    );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run rejects invalid legacy draft clock values without source mutation", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtimePath = path.join(directory, "bot-runtime.json");
+    const runtime = JSON.parse(fs.readFileSync(runtimePath, "utf8"));
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "legacy-draft-invalid-clock",
+        merchant_id: "merchant-1",
+        customer_id: "customer-1",
+        awaiting: "product",
+        started_at: "2026-02-28T25:00:00.000Z",
+        updated_at: "2026-02-28T25:00:00.000Z",
+        expires_at: "2026-03-01T00:00:00.000Z",
+      },
+    };
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", { orderDraftsByConversation: runtime.orderDraftsByConversation });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    const after = directorySnapshot(directory);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    assert.deepEqual(after, before, "rejected draft mutated source files");
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(
+      report.errors.some((issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID"),
+      "invalid clock hour must be rejected by the complete migration planner",
+    );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run rejects invalid legacy draft timezone offsets without source mutation", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtimePath = path.join(directory, "bot-runtime.json");
+    const runtime = JSON.parse(fs.readFileSync(runtimePath, "utf8"));
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "legacy-draft-invalid-offset",
+        merchant_id: "merchant-1",
+        customer_id: "customer-1",
+        awaiting: "product",
+        started_at: "2026-02-28T12:00:00.000+02:99",
+        updated_at: "2026-02-28T12:00:00.000+02:99",
+        expires_at: "2026-03-01T00:00:00.000Z",
+      },
+    };
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", { orderDraftsByConversation: runtime.orderDraftsByConversation });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    const after = directorySnapshot(directory);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    assert.deepEqual(after, before, "rejected draft mutated source files");
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(
+      report.errors.some((issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID"),
+      "invalid timezone offset must be rejected by the complete migration planner",
+    );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run rejects legacy draft last update earlier than creation without source mutation", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-reversed-update",
+          merchant_id: "merchant-1",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T10:00:00.000Z",
+          updated_at: "2026-02-28T09:00:00.000Z",
+          expires_at: "2026-02-28T13:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID",
+    ), "historical update before creation must block migration readiness");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run rejects legacy draft expiry earlier than last update without source mutation", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-reversed-expiry",
+          merchant_id: "merchant-1",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T10:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-02-28T11:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID",
+    ), "historical expiry before last update must block migration readiness");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run rejects legacy draft expiry equal to creation under PostgreSQL time check", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-zero-ttl",
+          merchant_id: "merchant-1",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T10:00:00.000Z",
+          updated_at: "2026-02-28T10:00:00.000Z",
+          expires_at: "2026-02-28T10:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID",
+    ), "expiry equal to creation violates order_drafts_time_check");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run rejects conflicting legacy draft field aliases without source mutation", () => {
+  for (const [field, conflictingValue] of [
+    ["customer_external_id", "different-customer"],
+    ["awaiting_field", "customer_info"],
+    ["created_at", "2026-02-28T11:00:00.000Z"],
+  ]) {
+    const directory = makeDataDirectory();
+    try {
+      createCompleteFixture(directory);
+      const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+      runtime.conversations[0].channel_id = "channel-1";
+      writeJson(directory, "bot-runtime.json", runtime);
+      writeJson(directory, "fawri-runtime-db.json", {
+        orderDraftsByConversation: {
+          "conversation-1": {
+            id: "legacy-draft-alias-conflict",
+            merchant_id: "merchant-1",
+            customer_id: "customer-1",
+            awaiting: "product",
+            started_at: "2026-02-28T12:00:00.000Z",
+            updated_at: "2026-02-28T12:00:00.000Z",
+            expires_at: "2026-03-01T00:00:00.000Z",
+            [field]: conflictingValue,
+          },
+        },
+      });
+      const before = directorySnapshot(directory);
+      const result = runCompletePlanner(directory);
+      assert.deepEqual(directorySnapshot(directory), before, `conflicting ${field} mutated source files`);
+      assert.equal(result.status, 2, result.stderr || result.stdout);
+      const report = JSON.parse(result.stdout);
+      assert.equal(report.ok, false);
+      assert.equal(report.writes_performed, false);
+      assert.equal(report.database_connection_used, false);
+      assert.ok(report.errors.some(
+        (issue) => issue.code === "LEGACY_DRAFT_FIELD_ALIAS_CONFLICT",
+      ), `conflicting ${field} must block migration readiness`);
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  }
+});
+
+test("F004-R1 rejects a legacy draft whose embedded conversation differs from its Map key", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-key-conflict",
+          merchant_id: "merchant-1",
+          conversation_id: "conversation-other",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_CONVERSATION_KEY_CONFLICT"));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("F004-R1 rejects a draft with conflicting embedded channel identity", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-channel-conflict",
+          merchant_id: "merchant-1",
+          channel_id: "channel-foreign",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_CHANNEL_ALIAS_CONFLICT"));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("F004-R1 rejects a legacy draft claiming another customer's identity", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-customer-conflict",
+          merchant_id: "merchant-1",
+          conversation_id: "conversation-1",
+          channel_id: "channel-1",
+          customer_id: "customer-foreign",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_CONVERSATION_IDENTITY_UNVERIFIED"));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run blocks legacy drafts when channel ownership is unverified", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-not-in-source";
+    writeJson(directory, "bot-runtime.json", runtime);
+    runtime.orderDraftsByConversation = {
+      "conversation-1": {
+        id: "legacy-draft-channel-unverified",
+        merchant_id: "merchant-1",
+        customer_id: "customer-1",
+        awaiting: "product",
+        started_at: "2026-02-28T12:00:00.000Z",
+        updated_at: "2026-02-28T12:00:00.000Z",
+        expires_at: "2026-03-01T00:00:00.000Z",
+      },
+    };
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: runtime.orderDraftsByConversation,
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "LEGACY_DRAFT_CHANNEL_OWNERSHIP_UNVERIFIED",
+    ), "draft without proven merchant channel must block migration");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run blocks legacy drafts when channel belongs to another merchant", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    runtime.metaPages[0].merchant_id = "admin-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-foreign-channel",
+          merchant_id: "merchant-1",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "LEGACY_DRAFT_CHANNEL_OWNERSHIP_UNVERIFIED",
+    ), "draft must not inherit a channel owned by another merchant");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("F004-R1 rejects duplicate matching conversations instead of choosing the first", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    runtime.conversations.push({ ...runtime.conversations[0] });
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-ambiguous-conversation", merchant_id: "merchant-1",
+          customer_id: "customer-1", awaiting: "product",
+          started_at: "2026-02-28T10:00:00.000Z",
+          updated_at: "2026-02-28T11:00:00.000Z",
+          expires_at: "2026-02-28T12:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some((issue) =>
+      issue.code === "LEGACY_DRAFT_CONVERSATION_IDENTITY_UNVERIFIED"),
+      "duplicate matching conversation ownership must fail closed");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("F004-R1 rejects unverified historical TTL evidence without touching source", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          merchant_id: "merchant-1", customer_id: "customer-1",
+          awaiting: "product", started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const program = [
+      'import { buildValidatedMigrationPlan } from "./scripts/lib/postgresql-migration-plan-complete.mjs";',
+      'const { report } = buildValidatedMigrationPlan({ dataDirectory: process.argv[1], legacyDraftTtlProvenance: { version: 1, runtime_sha256: "0".repeat(64), configuration_sha256: "1".repeat(64), source_commit: "2".repeat(40), ttl_minutes: 60, cutoff_at: "2026-03-01T00:00:00.000Z" } });',
+      'process.stdout.write(JSON.stringify(report));',
+      'process.exitCode = report.ok ? 0 : 2;',
+    ].join("\n");
+    const result = spawnSync(process.execPath, ["--input-type=module", "-e", program, directory], {
+      cwd: repositoryRoot, encoding: "utf8",
+      env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" },
+    });
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_TTL_EVIDENCE_UNVERIFIED"));
+    assert.deepEqual(directorySnapshot(directory), before);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("F004-R1 refuses self-consistent but untrusted historical TTL claims", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          merchant_id: "merchant-1", customer_id: "customer-1",
+          awaiting: "customer_info", started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const configuration_json = JSON.stringify({
+      BOT_DRAFT_TTL_MINUTES: 60, source_commit: "2".repeat(40),
+    });
+    const evidence = {
+      version: 1,
+      runtime_sha256: before["fawri-runtime-db.json"].sha256,
+      configuration_json,
+      configuration_sha256: crypto.createHash("sha256").update(configuration_json).digest("hex"),
+      source_commit: "2".repeat(40),
+      ttl_minutes: 60, cutoff_at: "2026-03-01T00:00:00.000Z",
+    };
+    const program = [
+      'import { buildValidatedMigrationPlan } from "./scripts/lib/postgresql-migration-plan-complete.mjs";',
+      'const { report } = buildValidatedMigrationPlan({ dataDirectory: process.argv[1], legacyDraftTtlProvenance: JSON.parse(process.argv[2]) });',
+      'process.stdout.write(JSON.stringify(report));',
+      'process.exitCode = report.ok ? 0 : 2;',
+    ].join("\n");
+    const result = spawnSync(process.execPath,
+      ["--input-type=module", "-e", program, directory, JSON.stringify(evidence)],
+      { cwd: repositoryRoot, encoding: "utf8",
+        env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" } });
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.ok(report.errors.some((issue) => issue.code === "LEGACY_DRAFT_TTL_EVIDENCE_UNVERIFIED"));
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.deepEqual(directorySnapshot(directory), before);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("F004-R1 preserves explicit expired legacy drafts for both supported states", () => {
+  for (const awaiting of ["product", "customer_info"]) {
+    const directory = makeDataDirectory();
+    try {
+      createCompleteFixture(directory);
+      // Isolate this acceptance case from unrelated fixture-only blockers.
+      const merchants = JSON.parse(fs.readFileSync(path.join(directory, "merchants.json"), "utf8"));
+      merchants.merchants[0].activity_type = "retail";
+      writeJson(directory, "merchants.json", merchants);
+      const requests = JSON.parse(fs.readFileSync(path.join(directory, "training-requests.json"), "utf8"));
+      requests.requests = [];
+      writeJson(directory, "training-requests.json", requests);
+      const learned = JSON.parse(fs.readFileSync(path.join(directory, "learned-answers.json"), "utf8"));
+      learned.answers = [];
+      writeJson(directory, "learned-answers.json", learned);
+      const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+      runtime.conversations[0].channel_id = "channel-1";
+      runtime.orderDrafts = [];
+      writeJson(directory, "bot-runtime.json", runtime);
+      writeJson(directory, "fawri-runtime-db.json", {
+        orderDraftsByConversation: {
+          "conversation-1": {
+            id: "explicit-expired-draft", merchant_id: "merchant-1",
+            conversation_id: "conversation-1", channel_id: "channel-1",
+            customer_id: "customer-1", awaiting,
+            started_at: "2026-02-28T10:00:00.000Z",
+            updated_at: "2026-02-28T11:00:00.000Z",
+            expires_at: "2026-02-28T12:00:00.000Z",
+          },
+        },
+      });
+      const before = directorySnapshot(directory);
+      const program = [
+        'import { buildValidatedMigrationPlan } from "./scripts/lib/postgresql-migration-plan-complete.mjs";',
+        'const { report } = buildValidatedMigrationPlan({ dataDirectory: process.argv[1], includeRows: true });',
+        'process.stdout.write(JSON.stringify(report));',
+        'process.exitCode = report.ok ? 0 : 2;',
+      ].join("\n");
+      const result = spawnSync(process.execPath,
+        ["--input-type=module", "-e", program, directory],
+        { cwd: repositoryRoot, encoding: "utf8",
+          env: { ...process.env, DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri" } });
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      const report = JSON.parse(result.stdout);
+      const row = report.rows.order_drafts.find((draft) => draft.id === "explicit-expired-draft");
+      assert.ok(row, "explicitly expired draft must remain in the offline plan");
+      assert.equal(row.awaiting_field, awaiting);
+      assert.equal(row.customer_external_id, "customer-1");
+      assert.equal(row.expires_at, "2026-02-28T12:00:00.000Z");
+      assert.equal(row.created_at, "2026-02-28T10:00:00.000Z");
+      assert.equal(row.updated_at, "2026-02-28T11:00:00.000Z");
+      assert.equal(row.draft_data.awaiting, awaiting);
+      assert.equal(report.writes_performed, false);
+      assert.equal(report.database_connection_used, false);
+      assert.deepEqual(directorySnapshot(directory), before);
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  }
+});
+
+test("dry-run rejects legacy draft without historical expiry even with verified channel", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-expiry-unproven",
+          merchant_id: "merchant-1",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "LEGACY_DRAFT_TIME_PROVENANCE_INVALID",
+    ), "planner must not invent historical expiry from current TTL configuration");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run rejects duplicate conversation drafts with different IDs", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "legacy-draft-conflicting-id",
+          merchant_id: "merchant-1",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "LEGACY_DRAFT_CONVERSATION_CONFLICT",
+    ), "planner must reject distinct draft IDs for the same conversation");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("dry-run rejects same-ID conflicting legacy draft state", () => {
+  const directory = makeDataDirectory();
+  try {
+    createCompleteFixture(directory);
+    const runtime = JSON.parse(fs.readFileSync(path.join(directory, "bot-runtime.json"), "utf8"));
+    runtime.conversations[0].channel_id = "channel-1";
+    writeJson(directory, "bot-runtime.json", runtime);
+    writeJson(directory, "fawri-runtime-db.json", {
+      orderDraftsByConversation: {
+        "conversation-1": {
+          id: "draft-1",
+          merchant_id: "merchant-1",
+          customer_id: "customer-1",
+          awaiting: "product",
+          started_at: "2026-02-28T12:00:00.000Z",
+          updated_at: "2026-02-28T12:00:00.000Z",
+          expires_at: "2026-03-01T00:00:00.000Z",
+        },
+      },
+    });
+    const before = directorySnapshot(directory);
+    const result = runCompletePlanner(directory);
+    assert.deepEqual(directorySnapshot(directory), before, "rejected draft mutated source files");
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.equal(report.writes_performed, false);
+    assert.equal(report.database_connection_used, false);
+    assert.ok(report.errors.some(
+      (issue) => issue.code === "DUPLICATE_TARGET_IDENTITY_CONFLICT",
+    ), "planner must reject a conflicting legacy payload for the same draft ID");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});

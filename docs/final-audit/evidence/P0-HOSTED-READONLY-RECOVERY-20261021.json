@@ -1,0 +1,150 @@
+{
+  "verifiedOn": "2026-10-21",
+  "mode": "read-only catalog/configuration; no data rows or secrets queried",
+  "neon": {
+    "project": "round-fire-18493605",
+    "branch": "br-falling-dust-b1km4gix",
+    "name": "staging-runtime",
+    "catalog": [
+      {
+        "database": "neondb",
+        "inspection_login": "neondb_owner",
+        "migration_count": 28,
+        "latest_migration_timestamp": "1791244800000",
+        "private_scope_schema_present": false,
+        "confirmed_resolver_count": 0,
+        "runtime_role_catalog": [
+          {
+            "rolname": "fawri_staging_rls_runtime",
+            "rolcanlogin": false,
+            "rolsuper": false,
+            "rolbypassrls": false,
+            "rolcreaterole": false,
+            "rolcreatedb": false
+          },
+          {
+            "rolname": "fawri_staging_runtime",
+            "rolcanlogin": true,
+            "rolsuper": false,
+            "rolbypassrls": true,
+            "rolcreaterole": true,
+            "rolcreatedb": true
+          }
+        ]
+      }
+    ],
+    "acl": [
+      {
+        "table_name": "account_sessions",
+        "rls": false,
+        "force_rls": false,
+        "owner": "neondb_owner",
+        "restricted_select": true,
+        "restricted_any_write": true,
+        "policy_count": 0
+      },
+      {
+        "table_name": "cashier_billing_orders",
+        "rls": true,
+        "force_rls": false,
+        "owner": "neondb_owner",
+        "restricted_select": true,
+        "restricted_any_write": true,
+        "policy_count": 1
+      },
+      {
+        "table_name": "cashier_operator_sessions",
+        "rls": false,
+        "force_rls": false,
+        "owner": "neondb_owner",
+        "restricted_select": true,
+        "restricted_any_write": true,
+        "policy_count": 0
+      },
+      {
+        "table_name": "merchants",
+        "rls": false,
+        "force_rls": false,
+        "owner": "neondb_owner",
+        "restricted_select": true,
+        "restricted_any_write": true,
+        "policy_count": 0
+      },
+      {
+        "table_name": "order_items",
+        "rls": false,
+        "force_rls": false,
+        "owner": "neondb_owner",
+        "restricted_select": true,
+        "restricted_any_write": true,
+        "policy_count": 0
+      },
+      {
+        "table_name": "saas_billing_orders",
+        "rls": true,
+        "force_rls": false,
+        "owner": "neondb_owner",
+        "restricted_select": true,
+        "restricted_any_write": true,
+        "policy_count": 1
+      },
+      {
+        "table_name": "support_messages",
+        "rls": false,
+        "force_rls": false,
+        "owner": "neondb_owner",
+        "restricted_select": true,
+        "restricted_any_write": true,
+        "policy_count": 0
+      }
+    ],
+    "sourceJournalEntries": 41,
+    "pendingSourceMigrations": 13,
+    "missingRange": "0028 through 0040; schema/hash migration acceptance still required"
+  },
+  "railway": {
+    "project": "f1f544d0-19ae-448d-95c3-ea682af98a10",
+    "projectName": "fawri-staging",
+    "environment": {
+      "id": "e3f66140-5fff-472b-ad63-1c16de59a911",
+      "name": "production",
+      "unmergedChangesCount": null,
+      "stagedChanges": null
+    },
+    "services": [
+      {
+        "id": "8acd3301-0af6-49c0-a457-84a0ed17e18c",
+        "name": "fawri-web",
+        "numReplicas": null,
+        "cronSchedule": null,
+        "volumes": [],
+        "latestDeployment": {
+          "id": "11f22954-446b-49ef-adc6-38aca7c08bff",
+          "status": "SUCCESS",
+          "createdAt": "2026-10-10T22:22:49.599Z",
+          "url": null
+        }
+      }
+    ],
+    "pendingWork": [],
+    "buckets": [],
+    "latestDeployment": {
+      "id": "11f22954-446b-49ef-adc6-38aca7c08bff",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-10T22:22:49.599Z",
+      "meta": {
+        "reason": "deploy",
+        "commitMessage": "docs(audit): consolidate cashier audit findings (#518)",
+        "commitHash": "d38d29229bed0f9575a98e7026e7819fe363bfd4",
+        "branch": "main"
+      }
+    }
+  },
+  "limitations": [
+    "Neon inspection login is owner, not actual deployed Railway runtime.",
+    "Do not infer deployed application credential from a role name/catalog grant.",
+    "No staging/production migration, privilege change or deployment performed.",
+    "Non-RLS direct grants establish a SQL isolation gap for that role, not a demonstrated HTTP exploit."
+  ],
+  "release": "NO-GO"
+}

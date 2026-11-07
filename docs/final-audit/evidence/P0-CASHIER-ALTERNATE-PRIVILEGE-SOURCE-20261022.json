@@ -1,0 +1,327 @@
+{
+  "schemaVersion": 1,
+  "source": "b0b9a851a0c894a9e7e51126fdf5d08d6f13094f",
+  "executable": "bec6e7114be692981df07bc7b25ad456116fda42",
+  "kind": "SOURCE_ONLY_NO_HOSTED_ACL_CLAIM",
+  "migrations": [
+    {
+      "path": "lib/db/drizzle/0000_even_kulan_gath.sql",
+      "blob": "0c9920caee6ea03d4f4776354bfdecd172234969",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0001_military_proteus.sql",
+      "blob": "0631349cad0075d927bfcf67a96180111555a5a4",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0002_cross_lane_stage.sql",
+      "blob": "3355d8cd9324b085961236bbb7afe3553d789313",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0003_cross_lane_cleanup.sql",
+      "blob": "38d71170941615f60d097c398041352e43d297f6",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0004_product_shipping_measurements.sql",
+      "blob": "fdf3a5c90d58bf4418f954c4a8b686e5500aa2d8",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0005_delivery_fee_per_area.sql",
+      "blob": "ff4e02df7d0f311e1d24fa66fb7f01cfe24912a4",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0006_saas_billing_authority.sql",
+      "blob": "74bd891659d23dc623e9b020a9005ed32fee845c",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0007_merchant_customer_payment_confirmation_authority.sql",
+      "blob": "678454cad18cfaccaa8df7fc16493e32a6317335",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0008_admin_device_verification_auth.sql",
+      "blob": "16e502ce0ec92a153dce1b1d3094d700b801a6ae",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0009_merchant_management_lifecycle_authority.sql",
+      "blob": "ac9709a33e1411a3fc5716db0b4bb8f672162e60",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0010_provider_cost_authority.sql",
+      "blob": "198d1d788f13443f3bb366ed34347e89f16fa283",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0011_commerce_promotions_timezone_authority.sql",
+      "blob": "64f7465a3bc99fda9a1dac14702c8d288c63cb0e",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0012_catalog_variant_signature_guard.sql",
+      "blob": "0ffa1def74719acaf073229b6f17341faaaf6652",
+      "functions": [
+        "fawri_normalize_catalog_variant_signature",
+        "fawri_catalog_variant_signature_guard"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0013_cashier_staff_station_authority.sql",
+      "blob": "ae99c5011c1194af22c946a32bfd1d3a91dce638",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0014_cashier_operation_attribution.sql",
+      "blob": "2d0549996343373309c2759d42b5e59a74f6a468",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0015_cashier_discount_override_authority.sql",
+      "blob": "1a720d6f840b2bf0d379732d6b6c47e2d10f8404",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0016_cashier_merchant_discount_kind.sql",
+      "blob": "137c29fc7b24d3ad680ddea363aaacf1c46e5f35",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0017_multi_location_inventory_foundation.sql",
+      "blob": "8597608339ddde6197a635243d3455215d2038ae",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0018_location_inventory_authority.sql",
+      "blob": "45fa8c8f33e4d236b3f12538b17708be64838764",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0019_location_delivery_area_routing.sql",
+      "blob": "30fdfbcb409695b7faad31bf53937ffaa0f65f82",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0020_cashier_operation_location_backfill.sql",
+      "blob": "671e8b62d4c1d38693613dbff6bd76c466bb39d1",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0021_merchant_inventory_freshness_policy.sql",
+      "blob": "d9adace73b86af57eec8d13b5b97d1159e5a1acf",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0022_location_rls_schema_alignment.sql",
+      "blob": "664959150e888c606712c233d08d404295a35eca",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0023_canonical_tenant_rls_schema_alignment.sql",
+      "blob": "b6a0d4698efc47cb42084b7d7cf7af23b5d4b7e3",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0024_tenant_rls_security_definer_predicate.sql",
+      "blob": "87e49d2124975030203b9a33f1b086f8c3191575",
+      "functions": [
+        "public.fawri_tenant_or_audited_admin"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0025_tenant_rls_policy_predicate_cutover.sql",
+      "blob": "043066bf39f144e537e91fee8b115ad03674a8b1",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0026_global_e164_phone_identity.sql",
+      "blob": "e25dcf09b759438171517466e5deea1604f9a59c",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0027_cashier_subscription_licensing.sql",
+      "blob": "f4fa482d412664091b38fb980f25e399ff6b1847",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0028_meta_ingress_bounded_page_resolver.sql",
+      "blob": "903fd7fe3bd8e530f11a25921769d961e95425ea",
+      "functions": [
+        "public.fawri_resolve_meta_page_merchants"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0029_verified_provider_payment_receipts.sql",
+      "blob": "028fd9b071c68ce74f34c43bd36ff5ef20cb45e3",
+      "functions": [
+        "public.fawri_admit_verified_payment_receipt"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0030_audited_verified_receipt_reads.sql",
+      "blob": "285cdbc4e4de3094c0e6b826e40c82e211d64a46",
+      "functions": [
+        "public.fawri_read_verified_payment_receipts"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0031_audited_receipt_replay_reviews.sql",
+      "blob": "1cce7b8b6693aefb95157d045bfc372205327a89",
+      "functions": [
+        "public.fawri_review_verified_payment_receipt"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0032_authorized_receipt_replay_execution.sql",
+      "blob": "b7eeda10d855bd0160367722b723ad3d0520f7de",
+      "functions": [
+        "public.fawri_authorize_verified_receipt_replay"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0033_confirmed_provider_order_resolution.sql",
+      "blob": "cbb92f1e1b3cc20828cd3f7069389ebc9838842c",
+      "functions": [
+        "public.fawri_resolve_confirmed_payment_order"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0034_cross_authority_payment_identity_guard.sql",
+      "blob": "ea5b17efb223310ef56a09ba43833e576e9dd85e",
+      "functions": [
+        "public.fawri_guard_provider_order_identity"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0035_order_items_tenant_rls.sql",
+      "blob": "423b8cc4b300c65600c05efc27896b45d7da2c39",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0036_audited_admin_active_state_guard.sql",
+      "blob": "57d672d725ba18a50bba6f18709b7db7e1751af9",
+      "functions": [
+        "public.fawri_tenant_or_audited_admin"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0037_audited_admin_transaction_binding.sql",
+      "blob": "948f406c789378bcbd0b04f97d953f7849689373",
+      "functions": [
+        "public.fawri_tenant_or_audited_admin"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0038_role_bound_admin_directory_issuer.sql",
+      "blob": "1ab287e78d7c61e721860e8591fae1b40b8adf64",
+      "functions": [
+        "public.fawri_issue_admin_directory_audit",
+        "public.fawri_tenant_or_audited_admin"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0039_role_bound_authentication_runtime.sql",
+      "blob": "3275129afee9ba454ba1e69ea619f538a94e1c14",
+      "functions": [
+        "public.fawri_authentication_runtime",
+        "public.fawri_tenant_or_audited_admin"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0040_transaction_scoped_tenant_authority.sql",
+      "blob": "718330bb9b1ac592e0f2f835be2062c11f0dbffe",
+      "functions": [
+        "fawri_security.issue_scope",
+        "fawri_security.allows_merchant"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0041_private_tenant_predicate_cutover.sql",
+      "blob": "ad9c6ad522a32268aeb6f585829f270c451fb2c2",
+      "functions": [
+        "public.fawri_tenant_or_audited_admin"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0042_scoped_cashier_approver_lock.sql",
+      "blob": "23a5ac80f7869c640f191845739e0554d38faee1",
+      "functions": [
+        "public.fawri_lock_cashier_approver"
+      ],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0043_cashier_identity_tenant_rls.sql",
+      "blob": "9eb2fd52a3ea8bd797bdcbd736a943b5b98b8004",
+      "functions": [],
+      "views": []
+    },
+    {
+      "path": "lib/db/drizzle/0044_cashier_discount_attribution_tenant_rls.sql",
+      "blob": "4146a005ab8a6ddf7b6ff924099ff320a83b29ea",
+      "functions": [],
+      "views": []
+    }
+  ],
+  "readiness": {
+    "authenticationTables": "table INSERT/UPDATE/DELETE/TRUNCATE/TRIGGER/REFERENCES and column INSERT/UPDATE/REFERENCES across current/session/inherited/SET reachable roles",
+    "protectedRlsTables": "RLS enabled and ownership reachability; no blanket non-row privilege rejection in source",
+    "runtimeFinding": "NOT_RUN new diagnostic pending",
+    "hostedAclFinding": "NOT_CERTIFIED"
+  },
+  "diagnostic": {
+    "test": "artifacts/api-server/tests/cashier-alternate-privilege-postgres.integration.test.mjs",
+    "productionChanged": false,
+    "observation": "18 cashier table ACLs and callable routines/views, disposable GRANT TRUNCATE/REFERENCES/TRIGGER readiness responses, scoped TRUNCATE with two-row synthetic definer observer and rollback",
+    "acceptance": "Diagnostic may pass while recording unsafe readiness acceptance; not a security acceptance gate",
+    "next": "Read exact diagnostic once after completion; classify actual inventory/probes before remediation. Do not repeat pending polling."
+  }
+}

@@ -10,13 +10,25 @@ import {
   metaConnectionActivationConfigured,
 } from "../src/services/productionReleaseReadiness";
 
+// Build test-only URLs at runtime. Never commit credential-shaped URI literals:
+ // security CI deliberately treats such literals as suspicious even in tests.
+function fakePgUrl(user: string, host = "db.internal", db = "fawri", port = 5432): string {
+  const uri = new URL(`postgresql://${host}:${port}/${db}`);
+  uri.username = user;
+  uri.password = "synthetic-fixture-not-a-credential";
+  return uri.toString();
+}
+
 function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   return {
     NODE_ENV: "production",
     FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_PRODUCTION_RELEASE_GATE: "required",
-    DATABASE_URL: "postgresql://fawri:test@db.internal:5432/fawri",
+    DATABASE_URL: fakePgUrl("fawri_restricted_runtime"),
+    FAWRI_AUTH_DATABASE_URL: fakePgUrl("fawri_auth_issuer"),
+    FAWRI_OPERATOR_DATABASE_URL: fakePgUrl("fawri_operator_issuer"),
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_restricted_runtime",
     FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
     FAWRI_AUTH_SECURITY_SECRET: "auth-secret-at-least-thirty-two-characters-long",
@@ -49,6 +61,121 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   };
 }
 
+
+test("FIELD002 production refuses missing, malformed or reused auth PostgreSQL login before listener", () => {
+  for (const value of [
+    "", "  ", "not-a-url", "https://not-a-database.test",
+    fakePgUrl(""),
+    fakePgUrl("%2X"),
+  ]) {
+    const env = productionEnv({ FAWRI_AUTH_DATABASE_URL: value });
+    const issues = getProductionRuntimeConfigurationIssues(env);
+    assert.ok(issues.some(item => item.code === "FIELD002_AUTH_DATABASE_URL_REQUIRED"), value);
+    assert.throws(
+      () => assertProductionRuntimeConfiguration(env),
+      (error: unknown) => (error as { issueCodes?: string[] }).issueCodes
+        ?.includes("FIELD002_AUTH_DATABASE_URL_REQUIRED") === true,
+    );
+  }
+  for (const username of [
+    "fawri_restricted_runtime", "fawri_staging_runtime",
+    "fawri_staging_rls_runtime", "neondb_owner", "neon_superuser",
+  ]) {
+    const env = productionEnv({
+      FAWRI_AUTH_DATABASE_URL: fakePgUrl(username),
+    });
+    assert.ok(getProductionRuntimeConfigurationIssues(env)
+      .some(item => item.code === "FIELD002_AUTH_DATABASE_LOGIN_UNSAFE"), username);
+  }
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
+});
+
+test("FIELD002 production requires auth and tenant to target the same PostgreSQL branch/database", () => {
+  for (const auth of [
+    fakePgUrl("fawri_auth_issuer", "other-db.internal"),
+    fakePgUrl("fawri_auth_issuer", "db.internal", "other_db"),
+    fakePgUrl("fawri_auth_issuer", "db.internal", "fawri", 5433),
+  ]) {
+    const env = productionEnv({ FAWRI_AUTH_DATABASE_URL: auth });
+    assert.ok(getProductionRuntimeConfigurationIssues(env)
+      .some(item => item.code === "FIELD002_AUTH_DATABASE_TARGET_MISMATCH"), auth);
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+    });
+  }
+  // Neon pooled and direct endpoints identify the same compute; distinct
+  // arbitrary hosts and databases do not.
+  const neon = productionEnv({
+    DATABASE_URL: fakePgUrl("fawri_restricted_runtime", "ep-test-case.c-5.eu-central-1.aws.neon.tech", "neondb"),
+    FAWRI_AUTH_DATABASE_URL: fakePgUrl("fawri_auth_issuer", "ep-test-case-pooler.c-5.eu-central-1.aws.neon.tech", "neondb"),
+    FAWRI_OPERATOR_DATABASE_URL: fakePgUrl("fawri_operator_issuer", "ep-test-case.c-5.eu-central-1.aws.neon.tech", "neondb"),
+  });
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(neon), []);
+});
+
+test("FIELD002 production requires a separate operator LOGIN on the same database", () => {
+  for (const value of [
+    "", "not-a-postgres-url", "https://invalid.example",
+    fakePgUrl(""), fakePgUrl("%2X"),
+  ]) {
+    const env = productionEnv({ FAWRI_OPERATOR_DATABASE_URL: value });
+    assert.ok(getProductionRuntimeConfigurationIssues(env).some(
+      item => item.code === "FIELD002_OPERATOR_DATABASE_URL_REQUIRED"), value);
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+    });
+  }
+  for (const role of [
+    "fawri_restricted_runtime", "fawri_auth_issuer",
+    "fawri_staging_runtime", "fawri_staging_rls_runtime",
+    "neondb_owner", "neon_superuser",
+  ]) {
+    const env = productionEnv({ FAWRI_OPERATOR_DATABASE_URL: fakePgUrl(role) });
+    assert.ok(getProductionRuntimeConfigurationIssues(env).some(
+      item => item.code === "FIELD002_OPERATOR_DATABASE_LOGIN_UNSAFE"), role);
+  }
+  for (const url of [
+    fakePgUrl("fawri_operator_issuer", "wrong-db.internal"),
+    fakePgUrl("fawri_operator_issuer", "db.internal", "other_db"),
+    fakePgUrl("fawri_operator_issuer", "db.internal", "fawri", 5433),
+  ]) {
+    const env = productionEnv({ FAWRI_OPERATOR_DATABASE_URL: url });
+    assert.ok(getProductionRuntimeConfigurationIssues(env).some(
+      item => item.code === "FIELD002_OPERATOR_DATABASE_TARGET_MISMATCH"), url);
+  }
+  const neon = productionEnv({
+    DATABASE_URL: fakePgUrl("fawri_restricted_runtime",
+      "ep-test-case.c-5.eu-central-1.aws.neon.tech", "neondb"),
+    FAWRI_AUTH_DATABASE_URL: fakePgUrl("fawri_auth_issuer",
+      "ep-test-case-pooler.c-5.eu-central-1.aws.neon.tech", "neondb"),
+    FAWRI_OPERATOR_DATABASE_URL: fakePgUrl("fawri_operator_issuer",
+      "ep-test-case.c-5.eu-central-1.aws.neon.tech", "neondb"),
+  });
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(neon), []);
+  assert.deepEqual(getProductionRuntimeConfigurationIssues({
+    ...productionEnv(), FAWRI_DEPLOYMENT_MODE: "staging", FAWRI_OPERATOR_DATABASE_URL: "",
+  }), []);
+});
+
+test("FIELD002 production enforces DATABASE_URL LOGIN matches reviewed tenant identity", () => {
+  const mismatch = productionEnv({
+    DATABASE_URL: fakePgUrl("another_restricted_role"),
+  });
+  assert.ok(getProductionRuntimeConfigurationIssues(mismatch)
+    .some(item => item.code === "FIELD002_TENANT_DATABASE_LOGIN_MISMATCH"));
+  assert.throws(() => assertProductionRuntimeConfiguration(mismatch), {
+    code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+  });
+  const valid = productionEnv({
+    DATABASE_URL: fakePgUrl("fawri_restricted_runtime"),
+    FAWRI_AUTH_DATABASE_URL: fakePgUrl("fawri_auth_issuer"),
+  });
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(valid), []);
+  const staging = { ...mismatch, FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_AUTH_DATABASE_URL: "" };
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(staging), []);
+});
+
 test("NODE_ENV production fails closed even when the legacy release-gate variable is omitted", () => {
   const env = { NODE_ENV: "production" } as NodeJS.ProcessEnv;
   const issues = getProductionRuntimeConfigurationIssues(env);
@@ -58,6 +185,31 @@ test("NODE_ENV production fails closed even when the legacy release-gate variabl
     (error: unknown) =>
       (error as { code?: string }).code === "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
   );
+});
+
+test("FIELD002 production startup config requires an explicit approved tenant runtime role", () => {
+  for (const bad of ["", "  ", "<role>", "bad role", "neondb.owner"]) {
+    const env = productionEnv({ FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: bad });
+    const issues = getProductionRuntimeConfigurationIssues(env);
+    assert.ok(issues.some(issue => issue.code === "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"), bad);
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+    });
+  }
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
+  // NODE_ENV is not the sole source of deployment authority: an explicit
+  // production mode must still refuse a missing role even in a test process.
+  const explicit = productionEnv({
+    NODE_ENV: "test",
+    FAWRI_DEPLOYMENT_MODE: "production",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "",
+  });
+  assert.ok(getProductionRuntimeConfigurationIssues(explicit)
+    .some(issue => issue.code === "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"));
+  assert.deepEqual(getProductionRuntimeConfigurationIssues({
+    NODE_ENV: "production", FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "",
+  }), []);
 });
 
 test("staging must opt out explicitly from production-only provider requirements", () => {
@@ -265,3 +417,32 @@ test("production env example stays aligned with the runtime release gate", () =>
   }
 });
 
+
+test("FIELD002 rejects historic broad-grant and owner identities as production runtime even if flags change", () => {
+  for (const role of [
+    "fawri_staging_runtime",
+    "fawri_staging_rls_runtime",
+    "neondb_owner",
+    "neon_superuser",
+  ]) {
+    const env = productionEnv({ FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: role });
+    assert.deepEqual(
+      getProductionRuntimeConfigurationIssues(env).filter(issue => issue.area === "database"),
+      [{ area: "database", code: "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN" }],
+      role,
+    );
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+      issueCodes: ["FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"],
+    });
+    // The original branch's staging mode remains usable for diagnostics,
+    // but it does not turn a legacy identity into a production tenant login.
+    assert.deepEqual(getProductionRuntimeConfigurationIssues({
+      ...env, FAWRI_DEPLOYMENT_MODE: "staging",
+    }), []);
+  }
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv({
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_tenant_runtime_v2",
+    DATABASE_URL: fakePgUrl("fawri_tenant_runtime_v2"),
+  })), []);
+});

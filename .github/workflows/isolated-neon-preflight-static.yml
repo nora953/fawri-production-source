@@ -1,0 +1,27 @@
+name: Isolated Neon preflight static safety
+
+on:
+  pull_request:
+    paths:
+      - 'lib/db/drizzle/**'
+      - 'lib/db/scripts/preflight-isolated-neon-migrations.mjs'
+      - 'lib/db/scripts/lib/migration-sql-order.mjs'
+      - 'lib/db/scripts/tests/isolated-neon-migration-static.test.mjs'
+      - 'lib/db/package.json'
+      - '.github/workflows/isolated-neon-preflight-static.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Test isolated Neon preflight static safeguards
+        run: node --test lib/db/scripts/tests/isolated-neon-migration-static.test.mjs

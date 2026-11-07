@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { probeIndexedDbCashierDurability } from '@/lib/cashierIndexedDbAuthority';
 import { runCashierIndexedDbSmoke } from '@/lib/cashierIndexedDbSmoke';
 import { runCashierPromotionSmoke } from '@/lib/cashierPromotionSmoke';
 import { runCashierSalePricingSmoke } from '@/lib/cashierSalePricingSmoke';
 import { runCashierCompensationSmoke } from '@/lib/cashierCompensationSmoke';
 import { runCashierBackupSmoke } from '@/lib/cashierBackupSmoke';
+import { runCashierBackupSequenceRegression } from '@/lib/cashierBackupSequenceRegression';
 import { CASHIER_INDEXEDDB_SMOKE_COPY as copy } from '@/lib/translations/features/pages/CashierIndexedDbSmokePage';
 
 type SmokeState =
@@ -27,6 +28,8 @@ export default function CashierIndexedDbSmokePage() {
       const sale_time_pricing = runCashierSalePricingSmoke();
       const compensation = await runCashierCompensationSmoke();
       const backup_restore = await runCashierBackupSmoke();
+      // P0 negative regression: a stale backup must not silently rewind the device.
+      await runCashierBackupSequenceRegression();
       setState({
         status: 'passed',
         payload: {
@@ -36,6 +39,7 @@ export default function CashierIndexedDbSmokePage() {
           sale_time_pricing,
           compensation,
           backup_restore,
+          backup_sequence_regression: 'passed',
         },
       });
     } catch (error) {
@@ -46,8 +50,15 @@ export default function CashierIndexedDbSmokePage() {
     }
   };
 
+  // Dedicated opt-in CI entry point; never enabled in normal builds.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('ci') === '1') {
+      void run();
+    }
+  }, []);
+
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
+    <main data-cashier-smoke-status={state.status} className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-3xl space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">{copy.title}</h1>

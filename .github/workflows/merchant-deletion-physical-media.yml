@@ -92,10 +92,5 @@ jobs:
       - name: Prove physical-media source contract
         run: node --test artifacts/api-server/tests/merchant-deletion-physical-media-contract.test.mjs
 
-      - name: Initialize disposable PostgreSQL runtime schema
-        run: pnpm --filter @workspace/db run push-force
-
       - name: Prove catalog and support files are retired after irreversible deletion
-        run: >-
-          pnpm --filter @workspace/api-server exec tsx --test
-          ./tests/merchant-deletion-physical-media-postgres.integration.test.ts
+        run: bash scripts/run-isolated-postgres-audit.sh media-runtime

@@ -1,0 +1,3347 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "sourceRevision": "e81c2cd8eafb5412018435400c37e65a7d92e6c8",
+  "status": "SOURCE_REACHABILITY_RECONCILED_NO_NEW_RUNTIME_ACCEPTANCE",
+  "release": "NO-GO",
+  "sourceOnly": true,
+  "runtimeExecuted": false,
+  "fieldCellClosed": false,
+  "lastAcceptedExecutable": "d86d7c11a9634f870acda08f863d2237dbbe5bbc",
+  "method": {
+    "trackedRuntimeFiles": 807,
+    "roots": [
+      "artifacts/api-server/src/",
+      "artifacts/fawri/src/",
+      "src/",
+      "lib/"
+    ],
+    "textScan": "UTF-8 source including embedded NUL bytes; literal identifier matches; no binary-file skipping",
+    "excludes": [
+      "tests",
+      "scripts",
+      "docs"
+    ],
+    "manifestSha256": "0a7f5268a66f3b63a4619375ab6f6186ff154e820ee4ef931857208a5994c040",
+    "inputs": [
+      {
+        "path": "artifacts/api-server/src/app.ts",
+        "sha256": "1f16a203153f02f5aa2960eed63408ab46ecd72125cb505e579a3ebf78502780"
+      },
+      {
+        "path": "artifacts/api-server/src/index.ts",
+        "sha256": "cde254c56d646ddf4e5cd2ecae955eb9c393cc9bd44619b958c4ad022e9f7aad"
+      },
+      {
+        "path": "artifacts/api-server/src/lib/dataPaths.ts",
+        "sha256": "2a5c666f8ce8c2999871bc348aee04df9a8a18a533f075008c5602a57faa4832"
+      },
+      {
+        "path": "artifacts/api-server/src/lib/logger.ts",
+        "sha256": "29e1ca75036fe917595a3a74fd450857d845836fe0625c30b9caa02df4acba62"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/authCutoverCompatibility.ts",
+        "sha256": "e75a613e9016b848cdf88253f4a4114f0e497598637679911b0d0b5b10e726b5"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/authSession.ts",
+        "sha256": "8d5c2ca7cc41d6cf5cea662b11a9b54cb042ed9280786acfebde572af14eefe9"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/cashierStaffSession.ts",
+        "sha256": "b8fd7ce50c291da552555cc9d988aa458512f07f9f881a976c14a27b650b81b9"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+        "sha256": "291c917025c196b0b7ff62de975245a66aee4a66919d76f743fc2904f8b859e6"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts",
+        "sha256": "fcd1d741fef589947e4050ea3e921234772f2c5ec3a70014b3b5747a1608c77f"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/merchantOperationalAccess.ts",
+        "sha256": "1140aae651fef35c02f396f15f8905e1329f7a8615215a7ebeb133eb498dea6c"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/merchantRetentionAccess.ts",
+        "sha256": "244643d63493d01e792472f8c3e0b09a75ff3e41814ae86f284824f367c4085d"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/merchantWebhookAccess.ts",
+        "sha256": "92fb049d899b9ed25d7b16847fae6ff6322b1c85f109ecbfd4f93939b744ab48"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/merchantWebhookSubscriptionAccess.ts",
+        "sha256": "e429856f84521a933b72041ca63401a590bbaf0d3e20fe3e2dd34f63688da8cd"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/metaWebhookPath.ts",
+        "sha256": "ee8fc1fdb3586baca53b2d75d632519f2cbdd03aa992b08f81d90a9a94910ad6"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts",
+        "sha256": "480764960fa9cd17e851b133a05eaaa1eabc34c7a77e3d47c35a5bbc13293a23"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/metaWebhookSecurity.ts",
+        "sha256": "6abb41f8f8973910b608ce3a2d27ff4143ba70defe65c05e477ac7231dded853"
+      },
+      {
+        "path": "artifacts/api-server/src/middleware/ownerRecoveryReauth.ts",
+        "sha256": "39da5f7eab0c90ff8618175cdd023227548777a2f374c62b05d6f2107d0f016e"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/aiUsageTelemetry.ts",
+        "sha256": "c0c5d74288d6b8341e401646b19f37c06981b6043089094852940e2f6f890707"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/alerts.ts",
+        "sha256": "a195e084b318ded67bc296c4bf8e333d4fc6ce9758fa3338622867504fd782fe"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/earlyWarningEvaluation.ts",
+        "sha256": "c064ac265d953cceb7dfc4bf35b6dd6b6b73b1c8ea14e81e56634d57890fae02"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/earlyWarningMerchantEvaluation.ts",
+        "sha256": "d232d30a288a79787b649a49ed45f2d66147df911a4dad46451b1c647270ce98"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/health.ts",
+        "sha256": "41eccfbaefb288c32b1624e6b8b0784f842b3728c2ce4d31e97ddffd43805985"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/index.ts",
+        "sha256": "75782121f662627e80ffe46af919a0f4aae27a37ccbc241d9a2813432d23ac04"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/metrics.ts",
+        "sha256": "c1f272fe99c1a689495f723c6f600b1d1ff4aeae3f05735eb7f45e2ad63e8e7f"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/readiness.ts",
+        "sha256": "2d69a5da15917f42f0dcd6db22ca0ed90b83773be4bbaca84dc5c4855dcc4227"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/requestTelemetry.ts",
+        "sha256": "8f1ab8c29927223aee7f9d518c368b26e9f714dbddcde4cd756af50bd463906b"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/router.ts",
+        "sha256": "0c641a7b17f7c8d9a5f971156426dc4a90e3371f64af2ff404d2d8ee94bd9f41"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/runtime.ts",
+        "sha256": "3b134685d78019bb4389a5ea655fad44d7aa91e3a53ce591f20e351cb3afeb37"
+      },
+      {
+        "path": "artifacts/api-server/src/observability/types.ts",
+        "sha256": "6766251892b0e4279fe05a82e799d8b70db49ee0a1b3cd43e67130ba01d686cc"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-admin-device-otp-pg-routes.ts",
+        "sha256": "9e3e5866ba1a97cc166b5c862167238b149658e5fbba4c41cfe98a7262e04c36"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-admin-postgres-routes.ts",
+        "sha256": "427868007803c72d14efe2588ea9c754b73807d166c0890d303b8adae1b6b2ec"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-admin-routes.ts",
+        "sha256": "44fd153f79772418223213a4e0da88e1d5e479a29b450053a53b9d4970e009f1"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+        "sha256": "a4e12146a54c422e2fe70d961453dae6db76dd6c9889db16c1b41f56ea246b53"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts",
+        "sha256": "d9a8161a861b612a9698f10a85152a2316957af80c63315472336cdb21eea54a"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-login-route-support.ts",
+        "sha256": "3b3dd202f0b598993edb1094517ab5f3299ea75f975d3b0bd075881e2a4a4437"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+        "sha256": "3f650a0d0ed13ddf53f47150e1e309b15921d3c0232000f450db01f5c9a4a693"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-owner-recovery-postgres-routes.ts",
+        "sha256": "bf97f013402378c34139cc8f052b657511a5271667e01b03688a355cc6fa9ed9"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-password-route-support.ts",
+        "sha256": "ecebe1640f94c323be39ecb766a4d811a037ee498109b7831f299ae6fd67175e"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-provider-cost-postgres-routes.ts",
+        "sha256": "a64107d6abdb1fc5ab479fa5a92d1f053fd06d312814f912f42a0d31ea35f1c0"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-public-routes.ts",
+        "sha256": "1b9aef7f065055619bbc065b342c62e648fadc3183e3aaf45064afe04b501342"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-route-common.ts",
+        "sha256": "265b1ddacd3bb5b395315d51ebe82fcb6d7c3fe0f6f5eee5db68ce2e87b403c0"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-security.ts",
+        "sha256": "69383e59066004751603d8efb03706cd9f6f7bc431943eb8e195200798881be1"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-session-routes.ts",
+        "sha256": "6b89103ecd106cc00a2337e263bd847f8acf62ab16ca4857192941fd8f4deefc"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-support-admin-lifecycle-postgres-routes.ts",
+        "sha256": "cbda6986c515c727d946e32ac9ac460f069dd97d5e6a03068f8d3c2278640f7c"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-support-image-alias-postgres-routes.ts",
+        "sha256": "998721bb1df4858f80b7930ca8da25cdbda8d9e5e627bbe65375c7267f48637f"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-support-inspection-decision-postgres-routes.ts",
+        "sha256": "0ffa9e7099036e5bfdf91d20f621c0452f7b8a304f03bcf96e0688d816d405f9"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-support-message-postgres-routes.ts",
+        "sha256": "58f61f9a7a8f52978e618855370e3477d5794ca7c94b6e93aabb91b8773c772d"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+        "sha256": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts",
+        "sha256": "97ed292f6f1014e46da256ef0aaa36b9ede478d2afb1fb42f421211225b01e79"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/auth.ts",
+        "sha256": "9546e4ed911cec8d72a303ca53b4e80d6dd5140b247e1dc21127bfa2a044c5fb"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+        "sha256": "6df8ea27106cb9d4bb80370c66f220d4228127b0fcde83ab92e08c07a6cceea5"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+        "sha256": "03a3cdf0417805f0dd0860c5d1962030196a82ca7b5e6701859477d50b182c15"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRoutesPart3.ts",
+        "sha256": "1dd77650f4de09fec1ad3021f6e7f44255cddc20b5e4c20ee3b21a34286149b9"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntime.ts",
+        "sha256": "f952f68e9d56cdaf5a5cfde908ab18da10021272c3f6fc3fed12cf997428a9c8"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+        "sha256": "2ebd5d74006591c79aa2e73d458628ee25cb608c62460a7336495600bdc0aef1"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart2.ts",
+        "sha256": "fb2282553072159daa02cc97720fd5226f919ab694d45ed6e0c01d8aeea5dd45"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+        "sha256": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+        "sha256": "c7b3a8a0429c07f45056b76366855e22bc61b497ff5fc41df404dae97c0e99ef"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/bot-training.ts",
+        "sha256": "1e34deb56bc4b83a031b750f34793afdc530eba97d2aafed10a71f3c57e9a71b"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts",
+        "sha256": "c83a0a490eba61f26d960c7e39903946cc7d43a40fc4596e72a79129d086f206"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+        "sha256": "246ed01a7fe25c7c3f2e236fdf1ca19b11d4d851451753031c88fc84cb34eb17"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/cashier-staff-operations.ts",
+        "sha256": "ea3a4e9e409a2c47729dfb5d23ffea13a0e362c02dbca0dc79ea313f6af47369"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/cashier-subscription-operations.ts",
+        "sha256": "74ec4d667f1da814af569bda0fa24d63ac61fadbb23d1b79e7bcd1f1b276aed1"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/cashier-sync-operations.ts",
+        "sha256": "fbd4834157cdad2cb557ec63a23f1bfc79f5363950046f4b07d62aa91f2c071a"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/catalog-operations.ts",
+        "sha256": "2c9d064af42723745880b119b82ca23b50a897681f15dbba847a300417c43237"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/channel-durable-job-admin.ts",
+        "sha256": "259f54f890747aff7652f5eac808444c18281eb852a323e97a1d6f34d90e2fa5"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/channel-operations.ts",
+        "sha256": "6b3e012f4604b555f5e2578fd41f7bfc8b7c1c936e2f3f38aa12d1660328d8b2"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/conversation-operations.ts",
+        "sha256": "0d783553f5c6bb6a532dc1d25152ca75b5b84f9d777e2f920a3e2ab1c7a19961"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/emergency-merchant-notices.ts",
+        "sha256": "539fc0e1c51f772fbd7f861dc269b9431de25fdcf5ce90058100fa96f8d359f1"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/emergency-owner-snapshot.ts",
+        "sha256": "579125600013b1b2e8dc14dc4ae999cf999a5afcae68ade2922000479c0553c4"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/emergency-read-access.ts",
+        "sha256": "d7f6004720d415f6e9982f974f9f68e74e22b073c2d8d8934757397e325b0208"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/emergency-read-directory.ts",
+        "sha256": "2c9c439f9b61e29d4f9de4099dffc796b7596c15e739f652c65caf97c253fc43"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/health.ts",
+        "sha256": "8b45528e15dcb83734f36aa1ce1312c0a8807961942eea57cd22012251a27fae"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/index.ts",
+        "sha256": "f4737aa78db60bd9c1fcb14790c38333118d8a2696991119d33d0b06357c9861"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+        "sha256": "2d973eef5fe79d24daceb454b302dc4551a9f13582d40af23877bc30da4b7019"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart2.ts",
+        "sha256": "60d9f81019d67ddb5ca66e9c62a2f24ff55d5be5a961cf1d8740c06d176447bc"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+        "sha256": "4f32c94a6fca5e3394882e0ecfb1bdb352e5fc6c9573d08a6c6f9597e7f72c47"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+        "sha256": "27c5346d89357c368d5f89ad37a4a0335dfb8c1195587eda61f1785789452b10"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/knowledge-operations.ts",
+        "sha256": "c76ee5d6fd84cbe8e74ca0654274b7304317c341225a975a6c79397e4252b9ea"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/knowledge-route-utils.ts",
+        "sha256": "b3e8f67e36bc285dd9f7406b7a1597e7d7c2ca0b4c354d4925499b6882bc4fa8"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts",
+        "sha256": "69db8b4a92d64ed21f46845ce4d1bde59f4ea1ee2054119839c84345748654fd"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+        "sha256": "e605658c347b63379fbb1c062e201dcbaaf6dc25ff08d48f1f4da963c9292135"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/merchant-realtime-pg.ts",
+        "sha256": "54fff6232ec48355fee69accbf3179473896c1af81c4f28760939080c1a817e2"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/merchant-regional.ts",
+        "sha256": "d0f047f5f38bb6fb84374c81d190dbce645e33594c625eabba96e22c6d687eb3"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/merchant-settings.ts",
+        "sha256": "5408d1fd3a0a35f281829746562d648d54cfcc3cf8cef474dd7e00469f2cf7f1"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/order-operations.ts",
+        "sha256": "a7cfd8a0912e6614c85387e4a318d7ff6ec739ba94f5833e0faa69996a964fab"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/reports-operations.ts",
+        "sha256": "c665fac16b369948c08472870520251b05bc690fde61fb75e66f4c16ddabd627"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/retention-guard.ts",
+        "sha256": "a71d7e586ea293cdfeff70db8191f43f5918c21b46450879594b2dc42d122e41"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/saas-billing.ts",
+        "sha256": "09e55466ead858b3b7338082af1274f6d4c62de64c64ec46eaffd06bc541d97d"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/saved-answer-operations.ts",
+        "sha256": "8328913251d34063414dd986b1ff47c89b0734162127b76f5c895a7b6f96e8e0"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/saved-answers.ts",
+        "sha256": "7b4b4cdad9a846db5a2c52e0828a9be0f1c88a76e975c0b1e134873d320a36ec"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/subscription-entitlement-pg.ts",
+        "sha256": "1115290ebc4486ef61e56d884487d88a053e080d05f7da2694bd485d235a675a"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/support-images.ts",
+        "sha256": "8db43df5a0d9f7787858ce4a093e161a00fa935ef4510dcae06e3736106c710f"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/support-preview.ts",
+        "sha256": "823191f48cee2fdeb6c4e54c48eacb394063162dd8d9dd23364c9310cf5e8bbb"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/training-operations.ts",
+        "sha256": "dc2719c16af60d16463f6c0e901bf6328e2527cc6bf356fa58bf6775c55984b9"
+      },
+      {
+        "path": "artifacts/api-server/src/services/adminAuthPostgresCutover.ts",
+        "sha256": "7fe3d47b332f77982127bb2f799e751e5ecb14f575a614ba10d97fc26596e836"
+      },
+      {
+        "path": "artifacts/api-server/src/services/adminManagement.ts",
+        "sha256": "35f588afc8f47035074a3b0c8b0b5b795f9a480776fcf5f611e3bdc19a5385b0"
+      },
+      {
+        "path": "artifacts/api-server/src/services/adminWorkMonitor.ts",
+        "sha256": "43a403909095f138fff6f065c9b198d6bf40e23f1c2c47f8621b39b8208bbb7b"
+      },
+      {
+        "path": "artifacts/api-server/src/services/ai/constrainedOpenAiProvider.ts",
+        "sha256": "c247fdeb8c4b6ef5161074712b17723a129a23722bd9b121ae434125096642c5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/ai/knowledgeDecisionEngine.ts",
+        "sha256": "309c375d129c359a0efef1025b81c6edde512c082042dfe129c86771e11ecfa9"
+      },
+      {
+        "path": "artifacts/api-server/src/services/ai/openAiMediaCatalogRanker.ts",
+        "sha256": "b86eaea6c171027f7b45a0a2bccd647edf2eb14387fc02f981852dd5eb9d7eb6"
+      },
+      {
+        "path": "artifacts/api-server/src/services/ai/openAiMediaVisionProvider.ts",
+        "sha256": "f89bcaa632a6444a68f459faae54738c0ef260eac2ad8c31ff7a4f916f2bf2d6"
+      },
+      {
+        "path": "artifacts/api-server/src/services/ai/openAiMetaAudioTranscriptionProvider.ts",
+        "sha256": "7330210725883ecd43531f693a447d043a9cbf2990d376198aa21b137b4103e7"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authAccountRepository.ts",
+        "sha256": "36076ee26c6ef54e7b50d032c4604027ee8e9a4019df650daa127c7e2233c73d"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authDeviceSecurity.ts",
+        "sha256": "3a38770932e359e5ada28febcda36fbba3ac1324c38091d296c72be86fc87dc1"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authOtpDelivery.ts",
+        "sha256": "7ff60f1e66eb1f44b8d5915a36ad282efdcbef853a8ca758bed16052babf1e9d"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authOtpSecurity.ts",
+        "sha256": "dd9d3f25dd12307d840b871ae44000a3cb78d693ca31ace2041877e95f2cfc9c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authPasswordService.ts",
+        "sha256": "38f6e16153da70c9f4fbb1bc10e6d2579daa56850d15100dceaab762edc6b8fb"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authPolicy.ts",
+        "sha256": "5f43e482ad5d4799a0936148cfc7cc9efad5a3c6d1ef51aca3470e04711fe161"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authPostgresSessionAuthority.ts",
+        "sha256": "343a4c37de7de2578fda1a54da48e8e2706199b2851e302ec48df9cbf88304a4"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authSecurityDataStore.ts",
+        "sha256": "38de864c851534f34261829b6457bddf2bb45e2d1bc18576567cb225c980b70f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authSecurityStore.ts",
+        "sha256": "3143bf284263ab7c4c678bea059017b712adae9110a0601ba412f949f2212b54"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authSecurityTypes.ts",
+        "sha256": "facd8e4e4937b0906bb53c97de270377ded94636ee6161fbf48d6a72032026f6"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authSessionSecurity.ts",
+        "sha256": "7c14cbc6c6d7254f9ac4d3ec2b18b973be405581a27381e948c5a42bb76e1afe"
+      },
+      {
+        "path": "artifacts/api-server/src/services/authenticationPostgresAuthority.ts",
+        "sha256": "de69d8d404d5a634badf7fb95e3e7a90cabd676fbb139b33a38ccf9b7c89fe89"
+      },
+      {
+        "path": "artifacts/api-server/src/services/awsKmsMetaCredentialKeyProvider.ts",
+        "sha256": "922741e5ce7294e9c9f5103200f341c258288d9a444de6b7e20b0f13b3ed2277"
+      },
+      {
+        "path": "artifacts/api-server/src/services/billingReplayScope.ts",
+        "sha256": "711e8ec8a3ed51f7da6f033d065494e2e7f6fc6795c130c18ed8c4b638e59e6f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/botCatalogAuthority.ts",
+        "sha256": "e9e529437f0f92c5e45b1710e90290892398f2bbb8e67e4d9cf40eaec10406dd"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierBillingAuthority.ts",
+        "sha256": "bdbe878bf0f4e3dc5ca8f412df1aa358c2e3d0b1b86386f647025fccb403404f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierCompensationSyncValidation.ts",
+        "sha256": "405cbe1ab178acb9cb91a2551f0a8af32be76c96c19a616af99eef8fbe9d16b0"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierCostEvidence.ts",
+        "sha256": "1d5b0a98c7bec682468007786cc8ad0887e70ca01b12bcb3bc638c28686eff5a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierDiscountOverrideAuthority.ts",
+        "sha256": "4334419a3e6ba501788d27c91b0da03fd6a5af9ef7f6c74aded600768f8afd38"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierDiscountPolicy.ts",
+        "sha256": "675f98e122e1dfbb90a53cbe030dca0c8157e466c7dc1281d1a1da0e0750876a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierDiscountPolicyAuthority.ts",
+        "sha256": "1ecd572f56b845bc8554447aa5770ad651678720ce2e3253760f9ad77c3b7ace"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierEntitlementAuthority.ts",
+        "sha256": "66632e87e659bac275c43981c22f67b3f66d882cbb455d6476b8c1cd5c8e0f82"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierHistoricalOperationAuthority.ts",
+        "sha256": "d8859c614130a76d9afcd4f328ad94ae73b02e9d1d2b5cca254d0b6a8cc2b55f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierLocationBindingAuthority.ts",
+        "sha256": "1e12af9a9ad1e9262714df2450639f2f3ac795e4dc0ad5392214f9fa4bc745d5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierLocationCatalogProjection.ts",
+        "sha256": "83a0f7d43e1330d8d84f5508ca8baa91b850b6fc6c9cb5df55c4386124532b1e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierMerchantDiscountSettingsAuthority.ts",
+        "sha256": "619643a73a5b84988f8cfbdad82324b073c64c5395429a1a1146032da12594e3"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierOfflineEntitlementIssuer.ts",
+        "sha256": "a215f63f527e289ac1c9fe475a688d0f1e4aebef26751ad7c2f532d9e815feb4"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts",
+        "sha256": "ef44fc162aa2a24a0af99a8d12716e33b07cf8c17f828a6877c03e4f48030161"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierOperatorDiscountAuthority.ts",
+        "sha256": "92aa443d4d9b4092053b26e20734329130adb07c0c3cd4f63514828334ad24ed"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierOperatorSaleScope.ts",
+        "sha256": "b1eb690d09666b5ef1b0ff8e99dbc88c35d7731980101db53fcc9b2b2932efbd"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierOperatorShiftCloseAuthority.ts",
+        "sha256": "094eb089cc9e260c26d0531b50056549f79f0760fd146630c8b1f300121288cf"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierReceiptProfileAuthority.ts",
+        "sha256": "38062cd12bfb9335268e9b24bd299f7eeac9e36315baf089913583df6f348847"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierRefundPricing.ts",
+        "sha256": "99f9710b2155510cadc06a14cc12e4f34ad5f200f09ffe6b2e9f0b1e069f9f99"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierRuntimeExpiryReconciliation.ts",
+        "sha256": "d2fe0f73b5277321d1eec4b1de3d6eca2b21a4d81a556cb5cf917190176fe040"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierStaffAuthorityValidation.ts",
+        "sha256": "ae5afbcc95f59f35412e5e4833bc2790abd029140ece609359a8e741d2ef94a8"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierStaffDiscountRoleHardening.ts",
+        "sha256": "1396b8bad8f7f296974af4b7e7e7c8da70f2a1f81bbed8f49e9c9419e40f304e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierStaffPolicy.ts",
+        "sha256": "e5ff52b5a5b5132f118769c1bbd395a65f57b8064de16738135586c4b9bb234c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/cashierStationConfigurationAuthority.ts",
+        "sha256": "016438246e6d7fdb1a806d9ad82bdde1d37c1a52323a6701c9c200780485221e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/catalogCommerceMetadata.ts",
+        "sha256": "0e8cc4d69b0bed4dd1dfe3fd1ff081d9ad9ae2610d759ed9aa25bfb7ca797840"
+      },
+      {
+        "path": "artifacts/api-server/src/services/catalogInventoryRuntime.ts",
+        "sha256": "e21bdf90b7bdefc2fd37e55db4a398d13e469d990198293bcf05f51611e392c5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/catalogMediaStorage.ts",
+        "sha256": "d03095cd79c2374ce0e3ca59c8eff0540a12aa8a3d2651627bf063691481b107"
+      },
+      {
+        "path": "artifacts/api-server/src/services/catalogProductNormalization.ts",
+        "sha256": "33a974b86f032e632137864710db6fe8e42f25650b54b0daa114665582d9e10f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/commerceDeliveryPricing.ts",
+        "sha256": "f0f22fbf0b89137e9cccc24f5470d3688f48b9c950d7c3f1ef98209366a64d78"
+      },
+      {
+        "path": "artifacts/api-server/src/services/commercePromotionRuntime.ts",
+        "sha256": "2c5f605bcb91b9d3b7f3daa4989d226f81d4b3ce8e117e3fff67fa9eedcd0856"
+      },
+      {
+        "path": "artifacts/api-server/src/services/confirmedProviderBillingScope.ts",
+        "sha256": "7f60e50a5669fc444d7bdfa9970153b1cbc397331eb3717453063a4869f5ee6c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/currencyMoneyRuntime.ts",
+        "sha256": "4e224b9c5bb62f3dd4eba12cad3ff8a11f2321802863e5e6cbbcfab129274a96"
+      },
+      {
+        "path": "artifacts/api-server/src/services/deliveryPricing.ts",
+        "sha256": "ea78b26ec01979f3635390d921d0f93c582dca118ae55d1a35b442fec9e3f217"
+      },
+      {
+        "path": "artifacts/api-server/src/services/deliveryProviderBoundary.ts",
+        "sha256": "f6ff6fa2aabf9bc6fbf540dcc9faf4bfd8e78e641360a130cd6b089b6cf2912f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/durableJobQueue.ts",
+        "sha256": "f5e4c14cf21a3cfebba78de80144d2c13225aba09509c688cf95480b60eb1fb5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningCostAuthority.ts",
+        "sha256": "64b524d2e18a064b8f70941b896f1129b6f9d613011a68882f169244e633c065"
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+        "sha256": "a67633bebbf6588c3412ecf85fae5ebd10493921c7d93392c4cce4e24461e165"
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningIncidentMonitor.ts",
+        "sha256": "c7e9f6e525867cd447fcd3bfdb4b5c4f0fe081802d4e9e634980152090a6be92"
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningMerchantUsageAuthority.ts",
+        "sha256": "7bf9ccbec970b8326dae6c0f6cb46295ec2354a3d088e25237ede972ce5bacf3"
+      },
+      {
+        "path": "artifacts/api-server/src/services/earlyWarningPostgresAuthority.ts",
+        "sha256": "f61b600044afd3c9084fc97ef3c8cc2bffaf52eb2863fdce2892b23709043d69"
+      },
+      {
+        "path": "artifacts/api-server/src/services/emergencyReadAccess.ts",
+        "sha256": "94c0df619d3cbf37a39e197fcece84c26fa2d4c6550957e4d15c7e9b28cdcc44"
+      },
+      {
+        "path": "artifacts/api-server/src/services/fastPayProductionReadiness.ts",
+        "sha256": "eead63251f61067471ff2d976f666ff490d989b3edf0299aef25c47169064722"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/catalogFactDisclosure.ts",
+        "sha256": "154db4e233c5d3d0ffeaa7e2b408627176fecf28e26320b4db58ab4b989c1985"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/fawriEncyclopedia.ts",
+        "sha256": "f6c1915799ac50ddb9ba3fd9430a8515b092364c1245c212c42d6fe4905c7047"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/fawriEncyclopediaExpansion.ts",
+        "sha256": "c5db59ea6313587e420fa867e5c2cc9cb9971d34d0682a91c39a9dec11f2c5f2"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/fawriEncyclopediaExpansion2.ts",
+        "sha256": "53ccde61954d1685124bb4396b5ee52d1314a06f39a194578bed8ff308c57d34"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/knowledgeLifecycle.ts",
+        "sha256": "123693df8030aede5da8b9acd4fd7e9c1eafa323a5aaff016b274db6016520ba"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/knowledgeRepository.ts",
+        "sha256": "4e3c9554864db0c000cb4726fd138ad46912c1294c6407496cf55129753aaf64"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/knowledgeStateStore.ts",
+        "sha256": "47c7a38925c6af252867587b61251a16041f9ec2cec06b5c5f06ed5cf56f6d06"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/normalization.ts",
+        "sha256": "e14ad35b35a1cc4b066acdc0ec1d658f5b4f3eee1071ad1786692ba73d8ca526"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/openAiApprovedKnowledgeTranslationProvider.ts",
+        "sha256": "3a695bb583da7faff3a681b6f5bee293112181ae1aeee510e84492d589963775"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/openAiKnowledgeEmbeddingProvider.ts",
+        "sha256": "4c7dcd83f0ad75e79683a44858081edb269fdfbdc3d8e09336ead4c761dc158e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/operationalIntent.ts",
+        "sha256": "996ed81de31b66258fe6541e7ae5413554600511f127540a4d69a469ad54217e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/postgresKnowledgeLifecycle.ts",
+        "sha256": "af27f9eb607ecc643eddf421c7a8fc13b80b0710dde9a83b0e835871b719263d"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/postgresKnowledgeManagementRuntime.ts",
+        "sha256": "ceafcb11b6bc8a8166e85a46b6323122447ae71d639987dd62a153ded40f816c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/postgresKnowledgeRuntime.ts",
+        "sha256": "9bffd804981ad6363052eee5d0013eafb8f4d9b695a5dcd3dc7c16cd470328d7"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/postgresOperationalFactResolver.ts",
+        "sha256": "14576156c02a83c49f8379aff756fb070d901da55006d4aaa75b17277c6b7f4f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/productCatalogContext.ts",
+        "sha256": "43676a107f0547f3f344aca33072f0ee769deb2e21ecce8fe2a178fee9b6ec96"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/promptInjection.ts",
+        "sha256": "aac5111ec08a4d83549299326854368a80615c0ede1af75fbedd2b9e2c58c065"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/redaction.ts",
+        "sha256": "836f37b99ed80179d544ac6c232c34582c54fced87a1d51c9ec6248979c59378"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/savedAnswerStore.ts",
+        "sha256": "81a15a0d61787d9ed466454509643db6dbd3c08ed99491fa58ac7b4d533fe2b9"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/semanticRetriever.ts",
+        "sha256": "5048202d920a6544b2f1f1b1aca11d21cb3d851c37ed931747b8b0ce520cc33f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/subscriptionGuaranteeClassification.ts",
+        "sha256": "317c3698222fc05c6da20a98f4a5d6bb3e2a14577025786f7e5cad555593576c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/trainingApprovalStore.ts",
+        "sha256": "096d58d4ea0a7243595ed38d0d2b3fd1ab1879408f5f44023f374ba50af18a5c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/trainingRequestStore.ts",
+        "sha256": "4746dfaa335d7dcac3f0219144ae52043c6e8893de920c409b124161e2fd1622"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/trainingStore.ts",
+        "sha256": "5013e7f4b0f15d321e3de2a04f016c582fb1a771b5baca49fdccdccdcbe5a7f5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/types.ts",
+        "sha256": "19f4beabc4c8ba693c93f862435ef16cb9bc3a6e747903018539f2db59deca6f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/knowledge/visualAlternativePolicy.ts",
+        "sha256": "9a0860f41afea814b7abbe026e3f0a47b3dcd25995bf324755a70efb28125f3a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/locationRoutingEngine.ts",
+        "sha256": "653a02163c30ccb11db49829c9dc55fcbc70eb89180d6b4dfe25c6e682e73243"
+      },
+      {
+        "path": "artifacts/api-server/src/services/manualConversationDeletion.ts",
+        "sha256": "eb5c7b03cadb5f3f8033bb413c53f3ee6c4b60b86755f7c9b84a79b32e8c5d18"
+      },
+      {
+        "path": "artifacts/api-server/src/services/manualConversationRuntime.ts",
+        "sha256": "1c60379128a4ba2f0a75ac115f917a0518d87765e96ec88549baaaf94b428299"
+      },
+      {
+        "path": "artifacts/api-server/src/services/mediaCatalogCandidateResolver.ts",
+        "sha256": "03621e2aa04ec6bc084145201f55a1d74f53b3d67e90e6348b43271a892e6097"
+      },
+      {
+        "path": "artifacts/api-server/src/services/mediaCatalogMatcher.ts",
+        "sha256": "ed8add6410a26ae91a26e15a6610368a870d0b42ab850b7c4ae6b75fb301cbf1"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantAuthData.ts",
+        "sha256": "954e36565234d4d5272aeb8b938482ffbf25e113ea97a4a6981195983460b425"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantBotTraining.ts",
+        "sha256": "ae2e7dd7bcac31fac20910a4f8bac6c946738ea9c251b0276592633a924f72f5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantCorrectionReview.ts",
+        "sha256": "ff8441ac6cb0f5106b8ae22cbd3ef86981f42d919a6b5dd61c9220a92134310d"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantDeletionProviderIdentifierRetirement.ts",
+        "sha256": "30e364ecc250c3016f24f4d0ad1d007600ada9fdb4796d5229f682c543ba1165"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantLifecycle.ts",
+        "sha256": "4b2aa7fdcfa9a072ac86351141aa40045d8fca0855e21025a9bb7b1385cfe815"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantManualKnowledgeLearning.ts",
+        "sha256": "9b9a33401a7b78aa8058b6f9ea7086aa819fa041e7bf5050a83ee2d447befafd"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantOperationalAccess.ts",
+        "sha256": "97becfedd010785bdf2ba23ea4fa185f007968431b213083ff0a9abb1da2ec56"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantPasswordRecoveryProof.ts",
+        "sha256": "f969c474a9dc1ec17babca41314c9d392fe518de96b6d5a707dee5686c9a45c0"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts",
+        "sha256": "766cc5e7aa0b59ad33fae04c3a1e30c92b84cac5734a89e5e8085fdda66592d8"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantReadOnlySnapshot.ts",
+        "sha256": "9d07ebc9c84aa09f1c8c84ef8330e45f66ae63566c5b61a2e6354d0fe7b4fab0"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantRegionDefaults.ts",
+        "sha256": "9f160cc4090a83ed976ab1aea18754bc3e5c341269e8613ccd6e0e1669101064"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantRegionalRuntime.ts",
+        "sha256": "7369e8a37c538fe309cd63a358f42b775a50a1bda19930d5bc35c8be80801730"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantReplyEntitlement.ts",
+        "sha256": "49110de0fdbf330541c01cd2e0e8697ad677f265be7852b2f0c0e145ca9897b2"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantReplyEntitlementAuthority.ts",
+        "sha256": "35d765e017e1216ad37ed64a9808e9c7d4a24fa643ea3d1e3ba9d17836ce91e0"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantReplyRefund.ts",
+        "sha256": "4bd1b7f70d92ee0599f4450a09db5af46a258cb0f0e104a442762d104c099164"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantReplyRefundAuthority.ts",
+        "sha256": "7c71b5ff2f57d4649d7fffda87a5a6e0b75e6415e89bde97616745fdcceb9f6a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantReplyReservationRelease.ts",
+        "sha256": "0724f06d945f5749b85c1f9e5bf5927f9c4736d4b56e52abe0b542bf3a39c521"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantReplyReservationReleaseAuthority.ts",
+        "sha256": "a5adcfb3d8b7c11118f35e6a81f33da617aab3d732198baad326e2d9256b8791"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantResponseStyle.ts",
+        "sha256": "3386aef69b696f7be40855f4244a72bf05a32d22eb774a5049a417f43c8d205e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantRetentionPolicy.ts",
+        "sha256": "32e347bb74ff915809a045353608c95de5bccf07b2c864a81cbae3793a629be2"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantRetentionScheduler.ts",
+        "sha256": "5639d2897a1159daa949830e8cecb2bd12fa0357cc649067ee0f89095de5c4b0"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantRuntime.ts",
+        "sha256": "55f432fe682e6b364d3a46842e22288f2d5386bae00f05cd1f3be791587644ac"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantSavedAnswers.ts",
+        "sha256": "590080c8b80320269544379b4428b27f3d7e16ba54520c3afcf93d770691139c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/merchantSettingsRuntime.ts",
+        "sha256": "7bdcd156a89a6c2f3426c2940548c43f490f389ccc5a6e1e61896b8b683a1f98"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaAudioFetcher.ts",
+        "sha256": "ab2aa5c66eacd0b9862a74cbb68e73f948a5e77ae2c7cf6de2bcee4fd196aa97"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaAudioUnderstandingRuntime.ts",
+        "sha256": "ff13462650812c6bf1915f55431eebe26593b282e2852e422be5447fcb7ece44"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaAudioUnderstandingService.ts",
+        "sha256": "bef1ad1173730d260b7ed1ca41df1c6f34d3e1ee18ca8fd933cf11f3d4c9e951"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaChannelJobs.ts",
+        "sha256": "8ab2c5ce9044ea4b296a6a19ce34911678a7ae10ca7cf4deb5b8decbd4b2b8a5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaChannelRuntime.ts",
+        "sha256": "7373a623c8eefa88bcbb2bce9ca04a81692e81a85544e46df17f22ca517d93cd"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaCredentialVault.ts",
+        "sha256": "ca9e848102bf83ed1edb8d43f5e773759759e599e2737b892acf0b00fa60d053"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaGraphSendClient.ts",
+        "sha256": "4c7927b5155ea6920eded881e464c55d03cd4aa9022db26788be6e06872f1797"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaImageUnderstandingRuntime.ts",
+        "sha256": "079f96a5cb0b2f4be2f89c58f75b66b4471d11c3ad5760bde3eb440cf58f6c8f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaImageUnderstandingService.ts",
+        "sha256": "f284e963f2308317cac9038f87468b354b94af1629d0fe3a9e4a8a6f87d82468"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaInboundMessage.ts",
+        "sha256": "8532efe1bc49201adad7da583f371f3ec1bb12948678e73013f1be97eaf1cb57"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaKnowledgeDecisionBoundary.ts",
+        "sha256": "2e3636fb65f94646f61e10482d74a69d97ba070d2eab58f197d9f8047c49bcfc"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaMediaFetcher.ts",
+        "sha256": "bd0abd3d315dd08d0313208b2f5d6131976890f302bc15abc2bd957805770829"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaPageDirectory.ts",
+        "sha256": "f1417d4f80abf2b50a3959d44915f8ec765018b6a911d559a7d06df0ff2e3c49"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaReplyJobAdmission.ts",
+        "sha256": "06fe66ee89203ebb65dd675fce7efa619721519bf1bd246c924cd29c8322f589"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaVideoFetcher.ts",
+        "sha256": "468b8f5bcb0be1e303ebbfc86dddc5aa50011aff195e4cfb1b9ba47d114bdae2"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaVideoFrameExtractor.ts",
+        "sha256": "8914a0038f16e369c2f41d54e30eb0dd1ca51eb412b83e164bd69ba11cac7edd"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaVideoReplyGrounding.ts",
+        "sha256": "60103924f2b967efd75215eab9188bddf2e234abc614b3691c8f02bfff3379bf"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaVideoUnderstandingRuntime.ts",
+        "sha256": "db31c1b7540ac6d67a2b642071fc3de0b096e32367730ac422c9590c496a4774"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaVideoUnderstandingService.ts",
+        "sha256": "7c220bd1a49a6c2c2ed3f16278dfef803279a92773711b3a6f62d94861a08751"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaWebhookFakeTransport.ts",
+        "sha256": "f80d07291609585bdbfc8951e9a81fff04b17f6bdcbee800dd841ce37747335a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaWebhookInternalReplay.ts",
+        "sha256": "6417bbd84fe469b964f635d2fae9f8bd84717eaea981382603c0a946c0b47335"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaWebhookOutcome.ts",
+        "sha256": "b7038717bd5941e7671190c26ffd42393b3a83880fe083a551987e5b6cb9e273"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaWebhookWorker.ts",
+        "sha256": "7507cdd03c50c51401141cb7995664c8c57eb467b327db14a034067469401c90"
+      },
+      {
+        "path": "artifacts/api-server/src/services/metaWebhookWorkerCore.ts",
+        "sha256": "1e31618c0661f6d5466bb1692ab6c3837b886c234c1be6507ce91836a46eee76"
+      },
+      {
+        "path": "artifacts/api-server/src/services/operationalPostgresAuthority.ts",
+        "sha256": "54f114d3d16c8556c655b1af2fabfa24c76eded075d596c6872f0dbc9b25286b"
+      },
+      {
+        "path": "artifacts/api-server/src/services/operatorDirectoryPostgresAuthority.ts",
+        "sha256": "113d019611e37469d33be5c3a0bba944eddcd8cdaf66382d2d980bf761e79b5e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/operatorReceiptExecutionPostgresAuthority.ts",
+        "sha256": "eadfd062dc1bdd5455f87e0f1b2536162d02b8a8710d24b4cf3498311482fd88"
+      },
+      {
+        "path": "artifacts/api-server/src/services/operatorReceiptReadPostgresAuthority.ts",
+        "sha256": "d72466747207f3bad3caa2b5882b576b44ee8caed9f258bcf3ffdee04c7ac1f6"
+      },
+      {
+        "path": "artifacts/api-server/src/services/operatorReceiptReviewPostgresAuthority.ts",
+        "sha256": "5fadf4d7c56c11430d7926c1a7970d1c3c59e301e0d3ecc807f0e0e065b870da"
+      },
+      {
+        "path": "artifacts/api-server/src/services/orderOperationsRuntime.ts",
+        "sha256": "7c2f74873fcdd47e24a401cd85a0fcb1ae38812dd253b7266ec0cdbd51d3c882"
+      },
+      {
+        "path": "artifacts/api-server/src/services/ownerBreakGlassRecoveryAuthority.ts",
+        "sha256": "a08dcbeb72dbc8cc483c1ccf3386c0aa30136aa742e73911d3162a935d919b0c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/passwordService.ts",
+        "sha256": "4ea8212f2cd189deafdaed570e2c323527f0b7598e787e621933919d761c7dd5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresAdminAccountAuthority.ts",
+        "sha256": "df4b713c4f1458adcec496d4371a89c33891e21a1205dde9edb449efa59c930e"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresAdminPasswordProfileAuthority.ts",
+        "sha256": "a67b5785f7de386e5ec1b1272058bf28ab1161e6773c78a83ba5cdf7751be6ba"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresAdminSecurityAuthority.ts",
+        "sha256": "f86988307ca3d0e38f44807b909ff77152ba57634b719443f5fc785b22996366"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierCentralActivityAuthority.ts",
+        "sha256": "a90ef07328e083f2f2cd11925923e93ae57912a344bd9ffca61e81c98a4b256b"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierCentralReportAuthority.ts",
+        "sha256": "3d700be5ce9043c71b49f731228c5743461e0f5440d04849dad819a1349c6711"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierCompensationSyncAuthority.ts",
+        "sha256": "81c5892e7d47683d26c58397078b616dd9e0ac6a46908972302266f4c76746fd"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierOperatorReportAuthority.ts",
+        "sha256": "e1b82eb756ef8674c186c40b167349fc1b4512c6f72fa55c18f8224becb5b557"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts",
+        "sha256": "77d02a2d5f5ffcff65729e3c0c6a780f45827b78cfa106ff24780ec89708c2bb"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts",
+        "sha256": "b8d681c659cc4a963b2676f8f8e134c037acdd6852e7a14d373885d3397bd8ce"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCatalogAuthority.ts",
+        "sha256": "2086b2db5d89f674d400fc471e04dc3e4ab27159e14d1b69e92cc19307910ce6"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCatalogAuthorityCore.ts",
+        "sha256": "f2473fbe5116de433887a5cc13e7297aac5b3cdb1697415432cc174bb02cd971"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresCommercePromotionAuthority.ts",
+        "sha256": "1d81a607cfd0d1a38ccc9ab63a1b80adeb4077a4dd7bb0080c2a34e98a073cc1"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresDurableJobQueue.ts",
+        "sha256": "6f03f8af64de69ea5478f85afb19a3a8fb82c6bc2e17f1522eda88c2fe9875b7"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+        "sha256": "45c53442056c4842e969d1867d085053aa0d935f4fbc9d0c5b7ca9815a320f40"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresEmergencySnapshot.ts",
+        "sha256": "08864fce4b7e43c979041a3c7a2c70b9ce0fbb71c41bf293229054f69fb01a11"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresLocationInventoryAuthority.ts",
+        "sha256": "65a802c860aa1f3cd058849a27c796eba7d004e8f82aca5ae980c4e6d15e4450"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresLocationRoutingAuthority.ts",
+        "sha256": "051882f9491c9de3455ad98760740a6f85778ed1b02702f1b151ed08c9be3de6"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresLocationServiceAreaResolver.ts",
+        "sha256": "06f4e655bbb30ba04a0d2073875526f247bfbfd230719dd209735860d0c9f2c5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+        "sha256": "2d4515227229618be97d90f0d618127ae8ba21b416dd5e5e6ca17ec27624b328"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantAccountAuthority.ts",
+        "sha256": "07b8dc3acd72e08d38d650681be9f0105277f6d264a3b0f5979d220e80d4c72d"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantAdminLogAuthority.ts",
+        "sha256": "8e7c0e5c6a4aacb5672e2bf2bb9191b459fa0de12b0429f3d6eecf91effd67ce"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantAuthSecurityAuthority.ts",
+        "sha256": "ac5ee0bca86d2e432e5bada52250afe8f4e4d0b0b417a2c639e1c0f46645f760"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantCurrencyAuthority.ts",
+        "sha256": "3ced59e7dfebeff67929172732d096789b80d216fd3473a78e9f9e3a9b49e24d"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+        "sha256": "0ce03dbe3df46b3459ba9ea052d9c03c1431ac4290961e6b9428fcab008b2d02"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+        "sha256": "91a3111f26b6d4b9876451b09c3218126a901d79a37eef1e8aa584b2e9fe0ff8"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantRegionalAuthority.ts",
+        "sha256": "c4d9b5c0d63f48708ca0a088074c0af022ab81c885b3f713ac66ecf094c919bb"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantRetentionAuthority.ts",
+        "sha256": "b65fa94f3a361c599d16a87c7a503ce91c2c2ebfd84690ca5c788ae0fb8a8a5b"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMerchantSettingsAuthority.ts",
+        "sha256": "968ec074d6034b5569c196ca40ce921ff80603cfcc6ef49681c5baab0199dfb5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "sha256": "91845a60273c8f12b967e9d2e50c5e53c1221980ab4136c6f3c74a7ec4765788"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaChannelAuthority.ts",
+        "sha256": "f1ace912c04c9fee7f68362bf6c7433349fa53be383f8bcd347fbc3307139f9f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaWebhookReplyTransport.ts",
+        "sha256": "586a8d648d8eaffd05324b0e9934ad9c9fa941138408335f8e1f5eeff78c36a5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOnlineOrderFulfillmentCommit.ts",
+        "sha256": "1173893e7bd10f66308ce6462eba6667207590f3e965d117be6941cc673157f9"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOnlineOrderFulfillmentPlanner.ts",
+        "sha256": "465eac1435651d64326b8728850985c79de464b7bb1b4d8443a63d85dd4d9a07"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOnlineOrderReportAuthority.ts",
+        "sha256": "c75a5e1149070929fbfbf31e4501e11c9740dd1506fd5cbed79be9837c41c263"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+        "sha256": "fa40e8d728cf33796e565b00f58dd839c893dd539da9d9786fb0c2dc3d11a6f8"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOrderOperationsAuthority.ts",
+        "sha256": "a996076ed9b1d8e6bbb264c575bb27e3c1149d07445f73ff70a6732b7af86cd0"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts",
+        "sha256": "0954d278c36ab5efba709dd30b4e5bf9ef9630377cb39786547d2a65f637d006"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOwnerAdminProvisioning.ts",
+        "sha256": "a6a2ea79fde0767f22e7f6254e33ae967abdad449061f15e64191595df2b071f"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+        "sha256": "58d616bd948a1ea25c780168b6f7881681d3c87f73101e65f8318a72ace48610"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts",
+        "sha256": "3c93579946ece775615be4b756743aceb2d659f94dc2192780a2f579b381a437"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+        "sha256": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportImageAuthority.ts",
+        "sha256": "9c5adc04dfd43424f45aeaee37640744781ca27188c55f176924658f4364302a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts",
+        "sha256": "d77196c64fb39c782047ab7f17e0cd63cadc2475ebe74a9e9fd1e8d432f328f7"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+        "sha256": "59ec43152b0ad63599cd91b2a1c4db23ab263c5f9ce2cd9c00138e20f6748008"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportRuntimeCutover.ts",
+        "sha256": "f317bb5a7dfc4a3feaf9a38ddc761bd9c1e8e1ea21e6b7b225d858a1c965bed1"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresSupportSnapshot.ts",
+        "sha256": "d6be97c0eece08f70ec201d673eb92311be8552120e0b56f165c50c858fb4ac5"
+      },
+      {
+        "path": "artifacts/api-server/src/services/productionReleaseReadiness.ts",
+        "sha256": "3ced74fffe752548c8570ff2d3a741017f16254993cd8788a4e7bd8055eccba4"
+      },
+      {
+        "path": "artifacts/api-server/src/services/providerCostAuthority.ts",
+        "sha256": "bb9f632d1c53041e282207e8398a329d9fbea7fd91cf77659086bfde2c714940"
+      },
+      {
+        "path": "artifacts/api-server/src/services/runtimeProviderBootstrap.ts",
+        "sha256": "f22c51421a95fa836de56951827da86e7b7ec3ef0a9a9bf7d5d428e2f40c3852"
+      },
+      {
+        "path": "artifacts/api-server/src/services/saasBillingAuthority.ts",
+        "sha256": "eaa54410e6e486ebb8661341668cf021c29d5fca003f0ef657edebb1cb2b0bb1"
+      },
+      {
+        "path": "artifacts/api-server/src/services/saasPlanCatalog.ts",
+        "sha256": "fef86005f46cfa940ce0690ae8b0ba6dee8a8b30cf1f87f2f81c0f01e0a7190d"
+      },
+      {
+        "path": "artifacts/api-server/src/services/savedAnswerRuntime.ts",
+        "sha256": "10d7b993c558916cb13ecacb7cd486ca2701795b22f686b682eba5ec7d6128c7"
+      },
+      {
+        "path": "artifacts/api-server/src/services/subscriptionPlanCycleAuthority.ts",
+        "sha256": "18742abba67b0da1f5c076ee51a20c3217872209ee9ecce909382d5bf28aab0b"
+      },
+      {
+        "path": "artifacts/api-server/src/services/subscriptionServiceGuarantee.ts",
+        "sha256": "49bab96ca1e114c931013720da2002e511d824ed2a9d6686562703196c96058a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/superQiSandboxTransport.ts",
+        "sha256": "927549df064e9f4dc1dbbf09ff7dc8b374e1d814c983f31da383c7494992dc74"
+      },
+      {
+        "path": "artifacts/api-server/src/services/superQiSandboxWebhook.ts",
+        "sha256": "7b8a8d5958638d256cffe1ef16816ee957ec939b37a5d9c40f888c3e950414b8"
+      },
+      {
+        "path": "artifacts/api-server/src/services/supportImageStorage.ts",
+        "sha256": "721c3caff4b0b1c78a431f68891342195abb21585be06aab93fb89307d9ed6db"
+      },
+      {
+        "path": "artifacts/api-server/src/services/supportPreviewSessions.ts",
+        "sha256": "f3482c146ab9cef2b83a006349b4b0c1e4e640041eb3755992623dcc9d1173ba"
+      },
+      {
+        "path": "artifacts/api-server/src/services/tenantScopePostgresBoundary.ts",
+        "sha256": "3a8e721488c3d2c662c6137fbf2e9faede5baf26a80d32d2abf5ee6fa42849f3"
+      },
+      {
+        "path": "artifacts/api-server/src/services/tenantTransactionScope.ts",
+        "sha256": "8b092de712d63f308d08d858addf896f7c1636f73906e8d3b049bb0ee95497ea"
+      },
+      {
+        "path": "artifacts/api-server/src/services/trainingRuntime.ts",
+        "sha256": "1eb301322fe592a1dc8790dc282b4661d65fe61f92a67e399d728e9ced16569c"
+      },
+      {
+        "path": "artifacts/api-server/src/services/verifiedReceiptOperatorRead.ts",
+        "sha256": "4fd69d78fe00e66ed7a389bbd3c6114db1cfa5a593773c82ff8ee5801fcb985a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/verifiedReceiptReplayExecution.ts",
+        "sha256": "95451515a881559295d300212202df7ddc92c78fd1dbe3261f6e409c021f0b8a"
+      },
+      {
+        "path": "artifacts/api-server/src/services/verifiedReceiptReplayReview.ts",
+        "sha256": "1a89d163cfc4816a31b422734afcd0e59d9008ac5f9d1249820f49166964eb1d"
+      },
+      {
+        "path": "artifacts/api-server/src/types/express-json-verifier.d.ts",
+        "sha256": "aef34cc319f781737e2ebd2b3ed7a946aa86999ab1ac5de920ee60e36154acc4"
+      },
+      {
+        "path": "artifacts/api-server/src/types/workspace-db-runtime.d.ts",
+        "sha256": "dbab4da946012a12ceb9eadf542de172dc7f0f8a54415267fcbe5ed00d1a8df9"
+      },
+      {
+        "path": "artifacts/fawri/src/App.tsx",
+        "sha256": "b3c098da094e178471a6aa8f49a846eb7680509d1ad6ae48cad472c688794ceb"
+      },
+      {
+        "path": "artifacts/fawri/src/cashierMain.tsx",
+        "sha256": "5e2d5edc87430d64604a1e7ebf1ce4cf72ef22e35116039b99bccb9a6e0621eb"
+      },
+      {
+        "path": "artifacts/fawri/src/components/CashierSubscriptionPanel.tsx",
+        "sha256": "e5746e005153f2f0bafb6da3c0ef17329984ec12756c5ed2518a5e582ba9915d"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ChangePasswordModal.tsx",
+        "sha256": "5f541837c687929bcd9e33afda9209b7ffcff75538756dce7660f5b52f81774d"
+      },
+      {
+        "path": "artifacts/fawri/src/components/DeleteMerchantDialog.tsx",
+        "sha256": "448a36bb8e70bfc9dbb0f89fe5d1cb094d616944872fce027e20181bdcf14502"
+      },
+      {
+        "path": "artifacts/fawri/src/components/EmergencyCredit.tsx",
+        "sha256": "ce0ac5f2b9f533b4af9c5b82a9ac75b295c448ac37d626cc356fdf1618b658ed"
+      },
+      {
+        "path": "artifacts/fawri/src/components/EmergencyIncidentNoticeBanner.tsx",
+        "sha256": "2d9822b14f977f2421a55889df0059468b24070444002d76bf5e656010ee2793"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ForgotPasswordModal.tsx",
+        "sha256": "5bb5a44d93cc93fb957f6236d0ced41370f1c93ec0829236edaf1ebd44eab08b"
+      },
+      {
+        "path": "artifacts/fawri/src/components/InternationalPhoneField.tsx",
+        "sha256": "7dbf386735b29f02f61abb8267b4b23dded0697262925390b57faa74d18c1303"
+      },
+      {
+        "path": "artifacts/fawri/src/components/OtpResendSection.tsx",
+        "sha256": "f1bf10b18ae8e22100842edd507859721f1ecd4516c1e0d089d648325b81ccd1"
+      },
+      {
+        "path": "artifacts/fawri/src/components/PlatformIcon.tsx",
+        "sha256": "d48eb2583e79092da27e4298d132f835a40cfff2ae05ee8103b2c371f2048f89"
+      },
+      {
+        "path": "artifacts/fawri/src/components/PolicyContent.tsx",
+        "sha256": "24c02a2c160e4e6c6fe72b0d8fed761bef107f167735e9443fcabd5879e6593f"
+      },
+      {
+        "path": "artifacts/fawri/src/components/PolicyModal.tsx",
+        "sha256": "f86b86d5222ef4172ef070b77e041e0e00a37fe64fa3ade7e941a24586e058b9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/SaasBillingPanel.tsx",
+        "sha256": "c5a2ad31666d8f2f5504e6ef0b6935c9fb23bfccae9773d483f88e23df750d4b"
+      },
+      {
+        "path": "artifacts/fawri/src/components/SubscriptionCard.tsx",
+        "sha256": "d3b8b53fb5ec89cdcfd22f921055cf091da011ce39e040718c847ef5ff5fea7a"
+      },
+      {
+        "path": "artifacts/fawri/src/components/SubscriptionRetentionCard.tsx",
+        "sha256": "20d5b79d543675ba7c9317ea5b92c952221795524b69054e5e06c05b1a11123f"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/AdminCashierSubscriptionControls.tsx",
+        "sha256": "2987308c4de96c1b448f4fb0da9263cda5e96c9466c52fadcb81e734a45ad8db"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/AdminSupportTab.tsx",
+        "sha256": "859a149a186e2d2de8971eb7e309987d456c92b847311f10664393b984ee15fd"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/AdministratorsTab.tsx",
+        "sha256": "fd5c11b0b6f53d043b2e0acff07488c652078cdc41cc797a4f9179d1945182b9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/AssistantPasswordResetDialog.tsx",
+        "sha256": "ff4feea8df48e0d71fa8b30232d13e71541d92bf3802c873961e7f615fcc57ca"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/EarlyWarningLauncher.tsx",
+        "sha256": "079511ea233abed056f555108d017e9c9d254daf6cdc696330ea6ae906de6700"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/EmergencyReadAccessLauncher.tsx",
+        "sha256": "a71e9fbd1fb56f966c98c30f765b60e5cab91e3db28b59deed0e5cfc7619f1be"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/OwnerRecoveryLauncher.tsx",
+        "sha256": "88832fbb05dc1981f9bde6e6b2b0413dbbc4c9e33feff32d0d9c1eaa93373324"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/ReceiptReplayControls.tsx",
+        "sha256": "119fcf3fe704d32e5b1b8e5643a9def9617620c0a2fc7234dba21af6dc12d656"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/RequiredAdminPasswordChangeDialog.tsx",
+        "sha256": "48cf659678934048bc7e8099835864c8e96d2a2119c24e9287e224bcf35f5ea0"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/SupportPreviewLauncher.tsx",
+        "sha256": "becd94ebda02c38280f3f68e7e39ce64330b28cafa226c0e27595474fd70d466"
+      },
+      {
+        "path": "artifacts/fawri/src/components/admin/VerifiedReceiptReview.tsx",
+        "sha256": "16a0fd9cedda7e83f2533e99ac82aa732b3ae755d25f87217cbbca9e75320163"
+      },
+      {
+        "path": "artifacts/fawri/src/components/cashier/CashierCheckoutModal.tsx",
+        "sha256": "d64e7c73e678058ab0709d8a9aa7830474d130d48213fdebec653d504beb573a"
+      },
+      {
+        "path": "artifacts/fawri/src/components/cashier/CashierDiscountOverrideEditor.tsx",
+        "sha256": "3ca06de8b81e14f7d6d56aa6369c94da7120ad17f053262a0235da95cca64a43"
+      },
+      {
+        "path": "artifacts/fawri/src/components/cashier/CashierEndShiftButton.tsx",
+        "sha256": "18378f3e8acc778f52ffba0f0802b7c35ef9cb216da2e77e19ac6b918e3e100c"
+      },
+      {
+        "path": "artifacts/fawri/src/components/cashier/CashierLanguageSwitcher.tsx",
+        "sha256": "a6db54a770fbb86a6ab1abb588cb80a3579eca0da12708299cba1694c23e803c"
+      },
+      {
+        "path": "artifacts/fawri/src/components/cashier/CashierManualDiscountEditor.tsx",
+        "sha256": "7fdc4e0e24298bef3c0e2e5b8ca622f6e2343322fba8662293af3d4989d6a621"
+      },
+      {
+        "path": "artifacts/fawri/src/components/cashier/CashierOperatorGate.tsx",
+        "sha256": "f4bfb29e0805361272cc6f32b131b4e79b639e76bd883308374e830cbe02332d"
+      },
+      {
+        "path": "artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx",
+        "sha256": "86b34dd825de66aa15d1d1dcd9c912116d0c6b54959745ec40e4c590206a922e"
+      },
+      {
+        "path": "artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx",
+        "sha256": "fa43cd368abfcd3c50b8b796feed37d583e72ba61cf66d0906fcb3947eea27d9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx",
+        "sha256": "0e30d9ce633ae8f9dcaed20856725df1b2009a793b18bcf284d0c9cc65a1ec93"
+      },
+      {
+        "path": "artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx",
+        "sha256": "4013491888e3f3284391a334b7e8614521e86e5788e5d63756d9546596b20dbb"
+      },
+      {
+        "path": "artifacts/fawri/src/components/catalog/CatalogProtectedImage.tsx",
+        "sha256": "adc3457f6963853772cc49990b36572c458177b5a90338b8b555034c4f2e745e"
+      },
+      {
+        "path": "artifacts/fawri/src/components/channels/ChannelStatusCard.tsx",
+        "sha256": "3177e4aa2dc115660519e767706d4e6cf7df80d0d2673d562aeac3eece4a1fce"
+      },
+      {
+        "path": "artifacts/fawri/src/components/knowledge/KnowledgeStatusBadge.tsx",
+        "sha256": "a285d54cc11af96a6a395f1eb199a96f586ddb2c63dd0479bf209194562ac748"
+      },
+      {
+        "path": "artifacts/fawri/src/components/knowledge/MerchantResponseStyleCard.tsx",
+        "sha256": "36ea6f4941d776a4c0cbd288706a90adf4fc1f047b40af8b922f3bc5f13a8a16"
+      },
+      {
+        "path": "artifacts/fawri/src/components/layout/BottomNav.tsx",
+        "sha256": "424cb7219c2c09c13dc2ce228bb22fb291fbb7e5dd888cbb5cba9029650ea360"
+      },
+      {
+        "path": "artifacts/fawri/src/components/layout/DashboardLayout.tsx",
+        "sha256": "97d8e1ad428e8abe3605f8acac4518b98327ac2559e1bb32574ea83177a7d355"
+      },
+      {
+        "path": "artifacts/fawri/src/components/layout/Header.tsx",
+        "sha256": "ce8da0440218f6260043adb7f4063a2e0dad874ac1a2870a9f4cfe0f3d63c08d"
+      },
+      {
+        "path": "artifacts/fawri/src/components/layout/Sidebar.tsx",
+        "sha256": "c2d4f14d378c07af7805997d7a7c5a0daceb5c603eaea0e3c43b7469defaf7f3"
+      },
+      {
+        "path": "artifacts/fawri/src/components/reports/ReportToolbar.tsx",
+        "sha256": "12ea7d430160fb0c73005015fafc659c3107d5540d738014d4d2177df0557773"
+      },
+      {
+        "path": "artifacts/fawri/src/components/support/AdminSupportImageButton.tsx",
+        "sha256": "52e5fb35329f37086262d1235a44060e9a76841c4563e73be13034db8b258227"
+      },
+      {
+        "path": "artifacts/fawri/src/components/support/MerchantSupportImageButton.tsx",
+        "sha256": "f8dcf474a935d9021f20b41016dcbeb90a672f091e02052e5dc1a0f3fd5570c0"
+      },
+      {
+        "path": "artifacts/fawri/src/components/support/PrivateSupportImage.tsx",
+        "sha256": "0bf80005ad8a7149884b6889228f9e2768023cc5aa4690e762b21475f184d050"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/accordion.tsx",
+        "sha256": "dcbfb3243a26096fc3e5f54039ccb5c4c23d9bb79a4d5846b4be75bf912f07d9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/alert-dialog.tsx",
+        "sha256": "311bede35f785d7b1ecd7398986757e26409d1049352a94ccf83586b8603c92d"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/alert.tsx",
+        "sha256": "5950ac01377e7eedc94b00eb3fee678745e4cc1a72b5343867f0733d07db6660"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/aspect-ratio.tsx",
+        "sha256": "08b0aa0b05efc573c7d63363c03e83d4b101bfeb54140764e96ddea30659cfcc"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/avatar.tsx",
+        "sha256": "e78b35ed76c67d8ff50603fbe0dfa4fe600097bd860d89e65beea3e16683dad8"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/badge.tsx",
+        "sha256": "3c339f439797dba9b3872a9d89db42420ffd900504b4e0b27e9dad51e87bc41c"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/breadcrumb.tsx",
+        "sha256": "c3d3dcb0d82fc5e91d8830bac7fead905686fe876f1f42c3ed872bb0a6b6584e"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/button-group.tsx",
+        "sha256": "e3716d270e9ef6457b5cd29464ae00194abc8093c08ebf726c9204d7a69231d9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/button.tsx",
+        "sha256": "9a9edf4fda319623ee228d5cb26ac31dd008dcfd5c57dbafe3b7d768e59e50ca"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/calendar.tsx",
+        "sha256": "787a19c855cf2b826942d25440b63150c45094154c6a40e95abdb4109298b8b4"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/card.tsx",
+        "sha256": "525c4bb2c051987be64df0e92e1d90174912b219bf541e24ffbc4a3406de49e8"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/carousel.tsx",
+        "sha256": "5a4ff73c804e86c873382da80c453f1399006326ef042fb984c24162ec86666e"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/chart.tsx",
+        "sha256": "b40d1236f168c746b228adec6bc4e9d196ea362a7910878f161d3c359a013b89"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/checkbox.tsx",
+        "sha256": "ac389a574651c8bedffc10f80674c5fc2f02ab81291a5f4ad9c587d1f775fdce"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/collapsible.tsx",
+        "sha256": "f4cdd104de29928bfcd40b865c7d08eed9157a537fbb8b5e6d0921f02b63cc04"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/command.tsx",
+        "sha256": "5a57ebc119f2357b097098d22865d45de8fda623ee88fe98b99999838c13633b"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/context-menu.tsx",
+        "sha256": "5369fc82c51df067aec2934f5e711aaf9e3f745ed7baadd7ba4b77397dee2a1b"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/dialog.tsx",
+        "sha256": "ab58d27c25e3a6add2316ae1a2d7b3fd1eea1142bdd56eadb27690e97b392dcb"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/drawer.tsx",
+        "sha256": "47ff6248307a4ac09bf7e00181a2a29f9f846691092e04cad03e15d749bc249b"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/dropdown-menu.tsx",
+        "sha256": "dc109123ecd59af01d07aa9f3a8e8a7085bd3f337388c5369799ab1ce6c2d45f"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/empty.tsx",
+        "sha256": "9f975582a0290dbc7ce6efa3b36b376a4c3f07863026c3b74c1e73cb0023acb8"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/field.tsx",
+        "sha256": "e463611ab049c5e9b1c61691d239e05970ead7b577a191b3f80aa6f8ffccada9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/form.tsx",
+        "sha256": "d50adf86568f76246f0f319c9e1e858627475563f6c1e38f5df7d4ee23958559"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/hover-card.tsx",
+        "sha256": "00f9086b1412843e04e01d31d2fab00a25d65d789d1a382e41f01b1f3c167c3b"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/input-group.tsx",
+        "sha256": "e9dad28bc940ca29714312d6c75d83bfe63f0cf7f9a384d2a2969a00a1d79700"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/input-otp.tsx",
+        "sha256": "d6d0a9bedb7a436f6bbe577a980317013675d14b2de98ad76b788fde399b43ce"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/input.tsx",
+        "sha256": "a2e6b25a31892481291f117e526a2ec725b472c4e25f1403a4f9a27777edda05"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/item.tsx",
+        "sha256": "90983640aa7cfef8217422347d8e14825cf55137c76369decacf440767f03188"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/kbd.tsx",
+        "sha256": "0c025e7736d435f563bfb44105e562629672799eb1f35cbf194148d06cd1a9f7"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/label.tsx",
+        "sha256": "2eac8fbb04002c42b0fbc4062d20d131e421796eaf65c37d2049e29e42ecbc5a"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/menubar.tsx",
+        "sha256": "def61eb2c47c9ec319423471f4ca20045e99549958211cacf832e4ede769e484"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/navigation-menu.tsx",
+        "sha256": "a06d96a582ac207ffcd38445d773c05e841d646efb185b5e9b65f73e5bd388c7"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/pagination.tsx",
+        "sha256": "9506dbd19ddd0c2810d1c9668a3f01606e39d9bf33ddc43329523c03bf629012"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/password-input.tsx",
+        "sha256": "7ead7f4cc90e42e4a9bb2f49fdc1557cddee933e5f994a3c2b3c353222f54a04"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/popover.tsx",
+        "sha256": "04cf38bf94abd3fe1b51e90227e6e235ca74776f6fc6af718bfc149e7424f582"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/progress.tsx",
+        "sha256": "6b3b4b69a1cb361076174892e9a96e1a09020307616965ef89f2f7e2495b57a9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/radio-group.tsx",
+        "sha256": "9ba7808b7404cdf2159c81883a39290033bc4308f2978eb80797c92b87421301"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/resizable.tsx",
+        "sha256": "70d1e35a5fb0897af7063cdd841d8ed636e1c332ef7ea6469f0f175a5a93dddf"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/scroll-area.tsx",
+        "sha256": "d7d02600effca55d0dcadce8c09c97ebddda3a19c5fa1d52dc9f6f727b26c6b1"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/select.tsx",
+        "sha256": "3d93ae07a8f3fe121ba60f4439e26bd7859f247eb8bfcafcf4b4a8a069888eec"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/separator.tsx",
+        "sha256": "c956c4cca4b8442fa9314d6079b9f975e1ee39d5804aaf2966990f6258ac342a"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/sheet.tsx",
+        "sha256": "beeeede8df57c428a6c05073f1217a4823a8f7f41ade2cc7015f1296760374ed"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/sidebar.tsx",
+        "sha256": "b023ff6245be1930e152a18c6aaa2b6dd1a11df7b05fcf41bbe483968bfb1c39"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/skeleton.tsx",
+        "sha256": "87608e7cc815ad3d88e0b9de6c402bb37b58ea1b38636cf69709da1baff6e334"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/slider.tsx",
+        "sha256": "234e38fef59169bd02d8f5b56ca02e5ec13a0bd6846c328927b924e1299f7fb0"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/sonner.tsx",
+        "sha256": "771ab8637d27384c3ed030ba3be01a07b90c791c294eae06646250f8e81bc49e"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/spinner.tsx",
+        "sha256": "3e6e6e8d37fb4069f8e43e55318f8db06fbc36e6c8be0096da3c9337c1c798b9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/switch.tsx",
+        "sha256": "ba5867cd3145af1290edd80bb56d4b6d61c6331aa8ef96ae0b85487f4499feaf"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/table.tsx",
+        "sha256": "a4a6972c2d47d465d7f02c1dc4a6cbfeda7a97e46479c1b0cebdaf26bf9b497a"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/tabs.tsx",
+        "sha256": "6f74706bc6b53f9e4bcebb5e7ab8743b616aef181edc7758b8ee905f9b2fdcd7"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/textarea.tsx",
+        "sha256": "ec7c92aaed80f6923a7caa4bfe4eead395b50a7001504fd7fbb0b9381804dae9"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/toast.tsx",
+        "sha256": "99f9f4a3e897f71d89b01c6772b2f5db51b888cecb2c8214fb2c2dbb2b3e6356"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/toaster.tsx",
+        "sha256": "1348f1a1f9820e2f1394b93cecc156a7e22f03636ab9270753985549aae2be74"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/toggle-group.tsx",
+        "sha256": "dba95ead40d163af6959198ded9853a2cc9282b2cb534980f99937a65edf4e2d"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/toggle.tsx",
+        "sha256": "955fa1bb97505b7a8bba3f7cff1991035a9afa0e1113f5d598147e6369dbf44b"
+      },
+      {
+        "path": "artifacts/fawri/src/components/ui/tooltip.tsx",
+        "sha256": "ce6afa34fb9dae51053a863b4c3f7c6e55f3da23b00149f31a8e4402bc963be0"
+      },
+      {
+        "path": "artifacts/fawri/src/content/policies.ts",
+        "sha256": "7297564ca08963652b054994e39074919eba7748ae08a63022bd7dd70ec1fc18"
+      },
+      {
+        "path": "artifacts/fawri/src/contexts/ThemeContext.tsx",
+        "sha256": "9cf35ae6ba54cd8a7249cb56a222a3adbe31d78b72b5f8cdfe6c21312902ad7f"
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/use-mobile.tsx",
+        "sha256": "ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b"
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/use-toast.ts",
+        "sha256": "5aab0623ee24bddf9420c259a23a06996292e38ea70eccbac2715516f6d01a0b"
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/useMerchantFeatureEntitlements.ts",
+        "sha256": "7ac5b4073027ee1ad71c4606fea93f8bb1c9e24dde85ab0d7c17c01a31aa5436"
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/useMerchantNotifications.ts",
+        "sha256": "972619c786d717afd385cba527da0974b3cc9e6e740eb0feaab35fb465c8730d"
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/useMerchantRealtime.ts",
+        "sha256": "aaae1bb32352f51fd5bd5e8762f127d787da68c14bac4412922017eeefe575b2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/activity-translations.ts",
+        "sha256": "a9782515b66362e0cac861e0d262bd6d3a8ff5b8c6f56daf4d1d4e3f003fbb7d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/adaptiveIdentifierInputs.ts",
+        "sha256": "17fbc9e4b308789bbfcbce7d706198b398983c05cd7a6f88df4ebf0060a629af"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/admin-status-translations.ts",
+        "sha256": "f5be6f6f6d82a6bc2b4ffd00f290ba92e2db7dc72f92fd61bd548fee2c76c0c6"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/admin-translations.ts",
+        "sha256": "100d74a7d28eb67bd926fd45df37e90ab3642c03e15e957df2b26a760463663b"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/authClientCutover.ts",
+        "sha256": "e6b1d2e68f0fd608b5735de26ca5ec6419156b40a2ba5c0a340468ab41f9d9ec"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/authOtpChallenge.ts",
+        "sha256": "95ad77a24fc3ea3ceea712d8b8ae809bc5eb5cbc0dfb8b326329440087a1ac02"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierBackupAuthority.ts",
+        "sha256": "b6ce65fb55a9be5443a7f5bce3dd8bb0a23313a82d45e259bf42359c91b91649"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierBackupSequenceRegression.ts",
+        "sha256": "e508a3aef43f66e1c4b7b0ed7d8b566ee56d38445b7f235c9e1d9ec77f4ca43b"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierBackupSmoke.ts",
+        "sha256": "b819958141760a5acea2d678d265946f4f2bd250266304a7b0ea08d40d6b6a7f"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierBarcodeScanner.ts",
+        "sha256": "6a5e4a2c4b710575545cd7b22c5823adf20c27a6d526ada6d78a22d6c55f7eeb"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierCatalogRefresh.ts",
+        "sha256": "1d65d188d0cd9bf1c83a96e5a66ae7af6e8ab3b684a1b6d20d942c56d7ca8633"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierCloudCatalogSync.ts",
+        "sha256": "14cd0d19e68b2489c07e6e90af50c1c3fb210e1cc227a7854523b92aee9f9996"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierCloudOutboxSync.ts",
+        "sha256": "030130452299dec027d921af3e7471e2bf75136b508f5f68e5d3358bbc138160"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierCompensationAuthority.ts",
+        "sha256": "0fa6b16f9db9ab909b77d51e6df013311709eb6ff252e806e19a6ca0314a3198"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierCompensationSmoke.ts",
+        "sha256": "a717288a0f6c5e66897ed811f3723f34628ba6c863ce15f7be037f33496f8149"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierConnectivity.ts",
+        "sha256": "0fa4186b26594299731edd48899ff31d3a775b4692b24e9397409f98c5c2521f"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierDashboardRefresh.ts",
+        "sha256": "43c5cf95433c8afd18b5d73c0306e169dd5d428e074d59e27295272a6a9a36c7"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierDiscountOverrideClient.ts",
+        "sha256": "62e088a46998a12dadbd5926839d90584da9b72937fc410609f22076c2ac5a87"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierDiscountOverrideOperationBinding.ts",
+        "sha256": "0e4ced79f342ec0b9c84eb857abcffd69c7a4982499c411987b34ac44f1a1916"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierDiscountPolicyClient.ts",
+        "sha256": "8ea6b61409116695038aeb4e3d6a3544efadf75d9d9b404a70751f6ffd123002"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierEndShiftRuntime.ts",
+        "sha256": "c785a518367fb32005882283889c6749a5015d3a3b53e13fd8c3982a74d91fc2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierFastCheckoutKeyboard.ts",
+        "sha256": "59f907bcbfa323d879c2a1920d38e2d35fe65ea28be0cb771de87ff79d91a9eb"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierHistoryBaseRuntime.ts",
+        "sha256": "5bcf572e6e919a17790316c141314a7fc8d9ddf69145c05d8707a6d3d28e85a7"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierHistoryRuntime.ts",
+        "sha256": "58fb228f9992b047d377b6b6ea27f022a8e22c57c0281bbd0d7189ca05be0276"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+        "sha256": "5ef693540987a9bf1761c2f741c6a51b053511771606e5f412cbecdd5c36c7b2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierIndexedDbSmoke.ts",
+        "sha256": "b02f065c3442e4d1779fa2374266881710d17dc5a2b3eb11353a529f44b51eee"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierLocalContracts.ts",
+        "sha256": "e60086041d8e3a17f15abc7e2641d0d1905ff9c8ce7e760c4239e39e14b30b18"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierLocalHistory.ts",
+        "sha256": "a063ca86860eca369d19c0299df31a71717703e0beb0dd5ec75ac8c4e1f7f769"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierManualDiscount.ts",
+        "sha256": "fa3d13944576d0b20a19c964e72289c8661cefe98d96661dc41f6f56a5473fba"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOfflineAppShell.ts",
+        "sha256": "3de8bc0bd21ee6ec1d4983e1f597ff85240944eca3fba3ea481e9d818150e639"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOfflineEntitlementAuthority.ts",
+        "sha256": "46a9cb1cff50171e365955319f7a81561175d9d243cf5fe7d7def8f9d26e50a5"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOfflineEntitlementSignature.mjs",
+        "sha256": "61cc8f834843a3f95c8783189e56934be2b668b7b981708c18408867aa33551f"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOfflineOperatorResume.ts",
+        "sha256": "7ad27f183bb23b69bf8358538aca2c1cb41a85ea18cc44b0a66b2141d20a8ac4"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOfflineTrustedKeys.ts",
+        "sha256": "2c718c0f7e95a1574da028f390e8eae5a29e255349fd7b22d730e88400c580c2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorClientRuntime.ts",
+        "sha256": "4cb9f992e8b0e7e340636437000118529d5e712b9390781dfc9f114012893337"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorCloudSync.ts",
+        "sha256": "4c8bad97cc5d4dfb55299e82b29a958aeb2b6d065a1d953f465f920f00762ef4"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorHistoryRuntime.ts",
+        "sha256": "ad110ef3aa81dbc1b8cb522e6cc2db3f1acc2ea24a62624481823c13547a16f1"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorLocalDatabaseReadiness.ts",
+        "sha256": "3957d8907c561993e3b7c11a56cc9b9ded4b7be02cedd3c64fe0f112e5531313"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorLocalSecurity.ts",
+        "sha256": "7a95e0d2d5f81d5cb35c947383b99d09672ed9d60ed66fcc12b90fddf09b9c5d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorPolicyRefresh.ts",
+        "sha256": "f75158648294e511045174bea7e1303bd021adc427b1128c26760f1a92d17039"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorPosRuntime.ts",
+        "sha256": "2cc8d81be4d77b6138e20c35a18ac2fab6f6374d36e5f9564a5b3a2c921d88b4"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorReportsRuntime.ts",
+        "sha256": "dcec77f026535f6a3e6996654e27806423ae4d05a83a782c4e7c9ec502b529a4"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorSessionClient.ts",
+        "sha256": "57a8a13ac4de66431f6f2b10df9bf6278b9673ee7fd9c8349b954de218b45d6a"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts",
+        "sha256": "834c6e6544d886ae7f8a24de714dc3b5a5a262ec3384f4c3a878368367b57740"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierOperatorSessionUi.ts",
+        "sha256": "93339f0fd49246a7efaab8d9bc500bbcb964f0c076a829225633a0fbc8e5de46"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierPairingCode.ts",
+        "sha256": "7513c4caaad902c1f5b9fd4ea02cf9881f8dbdb74df71633a47af45355d0051e"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierPosBaseRuntime.ts",
+        "sha256": "af494b1bd9e95b2d6c28843f1d2cf2491c62e63abf73cc16f9cab1e9f17f004f"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierPosEnhancementCopy.ts",
+        "sha256": "e6ca6e2af7ef32d74f2d565b8cf9e44b034b6e793e67a052d26dd01845b28de3"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierPosRuntime.ts",
+        "sha256": "99b0a2dca84b48d32fb8fde8f43a86feaeea1fbedb0f271c46910af0ac120acc"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierPromotionRuntime.ts",
+        "sha256": "21d0efde9a792f3e3022a62e94611710a1a45bb082f44226d89dad816cfcd7ce"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierPromotionSmoke.ts",
+        "sha256": "d53cf6271a467ffbd8f39e8fe7b17152c1fe95b68de57a93f8c18a6364deb43a"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierReceiptPrinting.ts",
+        "sha256": "31aac50f765c59100d95c19e5bb294bc3815d82be4e7d45b92266af1a7fd536d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierReceiptProfileClient.ts",
+        "sha256": "7205d7e0612ac7661d8538ed6905ade0d52bab027626705ebc7687bc60f59cb3"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierRefundPricing.ts",
+        "sha256": "76394266050e19b54ce145e92110c9cd9fe760eba2c631c173a6a377ced249e6"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierReportsBaseRuntime.ts",
+        "sha256": "92741f87cfed5068e4bb233a28b24d37f483c6049ab3cfd72f8d93b442e04fdc"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierReportsRuntime.ts",
+        "sha256": "1d52413236a4e3308113770445232feb302ccb372e1b755804121e736c38c9f6"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierSaleCommitSingleFlight.ts",
+        "sha256": "36929ce48e22774147534ec7c8803098c79ee20dac2718d41c00c4c9c6eeb2ec"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierSalePricingRuntime.ts",
+        "sha256": "3ae9ec35dfb36089ededd7d0a5d3f6de71f4134262fa8c4ae24e5c6b04c64c9a"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierSalePricingSmoke.ts",
+        "sha256": "c0ead07e39b95d602fbc164413e8acdd8c67c688e34e405d7fe2607ce78ccec1"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierSalesReportRuntime.ts",
+        "sha256": "cc838809fe7a43e7c49ed2816e910ad1374d8850ee6d92002e908351029b9ee1"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierStationBindingRecovery.ts",
+        "sha256": "bcd541fe14a6e8b19d25570a07171f6f9cf1b4bc4f268a6af9a4f1306df127c9"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierStationCreation.ts",
+        "sha256": "bd701d1d6eb9ce1b55c86752816da70aa93ef3d17782910dca830d2d2b2ff78d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierSyncUiState.ts",
+        "sha256": "51e7e968a8df0b048e13be55cd9511646995616bf427ba0096d1b5127b9461db"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/cashierUiCopy.ts",
+        "sha256": "a285ca4710f5e0c74083582c2af1b9bd9c5324404e7411e041b7838818b1eb02"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogArabicServiceGoldenGuard.ts",
+        "sha256": "4574d08d25ab9d7190f774634d8ae1b0f95ed4b22a5c549608706082864f8a34"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogDetailsTypeParity.ts",
+        "sha256": "f39a977c6579ee080786a885c517796bd8b4646ba28af95d1f5c8bbf96dcf292"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogEditorArabicFinalSemanticParity.ts",
+        "sha256": "148851d1f29a68427f8cc199a25d90da94efbfd60f95147bc11179b0c3337b4a"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogEditorAutoDirection.ts",
+        "sha256": "4347abfc1b24db2f81bc775190eb8091f20921527fe8110a4ed648c1f6c31550"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogEditorEnglishSemanticParity.ts",
+        "sha256": "80a7f4e4493b4cc070ada5943c9dd3e8af64d73e78da8e5f7701585cc659275d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogEditorRecovery.ts",
+        "sha256": "3b2cc48ef324323e8f99f2af7db5c4eab2efab576742043207483fb70e343e8f"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogEditorSession.ts",
+        "sha256": "0d2a1cd52c7f6a3829421bd829115d07e9bd1f4089a87504e8b69090b85a7754"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogEditorSoraniSemanticParity.ts",
+        "sha256": "eb351f03de1dea1b1a3b6120de824879ec1d433ab3a434482c875d5aa65b66cf"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogMediaUiApi.ts",
+        "sha256": "1e01b2e73cfeb7c5e391c2aa4544f2b9a24bf8276775b4f7687ea5162c89f189"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogMoneyFormAdapter.ts",
+        "sha256": "3d76b66e6077148859028e8725f7863016a2f64f02bc68ea9cb9e9a19c4d6456"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogPriceRange.ts",
+        "sha256": "1a342ebd8e605c2c3f0afcd12f8a0a9ed19554f7f4799cc6565f70d9ff155737"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogProductEditor.ts",
+        "sha256": "fe65ccbc319dd0fe061e5144cfe5402295e837df815231d6e6ae69363063a894"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogPromotionUiApi.ts",
+        "sha256": "e54f1021b079fbbcf65fdfad9584c7830c420175c579648e9a652372b9c28535"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogUiApi.ts",
+        "sha256": "2a3eec03248400c7444bb59c37fdf19646ca8668720562d2596d8821a06fe7b5"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/catalogVariantMatrix.ts",
+        "sha256": "256b1e0ab94fe1a464a04a8c8ea557679c76d228599500105d8fb4762a1f195b"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/conversationSavedAnswer.ts",
+        "sha256": "fc2dc2aa1a2cec7cb623df990c47daba7120a2fefc2ab684e9e8b209e7f9bc54"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/currentSubscriptionAuthority.ts",
+        "sha256": "bc7a55f68c2d874cc9bceef79dd531770c23dee39ba20baafb57ffc7335f9324"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/dateTimeInputMask.ts",
+        "sha256": "090e4871d7cf61efe579f2f35185f7bb30f0868c282613058eecb0b3eac6c264"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/earlyWarningCoverageCopy.ts",
+        "sha256": "246d04e9ba5f57f240c90f6244696476390e034cbf21bfb2af905f64feb033e5"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/fawriUiBaseline.ts",
+        "sha256": "bca241393d4682ade7c1eecdf0edfefb716811f6450f14c5d49a3dfa949f9fc0"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/i18n.ts",
+        "sha256": "23aa1e27629a23f81ecafd3d2d7588b255e43258c023ad51bfe6ad951627e287"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/i18n.tsx",
+        "sha256": "441dbf2a88fb2974a92e26645cb7bb4a8304d49cc91e4ca742e6e69fa91598db"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/internationalPhone.ts",
+        "sha256": "2589f0825bf9e28c692a791535e5e2ec262230b4b19741cc89ae192f0bd03efc"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantLifecycle.ts",
+        "sha256": "9fc39de183ba05694cc3f4684abfa76ec21f3a28f1737179727ef06243896c46"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+        "sha256": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantRegionalUiApi.ts",
+        "sha256": "84b5acffdb4d8b049d15c6580042ac36fd7192f7327780dc33893818a1ff7b8f"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantRegions.ts",
+        "sha256": "2134765a8a523d6077a247fd2d5fe067fc4e4f6dcb2a34646e87f3ba60d503c9"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/moneyUi.ts",
+        "sha256": "a4e351752206ff7b4dbca752b57783b05269ef7482ebc1a7ae8c827ca09bc410"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/orderEngine.ts",
+        "sha256": "421dcc411d272facf27ed3932a3140b4fe37b0770a231a8f0326bd1745c9f78e"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/ownerRecoveryCopy.ts",
+        "sha256": "1ad15d88f6c889fb4089633df3acc6de243f2a48a795ec2dd6e8fb4327831f88"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/passwordReset.ts",
+        "sha256": "6ff30fe85f95c25cd560867b0fcdfab8c8c3042e9914beb89fcbd56ba73490ec"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/receiptReplayClient.ts",
+        "sha256": "681ea7b65bcf9aeedc66d524e8f9ef4962b605d0957931bcf93e7211e55bae10"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/reportWorkbook.ts",
+        "sha256": "f863f9db571fda8d23779773b249d84d751230e3cb292b250f9c44c2dfe01af2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/store.ts",
+        "sha256": "5e2cc0320d379edbfcd3fd69eb60fbbdf20714bf7a8e1b4ffe4d9a940f0e2d30"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/subscriptionStateMessages.ts",
+        "sha256": "31aca312b948c025376897aa555254920edf389b9ed5b3894b16de71a51612ab"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/supportedMerchantCurrencies.ts",
+        "sha256": "c51397367a8a6c1dc9c25099b311a0a3515e00a48ef0ee6c2524c7b6bf47bddc"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/ar.ts",
+        "sha256": "87d8d50de8aa4d9aca6e56cf720bfeb15d31a0d8776103c449d6c3cec531bf86"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/commonUi.ts",
+        "sha256": "d944fc0cfafa5a9aaff7f85bc480736b47bbefc2860e156e6048e441fe2a8834"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/en.ts",
+        "sha256": "189f9bbadc6245bff702eaaedd667d9460289d20d31052412fd93f565e7f5cfc"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/admin/AdminCashierSubscriptionControls.ts",
+        "sha256": "0daf0094a1a0765b897f88ffe47a2df528316a1aefbe92c6c762b5e0ff206170"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/admin/AdminSecurityActions.ts",
+        "sha256": "5abaae5e4a448006620108ec0a41745f85e0b27aa8dd35051ca43a2117868c37"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/admin/ReceiptReplayControls.ts",
+        "sha256": "268f5bbf3e9c3aeb0768dee46a0d024bcf1e47b2daa3036453e77542028a2a3e"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/admin/VerifiedReceiptReview.ts",
+        "sha256": "6892219966f6e455cd09328dea1ecf0cf44444f6dda918a492d8843667d08e1d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/catalog/catalogDetailsTypeParityCopy.ts",
+        "sha256": "7c9845108a62a4e8352896827e7cc54eae510d129eb9aa3c4caa7c88aa7cb6a7"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts",
+        "sha256": "6d8825650abfb1cbd05be5fbedc93ad5d94f9cc2e085e759ad2417c6731e5b5b"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/catalog/catalogProductDetailsEditorCopy.ts",
+        "sha256": "d47033ee34139192b859ae2d0a6cc08a95366e21e491ebc6af9ba205a561ed6d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/CashierSubscriptionPanel.ts",
+        "sha256": "574e54b18b475ce2b96fcef9de1b9bf7e2b2de704c451db4d69a5de70770e7d3"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/EmergencyIncidentNoticeBanner.ts",
+        "sha256": "a21f9e2576edc4cbcade02da3725a59721fef4c4755fbe62f11070493e6c4916"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/admin/AdminSupportTab.ts",
+        "sha256": "5a44e8cdddb214d25976214c902cd4221d754cea5ffde9786edb7f5ac4ae8651"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/admin/AdministratorsTab.ts",
+        "sha256": "a14260d1f91e51bdc0a9c5ec7187e11263e5e7735bbb3c94d69f22e24617c440"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/admin/AssistantPasswordResetDialog.ts",
+        "sha256": "e8471e771fa9b5e50bb7e06c90b87c9bc87ffddc7f5522aab90c0eb3563bab0e"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/admin/EmergencyReadAccessLauncher.ts",
+        "sha256": "4b8a89474b9d8c7eb419cc04d311f927de7fe771f001e0e01d980389fdf2a0b2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/admin/RequiredAdminPasswordChangeDialog.ts",
+        "sha256": "0906c56f8169f76896b8957037a62d82235526c1969f193b38a66631164bc7e1"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/admin/SupportPreviewLauncher.ts",
+        "sha256": "a1e26e33ca85ccd2e543b1939eb2d5bfc21bfff5e19343c3091ef7e243d4b041"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/cashierLanguageSwitcherCopy.ts",
+        "sha256": "51857e5b7bf5301ae056891ecc9b02b40e8cf72c5aa06278ec4e51601525433c"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/reportToolbarCopy.ts",
+        "sha256": "38c08d4a438054442776da35a261baa5cc4a269d76ab914bec8c33127e0be9d2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/support/AdminSupportImageButton.ts",
+        "sha256": "50b7c7935d815c158d09be26ed9d43e8cdeba0e3ba3a1ee62eac8477d25988bc"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/components/support/MerchantSupportImageButton.ts",
+        "sha256": "55b375b241ba1e062f593bbf2484f72cdc738f2dce8167f2d3b2ee56c1c8b755"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/content/policies.ts",
+        "sha256": "c5ea820085f06fc66f5815f0eedaaa579eeb8989e3182f03a02fa598b25c4b08"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/lib/activity-translations.ts",
+        "sha256": "44158d9071b0fd91c99bb1de8377c3592fb548841bd9eda6852e8de1dd62a4c0"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/lib/cashierPosEnhancementCopy.ts",
+        "sha256": "b7a5b64d10e953c0f9a3cce374bf978b9dfdbb613c2c37e9663b441cb17d8f9d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/lib/cashierReceiptPrintingCopy.ts",
+        "sha256": "95d9e88afe92c0bc36fccaa52f2f13d65e26434ceb9c9103a6e4b5eba506855d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/lib/cashierUiCopy.ts",
+        "sha256": "4142b86cb0ca04e57e10cb3ee3609c075b7b5b8751853b0da92c43375fce1492"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/lib/earlyWarningCoverageCopy.ts",
+        "sha256": "8199c4fd7576ca129ea76ac38eba0908237e98156adcdab5e946c7b6c4bbdc9b"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/lib/ownerRecoveryCopy.ts",
+        "sha256": "e35db21a0288f1c7fd46a127570210e4e688ce9a5b35ea6afb3343dccdd532d0"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/lib/subscriptionStateMessages.ts",
+        "sha256": "b73d0245b88c32e65e00eeab6001c6dcd9d8a0c177511589b6ae0b4c713310e4"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/AdminEarlyWarningPage.ts",
+        "sha256": "256d75a91859e5ef12b8f7acfb4c921ca2fe9e95ee004de1fcc0580b5df841e8"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/AdminEarlyWarningWorkspace.ts",
+        "sha256": "63a5f536e40ae974470513c10cab9142b753fa910d5c19afcda8f0618151927f"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/AdminEmergencyAccessPage.ts",
+        "sha256": "777fccdcca774d13c6f928d8aa827957c19db821802e7e9a4a2d4dcaa193bc0b"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/AdminEmergencyAccessRouterPage.ts",
+        "sha256": "7ac5c83bbdcd16365196fec01e3adcd299a0c663a2ecc99413d8ce49c664ac95"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/AdminEmergencySnapshotPage.ts",
+        "sha256": "ec43be35845151b57ba7d752a6dad06f0be646dacb92e714acc53f14661c47ef"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/AdminPageShell.ts",
+        "sha256": "94276ff607479fc610e985364951f92ab5b7d1103c00f8fc09ca9d93f1997b87"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/AdminSupportPreviewPage.ts",
+        "sha256": "d5be493b47575d955d47780df958f912e074aa513e206151d154b31c5d814e71"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/AdminWorkMonitorPage.ts",
+        "sha256": "73c108f9cdad75b0cd873596d47941f48a72b30f3c4fa139eb8d10d30ba4dcb5"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/CashierIndexedDbSmokePage.ts",
+        "sha256": "4f38132b296a3c2f0212eae9c90dcf487d84b49a4a2838d747a3a3992174c72d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/CashierLocalShellPage.ts",
+        "sha256": "9df67c75ab2262fe771ab75c2a35196ae61e3cf78fa672a50dcbf1251f2f9ae6"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/CashierReportsPage.ts",
+        "sha256": "74d5682aaf0606fcffc5ff502da0ee276767719a0794bea28835d924e40843f8"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/LandingPage.ts",
+        "sha256": "eb0917f426bd821f2e70d0d161bbc9e4a2fa14ccb4e0a118c2afc3dc065d4e98"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/LoginPage.ts",
+        "sha256": "544d239104ac1b8eeef978ebd13c9cf1d2bd32dae17dc46f21235d74f8f2e6d3"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/PendingPage.ts",
+        "sha256": "d032b76d4245711ea37280b536dcb6a8f495d3fe1a017f2b501069ff498113b2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/ProviderCostSettings.ts",
+        "sha256": "d796860725256df430f525b5025a571d047a46bb18c63fe00e6f79c6a9a8d590"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/BotTrainingPage.ts",
+        "sha256": "c5f037faec830b22f0744a2049e61de986da64271fbc931ed71be43b2aeeb44c"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/CashierCentralReportsPage.ts",
+        "sha256": "57d3dee37a8b9f4ff899c6ef82ef60f903bcd5c726a9f417ba53c4da1119ff32"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/CashierDiscountPoliciesPage.ts",
+        "sha256": "70d57b9f070c4a90a6315583bb56340fa89f45393f278e109fbd0d61dfc1219a"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/CashierManagementPage.ts",
+        "sha256": "b4b09697cb2bbc894ad693ae78271880cff0a78dbc4c88a9224c448045c37d46"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/CatalogPromotionsPage.ts",
+        "sha256": "de6f51dfaf0e72f989f0ecfa37927556f4e627861a168ad5a099f0e8bcc2ee83"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/CommerceCatalogPage.ts",
+        "sha256": "05e29fec67732835c5c984bb5582b2b6e197ebfae19cbf220cd3c197f8e8aece"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ConversationsPage.ts",
+        "sha256": "64fe58448ed8048b831632bc3e3a7cf5f54e01b39c7f7fa8100d244f0566d1e3"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/MerchantAccountSecurityPanel.ts",
+        "sha256": "1daa19306ed01e2bdc4d54575af0c54d36c294f9f55bb3b6157dd17bdc589cbe"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/MerchantSettingsPage.ts",
+        "sha256": "aa6d47b89969d480fbd5c21982c65564e7f0615c1d328805d8b8e402f4e9669c"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/NotificationsPage.ts",
+        "sha256": "a1771041a11041fa18a51cbcdb7d0638bbd0703aa413d83efa2b1446ec2af4ab"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ProductsPage.ts",
+        "sha256": "7cd752417ecea49b9f67e7d10d7d9806c0e5a96b6dbdb6326b4945f1f68c804d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ProductsWorkspacePage.ts",
+        "sha256": "8242db53cda0a5d60a8088d2f014f8c95a9b7eef1e0d69daeee933dfc3d78c71"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ReportsPage.ts",
+        "sha256": "2b6bda1481a900f430bea3bb54364d91bebd6a2cc6551a25f6fbb656eab82a4f"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ServerChannelsPage.ts",
+        "sha256": "a0a2626282bd6def58a0459383acd824e64dec293b3ee4a2b7e02f89a35903e2"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ServerOrdersPage.ts",
+        "sha256": "f0db5c2e953d984d29e6d817576fcd698fd393ba7567aabfcd719f73f36caa24"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ServerProductsPage.ts",
+        "sha256": "51ce912fcfab6434728935c2c5f5af3e52b36f2d5e7bc84c4e027a4ab8aae587"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ServerSavedAnswersPage.ts",
+        "sha256": "0213f2e558030c4380982b7c9806b751bc46611c5e1dce8df48096e3538fa00e"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ServerSettingsPage.ts",
+        "sha256": "1343369863e613a599cf167b5ecb6ba733aba5d5776d8b006a84120d0e7cc930"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/ServerTrainingPage.ts",
+        "sha256": "307f9333352ebb42ea3efba422f4e459a2ef914a0b35970d8217760acc7d8f89"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/features/pages/dashboard/SupportPage.ts",
+        "sha256": "4ba45003385a811082682849f5bb50cb1b27791c92b511bc10e22b1365fd4c1c"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/ku.ts",
+        "sha256": "2731713a397867ac2e0418cbe9f06f62d1d192f0fce906047b5721cc9fb8a5de"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/translations/saasBilling.ts",
+        "sha256": "760492f8f5e16668b8f1a29a65c3fcaf7b965b37039991560e58783375136e55"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "sha256": "f4cbf18d2bf5c561c5e3fc30a5d83091dfd2d0991aa173cf287564afe3537c45"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/useCashierManualDiscountCheckout.ts",
+        "sha256": "59a617668e02896057d1b339bdb467dda6d3b1855342628e5c4ad58a329f7423"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/utils.ts",
+        "sha256": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/validators.ts",
+        "sha256": "49129d373fcb90e12ea1ed990dff56f911031cbc39b30871199c33048940d02e"
+      },
+      {
+        "path": "artifacts/fawri/src/lib/verifiedReceiptClient.ts",
+        "sha256": "324d968a2b6dc2577a0d5f16b91e226bffbc3956571b67d577e786f1888d23dd"
+      },
+      {
+        "path": "artifacts/fawri/src/main.tsx",
+        "sha256": "7464bebb2fbb6d77c6b5d6c3b33a0e5bcc07cfac1ad28b84754687e28f188877"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminEarlyWarningPage.tsx",
+        "sha256": "599268c16d4cc598e8b0b14a9761ea56fdc45cfff5a18532d5f929460931cf38"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminEarlyWarningWorkspacePage.tsx",
+        "sha256": "d8a8f936e7a12efb9688a09d690d70e9dfd98d893a23acf0685209e6b5d286d8"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminEmergencyAccessPage.tsx",
+        "sha256": "1fb77b63298810a4f30cc466711b0b733bf4e3cd0beabb6165fb3920433fa9cb"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminEmergencyAccessRouterPage.tsx",
+        "sha256": "5b760856afb948a308b8269b2fc66fd8290f063b024cb1e2cb848982f3441f1d"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminEmergencySnapshotPage.tsx",
+        "sha256": "cce09c31da2a8c94498b98892f390a4f1a03430fc3257225a15082d3f81a5174"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminPage.tsx",
+        "sha256": "79ec2800e6d600497f235dc2f9d505ebe78115d370a7eec7bf69d731c3607e92"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminSupportPreviewPage.tsx",
+        "sha256": "655bb4a8a68760dd46204664c3062d62b5c67db75b7daf37c86eb86a9125db20"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/AdminWorkMonitorPage.tsx",
+        "sha256": "fa3f987f6351e9dcb2b04f3d3052412105cbeae7acb8dcb65aed9f94e26f5b9b"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/CashierCatalogSyncPage.tsx",
+        "sha256": "ed295e80c2f04409c1263fa7ff78ab3fdda23a523a386e8f51784fa6e64f78e6"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/CashierHistoryPage.tsx",
+        "sha256": "f4b1eaa1ea3e0c563ff782077a33da37f8d2db31ea06aad200f8616202a34127"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/CashierIndexedDbSmokePage.tsx",
+        "sha256": "e17f3a3acf0ddc3cea2f9eca053c702120ebb99dccd7982c3634d63cf44a4505"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/CashierLocalShellPage.tsx",
+        "sha256": "2c72d784b6d332744a65c28aa51a39348d04120261be1d4b5b5f1143344a17ce"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/CashierPosPage.tsx",
+        "sha256": "8897ea1e8d9d31d739b714c1a050701b867a1ab9c5519480256ed01a757b9802"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/CashierReportsPage.tsx",
+        "sha256": "a5683d075d58795f1e4c8333af61b4363944b64902537caa6f2d365675ab2d33"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/LandingPage.tsx",
+        "sha256": "ac7f6713de1a57ff6d99b7329f12680aa632ee0b33ca39125f1b92efe1901999"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/LoginPage.tsx",
+        "sha256": "0bf458d6e63f9a55e003d105380a535d7a2dddbcda3d1dfbd668387c53ca313c"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/OTPPage.tsx",
+        "sha256": "3e2ab42a9e53313e720b4f94753a90e69aef51f22bb923bb3efbfba8eb4ddb4d"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/OwnerRecoveryPage.tsx",
+        "sha256": "d38d584950648f0b88fe10d6f49c90561abbe023d2bc94810fcad81b95dd48d6"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/OwnerRecoverySetupPage.tsx",
+        "sha256": "5bb9a936d9674f5a53c2d9798181b1c28e6e19ef0c189a180becc9ba98d14770"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/PendingPage.tsx",
+        "sha256": "e63cfe37e2931facc626ec08a9f6105c3854affd7441feb7fca8b21f56732d17"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/PrivacyPage.tsx",
+        "sha256": "3907852c2e10e1c7c8de772b841411b6b02c0924ea9f56b51a12dcfdd8e3e47f"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/ProviderCostSettings.tsx",
+        "sha256": "8ba63b433867db53c43f07f3cad8b26af5341992bd84b6f1c26fe96252fe6d87"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/SignupPage.tsx",
+        "sha256": "417c15175c57f52e739ef6f8aa2738463dffb58a06c91d3ab361f76d74ee5114"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/TermsPage.tsx",
+        "sha256": "71f2416d54735c763d33c1a5047ccd37f936e3a16ad590005f741dc4751b3e19"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageDialogs.tsx",
+        "sha256": "dc6f74304a7908dad454db85fc7262f94a1c05ff89fc833d9e0bab9a709902f0"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageParts.ts",
+        "sha256": "698f3865ae53f32846781189feb5d24d69fe7273b7e13072c6e4c93d6c371a56"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageSections.tsx",
+        "sha256": "7ab937f85fab69a302099805c11edd942fa2b619d8c179fa4a8d4414782e65a8"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageShell.tsx",
+        "sha256": "69e95ce49ebee2965f44487fe3554bbcfdfabf563fabc5159d686cd5ea33d47f"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/AdminPageView.tsx",
+        "sha256": "32f0ebc7f278a1237fd93484aab932678e8334dc555e07219f5dce2d6869ca20"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/admin/useAdminPageController.tsx",
+        "sha256": "5fb364210dbee1fcb004e1b7844bfeb01da7bada50ccc7bf15c22e0ac4cf56ca"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/BotTrainingPage.tsx",
+        "sha256": "c360282a02a14179f9d3feee321a5864126221bb89b7832cf029f44408d523bd"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/CashierCentralReportsPage.tsx",
+        "sha256": "4cd4cb4b2e595ed582515c6a08fd9c4aaf51df8966bfb8001a33513b7c0780f5"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/CashierDiscountPoliciesPage.tsx",
+        "sha256": "7040f93a6c17e9b6c58594da7d3980a4935bb7d129a20db12feead6f67d1cf9a"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/CashierManagementPage.tsx",
+        "sha256": "040fc557eb7191a9ebacddf9fe604034902bf2845b3068a8ab6f74abfaca4ab2"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/CatalogPromotionsPage.tsx",
+        "sha256": "114c781d705af94e336a8b9bfe39312ef42665d7dfc8d22e9b91ecab81b769c0"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ChannelsPage.ts",
+        "sha256": "95a2289f26fd8a2d102b609ebb56d991132679aa9bac8f553d6f6c430e1d19ef"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ChannelsPage.tsx",
+        "sha256": "95a2289f26fd8a2d102b609ebb56d991132679aa9bac8f553d6f6c430e1d19ef"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/CommerceCatalogPage.tsx",
+        "sha256": "3a28a2d82780e531254ac58a794da28c147efa328ff4fce0ff4ccfa5dbe0c3b8"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx",
+        "sha256": "0fb9da2fa2309040bd453fc06854ae7006cd5067ca5e39880efe3e8818d4926f"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx",
+        "sha256": "4a87991cf17b2670f374f19a4f0b8d926253313e6af5d2977a3907b14872418b"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ImportProductsPage.tsx",
+        "sha256": "e88faa6a20dce03d71e30a3c63a13a62ad8d640b731dbb47e2dc7c6a2cfdde69"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/MerchantAccountSecurityPanel.tsx",
+        "sha256": "595154be1a66323743804a6a9fb983bfc5a248bb17098e33122b76ad032c1642"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/MerchantCurrencySettingsCard.tsx",
+        "sha256": "5a16f3a98dcfdbd3eddd42d702949a61192b8f6e62f898dbef5a7e5be8d3ff90"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/MerchantSettingsPage.tsx",
+        "sha256": "abf7dcb72272d70853a6800e02bf883f5d925ed7b059e0e954e7820e42e9e0a6"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+        "sha256": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/OrdersPage.ts",
+        "sha256": "94ca30c58bf8397f8c9fc40795eb1e2366532756a512bb62ddbc4c2bed6c48a3"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/OrdersPage.tsx",
+        "sha256": "94ca30c58bf8397f8c9fc40795eb1e2366532756a512bb62ddbc4c2bed6c48a3"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/OrdersWorkspacePage.tsx",
+        "sha256": "24d059f5925e26dfffd933f33509e8ff4934ae2cd304230bb18ea0c474465ccb"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx",
+        "sha256": "2f351532391a577f2c39232fef745077a5ad0a3732d4c6998d2c3315f4fde4de"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ProductsPage.ts",
+        "sha256": "26d6a52e618885a4301c8720c723d919ea56cef8cd8d821ef2c8986ea4c29edd"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ProductsPage.tsx",
+        "sha256": "9109c64d1581db51e7f5996d94b351828f869d6f4eeb233ed8cd3baa5bc9ffbd"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ProductsWorkspacePage.tsx",
+        "sha256": "79bc6c7bd458787de6010445ed983c240dec459e4708ec5b2acf7a3178951054"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ReportsPage.tsx",
+        "sha256": "2d59ea66487f7490a20d709f8d53b94e8d8c4cf0ac7daa1ddf0d41a4ddcdbadf"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.ts",
+        "sha256": "0508302a9bd4a6f452fe9bddcf39bbd4fabfb83bbf1557ccc91cdbf7284456c4"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.tsx",
+        "sha256": "0508302a9bd4a6f452fe9bddcf39bbd4fabfb83bbf1557ccc91cdbf7284456c4"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ServerChannelsPage.tsx",
+        "sha256": "b9d0485f90211954b015dd523a382a1b20babe17e7e30b84f5cf2e94141599f5"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx",
+        "sha256": "960806a9692a8a952b1e16192620fc1a04cd27f7acd90e8db97b5d2fbd785d92"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ServerProductsPage.tsx",
+        "sha256": "8e327e250ffab326f6f7e888ad20e9ce83a5cc4d4d31fc511ce8fac001f7bf8c"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ServerSavedAnswersPage.tsx",
+        "sha256": "e7cae59706393cbd4c5fc54415e2eb216d9e78f8f38eb5b89a7b836ad3e58f0a"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx",
+        "sha256": "5afbb6405ffc4da68e17485aaf352ca97a0864a1d0fa83f6c6c4fde4904163fb"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/ServerTrainingPage.tsx",
+        "sha256": "c17f33ce1e7f8e53968b17e0b490795bb5bfcf19ef5310710261a960e823bf43"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/SettingsPage.ts",
+        "sha256": "d64e43687329bccbef14ccc892882eeb5fd18bdf335e2303fc0cef064392a497"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/SettingsPage.tsx",
+        "sha256": "d64e43687329bccbef14ccc892882eeb5fd18bdf335e2303fc0cef064392a497"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/SubscriptionPage.tsx",
+        "sha256": "28f9ea9395d5d9a06a9dc7cc902cc43a71bdbf4c7f2da81a639c02bf8a40bf92"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/SupportPage.tsx",
+        "sha256": "0c93fd3b82eb9dc499d71a505a36b2b0bd59c3b5bc793accd3c2b22b0cc87d15"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/TrainingPage.ts",
+        "sha256": "eec476623ce50d20e9c3915903abb70721cfb9358f21115fd266f6fd432f478d"
+      },
+      {
+        "path": "artifacts/fawri/src/pages/not-found.tsx",
+        "sha256": "4060bf43a6dd3584f48b1776a9666e186c9a685dcee292a4fbe150869febe0c6"
+      },
+      {
+        "path": "artifacts/fawri/src/types/order-payment-compat.d.ts",
+        "sha256": "43af7802fb59175a262fae8d49bab7d794a2195cdd58276356c57b0a9690b108"
+      },
+      {
+        "path": "lib/api-client-react/src/custom-fetch.ts",
+        "sha256": "3a5605ea89571cca7ea9412a230a40954e3a3f1d94d7a566271480165bf5e03c"
+      },
+      {
+        "path": "lib/api-client-react/src/generated/api.schemas.ts",
+        "sha256": "bd64c08dc0f6903c3772e47a45cc9377134f9f4f487f6da44c8566ff15553704"
+      },
+      {
+        "path": "lib/api-client-react/src/generated/api.ts",
+        "sha256": "423cea17cde55c1d6e71dabf895eae1a642a67ec8f2c25c61b81774b11301c71"
+      },
+      {
+        "path": "lib/api-client-react/src/index.ts",
+        "sha256": "7974b36e3973a8d0c403589bcf8d8aca7547c5c42c4b73924d05f49de18809e5"
+      },
+      {
+        "path": "lib/api-spec/orval.config.ts",
+        "sha256": "3d5a20f7797df837d489d75305ca3077578005ff7dc39e246b0d91c7d38998b4"
+      },
+      {
+        "path": "lib/api-zod/src/generated/api.ts",
+        "sha256": "6b6aa678b57b6caf2fd5ea1fd7d86b406692e6638289aec86673726d2ff420ae"
+      },
+      {
+        "path": "lib/api-zod/src/generated/types/healthStatus.ts",
+        "sha256": "66125eb3e9e326184ebd0ec35989e27b922aced0dc1af5161bf54edc37ca98e0"
+      },
+      {
+        "path": "lib/api-zod/src/generated/types/index.ts",
+        "sha256": "b2a68143b350052472122dd05c7a2f14adfb460e37b1aa2a5c6b43523dfb4abc"
+      },
+      {
+        "path": "lib/api-zod/src/index.ts",
+        "sha256": "effb7d33b5df99004c9b1a840944516ca3ad65cbcd3ae2fcc717c505814ce039"
+      },
+      {
+        "path": "lib/db/drizzle.complete.config.ts",
+        "sha256": "e3505332596f6dc5693a7b22ebf1f268476cec7b51539684e2dffaeadf560ad3"
+      },
+      {
+        "path": "lib/db/drizzle.config.ts",
+        "sha256": "b5fc9b35fbe935b92c410d4216e1b559aaf9e54a1914ca88f8d5844cb5303762"
+      },
+      {
+        "path": "lib/db/migration-stages/0002/channels.ts",
+        "sha256": "c080e323857819e95660a022b1058f2a5e162f9c1ea0f3c9a7b3eaa6a7cc6100"
+      },
+      {
+        "path": "lib/db/migration-stages/0002/jobs.ts",
+        "sha256": "6d6673be5b6620bd9c0cd85381e16ad1f65a4f3bec16312e82ab4d156d825ffc"
+      },
+      {
+        "path": "lib/db/migration-stages/0002/knowledge.ts",
+        "sha256": "a4d0bee00c21c83c6111a23adc0d88d17d2e63940a34837eb21734a6e98fae52"
+      },
+      {
+        "path": "lib/db/migration-stages/0002/sessions.ts",
+        "sha256": "05fdce734f302d10bb5ba119175f33aed499e99fea7976adc14a086e18c9fbc5"
+      },
+      {
+        "path": "lib/db/migration-stages/0002/subscriptions.ts",
+        "sha256": "12c2d23b8eb71305d60828394f53c7209af7e172e2ea1383c8df7467bfeb4f64"
+      },
+      {
+        "path": "lib/db/migration-stages/0002/tenant-security.ts",
+        "sha256": "bf7e077bcf22a5b2b2455577a2d9e786c567abb8138cf8cceb78f144e21e6072"
+      },
+      {
+        "path": "lib/db/migration-stages/0004/preimage/catalog.ts",
+        "sha256": "37343325f427123a781b2649073ed3c6056f9c56a2ac4f38ba79158714df22f1"
+      },
+      {
+        "path": "lib/db/migration-stages/0005/preimage/catalog.ts",
+        "sha256": "a87ba90540ed9942260bedb87922fb6d4e7bc3122ce2a11d9fc0477024643970"
+      },
+      {
+        "path": "lib/db/migration-stages/0005/preimage/merchant-settings.ts",
+        "sha256": "ecd230004c52be8d3b1160c6fee8a4a40ff9a7bebe9b69f899c959ab3dbb2c3a"
+      },
+      {
+        "path": "lib/db/migration-stages/0005/preimage/tenant-security.ts",
+        "sha256": "88384a27b9e98fd7b05c4f0291dabf634fc66a596a2ac170f60f12f1ee731ce4"
+      },
+      {
+        "path": "lib/db/migration-stages/0006/preimage/index.ts",
+        "sha256": "f8938346584ac3797f65c253902e5681f0b91c38421ed2136189146abd34f148"
+      },
+      {
+        "path": "lib/db/migration-stages/0006/preimage/saas-billing.ts",
+        "sha256": "a062950139c480d82845f154fde43367cbec3dd294129511c3634588e086bab2"
+      },
+      {
+        "path": "lib/db/migration-stages/0006/preimage/tenant-security.ts",
+        "sha256": "4fcdc2c2f84485ab928a2bfa1f6bea11994bf807fe471f25133a6799f6e38b45"
+      },
+      {
+        "path": "lib/db/migration-stages/0007/preimage/orders.ts",
+        "sha256": "893515acf09a6a89e24eb1d0a10752d2cbaebeacd836b19d4504ba44c25739d5"
+      },
+      {
+        "path": "lib/db/migration-stages/0007/preimage/tenant-security.ts",
+        "sha256": "f3403137a6581e8fdf1cb36647aa91161adb8676d608f58c0a00bf20dd6861ff"
+      },
+      {
+        "path": "lib/db/migration-stages/0008/preimage/auth-security.ts",
+        "sha256": "5e97f3a12779793cfde0c3a459c4a4aab4e15631713d6057cc07373143e7385c"
+      },
+      {
+        "path": "lib/db/migration-stages/0009/preimage/accounts.ts",
+        "sha256": "3669faacd39a5542859eea2952d38b5640258e90864150e63eed0646600764e3"
+      },
+      {
+        "path": "lib/db/migration-stages/0009/preimage/index.ts",
+        "sha256": "66f37e20ec3ec15c39445b2c215686bc19ecfd1f19a43d8ecfceed0f69b4dc73"
+      },
+      {
+        "path": "lib/db/migration-stages/0009/preimage/merchant-management.ts",
+        "sha256": "51f4bd33e2ddc9a896f0d6a8776fe39a7c96cbad6284bba04b3532a920451876"
+      },
+      {
+        "path": "lib/db/migration-stages/0010/preimage/index.ts",
+        "sha256": "62100d57cef41d24a89ea6c0191e0375ffd1656abc14793542b584667ddee9ba"
+      },
+      {
+        "path": "lib/db/migration-stages/0010/preimage/provider-costs.ts",
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+      },
+      {
+        "path": "lib/db/migration-stages/0011/preimage/commerce-promotions.ts",
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+      },
+      {
+        "path": "lib/db/migration-stages/0011/preimage/index.ts",
+        "sha256": "f0b45a9173c50f1db74c727acebca480a751f791c241a9cbc9c7bc1ace72025e"
+      },
+      {
+        "path": "lib/db/migration-stages/0011/preimage/merchants.ts",
+        "sha256": "0f2663744d6bb2bd44ac967558b642d01a4bcf2854f831cda07fd0c0d6a49f6c"
+      },
+      {
+        "path": "lib/db/migration-stages/0011/preimage/tenant-security.ts",
+        "sha256": "0066b8df5c194421d8a6bfe81f786c0acab815b12fef339aaeb76469f20f8a42"
+      },
+      {
+        "path": "lib/db/migration-stages/0013/preimage/cashier-staff.ts",
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+      },
+      {
+        "path": "lib/db/migration-stages/0013/preimage/index.ts",
+        "sha256": "ec63c71267b5b4aac8f26521201c112fceacf0411ffff00c66fcb456146e3b52"
+      },
+      {
+        "path": "lib/db/migration-stages/0014/preimage/cashier-operation-attribution.ts",
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+      },
+      {
+        "path": "lib/db/migration-stages/0014/preimage/index.ts",
+        "sha256": "a950d09bacf0967a83ed934bc56bb8f4490f77f63fd553a5ea408fd2166249f0"
+      },
+      {
+        "path": "lib/db/migration-stages/0015/preimage/cashier-discount.ts",
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+      },
+      {
+        "path": "lib/db/migration-stages/0015/preimage/cashier-staff.ts",
+        "sha256": "68f1680448434403aa462dcf564f781a8dd94b7129b9b7476a004a32e5825355"
+      },
+      {
+        "path": "lib/db/migration-stages/0015/preimage/index.ts",
+        "sha256": "3f64c3c004a0fd0ee18c725870beced12fc0a6be43a13dfc8227b1cc776fafcf"
+      },
+      {
+        "path": "lib/db/migration-stages/0016/preimage/cashier-discount.ts",
+        "sha256": "cd1f9dcebdecc261540c6369d0636f071d437aeaeef0cae2c3ef8d7b2a873d85"
+      },
+      {
+        "path": "lib/db/migration-stages/0017/preimage/cashier-operation-attribution.ts",
+        "sha256": "b1356541b704817d56539889da42930bb990eca8c6c0394d6a7a57901110ad7c"
+      },
+      {
+        "path": "lib/db/migration-stages/0017/preimage/cashier-staff.ts",
+        "sha256": "b3cfbfc76ecc83ff942d04cadd9bc1b1d751e91ca72b64c8e3695139aa1a4e48"
+      },
+      {
+        "path": "lib/db/migration-stages/0017/preimage/catalog.ts",
+        "sha256": "c6600fae1f5408fa00589792c8250b85a5ce8c34224915e15ca1840db9318e45"
+      },
+      {
+        "path": "lib/db/migration-stages/0017/preimage/index.ts",
+        "sha256": "618300f3cb6b755ab37a28227137c2d7c5643e1fc6bddda092effa3c76b946c8"
+      },
+      {
+        "path": "lib/db/migration-stages/0017/preimage/location-inventory.ts",
+        "sha256": "c80b97400c6ed69d431a554a40138c9a3213d95ea2d717a34cfe998559a59b9e"
+      },
+      {
+        "path": "lib/db/migration-stages/0017/preimage/merchant-locations.ts",
+        "sha256": "c80b97400c6ed69d431a554a40138c9a3213d95ea2d717a34cfe998559a59b9e"
+      },
+      {
+        "path": "lib/db/migration-stages/0017/preimage/orders.ts",
+        "sha256": "ae55fa87bbc985216025cd874f4de5a0006343337cb1692a7f1c9f866d899c26"
+      },
+      {
+        "path": "lib/db/migration-stages/0018/preimage/catalog.ts",
+        "sha256": "909b079cf0418702287bf0dd44bce0c074c2376489cfae5ce3322bae5424ba30"
+      },
+      {
+        "path": "lib/db/migration-stages/0019/preimage/merchant-locations.ts",
+        "sha256": "227021551fc35a98927e205aebbb391a70a62e45928790e396bbc0d0f363aea0"
+      },
+      {
+        "path": "lib/db/migration-stages/0019/preimage/merchant-settings.ts",
+        "sha256": "f547c20d01b7f701550e6adab8ee16dc2e0eff0733c1cfcadffda1cc066cc6cc"
+      },
+      {
+        "path": "lib/db/migration-stages/0019/preimage/tenant-security.ts",
+        "sha256": "2b25860e9ec47dcdd8697cda7356d57009b352cddb07a20036e4a6c063b3b42e"
+      },
+      {
+        "path": "lib/db/migration-stages/0021/preimage/merchant-settings.ts",
+        "sha256": "3656308ffd4b9cf01e13ddb573053edd8edd31feb55f7975de2db326e1f615a5"
+      },
+      {
+        "path": "lib/db/migration-stages/0022/preimage/location-inventory.ts",
+        "sha256": "c80b618f46cfc2fcfc8a313a2ac14697e4e4de69f5c75ae647c47480470831d2"
+      },
+      {
+        "path": "lib/db/migration-stages/0022/preimage/merchant-locations.ts",
+        "sha256": "89623aed696e29a6e781f27afb2da7f5a77ee0d257898d5b054f56411574edda"
+      },
+      {
+        "path": "lib/db/migration-stages/0022/preimage/tenant-security.ts",
+        "sha256": "19af5da37af8df59e0df43d2e73f9a47e43908675fdfac0e7f33dd9f43bc5388"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/catalog.ts",
+        "sha256": "4c26fb991dfffbc1f6b6a591d96853b2894e9b5d61b04f46f4584f8fbfc60c76"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/channel-messaging.ts",
+        "sha256": "72960dd76f8e0c32280b917aff930d9979f80be5b9265da3fb79654bb8bdf1c7"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/channels.ts",
+        "sha256": "00f27a3036f8c03293d46f6e1c3ef995ac729fb5b3025b5cf6d730d9bcb2345d"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/commerce-promotions.ts",
+        "sha256": "1457ca9202c3cbed01e83246da234bbf707004c9182062b5a5b28782b2132c3e"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/conversations.ts",
+        "sha256": "8bbb44be5987485b670f3ac7a2488929e77c8893c2e5126246f67bb2f8357c5d"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/jobs.ts",
+        "sha256": "afd1e12f24bdf4b7d387572403de48085eb1c57fe06aebad6e167e308c618d39"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/knowledge.ts",
+        "sha256": "f629f58b063b1372cad06311ca426ffaab03d4b79a4811dc3a0ec6cd83d29fbc"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/merchant-locations.ts",
+        "sha256": "81070f81b54f02ad006c2109ca5e89fe18cfba6841762c23c2ed14b553ee00d0"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/merchant-settings.ts",
+        "sha256": "abe77c2a7f7d687a8565ba95f2567207dccd50cac3634e02b02b722238c135e8"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/orders.ts",
+        "sha256": "cb8eb41ebf05bf005b41ccd949b448921bf77983ba5c1436242737db3fc6bf05"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/saas-billing.ts",
+        "sha256": "33ce005a00ce2c7a3f431658051358c88fc0c0a66e695a6bf379646e0808881c"
+      },
+      {
+        "path": "lib/db/migration-stages/0023/preimage/subscriptions.ts",
+        "sha256": "11dddfb6d1f096f2798d4b8f3340f6b5684e5bb1aeec8bc68dce5603b9853692"
+      },
+      {
+        "path": "lib/db/migration-stages/0025/preimage/tenant-security.ts",
+        "sha256": "ee3883c8121f9f7d273c2840f312c4d0f626eec8dc05aff0b7bba66b003fe2b8"
+      },
+      {
+        "path": "lib/db/migration-stages/0026/preimage/accounts.ts",
+        "sha256": "c6b9bea9de7fbbb21e93fd78800e3a4d5201b406161c43aab2df459d935a846d"
+      },
+      {
+        "path": "lib/db/migration-stages/0027/preimage/cashier-subscription.ts",
+        "sha256": "9cbc5cbd7b22c14cda5c40b31ff06606fb5e0b2fbc3b4e0efd795abaacd4711c"
+      },
+      {
+        "path": "lib/db/migration-stages/0027/preimage/index.ts",
+        "sha256": "446c62880686be830e25b8bfea74d325a02ba06c592f1cb94c94f53546aeb3a3"
+      },
+      {
+        "path": "lib/db/migration-stages/0029/preimage/verified-payment-receipts.ts",
+        "sha256": "c01b5a92affc32c9c6901fd94dd7c5fcfce685ca8564716ee04abc10a854b88e"
+      },
+      {
+        "path": "lib/db/migration-stages/0037/preimage/tenant-security.ts",
+        "sha256": "2fed9273d885724d51b0764ad3f7716b5d13427b9aa8d4c6693f89faa77ae372"
+      },
+      {
+        "path": "lib/db/migration-stages/0043/preimage/cashier-staff.ts",
+        "sha256": "e040b195df17eec1e7762c7a05496506f5c9bf3f19a651a0b74483846619d652"
+      },
+      {
+        "path": "lib/db/migration-stages/0043/preimage/tenant-security.ts",
+        "sha256": "c21b118a940d8550bb8c585e681ba261be270816423a0834084c7f440d2e704f"
+      },
+      {
+        "path": "lib/db/migration-stages/0044/preimage/cashier-discount.ts",
+        "sha256": "4a528dc9f4755bdecff8e8aa8ff53f501b7d0e63722cc7efe423ddb688227d56"
+      },
+      {
+        "path": "lib/db/migration-stages/0044/preimage/cashier-operation-attribution.ts",
+        "sha256": "e88cb9c38c4e298411276ec0cd33ab64bbf3bff9b56e33d09ceaf420eae445ea"
+      },
+      {
+        "path": "lib/db/migration-stages/0044/preimage/tenant-security.ts",
+        "sha256": "241ef110f11db1e740b07bf2b183e7075007f4c9284922e8d8e0db0fe4e64d01"
+      },
+      {
+        "path": "lib/db/migration-stages/0047/preimage/support.ts",
+        "sha256": "daae79df695ea98734628522a4dea56a4ce1ded6a7dd637ecaeda05e9511cc5c"
+      },
+      {
+        "path": "lib/db/migration-stages/0047/preimage/tenant-security.ts",
+        "sha256": "85f54ff8b19a3d693626372921c59f09299fd7303dc36c7c27a80b12a132d9f3"
+      },
+      {
+        "path": "lib/db/migration-stages/0048/preimage/emergency.ts",
+        "sha256": "c8d3efdc44478646ee84bec2b6b789ad8c0d8b423e0e03207c67b0b722731644"
+      },
+      {
+        "path": "lib/db/migration-stages/0048/preimage/tenant-security.ts",
+        "sha256": "8af4569d4c5477a48ab64630609233ca53275b7563a8581153fc75b676f2d03b"
+      },
+      {
+        "path": "lib/db/migration-stages/0049/preimage/orders.ts",
+        "sha256": "de79b835f4d53249d624b2215c0473877c4c0fd54a45a420f688a96f070f5da0"
+      },
+      {
+        "path": "lib/db/migration-stages/0049/preimage/tenant-security.ts",
+        "sha256": "8012c8844c7f1e62ed59cf0272b1a01d148b13689d551f54cdd70024e146de64"
+      },
+      {
+        "path": "lib/db/migration-stages/0050/preimage/merchant-management.ts",
+        "sha256": "31b1acafaa1d346db65ddbbf31a250851a15539cdb196e478626cd88720e6f25"
+      },
+      {
+        "path": "lib/db/migration-stages/0050/preimage/tenant-security.ts",
+        "sha256": "58c2f76e62ad4414207cb5902866721f574598235489b95fe2f595ab0cf40ebe"
+      },
+      {
+        "path": "lib/db/migration-stages/0051/preimage/audit.ts",
+        "sha256": "01a484a225741222d5dd701109f3e2690de0bcd3ca606cc9e4d32e51e1363447"
+      },
+      {
+        "path": "lib/db/migration-stages/0051/preimage/conversations.ts",
+        "sha256": "6660a357fe648bfe0c1e310ba2e33a25a9ab49014f41bddcfd3534757e6f96bf"
+      },
+      {
+        "path": "lib/db/migration-stages/0051/preimage/manual-conversations.ts",
+        "sha256": "24ef518b1d5b3426bbc0715a04429e4bc66bfa07491b415f6be4cd66188923fe"
+      },
+      {
+        "path": "lib/db/migration-stages/0051/preimage/notifications.ts",
+        "sha256": "c1db572a30f321ee4caa1426a69f505c1082f1e4cb8103b1de065ddc294318f5"
+      },
+      {
+        "path": "lib/db/migration-stages/0051/preimage/orders.ts",
+        "sha256": "270354c94ad83acdce734a7684626fac23b6da7a82b6dfc89ae5b87f6d17e63e"
+      },
+      {
+        "path": "lib/db/migration-stages/0051/preimage/tenant-security.ts",
+        "sha256": "785efc21169913ecb455f2d7e6bf131b375583be42282d385257d8c5d617bfbf"
+      },
+      {
+        "path": "lib/db/src/index.ts",
+        "sha256": "e01fa9dedf1fbcce8c09b3839b8aa581104b7e46b5188ba8882d2df3a1883ce2"
+      },
+      {
+        "path": "lib/db/src/schema/accounts.ts",
+        "sha256": "246f7f35bf674e8772ca8c2f8072ca59849e1a9ee4df5e078c6b02e300fca481"
+      },
+      {
+        "path": "lib/db/src/schema/audit.ts",
+        "sha256": "2b31decaaeb9115d54de8e1646eabd9dbebaf464006f0890d5089b509b30a011"
+      },
+      {
+        "path": "lib/db/src/schema/auth-security.ts",
+        "sha256": "ad8f421df5c4bc1f2985058a955f5858009e23f0917c3868d6180acbc29a4619"
+      },
+      {
+        "path": "lib/db/src/schema/cashier-discount.ts",
+        "sha256": "84ee67707364f1e79b8c40b2e266e9e27117f923d350947477072d5391fe56be"
+      },
+      {
+        "path": "lib/db/src/schema/cashier-operation-attribution.ts",
+        "sha256": "fd8f46f629948100b0255fd600f7eb7e9d15ad84443780b2fc8219ee01992bc7"
+      },
+      {
+        "path": "lib/db/src/schema/cashier-staff.ts",
+        "sha256": "a6378ac1e1aa2c7d20c389e4032127167ec62d31c18c1cf97d573dba4312b047"
+      },
+      {
+        "path": "lib/db/src/schema/cashier-subscription.ts",
+        "sha256": "bfc224f57b63bfc4c873cb58b848ccda59476dcb92e106a76963c4300b3a42c9"
+      },
+      {
+        "path": "lib/db/src/schema/catalog.ts",
+        "sha256": "451d1d2ca8011c56d9f467b8cd21e3e2c24bef1949d0a9d1312f006e1907679e"
+      },
+      {
+        "path": "lib/db/src/schema/channel-messaging.ts",
+        "sha256": "35c6d30af437a38bd239f9b4452724354506d0f17ad6d5e77d39651a9871b416"
+      },
+      {
+        "path": "lib/db/src/schema/channels.ts",
+        "sha256": "c9a17bc104fb3b68bdd2ba281c7183535228c6a72689130b12438de8d6169723"
+      },
+      {
+        "path": "lib/db/src/schema/commerce-promotions.ts",
+        "sha256": "30621e5710bdc5241e7ac703b4b5e21b11c3706bfefcd828c0be10a1ef3359fe"
+      },
+      {
+        "path": "lib/db/src/schema/conversations.ts",
+        "sha256": "49362ee5b3396790c307c85a0bd6dc26faa1034e8d684f6d62c55a4847dfbc0d"
+      },
+      {
+        "path": "lib/db/src/schema/emergency.ts",
+        "sha256": "c1a4de2007e435d74ece0fb9db63e5a68063b07aabf4bfcd73a87c898ddab490"
+      },
+      {
+        "path": "lib/db/src/schema/enums.ts",
+        "sha256": "e536dc3a2c92e3cab9a7990d41bb27666ab6f0f26d5a1b29b34e309ad7207455"
+      },
+      {
+        "path": "lib/db/src/schema/index.ts",
+        "sha256": "0c071109502d233d6e47cdc21d0bfcc06501621af87af04d8a564db5e584a5a6"
+      },
+      {
+        "path": "lib/db/src/schema/jobs.ts",
+        "sha256": "63accbb574905fa6075ca8f2424b670112bc42fd23ae9a05aa5ced602646e49e"
+      },
+      {
+        "path": "lib/db/src/schema/knowledge.ts",
+        "sha256": "193a4ab19223c86263b42e12e74fe3fc0cd7a77265423ebcb5f7a34d88551207"
+      },
+      {
+        "path": "lib/db/src/schema/location-inventory.ts",
+        "sha256": "daa708d49f00f02739eddc48bf7923bcf42a82edd5831c78e522ed5451685673"
+      },
+      {
+        "path": "lib/db/src/schema/manual-conversations.ts",
+        "sha256": "df8daf8e3ffd42eda7dc24ac1f026d495c9f64e9f6f0e6b08bac0fd80ef0e8da"
+      },
+      {
+        "path": "lib/db/src/schema/merchant-locations.ts",
+        "sha256": "d29b970e2123ba1006204e7d4b6ba5d688c6d44e57355493abfa8d4e3529bcc5"
+      },
+      {
+        "path": "lib/db/src/schema/merchant-management.ts",
+        "sha256": "3e9eaa95e5b7e98fc67b9defa7eb74c3a9866f99cc958713ca3ee2c10a8f6659"
+      },
+      {
+        "path": "lib/db/src/schema/merchant-settings.ts",
+        "sha256": "17b389998a204af21253c59ff1c2ba3f78596f49df920a1f270fefb202a9964b"
+      },
+      {
+        "path": "lib/db/src/schema/merchants.ts",
+        "sha256": "2ccfbc1324a72afab8ded1bf9d005187d03b25b2caf05a2f9a02b4fcae62aea2"
+      },
+      {
+        "path": "lib/db/src/schema/migrations.ts",
+        "sha256": "706f52b6b878e00dd97c033dc8aa890928f52039a864c3c7460d68896fe3d4dd"
+      },
+      {
+        "path": "lib/db/src/schema/notifications.ts",
+        "sha256": "a6190fb65372ecde3070e184deeeea6ece0e5d7774f14295a27acfc0fff25cab"
+      },
+      {
+        "path": "lib/db/src/schema/orders.ts",
+        "sha256": "b84d1fd59d3d0dc779ec3bf48564d05d19f2b097c2210dbfb7cfe0c4b6248884"
+      },
+      {
+        "path": "lib/db/src/schema/provider-costs.ts",
+        "sha256": "fcdaf022f074ae2a9938dabd46dc7717df836b2bfc37c7d0563e0aa824bcd1b5"
+      },
+      {
+        "path": "lib/db/src/schema/saas-billing.ts",
+        "sha256": "c6f407788300bcbada2dde382839aa89e4486bdc8b9d5d1eef305b35359161d8"
+      },
+      {
+        "path": "lib/db/src/schema/sessions.ts",
+        "sha256": "3e5b075fb9b4b8e4433633f1d1dc61ba06f422ac8374e1277f8e21b717af1459"
+      },
+      {
+        "path": "lib/db/src/schema/subscriptions.ts",
+        "sha256": "3bcd2e8ef425dfc5b40f3337fa0a0bd0fddd5df2596ab9648f115e6c1bf8f4e0"
+      },
+      {
+        "path": "lib/db/src/schema/support.ts",
+        "sha256": "05ec1203503d1c52f1ab9e580dce036ee669df51ffc62350a2efb8c9fa461c8b"
+      },
+      {
+        "path": "lib/db/src/schema/tenant-security.ts",
+        "sha256": "85065c627ebaca00c02cbccd2bc78e6e084084ed6c13a0886be461d4768abd91"
+      },
+      {
+        "path": "lib/db/src/schema/verified-payment-receipts.ts",
+        "sha256": "32d199fdf61bcbf0a26fdf9fe1e1a1e4cc106e2b1d52f314313f2e7830933260"
+      },
+      {
+        "path": "src/ai/agentService.ts",
+        "sha256": "d167daa690d8ffd0d3145b752b9e0322a797f900b884ae11e99ddafec8e45140"
+      },
+      {
+        "path": "src/ai/agentTypes.ts",
+        "sha256": "1e3f8544f745aa2223c37b5b8a90d75414ef0eb08f9a17204004f42153da3e52"
+      },
+      {
+        "path": "src/ai/catalogProvider.ts",
+        "sha256": "3835daaca59cf9c459c4a5bc2c83f680bf1eb482aefb104f8d975503903e2246"
+      },
+      {
+        "path": "src/ai/conversationLocks.ts",
+        "sha256": "ad57b72e359b50dfe8632cb3f10ec23d18c721314bad44b393f663828b946c3f"
+      },
+      {
+        "path": "src/ai/conversationStateStore.ts",
+        "sha256": "8cffe612790c4396f038a51a53c65e6111fd8db91f1174476c8b2771fe9cc1fe"
+      },
+      {
+        "path": "src/ai/learnedAnswersStore.ts",
+        "sha256": "fe3e2ca86b74e6ed08ac4ad3f2d7b6e35207ad77d6dda743228b4f8667410ce8"
+      },
+      {
+        "path": "src/ai/localIntentEngine.ts",
+        "sha256": "f32c86c19aa94abe286c91dccc2e46cd79a942a761fd63dd4f04bc49634e3383"
+      },
+      {
+        "path": "src/ai/localResponder.ts",
+        "sha256": "5473ee433fb00b8bd23832c15aeb08e8698e8a9ad00e52b97a4db064c3500b61"
+      },
+      {
+        "path": "src/ai/openAiFallback.ts",
+        "sha256": "c62abc988ebe06545c5a83abc48c29b11c51b51a111ab32ef8698f79d6c8d32e"
+      },
+      {
+        "path": "src/ai/textUtils.ts",
+        "sha256": "e7d0f8c83e23f1a3702ddbd98d71246ce6213069c87eae64691e6a641d84c86a"
+      },
+      {
+        "path": "src/ai/trainingRequestsStore.ts",
+        "sha256": "54e14085c1d40355ea03017e681ce333fab0f2cf616564007930aacaa12f83fd"
+      },
+      {
+        "path": "src/lib/orderEngine.ts",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "references": {
+    "notifyMerchantNewOrderPostgres": [
+      {
+        "path": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+        "line": 90,
+        "text": "export async function notifyMerchantNewOrderPostgres(input: {"
+      }
+    ],
+    "notifyMerchantNewOrder": [
+      {
+        "path": "artifacts/api-server/src/routes/auth.ts",
+        "line": 40,
+        "text": "notifyMerchantNewOrder,"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+        "line": 338,
+        "text": "export function notifyMerchantNewOrder(input: {"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart1.ts",
+        "line": 34,
+        "text": "notifyMerchantNewOrder,"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart2.ts",
+        "line": 34,
+        "text": "notifyMerchantNewOrder,"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+        "line": 34,
+        "text": "notifyMerchantNewOrder,"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+        "line": 271,
+        "text": "notifyMerchantNewOrder({"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+        "line": 34,
+        "text": "notifyMerchantNewOrder,"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+        "line": 90,
+        "text": "export async function notifyMerchantNewOrderPostgres(input: {"
+      }
+    ],
+    "generateTrainedBotReply": [
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+        "line": 356,
+        "text": "export async function generateTrainedBotReply(params: {"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+        "line": 44,
+        "text": "import { generateTrainedBotReply } from './indexModulePart3';"
+      },
+      {
+        "path": "artifacts/api-server/src/routes/indexModulePart4.ts",
+        "line": 83,
+        "text": "const trainedReply = await generateTrainedBotReply({"
+      }
+    ],
+    "INSERT INTO orders": [
+      {
+        "path": "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts",
+        "line": 1168,
+        "text": "`INSERT INTO orders ("
+      }
+    ]
+  },
+  "conclusions": [
+    "Canonical new-order SQL producer has only its declaration in scanned runtime source; direct producer acceptance is retained but no application caller identified.",
+    "Legacy createOrder in indexModulePart3 saves in-memory/runtime JSON order then calls AuthDb notifyMerchantNewOrder, not the SQL producer.",
+    "Its generateTrainedBotReply call is in legacy Meta webhook, which returns410 in required-PostgreSQL mode. Earlier actual app queue ingress responds200 without falling through; original Meta worker uses preparePostgresMetaAutoReply.",
+    "Literal INSERT INTO orders found in backend runtime is cashier sync insertCanonicalOrder, source_channel cashier, not an online conversational order creator. Existing online fulfillment authorities operate on an existing order and do not create this notification.",
+    "Do not add synthetic SQL new-order caller to invent runtime proof or enable retired JSON path. Online-order journey completeness needs separate reconciliation under current plan; no new product feature or severity presumed."
+  ],
+  "limits": [
+    "Textual scan plus inspected call chain, not a formal whole-program call graph, runtime absence proof, deployed behavior or data inventory.",
+    "No runtime case added for a nonexistent identified canonical caller; no P0 requirement closed.",
+    "Historical rows, external/dynamic writers and intended commercial order-creation contract remain unaccepted.",
+    "Cashier order insertion is not evidence that every cashier sale should produce an online-order notice."
+  ],
+  "nextExactAction": "Exercise actual canonical subscription list refresher for subscription_expiry_reminder, subscription_expired and addon_expiry_reminder through SQL, authenticated app and frontend validator. Preserve prior background refresher RLS proof separately."
+}

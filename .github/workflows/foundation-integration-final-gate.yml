@@ -70,6 +70,13 @@ jobs:
           pnpm exec tsx --test
           artifacts/api-server/tests/production-release-readiness.test.ts
           artifacts/api-server/tests/production-postgres-rls-security.test.ts
+          artifacts/api-server/tests/operator-directory-postgres-authority.test.ts
+
+      - name: Prove operational PostgreSQL transaction lifecycle failure handling
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/operational-postgres-tenant-context.test.ts
+          artifacts/api-server/tests/operational-postgres-transaction-lifecycle.test.ts
 
       - name: Validate online report query budget contract
         run: node --test artifacts/api-server/tests/online-report-query-budget.test.mjs
@@ -142,41 +149,27 @@ jobs:
           pnpm exec tsx --test
           artifacts/api-server/tests/production-postgres-rls-security.integration.test.ts
 
-      - name: Prove default knowledge services under restricted tenant RLS
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/knowledge-tenant-rls.integration.test.mjs
+      - name: Prove default knowledge services under restricted tenant RLS in an owned offline cluster
+        run: bash scripts/run-isolated-postgres-audit.sh knowledge-rls
 
-      - name: Prove background subscription reminders under restricted tenant RLS
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/subscription-reminder-rls.integration.test.mjs
+      - name: Prove background subscription reminders in an owned offline cluster
+        run: bash scripts/run-isolated-postgres-audit.sh subscription-reminder
 
       - name: Prove Support image authorization before filesystem persistence
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/support-image-write-order-postgres.integration.test.ts
+        run: bash scripts/run-isolated-postgres-audit.sh support-image-runtime
 
       - name: Prove merchant deletion under restricted tenant RLS
         run: bash scripts/run-isolated-postgres-audit.sh deletion
 
       - name: Prove merchant management and retention under restricted tenant RLS
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/merchant-management-tenant-rls.integration.test.mjs
+        run: bash scripts/run-isolated-postgres-audit.sh management
 
       - name: Prove Meta knowledge-gap notification under pool contention in an owned offline cluster
         # Full parent lifecycle includes the assertion that holds all but one
         # pool connection; do not filter away its seed or teardown dependencies.
         run: bash scripts/run-isolated-postgres-audit.sh meta-bot
-      - name: Prove settings timestamps tolerate application clock skew
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/merchant-settings-clock.integration.test.mjs
-      - name: Prove expired queue leases are revalidated before settlement
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/queue-expired-lease-race.integration.test.mjs
+      - name: Prove clock skew and expired queue lease settlement in an owned offline cluster
+        run: bash scripts/run-isolated-postgres-audit.sh foundation-runtime
       - name: Prove read-only catalog and commerce readiness
         run: node lib/db/scripts/catalog-variant-signature-readiness.mjs
 

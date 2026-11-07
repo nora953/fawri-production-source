@@ -1,3 +1,6 @@
+import {issueMerchantTransactionScope} from "./tenantTransactionScope";
+import { withOperationalTransaction } from "./operationalPostgresAuthority";
+import {resolveConfirmedProviderBillingScope,authorizeConfirmedProviderBillingScope,type ConfirmedProviderBillingScope} from './confirmedProviderBillingScope';
 import crypto from "node:crypto";
 import { pool } from "@workspace/db";
 import {
@@ -6,7 +9,6 @@ import {
 } from "./saasBillingAuthority";
 import {
   applyVerifiedCashierBillingProviderEvent,
-  discoverCashierBillingOrderByProviderReference,
 } from "./cashierBillingAuthority";
 import {
   getSuperQiSandboxPaymentStatus,
@@ -61,76 +63,22 @@ type BillingOrderMatch = {
   amount_iqd: number;
 };
 
-async function findBillingOrder(input: {
-  paymentId: string;
-  requestId: string;
-}): Promise<BillingOrderMatch | null> {
-  const saasResult = await pool.query(
-    `SELECT id, amount_iqd, provider_checkout_ref, metadata->>'provider_request_id' AS provider_request_id
-       FROM saas_billing_orders
-      WHERE provider = $1
-        AND (
-          provider_checkout_ref = $2 OR
-          metadata->>'provider_request_id' = $3
-        )
-      ORDER BY created_at DESC
-      LIMIT 2`,
-    [SUPERQI_SANDBOX_PROVIDER, input.paymentId, input.requestId],
-  );
-  if (saasResult.rows.length > 1) {
-    throw new SuperQiSandboxProviderError(
-      "SUPERQI_SANDBOX_ORDER_AMBIGUOUS",
-      "SuperQi sandbox payment maps to more than one Fawri SaaS billing order",
-      503,
-    );
-  }
-
-  const cashier = await discoverCashierBillingOrderByProviderReference({
-    provider: SUPERQI_SANDBOX_PROVIDER,
-    paymentId: input.paymentId,
-    requestId: input.requestId,
-  });
-
-  if (saasResult.rows[0] && cashier) {
-    throw new SuperQiSandboxProviderError(
-      "SUPERQI_SANDBOX_ORDER_AUTHORITY_COLLISION",
-      "SuperQi sandbox payment maps to more than one Fawri billing authority",
-      503,
-    );
-  }
-  if (saasResult.rows[0]) {
-    const candidate = saasResult.rows[0];
-    if (candidate.provider_request_id !== input.requestId ||
-        (candidate.provider_checkout_ref !== null && candidate.provider_checkout_ref !== input.paymentId)) {
-      throw new SuperQiSandboxProviderError("SUPERQI_SANDBOX_ORDER_IDENTITY_MISMATCH", "confirmed provider identity conflicts with billing order", 409);
-    }
-    return {
-      authority: "bot_subscription",
-      id: required(saasResult.rows[0].id, 180),
-      amount_iqd: amount(saasResult.rows[0].amount_iqd),
-    };
-  }
-  if (cashier) {
-    return {
-      authority: "cashier_subscription",
-      id: required(cashier.id, 180),
-      amount_iqd: amount(cashier.amount_iqd),
-    };
-  }
-  return null;
-}
-
 async function attachProviderPaymentReference(
   order: BillingOrderMatch,
   paymentId: string,
   requestId: string,
+  scope: ConfirmedProviderBillingScope,
 ): Promise<void> {
   const table =
     order.authority === "cashier_subscription"
       ? "cashier_billing_orders"
       : "saas_billing_orders";
 
-  const collision = await pool.query(
+  await withOperationalTransaction(async client => {
+    await issueMerchantTransactionScope(client,scope.merchantId);
+    await client.query('SELECT id FROM merchants WHERE id=$1 FOR UPDATE',[scope.merchantId]);
+    await authorizeConfirmedProviderBillingScope(client,scope);
+  const collision = await client.query(
     `SELECT id
        FROM ${table}
       WHERE provider = $1
@@ -146,17 +94,18 @@ async function attachProviderPaymentReference(
       409,
     );
   }
-  const updated = await pool.query(
+  const updated = await client.query(
     `UPDATE ${table}
         SET provider_checkout_ref = $2,
             updated_at = NOW()
       WHERE id = $1
         AND provider = $3
+        AND merchant_id = $6
         AND (provider_checkout_ref IS NULL OR provider_checkout_ref = $2)
         AND metadata->>'provider_request_id' = $4
         AND amount_iqd = $5
       RETURNING id`,
-    [order.id, paymentId, SUPERQI_SANDBOX_PROVIDER, requestId, order.amount_iqd],
+    [order.id, paymentId, SUPERQI_SANDBOX_PROVIDER, requestId, order.amount_iqd, scope.merchantId],
   );
   if (updated.rows.length !== 1) {
     throw new SuperQiSandboxProviderError(
@@ -165,6 +114,7 @@ async function attachProviderPaymentReference(
       409,
     );
   }
+  });
 }
 
 export function superQiConfirmedProviderEventId(input: {
@@ -278,10 +228,8 @@ export async function handleSuperQiSandboxWebhook(input: {
     throw error;
   }
 
-  const order = await findBillingOrder({
-    paymentId: confirmed.paymentId,
-    requestId: confirmed.requestId,
-  });
+  const scope = await resolveConfirmedProviderBillingScope(pool,{eventId,paymentId:confirmed.paymentId,requestId:confirmed.requestId,eventType,amountIqd:settledAmount,payloadHash});
+  const order: BillingOrderMatch|null = scope?{id:scope.orderId,authority:scope.authority,amount_iqd:settledAmount}:null;
   if (!order) {
     // A verified terminal provider payment must not be acknowledged as ignored:
     // its local checkout may have rolled back after remote creation. Returning
@@ -295,7 +243,7 @@ export async function handleSuperQiSandboxWebhook(input: {
   if (order.amount_iqd !== settledAmount) {
     throw new SuperQiSandboxProviderError("SUPERQI_SANDBOX_ORDER_AMOUNT_MISMATCH", "confirmed amount conflicts with billing order", 409);
   }
-  await attachProviderPaymentReference(order, confirmed.paymentId, confirmed.requestId);
+  await attachProviderPaymentReference(order, confirmed.paymentId, confirmed.requestId, scope!);
 
   const commonEvent = {
     provider: SUPERQI_SANDBOX_PROVIDER,
@@ -313,8 +261,8 @@ export async function handleSuperQiSandboxWebhook(input: {
 
   const outcome =
     order.authority === "cashier_subscription"
-      ? await applyVerifiedCashierBillingProviderEvent(commonEvent)
-      : await applyVerifiedSaasBillingProviderEvent(commonEvent);
+      ? await applyVerifiedCashierBillingProviderEvent(commonEvent,undefined,scope!)
+      : await applyVerifiedSaasBillingProviderEvent(commonEvent,undefined,scope!);
 
   return {
     status: "processed",

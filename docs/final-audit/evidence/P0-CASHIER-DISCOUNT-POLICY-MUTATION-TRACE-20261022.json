@@ -1,0 +1,548 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "phaseStatus": "SOURCE_TRACE_COMPLETE_RUNTIME_BYPASS_NOT_RUN",
+  "source": "645b534aea0d32848b4467b5bbebf8fd671deddb",
+  "sources": [
+    {
+      "path": "artifacts/api-server/src/services/cashierDiscountPolicyAuthority.ts",
+      "sha": "dc729b5e4fc0549023cf804d30ee3bcc1bebed90"
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierOperatorDiscountAuthority.ts",
+      "sha": "f90a44ad8afb3b9b2c813e955f92387b6c4eb77f"
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierDiscountOverrideAuthority.ts",
+      "sha": "2fd08e6cdea3e4f2d0048d78a00ee48222f96bd5"
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierStaffDiscountRoleHardening.ts",
+      "sha": "963f70598c480dff5c8e8b97c06be7818a8f3e5b"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts",
+      "sha": "6618b8819109ef15c7aad213b057d8e2d621bf5a"
+    },
+    {
+      "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+      "sha": "53a4ab02818fbf3e08bd7a3db69a0d6198c2afea"
+    },
+    {
+      "path": "artifacts/api-server/tests/cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
+      "sha": "15cba707838fe8d796338ae16c8da3c4a9c3f588"
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierDiscountPolicy.ts",
+      "sha": "e74ef4eb7cfadae2d249c8626d3426a4849a2271"
+    },
+    {
+      "path": "artifacts/api-server/src/routes/cashier-operator-commerce.ts",
+      "sha": "d9a1cb590baebbf4f2b5b3f193a7aa40b9236995"
+    }
+  ],
+  "pendingRemediation": {
+    "source": "645b534aea0d32848b4467b5bbebf8fd671deddb",
+    "readPolicy": "ONE_RESUME_READ_NO_POLLING",
+    "total": 47,
+    "success": 15,
+    "failures": [],
+    "pending": [
+      {
+        "id": 39824457107,
+        "name": "Product catalog UI cutover",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457725,
+        "name": "Meta webhook pipeline",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457442,
+        "name": "Merchant regional PostgreSQL authority",
+        "status": "queued"
+      },
+      {
+        "id": 39824457428,
+        "name": "Clean deployment golden gate",
+        "status": "queued"
+      },
+      {
+        "id": 39824457555,
+        "name": "Isolated PostgreSQL engineering audit",
+        "status": "queued"
+      },
+      {
+        "id": 39824457487,
+        "name": "Final quality gates",
+        "status": "queued"
+      },
+      {
+        "id": 39824457092,
+        "name": "Merchant access security",
+        "status": "queued"
+      },
+      {
+        "id": 39824457786,
+        "name": "Meta webhook PostgreSQL ingress cutover",
+        "status": "queued"
+      },
+      {
+        "id": 39824457226,
+        "name": "Global admin golden journey",
+        "status": "queued"
+      },
+      {
+        "id": 39824457639,
+        "name": "Merchant settings",
+        "status": "queued"
+      },
+      {
+        "id": 39824457054,
+        "name": "Auth PostgreSQL concurrency proof",
+        "status": "queued"
+      },
+      {
+        "id": 39824456962,
+        "name": "Meta OAuth operational cutoff",
+        "status": "queued"
+      },
+      {
+        "id": 39824457206,
+        "name": "Global Merchant PostgreSQL HTTP Journey",
+        "status": "queued"
+      },
+      {
+        "id": 39824457308,
+        "name": "Global merchant golden journey",
+        "status": "queued"
+      },
+      {
+        "id": 39824457240,
+        "name": "Complete migration safety",
+        "status": "queued"
+      },
+      {
+        "id": 39824457055,
+        "name": "Auth OTP contract continuity",
+        "status": "queued"
+      },
+      {
+        "id": 39824458529,
+        "name": "Location inventory authority",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824456942,
+        "name": "Order operations",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457146,
+        "name": "Catalog variant signature schema contract",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457229,
+        "name": "Staging container contract",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457524,
+        "name": "PostgreSQL outage recovery proof",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457279,
+        "name": "Backup and restore drill",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457140,
+        "name": "Subscription service guarantee validation",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457110,
+        "name": "Isolated Neon preflight static safety",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457615,
+        "name": "Global subscription golden journey",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457373,
+        "name": "Cashier subscription lifecycle",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457202,
+        "name": "Foundation integration final gate",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824457323,
+        "name": "Merchant deletion physical media lifecycle",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824456565,
+        "name": "Merchant deletion promotions lifecycle",
+        "status": "queued"
+      },
+      {
+        "id": 39824456460,
+        "name": "PostgreSQL schema validation",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824456708,
+        "name": "Cashier operational cutoff",
+        "status": "in_progress"
+      },
+      {
+        "id": 39824456372,
+        "name": "Final security and supply chain",
+        "status": "in_progress"
+      }
+    ],
+    "workflows": [
+      {
+        "id": 39824457107,
+        "name": "Product catalog UI cutover",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457725,
+        "name": "Meta webhook pipeline",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457032,
+        "name": "Knowledge embedding readiness",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824457442,
+        "name": "Merchant regional PostgreSQL authority",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457428,
+        "name": "Clean deployment golden gate",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457555,
+        "name": "Isolated PostgreSQL engineering audit",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457487,
+        "name": "Final quality gates",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457092,
+        "name": "Merchant access security",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457786,
+        "name": "Meta webhook PostgreSQL ingress cutover",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457226,
+        "name": "Global admin golden journey",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457639,
+        "name": "Merchant settings",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457054,
+        "name": "Auth PostgreSQL concurrency proof",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824456962,
+        "name": "Meta OAuth operational cutoff",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457206,
+        "name": "Global Merchant PostgreSQL HTTP Journey",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457308,
+        "name": "Global merchant golden journey",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457240,
+        "name": "Complete migration safety",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457055,
+        "name": "Auth OTP contract continuity",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824457117,
+        "name": "Cashier dashboard surface regression",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824458529,
+        "name": "Location inventory authority",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457000,
+        "name": "Billing provider readiness",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824456942,
+        "name": "Order operations",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457146,
+        "name": "Catalog variant signature schema contract",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824456954,
+        "name": "Complete schema candidate",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824457303,
+        "name": "AWS KMS production adapter readiness",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824457229,
+        "name": "Staging container contract",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457524,
+        "name": "PostgreSQL outage recovery proof",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457279,
+        "name": "Backup and restore drill",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824456869,
+        "name": "Merchant deletion cashier lifecycle",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824457140,
+        "name": "Subscription service guarantee validation",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457514,
+        "name": "Merchant deletion provider identifiers",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824457110,
+        "name": "Isolated Neon preflight static safety",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457615,
+        "name": "Global subscription golden journey",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457042,
+        "name": "Merchant deletion audit PII",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824457373,
+        "name": "Cashier subscription lifecycle",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457202,
+        "name": "Foundation integration final gate",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824457323,
+        "name": "Merchant deletion physical media lifecycle",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824456567,
+        "name": "Bot logic adversarial matrix",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824456565,
+        "name": "Merchant deletion promotions lifecycle",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 39824456460,
+        "name": "PostgreSQL schema validation",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824456708,
+        "name": "Cashier operational cutoff",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824456372,
+        "name": "Final security and supply chain",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 39824456554,
+        "name": "Pre-release performance smoke gate",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824456530,
+        "name": "Observability mounted routes",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824456743,
+        "name": "PostgreSQL migration candidate",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824456474,
+        "name": "Dashboard channel coherence",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824456582,
+        "name": "Location routing engine",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 39824456562,
+        "name": "Merchant account security UI",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "noReruns": true
+  },
+  "sourceFacts": [
+    {
+      "path": "artifacts/api-server/src/routes/cashier-discount-policy-operations.ts",
+      "fact": "Policy PUT uses withMerchantAuthenticationTransaction; locks staff FOR UPDATE, expected staff version, role-restricts policy, synchronizes permissions, upserts policy, increments staff version and snapshots atomically."
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierStaffDiscountRoleHardening.ts",
+      "fact": "Non-manager override flag/permission/session snapshot cleanup uses trusted merchant auth transaction."
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierOperatorDiscountAuthority.ts",
+      "fact": "Sale validation uses primary withMerchantOperationalTransaction; loads own settings/policy, requires sale.discount, enabled policy/reason/kind; returns without approval when manualDiscount <= computed policy limit."
+    },
+    {
+      "path": "artifacts/api-server/src/services/cashierDiscountOverrideAuthority.ts",
+      "fact": "Issue on auth reads requester policy before manager/PIN checks; consumption separately verifies active manager, protected permission and policy, real staff lock, bindings and once-only consumption."
+    },
+    {
+      "path": "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts",
+      "fact": "merchant_cashier_staff_discount_policies is a protected RLS table but absent from AUTHENTICATION_INTEGRITY_TABLES; current645 fix only adds non-row privilege rejection, not ordinary INSERT/UPDATE/DELETE/column UPDATE rejection for this policy table."
+    },
+    {
+      "path": "artifacts/api-server/tests/cashier-discount-attribution-tenant-rls-postgres.integration.test.mjs",
+      "fact": "Previously executed cashier business RLS proof calls upsertPolicy on scoped primary for own cashier, changes amount100->125 and rolls back. This is a bounded observed own-write positive, not a proven no-approval sale bypass."
+    }
+  ],
+  "inference": {
+    "candidate": "Own-tenant raw policy mutation may expand operator limits without merchant policy-management authorization.",
+    "runtimeSaleBypass": "NOT_RUN",
+    "httpExposure": "NOT_PROVEN",
+    "hostedExposure": "NOT_PROVEN",
+    "pinOrRoleBypass": "NOT_CLAIMED"
+  },
+  "nextRuntimeProof": [
+    "First finish acceptance/classification of645b534 non-row remediation; do not cancel its queued CI for a new source.",
+    "Owned network-none PostgreSQL on GitHub Actions only; two real LOGINs/two merchants and actual merchant private scopes.",
+    "Seed cashier sale.discount, amount policy100, total1000/discount250; actual assertCashierOperatorManualDiscountAuthority must reject missing approval with CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED.",
+    "Attempt scoped primary direct policy max_amount_minor increase to300, commit only synthetic fixture work; call the same authority with identical payload/no approval. Record exact decision and readiness state; restore original policy through trusted auth in finally.",
+    "Verify cross-merchant data unchanged, manager role/permission/PIN/session unaffected, no approval fabricated or consumed, and original policy restored.",
+    "If confirmed, extend mutation admission to policy table with trusted-auth write positives, primary scoped read positives, table and column mutation direct/PUBLIC/inherit/SET/unreachable tests and authenticated HTTP version/atomic rollback regressions.",
+    "Update existing native own-policy-write positive to auth writer plus explicit primary denial; retain scoped attribution ordinary business write and rollback. Do not weaken manager checks, issue/consume lock order, discount kinds or threshold policy."
+  ],
+  "limits": {
+    "noNewNativeRun": true,
+    "noProductionCodeChangedThisCheckpoint": true,
+    "releaseDecision": "NO-GO",
+    "wholeP0Percentage": "UNMEASURED",
+    "externalConnectorUsed": false,
+    "hostedChanged": false
+  }
+}

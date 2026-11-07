@@ -1,0 +1,581 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-24",
+  "sourceRevision": "53f4f4b0ae3f0d5a62611d978771bba285b98653",
+  "lastAcceptedExecutable": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+  "snapshot": "lib/db/drizzle/meta/0051_snapshot.json",
+  "expectedColumns": 86,
+  "status": "BOUNDED_SOURCE_INVENTORY_NOT_PRIVACY_ACCEPTANCE",
+  "tables": {
+    "audit_events": {
+      "schemaPath": "lib/db/src/schema/audit.ts",
+      "ormSymbol": "auditEvents",
+      "fieldObservations": {
+        "id": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "actor_account_id": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "merchant_id": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "action_type": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "entity_id": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "reason_code": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "details": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "metadata": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "previous_hash": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "event_hash": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "created_at": "ADMIN_LOG_OR_EMERGENCY_SELECTED_PROJECTION",
+        "actor_kind": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+        "entity_type": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+        "ip_address": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+        "user_agent": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS",
+        "request_id": "FILTER_OR_INTERNAL_NOT_IN_REVIEWED_HTTP_MAPPERS"
+      },
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function listAdminLogsPostgres",
+          "note": "Selected columns plus joined admin/merchant identity; metadata mapped wholesale to meta."
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresEmergencyReadAccessAuthority.ts",
+          "anchor": "function mapAudit(",
+          "note": "Emergency-specific selected metadata/event/hash projection; separate owner route."
+        },
+        {
+          "path": "artifacts/api-server/src/services/earlyWarningIncidentHistory.ts",
+          "anchor": "export async function syncEarlyWarningIncidentHistory",
+          "note": "Incident lifecycle selected fields and normalized metadata; separate early-warning consumer."
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/logs",
+          "guard": "secure admin + view_logs",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/logs",
+          "guard": "secure admin + manage_subscriptions",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/emergency-read-access/audit",
+          "guard": "secure admin + owner",
+          "source": "artifacts/api-server/src/routes/auth-emergency-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "SEPARATE_EMERGENCY_EVIDENCE_NOT_ALL_FIELD_ACCEPTANCE"
+        },
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/early-warning",
+          "guard": "secure admin + view_logs",
+          "source": "artifacts/api-server/src/routes/auth-early-warning-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "PRODUCER_FIELD_RECONCILIATION_PENDING"
+        }
+      ],
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json",
+        "evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json"
+      ],
+      "notes": [
+        "Same-name legacy auth-security/emergency JSON audit_events are different authorities; literal table-name matches are not automatically SQL consumers.",
+        "metadata/details producer provenance is not fully accepted; management log tests do not certify all emergency/incident fields."
+      ],
+      "actorPolicyObserved": {
+        "merchant": "denied direct management/admin audit reads",
+        "owner": "global selected management and emergency projection",
+        "assistant": "permission-dependent management log; emergency audit owner-only",
+        "worker": "multiple SQL event producers; not an HTTP role"
+      }
+    },
+    "manual_reply_requests": {
+      "schemaPath": "lib/db/src/schema/manual-conversations.ts",
+      "ormSymbol": "manualReplyRequests",
+      "fieldObservations": {
+        "id": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "merchant_id": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "conversation_id": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "idempotency_key": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "text_sha256": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "status": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "message_id": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "external_message_id": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "error_code": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "created_at": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION",
+        "updated_at": "INTERNAL_REPLY_LIFECYCLE_NO_RAW_ROW_HTTP_SERIALIZATION"
+      },
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresManualConversationAuthority.ts",
+          "anchor": "async function updateConversationControl",
+          "note": "Pending/uncertain status gates return-to-Fawri; raw rows are not conversation projection."
+        },
+        {
+          "path": "artifacts/api-server/src/routes/conversation-operations.ts",
+          "anchor": "const requestKey = idempotencyKey(req);",
+          "note": "Secure merchant owns conversation; replay returns message/conversation, not raw request row."
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/conversations[/:merchantId]; /api/conversation/:conversationId",
+          "guard": "secure merchant own tenant",
+          "source": "artifacts/api-server/src/routes/conversation-operations.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/conversations/:conversationId/{takeover,return-to-fawri,messages}",
+          "guard": "secure merchant own tenant; reply lifecycle and provider boundary",
+          "source": "artifacts/api-server/src/routes/conversation-operations.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        }
+      ],
+      "boundedEvidence": [
+        "evidence/P0-CONVERSATION-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json"
+      ],
+      "notes": [
+        "idempotency and delivery state are internal; public messages are a different table/projection.",
+        "No new provider-send acceptance; provider/session/failure proofs retain their own limits."
+      ],
+      "actorPolicyObserved": {
+        "merchant": "own conversation projection/control; foreign IDs denied",
+        "owner": "admin cookie cannot substitute for merchant cookie",
+        "assistant": "admin cookie cannot substitute for merchant cookie",
+        "worker": "scoped lifecycle mutations; no public raw table endpoint"
+      }
+    },
+    "merchant_admin_notes": {
+      "schemaPath": "lib/db/src/schema/merchant-management.ts",
+      "ormSymbol": "merchantAdminNotes",
+      "fieldObservations": {
+        "merchant_id": "ADMIN_NOTE_PROJECTION",
+        "note": "ADMIN_NOTE_PROJECTION",
+        "updated_by_admin_id": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+        "created_at": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+        "updated_at": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP"
+      },
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function getMerchantAdminNotePostgres",
+          "note": "SELECT note; response merchant_id follows validated path."
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function setMerchantAdminNotePostgres",
+          "note": "Admin ID is supplied from current authenticated context; import is owner-only."
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET/PUT",
+          "path": "/api/auth/merchants/:id/note",
+          "guard": "secure admin + manage_merchant_status",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/local-data-migration",
+          "guard": "secure owner",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        }
+      ],
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-OWNER-IMPORT-HTTP-20261024.json",
+        "evidence/P0-MANAGEMENT-FULL-APP-HTTP-20261024.json"
+      ],
+      "notes": [
+        "Legitimate administrator scope is global; merchant isolation does not mean an authorized owner is restricted to one merchant."
+      ],
+      "actorPolicyObserved": {
+        "merchant": "denied",
+        "owner": "global read/write/import",
+        "assistant": "manage_merchant_status read/write; no owner import",
+        "worker": "tenant deletion purges note"
+      }
+    },
+    "merchant_channel_overrides": {
+      "schemaPath": "lib/db/src/schema/merchant-management.ts",
+      "ormSymbol": "merchantChannelOverrides",
+      "fieldObservations": {
+        "merchant_id": "ADMIN_CHANNEL_KEYED_PROJECTION",
+        "platform": "ADMIN_CHANNEL_KEYED_PROJECTION",
+        "status": "ADMIN_CHANNEL_KEYED_PROJECTION",
+        "updated_by_admin_id": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+        "created_at": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP",
+        "updated_at": "INTERNAL_AUTHORSHIP_OR_TIMESTAMP"
+      },
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function listMerchantChannelOverridesPostgres",
+          "note": "Projection is merchant_id -> platform -> status, not credentials."
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "export async function setMerchantChannelOverridePostgres",
+          "note": "Current admin actor; closed-account checks."
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/channels",
+          "guard": "secure admin + manage_channels",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/merchants/:id/channels/:platform",
+          "guard": "secure admin + manage_channels",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/local-data-migration",
+          "guard": "secure owner",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        }
+      ],
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-OWNER-IMPORT-HTTP-20261024.json"
+      ],
+      "notes": [
+        "This administrative override table is not encrypted merchant_channels credentials."
+      ],
+      "actorPolicyObserved": {
+        "merchant": "denied",
+        "owner": "global override read/write/import",
+        "assistant": "manage_channels read/write; no owner import",
+        "worker": "tenant deletion purges overrides"
+      }
+    },
+    "merchant_deletion_requests": {
+      "schemaPath": "lib/db/src/schema/merchant-management.ts",
+      "ormSymbol": "merchantDeletionRequests",
+      "fieldObservations": {
+        "id": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "merchant_id_snapshot": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "merchant_name_snapshot": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "merchant_phone_snapshot": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "requested_by_admin_id_snapshot": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "requested_by_admin_name_snapshot": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "requested_by_admin_phone_snapshot": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "reason": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "details": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "status": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "reviewed_by_admin_id": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "reviewed_at": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "created_at": "ADMIN_DELETION_SNAPSHOT_REVIEW_PROJECTION",
+        "merchant_id": "INTERNAL_LIVE_LINK_OR_COMPLETION",
+        "requested_by_admin_id": "INTERNAL_LIVE_LINK_OR_COMPLETION",
+        "completed_at": "INTERNAL_LIVE_LINK_OR_COMPLETION"
+      },
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "function deletionRequest(",
+          "note": "Snapshot fields are deliberately remapped to legacy public names; completed_at not returned by this mapper."
+        },
+        {
+          "path": "artifacts/api-server/src/services/merchantPhysicalMediaCleanup.ts",
+          "anchor": "export async function completeMerchantDeletionWithPhysicalMediaCleanup",
+          "note": "Manifest before actual deletion, local media after transaction commit."
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/admin/deletion-requests",
+          "guard": "secure admin + manage_merchant_status",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/merchants/:id/deletion-requests",
+          "guard": "secure assistant + manage_merchant_status (owner excluded by current requireAssistant)",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/admin/deletion-requests/:requestId/reject",
+          "guard": "secure owner",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/merchants/:id/delete",
+          "guard": "secure owner + own password + suspended merchant + matching request + quiescence",
+          "source": "artifacts/api-server/src/routes/auth-merchant-management-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        }
+      ],
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-OWNER-DELETION-HTTP-20261024.json"
+      ],
+      "notes": [
+        "Snapshot ID/name/phone provenance differs from nullable live foreign keys.",
+        "Complete financial/PII retention schedule remains separately OPEN; do not derive policy approval from deletion runtime PASS."
+      ],
+      "actorPolicyObserved": {
+        "merchant": "denied",
+        "owner": "review/reject/complete; creation route explicitly assistant-only",
+        "assistant": "manage_merchant_status create/read; cannot reject/complete",
+        "worker": "trusted tenant deletion transaction retains bounded completion record"
+      }
+    },
+    "notifications": {
+      "schemaPath": "lib/db/src/schema/notifications.ts",
+      "ormSymbol": "notifications",
+      "fieldObservations": {
+        "id": "MERCHANT_SELECTED_PROJECTION",
+        "type": "MERCHANT_SELECTED_PROJECTION",
+        "variables": "MERCHANT_SELECTED_PROJECTION",
+        "read_at": "MERCHANT_SELECTED_PROJECTION",
+        "created_at": "MERCHANT_SELECTED_PROJECTION",
+        "audience": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+        "merchant_id": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+        "account_id": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+        "title_key": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+        "body_key": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+        "source_entity_type": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+        "source_entity_id": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE",
+        "expires_at": "AUDIENCE_SCOPE_EXPIRY_OR_INTERNAL_TEMPLATE"
+      },
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "anchor": "function mapNotification(",
+          "note": "variables is spread at top level; id/type precede spread, timestamps follow it. No arbitrary-key acceptance."
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "anchor": "\"/notifications\",",
+          "note": "Mounted earlier under auth-security; owns GET list and PATCH individual read."
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "anchor": "\"/notifications/read-all\",",
+          "note": "Later support router owns POST bulk read; its GET/PATCH duplicates are shadowed by earlier notification router in required mode."
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "anchor": "export async function listMerchantNotificationsPostgres(",
+          "note": "Older SQL notification functions exist; current support routes import canonical authority instead."
+        }
+      ],
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/api/auth/notifications",
+          "guard": "secure merchant; audience=merchant + own merchant + expiry filter",
+          "source": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "PATCH",
+          "path": "/api/auth/notifications/:id/read",
+          "guard": "secure merchant; own merchant/audience",
+          "source": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_RUNTIME_EVIDENCE"
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/notifications/read-all",
+          "guard": "secure merchant; own merchant/audience",
+          "source": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "reachability": "ACTIVE",
+          "evidenceStatus": "BOUNDED_HTTP_ACCEPTED_RESIDUAL_FIELD_001"
+        },
+        {
+          "method": "GET/PATCH",
+          "path": "same list/individual paths in support router",
+          "guard": "secure merchant",
+          "source": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "reachability": "SHADOWED_IN_CURRENT_REQUIRED_MODE",
+          "evidenceStatus": "REACHABILITY_SOURCE_REVIEW"
+        }
+      ],
+      "boundedEvidence": [
+        "evidence/P0-RESIDUAL-HTTP-PRIVACY-20261024.json",
+        "evidence/P0-CONSUMER-FULL-APP-HTTP-20261024.json",
+        "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
+      ],
+      "notes": [
+        "Subscription, operational order/payment/knowledge/customer-message, Support lifecycle and inspection notification producers require explicit variable-key provenance reconciliation.",
+        "Bulk-read route has bounded actual-app runtime acceptance on bd3c518e; notification JSON variable producer/key policy remains separately OPEN."
+      ],
+      "actorPolicyObserved": {
+        "merchant": "own live merchant audience list; own read and bulk read",
+        "owner": "admin cookie denied merchant notification API",
+        "assistant": "admin cookie denied merchant notification API",
+        "worker": "canonical scoped notification producers; admin audience may share SQL table"
+      }
+    },
+    "order_drafts": {
+      "schemaPath": "lib/db/src/schema/orders.ts",
+      "ormSymbol": "orderDrafts",
+      "fieldObservations": {
+        "id": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "merchant_id": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "conversation_id": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "customer_external_id": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "awaiting_field": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "draft_data": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "expires_at": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "created_at": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "updated_at": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN"
+      },
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "async function purgeMerchantOperationalData",
+          "note": "Tenant deletion includes table; no raw table reader found in scanned current server SQL source."
+        },
+        {
+          "path": "artifacts/api-server/src/routes/indexModulePart3.ts",
+          "anchor": "router.get(\"/bot/debug\",",
+          "note": "Legacy debug reads merchant-filtered in-memory orderDraftsByConversation and db_path, not SQL order_drafts. Reachability/field policy remains open."
+        }
+      ],
+      "routes": [],
+      "boundedEvidence": [
+        "evidence/P0-0051-VERIFICATION-20261024.json",
+        "evidence/P0-ACCESS-CONTROL-PROOF-INVENTORY-20261023.json"
+      ],
+      "notes": [
+        "SQL schema/readiness/deletion refs alone do not prove route absence globally or require a new public CRUD API.",
+        "Current canonical SQL table and legacy/in-memory business structures must be reconciled; no whole-feature acceptance."
+      ],
+      "actorPolicyObserved": {
+        "all_http_actors": "no direct SQL row route identified; no HTTP PASS inferred",
+        "trusted_deletion": "actual tenant-scoped purge exists",
+        "legacy_or_worker": "separate storage/event pipelines require source/reachability reconciliation"
+      }
+    },
+    "processed_channel_events": {
+      "schemaPath": "lib/db/src/schema/conversations.ts",
+      "ormSymbol": "processedChannelEvents",
+      "fieldObservations": {
+        "id": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "merchant_id": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "channel_id": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "external_event_id": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "event_type": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "payload_hash": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "processing_status": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "error_code": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "received_at": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN",
+        "completed_at": "NO_DIRECT_HTTP_SQL_READER_IDENTIFIED_IN_SCAN"
+      },
+      "reviewedConsumers": [
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+          "anchor": "async function purgeMerchantOperationalData",
+          "note": "Tenant deletion includes table; no raw table reader found in scanned current server SQL source."
+        }
+      ],
+      "routes": [],
+      "boundedEvidence": [
+        "evidence/P0-0051-VERIFICATION-20261024.json",
+        "evidence/P0-ACCESS-CONTROL-PROOF-INVENTORY-20261023.json"
+      ],
+      "notes": [
+        "SQL schema/readiness/deletion refs alone do not prove route absence globally or require a new public CRUD API.",
+        "Current canonical SQL table and legacy/in-memory business structures must be reconciled; no whole-feature acceptance."
+      ],
+      "actorPolicyObserved": {
+        "all_http_actors": "no direct SQL row route identified; no HTTP PASS inferred",
+        "trusted_deletion": "actual tenant-scoped purge exists",
+        "legacy_or_worker": "separate storage/event pipelines require source/reachability reconciliation"
+      }
+    }
+  },
+  "gaps": [
+    {
+      "id": "RESIDUAL-FIELD-001",
+      "priority": 1,
+      "table": "notifications",
+      "status": "BOUNDED_HTTP_ACCEPTED",
+      "gap": "Actual-app bulk-read actor/tenant/audience/replay boundary accepted:5new functional cases,11denied requests, exact peer/admin preservation and existing expired-unread inclusion. Full field/producer policy not accepted.",
+      "next": "Continue RESIDUAL-FIELD-002 notification variable producer/key/input provenance; do not repeat accepted bulk scope absent source changes.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http",
+      "originalGap": "POST read-all uses later Support route; no current named runtime proof located.",
+      "acceptedAt": "2026-10-25",
+      "acceptedSource": "bd3c518eb784608a68539d6a8b9fb9050fff57e8",
+      "evidence": "evidence/P0-NOTIFICATION-BULK-HTTP-20261024.json"
+    },
+    {
+      "id": "RESIDUAL-FIELD-002",
+      "priority": 2,
+      "table": "notifications",
+      "status": "OPEN",
+      "gap": "Flattened variables require producer/type/key provenance and collision policy; synthetic sentinel test is not a general allowlist.",
+      "next": "Actual operational producer4types -> scoped SQL -> app list/single-read -> real frontend validator with peer preservation/dedup; then remaining subscription/Support templates and older SQL helper provenance. Reviewed12client types comprise9SQL-template candidates and3legacy definitions; no full field acceptance.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "sourceFieldMapEvidence": "evidence/P0-NOTIFICATION-PRODUCER-FIELD-MAP-20261025.json",
+      "sourceFieldMapStatus": "SOURCE_PROVENANCE_MAPPED_RUNTIME_PENDING"
+    },
+    {
+      "id": "RESIDUAL-FIELD-003",
+      "priority": 3,
+      "table": "audit_events",
+      "status": "OPEN",
+      "gap": "Management meta/details, emergency event metadata and incident history have different projections and scopes.",
+      "next": "Reconcile each producer and current HTTP role/field mapping against existing emergency/management tests.",
+      "existingGate": "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX"
+    },
+    {
+      "id": "RESIDUAL-FIELD-004",
+      "priority": 4,
+      "table": "order_drafts,processed_channel_events",
+      "status": "OPEN",
+      "gap": "No direct SQL row HTTP reader found; separate legacy debug/in-memory and durable ingress pipelines need authority/field/reachability mapping.",
+      "next": "Trace actual bot debug and order/ingress consumers with accepted-source restrictions; do not build new CRUD endpoints.",
+      "existingGate": "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    },
+    {
+      "id": "RESIDUAL-FIELD-005",
+      "priority": 5,
+      "table": "merchant_deletion_requests",
+      "status": "OPEN_EXISTING_POLICY_GATE",
+      "gap": "Phone/name snapshots, audit retention and complete PII schedule remain policy-sensitive despite tested tenant deletion.",
+      "next": "Keep existing retention/privileged-deletion policy gate open; document exact field policy rather than invent duration.",
+      "existingGate": "P0-RETENTION-PRIVILEGED-DELETION-POLICY"
+    }
+  ]
+}

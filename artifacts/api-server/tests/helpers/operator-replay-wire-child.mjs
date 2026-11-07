@@ -15,16 +15,19 @@ process.on('message',async task=>{
     assert.match(task.role,/^operator_wire_[a-f0-9]{32}$/);assert.match(task.marker,/^operator-wire-owned-[a-f0-9-]+$/);
     assert.match(task.event,/^superqi-[a-f0-9]{64}$/);assert.ok(['saas','cashier'].includes(task.kind));
     assert.ok(task.boundary===undefined||[1,2].includes(task.boundary));
-    pool.options.application_name=task.marker;pool.options.options=`-c role=${task.role}`;
+    assert.match(task.password,/^[a-f0-9]{32}$/);
+    const owned=new URL(process.env.DATABASE_URL);owned.username=task.role;owned.password=task.password;owned.search='';
+    owned.searchParams.set('application_name',task.marker);
     if(task.boundary){
       const {startOwnedCommitResponseProxy}=await import('./postgres-commit-response-proxy.mjs');
       proxy=await startOwnedCommitResponseProxy(task.boundary,async()=>{dropObserved=true;await send({type:'wire-drop',boundary:task.boundary,serverCommitCompleted:true,commandCompleteDelivered:false});},{deferUntilArmed:true});
-      const owned=new URL(process.env.DATABASE_URL);pool.options.connectionString=undefined;
-      Object.assign(pool.options,{host:'127.0.0.1',port:proxy.port,user:decodeURIComponent(owned.username),password:decodeURIComponent(owned.password),database:'fawri_ci',ssl:false});
+      owned.port=String(proxy.port);
     }
-    const identity=(await pool.query("SELECT current_user AS role,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
-    assert.deepEqual(identity,{role:task.role,rolsuper:false,rolbypassrls:false,owns_table:false});
-    assert.equal((await pool.query('SELECT * FROM verified_provider_payment_receipts')).rows.length,0);
+    pool.options.options=undefined;pool.options.connectionString=owned.toString();
+    process.env.FAWRI_OPERATOR_DATABASE_URL=owned.toString();
+    const identity=(await pool.query("SELECT current_user AS role,session_user AS login,rolsuper,rolbypassrls,EXISTS(SELECT 1 FROM pg_class WHERE relnamespace='public'::regnamespace AND relowner=r.oid) AS owns_table FROM pg_roles r WHERE rolname=current_user")).rows[0];
+    assert.deepEqual(identity,{role:task.role,login:task.role,rolsuper:false,rolbypassrls:false,owns_table:false});
+    await assert.rejects(()=>pool.query('SELECT * FROM verified_provider_payment_receipts'),{code:'42501'});
     assert.equal((await pool.query('SELECT * FROM saas_billing_orders')).rows.length,0);
     await send({type:'role-proof',restricted:true,privateReceipt:true,privateOrders:true});
     const [{default:express},{default:cookieParser},{default:router},{enforceAuthOrigin}]=await Promise.all([import('express'),import('cookie-parser'),import('../../src/routes/auth-verified-receipts-postgres-routes.ts'),import('../../src/middleware/authSession.ts')]);
@@ -48,7 +51,7 @@ process.on('message',async task=>{
   }catch(error){await send({type:'failure',code:/^[A-Z0-9_]{1,80}$/.test(error?.code||'')?error.code:'OPERATOR_WIRE_TEST_FAILURE'});process.exitCode=1;}
   finally{
     globalThis.fetch=nativeFetch;process.off('message',resumeListener);
-    try{if(server)await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));await pool.end();if(proxy)await proxy.close();}
+    try{if(server)await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));await (await import('../../src/services/operatorReceiptExecutionPostgresAuthority.ts')).closeReceiptOperatorExecutionPool();await (await import('../../src/services/authenticationPostgresAuthority.ts')).closeAuthenticationPool();await pool.end();if(proxy)await proxy.close();}
     catch{await send({type:'cleanup-failure'});process.exitCode=1;}
     if(process.connected)process.disconnect();
   }

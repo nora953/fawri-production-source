@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import {
   operationalPostgresAuthorityRequired,
-  withOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import { getManagedMerchantPostgres, MerchantManagementError } from "./postgresMerchantManagementAuthority";
 
@@ -57,7 +57,7 @@ export async function appendMerchantAdminLogPostgres(input: {
   const reason = String(input.reason || "").slice(0, 1000);
   const meta = input.meta || {};
 
-  await withOperationalTransaction(async (client) => {
+  await withAuthenticationTransaction(async (client) => {
     await client.query(
       `INSERT INTO audit_events (
          id, actor_kind, actor_account_id, merchant_id,

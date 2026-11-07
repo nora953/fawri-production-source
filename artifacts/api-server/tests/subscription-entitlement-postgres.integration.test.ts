@@ -3,17 +3,19 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { pool } from "@workspace/db";
-import { reserveMerchantAutoReplyAuthoritative } from "../src/services/merchantReplyEntitlementAuthority";
-import { refundMerchantAutoReplyAuthoritative } from "../src/services/merchantReplyRefundAuthority";
-import { releaseMerchantAutoReplyReservationAuthoritative } from "../src/services/merchantReplyReservationReleaseAuthority";
-import {
+const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
+const { reserveMerchantAutoReplyAuthoritative }=await import("../src/services/merchantReplyEntitlementAuthority");
+const { refundMerchantAutoReplyAuthoritative }=await import("../src/services/merchantReplyRefundAuthority");
+const { releaseMerchantAutoReplyReservationAuthoritative }=await import("../src/services/merchantReplyReservationReleaseAuthority");
+const {
   activateEmergencyCreditPostgres,
   applySubscriptionActionPostgres,
   applySubscriptionPlanOperationPostgres,
   getCurrentSubscriptionPostgres,
   SubscriptionEntitlementAuthorityError,
-} from "../src/services/postgresSubscriptionEntitlement";
+}=await import("../src/services/postgresSubscriptionEntitlement");
 
 const merchantId = "merchant-subscription-pg-test";
 const actorId = "admin-subscription-pg-test";
@@ -112,14 +114,14 @@ test("required mode keeps reply entitlement entirely in PostgreSQL", async () =>
     const released = await releaseMerchantAutoReplyReservationAuthoritative(
       "meta:pg-cutover:event-1",
       "MERCHANT_SETTINGS_VERSION_CHANGED",
-      new Date("2026-08-11T00:03:00.000Z"),
+      new Date("2026-08-11T00:03:00.000Z"), merchantId
     );
     assert.equal(released.released, true);
     assert.deepEqual(
       await releaseMerchantAutoReplyReservationAuthoritative(
         "meta:pg-cutover:event-1",
         "MERCHANT_SETTINGS_VERSION_CHANGED",
-        new Date("2026-08-11T00:04:00.000Z"),
+        new Date("2026-08-11T00:04:00.000Z"), merchantId
       ),
       { released: false, reason: "already_released" },
     );
@@ -139,14 +141,14 @@ test("required mode keeps reply entitlement entirely in PostgreSQL", async () =>
     const refunded = await refundMerchantAutoReplyAuthoritative(
       "meta:pg-cutover:event-2",
       "META_REPLY_FAILED",
-      new Date("2026-08-11T00:07:00.000Z"),
+      new Date("2026-08-11T00:07:00.000Z"), merchantId
     );
     assert.equal(refunded.refunded, true);
     assert.deepEqual(
       await refundMerchantAutoReplyAuthoritative(
         "meta:pg-cutover:event-2",
         "META_REPLY_FAILED",
-        new Date("2026-08-11T00:08:00.000Z"),
+        new Date("2026-08-11T00:08:00.000Z"), merchantId
       ),
       { refunded: false, reason: "already_refunded" },
     );
@@ -244,3 +246,6 @@ test("admin mutations fail closed when merchant is not approved", async () => {
     }
   }
 });
+
+// Dispose only after all original cases and their fixture cleanup finish.
+test.after(()=>runtimeFixture.dispose());

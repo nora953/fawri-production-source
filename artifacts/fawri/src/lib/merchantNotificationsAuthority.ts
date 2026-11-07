@@ -58,12 +58,22 @@ function plan(value: unknown): boolean {
 }
 
 export function isSafeMerchantNotificationActionUrl(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    value.startsWith("/") &&
-    !value.startsWith("//") &&
-    !value.includes("\\")
-  );
+  if (
+    typeof value !== "string" ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    /[\\\u0000-\u001f\u007f]/.test(value)
+  ) {
+    return false;
+  }
+  // URL parsing removes literal CR/LF/TAB: "/\n/attacker.example" can
+  // otherwise become a protocol-relative external navigation.
+  const base = "https://fawri.invalid";
+  try {
+    return new URL(value, base).origin === base;
+  } catch {
+    return false;
+  }
 }
 
 function common(record: JsonObject): boolean {
@@ -240,6 +250,31 @@ export function isMerchantNotificationRecord(value: unknown): value is MerchantN
   );
 }
 
+// Keep this list aligned with the reviewed 12-type response contract. A known
+// type with malformed fields is an authority error, never a silent omission.
+const SUPPORTED_MERCHANT_NOTIFICATION_TYPES = new Set([
+  "subscription_expiry_reminder",
+  "subscription_expired",
+  "addon_expiry_reminder",
+  "operational_new_order",
+  "operational_payment_conflict",
+  "operational_knowledge_gap",
+  "operational_customer_message",
+  "inspection_session_request",
+  "support_reply_reminder",
+  "subscription_balance_purchase",
+  "subscription_plan_event",
+  "subscription_emergency_activated",
+]);
+const UNKNOWN_NOTIFICATION_METADATA_KEYS = new Set(["id", "type", "created_at", "read_at"]);
+
+function isSafeUnknownNotificationMetadata(value: unknown): boolean {
+  const candidate = object(value);
+  return !!candidate && common(candidate) &&
+    !SUPPORTED_MERCHANT_NOTIFICATION_TYPES.has(String(candidate.type)) &&
+    Object.keys(candidate).every(key => UNKNOWN_NOTIFICATION_METADATA_KEYS.has(key));
+}
+
 async function jsonObject(response: Response): Promise<JsonObject> {
   const body = object(await response.json().catch(() => null));
   if (!body) throw new Error("invalid notification authority response");
@@ -253,15 +288,21 @@ export async function readMerchantNotificationsAuthority(): Promise<MerchantNoti
     headers: { Accept: "application/json" },
   });
   const body = await jsonObject(response);
-  if (
-    !response.ok ||
-    body.ok !== true ||
-    !Array.isArray(body.notifications) ||
-    !body.notifications.every(isMerchantNotificationRecord)
-  ) {
+  if (!response.ok || body.ok !== true || !Array.isArray(body.notifications)) {
     throw new Error("merchant notification authority unavailable");
   }
-  return body.notifications;
+  const approved: MerchantNotificationRecord[] = [];
+  for (const candidate of body.notifications) {
+    if (isMerchantNotificationRecord(candidate)) {
+      approved.push(candidate);
+    } else if (!isSafeUnknownNotificationMetadata(candidate)) {
+      // An unknown but canonical metadata-only record can be skipped so an
+      // old client still renders supported notices. Known malformed records,
+      // unsafe extension fields, or invalid canonical metadata fail closed.
+      throw new Error("merchant notification authority unavailable");
+    }
+  }
+  return approved;
 }
 
 export async function markMerchantNotificationReadAuthority(

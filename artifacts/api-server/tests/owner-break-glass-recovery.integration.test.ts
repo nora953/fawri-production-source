@@ -198,6 +198,39 @@ test("owner break-glass recovery is PostgreSQL authoritative, one-time, and capp
     return generated.body;
   }
 
+
+  const stageObservations: Array<{ endpoint: string; status: number | null; code?: string; timedOut: boolean }> = [];
+  async function recoveryState() {
+    const result = await pool.query(`
+      SELECT
+        (SELECT row_to_json(a) FROM accounts a WHERE id = $1) AS account,
+        (SELECT COALESCE(jsonb_agg(to_jsonb(s) ORDER BY s.id), '[]'::jsonb) FROM account_sessions s WHERE account_id = $1) AS sessions,
+        (SELECT COALESCE(jsonb_agg(to_jsonb(d) ORDER BY d.id), '[]'::jsonb) FROM trusted_devices d WHERE account_id = $1) AS devices,
+        (SELECT COALESCE(jsonb_agg(to_jsonb(o) ORDER BY o.id), '[]'::jsonb) FROM auth_otp_challenges o WHERE account_id = $1 OR purpose = 'admin_recovery') AS challenges
+    `, [ownerId]);
+    return result.rows[0];
+  }
+  async function wrongStage(recoveryId: string, cookie: string, endpoints: string[]) {
+    const before = await recoveryState();
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(`${baseUrl}/api/auth/owner-recovery/${recoveryId}/${endpoint}`, {
+          method: "POST",
+          headers: { Cookie: cookie, "Content-Type": "application/json" },
+          body: "{}",
+          signal: AbortSignal.timeout(1500),
+        });
+        const body = await response.json().catch(() => null) as any;
+        stageObservations.push({ endpoint, status: response.status, code: body?.code, timedOut: false });
+      } catch (error) {
+        if (!(error instanceof Error) || !["TimeoutError", "AbortError"].includes(error.name)) throw error;
+        stageObservations.push({ endpoint, status: null, timedOut: true });
+      }
+    }
+    assert.deepEqual(await recoveryState(), before, "wrong-stage requests must leave account/session/device/OTP rows unchanged");
+  }
+  let probeStages = true;
+
   async function recover(input: {
     bundle: any;
     oldPhone: string;
@@ -215,6 +248,7 @@ test("owner break-glass recovery is PostgreSQL authoritative, one-time, and capp
     }));
     assert.equal(start.response.status, 200);
     let recoveryCookie = cookieFrom(start.response, "fawri_owner_recovery");
+    if (probeStages) await wrongStage(recoveryId, recoveryCookie, ["otp/verify", "complete"]);
 
     const otpRequest = await json(await fetch(
       `${baseUrl}/api/auth/owner-recovery/${recoveryId}/otp/request`,
@@ -231,6 +265,7 @@ test("owner break-glass recovery is PostgreSQL authoritative, one-time, and capp
     assert.equal(otpRequest.response.status, 202);
     assert.match(String(otpRequest.body?.devCode || ""), /^\d{6}$/);
     recoveryCookie = cookieFrom(otpRequest.response, "fawri_owner_recovery");
+    if (probeStages) await wrongStage(recoveryId, recoveryCookie, ["otp/request", "complete"]);
 
     const otpRows = await pool.query(
       `SELECT account_id, purpose::text AS purpose, used_at
@@ -253,6 +288,8 @@ test("owner break-glass recovery is PostgreSQL authoritative, one-time, and capp
     ));
     assert.equal(otpVerify.response.status, 200);
     recoveryCookie = cookieFrom(otpVerify.response, "fawri_owner_recovery");
+    if (probeStages) await wrongStage(recoveryId, recoveryCookie, ["otp/request", "otp/verify"]);
+    probeStages = false;
 
     const complete = await json(await fetch(
       `${baseUrl}/api/auth/owner-recovery/${recoveryId}/complete`,
@@ -416,4 +453,9 @@ test("owner break-glass recovery is PostgreSQL authoritative, one-time, and capp
   );
   assert.equal(liveFour.rows[0].count, 4);
   assert.equal(liveFour.rows[0].devices, 2);
+
+  console.log("P0_OWNER_RECOVERY_STAGE_OBSERVED " + JSON.stringify({ observations: stageObservations, unchangedState: true, devOtpOnly: true, aggregateRouter: true }));
+  assert.equal(stageObservations.length, 6);
+  assert.deepEqual(stageObservations.map(({ status, code, timedOut }) => ({ status, code, timedOut })),
+    Array.from({ length: 6 }, () => ({ status: 401, code: "OWNER_RECOVERY_SESSION_INVALID", timedOut: false })));
 });

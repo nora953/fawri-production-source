@@ -1,3 +1,4 @@
+import { assertNotificationTypeWritable, requireNotificationSourceReference } from "./postgresNotificationSourceReference";
 import crypto from "node:crypto";
 import {
   withMerchantOperationalTransaction,
@@ -50,6 +51,8 @@ async function insertOperationalNotification(input: {
       code: "OPERATIONAL_NOTIFICATION_IDENTITY_INVALID",
     });
   }
+  assertNotificationTypeWritable(input.type);
+  const source = requireNotificationSourceReference(input.sourceEntityType, sourceEntityId);
   const id = deterministicId(input.type, merchantId, sourceEntityId);
   return withMerchantOperationalTransaction(merchantId, async (client) => {
     const existing = await client.query<{ id: string }>(
@@ -78,8 +81,8 @@ async function insertOperationalNotification(input: {
         input.titleKey,
         input.bodyKey,
         JSON.stringify(input.variables),
-        input.sourceEntityType,
-        sourceEntityId,
+        source.sourceEntityType,
+        source.sourceEntityId,
         createdAt(input.createdAt),
       ],
     );

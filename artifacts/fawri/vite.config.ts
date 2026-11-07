@@ -1,10 +1,13 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
+import { assertCashierOfflinePublicKeyConfig } from "./build/cashierOfflinePublicKeyConfig.mjs";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-export default defineConfig(async ({ command }) => {
+export default defineConfig(async ({ command, mode }) => {
+  const publicEnv = loadEnv(mode, import.meta.dirname, 'VITE_FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS');
+  assertCashierOfflinePublicKeyConfig(publicEnv.VITE_FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS);
   const isServe = command === "serve";
   const rawPort = process.env.PORT;
 

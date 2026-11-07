@@ -1,0 +1,2613 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-25",
+  "fieldCell": "RESIDUAL-FIELD-002",
+  "status": "OPEN_RECONCILED_BOUNDED_CANONICAL_COVERAGE_POLICY_AND_HISTORY_REMAIN",
+  "auditedSourceRevision": "04552d16ab432fcf90eec3d0e40d218c42ae4403",
+  "lastAcceptedExecutable": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+  "applicationChanged": false,
+  "client": {
+    "source": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+    "recognizedTypeCount": 12,
+    "commonFields": [
+      "id",
+      "type",
+      "created_at"
+    ],
+    "optionalCommonFields": [
+      "read_at"
+    ],
+    "shapeValidation": true,
+    "unknownKeySanitization": false,
+    "returnsOriginalResponseRecords": true,
+    "safeActionUrlCheck": "relative path starting /, excludes // and backslash; this is not server field redaction."
+  },
+  "counts": {
+    "reviewedTypes": 12,
+    "sqlTemplateCandidates": 9,
+    "legacyDefinitionsOnly": 3,
+    "canonicalCallerBoundedRuntimeAccepted": 8,
+    "directSqlProducerWithoutIdentifiedCaller": 1,
+    "legacySourceAndSyntheticClientOnly": 3
+  },
+  "records": [
+    {
+      "type": "subscription_expiry_reminder",
+      "source": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+      "anchor": "type: \"subscription_expiry_reminder\",",
+      "line": 151,
+      "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+      "requiredVariableKeys": [
+        "plan_name",
+        "expires_at",
+        "days_remaining"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Canonical subscription row and service clock; literal key names.",
+      "runtimeProducerToHttpClientAccepted": true,
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": false,
+        "valueInputControl": "Canonical subscription row and service clock; literal key names."
+      },
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Actual authenticated list→canonical subscription refresher→three SQL templates→actual app→actual frontend validator; Two owned merchants; exact fields/source identity; eligible and zero-remaining/expired/distant batch filtering; Scoped disposable addon-notice INSERT failure after subscription reminder insertion/marker update: HTTP503, all three-table snapshots unchanged; real HTTP retry succeeds; Actual foreign notice read denial, own read/replay and successful list/read peer snapshots preserved",
+      "runtimeAcceptanceScope": "Actual authenticated list→canonical subscription refresher→three SQL templates→actual app→actual frontend validator; Two owned merchants; exact fields/source identity; eligible and zero-remaining/expired/distant batch filtering; Scoped disposable addon-notice INSERT failure after subscription reminder insertion/marker update: HTTP503, all three-table snapshots unchanged; real HTTP retry succeeds; Actual foreign notice read denial, own read/replay and successful list/read peer snapshots preserved",
+      "callerAcceptedSource": "ac1cd586a51dea417ace5b1e3ff818c8ec58f4ce",
+      "concurrentRefreshEvidence": "P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json"
+    },
+    {
+      "type": "subscription_expired",
+      "source": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+      "anchor": "type: \"subscription_expired\",",
+      "line": 179,
+      "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+      "requiredVariableKeys": [
+        "plan_name",
+        "expired_at",
+        "addon_replies_remaining"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Canonical subscription state/time and remaining count; literal key names.",
+      "runtimeProducerToHttpClientAccepted": true,
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": false,
+        "valueInputControl": "Canonical subscription state/time and remaining count; literal key names."
+      },
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Actual authenticated list→canonical subscription refresher→three SQL templates→actual app→actual frontend validator; Two owned merchants; exact fields/source identity; eligible and zero-remaining/expired/distant batch filtering; Scoped disposable addon-notice INSERT failure after subscription reminder insertion/marker update: HTTP503, all three-table snapshots unchanged; real HTTP retry succeeds; Actual foreign notice read denial, own read/replay and successful list/read peer snapshots preserved",
+      "runtimeAcceptanceScope": "Actual authenticated list→canonical subscription refresher→three SQL templates→actual app→actual frontend validator; Two owned merchants; exact fields/source identity; eligible and zero-remaining/expired/distant batch filtering; Scoped disposable addon-notice INSERT failure after subscription reminder insertion/marker update: HTTP503, all three-table snapshots unchanged; real HTTP retry succeeds; Actual foreign notice read denial, own read/replay and successful list/read peer snapshots preserved",
+      "callerAcceptedSource": "ac1cd586a51dea417ace5b1e3ff818c8ec58f4ce",
+      "concurrentRefreshEvidence": "P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json"
+    },
+    {
+      "type": "addon_expiry_reminder",
+      "source": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+      "anchor": "type: \"addon_expiry_reminder\",",
+      "line": 229,
+      "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+      "requiredVariableKeys": [
+        "addon_batch_id",
+        "source",
+        "remaining_replies",
+        "expires_at",
+        "days_remaining"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Scoped reply batch row, source enum and service clock; literal key names.",
+      "runtimeProducerToHttpClientAccepted": true,
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": false,
+        "valueInputControl": "Scoped reply batch row, source enum and service clock; literal key names."
+      },
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Actual authenticated list→canonical subscription refresher→three SQL templates→actual app→actual frontend validator; Two owned merchants; exact fields/source identity; eligible and zero-remaining/expired/distant batch filtering; Scoped disposable addon-notice INSERT failure after subscription reminder insertion/marker update: HTTP503, all three-table snapshots unchanged; real HTTP retry succeeds; Actual foreign notice read denial, own read/replay and successful list/read peer snapshots preserved",
+      "runtimeAcceptanceScope": "Actual authenticated list→canonical subscription refresher→three SQL templates→actual app→actual frontend validator; Two owned merchants; exact fields/source identity; eligible and zero-remaining/expired/distant batch filtering; Scoped disposable addon-notice INSERT failure after subscription reminder insertion/marker update: HTTP503, all three-table snapshots unchanged; real HTTP retry succeeds; Actual foreign notice read denial, own read/replay and successful list/read peer snapshots preserved",
+      "callerAcceptedSource": "ac1cd586a51dea417ace5b1e3ff818c8ec58f4ce",
+      "concurrentRefreshEvidence": "P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json"
+    },
+    {
+      "type": "operational_new_order",
+      "source": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+      "anchor": "export async function notifyMerchantNewOrderPostgres",
+      "line": 90,
+      "state": "DIRECT_SQL_PRODUCER_ACCEPTED_NO_APPLICATION_CALLER_IDENTIFIED",
+      "requiredVariableKeys": [
+        "order_id",
+        "action_url"
+      ],
+      "optionalVariableKeys": [
+        "conversation_id"
+      ],
+      "valueInputControl": "Fixed literal keys and encoded local URL in direct internal SQL helper. No application caller identified; existing legacy JSON order caller is separate and retired in required mode. No commercial order journey acceptance.",
+      "runtimeProducerToHttpClientAccepted": true,
+      "runtimeAcceptanceScope": "Direct SQL producer -> actual app -> actual frontend validator only; no canonical application caller identified by bounded text/call-chain source review.",
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "optionalAbsentAndBlankRuntimeAccepted": true,
+      "optionalRuntimeEvidence": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": true,
+        "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
+        "valueInputControl": "Internal call parameters normalized with text(); fixed relative action URL with encoded order ID. Caller identity/ownership chain still requires reconciliation."
+      },
+      "runtimeCallerToHttpClientAccepted": false,
+      "callerReachabilityEvidence": "P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json"
+    },
+    {
+      "type": "operational_payment_conflict",
+      "source": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+      "anchor": "export async function notifyMerchantPaymentConflictPostgres",
+      "line": 115,
+      "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+      "requiredVariableKeys": [
+        "order_id",
+        "action_url"
+      ],
+      "optionalVariableKeys": [
+        "conversation_id",
+        "provider"
+      ],
+      "valueInputControl": "Internal normalized parameters; relative action URL with encoded IDs; variable keys fixed by producer. Caller provenance is bounded by linked runtime evidence. ",
+      "runtimeProducerToHttpClientAccepted": true,
+      "runtimeAcceptanceScope": "Internal recordVerifiedProviderPaymentEvidenceAuthoritative→actual notification SQL→actual app→actual frontend validator; Two merchants, separate auth/restricted primary LOGIN; Unverified flag, foreign-order, amount and unsafe metadata denials without domain mutation; Caller/read sequential replay and peer preservation; Disposable scoped notification INSERT fault after committed payment evidence, then replay repair",
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "optionalAbsentAndBlankRuntimeAccepted": true,
+      "optionalRuntimeEvidence": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Internal recordVerifiedProviderPaymentEvidenceAuthoritative→actual notification SQL→actual app→actual frontend validator; Two merchants, separate auth/restricted primary LOGIN; Unverified flag, foreign-order, amount and unsafe metadata denials without domain mutation; Caller/read sequential replay and peer preservation; Disposable scoped notification INSERT fault after committed payment evidence, then replay repair",
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": true,
+        "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
+        "valueInputControl": "Internal normalized parameters; relative action URL with encoded IDs; variable keys fixed by producer. Caller/input provenance not accepted yet."
+      },
+      "callerAcceptedSource": "92507e7ab7e55f792c238df65ca8ec8ea5a37403"
+    },
+    {
+      "type": "operational_knowledge_gap",
+      "source": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+      "anchor": "export async function notifyMerchantKnowledgeGapPostgres",
+      "line": 145,
+      "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+      "requiredVariableKeys": [
+        "training_request_id",
+        "action_url"
+      ],
+      "optionalVariableKeys": [
+        "conversation_id"
+      ],
+      "valueInputControl": "Internal training/conversation IDs; fixed keys and encoded relative action URL. Caller provenance is bounded by linked runtime evidence. ",
+      "runtimeProducerToHttpClientAccepted": true,
+      "runtimeAcceptanceScope": "Actual restricted Meta worker with encrypted durable queue and actual knowledge engine; Two new unknown-question events create separate owned training requests, committed manual handoff and exact SQL knowledge-gap notices; Authenticated actual app list/read plus actual frontend validator; peer notice absent from list and read denied with unchanged snapshots; Own read replay; signed webhook redelivery and durable queue dedup preserve training/audit/domain/job snapshots, sends and debit",
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "optionalAbsentAndBlankRuntimeAccepted": true,
+      "optionalRuntimeEvidence": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": true,
+        "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
+        "valueInputControl": "Internal training/conversation IDs; fixed keys and encoded relative action URL. Caller/input provenance not accepted yet."
+      },
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Actual restricted Meta worker with encrypted durable queue and actual knowledge engine; Two new unknown-question events create separate owned training requests, committed manual handoff and exact SQL knowledge-gap notices; Authenticated actual app list/read plus actual frontend validator; peer notice absent from list and read denied with unchanged snapshots; Own read replay; signed webhook redelivery and durable queue dedup preserve training/audit/domain/job snapshots, sends and debit",
+      "callerAcceptedSource": "d86d7c11a9634f870acda08f863d2237dbbe5bbc"
+    },
+    {
+      "type": "operational_customer_message",
+      "source": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+      "anchor": "export async function notifyMerchantNewCustomerMessagePostgres",
+      "line": 171,
+      "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+      "requiredVariableKeys": [
+        "conversation_id",
+        "action_url"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Internal conversation/event IDs, fixed keys and encoded relative action URL. Caller provenance is bounded by linked runtime evidence. ",
+      "runtimeProducerToHttpClientAccepted": true,
+      "runtimeAcceptanceScope": "Reuse original restricted worker, encrypted jobs, fake loopback Graph transport and identity denials; Two real worker-produced customer notifications matched to inbound SQL messages and source events; Actual app authenticated merchant list/read and actual frontend validator; Peer read denial with unchanged nine-surface snapshot, own read replay; Signed webhook redelivery and exact durable queue dedup without notice/send/debit/job changes",
+      "runtimeEvidence": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Reuse original restricted worker, encrypted jobs, fake loopback Graph transport and identity denials; Two real worker-produced customer notifications matched to inbound SQL messages and source events; Actual app authenticated merchant list/read and actual frontend validator; Peer read denial with unchanged nine-surface snapshot, own read replay; Signed webhook redelivery and exact durable queue dedup without notice/send/debit/job changes",
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": true,
+        "runtimeAcceptanceScope": "Present optional inputs, direct internal producer invocation, two-merchant SQL/app/frontend-validator round trip, sequential dedup/read replay only; upstream caller ownership remains pending.",
+        "valueInputControl": "Internal conversation/event IDs, fixed keys and encoded relative action URL. Caller/input provenance not accepted yet."
+      },
+      "callerAcceptedSource": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0"
+    },
+    {
+      "type": "inspection_session_request",
+      "source": "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts",
+      "anchor": "'notifications.inspection_session_request.title'",
+      "line": 158,
+      "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+      "requiredVariableKeys": [
+        "ticket_id",
+        "inspection_request_id",
+        "ticket_subject",
+        "admin_name",
+        "mode",
+        "request_expires_at",
+        "action_url"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Ticket/request/admin rows; merchant-controlled ticket subject is a value, not a key; canonical mode independent_read_only. Lifecycle and tenant provenance are bounded by linked runtime evidence.",
+      "runtimeProducerToHttpClientAccepted": true,
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": false,
+        "valueInputControl": "Ticket/request/admin rows; merchant-controlled ticket subject is a value, not a key; canonical mode independent_read_only. Lifecycle and tenant provenance still need runtime linkage."
+      },
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Actual assistant inspection HTTP caller creates committed request and exact SQL notice; improper admin roles denied; Actual admin lifecycle HTTP list emits exact reply-reminder fields, idempotent markers and peer preservation; Inspection/reminder notice INSERT fault triggers prove transaction rollback and subsequent real HTTP retry; Actual app list/read and actual frontend validator; foreign notice read denied, own read/replay preserved; Actual merchant approve/reject reflected in authoritative current notification lifecycle projection; Synthetic mismatched source/ticket references do not project peer state; stale stored lifecycle keys cannot override current owned request",
+      "runtimeAcceptanceScope": "Actual assistant inspection HTTP caller creates committed request and exact SQL notice; improper admin roles denied; Actual admin lifecycle HTTP list emits exact reply-reminder fields, idempotent markers and peer preservation; Inspection/reminder notice INSERT fault triggers prove transaction rollback and subsequent real HTTP retry; Actual app list/read and actual frontend validator; foreign notice read denied, own read/replay preserved; Actual merchant approve/reject reflected in authoritative current notification lifecycle projection; Synthetic mismatched source/ticket references do not project peer state; stale stored lifecycle keys cannot override current owned request",
+      "callerAcceptedSource": "06c045233853ad897b99ae2cd72582274e69e65c",
+      "requiredProjectedKeys": [
+        "request_status"
+      ],
+      "optionalProjectedKeys": [
+        "consent_decision",
+        "responded_at",
+        "session_expires_at",
+        "ended_at",
+        "end_reason"
+      ],
+      "lifecycleEvidence": "P0-SUPPORT-NOTIFICATION-ENDING-20261025.json",
+      "creationRaceEvidence": "P0-INSPECTION-CONCURRENT-CREATE-20261025.json"
+    },
+    {
+      "type": "support_reply_reminder",
+      "source": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+      "anchor": "type: \"support_reply_reminder\",",
+      "line": 235,
+      "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+      "requiredVariableKeys": [
+        "ticket_id",
+        "ticket_subject",
+        "action_url"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "Scoped support ticket/lifecycle clock; fixed keys and encoded local ticket URL.",
+      "runtimeProducerToHttpClientAccepted": true,
+      "initialReview": {
+        "state": "REVIEWED_SQL_TEMPLATE_CANDIDATE",
+        "runtimeProducerToHttpClientAccepted": false,
+        "valueInputControl": "Scoped support ticket/lifecycle clock; fixed keys and encoded local ticket URL."
+      },
+      "runtimeCallerToHttpClientAccepted": true,
+      "callerRuntimeEvidence": "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+      "callerRuntimeScope": "Actual assistant inspection HTTP caller creates committed request and exact SQL notice; improper admin roles denied; Actual admin lifecycle HTTP list emits exact reply-reminder fields, idempotent markers and peer preservation; Inspection/reminder notice INSERT fault triggers prove transaction rollback and subsequent real HTTP retry; Actual app list/read and actual frontend validator; foreign notice read denied, own read/replay preserved; Actual merchant approve/reject reflected in authoritative current notification lifecycle projection; Synthetic mismatched source/ticket references do not project peer state; stale stored lifecycle keys cannot override current owned request",
+      "runtimeAcceptanceScope": "Actual assistant inspection HTTP caller creates committed request and exact SQL notice; improper admin roles denied; Actual admin lifecycle HTTP list emits exact reply-reminder fields, idempotent markers and peer preservation; Inspection/reminder notice INSERT fault triggers prove transaction rollback and subsequent real HTTP retry; Actual app list/read and actual frontend validator; foreign notice read denied, own read/replay preserved; Actual merchant approve/reject reflected in authoritative current notification lifecycle projection; Synthetic mismatched source/ticket references do not project peer state; stale stored lifecycle keys cannot override current owned request",
+      "callerAcceptedSource": "06c045233853ad897b99ae2cd72582274e69e65c"
+    },
+    {
+      "type": "subscription_balance_purchase",
+      "source": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+      "anchor": "export function appendMerchantBalanceNotification",
+      "line": 581,
+      "state": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY",
+      "requiredVariableKeys": [
+        "purchased_replies",
+        "emergency_debt_paid",
+        "addon_replies_added",
+        "emergency_debt_remaining",
+        "base_replies_remaining",
+        "emergency_replies_remaining",
+        "addon_replies_remaining",
+        "total_replies_available"
+      ],
+      "optionalVariableKeys": [
+        "addon_batch_id",
+        "addon_batch_expires_at"
+      ],
+      "valueInputControl": "AuthDb merchant_notifications array definition; not evidence of canonical SQL producer.",
+      "runtimeProducerToHttpClientAccepted": false,
+      "initialReview": {
+        "state": "LEGACY_AUTHDB_DEFINITION_ONLY_IN_REVIEWED_SOURCE",
+        "runtimeProducerToHttpClientAccepted": false,
+        "valueInputControl": "AuthDb merchant_notifications array definition; not evidence of canonical SQL producer."
+      },
+      "runtimeCallerToHttpClientAccepted": false,
+      "compatibilityEvidence": "P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json",
+      "runtimeAcceptanceScope": "Source reachability plus synthetic actual-client contract only; not a canonical SQL producer or actual app HTTP round trip."
+    },
+    {
+      "type": "subscription_plan_event",
+      "source": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+      "anchor": "export function appendMerchantSubscriptionPlanNotification",
+      "line": 628,
+      "state": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY",
+      "requiredVariableKeys": [
+        "operation",
+        "plan_name",
+        "start_date",
+        "expires_at",
+        "emergency_debt_paid",
+        "emergency_debt_remaining",
+        "base_replies_remaining",
+        "addon_replies_remaining",
+        "total_replies_available"
+      ],
+      "optionalVariableKeys": [
+        "previous_plan_name"
+      ],
+      "valueInputControl": "AuthDb appendMerchantNotificationRecord; no canonical SQL type producer claimed.",
+      "runtimeProducerToHttpClientAccepted": false,
+      "initialReview": {
+        "state": "LEGACY_AUTHDB_DEFINITION_ONLY_IN_REVIEWED_SOURCE",
+        "runtimeProducerToHttpClientAccepted": false,
+        "valueInputControl": "AuthDb appendMerchantNotificationRecord; no canonical SQL type producer claimed."
+      },
+      "runtimeCallerToHttpClientAccepted": false,
+      "compatibilityEvidence": "P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json",
+      "runtimeAcceptanceScope": "Source reachability plus synthetic actual-client contract only; not a canonical SQL producer or actual app HTTP round trip."
+    },
+    {
+      "type": "subscription_emergency_activated",
+      "source": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+      "anchor": "export function appendMerchantEmergencyActivationNotification",
+      "line": 656,
+      "state": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY",
+      "requiredVariableKeys": [
+        "addon_batch_id",
+        "emergency_replies_added",
+        "emergency_debt",
+        "expires_at"
+      ],
+      "optionalVariableKeys": [],
+      "valueInputControl": "AuthDb appendMerchantNotificationRecord. Same string in PostgreSQL subscription audit action_type is not a notifications.type producer.",
+      "runtimeProducerToHttpClientAccepted": false,
+      "initialReview": {
+        "state": "LEGACY_AUTHDB_DEFINITION_ONLY_IN_REVIEWED_SOURCE",
+        "runtimeProducerToHttpClientAccepted": false,
+        "valueInputControl": "AuthDb appendMerchantNotificationRecord. Same string in PostgreSQL subscription audit action_type is not a notifications.type producer."
+      },
+      "runtimeCallerToHttpClientAccepted": false,
+      "compatibilityEvidence": "P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json",
+      "runtimeAcceptanceScope": "Source reachability plus synthetic actual-client contract only; not a canonical SQL producer or actual app HTTP round trip."
+    }
+  ],
+  "reservedKeyReview": {
+    "keys": [
+      "id",
+      "type",
+      "created_at",
+      "read_at"
+    ],
+    "collisionInReviewedLiteralKeySets": false,
+    "genericServerMapper": "clone variables -> remove reserved keys -> canonical SQL id/type/created_at/read_at; current inspection lifecycle hydrated only from matching owned request/source/ticket",
+    "serverPerTypeAllowlist": false,
+    "untrustedControlOfVariableKeysProven": false,
+    "privacyAccepted": false,
+    "canonicalReservedFieldsAccepted": true,
+    "evidence": "P0-NOTIFICATION-RESERVED-FIELDS-20261025.json",
+    "note": "Synthetic bootstrap correctness/defense-in-depth conflict proved and fixed. Other business/extra keys stay unchanged; no attacker path or historical data claim."
+  },
+  "alternateSqlHelpers": [
+    {
+      "source": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+      "anchors": [
+        "export async function createInspectionRequestPostgres",
+        "export async function refreshSupportLifecyclePostgres"
+      ],
+      "notes": "Older SQL helper has request_id instead of the reviewed client inspection_request_id/ticket_subject/admin_name shape; current reviewed route imports canonical createInspectionRequestCanonicalPostgres. Helper reachability and historical data are not certified."
+    }
+  ],
+  "evidenceLimits": [
+    "Eight identified canonical caller types have bounded runtime evidence, not complete actor/domain acceptance.",
+    "New-order direct SQL helper is not an identified application caller; legacy source/client shapes are not canonical SQL producer acceptance.",
+    "Non-reserved extra keys remain projected and unknown/malformed/historical response policy unresolved.",
+    "No actual hosted rows, browser rendering, provider delivery, capacity, formal complete call graph or whole P0 acceptance.",
+    "Initial review snapshots are dated provenance; currentReconciliation and current record state supersede old pending notes.",
+    "No new CI or runtime execution in this documentation-only batch. Latest executable56/56,notification78TAP,broader721TAP reused as inherited evidence."
+  ],
+  "nextExactBatch": {
+    "types": [],
+    "acceptance": "Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved.",
+    "gateRemainsOpen": true
+  },
+  "verification": {
+    "clientTypeSetMatchesSource": true,
+    "sourceAnchorsPresent": true,
+    "reviewedLiteralKeysAvoidReserved": true,
+    "runtimeRoundTripAccepted": false,
+    "partialOperationalRuntimeAccepted": true,
+    "allIdentifiedCanonicalCallerTypesBoundedAccepted": true,
+    "canonicalCallerTypeCount": 8,
+    "canonicalReservedFieldsAccepted": true,
+    "wholeCellAccepted": false
+  },
+  "inputSha256": {
+    "artifacts/api-server/src/routes/auth-support-postgres-routes.ts": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62",
+    "artifacts/api-server/src/routes/authRuntimePart3.ts": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff",
+    "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts": "9f432edc4161645e7d452f999c5bfd8f21f406b31f19c51679843881d17f09f5",
+    "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts": "fa40e8d728cf33796e565b00f58dd839c893dd539da9d9786fb0c2dc3d11a6f8",
+    "artifacts/api-server/src/services/postgresSupportAuthority.ts": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0",
+    "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts": "af2012d752ffb85a1c02dba8a761066c8170c491b042606136152d5c14460c7f",
+    "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts": "59ec43152b0ad63599cd91b2a1c4db23ab263c5f9ce2cd9c00138e20f6748008",
+    "artifacts/api-server/tests/operational-notifications.test.ts": "0b31ef9d0dd42f3e83e3603e990e02670f6c2d162e321dd9579cd81e2a2136e3",
+    "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6",
+    "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980",
+    "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts": "e1deebab5c2cf4e7db1892758345a56e160b4f3ff1bd6b92fe33a02deb8c3cfd"
+  },
+  "release": "NO-GO",
+  "callerSourceFollowup": {
+    "status": "HISTORICAL_SOURCE_REVIEW_SUPERSEDED_BY_CURRENT_RECONCILIATION",
+    "sourceRevision": "a2e74076c435de441377347a53c687cd8f24397a",
+    "observedCallSites": [
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "function": "notifyMerchantNewCustomerMessagePostgres",
+        "line": 507,
+        "inputs": "parsed merchant/event and committed inbound conversation"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts",
+        "function": "notifyMerchantKnowledgeGapPostgres",
+        "line": 1603,
+        "inputs": "parsed merchant, decision training request, committed handoff conversation"
+      },
+      {
+        "path": "artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts",
+        "function": "notifyMerchantPaymentConflictPostgres",
+        "line": 705,
+        "inputs": "verified payment application conflict merchant/order/provider/event"
+      }
+    ],
+    "unresolved": "New-order SQL producer caller not reconciled in inspected subset; not proof it is unreachable or a missing feature.",
+    "next": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation.",
+    "existingCallerRegressionEvidence": {
+      "runtime": "Executed in broader exact-source CI; bounded original assertions only",
+      "paymentAuthorityTap": 11,
+      "metaJobIdentityTap": 20,
+      "limits": "Payment suite checks conflict row/order ID; Meta identity suite snapshots notifications among nine surfaces. Neither establishes all caller-to-HTTP/frontend field round trips."
+    },
+    "historicalStatus": "SOURCE_ONLY_NOT_CALLER_RUNTIME_ACCEPTANCE"
+  },
+  "knowledgeGapSourceFollowup": {
+    "sourceRevision": "17242509f6fff4952949dca77acc1c557aa37a93",
+    "existingLearningTest": "artifacts/api-server/tests/knowledge-learning-cycle-postgres.integration.test.ts",
+    "observation": "Existing learning test exercises KnowledgeDecisionEngine/PostgresKnowledgeRuntime directly; it is engine-domain evidence, not preparePostgresMetaAutoReply caller-to-notification evidence.",
+    "nextCaller": "Bounded caller runtime accepted; see current record and P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json",
+    "historicalNextCaller": "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts: committed handoff + decision.trainingRequestId -> notifyMerchantKnowledgeGapPostgres"
+  },
+  "initialReview": {
+    "auditedSourceRevision": "64f61f44ac32738607f0bcc5d8fae0ff8072e295",
+    "lastAcceptedExecutable": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
+    "status": "OPEN_PARTIAL_OPERATIONAL_RUNTIME_ACCEPTED",
+    "reservedKeyReview": {
+      "keys": [
+        "created_at",
+        "id",
+        "read_at",
+        "type"
+      ],
+      "collisionInReviewedLiteralKeySets": false,
+      "genericServerMapper": "id/type -> spread record(variables) -> timestamps",
+      "serverPerTypeAllowlist": false,
+      "untrustedControlOfVariableKeysProven": false,
+      "privacyAccepted": false,
+      "note": "A possible collision mechanism is not an observed unauthenticated exploit. Reconcile actual producer/caller inputs before changing the projection."
+    },
+    "nextExactBatch": {
+      "types": [
+        "operational_knowledge_gap"
+      ],
+      "acceptance": "Exercise actual Meta knowledge-gap/handoff caller through training request, notification SQL fields, authenticated actual app and frontend validator. Reuse existing knowledge-learning-cycle engine-domain and Meta identity evidence; a direct engine decision is not the Meta caller round trip.",
+      "gateRemainsOpen": true
+    },
+    "inputSha256": {
+      "artifacts/api-server/src/routes/auth-support-postgres-routes.ts": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62",
+      "artifacts/api-server/src/routes/authRuntimePart3.ts": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff",
+      "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts": "91a3111f26b6d4b9876451b09c3218126a901d79a37eef1e8aa584b2e9fe0ff8",
+      "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts": "fa40e8d728cf33796e565b00f58dd839c893dd539da9d9786fb0c2dc3d11a6f8",
+      "artifacts/api-server/src/services/postgresSupportAuthority.ts": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0",
+      "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts": "d77196c64fb39c782047ab7f17e0cd63cadc2475ebe74a9e9fd1e8d432f328f7",
+      "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts": "59ec43152b0ad63599cd91b2a1c4db23ab263c5f9ce2cd9c00138e20f6748008",
+      "artifacts/api-server/tests/operational-notifications.test.ts": "0b31ef9d0dd42f3e83e3603e990e02670f6c2d162e321dd9579cd81e2a2136e3",
+      "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6",
+      "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980",
+      "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts": "e1deebab5c2cf4e7db1892758345a56e160b4f3ff1bd6b92fe33a02deb8c3cfd"
+    },
+    "evidenceLimits": [
+      "Existing synthetic-notification HTTP and bulk actor tests prove scoped transport/mutation, not all real producer/type/key round trips.",
+      "Mocked client tests do not establish SQL producer-to-HTTP provenance.",
+      "operational-notifications.test.ts seeds legacy merchants.json and runtime JSON; do not count it as canonical SQL producer coverage.",
+      "Nine SQL templates are reviewed candidates, not a complete dynamic call graph or all historical data.",
+      "No code fix or policy change is justified solely by a generic mapper accepting arbitrary stored JSON.",
+      "Historical initialReview/sourceFollowup fields are retained as dated provenance; currentReconciliation and per-record state take precedence. No new CI or runtime execution in this documentation batch."
+    ]
+  },
+  "schemaChanged": false,
+  "aclChanged": false,
+  "currentReconciliation": {
+    "date": "2026-10-25",
+    "recoveredHead": "04552d16ab432fcf90eec3d0e40d218c42ae4403",
+    "applicationChanged": false,
+    "newRuntimeExecuted": false,
+    "sourceTypeSetMatches": true,
+    "typeMatrix": [
+      {
+        "type": "subscription_expiry_reminder",
+        "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+        "evidence": "P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": true
+      },
+      {
+        "type": "subscription_expired",
+        "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+        "evidence": "P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": true
+      },
+      {
+        "type": "addon_expiry_reminder",
+        "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+        "evidence": "P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": true
+      },
+      {
+        "type": "operational_new_order",
+        "state": "DIRECT_SQL_PRODUCER_ACCEPTED_NO_APPLICATION_CALLER_IDENTIFIED",
+        "evidence": "P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": false
+      },
+      {
+        "type": "operational_payment_conflict",
+        "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+        "evidence": "P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": true
+      },
+      {
+        "type": "operational_knowledge_gap",
+        "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+        "evidence": "P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": true
+      },
+      {
+        "type": "operational_customer_message",
+        "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+        "evidence": "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": true
+      },
+      {
+        "type": "inspection_session_request",
+        "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+        "evidence": "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": true
+      },
+      {
+        "type": "support_reply_reminder",
+        "state": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED",
+        "evidence": "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+        "producerToHttpClient": true,
+        "actualCallerToHttpClient": true
+      },
+      {
+        "type": "subscription_balance_purchase",
+        "state": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY",
+        "evidence": "P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json",
+        "producerToHttpClient": false,
+        "actualCallerToHttpClient": false
+      },
+      {
+        "type": "subscription_plan_event",
+        "state": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY",
+        "evidence": "P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json",
+        "producerToHttpClient": false,
+        "actualCallerToHttpClient": false
+      },
+      {
+        "type": "subscription_emergency_activated",
+        "state": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY",
+        "evidence": "P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json",
+        "producerToHttpClient": false,
+        "actualCallerToHttpClient": false
+      }
+    ],
+    "checklist": [
+      {
+        "id": "FIELD002-C1",
+        "status": "BOUNDED_ACCEPTED",
+        "requirement": "Exact variables and owned transport for the eight identified canonical caller types",
+        "evidence": [
+          "P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+          "P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
+          "P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json",
+          "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+          "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json"
+        ],
+        "limit": "Scoped source/runtime contract; not complete actor or domain acceptance"
+      },
+      {
+        "id": "FIELD002-C2",
+        "status": "BOUNDED_ACCEPTED",
+        "requirement": "Direct operational producer optional/absent/blank field contracts including new-order helper",
+        "evidence": [
+          "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+          "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json"
+        ],
+        "limit": "Direct producer invocation is not proof of application reachability"
+      },
+      {
+        "id": "FIELD002-C3",
+        "status": "BOUNDED_ACCEPTED",
+        "requirement": "Canonical identity/time and inspection lifecycle projection",
+        "evidence": [
+          "P0-NOTIFICATION-RESERVED-FIELDS-20261025.json",
+          "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+          "P0-SUPPORT-NOTIFICATION-ENDING-20261025.json"
+        ],
+        "limit": "No fabricated lifecycle for unlinked historical rows"
+      },
+      {
+        "id": "FIELD002-C4",
+        "status": "BOUNDED_ACCEPTED",
+        "requirement": "Observed SQL overlap for subscription refresh and canonical inspection creation",
+        "evidence": [
+          "P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json",
+          "P0-INSPECTION-CONCURRENT-CREATE-20261025.json"
+        ],
+        "limit": "No general race, crash, capacity or all-writer certification"
+      },
+      {
+        "id": "FIELD002-C5",
+        "status": "SOURCE_AND_LOCAL_CLIENT_RECONCILED",
+        "requirement": "Legacy JSON types, older SQL inspection shapes and new-order helper reachability",
+        "evidence": [
+          "P0-NOTIFICATION-LEGACY-COMPATIBILITY-20261025.json",
+          "P0-NEW-ORDER-NOTIFICATION-REACHABILITY-20261025.json"
+        ],
+        "limit": "Bounded literal source scan, not formal whole-program or hosted absence"
+      },
+      {
+        "id": "FIELD002-R1",
+        "status": "OPEN_CANDIDATE_PREPARED_LOCAL_CLIENT_TESTED_NOT_ENFORCED",
+        "requirement": "Decide and enforce complete response policy for non-reserved extra keys and unknown/malformed types",
+        "current": "Server retains non-reserved variables; client validates shape but returns original records. Current literal key outputs are bounded accepted; arbitrary stored fields have no general privacy certification. Candidate per-type projection prepared and locally compared with actual client (6PASS); existing extension behavior would change. No product projection or policy adoption.",
+        "acceptance": "Prepare explicit compatibility-preserving projection contract for current 12 shapes, canonical inspection enrichment and unknown/malformed records; identify permitted extra keys and migration impact before changing output. Verify positive and negative actual app/client behavior if implemented.",
+        "requiresHosted": false,
+        "requiresNewPublicFeature": false,
+        "candidateContract": "responseFieldContract",
+        "candidateTest": "p0-notification-response-field-contract.test.mjs"
+      },
+      {
+        "id": "FIELD002-R2",
+        "status": "BLOCKED_HOSTED_VERIFICATION_AND_DISPOSITION",
+        "requirement": "Establish actual historical/alternate-writer row inventory and approved handling of incompatible/unlinked records",
+        "current": "No hosted rows inspected. Synthetic old inspection shapes lack required keys/linkage; one incompatible record currently rejects the whole client response.",
+        "acceptance": "Authorized read-only inventory and explicit preserve/quarantine/repair handling with source/tenant/request/ticket provenance. No automatic relinking, cleanup or retention policy inferred.",
+        "requiresHosted": true,
+        "authorization": "Unavailable under current GitHub-only restriction"
+      },
+      {
+        "id": "FIELD002-R3",
+        "status": "OPEN_PRODUCER_SCOPE_CONTRACT",
+        "requirement": "Confirm intended canonical role of new-order and three legacy-only notification types",
+        "current": "No identified canonical new-order application caller; three legacy subscription types have source/client compatibility only.",
+        "acceptance": "Document intended supported versus compatibility-only types in release contract; require a real caller test only if a supported canonical caller is identified or separately authorized. Do not enable retired paths or fabricate a caller.",
+        "requiresNewPublicFeature": false
+      }
+    ],
+    "closureDecision": "FIELD002_OPEN_NO_GATE_CLOSURE",
+    "currentExecutable": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+    "inheritedLatestCi": {
+      "workflowsSuccess": 56,
+      "notificationTapPass": 78,
+      "broaderTapPass": 721,
+      "newCiRun": false
+    },
+    "evidenceAncestry": {
+      "evidence": [
+        {
+          "file": "P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+          "acceptedSource": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "0e6b83d3d8cfe2416de71cc5aee5020730e54fe62e57eb8747a247b46f568f9c"
+        },
+        {
+          "file": "P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
+          "acceptedSource": "b0417241bd9b69dd8f460ce91e044004650266d9",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "a85f00fa74f2ebbac142ec185bc362e047a7a11220b8105219f992e070f4408e"
+        },
+        {
+          "file": "P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
+          "acceptedSource": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "6e82a4a0e1fedf140a29996caee3af753bef3c710c87d7efffc7321622629b66"
+        },
+        {
+          "file": "P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+          "acceptedSource": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "3063a62f1f3e9e84597fc56e867d638fdde29930242a1cc0dcc1ee32424d5a9f"
+        },
+        {
+          "file": "P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json",
+          "acceptedSource": "d86d7c11a9634f870acda08f863d2237dbbe5bbc",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "1c4e887270b77e500e704e9eb52ba365424ca062d025dcb7bdec414bfbf6e4e5"
+        },
+        {
+          "file": "P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+          "acceptedSource": "ac1cd586a51dea417ace5b1e3ff818c8ec58f4ce",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "c654454f738b0b4939f04d330b404a1ed180eb25736a4123b1238d93cef1e187"
+        },
+        {
+          "file": "P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+          "acceptedSource": "06c045233853ad897b99ae2cd72582274e69e65c",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "3713474966a8fa69f3a1abeb89ac0c7800e6280aafd726f7c0713c12d676e99d"
+        },
+        {
+          "file": "P0-SUPPORT-NOTIFICATION-ENDING-20261025.json",
+          "acceptedSource": "6182678d76e97e315df428bd2739af284afea420",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "88903a92408df2cfecb3f6f8c2375c21ac20222a75bbac7d677a6024e64eb792"
+        },
+        {
+          "file": "P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json",
+          "acceptedSource": "57b554a0ea1c2caf7fa258145a9ec38c19b68b8e",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "81614fce8293d148968f68e7a35c2d199f7084b45c4fee813185c68f2267ca00"
+        },
+        {
+          "file": "P0-INSPECTION-CONCURRENT-CREATE-20261025.json",
+          "acceptedSource": "31912d9fd33c9e12311351c189b937652496c6fb",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "d1041fd254dcdef1a2c6edb4b62cb3b91482d4b1547ebb5d543dbcadaeea595c"
+        },
+        {
+          "file": "P0-NOTIFICATION-RESERVED-FIELDS-20261025.json",
+          "acceptedSource": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+          "ancestorOfRecoveredHead": true,
+          "sha256": "b37b4e2ea3be59c3833a909d3bcf6ea90901c806f59befb7dc0c5f68fdb2a262"
+        }
+      ],
+      "clientTypeSetMatchesSource": true,
+      "count": 12
+    },
+    "nextExactAction": "Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope.",
+    "scope": "Reconciliation of this bounded notification field cell only; not a complete P0 inventory or whole-application privacy denominator",
+    "historicalNextExactAction": "Prepare a compatibility-preserving FIELD002-R1 response-field contract from the reconciled 12 type shapes and current inspection enrichment: explicit allowed extra keys, unknown/malformed record behavior and historical compatibility impact. Do not change production projection, enable retired producers or claim hosted data acceptance until that contract and source evidence justify remediation."
+  },
+  "responseFieldContract": {
+    "version": 1,
+    "date": "2026-10-25",
+    "status": "CANDIDATE_SOURCE_CONTRACT_NOT_ENFORCED",
+    "recoveredHead": "f0bd2b0639f80da5c4dc98c75909d51c93e533df",
+    "applicationChanged": false,
+    "privacyAccepted": false,
+    "scope": "Response-field minimization candidate for merchant notification list/unread/single-read; not a storage schema, SQL row repair, new producer or billing contract.",
+    "common": {
+      "required": [
+        "id",
+        "type",
+        "created_at"
+      ],
+      "optional": [
+        "read_at"
+      ],
+      "authority": "Canonical SQL notification fields; variables never override them."
+    },
+    "types": [
+      {
+        "type": "subscription_expiry_reminder",
+        "required": [
+          "plan_name",
+          "expires_at",
+          "days_remaining"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "subscription_expired",
+        "required": [
+          "plan_name",
+          "expired_at",
+          "addon_replies_remaining"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "addon_expiry_reminder",
+        "required": [
+          "addon_batch_id",
+          "source",
+          "remaining_replies",
+          "expires_at",
+          "days_remaining"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "operational_new_order",
+        "required": [
+          "order_id",
+          "action_url"
+        ],
+        "optional": [
+          "conversation_id"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "DIRECT_SQL_PRODUCER_ACCEPTED_NO_APPLICATION_CALLER_IDENTIFIED"
+      },
+      {
+        "type": "operational_payment_conflict",
+        "required": [
+          "order_id",
+          "action_url"
+        ],
+        "optional": [
+          "conversation_id",
+          "provider"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "operational_knowledge_gap",
+        "required": [
+          "training_request_id",
+          "action_url"
+        ],
+        "optional": [
+          "conversation_id"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "operational_customer_message",
+        "required": [
+          "conversation_id",
+          "action_url"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "inspection_session_request",
+        "required": [
+          "ticket_id",
+          "inspection_request_id",
+          "ticket_subject",
+          "admin_name",
+          "mode",
+          "request_expires_at",
+          "action_url",
+          "request_status"
+        ],
+        "optional": [
+          "consent_decision",
+          "responded_at",
+          "session_expires_at",
+          "ended_at",
+          "end_reason"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "support_reply_reminder",
+        "required": [
+          "ticket_id",
+          "ticket_subject",
+          "action_url"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "CANONICAL_CALLER_BOUNDED_SQL_HTTP_CLIENT_ACCEPTED"
+      },
+      {
+        "type": "subscription_balance_purchase",
+        "required": [
+          "purchased_replies",
+          "emergency_debt_paid",
+          "addon_replies_added",
+          "emergency_debt_remaining",
+          "base_replies_remaining",
+          "emergency_replies_remaining",
+          "addon_replies_remaining",
+          "total_replies_available"
+        ],
+        "optional": [
+          "addon_batch_id",
+          "addon_batch_expires_at"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY"
+      },
+      {
+        "type": "subscription_plan_event",
+        "required": [
+          "operation",
+          "plan_name",
+          "start_date",
+          "expires_at",
+          "emergency_debt_paid",
+          "emergency_debt_remaining",
+          "base_replies_remaining",
+          "addon_replies_remaining",
+          "total_replies_available"
+        ],
+        "optional": [
+          "previous_plan_name"
+        ],
+        "permittedExtraKeys": [],
+        "runtimeState": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY"
+      },
+      {
+        "type": "subscription_emergency_activated",
+        "required": [
+          "addon_batch_id",
+          "emergency_replies_added",
+          "emergency_debt",
+          "expires_at"
+        ],
+        "optional": [],
+        "permittedExtraKeys": [],
+        "runtimeState": "LEGACY_JSON_SOURCE_AND_SYNTHETIC_CLIENT_ONLY"
+      }
+    ],
+    "currentBehavior": {
+      "knownTypes": "Canonical common fields plus every non-reserved stored variable; matching inspection lifecycle overrides stale lifecycle keys.",
+      "unknownTypes": "Server projects row; actual frontend rejects unknown record and rejects the whole list.",
+      "malformedKnownTypes": "Actual frontend rejects the whole list, even if other records are valid.",
+      "unreadBadge": "Count hook verifies ok and array only, then uses array length; it does not validate each record.",
+      "readMutation": "Server commits owned read update; client separately validates response shape, path id and read_at. Do not claim client failure rolls back the committed read."
+    },
+    "candidateRules": {
+      "knownTypes": "Copy common fields and the type required/optional fields only, preserving exact values and absent fields. No extra key is allowed beyond those enumerated.",
+      "unknownTypes": "Retain row and canonical common fields only. Preserve current frontend rejection; do not silently filter rows or change count/limit/order semantics.",
+      "malformedKnownTypes": "Do not coerce, default, rename, fabricate or repair values. Preserve existing actual frontend validation/failure semantics.",
+      "inspection": "Apply existing owned source/request/ticket lifecycle enrichment before key minimization. Missing/unlinked lifecycle stays missing; no fabricated status or request relinking.",
+      "readMutation": "Do not alter SQL update, transaction, tenant predicates, error statuses or idempotency. Frontend validation remains post-response.",
+      "storage": "No stored variables, source references, read state, historic rows, retention or grants are changed by a projection-only candidate."
+    },
+    "compatibilityDecision": {
+      "status": "CANDIDATE_LOCAL_CLIENT_COMPATIBLE_CURRENT_EXTENSION_BEHAVIOR_CHANGED_NOT_ENFORCED",
+      "recommendedCandidate": "Per-type field minimization with unchanged whole-response validation and no silent record filtering.",
+      "notYetAdopted": "Removing non-reserved keys changes an explicitly retained current extension behavior; synthetic client compatibility does not prove hosted/custom-consumer compatibility.",
+      "priorEvidenceImpacted": "P0-NOTIFICATION-RESERVED-FIELDS-20261025.json includes synthetic order_id preservation on customer_message. Keep the old proof dated; any adoption must explicitly supersede only extension preservation with positive/negative actual app tests, without weakening canonical/tenant/storage assertions.",
+      "unresolved": [
+        "Actual historical/alternate-writer key inventory unavailable under GitHub-only restriction",
+        "No declared existing extension-consumer or migration/disposition policy found in reviewed source; no absence theorem",
+        "No new-order application caller or canonical SQL producer for three legacy subscription types established"
+      ],
+      "observedChange": {
+        "example": "Synthetic operational_customer_message with extra order_id",
+        "current": "Actual frontend accepts and returns order_id",
+        "candidate": "Per-type field set removes order_id and remains frontend-valid",
+        "meaning": "Known-shape compatibility only; not proof the extra field can be removed from all historical/custom consumers."
+      }
+    },
+    "sourceAssessment": {
+      "actualClientValidatorTypeKeySetsMatch": true,
+      "typeCount": 12,
+      "notificationPageKeysOutsideContract": [],
+      "scope": "Literal property reads in reviewed page and validator; bounded static review, not browser execution or a formal dynamic consumer graph.",
+      "inputs": {
+        "artifacts/api-server/src/routes/auth-support-postgres-routes.ts": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62",
+        "artifacts/api-server/src/routes/authRuntimePart3.ts": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff",
+        "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts": "9f432edc4161645e7d452f999c5bfd8f21f406b31f19c51679843881d17f09f5",
+        "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts": "fa40e8d728cf33796e565b00f58dd839c893dd539da9d9786fb0c2dc3d11a6f8",
+        "artifacts/api-server/src/services/postgresSupportAuthority.ts": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0",
+        "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts": "af2012d752ffb85a1c02dba8a761066c8170c491b042606136152d5c14460c7f",
+        "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts": "59ec43152b0ad63599cd91b2a1c4db23ab263c5f9ce2cd9c00138e20f6748008",
+        "artifacts/api-server/tests/operational-notifications.test.ts": "0b31ef9d0dd42f3e83e3603e990e02670f6c2d162e321dd9579cd81e2a2136e3",
+        "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6",
+        "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980",
+        "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts": "e1deebab5c2cf4e7db1892758345a56e160b4f3ff1bd6b92fe33a02deb8c3cfd",
+        "artifacts/fawri/src/hooks/useMerchantNotifications.ts": "972619c786d717afd385cba527da0974b3cc9e6e740eb0feaab35fb465c8730d"
+      },
+      "typeValidatorKeySets": [
+        {
+          "type": "subscription_balance_purchase",
+          "validator": "isBalance",
+          "keys": [
+            "addon_batch_expires_at",
+            "addon_batch_id",
+            "addon_replies_added",
+            "addon_replies_remaining",
+            "base_replies_remaining",
+            "emergency_debt_paid",
+            "emergency_debt_remaining",
+            "emergency_replies_remaining",
+            "purchased_replies",
+            "total_replies_available",
+            "type"
+          ]
+        },
+        {
+          "type": "subscription_plan_event",
+          "validator": "isSubscriptionPlan",
+          "keys": [
+            "addon_replies_remaining",
+            "base_replies_remaining",
+            "emergency_debt_paid",
+            "emergency_debt_remaining",
+            "expires_at",
+            "operation",
+            "plan_name",
+            "previous_plan_name",
+            "start_date",
+            "total_replies_available",
+            "type"
+          ]
+        },
+        {
+          "type": "subscription_emergency_activated",
+          "validator": "isEmergency",
+          "keys": [
+            "addon_batch_id",
+            "emergency_debt",
+            "emergency_replies_added",
+            "expires_at",
+            "type"
+          ]
+        },
+        {
+          "type": "subscription_expiry_reminder",
+          "validator": "isSubscriptionExpiryReminder",
+          "keys": [
+            "days_remaining",
+            "expires_at",
+            "plan_name",
+            "type"
+          ]
+        },
+        {
+          "type": "subscription_expired",
+          "validator": "isSubscriptionExpired",
+          "keys": [
+            "addon_replies_remaining",
+            "expired_at",
+            "plan_name",
+            "type"
+          ]
+        },
+        {
+          "type": "addon_expiry_reminder",
+          "validator": "isAddonExpiryReminder",
+          "keys": [
+            "addon_batch_id",
+            "days_remaining",
+            "expires_at",
+            "remaining_replies",
+            "source",
+            "type"
+          ]
+        },
+        {
+          "type": "inspection_session_request",
+          "validator": "isInspection",
+          "keys": [
+            "action_url",
+            "admin_name",
+            "consent_decision",
+            "end_reason",
+            "ended_at",
+            "inspection_request_id",
+            "mode",
+            "request_expires_at",
+            "request_status",
+            "responded_at",
+            "session_expires_at",
+            "ticket_id",
+            "ticket_subject",
+            "type"
+          ]
+        },
+        {
+          "type": "support_reply_reminder",
+          "validator": "isSupportReminder",
+          "keys": [
+            "action_url",
+            "ticket_id",
+            "ticket_subject",
+            "type"
+          ]
+        },
+        {
+          "type": "operational_new_order",
+          "validator": "isNewOrder",
+          "keys": [
+            "action_url",
+            "conversation_id",
+            "order_id",
+            "type"
+          ]
+        },
+        {
+          "type": "operational_customer_message",
+          "validator": "isCustomerMessage",
+          "keys": [
+            "action_url",
+            "conversation_id",
+            "type"
+          ]
+        },
+        {
+          "type": "operational_payment_conflict",
+          "validator": "isPaymentConflict",
+          "keys": [
+            "action_url",
+            "conversation_id",
+            "order_id",
+            "provider",
+            "type"
+          ]
+        },
+        {
+          "type": "operational_knowledge_gap",
+          "validator": "isKnowledgeGap",
+          "keys": [
+            "action_url",
+            "conversation_id",
+            "training_request_id",
+            "type"
+          ]
+        }
+      ],
+      "notificationPageLiteralAccessKeys": [
+        "action_url",
+        "addon_batch_expires_at",
+        "addon_replies_added",
+        "addon_replies_remaining",
+        "admin_name",
+        "base_replies_remaining",
+        "created_at",
+        "days_remaining",
+        "emergency_debt",
+        "emergency_debt_paid",
+        "emergency_debt_remaining",
+        "emergency_replies_added",
+        "ended_at",
+        "expired_at",
+        "expires_at",
+        "id",
+        "mode",
+        "operation",
+        "order_id",
+        "plan_name",
+        "previous_plan_name",
+        "purchased_replies",
+        "read_at",
+        "remaining_replies",
+        "request_expires_at",
+        "request_status",
+        "responded_at",
+        "session_expires_at",
+        "source",
+        "start_date",
+        "ticket_subject",
+        "total_replies_available",
+        "type"
+      ]
+    },
+    "validation": {
+      "status": "LOCAL_CANDIDATE_CLIENT_CONTRACT_PASS",
+      "command": "node --test --test-reporter=tap docs/final-audit/evidence/p0-notification-response-field-contract.test.mjs",
+      "test": "p0-notification-response-field-contract.test.mjs",
+      "runtime": "v24.22.1",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "exitCode": 0,
+      "actualFrontendModule": true,
+      "syntheticObjects": true,
+      "fetchAdapterInProcess": true,
+      "candidateEnforcedInProduct": false,
+      "sqlExecuted": false,
+      "applicationHttpExecuted": false,
+      "browserExecuted": false,
+      "hostedAccepted": false,
+      "testSha256": "af0d5ec9ab48abd6ab045119097de20967eaaa1a5280abe0c6dcc3cd285540aa",
+      "cases": [
+        "All12 complete valid shapes remain field-identical and accepted",
+        "Current extra-key acceptance versus candidate removal; original synthetic objects preserved",
+        "Optional absence and missing-required negatives across12types",
+        "Unlinked inspection, unsafe URL and null typed field remain invalid",
+        "Unknown type preserves row count and actual mixed-response rejection",
+        "Actual read-client path identity and required read timestamp preserved"
+      ]
+    },
+    "implementationAcceptance": [
+      "Contract choice and extension/historical disposition explicit; no silent policy change",
+      "Actual two-merchant app list/unread/read/replay retain required/optional fields, safe URLs and canonical identity/time",
+      "Unknown/malformed rows remain visible as failure according to declared semantics; no hidden drop or count mismatch",
+      "Unlinked inspection references do not fabricate lifecycle or expose peer state",
+      "SQL JSON and peer snapshots unchanged; actual frontend validator remains strict",
+      "Exact-source targeted and broader CI before any source acceptance"
+    ],
+    "nextExactAction": "Continue RESIDUAL-FIELD-003: map actual audit_events producers, metadata/details projections and current role-scoped HTTP consumers against existing emergency, management and incident evidence. Select one concrete unproved field boundary; do not rerun accepted notification cases. FIELD002-R1 remains a tested candidate, not enforced or closed; retain R2 hosted disposition and R3 intended producer scope."
+  },
+  "policyReconciliation20261028": {
+    "date": "2026-10-28",
+    "status": "CURRENT_FIELD002_REMAINDERS_CLASSIFIED_CONCRETE_POLICY_CHOICE_REQUIRED",
+    "sourceReviewed": "362530d048c86b09b91ee6ac625b964319bb6d8c",
+    "applicationChanged": false,
+    "newRuntimeTests": 0,
+    "newCiRuns": 0,
+    "gateClosed": false,
+    "sourceContinuity": {
+      "comparedSnapshot": "f0bd2b0639f80da5c4dc98c75909d51c93e533df",
+      "contractInputCount": 12,
+      "contractInputsByteIdentical": 12,
+      "contractPins": [
+        {
+          "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "historicalBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "currentBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "recordedSha256": "23e501225157e8fbd14e17746e1c22f32dd305d5252c3788b6517d33d110dc62",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+          "historicalBlob": "37a8125ca5dc3c3028b68ac286d22b656c2e9594",
+          "currentBlob": "37a8125ca5dc3c3028b68ac286d22b656c2e9594",
+          "recordedSha256": "9bd16f5b20a3583e12f101371021384532db3bbab8b2c099eca6948b0ea871ff",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "historicalBlob": "2d9c02c50a4735ea833e7d2d9f3b9f58f5a4d31e",
+          "currentBlob": "2d9c02c50a4735ea833e7d2d9f3b9f58f5a4d31e",
+          "recordedSha256": "9f432edc4161645e7d452f999c5bfd8f21f406b31f19c51679843881d17f09f5",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresOperationalNotificationAuthority.ts",
+          "historicalBlob": "edbb86a98b6075e7ba8e1afcebd6676432b5db01",
+          "currentBlob": "edbb86a98b6075e7ba8e1afcebd6676432b5db01",
+          "recordedSha256": "fa40e8d728cf33796e565b00f58dd839c893dd539da9d9786fb0c2dc3d11a6f8",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportAuthority.ts",
+          "historicalBlob": "08a4f4881d4887b850bb7b6a42ba171fccc064dd",
+          "currentBlob": "08a4f4881d4887b850bb7b6a42ba171fccc064dd",
+          "recordedSha256": "521a39ccc1a798dd20d5e0fdee93b0218ed9a3df125d8ad8759f055f14e4d7e0",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportInspectionAuthority.ts",
+          "historicalBlob": "aa91e86d6fbc33823be22a325735b536b7f66384",
+          "currentBlob": "aa91e86d6fbc33823be22a325735b536b7f66384",
+          "recordedSha256": "af2012d752ffb85a1c02dba8a761066c8170c491b042606136152d5c14460c7f",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresSupportLifecycleAuthority.ts",
+          "historicalBlob": "df39aac960dba14d1a0cbe541a30a9cdd18990ee",
+          "currentBlob": "df39aac960dba14d1a0cbe541a30a9cdd18990ee",
+          "recordedSha256": "59ec43152b0ad63599cd91b2a1c4db23ab263c5f9ce2cd9c00138e20f6748008",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/api-server/tests/operational-notifications.test.ts",
+          "historicalBlob": "646d5b6e88e4f3d3780ca8212620ac4150745834",
+          "currentBlob": "646d5b6e88e4f3d3780ca8212620ac4150745834",
+          "recordedSha256": "0b31ef9d0dd42f3e83e3603e990e02670f6c2d162e321dd9579cd81e2a2136e3",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+          "historicalBlob": "b88f0bf028b889c760d141063bab416937562841",
+          "currentBlob": "b88f0bf028b889c760d141063bab416937562841",
+          "recordedSha256": "59dfcf9918a0f7ab904c828686da002c32c659a3e5d0879409e3c5afb0bdc5d6",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+          "historicalBlob": "787872fcdd2fff28120940ba0d062022505866c7",
+          "currentBlob": "787872fcdd2fff28120940ba0d062022505866c7",
+          "recordedSha256": "5641588984c16c895ff1c32183f9f39fe513ed6a471663a7d8d62999d4770980",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts",
+          "historicalBlob": "f6520e19a42af7430b2a6f4ec71f9a4def27e73f",
+          "currentBlob": "f6520e19a42af7430b2a6f4ec71f9a4def27e73f",
+          "recordedSha256": "e1deebab5c2cf4e7db1892758345a56e160b4f3ff1bd6b92fe33a02deb8c3cfd",
+          "byteIdentical": true
+        },
+        {
+          "path": "artifacts/fawri/src/hooks/useMerchantNotifications.ts",
+          "historicalBlob": "4f0b929d32bbb8956eba2ffed34121e434d80e3d",
+          "currentBlob": "4f0b929d32bbb8956eba2ffed34121e434d80e3d",
+          "recordedSha256": "972619c786d717afd385cba527da0974b3cc9e6e740eb0feaab35fb465c8730d",
+          "byteIdentical": true
+        }
+      ],
+      "acceptedEvidenceCount": 11,
+      "acceptedEvidenceByteIdentical": 11,
+      "evidencePins": [
+        {
+          "path": "docs/final-audit/evidence/P0-OPERATIONAL-NOTIFICATION-FIELD-RUNTIME-20261025.json",
+          "historicalBlob": "6612be1e67c4ad2fb8df17667df12e1223770cfc",
+          "currentBlob": "6612be1e67c4ad2fb8df17667df12e1223770cfc",
+          "acceptedSource": "04b7fa858c10e7d7d8242b26aa6d6a77e49edc7e",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-OPERATIONAL-NOTIFICATION-OPTIONAL-RUNTIME-20261025.json",
+          "historicalBlob": "1c63ebae4dbe95aa3926da5489df7fc447d750b4",
+          "currentBlob": "1c63ebae4dbe95aa3926da5489df7fc447d750b4",
+          "acceptedSource": "b0417241bd9b69dd8f460ce91e044004650266d9",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-PAYMENT-CONFLICT-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "b6a39f074e1fdbc3b56807b93c1a85c9fb6705fb",
+          "currentBlob": "b6a39f074e1fdbc3b56807b93c1a85c9fb6705fb",
+          "acceptedSource": "92507e7ab7e55f792c238df65ca8ec8ea5a37403",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-META-CUSTOMER-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "877618a4f1cbcf0f5d4cb2c4f09063a349903e9e",
+          "currentBlob": "877618a4f1cbcf0f5d4cb2c4f09063a349903e9e",
+          "acceptedSource": "e08e554fd159e1f90d05fdf56fe768ea3b3ed4d0",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-META-KNOWLEDGE-GAP-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "a14282ce3279b96f8d0ccd6f61ababe386e23989",
+          "currentBlob": "a14282ce3279b96f8d0ccd6f61ababe386e23989",
+          "acceptedSource": "d86d7c11a9634f870acda08f863d2237dbbe5bbc",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-SUBSCRIPTION-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "56f1a204d352948bbb9687342edd452d1bcca75f",
+          "currentBlob": "56f1a204d352948bbb9687342edd452d1bcca75f",
+          "acceptedSource": "ac1cd586a51dea417ace5b1e3ff818c8ec58f4ce",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-SUPPORT-NOTIFICATION-CALLER-20261025.json",
+          "historicalBlob": "38ef1a7f259a9e16343f9ce5fd244a17293d813f",
+          "currentBlob": "38ef1a7f259a9e16343f9ce5fd244a17293d813f",
+          "acceptedSource": "06c045233853ad897b99ae2cd72582274e69e65c",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-SUPPORT-NOTIFICATION-ENDING-20261025.json",
+          "historicalBlob": "52fc096822796627d3774c01e420c129bff99ee5",
+          "currentBlob": "52fc096822796627d3774c01e420c129bff99ee5",
+          "acceptedSource": "6182678d76e97e315df428bd2739af284afea420",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-NOTIFICATION-CONCURRENT-REFRESH-20261025.json",
+          "historicalBlob": "4a5c21fa3934779187b9221c0f795ec9c10122b4",
+          "currentBlob": "4a5c21fa3934779187b9221c0f795ec9c10122b4",
+          "acceptedSource": "57b554a0ea1c2caf7fa258145a9ec38c19b68b8e",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-INSPECTION-CONCURRENT-CREATE-20261025.json",
+          "historicalBlob": "7d145b0719042195058c9b3d965a483f33585dd6",
+          "currentBlob": "7d145b0719042195058c9b3d965a483f33585dd6",
+          "acceptedSource": "31912d9fd33c9e12311351c189b937652496c6fb",
+          "byteIdentical": true
+        },
+        {
+          "path": "docs/final-audit/evidence/P0-NOTIFICATION-RESERVED-FIELDS-20261025.json",
+          "historicalBlob": "8e8a263cf75a6e5ce3dd54bab99b0f49840c0ddc",
+          "currentBlob": "8e8a263cf75a6e5ce3dd54bab99b0f49840c0ddc",
+          "acceptedSource": "4e36d59149f1ac3b7b1cad91c93a09aff9146612",
+          "byteIdentical": true
+        }
+      ],
+      "candidateTest": "docs/final-audit/evidence/p0-notification-response-field-contract.test.mjs",
+      "candidateTestSha256": "af0d5ec9ab48abd6ab045119097de20967eaaa1a5280abe0c6dcc3cd285540aa",
+      "matchesExistingLocalValidationHash": true,
+      "priorLocalAssessmentReused": {
+        "passed": 6,
+        "failed": 0,
+        "syntheticClientOnly": true,
+        "notRerun": true
+      },
+      "interpretation": "Git blob equality verifies unchanged source/evidence bytes. Historical accepted layers retain scope; no new application execution claimed."
+    },
+    "currentRuntimeEvidenceReused": {
+      "source": "69a3ccc7c66f4b0eca78c27787bc8a8aceae1d74",
+      "run": 40571069056,
+      "job": 122425088862,
+      "conclusion": "success",
+      "passedTap": 80,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "files": 6,
+      "suites": [
+        {
+          "suite": "meta-job-identity-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 26,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "payment-conflict-notification-caller-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "operational-notification-field-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 27,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "notification-bulk-read-full-app-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "consumer-full-app-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        },
+        {
+          "suite": "merchant-notification-privacy-http-postgres.integration.test.mjs",
+          "auditBatch": "notification-privacy-http",
+          "runtime": "v24.22.1",
+          "exit": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "cancelled": 0,
+          "summaryComplete": true
+        }
+      ],
+      "checkout": "5c1643399fbf9d69e2a6ed003a8ce88dc2b092e0",
+      "checkoutTree": "12151a5b50d7971b1fc15aa3caaadc3d299243b8",
+      "headDelta": "7 documentation files only since accepted executable; no app/test change.",
+      "newExecution": false,
+      "limits": "Existing actual notification SQL/HTTP tests reused. Local6 candidate cases remain synthetic, projection not enforced, not hosted/custom-consumer compatibility."
+    },
+    "r1Decision": {
+      "id": "FIELD002-R1-RESPONSE-FIELDS-20261028",
+      "status": "CONCRETE_REVIEWABLE_CHOICE_READY_NOT_ADOPTED",
+      "approval": "UNAPPROVED",
+      "selectedModel": null,
+      "recommendedModel": "PER_TYPE_RESPONSE_FIELDS_NO_EXTRAS",
+      "contractPointer": "responseFieldContract",
+      "knownTypes": 12,
+      "rule": "Return canonical id/type/created_at and optional read_at, plus only the exact required/optional fields listed for that type. Remove other keys from responses after existing canonical lifecycle enrichment. Preserve exact values and absence.",
+      "storage": "No stored JSON, historical row, source/ticket linkage, read state, tenant predicate, transaction, retention or financial value is changed.",
+      "unknownMalformed": "Keep rows/count/order/limit and current whole-response client rejection; no silent filtering, coercion, fabricated lifecycle or historical relinking.",
+      "compatibilityImpact": "Changes explicitly retained current extension behavior. Example: extra order_id on operational_customer_message is currently returned; candidate removes it because that type permits conversation_id/action_url only. The reserved-key proof's extra-key-preservation assertion would be explicitly superseded only at the response projection layer.",
+      "alternatives": [
+        {
+          "model": "PER_TYPE_RESPONSE_FIELDS_NO_EXTRAS",
+          "effect": "Recommended bounded response minimization. Requires explicit policy choice then actual two-merchant app/client positive/negative/replay/storage assertions and exact-source CI."
+        },
+        {
+          "model": "DEFER_KEEP_CURRENT_EXTENSION",
+          "effect": "Retain current product behavior and keep R1 OPEN. No privacy acceptance of arbitrary extra keys."
+        }
+      ],
+      "choiceDoesNotApprove": [
+        "R2 historical cleanup/quarantine/repair",
+        "R3 new canonical callers or retirement of compatibility types",
+        "hosted access, deployment or merge",
+        "SEQ-R2 product choice",
+        "complete FIELD002/P0 closure"
+      ],
+      "whyExplicitChoice": "AGENTS.md: Plan approval does not approve policies. Existing contract compatibilityDecision says NOT_ADOPTED; continuation does not select a changed response policy.",
+      "requestStatus": "PREMATURE_IMMEDIATE_REQUEST_WITHDRAWN_PENDING_COMPATIBILITY_EVIDENCE",
+      "userActionRequiredNow": false,
+      "currentUseReview": "consumerUseReconciliation20261028"
+    },
+    "remainderClassification": [
+      {
+        "id": "FIELD002-R1",
+        "kind": "EXPLICIT_RESPONSE_COMPATIBILITY_POLICY_THEN_IMPLEMENTATION",
+        "status": "OPEN_CONCRETE_CHOICE_READY",
+        "missing": "Policy choice for suppressing existing extension fields; after adoption enforce only reviewed projection and test changed real app behavior.",
+        "newDuplicateTestNeededNow": false
+      },
+      {
+        "id": "FIELD002-R2",
+        "kind": "AUTHORIZED_HOSTED_INVENTORY_AND_DISPOSITION",
+        "status": "BLOCKED_HOSTED_VERIFICATION_AND_DISPOSITION",
+        "missing": "Actual historical/alternate-writer rows and provenance plus separately approved preserve/quarantine/repair policy; unavailable within GitHub-only scope.",
+        "hostedAccessPerformed": false
+      },
+      {
+        "id": "FIELD002-R3",
+        "kind": "EXPLICIT_INTENDED_PRODUCER_SCOPE",
+        "status": "OPEN_PRODUCER_SCOPE_CONTRACT",
+        "canonicalCallerTypes": [
+          "subscription_expiry_reminder",
+          "subscription_expired",
+          "addon_expiry_reminder",
+          "operational_payment_conflict",
+          "operational_knowledge_gap",
+          "operational_customer_message",
+          "inspection_session_request",
+          "support_reply_reminder"
+        ],
+        "directHelperWithoutIdentifiedCaller": [
+          "operational_new_order"
+        ],
+        "legacyReadCompatibilityOnly": [
+          "subscription_balance_purchase",
+          "subscription_plan_event",
+          "subscription_emergency_activated"
+        ],
+        "supportedScopeApproved": false,
+        "missing": "Decide intended runtime versus compatibility-only support. Current8 callers/direct helper/3legacy facts do not authorize adding a caller, enabling retired paths or dropping compatibility."
+      }
+    ],
+    "nextExactAction": "Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved.",
+    "previousNextExactAction": "Obtain explicit FIELD002-R1 response-field choice from the concrete existing12-type table before enforcing projection. Keep R2 blocked and R3 scope unapproved. If choice deferred, retain R1 OPEN and continue independent existing FIELD003 cross-consumer metadata reconciliation without repeating accepted notification/admin tests. SEQ-R2 remains UNAPPROVED."
+  },
+  "consumerUseReconciliation20261028": {
+    "date": "2026-10-28",
+    "status": "BOUNDED_FIRST_PARTY_CONSUMERS_TRACED_EXISTING_EXTENSION_PRESERVATION_RETAINED",
+    "existingGates": [
+      "P0-ACCESS-FULL-ROLE-PRIVACY-MATRIX",
+      "P0-RESIDUAL-MERCHANT-PRIVACY-001/http"
+    ],
+    "sourceReviewed": "1452b81bc3a8bcb74ecd6542ef1f4342f550e97e",
+    "sourceValidation": {
+      "filesVerified": 839,
+      "frontendFiles": 354,
+      "apiFiles": 318,
+      "libFiles": 167,
+      "localExactGitBlobs": 836,
+      "remoteExactOverrides": 3,
+      "overridePaths": [
+        "artifacts/fawri/src/lib/cashierCompensationAuthority.ts",
+        "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+        "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts"
+      ],
+      "localRepositoryEdited": false,
+      "badBlobs": [],
+      "manifestSha256": "c90f3cc2832986d84711b4a3afc1d58b980d2be65aa18a4faf4af1b629920bab",
+      "scanReportSha256": "f5675f36b7280d909cba5c5eaa1f7c32e6ae9f35da15511ff92a12cec9113324",
+      "manifestEncoding": "Git recursive-tree order; json.dumps([{path,sha}],sort_keys=True,separators=(',',':')). UTF-8; blob hash SHA1('blob '+byteLength+NUL+bytes).",
+      "selectedPrefixes": [
+        "artifacts/fawri/src/",
+        "artifacts/api-server/src/",
+        "lib/"
+      ],
+      "extensionRegex": "\\.(?:[cm]?[jt]sx?)$",
+      "scanPatterns": {
+        "http_path": "(?:/api/auth)?/notifications(?:\\b|[/?])",
+        "client_authority": "merchantNotificationsAuthority|readMerchantNotificationsAuthority|markMerchantNotificationReadAuthority",
+        "count_hook": "useMerchantNotifications|useUnreadMerchantNotificationCount|notifyMerchantNotificationsChanged",
+        "realtime_count": "unread_notification_count|notifications_updated",
+        "notification_records": "\\bmerchant_notifications\\b|\\bMerchantNotificationRecord\\b|\\bMerchantNotification\\b|\\bMerchantOperationalNotification\\b",
+        "canonical_service": "listMerchantNotificationsPostgresCanonical|markMerchantNotificationReadPostgresCanonical|markAllMerchantNotificationsReadPostgresCanonical"
+      },
+      "reproduction": [
+        "Read exact sourceReviewed recursive Git tree, filter blob paths by selected prefixes/extensions in tree order.",
+        "Match every local byte buffer to expected Git blob; use exact remote bytes for mismatches without editing working repository.",
+        "Scan each verified UTF-8 source line with declared regex patterns; retain path/blob/line candidates, then trace matching imports/role/serializer and field readers manually."
+      ],
+      "candidateFiles": 29,
+      "classificationCounts": {
+        "frontendCurrent": 9,
+        "apiCurrentOrLegacy": 9,
+        "historicalMigrationPreimages": 9,
+        "schemaExportsOrImports": 2
+      },
+      "candidates": [
+        {
+          "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "blob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "matches": {
+            "http_path": [
+              {
+                "line": 468,
+                "text": "router.get(\"/notifications\", requireSecureMerchantSession, async (req, res) => {"
+              },
+              {
+                "line": 484,
+                "text": "\"/notifications/read-all\","
+              },
+              {
+                "line": 499,
+                "text": "\"/notifications/:id/read\","
+              }
+            ],
+            "canonical_service": [
+              {
+                "line": 44,
+                "text": "listMerchantNotificationsPostgresCanonical,"
+              },
+              {
+                "line": 45,
+                "text": "markAllMerchantNotificationsReadPostgresCanonical,"
+              },
+              {
+                "line": 46,
+                "text": "markMerchantNotificationReadPostgresCanonical,"
+              },
+              {
+                "line": 472,
+                "text": "const notifications = await listMerchantNotificationsPostgresCanonical({"
+              },
+              {
+                "line": 488,
+                "text": "const updated = await markAllMerchantNotificationsReadPostgresCanonical("
+              },
+              {
+                "line": 503,
+                "text": "const notification = await markMerchantNotificationReadPostgresCanonical({"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRoutesPart1.ts",
+          "blob": "9fb113d4938fb138e96f913cea367e7859048b5c",
+          "matches": {
+            "http_path": [
+              {
+                "line": 562,
+                "text": "router.get(\"/notifications\", requireMerchantSession, (req: Request, res: Response) => {"
+              },
+              {
+                "line": 619,
+                "text": "\"/notifications/:id/read\","
+              }
+            ],
+            "realtime_count": [
+              {
+                "line": 632,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              },
+              {
+                "line": 786,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              },
+              {
+                "line": 858,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 573,
+                "text": "const notifications = db.merchant_notifications"
+              },
+              {
+                "line": 625,
+                "text": "const notification = db.merchant_notifications.find("
+              },
+              {
+                "line": 772,
+                "text": "for (const notification of db.merchant_notifications) {"
+              },
+              {
+                "line": 846,
+                "text": "const inspectionNotification = db.merchant_notifications.find("
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRoutesPart2.ts",
+          "blob": "39f8bc60d040674732b182c0333cf55227b6bf8b",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 193,
+                "text": "emitMerchantRealtimeState(db, ticket.merchant_id, \"notifications_updated\");"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart1.ts",
+          "blob": "6b48bf08c5416e67e513e3b80ccbaedd0b4ece7b",
+          "matches": {
+            "notification_records": [
+              {
+                "line": 465,
+                "text": "export type MerchantNotificationRecord ="
+              },
+              {
+                "line": 574,
+                "text": "merchant_notifications: MerchantNotificationRecord[];"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart3.ts",
+          "blob": "37a8125ca5dc3c3028b68ac286d22b656c2e9594",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 902,
+                "text": "| \"notifications_updated\""
+              },
+              {
+                "line": 907,
+                "text": "unread_notification_count: number;"
+              },
+              {
+                "line": 1041,
+                "text": "unread_notification_count: db.merchant_notifications.filter("
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 55,
+                "text": "import type { AddonReplyBatch, AdminLogRecord, AuthDb, InspectionConsentDecision, InspectionSessionEndReason, InspectionSessionMode, InspectionSessionRequestRecord, InspectionSessionRequestStatus, Lang, Merchant, MerchantBalanceNotification"
+              },
+              {
+                "line": 60,
+                "text": "): value is MerchantNotificationRecord {"
+              },
+              {
+                "line": 176,
+                "text": "merchant_notifications: [],"
+              },
+              {
+                "line": 220,
+                "text": "merchant_notifications: Array.isArray(parsed.merchant_notifications)"
+              },
+              {
+                "line": 221,
+                "text": "? parsed.merchant_notifications.filter(isMerchantNotificationRecord)"
+              },
+              {
+                "line": 543,
+                "text": "export function appendMerchantNotificationRecord<T extends MerchantNotificationRecord>("
+              },
+              {
+                "line": 547,
+                "text": "db.merchant_notifications.unshift(notification);"
+              },
+              {
+                "line": 548,
+                "text": "const merchantNotificationIds = db.merchant_notifications"
+              },
+              {
+                "line": 554,
+                "text": "db.merchant_notifications = db.merchant_notifications.filter("
+              },
+              {
+                "line": 613,
+                "text": "db.merchant_notifications.unshift(notification);"
+              },
+              {
+                "line": 614,
+                "text": "const merchantNotificationIds = db.merchant_notifications"
+              },
+              {
+                "line": 620,
+                "text": "db.merchant_notifications = db.merchant_notifications.filter("
+              },
+              {
+                "line": 693,
+                "text": "db.merchant_notifications.unshift(notification);"
+              },
+              {
+                "line": 694,
+                "text": "const merchantNotificationIds = db.merchant_notifications"
+              },
+              {
+                "line": 700,
+                "text": "db.merchant_notifications = db.merchant_notifications.filter("
+              },
+              {
+                "line": 721,
+                "text": "db.merchant_notifications.unshift(notification);"
+              },
+              {
+                "line": 723,
+                "text": "const merchantNotificationIds = db.merchant_notifications"
+              },
+              {
+                "line": 729,
+                "text": "db.merchant_notifications = db.merchant_notifications.filter("
+              },
+              {
+                "line": 786,
+                "text": "const existingReminder = db.merchant_notifications.find("
+              },
+              {
+                "line": 823,
+                "text": "for (const notification of db.merchant_notifications) {"
+              },
+              {
+                "line": 1041,
+                "text": "unread_notification_count: db.merchant_notifications.filter("
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/authRuntimePart4.ts",
+          "blob": "5d2c161fb3e04dfbd5055149929f01bc160b48e9",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 334,
+                "text": "emitMerchantRealtimeState(db, notification.merchant_id, \"notifications_updated\");"
+              },
+              {
+                "line": 446,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              },
+              {
+                "line": 541,
+                "text": "emitMerchantRealtimeState(db, merchantId, \"notifications_updated\");"
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 314,
+                "text": "const existing = db.merchant_notifications.find("
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "blob": "f22d0f89ab1899e9af7f32b9d7d2bca3f6861a36",
+          "matches": {
+            "http_path": [
+              {
+                "line": 45,
+                "text": "\"/notifications\","
+              },
+              {
+                "line": 68,
+                "text": "\"/notifications/:id/read\","
+              }
+            ],
+            "canonical_service": [
+              {
+                "line": 9,
+                "text": "listMerchantNotificationsPostgresCanonical,"
+              },
+              {
+                "line": 10,
+                "text": "markMerchantNotificationReadPostgresCanonical,"
+              },
+              {
+                "line": 54,
+                "text": "const notifications = await listMerchantNotificationsPostgresCanonical({"
+              },
+              {
+                "line": 72,
+                "text": "const notification = await markMerchantNotificationReadPostgresCanonical({"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-realtime-pg.ts",
+          "blob": "6ab8322e113e621e06837068b48400b77d17a4d8",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 89,
+                "text": "unread_notification_count: state.unreadNotificationCount,"
+              },
+              {
+                "line": 150,
+                "text": "writeSseEvent(res, \"notifications_updated\", payload);"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "blob": "2d9c02c50a4735ea833e7d2d9f3b9f58f5a4d31e",
+          "matches": {
+            "canonical_service": [
+              {
+                "line": 331,
+                "text": "export async function listMerchantNotificationsPostgresCanonical(input: {"
+              },
+              {
+                "line": 376,
+                "text": "export async function markMerchantNotificationReadPostgresCanonical(input: {"
+              },
+              {
+                "line": 401,
+                "text": "export async function markAllMerchantNotificationsReadPostgresCanonical("
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/App.tsx",
+          "blob": "e5ab25024945a4705cbea2b6bbaf21133481f782",
+          "matches": {
+            "http_path": [
+              {
+                "line": 160,
+                "text": "<Route path=\"/dashboard/notifications\">"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/components/layout/BottomNav.tsx",
+          "blob": "27dfa1a139252131a638cdc9ff498ad3600882fc",
+          "matches": {
+            "http_path": [
+              {
+                "line": 164,
+                "text": "href: \"/dashboard/notifications\","
+              }
+            ],
+            "count_hook": [
+              {
+                "line": 30,
+                "text": "useUnreadMerchantNotificationCount,"
+              },
+              {
+                "line": 32,
+                "text": "} from \"@/hooks/useMerchantNotifications\";"
+              },
+              {
+                "line": 98,
+                "text": "const unreadNotifications = useUnreadMerchantNotificationCount();"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/components/layout/Sidebar.tsx",
+          "blob": "216b722ec7d99b74ec90aa8fabec9f8d5786194c",
+          "matches": {
+            "http_path": [
+              {
+                "line": 94,
+                "text": "\"/dashboard/notifications\","
+              },
+              {
+                "line": 192,
+                "text": "href=\"/dashboard/notifications\""
+              }
+            ],
+            "count_hook": [
+              {
+                "line": 24,
+                "text": "useUnreadMerchantNotificationCount,"
+              },
+              {
+                "line": 26,
+                "text": "} from \"@/hooks/useMerchantNotifications\";"
+              },
+              {
+                "line": 90,
+                "text": "const unreadNotifications = useUnreadMerchantNotificationCount();"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/hooks/useMerchantNotifications.ts",
+          "blob": "4f0b929d32bbb8956eba2ffed34121e434d80e3d",
+          "matches": {
+            "http_path": [
+              {
+                "line": 24,
+                "text": "const response = await fetch('/api/auth/notifications?unread=1&limit=50', {"
+              }
+            ],
+            "count_hook": [
+              {
+                "line": 13,
+                "text": "export function notifyMerchantNotificationsChanged(): void {"
+              },
+              {
+                "line": 17,
+                "text": "export function useUnreadMerchantNotificationCount(): MerchantNotificationCountState {"
+              }
+            ],
+            "realtime_count": [
+              {
+                "line": 50,
+                "text": "if (typeof detail?.unread_notification_count === 'number') {"
+              },
+              {
+                "line": 52,
+                "text": "setCount(Math.max(0, detail.unread_notification_count));"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/hooks/useMerchantRealtime.ts",
+          "blob": "03a50d085c764fc7095fdf9216fa85ee977303f8",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 10,
+                "text": "| 'notifications_updated'"
+              },
+              {
+                "line": 16,
+                "text": "unread_notification_count: number;"
+              },
+              {
+                "line": 29,
+                "text": "'notifications_updated',"
+              },
+              {
+                "line": 51,
+                "text": "typeof payload.unread_notification_count !== 'number' ||"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+          "blob": "b88f0bf028b889c760d141063bab416937562841",
+          "matches": {
+            "http_path": [
+              {
+                "line": 250,
+                "text": "const response = await fetch(\"/api/auth/notifications?limit=50\", {"
+              },
+              {
+                "line": 271,
+                "text": "`/api/auth/notifications/${encodeURIComponent(notificationId)}/read`,"
+              }
+            ],
+            "client_authority": [
+              {
+                "line": 249,
+                "text": "export async function readMerchantNotificationsAuthority(): Promise<MerchantNotificationRecord[]> {"
+              },
+              {
+                "line": 267,
+                "text": "export async function markMerchantNotificationReadAuthority("
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 8,
+                "text": "MerchantNotification,"
+              },
+              {
+                "line": 9,
+                "text": "MerchantOperationalNotification,"
+              },
+              {
+                "line": 21,
+                "text": "export type MerchantNotificationRecord = WithoutMerchantId<MerchantNotification>;"
+              },
+              {
+                "line": 26,
+                "text": "export type MerchantOperationalNotificationRecord = WithoutMerchantId<MerchantOperationalNotification>;"
+              },
+              {
+                "line": 223,
+                "text": "export function isMerchantNotificationRecord(value: unknown): value is MerchantNotificationRecord {"
+              },
+              {
+                "line": 249,
+                "text": "export async function readMerchantNotificationsAuthority(): Promise<MerchantNotificationRecord[]> {"
+              },
+              {
+                "line": 269,
+                "text": "): Promise<MerchantNotificationRecord> {"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/lib/types.ts",
+          "blob": "1577a7e6351fd6d4dc9c27bccd138c56693aa128",
+          "matches": {
+            "notification_records": [
+              {
+                "line": 354,
+                "text": "export type MerchantOperationalNotification ="
+              },
+              {
+                "line": 360,
+                "text": "export type MerchantNotification ="
+              },
+              {
+                "line": 365,
+                "text": "| MerchantOperationalNotification;"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+          "blob": "787872fcdd2fff28120940ba0d062022505866c7",
+          "matches": {
+            "client_authority": [
+              {
+                "line": 8,
+                "text": "markMerchantNotificationReadAuthority,"
+              },
+              {
+                "line": 9,
+                "text": "readMerchantNotificationsAuthority,"
+              },
+              {
+                "line": 16,
+                "text": "} from '@/lib/merchantNotificationsAuthority';"
+              },
+              {
+                "line": 106,
+                "text": "const nextNotifications = await readMerchantNotificationsAuthority();"
+              },
+              {
+                "line": 164,
+                "text": "const currentNotification = await markMerchantNotificationReadAuthority(notificationId);"
+              }
+            ],
+            "count_hook": [
+              {
+                "line": 17,
+                "text": "import { notifyMerchantNotificationsChanged } from '@/hooks/useMerchantNotifications';"
+              },
+              {
+                "line": 170,
+                "text": "notifyMerchantNotificationsChanged();"
+              }
+            ],
+            "realtime_count": [
+              {
+                "line": 134,
+                "text": "detail?.event === 'notifications_updated'"
+              }
+            ],
+            "notification_records": [
+              {
+                "line": 12,
+                "text": "type MerchantNotificationRecord,"
+              },
+              {
+                "line": 41,
+                "text": "notification: MerchantNotificationRecord,"
+              },
+              {
+                "line": 62,
+                "text": "const [notifications, setNotifications] = useState<MerchantNotificationRecord[]>([]);"
+              }
+            ]
+          }
+        },
+        {
+          "path": "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx",
+          "blob": "3fbf2e2390d61ef8d33a442aae6b37584f77132a",
+          "matches": {
+            "realtime_count": [
+              {
+                "line": 130,
+                "text": "if (detail?.event === 'notifications_updated') {"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0006/preimage/index.ts",
+          "blob": "c3b67921bc49f3a6089795f6edf8f9a0f530339d",
+          "matches": {
+            "http_path": [
+              {
+                "line": 13,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0009/preimage/index.ts",
+          "blob": "12179805734df329ba0f01f0d4d03d79fd4ce950",
+          "matches": {
+            "http_path": [
+              {
+                "line": 14,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0010/preimage/index.ts",
+          "blob": "ed57f6a794f338bdc5c5081fa80ff62bda0d2f48",
+          "matches": {
+            "http_path": [
+              {
+                "line": 15,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0011/preimage/index.ts",
+          "blob": "6483109590c54a587e2c644c5374c8f999669aa7",
+          "matches": {
+            "http_path": [
+              {
+                "line": 16,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0013/preimage/index.ts",
+          "blob": "e9d5e315796b028e865b53221b162b3513556369",
+          "matches": {
+            "http_path": [
+              {
+                "line": 17,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0014/preimage/index.ts",
+          "blob": "7079bbc7c98f74ee479ce2b1146bbf18b8a168b8",
+          "matches": {
+            "http_path": [
+              {
+                "line": 18,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0015/preimage/index.ts",
+          "blob": "f7d07bbdfdc22faa3eaa0764de676c54bac45ad4",
+          "matches": {
+            "http_path": [
+              {
+                "line": 19,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0017/preimage/index.ts",
+          "blob": "7dc66f6b166bd26849c825e4b04810cfc9b21429",
+          "matches": {
+            "http_path": [
+              {
+                "line": 20,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/migration-stages/0027/preimage/index.ts",
+          "blob": "73d5c2c99145fa952c45d2912a4bbc70047313cc",
+          "matches": {
+            "http_path": [
+              {
+                "line": 22,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/src/schema/index.ts",
+          "blob": "b1303f845df2cb12efc017a35054f793cd430593",
+          "matches": {
+            "http_path": [
+              {
+                "line": 23,
+                "text": "export * from \"./notifications\";"
+              }
+            ]
+          }
+        },
+        {
+          "path": "lib/db/src/schema/tenant-security.ts",
+          "blob": "c4fa1de56f9fb7c70b301930680a111914df683c",
+          "matches": {
+            "http_path": [
+              {
+                "line": 165,
+                "text": "import { notifications } from \"./notifications\";"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "consumers": [
+      {
+        "path": "artifacts/fawri/src/App.tsx",
+        "gitBlob": "e5ab25024945a4705cbea2b6bbaf21133481f782",
+        "lines": [
+          160
+        ],
+        "role": "Navigation only",
+        "uses": "Mounts notification page, no per-record fields."
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx",
+        "gitBlob": "787872fcdd2fff28120940ba0d062022505866c7",
+        "lines": [
+          106,
+          109,
+          134,
+          149,
+          164,
+          167,
+          187,
+          203,
+          231,
+          265,
+          434,
+          455,
+          459,
+          461,
+          518,
+          587
+        ],
+        "role": "Display, read-state, action navigation",
+        "uses": "Reads existing declared type/common fields; uses safe action_url and id/read_at for actions. Customer-message rendering does not read order_id; that field is read only in new-order/payment-conflict branches where declared.",
+        "passThrough": "Stores validated full records and replaces them with full read responses, preserving extras in state. This is transport/state compatibility, not use of arbitrary extras to render content.",
+        "genericFormatter": "Object.entries applies to explicit format values objects constructed by each branch, not a generic notification record."
+      },
+      {
+        "path": "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts",
+        "gitBlob": "b88f0bf028b889c760d141063bab416937562841",
+        "lines": [
+          223,
+          249,
+          260,
+          264,
+          267,
+          282,
+          288
+        ],
+        "role": "Transport/shape validator",
+        "uses": "12 known type validators, canonical common fields and safe local URLs; returns original records, not a key-minimized clone. Existing extra-key pass-through is observable API behavior."
+      },
+      {
+        "path": "artifacts/fawri/src/lib/types.ts",
+        "gitBlob": "1577a7e6351fd6d4dc9c27bccd138c56693aa128",
+        "lines": [
+          354,
+          360
+        ],
+        "role": "Static declared field definitions",
+        "uses": "Compile-time notification unions, not runtime field removal."
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/useMerchantNotifications.ts",
+        "gitBlob": "4f0b929d32bbb8956eba2ffed34121e434d80e3d",
+        "lines": [
+          17,
+          24,
+          36,
+          50,
+          52
+        ],
+        "role": "Unread count",
+        "uses": "HTTP notifications.length or numeric SSE unread_notification_count; no per-record extra variable read. Existing50 limit/count semantics unchanged."
+      },
+      {
+        "path": "artifacts/fawri/src/components/layout/Sidebar.tsx",
+        "gitBlob": "216b722ec7d99b74ec90aa8fabec9f8d5786194c",
+        "lines": [
+          24,
+          90,
+          204
+        ],
+        "role": "Badge/navigation",
+        "uses": "Consumes numeric/loading/unavailable count from existing hook, not record payload."
+      },
+      {
+        "path": "artifacts/fawri/src/components/layout/BottomNav.tsx",
+        "gitBlob": "27dfa1a139252131a638cdc9ff498ad3600882fc",
+        "lines": [
+          30,
+          98,
+          167,
+          266
+        ],
+        "role": "Badge/navigation",
+        "uses": "Consumes existing hook count, not record payload."
+      },
+      {
+        "path": "artifacts/fawri/src/hooks/useMerchantRealtime.ts",
+        "gitBlob": "03a50d085c764fc7095fdf9216fa85ee977303f8",
+        "lines": [
+          13,
+          51,
+          58
+        ],
+        "role": "SSE event dispatch",
+        "uses": "Parses count/subscription/emitted_at payload and forwards event. This payload is separate from notifications.variables; no raw notification rows from current server."
+      },
+      {
+        "path": "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx",
+        "gitBlob": "3fbf2e2390d61ef8d33a442aae6b37584f77132a",
+        "lines": [
+          127,
+          129,
+          130,
+          131
+        ],
+        "role": "Update listener",
+        "uses": "Applies subscription and reloads stats on notifications_updated; no per-record notification field reads."
+      }
+    ],
+    "currentServerPath": {
+      "anchors": [
+        {
+          "path": "artifacts/api-server/src/app.ts",
+          "gitBlob": "d0b72e95a4957252e3dbe94b64056572f56018c2",
+          "lines": [
+            327,
+            422
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-security.ts",
+          "gitBlob": "92e3ed37d13809d93c47d03794b05f7c0a30c74b",
+          "lines": [
+            59,
+            60,
+            69
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-notifications-pg.ts",
+          "gitBlob": "f22d0f89ab1899e9af7f32b9d7d2bca3f6861a36",
+          "lines": [
+            42,
+            68
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/auth-support-postgres-routes.ts",
+          "gitBlob": "9adb03903d5dd998cc4a8d80aa3dda40fdf32234",
+          "lines": [
+            484
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts",
+          "gitBlob": "2d9c02c50a4735ea833e7d2d9f3b9f58f5a4d31e",
+          "lines": [
+            254,
+            264,
+            268,
+            331,
+            346,
+            376,
+            386,
+            401
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/routes/merchant-realtime-pg.ts",
+          "gitBlob": "6ab8322e113e621e06837068b48400b77d17a4d8",
+          "lines": [
+            72,
+            86,
+            89,
+            150
+          ]
+        },
+        {
+          "path": "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts",
+          "gitBlob": "5da7b9fd813d11b258b2270aa0353500f90e0283",
+          "lines": [
+            16,
+            27,
+            36
+          ]
+        }
+      ],
+      "interpretation": "app mounts auth-security; earlier merchant-notifications-pg handles current list/single-read, later support PG handles read-all. Same canonical authority, no alternate new mechanism. Canonical serializer retains non-reserved variables and protects id/type/time/read state. SSE uses count and no raw row.variables.",
+      "legacyInterpretation": "Five authRoutesPart1/2 and authRuntimePart1/3/4 lexical hits are compatibility JSON paths/helpers, distinguished from the PostgreSQL-required routes; final cutover guard blocks unresolved /api/auth legacy fallthrough. Nine migration preimages and two schema import/export hits are not additional current application consumers."
+    },
+    "result": {
+      "currentDisplayDependenceOnUndeclaredExtraKeysIdentified": false,
+      "retainedTransportStateCompatibility": true,
+      "existingPrivacyOrCrossTenantLeakProven": false,
+      "currentBehaviorChanged": false,
+      "policyEnforcementJustifiedByNewDefect": false,
+      "description": "No functional display/count/action dependency on undeclared extras identified in the traced current first-party consumers. Raw-record return/state and existing tests intentionally preserve extra keys. This does not prove all unknown historical/custom consumers safe or absent."
+    },
+    "workflowCorrection": {
+      "immediateApprovalRequest": "WITHDRAWN_AS_PREMATURE_NOT_A_CURRENT_USER_BLOCKER",
+      "userActionRequiredNow": false,
+      "userInstruction": "Verify actual existing mechanism/usages before a decision and avoid duplicating existing design; no policy adoption was supplied.",
+      "candidatePolicyApproval": "UNAPPROVED",
+      "selectedModel": null,
+      "productContractUnchanged": true,
+      "technicalDisposition": "Keep source behavior and candidate as separately documented. Do not interpret continuation as approval or automatically enforce the candidate. Continue independent known P0 work."
+    },
+    "priorEvidenceReused": {
+      "pointer": "policyReconciliation20261028.currentRuntimeEvidenceReused",
+      "notificationTap": 80,
+      "localCandidateCases": 6,
+      "newTests": 0,
+      "newCiRuns": 0,
+      "interpretation": "No existing80 HTTP or6 local candidate cases rerun/credited as new. This batch adds static consumer/source reconciliation only."
+    },
+    "limits": [
+      "Verified scoped lexical search plus manual tracing, not whole-program dynamic/alias analysis or a formal absence theorem.",
+      "Includes839 JS/TS files in named directories, not other languages, deployed artifacts, external/custom API consumers or hosted row/writer inventory.",
+      "No browser/HTTP/SQL/new execution; prior tests retain independent source/proof layers.",
+      "No evidence that hypothetical extra-field presence is a present data leak, and no complete privacy certification of arbitrary stored values.",
+      "FIELD002-R1/R2/R3 and parent gates remain open/blocked as recorded; no new gate or denominator."
+    ],
+    "nextExactAction": "Reconcile the existing FIELD003 cross-consumer audit metadata item against current route composition, actual field readers and existing audit/early-warning tests before proposing any policy. Identify established role behavior and any concrete contradiction or unproved boundary; reuse accepted evidence and do not infer a missing access mechanism. FIELD002 projection candidate stays unadopted; its premature immediate approval request is withdrawn, no user action required now. R2 historical/custom-consumer inventory remains explicitly blocked, R3 scope and SEQ-R2 unapproved."
+  }
+}

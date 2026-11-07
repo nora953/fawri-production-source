@@ -6,8 +6,9 @@ process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = "required";
 process.env.FAWRI_AUTH_SECURITY_SECRET =
   "catalog-cashier-compensation-history-secret-32-bytes-minimum";
 
-const dbModule = await import("@workspace/db");
-const pool = dbModule.pool;
+const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+const runtimeFixture=await createDisposableKnowledgeRuntime();
+const pool=runtimeFixture.admin;
 const accounts = await import(
   "../src/services/postgresMerchantAccountAuthority.js"
 );
@@ -772,5 +773,5 @@ test("cashier full void restores stock to the original sale location even after 
 });
 
 test.after(async () => {
-  await pool.end();
+  await runtimeFixture.dispose();
 });

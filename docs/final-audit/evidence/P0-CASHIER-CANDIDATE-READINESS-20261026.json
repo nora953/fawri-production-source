@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "BOUNDED_READ_ONLY_CANDIDATE_METADATA_READINESS_ACCEPTED_NOT_OPERATIONALLY_WIRED",
+  "source": "11f7e55dd59aa5674822dc3557973acc9440fef0",
+  "sourceTree": "44dd09e1bf53f3acb869f3bcb9293907530ff12d",
+  "checkout": "b5f9b31a721460b905267b37b4da559de6f15a7a",
+  "checkoutTreeMatched": true,
+  "release": "NO-GO",
+  "gateClosed": false,
+  "component": "lib/db/scripts/lib/cashier-stream-storage-candidate-readiness.mjs",
+  "fixture": "artifacts/api-server/tests/cashier-stream-storage-readiness-postgres.integration.test.mjs",
+  "target": {
+    "run": 40318675833,
+    "job": 121557666907,
+    "tests": [
+      {
+        "suite": "merchant-management-tenant-rls.integration.test.mjs",
+        "auditBatch": "management",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      },
+      {
+        "suite": "cashier-stream-storage-readiness-postgres.integration.test.mjs",
+        "auditBatch": "management",
+        "runtime": "v24.22.1",
+        "exit": 0,
+        "passed": 15,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "summaryComplete": true
+      }
+    ],
+    "readinessProofs": [
+      {
+        "readOnlyPositive": true,
+        "metadataFaults": 13,
+        "rollbackRestoresPositive": true,
+        "selectedBusinessRowsUnchanged": true,
+        "liveReadinessWired": false,
+        "hostedAccepted": false
+      }
+    ],
+    "generationProofs": [
+      {
+        "candidateOnly": true,
+        "historicalFilesUnchanged": 104,
+        "journalEntries": 53,
+        "snapshotTables": 97,
+        "reviewedSql": true,
+        "liveAdmissionChanged": false,
+        "hostedChanged": false
+      }
+    ]
+  },
+  "priorPendingResolved": {
+    "source": "b55328a2a3410cbb94b13b4ba2ba5085a8560336",
+    "ciTotal": 57,
+    "ciSuccess": 57,
+    "browserRun": 40315005762,
+    "browserJob": 121545272094,
+    "result": "PASS: cashier IndexedDB smoke and stale-backup sequence regression"
+  },
+  "checks": [
+    "Restricted caller and non-login owner role flags; no owner memberships or caller owner activation",
+    "New table RLS and scoped read policies; no public write policy; owner retirement policy shape",
+    "Approved function body hashes, SECURITY DEFINER/INVOKER flags, owner, fixed search_path and PUBLIC execute denial",
+    "Expected trigger relation/function binding, enabled and deferred state",
+    "Owner column UPDATE allowlist; no table ownership/schema CREATE/extra sensitive table or authentication capability grant"
+  ],
+  "limits": [
+    "Internal trusted caller provides role names; inspector is not actor authentication or authorization",
+    "Catalog SELECT observations only; no concurrent DDL or durable deployment attestation",
+    "Candidate workflow ephemeral53/97 schema; active canonical52/95 and live readiness remain unchanged",
+    "Selected metadata faults, not universal SQL semantic, financial/retention/privacy or full actor acceptance",
+    "No new live admission, hosted verification or provider interaction"
+  ],
+  "nextAction": "Promote generated0052/schema/preimage together with fixture adaptation and live readiness wiring of reviewed checks; update candidate workflow and require exact-source migration/storage/deletion/restore and role/config denials. Preserve legacy admission, old migration bytes and FIELD005/full role-bootstrap blockers.",
+  "ci": {
+    "total": 57,
+    "success": 57,
+    "broader": {
+      "run": 40318676078,
+      "job": 121557667401,
+      "invocations": 93,
+      "files": 91,
+      "passed": 734,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "b5f9b31a721460b905267b37b4da559de6f15a7a"
+    }
+  },
+  "componentSha256": "ece77b0b5fa818a626605a61987f2b749fc1f748ce19e116c04cf87e9292782a",
+  "fixtureSha256": "4871d4f3460c6881a6835bcabd3d420b0cb408d31d0f15299c5579e48b2990dd"
+}

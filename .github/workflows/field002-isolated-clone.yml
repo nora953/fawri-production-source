@@ -1,0 +1,66 @@
+name: FIELD002 isolated clone acceptance
+on:
+  push:
+    branches: [fix/p0-provider-receipt-order-discovery-20261015]
+    paths: ['docs/final-audit/evidence/field002-clone-run-request.json']
+permissions:
+  contents: read
+concurrency:
+  group: field002-isolated-clone
+  cancel-in-progress: false
+jobs:
+  acceptance:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 4e82daec11044c751ff743c0108d90a73c504a11
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - run: node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Run loopback HTTP and SQL against the fixed clone
+        env:
+          FAWRI_FIELD002_EXPECTED_SOURCE: 4e82daec11044c751ff743c0108d90a73c504a11
+          FAWRI_FIELD002_CLONE_ADMIN_URL: ${{ secrets.FAWRI_FIELD002_CLONE_ADMIN_URL }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {spawnSync} from 'node:child_process';
+          import {CLONE_HOST,parseCloneAdminUrl} from './scripts/lib/field002-isolated-acceptance-plan.mjs';
+          function prepare(raw) {
+            let text = (raw || '').trim();
+            if (!text) throw Error('MISSING');
+            // Accept the single quoted URL copied from Neon's psql snippet; never invoke a shell.
+            const quoted = /^(?:psql\s+)?(['"])(postgres(?:ql)?:\/\/[^\s'"]+)\1$/.exec(text);
+            if (quoted) text = quoted[2];
+            let url;
+            try { url = new URL(text); } catch { throw Error('FORMAT'); }
+            if (!['postgresql:', 'postgres:'].includes(url.protocol)) throw Error('FORMAT');
+            const pooled = CLONE_HOST.replace('.', '-pooler.');
+            if (![CLONE_HOST, pooled].includes(url.hostname)) throw Error('WRONG_ENDPOINT');
+            if (url.username === 'fawri_staging_runtime') throw Error('STAGING_RUNTIME_SELECTED');
+            if (url.username === 'fawri_staging_rls_runtime') throw Error('RLS_RUNTIME_SELECTED');
+            if (url.username !== 'neondb_owner') throw Error('WRONG_ROLE');
+            if (url.pathname !== '/neondb') throw Error('WRONG_DATABASE');
+            if (!url.password || /^(?:\*+|<password>|\[password\])$/i.test(decodeURIComponent(url.password))) throw Error('PASSWORD_MISSING');
+            url.hostname = CLONE_HOST;
+            parseCloneAdminUrl(url.href);
+            return url.href;
+          }
+          let connection;
+          try { connection = prepare(process.env.FAWRI_FIELD002_CLONE_ADMIN_URL); }
+          catch (err) {
+            const codes = ['MISSING','FORMAT','WRONG_ENDPOINT','WRONG_ROLE','STAGING_RUNTIME_SELECTED','RLS_RUNTIME_SELECTED','WRONG_DATABASE','PASSWORD_MISSING'];
+            console.error('FIELD002_INPUT_' + (codes.includes(err.message) ? err.message : 'OPTIONS_OR_ENCODING'));
+            process.exit(1);
+          }
+          process.env.FAWRI_FIELD002_CLONE_ADMIN_URL = connection;
+          const result = spawnSync('pnpm',['exec','tsx','artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs','--execute'],{stdio:'inherit'});
+          process.exit(result.status ?? 1);
+          NODE

@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { assertNoUnreconciledLegacyMetaEvent } from "./metaReplyJobAdmission";
 import {
   createEnvironmentMetaCredentialKeyProvider,
   decryptMetaCredential,
@@ -286,6 +287,9 @@ export async function enqueueDurableJobAuthoritative(
     );
     if (existing.rows[0]) {
       return { job: await hydrateJob(client, existing.rows[0]), deduplicated: true };
+    }
+    if (type === "meta.webhook.reply" || type === "meta.webhook.event") {
+      await assertNoUnreconciledLegacyMetaEvent(client, merchantId, dedupeKey);
     }
     const id = `job-${Date.now()}-${crypto.randomBytes(8).toString("hex")}`;
     const encrypted = encryptPayload(id, merchantId, input.payload);

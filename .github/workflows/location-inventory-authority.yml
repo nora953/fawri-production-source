@@ -79,7 +79,7 @@ jobs:
         run: pnpm --filter @workspace/db run schema:smoke
 
       - name: Run location inventory PostgreSQL authority test
-        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/location-inventory-authority-postgres.integration.test.ts
+        run: bash scripts/run-isolated-postgres-audit.sh inventory-runtime
 
       - name: Final marker
         run: echo "LOCATION_INVENTORY_AUTHORITY_PASS"

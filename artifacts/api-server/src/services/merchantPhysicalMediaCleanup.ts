@@ -17,6 +17,7 @@ import {
 } from "./operationalPostgresAuthority";
 import {
   completeMerchantDeletionPostgres,
+  MerchantManagementError,
   type ManagedDeletionRequest,
 } from "./postgresMerchantManagementAuthority";
 import {
@@ -215,14 +216,17 @@ async function captureCleanupManifest(input: {
   );
 
   const merchant = merchantRows[0];
+  if (!merchant || merchant.account_state === "closed") {
+    throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
+  }
   if (
-    !merchant ||
     merchant.merchant_status !== "suspended" ||
     merchant.account_state !== "suspended"
   ) {
-    throw Object.assign(
-      new Error("merchant must be suspended before media cleanup capture"),
-      { code: "MERCHANT_MUST_BE_SUSPENDED" },
+    throw new MerchantManagementError(
+      409,
+      "MERCHANT_MUST_BE_SUSPENDED",
+      "merchant must be suspended before media cleanup capture",
     );
   }
 

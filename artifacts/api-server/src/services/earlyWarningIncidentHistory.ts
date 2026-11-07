@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import type { EarlyWarningIncident, EarlyWarningWindow } from "./earlyWarningPostgresAuthority";
-import { withOperationalTransaction, type OperationalSqlClient } from "./operationalPostgresAuthority";
+import type { OperationalSqlClient } from "./operationalPostgresAuthority";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 
 const ENTITY_TYPE = "early_warning_incident";
 const OPENED_ACTION = "early_warning_incident_opened";
@@ -209,7 +210,7 @@ export async function syncEarlyWarningIncidentHistory(input: {
       .map((incident) => [text(incident.id), incident] as const),
   );
 
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     await client.query(
       "SELECT pg_advisory_xact_lock(hashtext('fawri:early-warning-incident-ledger'))",
     );

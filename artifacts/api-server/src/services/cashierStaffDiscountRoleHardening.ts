@@ -1,8 +1,8 @@
 import {
   operationalQueryRows,
-  withMerchantOperationalTransaction,
-  type OperationalTransactionClient,
+  type OperationalQueryTarget,
 } from './operationalPostgresAuthority';
+import { withMerchantAuthenticationTransaction } from './authenticationPostgresAuthority';
 
 type StaffRoleRow = Record<string, unknown> & {
   id: string;
@@ -18,7 +18,7 @@ function schemaMissing(error: unknown): boolean {
 }
 
 async function clearStoredOverrideFlagIfAvailable(
-  client: OperationalTransactionClient,
+  client: OperationalQueryTarget,
   merchantId: string,
   staffId: string,
 ): Promise<boolean> {
@@ -54,7 +54,7 @@ export async function enforceCashierDiscountOverrideRoleInvariant(input: {
   const staffId = String(input.staffId || '').trim();
   if (!merchantId || !staffId) return false;
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const staffRows = await operationalQueryRows<StaffRoleRow>(
       client,
       `SELECT id, role
