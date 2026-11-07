@@ -51,6 +51,13 @@ export function roleNames(runId) {
   return [`field002_t_${runId}`, `field002_a_${runId}`];
 }
 
+// Third trusted issuer must have a distinct ephemeral principal. Never
+// reuse tenant/auth LOGINs or accept role names from deployment inputs.
+export function operatorRoleName(runId) {
+  if (!/^[a-f0-9]{24}$/.test(runId || '')) throw Error('FIELD002_RUN_ID_REJECTED');
+  return `field002_o_${runId}`;
+}
+
 export function compileRehearsedGrants(source, runId) {
   if (createHash('sha256').update(source).digest('hex') !==
       '32abaf3d4d4394fede2214a7eae9324fa66192e1cd82a9b2effdf5cdd55aefe5') {
@@ -73,7 +80,7 @@ export function compileRehearsedGrants(source, runId) {
 
 export function restrictedUrl(role, password, profile = selectCloneProfile('cleaned_20261104')) {
   assertAllowedProfile(profile);
-  if (!/^field002_[ta]_[a-f0-9]{24}$/.test(role) || !/^[a-f0-9]{64}$/.test(password)) {
+  if (!/^field002_[tao]_[a-f0-9]{24}$/.test(role) || !/^[a-f0-9]{64}$/.test(password)) {
     throw Error('FIELD002_RUNTIME_CREDENTIAL_FORMAT_REJECTED');
   }
   const url = new URL('postgresql://' + profile.host + '/neondb');
