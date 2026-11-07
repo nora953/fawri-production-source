@@ -72,6 +72,25 @@ function postgresLoginName(value: unknown): string | null {
   }
 }
 
+// A trusted auth issuer and its tenant pool must address the same logical DB.
+// Neon offers pooled and direct hostnames for one compute; normalize only this
+// documented suffix. Exact endpoint identity still needs hosted verification.
+function postgresDatabaseTarget(value: unknown): string | null {
+  if (!isPostgresUrl(value)) return null;
+  try {
+    const parsed = new URL(text(value));
+    const rawHost = parsed.hostname.toLowerCase();
+    const host = rawHost.endsWith(".neon.tech")
+      ? rawHost.replace(/^([^.]+)-pooler(?=\.)/, "$1")
+      : rawHost;
+    const database = decodeURIComponent(parsed.pathname);
+    if (!host || !database || database === "/") return null;
+    return [host, parsed.port || "5432", database].join("\u0000");
+  } catch {
+    return null;
+  }
+}
+
 function isSafeAllowedOrigins(value: unknown): boolean {
   const origins = text(value)
     .split(",")
@@ -204,6 +223,13 @@ export function getProductionRuntimeConfigurationIssues(
       authUrlLogin === selectedRuntimeRole ||
       FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(authUrlLogin)) {
     issues.push(issue("auth", "FIELD002_AUTH_DATABASE_LOGIN_UNSAFE"));
+  }
+  if (authUrlLogin && tenantUrlLogin) {
+    const tenantTarget = postgresDatabaseTarget(env.DATABASE_URL);
+    const authTarget = postgresDatabaseTarget(env.FAWRI_AUTH_DATABASE_URL);
+    if (!tenantTarget || !authTarget || tenantTarget !== authTarget) {
+      issues.push(issue("auth", "FIELD002_AUTH_DATABASE_TARGET_MISMATCH"));
+    }
   }
   if (text(env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "SUBSCRIPTION_POSTGRES_AUTHORITY_REQUIRED"));
