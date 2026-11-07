@@ -144,9 +144,19 @@ export async function assertProductionOperatorDatabaseReady(
         has_function_privilege(session_user,
           'public.fawri_authentication_runtime()', 'EXECUTE')
           AS authentication_reachable,
-        has_function_privilege(session_user,
-          'fawri_security.issue_scope(name,integer,bigint,text)',
-          'EXECUTE') AS scope_issuer_reachable`);
+        -- Operator is intentionally denied USAGE on fawri_security:
+        -- avoid resolving the private function signature under its role.
+        -- Catalog OID lookup remains read-only and privilege-specific.
+        has_function_privilege(session_user,(
+          SELECT p.oid FROM pg_proc p JOIN pg_namespace n
+            ON n.oid=p.pronamespace
+          WHERE n.nspname='fawri_security' AND p.proname='issue_scope'
+            AND p.pronargs=4
+            AND p.proargtypes[0]='name'::regtype
+            AND p.proargtypes[1]='integer'::regtype
+            AND p.proargtypes[2]='bigint'::regtype
+            AND p.proargtypes[3]='text'::regtype
+        ), 'EXECUTE') AS scope_issuer_reachable`);
       const row = result.rows[0];
       if (!row || row.login !== expectedLogin ||
           row.active !== expectedLogin ||
