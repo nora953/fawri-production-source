@@ -9,6 +9,7 @@ import { assertProductionCashierStreamStorageReady } from "./services/cashierStr
 import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
 import { createPostgresAuthorityReadinessCheck } from "./observability/runtime";
 import { assertProductionAuthenticationDatabaseReady } from "./services/authenticationPostgresAuthority";
+import { assertProductionOperatorDatabaseReady } from "./services/operatorDirectoryPostgresAuthority";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
 
 const rawPort = process.env["PORT"];
@@ -62,6 +63,9 @@ async function main(): Promise<void> {
     // FIELD002: verify the *authenticated* issuer pool too. Tenant RLS alone
     // cannot certify that a separate auth LOGIN is safe or even reachable.
     await assertProductionAuthenticationDatabaseReady(process.env);
+    // A third trusted issuer handles operator directory and receipt review;
+    // it must prove its separate SQL identity before any application traffic.
+    await assertProductionOperatorDatabaseReady(process.env);
   }
   startupStage = "cashier_storage";
   await assertProductionCashierStreamStorageReady(process.env);
