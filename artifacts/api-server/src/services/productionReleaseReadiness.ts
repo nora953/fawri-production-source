@@ -234,6 +234,25 @@ export function getProductionRuntimeConfigurationIssues(
       issues.push(issue("auth", "FIELD002_AUTH_DATABASE_TARGET_MISMATCH"));
     }
   }
+  // The operator directory and receipt-review issuer is a third authority,
+  // not an alias for tenant data or the authentication/session issuer.
+  // A syntactically valid URL alone is insufficient to accept a release.
+  const operatorUrlLogin = postgresLoginName(env.FAWRI_OPERATOR_DATABASE_URL);
+  if (!operatorUrlLogin) {
+    issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_URL_REQUIRED"));
+  } else if (operatorUrlLogin === tenantUrlLogin ||
+      operatorUrlLogin === selectedRuntimeRole ||
+      operatorUrlLogin === authUrlLogin ||
+      FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(operatorUrlLogin)) {
+    issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_LOGIN_UNSAFE"));
+  }
+  if (operatorUrlLogin && tenantUrlLogin) {
+    const tenantTarget = postgresDatabaseTarget(env.DATABASE_URL);
+    const operatorTarget = postgresDatabaseTarget(env.FAWRI_OPERATOR_DATABASE_URL);
+    if (!tenantTarget || !operatorTarget || tenantTarget !== operatorTarget) {
+      issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_TARGET_MISMATCH"));
+    }
+  }
   if (text(env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "SUBSCRIPTION_POSTGRES_AUTHORITY_REQUIRED"));
   }
