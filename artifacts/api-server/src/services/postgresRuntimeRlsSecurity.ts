@@ -251,7 +251,9 @@ export async function getProductionDatabaseRlsReadiness(
          ON tenant_table.relname = expected.name
      )
      SELECT
-       public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
+       -- Security property: catalogue validation MUST NOT invoke a
+       -- SECURITY DEFINER predicate before its source has been vetted.
+       -- SQL expression evaluation order is not an authorization boundary.
        -- FIELD002: policy names/hashes alone cannot guarantee the SECURITY
        -- DEFINER predicate still uses the private committed-scope boundary.
        -- Match the exact reviewed 0041 SQL function body (verified on two
