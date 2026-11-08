@@ -1,3 +1,4 @@
+import { FIELD002_R2_BRANCHES, FIELD002_R2_PROJECT_ID } from "../../../scripts/lib/field002-r2-precommercial-source-admission.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -19,11 +20,25 @@ function fakePgUrl(user: string, host = "db.internal", db = "fawri", port = 5432
   return uri.toString();
 }
 
+function firstCommercialManifest(): Record<string, unknown> {
+  return {
+    intent: "first_commercial_launch",
+    project_id: FIELD002_R2_PROJECT_ID,
+    target_branch_id: FIELD002_R2_BRANCHES.production,
+    source_mode: "fresh_schema_migrations_only",
+    source_branch_id: null,
+    source_backup_id: null,
+    data_import_requested: false,
+    restore_requested: false,
+  };
+}
+
 function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   return {
     NODE_ENV: "production",
     FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_PRODUCTION_RELEASE_GATE: "required",
+    FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON: JSON.stringify(firstCommercialManifest()),
     DATABASE_URL: fakePgUrl("fawri_restricted_runtime"),
     FAWRI_AUTH_DATABASE_URL: fakePgUrl("fawri_auth_issuer"),
     FAWRI_OPERATOR_DATABASE_URL: fakePgUrl("fawri_operator_issuer"),
@@ -61,6 +76,51 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   };
 }
 
+
+test("FIELD002 first commercial startup denies legacy staging and unsafe data-source plans", () => {
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
+  const source = firstCommercialManifest();
+  for (const forbidden of [
+    undefined,
+    "",
+    "not-json",
+    JSON.stringify({ ...source, data_import_requested: true }),
+    JSON.stringify({ ...source, restore_requested: true }),
+    JSON.stringify({ ...source, source_mode: "backup_and_restore" }),
+    JSON.stringify({ ...source, source_branch_id: FIELD002_R2_BRANCHES.cleanRehearsal }),
+    JSON.stringify({ ...source, source_backup_id: "precommercial-archive" }),
+    JSON.stringify({ ...source, target_branch_id: FIELD002_R2_BRANCHES.staging }),
+    JSON.stringify({ ...source, arbitrary_unsafe_field: true }),
+  ]) {
+    const issues = getProductionRuntimeConfigurationIssues(productionEnv({
+      FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON: forbidden,
+    }));
+    const expected = !forbidden
+      ? "FIELD002_FIRST_COMMERCIAL_SOURCE_MANIFEST_REQUIRED"
+      : "FIELD002_FIRST_COMMERCIAL_SOURCE_MANIFEST_FORBIDDEN";
+    assert.ok(issues.some((issue) => issue.code === expected), expected);
+    assert.throws(() => assertProductionRuntimeConfiguration(productionEnv({
+      FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON: forbidden,
+    })), /production release configuration is incomplete/);
+  }
+
+  const knownOriginalHost = "ep-plain-leaf-b1wtzjr3.c-5.eu-central-1.aws.neon.tech";
+  for (const host of [knownOriginalHost, knownOriginalHost.replace(".", "-pooler.")]) {
+    for (const key of ["DATABASE_URL", "FAWRI_AUTH_DATABASE_URL",
+      "FAWRI_OPERATOR_DATABASE_URL"] as const) {
+      const role = key === "DATABASE_URL" ? "fawri_restricted_runtime"
+        : key === "FAWRI_AUTH_DATABASE_URL" ? "fawri_auth_issuer"
+        : "fawri_operator_issuer";
+      const issues = getProductionRuntimeConfigurationIssues(productionEnv({
+        [key]: fakePgUrl(role, host),
+      }));
+      assert.ok(issues.some((issue) => issue.code === "FIELD002_ORIGINAL_STAGING_DATABASE_FORBIDDEN"),
+        `${key}: ${host}`);
+    }
+  }
+  // Declarative compatibility never certifies a live empty branch or deploy.
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
+});
 
 test("FIELD002 production refuses missing, malformed or reused auth PostgreSQL login before listener", () => {
   for (const value of [
