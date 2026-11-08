@@ -1,7 +1,10 @@
 /** The canonical JS precommercial-source policy; declarations do not confer release authorization. */
 export const FIELD002_R2_PROJECT_ID: string;
+export const FIELD002_R2_HISTORICAL_PROJECT_ID: string;
+export const FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID: string;
 export const FIELD002_R2_BRANCHES: Readonly<{
   production: string;
+  firstCommercialProduction: string;
   staging: string;
   cleanRehearsal: string;
   oldRehearsal: string;
