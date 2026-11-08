@@ -161,7 +161,9 @@ jobs:
           set -euo pipefail
           work="$RUNNER_TEMP/field002-portable-proof"
           local_url='postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci'
-          for role in neondb_owner fawri_staging_runtime fawri_staging_rls_runtime fawri_field002_tenant_probe fawri_field002_auth_probe fawri_field002_operator_probe token_roles; do
+          # Dummy local-only NOLOGIN role: Neon grants reference neon_superuser,
+          # but this disposable restore NEVER grants it superuser or BYPASSRLS.
+          for role in neondb_owner fawri_staging_runtime fawri_staging_rls_runtime fawri_field002_tenant_probe fawri_field002_auth_probe fawri_field002_operator_probe token_roles neon_superuser; do
             if ! docker run --rm --network host postgres:18-alpine \
                  psql "$local_url" -X -v ON_ERROR_STOP=1 -c "CREATE ROLE $role NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE" \
                  > /dev/null 2>&1; then
