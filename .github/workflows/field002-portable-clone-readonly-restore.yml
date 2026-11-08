@@ -5,7 +5,7 @@ on:
     branches:
       - fix/p0-provider-receipt-order-discovery-20261015
     paths:
-      - ".github/workflows/field002-portable-clone-readonly-restore.yml"
+      - "docs/final-audit/evidence/field002-portable-clone-run-request.json"
 
 permissions:
   contents: read
@@ -17,6 +17,10 @@ concurrency:
 
 jobs:
   clone-data-only-restore:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 22
     services:
@@ -47,8 +51,23 @@ jobs:
           test "$GITHUB_REF" = refs/heads/fix/p0-provider-receipt-order-discovery-20261015
           test "$GITHUB_EVENT_NAME" = push
           changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
-          test "$changed" = .github/workflows/field002-portable-clone-readonly-restore.yml
-          echo FIELD002_EXACT_ONE_FILE_REQUEST_ACCEPTED
+          test "$changed" = docs/final-audit/evidence/field002-portable-clone-run-request.json
+          node <<'NODE'
+          const fs=require('node:fs');
+          const cp=require('node:child_process');
+          const name='docs/final-audit/evidence/field002-portable-clone-run-request.json';
+          const request=JSON.parse(fs.readFileSync(name,'utf8'));
+          const keys=Object.keys(request).sort();
+          if (JSON.stringify(keys)!==JSON.stringify([
+            'approval','approved_branch','approved_parent_sha'
+          ])) process.exit(2);
+          const parent=cp.execFileSync('git',['rev-parse','HEAD^'],{encoding:'utf8'}).trim();
+          if (request.approval!=='APPROVE_CLONE_READONLY_PORTABLE_DATA_DRILL' ||
+              request.approved_branch!=='br-polished-mouse-b1proel7' ||
+              !/^[0-9a-f]{40}$/.test(request.approved_parent_sha) ||
+              request.approved_parent_sha!==parent) process.exit(2);
+          NODE
+          echo FIELD002_EXACT_ONE_FILE_READONLY_REQUEST_ACCEPTED
 
       - name: Pin a clean-clone-only read credential and write digest-only comparison query
         env:
