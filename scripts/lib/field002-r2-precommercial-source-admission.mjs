@@ -6,10 +6,20 @@
  * historical staging branches/archives are safe data sources just because
  * their current notifications table has zero rows.
  */
-export const FIELD002_R2_PROJECT_ID = "round-fire-18493605";
+// The independent, owner-created first commercial project, evidenced on
+// 2026-11-08. UI identity is NOT SQL/endpoint/empty-schema attestation.
+export const FIELD002_R2_PROJECT_ID = "crimson-cherry-65705041";
+export const FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID = "br-holy-waterfall-b993zglb";
+
+// Distinct historical Neon project for the prelaunch test/source lineage only.
+// Never reclassify this old default branch as the new first-commercial target.
+export const FIELD002_R2_HISTORICAL_PROJECT_ID = "round-fire-18493605";
 
 export const FIELD002_R2_BRANCHES = Object.freeze({
+  // Historical project's default, NOT first-commercial target.
   production: "br-shiny-lab-b1vxj4wn",
+  // Branch in the newly created standalone project; provider UI confirmed ID.
+  firstCommercialProduction: FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID,
   staging: "br-falling-dust-b1km4gix",
   cleanRehearsal: "br-polished-mouse-b1proel7",
   oldRehearsal: "br-young-hill-b1x9vhlz",
@@ -70,7 +80,7 @@ export function assertField002FirstCommercialSourcePolicy(candidate) {
   }
   if (candidate.intent !== "first_commercial_launch" ||
       candidate.project_id !== FIELD002_R2_PROJECT_ID ||
-      candidate.target_branch_id !== FIELD002_R2_BRANCHES.production) {
+      candidate.target_branch_id !== FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID) {
     reject("FIELD002_R2_RELEASE_TARGET_UNVERIFIED");
   }
   const branchId = candidate.source_branch_id;
@@ -96,7 +106,7 @@ export function assertField002FirstCommercialSourcePolicy(candidate) {
 }
 
 /**
- * Inspect metadata supplied by a live Neon branch-list call (never credentials
+ * Inspect metadata supplied by the HISTORICAL project's live Neon branch-list call (never credentials
  * or table rows) and fail if the known staging lineage or archived statuses
  * are unexpectedly different. This does not query Neon or unarchive branches.
  */
