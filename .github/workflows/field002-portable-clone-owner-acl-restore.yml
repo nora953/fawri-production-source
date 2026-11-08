@@ -238,6 +238,55 @@ jobs:
             }));
           console.error('FIELD002_OBJECT_ACL_CATEGORY_DIGEST_ONLY '+JSON.stringify(report));
           NODE
+            # Category mismatch only: interrogate which metadata FIELDS diverge.
+            # Keep full normalized object metadata on ephemeral private runner;
+            # print only object identifiers and FIELD NAMES (never ACL contents,
+            # SQL bodies, user data or credentials) to runner logs.
+            node <<'NODE'
+          const fs=require('node:fs');
+          const dir=process.env.RUNNER_TEMP+'/field002-portable-proof/';
+          const sql=fs.readFileSync(dir+'acl.sql','utf8');
+          const last="SELECT grp,count(*)::int n,md5(string_agg(val,E'\\n' ORDER BY val)) digest FROM rec GROUP BY grp ORDER BY grp;";
+          if(!sql.includes(last)) process.exit(2);
+          fs.writeFileSync(dir+'acl-detail.sql',sql.replace(last,
+            "SELECT grp||'|'||val FROM rec WHERE grp IN ('relations','routines') ORDER BY grp,val;"),{mode:0o600});
+          NODE
+            if ! docker run --rm --network host --env-file "$work/remote.env" -v "$work:/work" postgres:18-alpine \
+                 sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -f /work/acl-detail.sql' \
+                 > "$work/acl-detail-source.txt" 2>/dev/null; then
+              echo FIELD002_SOURCE_OBJECT_DIAGNOSTIC_FAILED >&2; exit 1
+            fi
+            if ! docker run --rm --network host -v "$work:/work" postgres:18-alpine \
+                 psql 'postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_field002_portable_restore' \
+                 -X -A -t -v ON_ERROR_STOP=1 -f /work/acl-detail.sql \
+                 > "$work/acl-detail-restored.txt" 2>/dev/null; then
+              echo FIELD002_RESTORED_OBJECT_DIAGNOSTIC_FAILED >&2; exit 1
+            fi
+            node <<'NODE'
+          const fs=require('node:fs');
+          const dir=process.env.RUNNER_TEMP+'/field002-portable-proof/';
+          const parse=file=>new Map(fs.readFileSync(dir+file,'utf8').trim().split('\n').map(line=>{
+            const parts=line.split('|');
+            const group=parts.shift(),object=parts.shift();
+            if(!['relations','routines'].includes(group)||!object)process.exit(2);
+            const fields={};
+            for(const item of parts){const i=item.indexOf('=');if(i<1)process.exit(2);fields[item.slice(0,i)]=item.slice(i+1);}
+            return [group+'|'+object,{group,object,fields}];
+          }));
+          const source=parse('acl-detail-source.txt'), restored=parse('acl-detail-restored.txt');
+          const report=[];
+          for(const key of [...new Set([...source.keys(),...restored.keys()])].sort()){
+            const a=source.get(key),b=restored.get(key);
+            if(!a||!b){report.push({object:key,different_fields:['missing_object']});continue;}
+            const different_fields=[...new Set([...Object.keys(a.fields),...Object.keys(b.fields)])]
+              .filter(field=>a.fields[field]!==b.fields[field]);
+            if(different_fields.length)report.push({object:key,different_fields});
+          }
+          console.error('FIELD002_OBJECT_ACL_FIELD_DIFF_NAMES_ONLY '+JSON.stringify({
+            total_mismatched_objects:report.length,objects:report.slice(0,80),
+            truncated:report.length>80,contains_metadata_values:false,
+          }));
+          NODE
             echo FIELD002_PORTABLE_OBJECT_ACL_PARITY_MISMATCH >&2; exit 1
           fi
           test "$(wc -l < "$work/acl-restored.txt" | tr -d ' ')" = 5
