@@ -36,3 +36,9 @@ The owner supplied screenshots of the **second push-triggered workflow run**, cl
 - [Pinned request commit](https://github.com/nora953/fawri-production-source/commit/ed75c5313bfc7bb2cd8c55abd7c876275dae3096)
 - [GitHub Actions workflow](https://github.com/nora953/fawri-production-source/actions/workflows/field002-original-staging-readonly-restore.yml)
 - [Prior pending checkpoint](https://github.com/nora953/fawri-production-source/pull/550#issuecomment-6723341820)
+
+## Next checkpoint — source-only global-role and durable custody preparation (2026-11-08)
+
+- The [separate encrypted offsite custody contract](P0-FIELD002-ORIGINAL-OFFSITE-RECOVERY-CONTRACT-20261108.md) records the exact critical-path conditions for **independent encrypted durable storage, global roles, role semantics and restore**, without falsely treating the ephemeral PASS as offsite approval.
+- Prepared [SELECT-only original role metadata inventory](sql/P0-FIELD002-ORIGINAL-STAGING-GLOBAL-ROLE-METADATA-READONLY-20261108.sql); **NOT RUN** on Neon. It excludes role passwords; the external destination and recovery keys/policies remain unselected and unauthorized.
+- The next action is offsite custody provisioning and a separately reviewed guarded workflow. No repeat of this already accepted ephemeral restore. **FIELD002 OPEN / 0052 BLOCKED / DRAFT / release NO-GO.**
