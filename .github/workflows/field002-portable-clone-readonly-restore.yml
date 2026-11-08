@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: field002-portable-clone-readonly-proof
@@ -183,6 +184,22 @@ jobs:
               ownerAclRestoreProven:false,externalDurableBackupProven:false,
               originalStagingTouched:false,commercialReleaseAuthorized:false}));
           NODE
+          touch "$work/accepted-data-only"
+
+      - name: Record digest-only hosted proof on draft PR #550
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/field002-portable-proof"
+          verdict=NOT_ACCEPTED_INSPECT_RUN
+          if [ -f "$work/accepted-data-only" ]; then
+            verdict=BOUNDED_PORTABLE_DATA_ONLY_PASS
+          fi
+          body="FIELD002 genuine hosted clean-clone portable data-only restore — exact source ${GITHUB_SHA}; branch br-polished-mouse-b1proel7; run #${GITHUB_RUN_ID} https://github.com/nora953/fawri-production-source/actions/runs/${GITHUB_RUN_ID}; verdict ${verdict}. No clone SQL writes, no raw backup uploaded, no original staging mutation. This is NOT owner/ACL-preserving offsite backup, not deployment approval, FIELD002 stays OPEN and 0052 BLOCKED."
+          gh api repos/nora953/fawri-production-source/issues/550/comments -f body="$body" >/dev/null 2>&1 || true
 
       - name: Erase all temporary database dump and connection bytes
         if: always()
