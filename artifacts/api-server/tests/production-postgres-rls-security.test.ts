@@ -159,6 +159,18 @@ test("FIELD002 prelistener readiness never executes an unverified SECURITY DEFIN
   assert.equal(catalogChecked, true);
 });
 
+test("FIELD002 privilege denials remain specific even if predicate fingerprint is unsafe", async () => {
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_SUPERUSER_FORBIDDEN",
+    safeRow({ session_role_superuser: true, tenant_predicate_trusted: false }));
+  await rejectsWith("PRODUCTION_DATABASE_SESSION_BYPASSRLS_FORBIDDEN",
+    safeRow({ session_role_bypass_rls: true, tenant_predicate_trusted: false }));
+  await rejectsWith("PRODUCTION_DATABASE_TENANT_RLS_REQUIRED",
+    safeRow({ missing_or_unprotected_tenant_tables: ["notifications"],
+      tenant_predicate_trusted: false }));
+  await rejectsWith("PRODUCTION_TENANT_PREDICATE_SOURCE_UNTRUSTED",
+    safeRow({ tenant_predicate_trusted: false }));
+});
+
 test("production rejects superuser and BYPASSRLS runtime roles", async () => {
   await rejectsWith(
     "PRODUCTION_DATABASE_RUNTIME_SUPERUSER_FORBIDDEN",
