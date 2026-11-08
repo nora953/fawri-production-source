@@ -132,6 +132,30 @@ test("FIELD002 production admits only the exact reviewed trusted tenant predicat
   assert.doesNotMatch(migration, /fawri\.tenant_id/);
 });
 
+test("FIELD002 prelistener readiness never executes an unverified SECURITY DEFINER tenant predicate", async () => {
+  let catalogChecked = false;
+  const guardedTarget: OperationalQueryTarget = {
+    async query<T extends Record<string, unknown>>(sql: string) {
+      if (sql.includes("WITH principal")) {
+        return { rows: [{ present: true, safe: true }] as unknown as T[] };
+      }
+      catalogChecked = true;
+      assert.match(sql, /tenant_predicate_trusted/);
+      assert.match(sql, /sha256\(convert_to\(fn\.prosrc,'UTF8'\)\)/);
+      // Calling the predicate before the fingerprint check is itself unsafe:
+      // it may be a modified SECURITY DEFINER function with side effects.
+      assert.doesNotMatch(sql, /rls_predicate_probe/);
+      assert.doesNotMatch(sql, /^\s*public\.fawri_tenant_or_audited_admin\s*\(/m);
+      assert.doesNotMatch(sql, /\bSELECT\s+public\.fawri_tenant_or_audited_admin\s*\(/i);
+      return { rows: [safeRow()] as unknown as T[] };
+    },
+  };
+  await assert.doesNotReject(() => assertProductionDatabaseRlsReady(
+    productionEnv(), guardedTarget,
+  ));
+  assert.equal(catalogChecked, true);
+});
+
 test("production rejects superuser and BYPASSRLS runtime roles", async () => {
   await rejectsWith(
     "PRODUCTION_DATABASE_RUNTIME_SUPERUSER_FORBIDDEN",
