@@ -6,6 +6,7 @@ on:
       - ".github/workflows/ft01-clean-pg18-schema-rehearsal.yml"
       - "lib/db/drizzle/**"
       - "lib/db/scripts/smoke-migration.mjs"
+      - "lib/db/scripts/ft01-disposable-three-login-rehearsal.mjs"
       - "lib/db/scripts/lib/migration-sql-order.mjs"
       - "lib/db/scripts/tests/isolated-neon-migration-static.test.mjs"
       - "scripts/lib/ft01-clean-bootstrap-source-plan.mjs"
@@ -170,6 +171,17 @@ jobs:
             console.log('FT01_LOCAL_PG18_53_MIGRATIONS_10_RLS_STORAGE_PASS');
           } finally { await client.end(); }
           NODE
+
+      - name: FT-01 prove independent ephemeral tenant auth operator LOGINs on PG18
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_DISPOSABLE_THREE_LOGIN_REHEARSAL: "1"
+        run: |
+          # This runner demands github repo identity, GITHUB_ACTIONS, a local
+          # 127.0.0.1:5432/fawri_ci URL, and an exact 53-migration preimage.
+          # Random credentials are memory-only, never printed or exported.
+          node --check scripts/ft01-disposable-three-login-rehearsal.mjs
+          node scripts/ft01-disposable-three-login-rehearsal.mjs
 
       - name: Deny any claim of hosted admission from this local proof
         run: |
