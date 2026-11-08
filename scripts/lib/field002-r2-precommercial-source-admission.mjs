@@ -124,6 +124,9 @@ export function assertField002KnownNeonLineage(branches) {
     [known.currentAcl0Recovery, known.staging, "ready"],
     [known.archived[0], known.staging, "archived"],
   ];
+  for (const retired of known.retired) {
+    if (byId.has(retired)) reject("FIELD002_R2_RETIRED_SOURCE_REAPPEARED");
+  }
   if (byId.size !== required.length) {
     reject("FIELD002_R2_BRANCH_INVENTORY_CHANGED");
   }
@@ -150,9 +153,6 @@ export function assertField002KnownNeonLineage(branches) {
     if (byId.get(id)?.[field] !== expected) {
       reject("FIELD002_R2_BRANCH_LINEAGE_CHANGED");
     }
-  }
-  for (const retired of known.retired) {
-    if (byId.has(retired)) reject("FIELD002_R2_RETIRED_SOURCE_REAPPEARED");
   }
   return Object.freeze({
     decision: "KNOWN_BRANCH_LINEAGE_OBSERVED",
