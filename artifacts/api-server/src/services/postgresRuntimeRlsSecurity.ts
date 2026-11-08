@@ -454,11 +454,6 @@ export async function assertProductionDatabaseRlsReady(
       "production runtime SQL identities do not match the approved tenant login");
   }
 
-  if (!readiness.tenantPredicateTrusted) {
-    fail("PRODUCTION_TENANT_PREDICATE_SOURCE_UNTRUSTED",
-      "production tenant predicate must match the reviewed trusted-scope migration");
-  }
-
   if (readiness.superuser) {
     fail(
       "PRODUCTION_DATABASE_RUNTIME_SUPERUSER_FORBIDDEN",
@@ -513,6 +508,14 @@ export async function assertProductionDatabaseRlsReady(
       "production protected tables must exist with row-level security enabled",
     );
   }
+  // Preserve precise privilege-failure diagnostics for restricted sessions
+  // authenticated using a privileged owner, while still refusing the
+  // untrusted predicate before any tenant-capable listener is opened.
+  if (!readiness.tenantPredicateTrusted) {
+    fail("PRODUCTION_TENANT_PREDICATE_SOURCE_UNTRUSTED",
+      "production tenant predicate must match the reviewed trusted-scope migration");
+  }
+
   if (!readiness.directoryIssuerPresent) {
     fail("PRODUCTION_DATABASE_OPERATOR_ISSUER_REQUIRED",
       "production database requires the role-bound directory issuer migration");
