@@ -80,6 +80,7 @@ test("FIELD002 production refuses missing, malformed or reused auth PostgreSQL l
   for (const username of [
     "fawri_restricted_runtime", "fawri_staging_runtime",
     "fawri_staging_rls_runtime", "neondb_owner", "neon_superuser",
+    "cloud_admin", "neon_service", "pg_database_owner", "postgres",
   ]) {
     const env = productionEnv({
       FAWRI_AUTH_DATABASE_URL: fakePgUrl(username),
@@ -129,6 +130,7 @@ test("FIELD002 production requires a separate operator LOGIN on the same databas
     "fawri_restricted_runtime", "fawri_auth_issuer",
     "fawri_staging_runtime", "fawri_staging_rls_runtime",
     "neondb_owner", "neon_superuser",
+    "cloud_admin", "neon_service", "pg_database_owner", "postgres",
   ]) {
     const env = productionEnv({ FAWRI_OPERATOR_DATABASE_URL: fakePgUrl(role) });
     assert.ok(getProductionRuntimeConfigurationIssues(env).some(
@@ -155,6 +157,23 @@ test("FIELD002 production requires a separate operator LOGIN on the same databas
   assert.deepEqual(getProductionRuntimeConfigurationIssues({
     ...productionEnv(), FAWRI_DEPLOYMENT_MODE: "staging", FAWRI_OPERATOR_DATABASE_URL: "",
   }), []);
+});
+
+test("FIELD002 forbids observed provider/admin tenant URL logins even with matching expected role", () => {
+  for (const role of ["cloud_admin", "neon_service", "pg_database_owner", "postgres"]) {
+    const env = productionEnv({
+      DATABASE_URL: fakePgUrl(role),
+      FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: role,
+    });
+    const issues = getProductionRuntimeConfigurationIssues(env);
+    assert.ok(issues.some((i) => i.code === "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"),
+      role);
+    assert.equal(issues.some((i) => i.code === "FIELD002_TENANT_DATABASE_LOGIN_MISMATCH"),
+      false, "deny by dangerous principal, not a secondary name mismatch");
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+    });
+  }
 });
 
 test("FIELD002 production enforces DATABASE_URL LOGIN matches reviewed tenant identity", () => {
@@ -424,6 +443,10 @@ test("FIELD002 rejects historic broad-grant and owner identities as production r
     "fawri_staging_rls_runtime",
     "neondb_owner",
     "neon_superuser",
+    "cloud_admin",
+    "neon_service",
+    "pg_database_owner",
+    "postgres",
   ]) {
     const env = productionEnv({ FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: role });
     assert.deepEqual(
