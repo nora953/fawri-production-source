@@ -69,7 +69,7 @@ jobs:
           NODE
           echo FIELD002_EXACT_ONE_FILE_OBJECT_ACL_REQUEST_ACCEPTED
 
-      - name: Pin a clean-clone-only read credential and write digest-only comparison query
+      - name: Pin original staging direct-host credential and source-catalog digest
         env:
           FIELD002_ADMIN_URL: "${{ secrets.FAWRI_FIELD002_ORIGINAL_STAGING_ADMIN_URL }}"
         run: |
