@@ -122,6 +122,31 @@ test("FIELD002 first commercial startup denies legacy staging and unsafe data-so
   assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
 });
 
+test("FT-01 new Neon owner cannot masquerade as any of the three commercial LOGINs", () => {
+  const tenant = productionEnv({
+    FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE: "fawri_owner",
+    DATABASE_URL: fakePgUrl("fawri_owner"),
+  });
+  assert.ok(getProductionRuntimeConfigurationIssues(tenant).some(
+    issue => issue.code === "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"));
+  assert.throws(() => assertProductionRuntimeConfiguration(tenant), {
+    code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+  });
+
+  for (const envKey of ["FAWRI_AUTH_DATABASE_URL", "FAWRI_OPERATOR_DATABASE_URL"] as const) {
+    const env = productionEnv({ [envKey]: fakePgUrl("fawri_owner") });
+    const expected = envKey === "FAWRI_AUTH_DATABASE_URL"
+      ? "FIELD002_AUTH_DATABASE_LOGIN_UNSAFE"
+      : "FIELD002_OPERATOR_DATABASE_LOGIN_UNSAFE";
+    assert.ok(getProductionRuntimeConfigurationIssues(env).some(
+      issue => issue.code === expected), envKey);
+    assert.throws(() => assertProductionRuntimeConfiguration(env), {
+      code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+    });
+  }
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(productionEnv()), []);
+});
+
 test("FIELD002 production refuses missing, malformed or reused auth PostgreSQL login before listener", () => {
   for (const value of [
     "", "  ", "not-a-url", "https://not-a-database.test",
@@ -139,7 +164,7 @@ test("FIELD002 production refuses missing, malformed or reused auth PostgreSQL l
   }
   for (const username of [
     "fawri_restricted_runtime", "fawri_staging_runtime",
-    "fawri_staging_rls_runtime", "neondb_owner", "neon_superuser",
+    "fawri_staging_rls_runtime", "neondb_owner", "fawri_owner", "neon_superuser",
     "cloud_admin", "neon_service", "pg_database_owner", "postgres",
   ]) {
     const env = productionEnv({
@@ -255,7 +280,7 @@ test("FIELD002 production requires a separate operator LOGIN on the same databas
   for (const role of [
     "fawri_restricted_runtime", "fawri_auth_issuer",
     "fawri_staging_runtime", "fawri_staging_rls_runtime",
-    "neondb_owner", "neon_superuser",
+    "neondb_owner", "fawri_owner", "neon_superuser",
     "cloud_admin", "neon_service", "pg_database_owner", "postgres",
   ]) {
     const env = productionEnv({ FAWRI_OPERATOR_DATABASE_URL: fakePgUrl(role) });
@@ -568,6 +593,7 @@ test("FIELD002 rejects historic broad-grant and owner identities as production r
     "fawri_staging_runtime",
     "fawri_staging_rls_runtime",
     "neondb_owner",
+    "fawri_owner",
     "neon_superuser",
     "cloud_admin",
     "neon_service",
