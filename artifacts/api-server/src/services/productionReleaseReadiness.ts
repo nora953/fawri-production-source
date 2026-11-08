@@ -51,12 +51,47 @@ function issue(
   return { area, code };
 }
 
+// FIELD002: the authority, credential and branch identity used by
+// node-postgres must not be overridden by URL parameters after the prefix is
+// checked. Restrict to explicitly non-routing parameters; libpq-style host,
+// user, service, options, dbname etc are never an authority source.
+const FIELD002_SAFE_POSTGRES_URL_OPTIONS = new Set([
+  "sslmode", "channel_binding", "application_name", "connect_timeout",
+]);
+
 function isPostgresUrl(value: unknown): boolean {
   const raw = text(value);
   if (!raw) return false;
   try {
     const parsed = new URL(raw);
-    return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:";
+    if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+      return false;
+    }
+    const seenOptions = new Set<string>();
+    for (const [originalKey, rawValue] of parsed.searchParams) {
+      const key = originalKey.toLowerCase();
+      if (!FIELD002_SAFE_POSTGRES_URL_OPTIONS.has(key) || seenOptions.has(key)) {
+        return false;
+      }
+      seenOptions.add(key);
+      if (key === "sslmode" &&
+          !["require", "verify-ca", "verify-full"].includes(rawValue.toLowerCase())) {
+        return false;
+      }
+      if (key === "channel_binding" &&
+          !["require", "prefer"].includes(rawValue.toLowerCase())) {
+        return false;
+      }
+      if (key === "connect_timeout" &&
+          (!/^[1-9][0-9]?$/.test(rawValue) || Number(rawValue) > 30)) {
+        return false;
+      }
+      if (key === "application_name" &&
+          (!/^[a-zA-Z0-9._-]{1,63}$/.test(rawValue))) {
+        return false;
+      }
+    }
+    return true;
   } catch {
     return false;
   }
