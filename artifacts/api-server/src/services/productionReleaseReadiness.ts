@@ -1,3 +1,5 @@
+import { assertField002FirstCommercialSourcePolicy } from "../../../../scripts/lib/field002-r2-precommercial-source-admission.mjs";
+
 export const PRODUCTION_RELEASE_GATE_ENV = "FAWRI_PRODUCTION_RELEASE_GATE";
 export const DEPLOYMENT_MODE_ENV = "FAWRI_DEPLOYMENT_MODE";
 
@@ -25,6 +27,36 @@ export type ProductionLaunchReadiness = {
   runtime_issues: ProductionReleaseIssue[];
   external_blockers: ProductionReleaseIssue[];
 };
+
+// FIELD002-R2: this is a *declarative* pre-listener safeguard for the first
+// commercial launch, NOT a trusted Neon branch attestation or an approved deploy.
+// The real provisioning/import/restore boundary must separately prove fresh
+// target creation, no historical data and the exact protected role/RLS state.
+export const FIRST_COMMERCIAL_SOURCE_MANIFEST_ENV = "FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON";
+const FIELD002_ORIGINAL_STAGING_DATABASE_HOST = "ep-plain-leaf-b1wtzjr3.c-5.eu-central-1.aws.neon.tech";
+
+function isKnownOriginalStagingUrl(value: unknown): boolean {
+  if (!isPostgresUrl(value)) return false;
+  try {
+    const host = new URL(text(value)).hostname.toLowerCase();
+    return host === FIELD002_ORIGINAL_STAGING_DATABASE_HOST ||
+      host === FIELD002_ORIGINAL_STAGING_DATABASE_HOST.replace(".", "-pooler.");
+  } catch {
+    return false;
+  }
+}
+
+function firstCommercialSourceManifestStatus(raw: unknown): "missing" | "refused" | "compatible" {
+  const input = text(raw);
+  if (!input) return "missing";
+  if (input.length > 4096) return "refused";
+  try {
+    assertField002FirstCommercialSourcePolicy(JSON.parse(input) as unknown);
+    return "compatible";
+  } catch {
+    return "refused";
+  }
+}
 
 const SAFE_SERVICE_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 const SAFE_DEK_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/;
@@ -233,6 +265,22 @@ export function getProductionRuntimeConfigurationIssues(
   const issues: ProductionReleaseIssue[] = [];
   if (invalidDeploymentMode) {
     issues.push(issue("deployment", "DEPLOYMENT_MODE_INVALID"));
+  }
+
+  // Block the known ORIGINAL staging connection, including its pooler, even if
+  // a caller supplies a seemingly safe first-launch plan. All three pools
+  // must be bound to a new, independently verified commercial destination.
+  if ([env.DATABASE_URL, env.FAWRI_AUTH_DATABASE_URL,
+       env.FAWRI_OPERATOR_DATABASE_URL].some(isKnownOriginalStagingUrl)) {
+    issues.push(issue("database", "FIELD002_ORIGINAL_STAGING_DATABASE_FORBIDDEN"));
+  }
+  const firstLaunchSource = firstCommercialSourceManifestStatus(
+    env[FIRST_COMMERCIAL_SOURCE_MANIFEST_ENV],
+  );
+  if (firstLaunchSource === "missing") {
+    issues.push(issue("deployment", "FIELD002_FIRST_COMMERCIAL_SOURCE_MANIFEST_REQUIRED"));
+  } else if (firstLaunchSource === "refused") {
+    issues.push(issue("deployment", "FIELD002_FIRST_COMMERCIAL_SOURCE_MANIFEST_FORBIDDEN"));
   }
 
   if (!isPostgresUrl(env.DATABASE_URL)) {
