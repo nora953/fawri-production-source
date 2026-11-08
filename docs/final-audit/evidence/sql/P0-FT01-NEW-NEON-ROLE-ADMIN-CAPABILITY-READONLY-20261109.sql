@@ -28,6 +28,15 @@ WITH candidate_roles AS (
          count(*) FILTER (WHERE bypass_rls OR can_create_roles)::int
            AS elevated_candidate_roles
   FROM candidate_inventory
+), user_schema_state AS (
+  SELECT count(*)::int AS user_relations
+    FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+   WHERE n.nspname NOT IN ('pg_catalog','information_schema')
+     AND n.nspname NOT LIKE 'pg_toast%'
+     AND n.nspname NOT LIKE 'pg_temp_%'
+     AND n.nspname NOT LIKE 'pg_toast_temp_%'
+     AND c.relkind IN ('r','p','v','m','f','S')
 )
 SELECT current_database() AS database_name,
        current_setting('server_version_num')::int / 10000 AS postgres_major,
@@ -46,6 +55,7 @@ SELECT current_database() AS database_name,
          AS public_data_relations,
        (to_regclass('drizzle.__drizzle_migrations') IS NOT NULL)
          AS drizzle_ledger_exists,
+       u.user_relations,
        s.existing_candidate_roles,
        s.elevated_candidate_roles,
        CASE
@@ -54,6 +64,8 @@ SELECT current_database() AS database_name,
            OR session_user <> 'fawri_owner'
            OR current_user <> session_user
          THEN 'WRONG_DATABASE_OR_ROLE_REFUSE'
+         WHEN u.user_relations <> 0
+         THEN 'SCHEMA_CHANGED_REQUIRES_NEW_EMPTY_PREFLIGHT'
          WHEN o.rolcreaterole IS DISTINCT FROM true
          THEN 'ROLE_CREATION_NOT_CONFIRMED_USE_APPROVED_PROVIDER_ADMIN_PATH'
          WHEN s.existing_candidate_roles <> 0
@@ -62,7 +74,7 @@ SELECT current_database() AS database_name,
          THEN 'MIGRATION_STATE_CHANGED_REVIEW'
          ELSE 'READONLY_ROLE_CREATION_FEASIBILITY_CANDIDATE'
        END AS readonly_role_provisioning_decision
-FROM authenticated_owner o CROSS JOIN summary s;
+FROM authenticated_owner o CROSS JOIN summary s CROSS JOIN user_schema_state u;
 -- The result reports role-creation feasibility, not actual capability to
 -- provision safe grants, owner ACLs, schema migration or authenticating users.
 -- The absence of o rows is NOT acceptance; return exactly one explicit row.
