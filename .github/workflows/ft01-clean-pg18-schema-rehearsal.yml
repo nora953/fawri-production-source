@@ -59,16 +59,17 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Set up Node 24 and pnpm
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
           cache: pnpm
 
-      - name: Enable Corepack and install frozen dependencies
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install frozen dependencies without package scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Prove the only reachable PostgreSQL service is local PG18 and empty
         working-directory: lib/db
