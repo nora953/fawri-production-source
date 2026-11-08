@@ -24,7 +24,7 @@ function firstCommercialManifest(): Record<string, unknown> {
   return {
     intent: "first_commercial_launch",
     project_id: FIELD002_R2_PROJECT_ID,
-    target_branch_id: FIELD002_R2_BRANCHES.production,
+    target_branch_id: FIELD002_R2_BRANCHES.firstCommercialProduction,
     source_mode: "fresh_schema_migrations_only",
     source_branch_id: null,
     source_backup_id: null,
