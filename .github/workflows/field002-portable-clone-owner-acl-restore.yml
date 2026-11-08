@@ -213,6 +213,31 @@ jobs:
           fi
           if ! cmp -s "$work/acl-source-before.txt" "$work/acl-source-after.txt" ||
              ! cmp -s "$work/acl-source-before.txt" "$work/acl-restored.txt"; then
+            # Only catalog category names/counts/digests (never raw ACL, rows,
+            # SQL metadata, credentials or archive bytes) enter the job log.
+            node <<'NODE'
+          const fs=require('node:fs');
+          const root=process.env.RUNNER_TEMP+'/field002-portable-proof/';
+          const parse=name=>new Map(fs.readFileSync(root+name,'utf8').trim().split('\n')
+            .map(line=>line.split('|'))
+            .filter(row=>row.length===3 && /^[a-z_]+$/.test(row[0]) &&
+              /^\d+$/.test(row[1]) && /^[0-9a-f]{32}$/.test(row[2]))
+            .map(([key,count,digest])=>[key,{count:Number(count),digest}]));
+          const src=parse('acl-source-before.txt');
+          const after=parse('acl-source-after.txt');
+          const restored=parse('acl-restored.txt');
+          const report=[...new Set([...src.keys(),...after.keys(),...restored.keys()])].sort()
+            .map(group=>({
+              group,
+              source_count:src.get(group)?.count??null,
+              restored_count:restored.get(group)?.count??null,
+              source_unchanged:src.get(group)?.digest===after.get(group)?.digest,
+              restored_digest_matches:src.get(group)?.digest===restored.get(group)?.digest,
+              source_digest:src.get(group)?.digest??null,
+              restored_digest:restored.get(group)?.digest??null,
+            }));
+          console.error('FIELD002_OBJECT_ACL_CATEGORY_DIGEST_ONLY '+JSON.stringify(report));
+          NODE
             echo FIELD002_PORTABLE_OBJECT_ACL_PARITY_MISMATCH >&2; exit 1
           fi
           test "$(wc -l < "$work/acl-restored.txt" | tr -d ' ')" = 5
