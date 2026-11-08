@@ -114,6 +114,72 @@ test("FIELD002 production requires auth and tenant to target the same PostgreSQL
   assert.deepEqual(getProductionRuntimeConfigurationIssues(neon), []);
 });
 
+test("FIELD002 refuses PostgreSQL URL query overrides of target or authority for all three LOGINs", () => {
+  const overrides = [
+    ["host", "other.example"],
+    ["hostaddr", "192.0.2.10"],
+    ["port", "6543"],
+    ["dbname", "wrong_db"],
+    ["database", "wrong_db"],
+    ["user", "neondb_owner"],
+    ["password", "overridden"],
+    ["service", "privileged"],
+    ["servicefile", "override.conf"],
+    ["options", "-c search_path=public"],
+    ["sslmode", "disable"],
+    ["sslmode", "prefer"],
+    ["channel_binding", "disable"],
+    ["SSLMode", "disable"],
+    ["HOST", "other.example"],
+    ["sslmode", "require&SSLMode=disable"],
+  ] as const;
+  const append = (role: string, query: string): string =>
+    fakePgUrl(role) + "?" + query;
+  for (const [key, value] of overrides) {
+    const query = key + "=" + encodeURIComponent(value);
+    for (const [urlVar, expectedCode] of [
+      ["DATABASE_URL", "PRODUCTION_DATABASE_URL_REQUIRED"],
+      ["FAWRI_AUTH_DATABASE_URL", "FIELD002_AUTH_DATABASE_URL_REQUIRED"],
+      ["FAWRI_OPERATOR_DATABASE_URL", "FIELD002_OPERATOR_DATABASE_URL_REQUIRED"],
+    ] as const) {
+      const env = productionEnv({ [urlVar]: append(
+        urlVar === "DATABASE_URL" ? "fawri_restricted_runtime" :
+          urlVar === "FAWRI_AUTH_DATABASE_URL" ? "fawri_auth_issuer" :
+            "fawri_operator_issuer",
+        query,
+      ) });
+      const issues = getProductionRuntimeConfigurationIssues(env);
+      assert.ok(issues.some(item => item.code === expectedCode),
+        "unsafe " + key + " must be rejected for " + urlVar);
+      assert.throws(() => assertProductionRuntimeConfiguration(env), {
+        code: "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
+      });
+    }
+  }
+  // Distinct query keys with the same case-insensitive identity must not
+  // permit a later override, regardless of the value in the first option.
+  const duplicate = productionEnv({
+    DATABASE_URL: append("fawri_restricted_runtime",
+      "sslmode=require&SSLMODE=disable"),
+  });
+  assert.ok(getProductionRuntimeConfigurationIssues(duplicate)
+    .some(item => item.code === "PRODUCTION_DATABASE_URL_REQUIRED"));
+});
+
+test("FIELD002 permits ordinary encrypted Neon URLs with non-routing connection metadata", () => {
+  const query = "?sslmode=require&channel_binding=require&application_name=fawri-api&connect_timeout=10";
+  const neon = "ep-test-case.c-5.eu-central-1.aws.neon.tech";
+  const env = productionEnv({
+    DATABASE_URL: fakePgUrl("fawri_restricted_runtime", neon, "neondb") + query,
+    FAWRI_AUTH_DATABASE_URL: fakePgUrl("fawri_auth_issuer",
+      "ep-test-case-pooler.c-5.eu-central-1.aws.neon.tech", "neondb") + query,
+    FAWRI_OPERATOR_DATABASE_URL: fakePgUrl("fawri_operator_issuer",
+      neon, "neondb") + query,
+  });
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(env), []);
+  assert.doesNotThrow(() => assertProductionRuntimeConfiguration(env));
+});
+
 test("FIELD002 production requires a separate operator LOGIN on the same database", () => {
   for (const value of [
     "", "not-a-postgres-url", "https://invalid.example",
