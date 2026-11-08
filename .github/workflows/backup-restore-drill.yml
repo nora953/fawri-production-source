@@ -19,6 +19,11 @@ on:
       - "scripts/restore-postgresql.test.mjs"
       - "scripts/lib/field002-r2-precommercial-source-admission.mjs"
       - "scripts/tests/field002-r2-precommercial-source-admission.test.mjs"
+      - "scripts/lib/ft01-clean-bootstrap-source-plan.mjs"
+      - "scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs"
+      - "lib/db/drizzle/meta/_journal.json"
+      - "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql"
+      - "lib/db/migration-stages/0052/stage.json"
       - "scripts/tests/field002-isolated-three-nologin-role-grants.test.mjs"
       - "docs/final-audit/evidence/sql/P0-FIELD002-ISOLATED-THREE-NOLOGIN-ROLE-GRANTS-20261107.sql"
       - "scripts/tests/field002-original-prechange-readonly-gate.test.mjs"
@@ -29,6 +34,8 @@ on:
       - "docs/final-audit/evidence/sql/P0-FIELD002-ORIGINAL-PRECHANGE-READONLY-GATE-20261107.sql"
       - "docs/final-audit/evidence/sql/P0-FIELD002-CURRENT-ACL0-ORIGINAL-PRECHANGE-READONLY-GATE-20261108.sql"
       - "scripts/lib/field002-isolated-acceptance-plan.mjs"
+      - "scripts/lib/ft01-clean-bootstrap-source-plan.mjs"
+      - "scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs"
       - "scripts/tests/field002-isolated-acceptance-plan.test.mjs"
       - "artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs"
       - ".github/workflows/field002-clean-clone-acceptance.yml"
@@ -119,6 +126,26 @@ jobs:
           node --check artifacts/api-server/scripts/field002-isolated-notification-acceptance.mjs
           node --check scripts/lib/field002-isolated-acceptance-plan.mjs
           node --test scripts/tests/field002-isolated-acceptance-plan.test.mjs
+
+      # Read-only repository inventory. This code has no PostgreSQL connection
+      # and never issues migration SQL; 0052 remains HELD for hosted rollout.
+      - name: FT-01 clean-production migration source inventory and 0052 hold
+        run: |
+          node --check scripts/lib/ft01-clean-bootstrap-source-plan.mjs
+          node --test scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs
+          node scripts/lib/ft01-clean-bootstrap-source-plan.mjs > "$RUNNER_TEMP/ft01-source-plan.json"
+          node - "$RUNNER_TEMP/ft01-source-plan.json" <<'NODE'
+          const fs = require('node:fs');
+          const p = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (p.approved_to_execute !== false ||
+              p.held_migration?.index !== 52 ||
+              p.inventoried_migrations?.length !== 53 ||
+              p.database_connection_used !== false ||
+              p.commercial_release_authorized !== false) {
+            throw new Error('FT01_UNSAFE_SOURCE_PLAN');
+          }
+          console.log('FT01_SOURCE_ONLY_0052_HELD_PASS');
+          NODE
 
       - name: FIELD002 production startup role and RLS policy admission tests
         run: >-
