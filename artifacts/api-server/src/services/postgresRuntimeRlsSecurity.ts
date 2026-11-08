@@ -263,6 +263,13 @@ export async function getProductionDatabaseRlsReadiness(
          SELECT fn.prosecdef AND fn.proisstrict AND fn.provolatile='s'
            AND fn.prolang=(SELECT oid FROM pg_language WHERE lanname='sql')
            AND fn.proconfig @> ARRAY['search_path=pg_catalog']::text[]
+           -- Guard against tenant sessions that can activate the function owner
+           -- and replace a vetted SECURITY DEFINER body after startup.
+           AND NOT EXISTS (
+             SELECT 1 FROM reachable_roles function_owner_reach
+             WHERE pg_has_role(function_owner_reach.oid,fn.proowner,'USAGE')
+                OR pg_has_role(function_owner_reach.oid,fn.proowner,'SET')
+           )
            AND encode(sha256(convert_to(fn.prosrc,'UTF8')),'hex')='a871b1d9a76f90af0bdabedfda6026458585a3efa21e4857f9694c104a808da0'
          FROM pg_proc fn
          WHERE fn.oid=to_regprocedure('public.fawri_tenant_or_audited_admin(text)')
