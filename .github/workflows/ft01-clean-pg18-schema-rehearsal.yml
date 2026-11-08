@@ -8,6 +8,7 @@ on:
       - "lib/db/scripts/smoke-migration.mjs"
       - "lib/db/scripts/ft01-disposable-three-login-rehearsal.mjs"
       - "artifacts/api-server/tests/ft01-disposable-production-startup-pg18.ts"
+      - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-ROLE-ADMIN-CAPABILITY-READONLY-20261109.sql"
       - "artifacts/api-server/src/services/authenticationPostgresAuthority.ts"
       - "artifacts/api-server/src/services/operatorDirectoryPostgresAuthority.ts"
       - "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts"
@@ -174,6 +175,31 @@ jobs:
             assert.equal(policy.n, 2);
             console.log('FT01_LOCAL_PG18_53_MIGRATIONS_10_RLS_STORAGE_PASS');
           } finally { await client.end(); }
+          NODE
+
+      - name: Rehearse new-Neon owner-role feasibility SQL as fail-closed SELECT on local PG18
+        working-directory: lib/db
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import pg from 'pg';
+          // This is the owner UI's reviewed SELECT-only query. CI's local
+          // fawri_ci must be explicitly REJECTED, never approved or mutated.
+          const sql = fs.readFileSync(
+            '../../docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-ROLE-ADMIN-CAPABILITY-READONLY-20261109.sql',
+            'utf8',
+          );
+          const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+          await db.connect();
+          try {
+            const result = await db.query(sql);
+            assert.equal(result.rows.length, 1);
+            assert.equal(result.rows[0].database_name, 'fawri_ci');
+            assert.equal(result.rows[0].readonly_role_provisioning_decision,
+              'WRONG_DATABASE_OR_ROLE_REFUSE');
+            console.log('FT01_READONLY_NEW_NEON_ROLE_PREFLIGHT_LOCAL_REJECTION_PASS');
+          } finally { await db.end(); }
           NODE
 
       - name: FT-01 prove independent ephemeral tenant auth operator LOGINs on PG18
