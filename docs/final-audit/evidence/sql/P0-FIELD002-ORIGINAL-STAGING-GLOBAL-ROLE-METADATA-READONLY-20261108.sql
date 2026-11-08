@@ -21,7 +21,7 @@ roles AS (
     'neondb_owner', 'fawri_staging_runtime', 'fawri_staging_rls_runtime',
     'fawri_field002_tenant_probe', 'fawri_field002_auth_probe',
     'fawri_field002_operator_probe'
-  ) OR r.rolname LIKE 'fawri_field002_%'
+  ) OR left(r.rolname, 15) = 'fawri_field002_'
 ),
 memberships AS (
   SELECT concat_ws('|',
@@ -41,7 +41,7 @@ database_grants AS (
           split_part(grant_entry::text, '/', 1), ',' ORDER BY
             split_part(grant_entry::text, '/', 1))
         FROM unnest(COALESCE(d.datacl, acldefault('d', d.datdba)))
-          AS grant_entry
+          AS grants(grant_entry)
       ), '(null)')) AS record
   FROM pg_database d WHERE d.datname = 'neondb'
 ),
