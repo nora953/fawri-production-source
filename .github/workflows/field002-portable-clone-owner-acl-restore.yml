@@ -147,6 +147,21 @@ jobs:
                > "$work/acl-source-before.txt" 2>/dev/null; then
             echo FIELD002_CLONE_SOURCE_ACL_CATALOG_FAILED >&2; exit 1
           fi
+          # FIELD002 R1/R2: a restore can be faithfully wrong. Freeze the
+          # separately reviewed, independently observed exact source digest
+          # baseline; reject a permissive policy/grant/owner change *before*
+          # exporting data. Print only a rejection code, never catalog details.
+          cat > "$work/acl-approved-baseline.txt" <<'CATALOG'
+          default_acl|4|2c3a21d7a1011f2fbbd745ed7280dfd3
+          policies|74|f6ace2b1988536ae51e23938d2e94f7e
+          relations|98|da9c9f2bdb4ba57a0cc4ff2b876065d9
+          routines|19|c93ee0374b4194dacf05a743e81304dd
+          schemas|3|6efdbd38f95288b67c1b1c74fc2e245f
+          CATALOG
+          if ! cmp -s "$work/acl-approved-baseline.txt" "$work/acl-source-before.txt"; then
+            echo FIELD002_CLONE_SOURCE_ACL_BASELINE_DRIFT_BLOCKED >&2
+            exit 1
+          fi
           if ! docker run --rm --network host --env-file "$work/remote.env" \
                -v "$work:/work" postgres:18-alpine \
                sh -ec 'pg_dump --dbname="$FIELD002_ADMIN_URL" --format=custom --no-password --serializable-deferrable --file=/work/clean-clone.dump' \
