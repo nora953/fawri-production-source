@@ -1,0 +1,177 @@
+name: FT-01 isolated clean PostgreSQL 18 canonical schema rehearsal
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ft01-clean-pg18-schema-rehearsal.yml"
+      - "lib/db/drizzle/**"
+      - "lib/db/scripts/smoke-migration.mjs"
+      - "lib/db/scripts/lib/migration-sql-order.mjs"
+      - "lib/db/scripts/tests/isolated-neon-migration-static.test.mjs"
+      - "scripts/lib/ft01-clean-bootstrap-source-plan.mjs"
+      - "scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs"
+      - "pnpm-lock.yaml"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/ft01-clean-pg18-schema-rehearsal.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ft01-disposable-pg18-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fresh-canonical-schema:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && (github.event_name != 'workflow_dispatch'
+          || github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+      FAWRI_ALLOW_MIGRATION_SMOKE: "1"
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout exact tested source without stored credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node 24 and pnpm
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Enable Corepack and install frozen dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Prove the only reachable PostgreSQL service is local PG18 and empty
+        working-directory: lib/db
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import pg from 'pg';
+          const target = new URL(process.env.DATABASE_URL);
+          assert.equal(target.hostname, '127.0.0.1');
+          assert.equal(target.pathname, '/fawri_ci');
+          const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+          await client.connect();
+          try {
+            const result = await client.query(`SELECT current_database() AS db,
+              current_setting('server_version_num')::int / 10000 AS major,
+              (SELECT count(*)::int FROM pg_class c
+                JOIN pg_namespace n ON n.oid=c.relnamespace
+                WHERE n.nspname='public' AND c.relkind IN ('r','p','m','f')) AS public_tables,
+              to_regclass('drizzle.__drizzle_migrations') IS NOT NULL AS ledger`);
+            assert.deepEqual(result.rows[0], {
+              db: 'fawri_ci', major: 18, public_tables: 0, ledger: false,
+            });
+            console.log('FT01_LOCAL_PG18_EMPTY_SOURCE_PASS');
+          } finally { await client.end(); }
+          NODE
+
+      - name: Validate exact source-only migration inventory with 0052 still HELD
+        run: |
+          node --test scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs
+          node scripts/lib/ft01-clean-bootstrap-source-plan.mjs > "$RUNNER_TEMP/ft01-plan.json"
+          node - "$RUNNER_TEMP/ft01-plan.json" <<'NODE'
+          const fs = require('node:fs');
+          const p = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (p.approved_to_execute !== false ||
+              p.inventoried_migrations?.length !== 53 ||
+              p.held_migration?.disposition !== 'HELD_NOT_AUTHORIZED_FOR_HOSTED' ||
+              p.database_connection_used !== false) {
+            throw new Error('FT01_SOURCE_HOLD_NOT_PROVEN');
+          }
+          console.log('FT01_SOURCE_ONLY_0052_HOLD_PASS');
+          NODE
+
+      - name: Rehearse all 53 canonical migrations twice in disposable PG18 only
+        run: |
+          pnpm --filter @workspace/db run schema:smoke
+
+      - name: Prove local post-bootstrap RLS and cashier storage baseline, without secrets
+        working-directory: lib/db
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import pg from 'pg';
+          const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+          await client.connect();
+          try {
+            const basic = (await client.query(`
+              SELECT current_database() AS db,
+                     current_setting('server_version_num')::int / 10000 AS major,
+                     (SELECT count(*)::int FROM drizzle.__drizzle_migrations) AS migrations,
+                     (SELECT count(*)::int FROM public.notifications) AS notifications
+            `)).rows[0];
+            assert.deepEqual(basic, {
+              db: 'fawri_ci', major: 18, migrations: 53, notifications: 0,
+            });
+            const wanted = [
+              'audit_events', 'manual_reply_requests', 'merchant_admin_notes',
+              'merchant_channel_overrides', 'merchant_deletion_requests',
+              'notifications', 'order_drafts', 'processed_channel_events',
+              'cashier_device_streams', 'cashier_operation_receipts',
+            ];
+            const relations = (await client.query(`
+              SELECT c.relname, c.relrowsecurity
+                FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+               WHERE n.nspname='public'
+                 AND c.relname=ANY($1::text[])
+                 AND c.relkind='r'
+            `, [wanted])).rows;
+            assert.equal(relations.length, wanted.length, 'ten protected relations required');
+            assert.ok(relations.every(row => row.relrowsecurity),
+              'all eight residual plus two cashier relations must enable RLS');
+            const owner = (await client.query(`
+              SELECT rolcanlogin, rolsuper, rolbypassrls, rolcreaterole,
+                     rolcreatedb, rolinherit, rolreplication
+                FROM pg_roles WHERE rolname='fawri_cashier_retirement_owner'
+            `)).rows;
+            assert.equal(owner.length, 1, 'reviewed cashier NOLOGIN role required');
+            assert.ok(Object.values(owner[0]).every(value => value === false),
+              'cashier retirement role must have no privileged flags');
+            const policy = (await client.query(`
+              SELECT count(*)::int AS n FROM pg_policies
+               WHERE schemaname='public' AND
+                 ((tablename='cashier_device_streams'
+                   AND policyname='cashier_device_streams_scoped_read')
+                   OR (tablename='cashier_operation_receipts'
+                   AND policyname='cashier_operation_receipts_scoped_read'))
+            `)).rows[0];
+            assert.equal(policy.n, 2);
+            console.log('FT01_LOCAL_PG18_53_MIGRATIONS_10_RLS_STORAGE_PASS');
+          } finally { await client.end(); }
+          NODE
+
+      - name: Deny any claim of hosted admission from this local proof
+        run: |
+          test "${DATABASE_URL}" = 'postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci'
+          test "${FAWRI_ALLOW_MIGRATION_SMOKE}" = '1'
+          echo 'FT01_DISPOSABLE_ONLY_NO_NEON_NO_RELEASE_PASS'
