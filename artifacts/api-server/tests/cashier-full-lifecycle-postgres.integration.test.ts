@@ -305,6 +305,33 @@ test(
     );
 
     await restoreHistoricalBillingPeriod();
+    // The pairing APIs use the *real* clock, while this billing lifecycle
+    // deliberately uses a fixed October/November 2026 event timeline. Without
+    // aligning this disposable fixture, issued_at/assigned_at drift past the
+    // Nov 5 historical sale as wall-clock time advances; the production
+    // historical authority correctly rejects an as-yet-unissued credential.
+    // Only the isolated test merchant/station is modified (same approach as
+    // cashier-historical-operation-postgres.integration.test.ts).
+    const historicalStationBoundAt = new Date("2026-10-10T00:30:00.000Z");
+    const backdatedCredential = await pool.query(
+      `UPDATE cashier_station_credentials
+          SET issued_at = $4
+        WHERE merchant_id = $1 AND station_id = $2 AND device_id = $3
+          AND revoked_at IS NULL`,
+      [merchantId, stationOne.id, deviceOne, historicalStationBoundAt],
+    );
+    assert.equal(backdatedCredential.rowCount, 1,
+      "test fixture must have exactly one live first-station credential");
+    const backdatedAssignment = await pool.query(
+      `UPDATE cashier_station_seat_assignments
+          SET assigned_at = $3, created_at = $3
+        WHERE merchant_id = $1 AND station_id = $2
+          AND released_at IS NULL`,
+      [merchantId, stationOne.id, historicalStationBoundAt],
+    );
+    assert.ok((backdatedAssignment.rowCount ?? 0) >= 1,
+      "test fixture must retain a licensed first-station seat");
+
     const subscriptionRow = await pool.query(
       `SELECT id, merchant_id, status, licensed_seats, price_per_seat_iqd,
               billing_period_start, billing_period_end, grace_duration_seconds,
