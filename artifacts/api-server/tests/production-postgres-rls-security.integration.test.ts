@@ -217,6 +217,34 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
       }
     });
   }
+  await t.test("predicate owner SET-role is rejected on the actual PostgreSQL session", async () => {
+    const predicateOwner = "fawri_predicate_owner_probe";
+    await client.query("RESET SESSION AUTHORIZATION");
+    await client.query("BEGIN");
+    try {
+      // Alter only this disposable transaction. The SQL body and hash stay
+      // identical; the privileged function OWNER becomes tenant-activatable.
+      await client.query(`CREATE ROLE ${predicateOwner} NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOINHERIT`);
+      await client.query(`ALTER FUNCTION public.fawri_tenant_or_audited_admin(text) OWNER TO ${predicateOwner}`);
+      await client.query(`GRANT ${predicateOwner} TO ${probeRole} WITH INHERIT FALSE, SET TRUE`);
+      await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+      const state = await getProductionDatabaseRlsReadiness(client);
+      assert.equal(state.tenantPredicateTrusted, false,
+        "matching function source is insufficient when the runtime can SET ROLE to function owner");
+      await assert.rejects(
+        () => assertProductionDatabaseRlsReady(productionEnv(), client),
+        { code: "PRODUCTION_TENANT_PREDICATE_SOURCE_UNTRUSTED" },
+      );
+    } finally {
+      await client.query("RESET SESSION AUTHORIZATION");
+      await client.query("ROLLBACK");
+      await client.query(`SET SESSION AUTHORIZATION ${probeRole}`);
+    }
+    const recovered = await getProductionDatabaseRlsReadiness(client);
+    assert.equal(recovered.tenantPredicateTrusted, true,
+      "rollback must restore safe function owner and original membership");
+  });
+
   for (const kind of ["bypass", "owner"]) {
     await t.test(`authenticated ${kind} role remains unsafe after SET ROLE`, async () => {
       const login = "fawri_session_authority_probe";
