@@ -142,6 +142,9 @@ test("FIELD002 prelistener readiness never executes an unverified SECURITY DEFIN
       catalogChecked = true;
       assert.match(sql, /tenant_predicate_trusted/);
       assert.match(sql, /sha256\(convert_to\(fn\.prosrc,'UTF8'\)\)/);
+      assert.match(sql, /NOT EXISTS\s*\(\s*SELECT 1 FROM reachable_roles function_owner_reach/);
+      assert.match(sql, /pg_has_role\(function_owner_reach\.oid,fn\.proowner,'USAGE'\)/);
+      assert.match(sql, /pg_has_role\(function_owner_reach\.oid,fn\.proowner,'SET'\)/);
       // Calling the predicate before the fingerprint check is itself unsafe:
       // it may be a modified SECURITY DEFINER function with side effects.
       assert.doesNotMatch(sql, /rls_predicate_probe/);
