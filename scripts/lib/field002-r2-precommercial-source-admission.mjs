@@ -13,12 +13,18 @@ export const FIELD002_R2_BRANCHES = Object.freeze({
   staging: "br-falling-dust-b1km4gix",
   cleanRehearsal: "br-polished-mouse-b1proel7",
   oldRehearsal: "br-young-hill-b1x9vhlz",
-  // Verified prechange snapshot and its separate native reset target.
-  // Both contain precommercial staging data; neither is a first-launch seed.
+  // Earlier recovery has a different default FUNCTION ACL than CURRENT original.
   frozenRecovery: "br-empty-mud-b1it6mg9",
-  nativeResetDrill: "br-nameless-base-b1vt822z",
-  archived: Object.freeze([
-    "br-square-night-b1l1x9zk",
+  historicalAcl2Recovery: "br-royal-fog-b1v7pdmr",
+  historicalAclRehearsal: "br-misty-bonus-b15f66v7",
+  nativeResetDrill: "br-summer-bonus-b19rgpfn",
+  // 95/95 public+drizzle table-data and 9/9 catalog parity with CURRENT ACL0.
+  currentAcl0Recovery: "br-lingering-surf-b19gxt4e",
+  archived: Object.freeze(["br-square-night-b1l1x9zk"]),
+  // Historical branch identities remain explicitly excluded as data sources;
+  // their deletion was separately approved and absence is not inventory drift.
+  retired: Object.freeze([
+    "br-nameless-base-b1vt822z",
     "br-snowy-voice-b1bovtwi",
     "br-billowing-leaf-b14yamgu",
   ]),
@@ -69,7 +75,8 @@ export function assertField002FirstCommercialSourcePolicy(candidate) {
   }
   const branchId = candidate.source_branch_id;
   const backupId = candidate.source_backup_id;
-  if (typeof branchId === "string" && FIELD002_R2_BRANCHES.archived.includes(branchId)) {
+  if (typeof branchId === "string" &&
+      [...FIELD002_R2_BRANCHES.archived, ...FIELD002_R2_BRANCHES.retired].includes(branchId)) {
     reject("FIELD002_R2_ARCHIVED_SOURCE_QUARANTINED");
   }
   if (branchId !== null || backupId !== null ||
@@ -105,55 +112,53 @@ export function assertField002KnownNeonLineage(branches) {
     byId.set(b.id, b);
   }
   const known = FIELD002_R2_BRANCHES;
-  const production = byId.get(known.production);
-  const staging = byId.get(known.staging);
-  const clean = byId.get(known.cleanRehearsal);
-  const old = byId.get(known.oldRehearsal);
-  const frozen = byId.get(known.frozenRecovery);
-  const reset = byId.get(known.nativeResetDrill);
-  if (!production || production.default !== true || production.primary !== true ||
-      production.parent_id != null || production.current_state !== "ready" ||
-      !staging || staging.parent_id !== known.production ||
-      staging.default !== false || staging.primary !== false ||
-      staging.current_state !== "ready" ||
-      !clean || clean.parent_id !== known.staging ||
-      clean.default !== false || clean.primary !== false ||
-      clean.current_state !== "ready" ||
-      !old || old.parent_id !== known.staging ||
-      old.default !== false || old.primary !== false ||
-      old.current_state !== "ready" ||
-      !frozen || frozen.parent_id !== known.staging ||
-      frozen.default !== false || frozen.primary !== false ||
-      frozen.current_state !== "ready" ||
-      frozen.parent_lsn !== "0/473AAE0" ||
-      !reset || reset.parent_id !== known.frozenRecovery ||
-      reset.default !== false || reset.primary !== false ||
-      reset.current_state !== "ready" ||
-      reset.parent_lsn !== frozen.parent_lsn ||
-      reset.last_reset_at !== "2026-11-06T23:36:16Z") {
-    reject("FIELD002_R2_BRANCH_LINEAGE_CHANGED");
+  const required = [
+    [known.production, null, "ready"],
+    [known.staging, known.production, "ready"],
+    [known.cleanRehearsal, known.staging, "ready"],
+    [known.oldRehearsal, known.staging, "ready"],
+    [known.frozenRecovery, known.staging, "ready"],
+    [known.historicalAcl2Recovery, known.staging, "ready"],
+    [known.historicalAclRehearsal, known.historicalAcl2Recovery, "ready"],
+    [known.nativeResetDrill, known.historicalAcl2Recovery, "ready"],
+    [known.currentAcl0Recovery, known.staging, "ready"],
+    [known.archived[0], known.staging, "archived"],
+  ];
+  if (byId.size !== required.length) {
+    reject("FIELD002_R2_BRANCH_INVENTORY_CHANGED");
   }
-  const expectedArchivedParent = new Map([
-    [known.archived[0], known.staging],
-    [known.archived[1], known.staging],
-    [known.archived[2], known.archived[1]],
-  ]);
-  for (const [id, parent] of expectedArchivedParent) {
+  for (const [id, expectedParent, expectedState] of required) {
     const b = byId.get(id);
-    if (!b || b.current_state !== "archived" || b.parent_id !== parent ||
-        b.default !== false || b.primary !== false) {
-      reject("FIELD002_R2_ARCHIVED_BRANCH_STATE_CHANGED");
-    }
-  }
-  for (const b of branches) {
-    if (b.id !== known.production && (b.default === true || b.primary === true)) {
+    if (!b || (b.parent_id ?? null) !== expectedParent ||
+        b.current_state !== expectedState ||
+        b.default !== (id === known.production) ||
+        b.primary !== (id === known.production)) {
       reject("FIELD002_R2_BRANCH_LINEAGE_CHANGED");
     }
   }
+  // Native provider snapshot/reset evidence and fresh ACL0 source capture
+  // are independent pinned histories; they must never be interchanged.
+  const checkpoints = [
+    [known.frozenRecovery, "parent_lsn", "0/473AAE0"],
+    [known.historicalAcl2Recovery, "parent_lsn", "0/492E628"],
+    [known.historicalAclRehearsal, "parent_lsn", "0/49957D8"],
+    [known.nativeResetDrill, "parent_lsn", "0/4A38530"],
+    [known.nativeResetDrill, "last_reset_at", "2026-11-07T21:01:06Z"],
+    [known.currentAcl0Recovery, "parent_lsn", "0/4B771F8"],
+  ];
+  for (const [id, field, expected] of checkpoints) {
+    if (byId.get(id)?.[field] !== expected) {
+      reject("FIELD002_R2_BRANCH_LINEAGE_CHANGED");
+    }
+  }
+  for (const retired of known.retired) {
+    if (byId.has(retired)) reject("FIELD002_R2_RETIRED_SOURCE_REAPPEARED");
+  }
   return Object.freeze({
     decision: "KNOWN_BRANCH_LINEAGE_OBSERVED",
-    archivedSourcesQuarantined: known.archived.length,
+    archivedSourcesQuarantined: known.archived.length + known.retired.length,
     stagingRecoveryLineageVerified: true,
+    currentAcl0RecoveryLineageVerified: true,
     disposableNativeResetLineageVerified: true,
     deploymentAuthorized: false,
     field002Closed: false,
