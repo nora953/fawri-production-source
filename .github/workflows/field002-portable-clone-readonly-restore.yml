@@ -77,6 +77,12 @@ jobs:
           fs.writeFileSync(process.env.RUNNER_TEMP+'/field002-portable-proof/remote.env',
             'FIELD002_ADMIN_URL='+raw+'\n',{mode:0o600});
           NODE
+          cat > "$work/preflight.sql" <<'SQL'
+          SELECT concat_ws('|', current_database(), session_user,
+            (SELECT count(*) FROM drizzle.__drizzle_migrations),
+            (SELECT count(*) FROM public.notifications),
+            current_setting('server_version_num'));
+          SQL
           cat > "$work/digest.sql" <<'SQL'
           WITH rels AS (
             SELECT n.nspname sn,c.relname tn
@@ -102,8 +108,8 @@ jobs:
         run: |
           set -euo pipefail
           work="$RUNNER_TEMP/field002-portable-proof"
-          if ! docker run --rm --network host --env-file "$work/remote.env" postgres:18-alpine \
-               sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -c "SELECT current_database()||''|''||session_user||''|''||(SELECT count(*) FROM drizzle.__drizzle_migrations)::text||''|''||(SELECT count(*) FROM public.notifications)::text||''|''||current_setting(''server_version_num'');"' \
+          if ! docker run --rm --network host --env-file "$work/remote.env" -v "$work:/work" postgres:18-alpine \
+               sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -f /work/preflight.sql' \
                > "$work/preflight.txt" 2>/dev/null; then
             echo FIELD002_CLONE_READONLY_PREFLIGHT_FAILED >&2; exit 1
           fi
