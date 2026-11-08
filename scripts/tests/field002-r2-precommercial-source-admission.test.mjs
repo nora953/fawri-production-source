@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   FIELD002_R2_PROJECT_ID, FIELD002_R2_BRANCHES,
+  FIELD002_R2_HISTORICAL_PROJECT_ID, FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID,
   assertField002FirstCommercialSourcePolicy,
   assertField002KnownNeonLineage,
 } from "../lib/field002-r2-precommercial-source-admission.mjs";
@@ -10,12 +11,24 @@ const known=FIELD002_R2_BRANCHES;
 const safe=()=>({
   intent:"first_commercial_launch",
   project_id:FIELD002_R2_PROJECT_ID,
-  target_branch_id:known.production,
+  target_branch_id:FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID,
   source_mode:"fresh_schema_migrations_only",
   source_branch_id:null,
   source_backup_id:null,
   data_import_requested:false,
   restore_requested:false,
+});
+
+test("FIELD002-R2 first commercial pin is a separate owner-created project and branch, not old default",()=>{
+  assert.equal(FIELD002_R2_PROJECT_ID,"crimson-cherry-65705041");
+  assert.equal(FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID,"br-holy-waterfall-b993zglb");
+  assert.equal(FIELD002_R2_BRANCHES.firstCommercialProduction,FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID);
+  assert.notEqual(FIELD002_R2_PROJECT_ID,FIELD002_R2_HISTORICAL_PROJECT_ID);
+  assert.notEqual(FIELD002_R2_FIRST_COMMERCIAL_BRANCH_ID,known.production);
+  assert.throws(()=>assertField002FirstCommercialSourcePolicy({
+    ...safe(),project_id:FIELD002_R2_HISTORICAL_PROJECT_ID,
+    target_branch_id:known.production,
+  }),/FIELD002_R2_RELEASE_TARGET_UNVERIFIED/);
 });
 
 test("FIELD002-R2 accepts only fresh-schema-only source policy, NOT deployment authority",()=>{
@@ -58,6 +71,8 @@ test("FIELD002-R2 refuses restored artifact, data-copy and misleading commercial
     (({source_branch_id,...rest})=>rest)(safe()),
     {...safe(),intent:"merchant_recovery"},
     {...safe(),intent:"first_commercial_launch",target_branch_id:known.staging},
+    {...safe(),target_branch_id:known.production},
+    {...safe(),project_id:FIELD002_R2_HISTORICAL_PROJECT_ID},
     {...safe(),project_id:"different-project"},
     Object.create(null),
   ]){
