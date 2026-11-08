@@ -1,6 +1,6 @@
 # FT-01 — standalone empty production-preparation Neon project: owner UI creation checkpoint
 
-**Date (Iraq):** 2026-11-08. **Status: PROVIDER CONSOLE CREATION CONFIRMED BY OWNER SCREENSHOT; hosted read-only identity / empty schema NOT YET VERIFIED.** No commercial deploy authority.
+**Date (Iraq):** 2026-11-08 (creation), 2026-11-09 (read-only empty-schema query). **Status: NEW PROJECT/BRANCH OWNER UI VERIFIED; BOUNDED READ-ONLY EMPTY-SCHEMA PREFLIGHT PASS.** Provider endpoint host and commercial deployment/role/RLS/recovery remain unverified. No commercial deploy authority.
 
 ## User-confirmed provisioning facts
 - Provider: Neon, independent **new project**, not a branch of old `round-fire-18493605`.
@@ -27,3 +27,24 @@
 The installed Neon connector was tested with **read-only** `describe_project(project_id='crimson-cherry-65705041')`. Neon returned an explicit safe refusal: `project_id "crimson-cherry-65705041" does not match this connection's project "round-fire-18493605"; reconnect with access to it`. **Do not omit project_id**, because that would target the old project. The previous project creation API attempts were unavailable; the owner created the new project using its web console and the screen proves completion. **No read-only SQL has been executed on the new target**, no host or role credentials were requested, and no hosted write, seed, migration, merchant data or deployment occurred.
 
 To continue hosted verification, reconnect the Neon app with access to **only the new project**, or run the strict [SELECT-only empty-schema preflight](sql/P0-FT01-NEW-PRODUCTION-EMPTY-SCHEMA-READONLY-20261108.sql) via the **new project's** Neon SQL Editor. Do not paste URLs, passwords or sensitive outputs into GitHub/chat. This preflight cannot prove branch ID from SQL; combine its output with the UI/provider branch ID above. A schema-only fresh DB still requires migration-bootstrap authorization, restricted roles, hosted RLS/HTTP and recovery acceptance. **Free plan's 6-hour history is not sufficient standalone long-term disaster recovery proof.**
+
+## FT-01 — New destination: actual read-only SQL empty-schema preflight PASS (2026-11-09, Baghdad)
+
+**Owner-supplied exact JSON result from the new project's Neon SQL Editor**, against [the reviewed SELECT-only preflight](sql/P0-FT01-NEW-PRODUCTION-EMPTY-SCHEMA-READONLY-20261108.sql):
+
+```json
+{
+  "database_name": "fawri",
+  "postgres_major": 18,
+  "session_role_name": "fawri_owner",
+  "user_relations": 0,
+  "user_data_relations": 0,
+  "public_relations": 0,
+  "drizzle_ledger_exists": false,
+  "pre_migration_readonly_decision": "EMPTY_SCHEMA_PRE_MIGRATION_CANDIDATE"
+}
+```
+
+**Bounded acceptance:** the previously created isolated **new** project `crimson-cherry-65705041`, branch `br-holy-waterfall-b993zglb` were visible in the owner's console images; the SQL Editor selected database `fawri` and returned the exact read-only decision above. This proves **zero non-system user relations of the selected kinds and no Drizzle migrations ledger at the time of the query**, PG18, role `fawri_owner`. It does **NOT** verify all objects, database histories or independent provider identity through an API; it does not certify absence of data in all possible non-relational storage. SQL alone does not attest project ID or branch ID, so retain the paired UI evidence. No write, migration or import occurred.
+
+**Next step / do not improvise:** Review existing migration bootstrap source and rollback/snapshot sequence against a genuinely empty new database; explicit owner approval is needed before writing schema/roles to `crimson-cherry-65705041`. Do not call `scripts/run-postgresql-migration-cutover.mjs --write` because it deliberately fails `REAL_CUTOVER_NOT_IMPLEMENTED`. Do not blindly apply previous staging 0028–0051 patches or unblock 0052. The source-only admission policy is already pinned to this project/branch and accepted in exact-code CI. Neon connector still scoped to original project and must never silently redirect. FT-01 empty-schema **subgate PASS**, overall hosted roles/RLS/HTTP/recovery remains open; FIELD002 OPEN, PR #550 DRAFT, commercial NO-GO.
