@@ -64,7 +64,9 @@ const SAFE_DEK_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/;
 // ownership identities as commercial tenant application logins.
 export const FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES: ReadonlySet<string> = new Set([
   "fawri_staging_runtime", "fawri_staging_rls_runtime",
-  "neondb_owner", "neon_superuser",
+  // The owner LOGIN of the new independently created PG18 "fawri" project
+  // must never be used for tenant, authentication or operator application traffic.
+  "neondb_owner", "fawri_owner", "neon_superuser",
   // Neon provider identities observed in the isolated PostgreSQL role
   // inventory. Never accept an admin/BYPASSRLS or inherited DB owner as a
   // tenant, auth or operator LOGIN merely because its URL looks valid.
