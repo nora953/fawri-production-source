@@ -45,3 +45,16 @@ The chat paste contained repeated truncated snippets plus one complete JSON resu
 4. Obtain separate scoped owner approval **before any `CREATE ROLE`, `GRANT`, migration DDL or hosted schema write** on `crimson-cherry-65705041`; use only a target-attested connection to the NEW project. Existing Neon app is pinned to the OLD `round-fire-18493605`, must never silently fall back.
 
 **State:** FT-01 *hosted read-only role-creation feasibility* **PASS**; actual schema/bootstrap/3 roles/RLS SQL+HTTP and durable recovery still **OPEN**. `FIELD002` OPEN, `0052` hosted BLOCKED, Draft PR #550, commercial **NO-GO**. No data import, deploy or merge.
+
+## 2026-11-09 — owner Branch overview/provider project metadata cross-check (read-only)
+
+Owner submitted **the actual new Neon project's Branch overview screenshot** after the SQL and backup-page evidence. The page visibly shows:
+
+- Breadcrumb: `All projects / fawri-production-prep-20261108 / production / Default`; branch name `production` and listed `Never` expiry.
+- Right provider panel: project ID begins **`crimson-cherry-65...`** and branch ID begins **`br-holy-waterfall-b...`**, consistent with independently owner-confirmed exact IDs `crimson-cherry-65705041` and `br-holy-waterfall-b993zglb` previously recorded. **The screenshot is horizontally cropped**, so this screenshot alone does not fully show the IDs or independently verify the compute endpoint hostname.
+- Service inventory: **Postgres database — 1 database, 1 compute**; project Free plan; branch count 1; default branch `production`; object storage 0 kB; **IP restrictions: None set**.
+- Postgres monitoring section says **there is no data to display**; do **not** reinterpret this as a SQL empty-schema finding (the earlier SQL SELECT explicitly proved zero user relations). A displayed Postgres storage usage figure is not proof of user records.
+
+**Bounded decision:** `FT01_NEW_PROVIDER_OVERVIEW_UI_MATCH_PASS` for actual project/branch *name and provider-displayed IDs prefix* pairing, on top of earlier full identity and owner-run SQL evidence. This resolves an additional **new-provider overview evidence** unknown; it does **not** close the deployed `P0-ACCESS-HOSTED-IDENTITY` release gate, since actual application `DATABASE_URL` host, branch, three restricted SQL sessions and ingress are not yet live/attested. **No IP restrictions** is a visible exposure/configuration decision that must be explicitly reviewed before real merchant credentials or traffic; it does not itself imply unauthorized access without credentials. Do not enable IP restrictions blindly before endpoint/egress addresses are known.
+
+No SQL, snapshot, roles, hosted migration, upgrade, data import, merge or deployment was performed by viewing this page. The project is still at **NO-GO** / FIELD002 OPEN / 0052 hosted BLOCKED.
