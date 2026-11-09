@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'lib/db/first-commercial/held/0053_verified_receipt_manual_cases_candidate.sql'
+      - 'lib/db/first-commercial/held/0053_receipt_manual_case_operator_grants.sql'
       - 'scripts/tests/p0-held-receipt-manual-case-pg18.mjs'
       - 'artifacts/api-server/src/services/verifiedReceiptManualCaseReadPostgres.ts'
       - 'artifacts/api-server/src/services/verifiedReceiptManualCasePostgres.ts'
