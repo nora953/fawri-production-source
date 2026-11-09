@@ -81,6 +81,18 @@ test('legacy paired devices hydrate canonical location from the existing station
   assert.match(recovery, /station_credential_expires_at: DURABLE_STATION_METADATA_EXPIRES_AT/);
 });
 
+test('legacy network recovery and expiry refresh use atomic native identity compare-and-swap',()=>{
+  const runtime=fs.readFileSync(
+    path.join(root,'src/lib/cashierOperatorSessionRuntime.ts'),'utf8',
+  );
+  assert.match(runtime,/export async function writeCashierDeviceIdentityIfUnchanged/);
+  assert.match(runtime,/database.transaction\(BOOTSTRAP_STORE, 'readwrite'\)/);
+  assert.match(runtime,/JSON.stringify\(current\) !== JSON.stringify\(expected\)/);
+  assert.match(runtime,/await completion/);
+  assert.match(recovery,/return writeCashierDeviceIdentityIfUnchanged\(identity, next\)/);
+  assert.match(recovery,/await writeCashierDeviceIdentityIfUnchanged\(identity, \{/);
+});
+
 test('legacy binding recovery runs before the cashier gate and does not generate a new pairing credential', () => {
   assert.match(
     recovery,

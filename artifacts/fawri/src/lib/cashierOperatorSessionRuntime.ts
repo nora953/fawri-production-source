@@ -185,6 +185,54 @@ export async function writeCashierDeviceIdentity(
   }
 }
 
+/**
+ * Atomic bootstrap identity compare-and-swap for slow metadata refreshes.
+ * Both the comparison and put share one IndexedDB readwrite transaction.
+ * A re-pair, credential rotation, policy refresh, or changed station identity
+ * between the HTTP request and this write must win over the stale response.
+ *
+ * This function does NOT authenticate a device or approve financial recovery.
+ */
+export async function writeCashierDeviceIdentityIfUnchanged(
+  expected: CashierDeviceIdentity,
+  next: CashierDeviceIdentity,
+): Promise<boolean> {
+  // This bounded helper only updates station metadata; not device identity,
+  // merchant binding, pairing identity, or credentials.
+  for (const field of [
+    'id', 'local_merchant_id', 'cloud_merchant_id', 'device_id',
+    'created_at', 'cloud_bound_at', 'station_id', 'station_token',
+  ] as const) {
+    if (expected[field] !== next[field]) {
+      throw new CashierOperatorSessionClientError(
+        'CASHIER_STATION_IDENTITY_UPDATE_UNSAFE',
+        'Station metadata update attempted to replace a binding identity',
+      );
+    }
+  }
+  const database = await openBootstrapDatabase();
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(BOOTSTRAP_STORE);
+    const current = await requestResult(
+      store.get('default'),
+    ) as CashierDeviceIdentity | undefined;
+    // Only serializable stable records are stored in this bootstrap store.
+    // A mismatch (including unrelated concurrent metadata) fails CLOSED;
+    // do not retry with a stale server response.
+    if (!current || JSON.stringify(current) !== JSON.stringify(expected)) {
+      await completion;
+      return false;
+    }
+    store.put(next);
+    await completion;
+    return true;
+  } finally {
+    database.close();
+  }
+}
+
 function stationBinding(
   identity: CashierDeviceIdentity,
 ): CashierStationBinding | null {

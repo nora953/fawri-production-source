@@ -1,6 +1,7 @@
 import {
   getOrCreateCashierDeviceIdentity,
   writeCashierDeviceIdentity,
+  writeCashierDeviceIdentityIfUnchanged,
 } from './cashierOperatorSessionRuntime';
 
 const STATION_BINDING_INVALID_CODES = new Set([
@@ -104,8 +105,9 @@ export async function recoverLegacyCashierStationBinding(): Promise<boolean> {
     delete next.branch_label;
   }
 
-  await writeCashierDeviceIdentity(next);
-  return true;
+  // A network response may arrive after another tab re-pairs the device.
+  // Reject the stale result atomically; never resurrect its old station.
+  return writeCashierDeviceIdentityIfUnchanged(identity, next);
 }
 
 /**
@@ -147,7 +149,9 @@ export async function refreshDurableCashierStationBindingMetadata(): Promise<voi
     return;
   }
 
-  await writeCashierDeviceIdentity({
+  // A concurrent station rotation must not be overwritten by a delayed
+  // metadata refresh based on this previously observed identity.
+  await writeCashierDeviceIdentityIfUnchanged(identity, {
     ...identity,
     station_credential_expires_at: DURABLE_STATION_METADATA_EXPIRES_AT,
   });
