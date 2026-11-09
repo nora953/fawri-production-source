@@ -9,6 +9,8 @@ on:
       - "lib/db/scripts/ft01-disposable-three-login-rehearsal.mjs"
       - "lib/db/scripts/ft01-disposable-nologin-role-reservation.mjs"
       - "lib/db/scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs"
+      - "lib/db/scripts/ft01-disposable-invoker-retirement-rehearsal.mjs"
+      - "lib/db/scripts/lib/ft01-0052-nonsuperuser-invoker-candidate.mjs"
       - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-THREE-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql"
       - "artifacts/api-server/tests/ft01-disposable-production-startup-pg18.ts"
       - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-ROLE-ADMIN-CAPABILITY-READONLY-20261109.sql"
@@ -118,6 +120,17 @@ jobs:
         run: |
           node --check scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
           node scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
+
+      # Held alternative: non-superuser SECURITY INVOKER retirement without
+      # canonical 0052 rewrite, elevated function owner or Neon connectivity.
+      - name: FT-01 prove held 0052 invoker candidate on disposable non-superuser PG18
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_INVOKER_CANDIDATE: "1"
+        run: |
+          node --check scripts/lib/ft01-0052-nonsuperuser-invoker-candidate.mjs
+          node --check scripts/ft01-disposable-invoker-retirement-rehearsal.mjs
+          node scripts/ft01-disposable-invoker-retirement-rehearsal.mjs
 
       - name: Validate exact source-only migration inventory with 0052 still HELD
         run: |
