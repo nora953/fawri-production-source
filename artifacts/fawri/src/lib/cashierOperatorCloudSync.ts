@@ -637,27 +637,20 @@ function completeOperationWindow(
 function operationKind(
   envelopes: CashierSyncEnvelope[],
 ): 'sale' | 'return' | 'void' | 'skip' {
-  if (
-    envelopes.some(
-      (item) => item.entity_type === 'return' && item.operation === 'append',
-    )
-  ) {
-    return 'return';
+  // An operation has exactly one primary entity. A return, sale, or void
+  // appearing anywhere in a mixed/corrupted group must not select a route
+  // that could upload only a prefix or reinterpret an older financial event.
+  // An inventory-only adjustment has no supported operator upload contract.
+  const primary = envelopes.filter((item) => item.entity_type !== 'inventory_movement');
+  if (primary.length !== 1 ||
+      envelopes.some((item) =>
+        item.entity_type === 'inventory_movement' && item.operation !== 'append')) {
+    return 'skip';
   }
-  if (
-    envelopes.some(
-      (item) => item.entity_type === 'sale' && item.operation === 'void',
-    )
-  ) {
-    return 'void';
-  }
-  if (
-    envelopes.some(
-      (item) => item.entity_type === 'sale' && item.operation === 'append',
-    )
-  ) {
-    return 'sale';
-  }
+  const anchor = primary[0];
+  if (anchor.entity_type === 'return' && anchor.operation === 'append') return 'return';
+  if (anchor.entity_type === 'sale' && anchor.operation === 'void') return 'void';
+  if (anchor.entity_type === 'sale' && anchor.operation === 'append') return 'sale';
   return 'skip';
 }
 
