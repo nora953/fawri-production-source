@@ -50,7 +50,7 @@ test('operator outbox ACK is complete before local durable operation deletion', 
   const orderAck = sync.indexOf('payload.order_id', fetchCall);
   const entityAck = sync.indexOf('payload.accepted_entity_ids', fetchCall);
   const compensationAck = sync.indexOf('payload.compensation_kind', fetchCall);
-  const localAck = sync.indexOf('await authority.acknowledgeSynced([operationId])');
+  const localAck = sync.indexOf('await authority.acknowledgeSyncedExact(operationId, envelopes)');
 
   assert.ok(fetchCall >= 0, 'operator outbox must use the operator sync endpoint');
   assert.ok(operationAck > fetchCall, 'operation identity must be validated after the server response');
@@ -197,7 +197,7 @@ test('operator outbox never treats a failed or incomplete server ACK as permissi
   assert.match(post, /if \(acknowledgementInvalid\)/);
   assert.match(post, /CASHIER_OPERATOR_ACK_INVALID/);
   const uploadStart = sync.indexOf('const uploadedResult = await postOperation(', postEnd);
-  const ack = sync.indexOf('await authority.acknowledgeSynced([operationId])', uploadStart);
+  const ack = sync.indexOf('await authority.acknowledgeSyncedExact(operationId, envelopes)', uploadStart);
   assert.ok(uploadStart > postEnd && ack > uploadStart, 'local acknowledgement must follow awaited upload');
   const between = sync.slice(uploadStart, ack);
   assert.match(between, /uploadedResult\.operation_id !== operationId/);
@@ -223,7 +223,7 @@ test('historical outbox cannot be acknowledged without matching operation sequen
   const sync = await source('src/lib/cashierOperatorCloudSync.ts');
   const ack = sync.indexOf('const acknowledgementInvalid =');
   const throwAt = sync.indexOf('if (acknowledgementInvalid)', ack);
-  const localDelete = sync.indexOf('await authority.acknowledgeSynced([operationId])', throwAt);
+  const localDelete = sync.indexOf('await authority.acknowledgeSyncedExact(operationId, envelopes)', throwAt);
   assert.ok(ack >= 0 && throwAt > ack && localDelete > throwAt);
   const validation = sync.slice(ack, throwAt);
   assert.match(validation, /operationId !== expectedOperationId/);
@@ -250,7 +250,7 @@ test('historical operation recovery cannot bypass missing binding or upload unde
 test('pending historical operations cannot be acknowledged before a complete server ACK', async () => {
   const sync = await source('src/lib/cashierOperatorCloudSync.ts');
   const start = sync.indexOf('for (const [operationId, envelopes] of groups)');
-  const ack = sync.indexOf('await authority.acknowledgeSynced([operationId])', start);
+  const ack = sync.indexOf('await authority.acknowledgeSyncedExact(operationId, envelopes)', start);
   assert.ok(start >= 0 && ack > start);
   const gate = sync.slice(start, ack);
   assert.match(gate, /const uploadedResult = await postOperation\(/);
