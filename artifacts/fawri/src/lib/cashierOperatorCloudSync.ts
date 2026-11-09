@@ -966,7 +966,7 @@ async function performCashierOperatorOutboxSync(): Promise<CashierOperatorOutbox
           409,
         );
       }
-      await authority.acknowledgeSynced([operationId]);
+      await authority.acknowledgeSyncedExact(operationId, envelopes);
       acknowledged += 1;
       if (uploadedResult.replayed) replayed += 1;
       else uploaded += 1;
