@@ -580,5 +580,62 @@ test('operational SQL producers round trip through actual app and frontend valid
     console.log('P0_NOTIFICATION_RESERVED_ACCEPTANCE '+JSON.stringify({newFunctionalCases:3,actualApp:true,actualFrontendValidator:true,merchants:2,canonicalSqlIdentity:true,canonicalSqlTimestamps:true,unreadOmitsStoredReadAt:true,peerDenied:true,readReplay:true,storedJsonUnchanged:true,nonReservedProjectionMinimized:true,syntheticBootstrapRowsOnly:true,attackerControlledInputProven:false,historicalRowsInspected:false,hostedAccepted:false,wholeCellAccepted:false}));
   });
 
+  await t.test('concurrent same-source notification calls yield exactly one inserted result per merchant',async()=>{
+    const sourceEventId='notification-concurrent-'+randomUUID();
+    const conversationId='synthetic-conversation-'+randomUUID();
+    const launched=[a,b].flatMap(actor=>Array.from({length:4},()=>({
+      actor,promise:producer.notifyMerchantNewCustomerMessagePostgres({
+        merchantId:actor.id,conversationId,sourceEventId,
+        createdAt:'2026-10-25T00:00:00.000Z',
+      }),
+    })));
+    const resolved=await Promise.all(launched.map(async({actor,promise})=>({
+      actor,answer:await promise,
+    })));
+    const ids=[];
+    for(const actor of [a,b]){
+      const cohort=resolved.filter(item=>item.actor===actor).map(item=>item.answer);
+      assert.equal(cohort.length,4);
+      assert.equal(cohort.filter(result=>result.deduplicated===false).length,1,
+        'only one same-merchant transaction may report actual INSERT success');
+      assert.equal(cohort.filter(result=>result.deduplicated===true).length,3,
+        'all same-source concurrent losers must report real DB deduplication');
+      assert.equal(new Set(cohort.map(result=>result.notification_id)).size,1);
+      const id=cohort[0].notification_id;ids.push(id);
+      const row=(await admin.query('SELECT * FROM notifications WHERE id=$1',[id])).rows[0];
+      assert.ok(row);assert.equal(row.merchant_id,actor.id);assert.equal(row.account_id,actor.id);
+      assert.equal(row.source_entity_id,sourceEventId);
+      assert.equal(row.type,'operational_customer_message');
+      assert.deepEqual(row.variables,{
+        conversation_id:conversationId,
+        action_url:'/dashboard/conversations?conversation='+encodeURIComponent(conversationId),
+      });
+      assert.equal(new Date(row.created_at).toISOString(),'2026-10-25T00:00:00.000Z');
+      const peer=actor===a?b:a;
+      const unauthorized=await req('/api/auth/notifications/'+id+'/read',peer,'PATCH');
+      assert.equal(unauthorized.status,404,'peer must not access concurrent notification');
+      const own=(await req('/api/auth/notifications?limit=50',actor)).body.notifications;
+      assert.ok(own.some(notification=>notification.id===id&&isMerchantNotificationRecord(notification)),
+        'actual HTTP list must project own concurrent notification');
+    }
+    assert.notEqual(ids[0],ids[1],'same event ID for distinct merchants cannot share a notice');
+    assert.equal((await admin.query('SELECT count(*)::int AS n FROM notifications WHERE id=ANY($1::text[])',[ids])).rows[0].n,2);
+    const unchanged=await snapshot();
+    for(const actor of [a,b]){
+      const again=await producer.notifyMerchantNewCustomerMessagePostgres({
+        merchantId:actor.id,conversationId,sourceEventId,
+        createdAt:'2026-10-26T00:00:00Z',
+      });
+      assert.equal(again.deduplicated,true);
+      assert.equal(again.notification_id,ids[actor===a?0:1]);
+    }
+    assert.deepEqual(await snapshot(),unchanged,'race/replay must never overwrite original SQL notice');
+    console.log('P0_NOTIFICATION_ATOMIC_INSERT_RACE '+JSON.stringify({
+      actualPostgres:true,restrictedTransaction:true,merchantCount:2,
+      calls:8,distinctNotices:2,newWinners:2,deduplicatedLosers:6,
+      peerDenied:true,firstFieldsUnchanged:true,hostedAccepted:false,
+    }));
+  });
+
   console.log('P0_OPERATIONAL_NOTIFICATION_FIELD_RUNTIME '+JSON.stringify({fieldCell:'RESIDUAL-FIELD-002',actualProducers:4,actualApp:true,actualFrontendValidator:true,merchants:2,sqlRows:20,optionalOmittedAndBlank:true,optionalFallbackCases:2,restrictedPrimaryLogin:true,separateAuthenticationLogin:true,exactFields:true,peerPreserved:true,replay:true,providerSending:false,upstreamCallerOwnershipAccepted:false,remainingTemplatesAccepted:false,hostedAccepted:false}));
 });
