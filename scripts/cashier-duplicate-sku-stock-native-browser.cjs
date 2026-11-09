@@ -95,7 +95,14 @@ async function browserPhase() {
 
     const persisted=await snapshot();
     const replay=await authority.commitSale(original);
-    equal(replay,result,'valid idempotent same-operation replay recovers sale');
+    equal(replay.sale,result.sale,'valid idempotent same-operation replay recovers sale');
+    const byIdentity=items=>items.map(row=>JSON.stringify(row)).sort();
+    equal(byIdentity(replay.inventory_movements),byIdentity(result.inventory_movements),
+      'replay retains original stock movements without duplicates');
+    // IndexedDB getAll(index) uses key order; initial producer returns sale first.
+    // Compare complete evidence as a SET, never falsely require insertion order.
+    equal(byIdentity(replay.outbox),byIdentity(result.outbox),
+      'replay retains all original envelopes regardless of IDB index iteration');
     equal(await snapshot(),persisted,'replay must never double-decrement stock');
     await rejected(saleInput(op,[{product_id:'SKU-A',quantity:1}]),
       'CASHIER_SALE_OPERATION_ID_CONFLICT');
