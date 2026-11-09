@@ -24,6 +24,14 @@ test("FT01 0052 first-commercial variant is pinned source-only, never authorized
   });
   assert.equal(plan.source_mode,"fresh_schema_migrations_only");
   assert.equal(plan.source_migrations_count,53);
+  assert.deepEqual(plan.deployment_roles,{
+    primary_login:"fawri_restricted_runtime",
+    authentication_login:"fawri_auth_issuer",
+    operator_login:"fawri_operator_issuer",
+    cashier_retirement_writer_group:"fawri_cashier_retirement_writer",
+  });
+  assert.ok(new Set(Object.values(plan.deployment_roles)).size===4,
+    "Login role names must be disjoint from NOLOGIN writer role");
   assert.equal(plan.canonical_0052_tag,"0052_cashier_stream_receipt_storage");
   assert.equal(plan.canonical_0052_sha256,
     "aaf7ee97fbdef0c1b4600e905216117ee8ff89f31ccd67d783ab61a9c4bd9b8e");

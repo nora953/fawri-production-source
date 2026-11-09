@@ -53,7 +53,9 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
   assert.notEqual(variantSha256, EXPECTED_CANONICAL_0052_SHA256,
     "FT01_INVOKER_VARIANT_MUST_DIFFER_FROM_CANONICAL");
   assert.match(variant, /LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog/);
-  assert.match(variant, /FOR UPDATE TO fawri_auth_issuer/);
+  assert.match(variant, /FOR UPDATE TO fawri_cashier_retirement_writer/);
+  assert.doesNotMatch(variant, /FOR UPDATE TO fawri_auth_issuer/);
+  assert.match(variant, /session_user <> 'fawri_auth_issuer'/);
   assert.doesNotMatch(variant, /FOR UPDATE TO PUBLIC/i);
   assert.doesNotMatch(variant, /CREATE ROLE fawri_cashier_retirement_owner/i);
   assert.doesNotMatch(variant, /ALTER FUNCTION public\.fawri_sequence_merchant_deleted\(\) OWNER TO/i);
@@ -72,6 +74,12 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
     canonical_journal_sha256: historical.migration_journal_sha256,
     source_manifest_sha256: historical.source_manifest_sha256,
     source_provenance: "in-memory replacement of held 0052 ONLY",
+    deployment_roles: Object.freeze({
+      primary_login: "fawri_restricted_runtime",
+      authentication_login: "fawri_auth_issuer",
+      operator_login: "fawri_operator_issuer",
+      cashier_retirement_writer_group: "fawri_cashier_retirement_writer",
+    }),
     production_startup_profile_adopted: false,
     canonical_source_or_journal_modified: false,
     committed_migration_applied: false,
