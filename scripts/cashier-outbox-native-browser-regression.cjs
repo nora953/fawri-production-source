@@ -85,7 +85,50 @@ async function browserPhase({phase, saved}) {
     same(calls.map(x=>x.sequence),[1,1,1,1,2],'invalid ACK retries and positive transport order');same(await snapshot(gap.config),expected,'positive other identity does not clear held queue');
     const authority=new IndexedDbCashierAuthority(positive.config);
     try{assert((await authority.getCatalogItem('product')).stock_quantity===3,'ACK leaves committed stock intact');for(const op of positive.ops)assert(await authority.getSale('sale:'+op),'ACK leaves committed sale intact');}finally{await authority.close();}
-    return {nativeIndexedDb:true,realLegacyDrain:true,realOperatorPreflight:true,operatorSessionSynthetic:true,syntheticTransport:true,syntheticLedger:true,postCommitAckLoss:true,actualPageReload:true,heldSequences:[2,3],heldEnvelopes:3,exactReplayPayload:true,peerPreserved:true,positiveUploaded:2,sqlServerProof:false,httpAuthenticationProof:false,recoveryContractAccepted:false,hostedAccepted:false};
+    // The operator-specific ACK must compare the current complete native
+    // operation to the exact original envelopes inside one write transaction.
+    // Reproduces a restore/concurrent writer adding a previously UNACKed row
+    // with the same operation ID during the network round-trip.
+    const modified=await seed(false);
+    const originalAuthority=new IndexedDbCashierAuthority(modified.config);
+    try {
+      const sent=(await originalAuthority.listPendingSync())
+        .filter(row=>row.operation_id===modified.ops[0]);
+      assert(sent.length===2,'original sale must have exactly two local envelopes');
+      await denied(()=>originalAuthority.acknowledgeSyncedExact(modified.ops[0],sent.slice(0,1)),
+        'CASHIER_LOCAL_ACK_EVIDENCE_MISMATCH');
+      const unchanged=await snapshot(modified.config);
+      const nativeDb=await request(indexedDB.open(modified.config.databaseName));
+      try {
+        const tx=nativeDb.transaction('outbox','readwrite'),complete=done(tx),store=tx.objectStore('outbox');
+        store.put({...sent[1],
+          outbox_id:'outbox:'+modified.ops[0]+':inventory_movement:late-extra',
+          entity_id:'late-extra',
+          payload:{...sent[1].payload,movement_id:'late-extra'},
+        });
+        await complete;
+      } finally {nativeDb.close();}
+      const afterExtra=await snapshot(modified.config);
+      assert(afterExtra.outbox.length===unchanged.outbox.length+1,'late extra row persisted');
+      await denied(()=>originalAuthority.acknowledgeSyncedExact(modified.ops[0],sent),
+        'CASHIER_LOCAL_ACK_EVIDENCE_MISMATCH');
+      same(await snapshot(modified.config),afterExtra,'mismatch must preserve every native outbox/sale/inventory record');
+    } finally {await originalAuthority.close();}
+
+    const clean=await seed(false),cleanAuthority=new IndexedDbCashierAuthority(clean.config);
+    try {
+      const sent=(await cleanAuthority.listPendingSync())
+        .filter(row=>row.operation_id===clean.ops[0]);
+      const beforeExact=await snapshot(clean.config);
+      assert(sent.length===2,'clean sale full snapshot expected');
+      await cleanAuthority.acknowledgeSyncedExact(clean.ops[0],sent);
+      const afterExact=await snapshot(clean.config);
+      const exactExpected={...beforeExact,
+        outbox:beforeExact.outbox.filter(row=>JSON.parse(row).operation_id!==clean.ops[0])};
+      same(afterExact,exactExpected,'exact ACK deletes only approved operation, preserving other history');
+      assert(afterExact.outbox.length===2,'second operation stays queued');
+    } finally {await cleanAuthority.close();}
+    return {nativeIndexedDb:true,exactSnapshotAckProtection:true,realLegacyDrain:true,realOperatorPreflight:true,operatorSessionSynthetic:true,syntheticTransport:true,syntheticLedger:true,postCommitAckLoss:true,actualPageReload:true,heldSequences:[2,3],heldEnvelopes:3,exactReplayPayload:true,peerPreserved:true,positiveUploaded:2,sqlServerProof:false,httpAuthenticationProof:false,recoveryContractAccepted:false,hostedAccepted:false};
   } finally {globalThis.fetch=originalFetch;}
 }
 
