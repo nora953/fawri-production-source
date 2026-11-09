@@ -152,6 +152,12 @@ function startCashierPosAutoSync(): () => void {
         result = await syncCashierOperatorOutboxToCloud();
         nextOutboxAttemptAt = 0;
       } catch (cause) {
+        if (syncErrorCode(cause) === 'CASHIER_OPERATOR_SYNC_IN_PROGRESS') {
+          // The manual sync page already owns this same-process outbox.
+          // Do not turn legitimate in-flight work into a false failure alarm.
+          nextOutboxAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
+          return;
+        }
         publishCashierOperationSyncFailure(cause);
         nextOutboxAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
         return;
