@@ -26,6 +26,18 @@ const journalPath = "lib/db/drizzle/meta/_journal.json";
 const heldIndex = 52;
 const sourceMode = "fresh_schema_migrations_only";
 
+// Immutable first-commercial baseline from the exact 53-file GitHub Actions
+// source inventory. Changes to pre-0052 SQL, journal chronology, stage or
+// snapshot must require a separately reviewed revision of these four pins;
+// calculating a new SHA from modified source is NOT independent acceptance.
+export const FT01_PINNED_CLEAN_SOURCE = Object.freeze({
+  sourceManifestSha256: "f218f0f24733421fc1ffd36ae09db8c7470022bb3ea3e78c5dc68b8472c5d594",
+  journalSha256: "d8f226a4651d35fced281c40afc7a6d9d1c322dd9d47d89322088a6bb49db852",
+  snapshot0052Sha256: "993461e7bdccce8a2c7386054ce43e57b6eab73e7f80d87d13dc5e693651c9e4",
+  stage0052Sha256: "4798e07b6713dfbef6231981f737ce598ddd72a9acf42fdda61f0a704eaabefd",
+});
+
+
 function fail(code) {
   const error = new Error(code);
   error.code = code;
@@ -127,8 +139,8 @@ export function buildFt01CleanBootstrapSourcePlan({
     });
   }
 
-  let stage;
-  try { stage = JSON.parse(readFile(stageMetadata)); } catch {
+  let stageRaw, stage;
+  try { stageRaw = readFile(stageMetadata); stage = JSON.parse(stageRaw); } catch {
     fail("FT01_0052_STAGE_INVALID");
   }
   const latest = migrations[heldIndex];
@@ -144,12 +156,33 @@ export function buildFt01CleanBootstrapSourcePlan({
 
   // The 0052 snapshot must be present, but a snapshot alone does not confer
   // hosted acceptance of its owners, grants, policies or financial receipts.
-  let snapshot;
-  try { snapshot = JSON.parse(readFile("lib/db/drizzle/meta/0052_snapshot.json")); } catch {
+  let snapshotRaw, snapshot;
+  try {
+    snapshotRaw = readFile("lib/db/drizzle/meta/0052_snapshot.json");
+    snapshot = JSON.parse(snapshotRaw);
+  } catch {
     fail("FT01_0052_SNAPSHOT_MISSING");
   }
   if (!cleanRecord(snapshot) || !cleanRecord(snapshot.tables)) {
     fail("FT01_0052_SNAPSHOT_INVALID");
+  }
+
+  // Validate against a separately pinned SHA for the entire reviewed chain,
+  // not against only the current (possibly tampered) on-disk migration files.
+  const calculatedManifestSha256 = sha256(JSON.stringify(
+    migrations.map(({index,tag,sha256:digest}) => [index,tag,digest]),
+  ));
+  if (calculatedManifestSha256 !== FT01_PINNED_CLEAN_SOURCE.sourceManifestSha256) {
+    fail("FT01_SOURCE_CHAIN_PIN_DRIFT");
+  }
+  if (sha256(journalRaw) !== FT01_PINNED_CLEAN_SOURCE.journalSha256) {
+    fail("FT01_JOURNAL_SOURCE_PIN_DRIFT");
+  }
+  if (sha256(snapshotRaw) !== FT01_PINNED_CLEAN_SOURCE.snapshot0052Sha256) {
+    fail("FT01_0052_SNAPSHOT_PIN_DRIFT");
+  }
+  if (sha256(stageRaw) !== FT01_PINNED_CLEAN_SOURCE.stage0052Sha256) {
+    fail("FT01_0052_STAGE_PIN_DRIFT");
   }
 
   return Object.freeze({
@@ -162,13 +195,13 @@ export function buildFt01CleanBootstrapSourcePlan({
     }),
     source_mode: sourceMode,
     data_import_allowed: false,
-    migration_journal_sha256: sha256(journalRaw),
+    migration_journal_sha256: FT01_PINNED_CLEAN_SOURCE.journalSha256,
     inventoried_migrations: migrations,
     last_pre_held_index: heldIndex - 1,
     held_migration: latest,
-    source_manifest_sha256: sha256(
-      JSON.stringify(migrations.map(({ index, tag, sha256: digest }) => [index, tag, digest])),
-    ),
+    source_manifest_sha256: calculatedManifestSha256,
+    snapshot_0052_sha256: FT01_PINNED_CLEAN_SOURCE.snapshot0052Sha256,
+    stage_0052_sha256: FT01_PINNED_CLEAN_SOURCE.stage0052Sha256,
     approved_to_execute: false,
     database_connection_used: false,
     hosted_sql_executed: false,
