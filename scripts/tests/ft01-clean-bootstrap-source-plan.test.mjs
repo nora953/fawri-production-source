@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   assertFt01EmptySchemaReadOnlyResult,
   buildFt01CleanBootstrapSourcePlan,
+  FT01_PINNED_CLEAN_SOURCE,
 } from "../lib/ft01-clean-bootstrap-source-plan.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -77,6 +78,18 @@ test("FT-01 inventory locks canonical 0000–0052, holds 0052, and cannot author
     result.inventoried_migrations.map((e) => e.index),
     Array.from({ length: 53 }, (_, index) => index),
   );
+
+  // These are independent immutable source pins, not hashes accepted merely
+  // because they were freshly computed from whichever files CI found.
+  assert.equal(result.source_manifest_sha256,
+    FT01_PINNED_CLEAN_SOURCE.sourceManifestSha256);
+  assert.equal(result.migration_journal_sha256,
+    FT01_PINNED_CLEAN_SOURCE.journalSha256);
+  assert.equal(result.snapshot_0052_sha256,
+    FT01_PINNED_CLEAN_SOURCE.snapshot0052Sha256);
+  assert.equal(result.stage_0052_sha256,
+    FT01_PINNED_CLEAN_SOURCE.stage0052Sha256);
+  assert.equal(Object.isFrozen(FT01_PINNED_CLEAN_SOURCE),true);
   assert.match(result.migration_journal_sha256, /^[a-f0-9]{64}$/);
   assert.match(result.source_manifest_sha256, /^[a-f0-9]{64}$/);
   assert.match(result.held_migration.sha256, /^[a-f0-9]{64}$/);
@@ -135,4 +148,37 @@ test("FT-01 rejects byte changes to held cashier 0052 and its stage provenance",
     () => modifiedSource({ "lib/db/drizzle/meta/0052_snapshot.json": "{}" }),
     /FT01_0052_SNAPSHOT_INVALID/,
   );
+});
+
+
+// A syntactically valid SQL change to any PRE-0052 migration used to pass
+// because its newly computed SHA was never compared to an independent pin.
+test("FT-01 rejects a valid but unreviewed early migration source change",()=>{
+ const path="lib/db/drizzle/0001_military_proteus.sql";
+ assert.throws(()=>modifiedSource({[path]:read(path)+"\n-- tampered after source review\n"}),
+   /FT01_SOURCE_CHAIN_PIN_DRIFT/);
+ const lastPreHeld="lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql";
+ assert.throws(()=>modifiedSource({[lastPreHeld]:read(lastPreHeld)+"\n-- changed after review\n"}),
+   /FT01_SOURCE_CHAIN_PIN_DRIFT/);
+});
+
+test("FT-01 rejects a valid journal chronology mutation without missing entries",()=>{
+ const path="lib/db/drizzle/meta/_journal.json";
+ const journal=JSON.parse(read(path));
+ journal.entries[1].when+=1;
+ assert.throws(()=>modifiedSource({[path]:JSON.stringify(journal)}),
+   /FT01_JOURNAL_SOURCE_PIN_DRIFT/);
+});
+
+test("FT-01 rejects structurally valid 0052 snapshot and stage byte drift",()=>{
+ const snapshotPath="lib/db/drizzle/meta/0052_snapshot.json";
+ const snapshot=JSON.parse(read(snapshotPath));
+ snapshot.__unreviewed_migration_metadata=true;
+ assert.throws(()=>modifiedSource({[snapshotPath]:JSON.stringify(snapshot)}),
+   /FT01_0052_SNAPSHOT_PIN_DRIFT/);
+ const stagePath="lib/db/migration-stages/0052/stage.json";
+ const stage=JSON.parse(read(stagePath));
+ stage.__unreviewed_release_note=true;
+ assert.throws(()=>modifiedSource({[stagePath]:JSON.stringify(stage)}),
+   /FT01_0052_STAGE_PIN_DRIFT/);
 });

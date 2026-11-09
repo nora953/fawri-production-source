@@ -83,6 +83,8 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
     four_role_reservation_sql_sha256: sha256(reservationSql),
     canonical_journal_sha256: historical.migration_journal_sha256,
     source_manifest_sha256: historical.source_manifest_sha256,
+    snapshot_0052_sha256: historical.snapshot_0052_sha256,
+    stage_0052_sha256: historical.stage_0052_sha256,
     source_provenance: "in-memory replacement of held 0052 ONLY",
     deployment_roles: Object.freeze({
       primary_login: "fawri_restricted_runtime",

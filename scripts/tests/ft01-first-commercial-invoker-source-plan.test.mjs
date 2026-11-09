@@ -38,7 +38,8 @@ test("FT01 0052 first-commercial variant is pinned source-only, never authorized
   assert.notEqual(plan.reviewed_invoker_variant_0052_sha256,plan.canonical_0052_sha256);
   for(const key of ["canonical_0052_sha256","reviewed_invoker_variant_0052_sha256",
      "reviewed_invoker_function_body_sha256","four_role_reservation_sql_sha256",
-     "canonical_journal_sha256","source_manifest_sha256"])
+     "canonical_journal_sha256","source_manifest_sha256",
+     "snapshot_0052_sha256","stage_0052_sha256"])
     assert.match(plan[key],/^[0-9a-f]{64}$/,key);
   for(const key of [
    "production_startup_profile_adopted","canonical_source_or_journal_modified",

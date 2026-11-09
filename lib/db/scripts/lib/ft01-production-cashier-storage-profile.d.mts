@@ -10,6 +10,10 @@ export const FT01_PINNED_FIRST_COMMERCIAL_SOURCE:Readonly<{
   database:"fawri";
   postgresMajor:18;
   canonical0052Sha256:string;
+  canonicalJournalSha256:string;
+  sourceManifestSha256:string;
+  snapshot0052Sha256:string;
+  stage0052Sha256:string;
   variant0052Sha256:string;
   fourRoleReservationSha256:string;
 }>;

@@ -30,6 +30,10 @@ test('bundled-runtime source pins match source-reviewed migration, four roles an
  assert.equal(pins.database,plan.target.database_name);
  assert.equal(pins.postgresMajor,plan.target.postgres_major);
  assert.equal(pins.canonical0052Sha256,plan.canonical_0052_sha256);
+ assert.equal(pins.canonicalJournalSha256,plan.canonical_journal_sha256);
+ assert.equal(pins.sourceManifestSha256,plan.source_manifest_sha256);
+ assert.equal(pins.snapshot0052Sha256,plan.snapshot_0052_sha256);
+ assert.equal(pins.stage0052Sha256,plan.stage_0052_sha256);
  assert.equal(pins.variant0052Sha256,plan.reviewed_invoker_variant_0052_sha256);
  assert.equal(pins.fourRoleReservationSha256,plan.four_role_reservation_sql_sha256);
  assert.equal(plan.approved_to_execute,false);
