@@ -55,16 +55,10 @@ async function insertOperationalNotification(input: {
   const source = requireNotificationSourceReference(input.sourceEntityType, sourceEntityId);
   const id = deterministicId(input.type, merchantId, sourceEntityId);
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const existing = await client.query<{ id: string }>(
-      `SELECT id FROM notifications
-        WHERE merchant_id = $1 AND id = $2
-        LIMIT 1`,
-      [merchantId, id],
-    );
-    if (existing.rows[0]) {
-      return { notification_id: id, deduplicated: true };
-    }
-    await client.query(
+    // The INSERT must decide whether this caller created the notification.
+    // A SELECT before INSERT races another transaction and can falsely
+    // report "deduplicated: false" even if ON CONFLICT discarded the write.
+    const inserted = await client.query<{ id: string }>(
       `INSERT INTO notifications
         (id, audience, merchant_id, account_id, type,
          title_key, body_key, variables,
@@ -73,7 +67,8 @@ async function insertOperationalNotification(input: {
         ($1, 'merchant', $2,
          (SELECT account_id FROM merchants WHERE id = $2),
          $3, $4, $5, $6::jsonb, $7, $8, $9::timestamptz)
-       ON CONFLICT (id) DO NOTHING`,
+       ON CONFLICT (id) DO NOTHING
+       RETURNING id`,
       [
         id,
         merchantId,
@@ -86,7 +81,7 @@ async function insertOperationalNotification(input: {
         createdAt(input.createdAt),
       ],
     );
-    return { notification_id: id, deduplicated: false };
+    return { notification_id: id, deduplicated: inserted.rows.length === 0 };
   });
 }
 
