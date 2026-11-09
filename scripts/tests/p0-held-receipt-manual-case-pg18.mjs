@@ -54,7 +54,7 @@ try {
   assert.ok(classes.every(c=>c.relrowsecurity));
   for(const fn of ['public.fawri_open_unmatched_verified_receipt_case(text,text,text)',
                    'public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text)']) {
-    assert.equal((await admin.query('SELECT has_function_privilege(\'public\',$1,\'EXECUTE\') AS allowed',[fn])).rows[0].allowed,false);
+    assert.equal((await admin.query(`SELECT EXISTS(SELECT 1 FROM pg_proc p, LATERAL aclexplode(p.proacl) acl WHERE p.oid=$1::regprocedure AND acl.grantee=0 AND acl.privilege_type='EXECUTE') AS allowed`,[fn])).rows[0].allowed,false);
   }
   await admin.query(`CREATE ROLE ${caseRole} LOGIN PASSWORD '${password}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);
   await admin.query(`GRANT USAGE ON SCHEMA public TO ${caseRole}`);
