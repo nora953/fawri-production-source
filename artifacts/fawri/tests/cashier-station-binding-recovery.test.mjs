@@ -62,7 +62,8 @@ test('cashier gate self-recovers to pairing instead of generic error', () => {
   assert.match(gate, /isCashierStationBindingInvalidError/);
   assert.match(gate, /clearInvalidCashierStationBinding/);
   assert.match(gate, /setState\(\{ kind: 'pair', binding: null \}\)/);
-  assert.match(gate, /if \(await recoverStationBinding\(error\)\) return;/);
+  assert.match(gate, /if \(await recoverStationBinding\(error, attemptedBinding\)\) return;/);
+  assert.match(gate, /if \(await recoverStationBinding\(error, state\.binding\)\) return;/);
 });
 
 test('paired-device metadata is made non-expiring before the cashier gate renders', () => {
