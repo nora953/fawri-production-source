@@ -440,7 +440,7 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
         <span className="max-w-[50vw] truncate font-semibold text-slate-600">{operatorName || roleLabel(state.session.context.role)} · {roleLabel(state.session.context.role)} · {state.binding.station_name}</span>
         <CashierEndShiftButton
           operatorName={operatorName || roleLabel(state.session.context.role)}
-          onStationBindingInvalid={recoverStationBinding}
+          onStationBindingInvalid={error => recoverStationBinding(error, state.binding)}
           onEnded={async () => {
             window.dispatchEvent(new CustomEvent('fawri:cashier-operator-session-changed'));
             setPin('');
