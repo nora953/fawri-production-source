@@ -10,6 +10,7 @@ export class VerifiedReceiptManualCaseError extends Error {
 type AuthenticatedOperator = { id: string; sessionId: string; deviceHash: string };
 const intake = createOperatorDirectoryAuthority({ capability: "receiptManualCaseIntake" });
 const escalation = createOperatorDirectoryAuthority({ capability: "receiptManualCaseEscalation" });
+const secondReview = createOperatorDirectoryAuthority({ capability: "receiptDisputeSecondReview" });
 
 function reject(code: string, status: number): never {
   throw new VerifiedReceiptManualCaseError(code,status);
@@ -66,7 +67,7 @@ export async function openVerifiedReceiptManualCase(
     });
     if (rows.length !== 1 || rows[0].case_id !== caseId ||
         rows[0].receipt_event_id !== eventId || rows[0].applied !== false ||
-        !["UNRESOLVED_HOLD","PROVIDER_REVIEW","PROVIDER_DISPUTE"].includes(rows[0].case_state)) {
+        !["UNRESOLVED_HOLD","PROVIDER_REVIEW","PROVIDER_DISPUTE","PROVIDER_DISPUTE_REVIEWED"].includes(rows[0].case_state)) {
       reject("RECEIPT_CASE_UNAVAILABLE",503);
     }
     return {case_id:caseId,receipt_event_id:eventId,status:rows[0].case_state,applied:false};
@@ -104,6 +105,40 @@ export async function escalateVerifiedReceiptManualCase(
     const expected = action === "ESCALATE_TO_PROVIDER" ? "PROVIDER_REVIEW" : "PROVIDER_DISPUTE";
     if (rows.length !== 1 || rows[0].state !== expected) reject("RECEIPT_CASE_UNAVAILABLE",503);
     return {case_id:caseId,status:expected,applied:false,provider_settled:false};
+  } catch (error) {
+    if (error instanceof VerifiedReceiptManualCaseError) throw error;
+    dbError(error);
+  }
+}
+
+/**
+ * Independent second review of the exact already recorded dispute evidence.
+ * A review is NOT a provider-confirmed settlement, refund, or case closure.
+ * SQL re-checks active session + trusted device and rejects opener/dispute actor.
+ */
+export async function acknowledgeReceiptDisputeSecondReview(
+  actor: AuthenticatedOperator, caseId: unknown, body: unknown
+) {
+  ready(actor);
+  if (typeof caseId !== "string" || !/^receipt-case-[a-f0-9]{64}$/.test(caseId) ||
+      !isObject(body) || Object.keys(body).join(",") !== "provider_evidence_hash" ||
+      typeof body.provider_evidence_hash !== "string" ||
+      !/^[a-f0-9]{64}$/.test(body.provider_evidence_hash)) {
+    reject("RECEIPT_CASE_INVALID",400);
+  }
+  const eventId = "case-review-" + crypto.randomUUID();
+  try {
+    const result = await secondReview.transaction(async client => {
+      const rows = await client.query<{ state: string }>(
+        "SELECT public.fawri_acknowledge_receipt_dispute_second_review($1,$2,$3,$4,$5,$6) AS state",
+        [actor.id,actor.sessionId,actor.deviceHash,caseId,eventId,body.provider_evidence_hash]);
+      return rows.rows;
+    });
+    if (result.length !== 1 || result[0].state !== "PROVIDER_DISPUTE_REVIEWED") {
+      reject("RECEIPT_CASE_UNAVAILABLE",503);
+    }
+    return {case_id:caseId,status:"PROVIDER_DISPUTE_REVIEWED" as const,
+      review_recorded:true as const,provider_settled:false as const,applied:false as const};
   } catch (error) {
     if (error instanceof VerifiedReceiptManualCaseError) throw error;
     dbError(error);
