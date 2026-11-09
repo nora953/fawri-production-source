@@ -27,10 +27,9 @@ test("R-OWN-5: verified unmatched receipt stays unassigned and non-applying", ()
   }
 });
 
-test("R-OWN-5: only provider escalation and independently approved evidence transitions", () => {
+test("R-OWN-5: only nonterminal provider escalation and dispute recording", () => {
   assert.deepEqual(parseManualCaseTransition(base),base);
   assert.equal(parseManualCaseTransition({...base,action:"RECORD_PROVIDER_DISPUTE",expectedState:"PROVIDER_REVIEW",nextState:"PROVIDER_DISPUTE",providerEvidenceHash:hash}).nextState,"PROVIDER_DISPUTE");
-  assert.equal(parseManualCaseTransition({...base,action:"RECORD_PROVIDER_OUTCOME",expectedState:"PROVIDER_DISPUTE",nextState:"PROVIDER_OUTCOME_VERIFIED",providerEvidenceHash:hash,independentlyApprovedBy:"reviewer:2"}).nextState,"PROVIDER_OUTCOME_VERIFIED");
 });
 
 test("R-OWN-5: forged assignment, money movement, privilege, and ambiguous evidence fail closed", () => {
