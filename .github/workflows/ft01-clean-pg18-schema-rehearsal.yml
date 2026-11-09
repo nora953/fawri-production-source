@@ -168,6 +168,17 @@ jobs:
               p.database_connection_used !== false) {
             throw new Error('FT01_SOURCE_HOLD_NOT_PROVEN');
           }
+          // Source-review checkpoint: print ONLY digests for the complete
+          // first-commercial immutable migration chain; never reveal SQL,
+          // credentials or runtime rows. These will be pinned in a second
+          // reviewed source commit before any release acceptance.
+          const crypto = require('node:crypto');
+          const snap = fs.readFileSync('lib/db/drizzle/meta/0052_snapshot.json');
+          const stage = fs.readFileSync('lib/db/migration-stages/0052/stage.json');
+          console.log('FT01_CANONICAL_53_MIGRATION_SOURCE_MANIFEST_SHA256 '+p.source_manifest_sha256);
+          console.log('FT01_CANONICAL_JOURNAL_SHA256 '+p.migration_journal_sha256);
+          console.log('FT01_CANONICAL_0052_SNAPSHOT_SHA256 '+crypto.createHash('sha256').update(snap).digest('hex'));
+          console.log('FT01_CANONICAL_0052_STAGE_SHA256 '+crypto.createHash('sha256').update(stage).digest('hex'));
           console.log('FT01_SOURCE_ONLY_0052_HOLD_PASS');
           NODE
 
