@@ -1,0 +1,52 @@
+name: P0 held receipt case PG18 restricted-login acceptance
+on:
+  pull_request:
+    paths:
+      - 'lib/db/first-commercial/held/0053_verified_receipt_manual_cases_candidate.sql'
+      - 'scripts/tests/p0-held-receipt-manual-case-pg18.mjs'
+      - '.github/workflows/p0-receipt-manual-case-held-pg18.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  held-receipt-case-pg18:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+      NODE_ENV: test
+      FAWRI_ALLOW_MIGRATION_SMOKE: '1'
+      FAWRI_RECEIPT_CASE_HELD_CI: '1'
+    steps:
+      - name: Check out exact source without retained credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Apply exact canonical 53 migrations to disposable empty PG18
+        run: cd lib/db && node scripts/smoke-migration.mjs
+      - name: Apply held SQL only to disposable PG18 and prove restricted LOGIN
+        run: node scripts/tests/p0-held-receipt-manual-case-pg18.mjs
