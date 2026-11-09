@@ -118,8 +118,9 @@ try {
   // same actual restricted LOGIN, not mocked route handlers.
   process.env.FAWRI_OPERATOR_DATABASE_URL=loginUrl.toString();
   process.env.FAWRI_ALLOWED_ORIGINS='https://operator.example.invalid';
-  const [{default:express},{default:cookieParser},{default:router},{enforceAuthOrigin}]=await Promise.all([
-    import('express'),import('cookie-parser'),
+  const requireApi=createRequire(new URL('../../artifacts/api-server/package.json',import.meta.url));
+  const express=requireApi('express'),cookieParser=requireApi('cookie-parser');
+  const [{default:router},{enforceAuthOrigin}]=await Promise.all([
     import('../../artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts'),
     import('../../artifacts/api-server/src/middleware/authSession.ts'),
   ]);
