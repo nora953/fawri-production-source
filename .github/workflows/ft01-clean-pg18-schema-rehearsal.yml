@@ -105,6 +105,20 @@ jobs:
           } finally { await client.end(); }
           NODE
 
+      # IMPORTANT: run on a completely clean PG18 cluster BEFORE the CI
+      # superuser schema smoke creates the cluster-global 0052 retirement role.
+      # Otherwise the result is contaminated by earlier role creation.
+      # Not the CI PostgreSQL superuser: exercises the actual canonical Drizzle
+      # sequence against a second empty local PostgreSQL18 owned by a LOGIN
+      # with Neon fawri_owner-like CREATEROLE/BYPASSRLS but NOSUPERUSER.
+      - name: FT-01 prove 53 migrations work with Neon-like non-superuser owner
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_NON_SUPERUSER_OWNER_REHEARSAL: "1"
+        run: |
+          node --check scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
+          node scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
+
       - name: Validate exact source-only migration inventory with 0052 still HELD
         run: |
           node --test scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs
@@ -215,17 +229,6 @@ jobs:
         run: |
           node --check scripts/ft01-disposable-nologin-role-reservation.mjs
           node scripts/ft01-disposable-nologin-role-reservation.mjs
-
-      # Not the CI PostgreSQL superuser: exercises the actual canonical Drizzle
-      # sequence against a second empty local PostgreSQL18 owned by a LOGIN
-      # with Neon fawri_owner-like CREATEROLE/BYPASSRLS but NOSUPERUSER.
-      - name: FT-01 prove 53 migrations work with Neon-like non-superuser owner
-        working-directory: lib/db
-        env:
-          FAWRI_ALLOW_FT01_NON_SUPERUSER_OWNER_REHEARSAL: "1"
-        run: |
-          node --check scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
-          node scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
 
       - name: FT-01 prove independent ephemeral tenant auth operator LOGINs on PG18
         working-directory: lib/db
