@@ -24,6 +24,7 @@ function actualFunction(start,end,name) {
 }
 const complete=actualFunction('function completeOperationWindow(', '\nfunction operationKind(','completeOperationWindow');
 const group=actualFunction('function groupByOperation(', '\n/**\n * Peek one envelope','groupByOperation');
+const kind=actualFunction('function operationKind(', '\nfunction commonBody(','operationKind');
 const e=(id,seq)=>({operation_id:id,device_sequence:seq});
 const many=(count,offset=0)=>Array.from({length:count},(_,i)=>e('op-'+(offset+i),offset+i+1));
 const denied=(run,code)=>assert.throws(run,error=>error instanceof OperatorSyncError && error.code===code);
@@ -74,4 +75,38 @@ test('operator repeated operation ID after a different group is fail-closed',()=
   denied(()=>group([e('op-a',1),e('op-a',2)]),'CASHIER_OPERATOR_OUTBOX_CORRUPT');
   denied(()=>group([e('op-a',2),e('op-b',1)]),'CASHIER_OPERATOR_OUTBOX_CORRUPT');
   assert.equal(group([e('op-a',1),e('op-a',1),e('op-b',2),e('op-c',3)]).size,3);
+});
+
+test('operator classifies only one primary financial event and ordinary inventory companions',()=>{
+  const anchor=(entity_type,operation,id='root')=>({entity_type,operation,operation_id:id,device_sequence:1});
+  const sale=anchor('sale','append'),movement=anchor('inventory_movement','append');
+  const refund=anchor('return','append'),voided=anchor('sale','void');
+  assert.equal(kind([sale]),'sale');
+  assert.equal(kind([sale,movement,movement]),'sale');
+  assert.equal(kind([refund,movement]),'return');
+  assert.equal(kind([voided,movement]),'void');
+  // An inventory adjustment is durable local history, NOT an uploadable sale.
+  assert.equal(kind([movement]),'skip');
+  assert.equal(kind([]),'skip');
+});
+
+test('operator blocks corrupted multi-primary groups before network and leaves history pending',()=>{
+  const item=(entity_type,operation,entity_id)=>({
+    entity_type,operation,entity_id,operation_id:'op-1',device_sequence:1,
+  });
+  const sale=item('sale','append','sale-1'),refund=item('return','append','return-1');
+  const voided=item('sale','void','sale-1'),movement=item('inventory_movement','append','movement-1');
+  for(const group of [
+    [sale,refund], [sale,voided], [refund,voided], [sale,sale],
+    [refund,refund],[voided,voided],[sale,refund,movement],
+    [sale,item('unknown','append','other')],
+    [sale,item('inventory_movement','void','movement-2')],
+    [item('unknown','append','other')],
+    [item('return','void','return-1')],
+  ]) assert.equal(kind(group),'skip',JSON.stringify(group));
+  // The existing full-batch preflight rejects "skip" before any fetch:
+  const preflight=source.indexOf('for (const [, envelopes] of groups)');
+  const rejectAt=source.indexOf('CASHIER_OPERATOR_UNSUPPORTED_OPERATION',preflight);
+  const upload=source.indexOf('const uploadedResult = await postOperation(',preflight);
+  assert.ok(preflight>=0 && rejectAt>preflight && upload>rejectAt);
 });
