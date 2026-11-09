@@ -24,6 +24,7 @@ loginUrl.password=password;
 const operator = new Client({connectionString:loginUrl.toString(),connectionTimeoutMillis:5000});
 const actorId='receipt-case-actor-'+randomUUID();
 const strangerId='receipt-case-stranger-'+randomUUID();
+const reviewerId='receipt-case-second-reviewer-'+randomUUID();
 const caseId='receipt-case-'+randomBytes(32).toString('hex');
 const paymentId='payment-'+randomUUID();
 const eventId='receipt-'+randomUUID();
@@ -68,6 +69,11 @@ try {
     strangerId,'+1991'+String(Math.floor(Math.random()*100000000)).padStart(8,'0')]);
   await admin.query(`INSERT INTO public.admin_profiles(id,account_id,display_name,role,enabled,must_change_password)
     VALUES($1,$1,'Synthetic','owner_admin',true,false)`,[actorId]);
+  await admin.query(`INSERT INTO public.accounts(id,kind,phone,password_hash,state,phone_verified)
+    VALUES($1,'admin',$2,'synthetic','active',true)`,[
+    reviewerId,'+1991'+String(Math.floor(Math.random()*100000000)).padStart(8,'0')]);
+  await admin.query(`INSERT INTO public.admin_profiles(id,account_id,display_name,role,enabled,must_change_password)
+    VALUES($1,$1,'Second Synthetic','owner_admin',true,false)`,[reviewerId]);
   Object.assign(process.env,{
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',
@@ -83,6 +89,10 @@ try {
   deviceHash=device.device_hash;
   const issued = await authPostgresSessionAuthority.issueSession({accountId:actorId,accountKind:'admin',tenantId:actorId,deviceId,deviceLabel:'Synthetic CI',adminRole:'owner_admin',permissions:['manage_subscriptions']});
   sessionId=issued.session.id;
+  const reviewerDeviceId='case-second-device-'+randomUUID();
+  const reviewerDevice=await registerAdminDeviceAuthoritative({accountId:reviewerId,accountKind:'admin',deviceId:reviewerDeviceId,deviceLabel:'Independent reviewer CI'});
+  assert.equal((await setAdminDeviceTrustAuthoritative({deviceRecordId:reviewerDevice.id,trusted:true,actorAccountId:reviewerId})).status,'trusted');
+  const reviewerIssued=await authPostgresSessionAuthority.issueSession({accountId:reviewerId,accountKind:'admin',tenantId:reviewerId,deviceId:reviewerDeviceId,deviceLabel:'Independent reviewer CI',adminRole:'owner_admin',permissions:['manage_subscriptions']});
   await admin.query(`INSERT INTO public.verified_provider_payment_receipts
     (provider,provider_event_id,payment_ref,request_ref,event_type,amount_iqd,payload_hash,first_received_at)
     VALUES('superqi_sandbox',$1,$2,$3,'payment_succeeded',49000,$4,clock_timestamp())`,[
@@ -102,6 +112,10 @@ try {
   await sqlstate(operator.query(historySql,[actorId,sessionId,deviceHash,caseId,20,null,'audit-no-grant-2',testHash]),'42501');
   await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_list_verified_receipt_manual_cases(text,text,text,integer,timestamptz,text,text,text) TO ${caseRole}`);
   await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_read_verified_receipt_manual_case_history(text,text,text,text,integer,bigint,text,text) TO ${caseRole}`);
+  const reviewSql="SELECT public.fawri_acknowledge_receipt_dispute_second_review($1,$2,$3,$4,$5,$6) AS state";
+  const reviewInput=[reviewerId,reviewerIssued.session.id,reviewerDevice.device_hash,caseId,'review-'+randomUUID(),testHash];
+  await sqlstate(operator.query(reviewSql,reviewInput),'42501');
+  await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_acknowledge_receipt_dispute_second_review(text,text,text,text,text,text) TO ${caseRole}`);
   await sqlstate(operator.query('SELECT * FROM public.verified_receipt_manual_case_events'),'42501');
   await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[strangerId,sessionId,deviceHash,caseId,eventId]),'42501');
   await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,'absent-receipt']),'23514');
@@ -153,6 +167,36 @@ try {
     },body:JSON.stringify(body)});
     return {status:response.status,data:await response.json()};
   }
+  async function reviewPost(path,body,roleToken,roleDeviceId) {
+    const response=await fetch(base+path,{method:'POST',headers:{
+      Origin:'https://operator.example.invalid',
+      'Content-Type':'application/json',
+      Cookie:'fawri_admin_session_v2='+roleToken,
+      'X-Fawri-Device-Id':roleDeviceId,
+    },body:JSON.stringify(body)});
+    return {status:response.status,data:await response.json()};
+  }
+  const reviewPath='/verified-receipt-manual-cases/'+caseId+'/second-review';
+  const payload={provider_evidence_hash:testHash};
+  assert.equal((await post(reviewPath,payload,false)).status,401);
+  assert.equal((await post(reviewPath,payload)).status,409,'opener cannot approve own dispute');
+  assert.equal((await reviewPost(reviewPath,{provider_evidence_hash:'b'.repeat(64)},reviewerIssued.token,reviewerDeviceId)).status,409,'wrong provider evidence digest must fail');
+  assert.equal((await reviewPost(reviewPath,{...payload,refund:true},reviewerIssued.token,reviewerDeviceId)).status,400,'no financial authority in review body');
+  const reviewed=await reviewPost(reviewPath,payload,reviewerIssued.token,reviewerDeviceId);
+  assert.equal(reviewed.status,200,JSON.stringify(reviewed.data));
+  assert.deepEqual({status:reviewed.data.status,provider_settled:reviewed.data.provider_settled,applied:reviewed.data.applied},
+    {status:'PROVIDER_DISPUTE_REVIEWED',provider_settled:false,applied:false});
+  assert.equal((await reviewPost(reviewPath,payload,reviewerIssued.token,reviewerDeviceId)).status,409,'second review cannot replay as second approval');
+  const reviewedEvents=(await admin.query('SELECT action,actor_id,session_id,device_hash,provider_evidence_hash FROM public.verified_receipt_manual_case_events WHERE case_id=$1 ORDER BY sequence',[caseId])).rows;
+  assert.deepEqual(reviewedEvents.map(e=>e.action),['OPEN_HOLD','ESCALATE_TO_PROVIDER','RECORD_PROVIDER_DISPUTE','ACKNOWLEDGE_DISPUTE_SECOND_REVIEW']);
+  assert.deepEqual({
+    actor:reviewedEvents.at(-1).actor_id,
+    session:reviewedEvents.at(-1).session_id,
+    device:reviewedEvents.at(-1).device_hash,
+    evidence:reviewedEvents.at(-1).provider_evidence_hash,
+  },{actor:reviewerId,session:reviewerIssued.session.id,device:reviewerDevice.device_hash,evidence:testHash});
+  assert.notEqual(reviewedEvents.at(-1).actor_id,reviewedEvents.at(-2).actor_id);
+  console.log('P0_RECEIPT_DISPUTE_INDEPENDENT_SECOND_ACTOR_HTTP_PG18_PASS');
   const intakePath='/verified-receipts/'+httpEventId+'/manual-case';
   assert.equal((await post(intakePath,{},false)).status,401);
   assert.equal((await post(intakePath,{merchant_id:'forged'})).status,400);
