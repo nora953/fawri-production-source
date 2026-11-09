@@ -1,3 +1,4 @@
+import { listVerifiedReceiptManualCases, readVerifiedReceiptManualCaseHistory } from '../services/verifiedReceiptManualCaseReadPostgres';
 import { openVerifiedReceiptManualCase, escalateVerifiedReceiptManualCase, VerifiedReceiptManualCaseError } from '../services/verifiedReceiptManualCasePostgres';
 import {executeVerifiedReceiptReplay} from '../services/verifiedReceiptReplayExecution';
 import {reviewVerifiedReceiptReplay,ReceiptReplayReviewError} from '../services/verifiedReceiptReplayReview';
@@ -91,6 +92,52 @@ router.post('/admin/billing/verified-receipt-manual-cases/:caseId/escalation', (
   } catch(error) {
     const failure=error instanceof VerifiedReceiptManualCaseError?error:new VerifiedReceiptManualCaseError('RECEIPT_CASE_UNAVAILABLE',503);
     sendAuthError(res,failure.status,failure.code,'manual receipt case could not be completed');
+  }
+});
+
+
+router.get('/admin/billing/verified-receipt-manual-cases', (req,res,next)=>{
+  res.setHeader('Cache-Control','no-store, max-age=0');
+  if(adminAuthPostgresCutoverMode()!=='postgres'){
+    sendAuthError(res,503,'RECEIPT_CASE_POSTGRES_REQUIRED','manual receipt case unavailable');return;
+  }
+  next();
+}, requireSecureAdminPermission('manage_subscriptions'), async(req,res)=>{
+  try{
+    const context=getAuthContext(res);
+    if(!context?.session.device_hash){
+      sendAuthError(res,403,'RECEIPT_CASE_PERMISSION_REQUIRED','case list denied');return;
+    }
+    const result=await listVerifiedReceiptManualCases({
+      id:context.account.id,sessionId:context.session.id,deviceHash:context.session.device_hash
+    },req.query);
+    res.json({ok:true,...result});
+  }catch(error){
+    const failure=error instanceof VerifiedReceiptManualCaseError?error:
+      new VerifiedReceiptManualCaseError('RECEIPT_CASE_READ_UNAVAILABLE',503);
+    sendAuthError(res,failure.status,failure.code,'manual receipt case read unavailable');
+  }
+});
+router.get('/admin/billing/verified-receipt-manual-cases/:caseId/history',(req,res,next)=>{
+  res.setHeader('Cache-Control','no-store, max-age=0');
+  if(adminAuthPostgresCutoverMode()!=='postgres'){
+    sendAuthError(res,503,'RECEIPT_CASE_POSTGRES_REQUIRED','manual receipt case unavailable');return;
+  }
+  next();
+},requireSecureAdminPermission('manage_subscriptions'),async(req,res)=>{
+  try{
+    const context=getAuthContext(res);
+    if(!context?.session.device_hash){
+      sendAuthError(res,403,'RECEIPT_CASE_PERMISSION_REQUIRED','case history denied');return;
+    }
+    const result=await readVerifiedReceiptManualCaseHistory({
+      id:context.account.id,sessionId:context.session.id,deviceHash:context.session.device_hash
+    },req.params.caseId,req.query);
+    res.json({ok:true,...result});
+  }catch(error){
+    const failure=error instanceof VerifiedReceiptManualCaseError?error:
+      new VerifiedReceiptManualCaseError('RECEIPT_CASE_READ_UNAVAILABLE',503);
+    sendAuthError(res,failure.status,failure.code,'manual receipt case history unavailable');
   }
 });
 
