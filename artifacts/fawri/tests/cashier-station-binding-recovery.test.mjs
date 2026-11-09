@@ -39,6 +39,25 @@ test('invalid station credentials clear only station binding fields', () => {
   assert.doesNotMatch(recovery, /clear\(\)/);
 });
 
+test('delayed invalid-credential denial cannot clear a newer paired station',()=>{
+  assert.match(recovery, /clearInvalidCashierStationBinding\(\s*expected: CashierStationBinding/);
+  for(const term of [
+    'identity.cloud_merchant_id !== expected.merchant_id',
+    'identity.device_id !== expected.device_id',
+    'identity.station_id !== expected.station_id',
+    'identity.station_token !== expected.station_token',
+    'identity.location_id !== expected.location_id',
+    'identity.branch_key !== expected.branch_key',
+    'identity.station_credential_expires_at !== expected.credential_expires_at',
+  ])assert.ok(recovery.includes(term),'must compare request binding: '+term);
+  assert.match(recovery, /return writeCashierDeviceIdentityIfUnchanged\(identity, next\)/);
+  assert.match(gate, /attemptedBinding = binding/);
+  assert.match(gate, /recoverStationBinding\(error, attemptedBinding\)/);
+  assert.match(gate, /recoverStationBinding\(error, state\.binding\)/);
+  assert.match(gate, /if \(!await clearInvalidCashierStationBinding\(attemptedBinding\)\) return false/);
+  assert.doesNotMatch(gate, /clearInvalidCashierStationBinding\(\)/);
+});
+
 test('cashier gate self-recovers to pairing instead of generic error', () => {
   assert.match(gate, /isCashierStationBindingInvalidError/);
   assert.match(gate, /clearInvalidCashierStationBinding/);
