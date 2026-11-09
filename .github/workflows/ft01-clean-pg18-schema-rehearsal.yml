@@ -24,6 +24,9 @@ on:
       - "scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs"
       - "scripts/lib/ft01-first-commercial-invoker-source-plan.mjs"
       - "scripts/tests/ft01-first-commercial-invoker-source-plan.test.mjs"
+      - "scripts/tests/ft01-production-cashier-storage-profile.test.mjs"
+      - "lib/db/scripts/lib/ft01-production-cashier-storage-profile.mjs"
+      - "artifacts/api-server/src/services/cashierStreamStorageReadiness.ts"
       - "lib/db/scripts/lib/ft01-held-invoker-storage-readiness.mjs"
       - "pnpm-lock.yaml"
   push:
@@ -140,6 +143,7 @@ jobs:
         run: |
           node --test scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs
           node --test scripts/tests/ft01-first-commercial-invoker-source-plan.test.mjs
+          node --test scripts/tests/ft01-production-cashier-storage-profile.test.mjs
           node scripts/lib/ft01-first-commercial-invoker-source-plan.mjs > "$RUNNER_TEMP/ft01-invoker-review.json"
           node - "$RUNNER_TEMP/ft01-invoker-review.json" <<'NODE'
           const fs = require('node:fs');
