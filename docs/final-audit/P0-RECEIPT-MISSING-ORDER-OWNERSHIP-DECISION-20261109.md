@@ -8,6 +8,12 @@
 - **Do not confuse with commercial readiness:** held `0053` is NOT in the canonical 53-stage migration journal, not deployed, not production-granted; original staging/production untouched. No actual provider reconciliation, verified two-person outcome, final refund/dispute, approved retention/authorized final disposition or hosted SQL+HTTP parity. **R-OWN-5 and parent P0 gate remain OPEN; no percentage change; NO-GO**.
 - This checkpoint **supersedes earlier below statements that case intake does not exist in source**. They described the state before the later held implementation; they remain valid for the absence of a *deployed* case-intake channel.
 
+## Latest bounded P0 receipt acceptance — 2026-11-09
+
+- Two separate live admin accounts and devices now prove a `PROVIDER_DISPUTE_REVIEWED` *nonterminal* milestone: SQL checks an independently active second reviewer, distinct from case opener/dispute actor, same immutable SHA-256 evidence and forbids replay. Real SQL+mounted HTTP [#42683116288](https://github.com/nora953/fawri-production-source/actions/runs/42683116288) **SUCCESS**. [Evidence](./evidence/P0-R-OWN5-INDEPENDENT-DISPUTE-SECOND-REVIEW-20261109.md).
+- Exact narrowly scoped **held 0053** operator grant artifact targets `fawri_operator_issuer` and just five case EXECUTEs. Disposable PostgreSQL18 restricted LOGIN [#42684077867](https://github.com/nora953/fawri-production-source/actions/runs/42684077867) **SUCCESS**, including direct-table-denial and forged session/actor rejection. [Evidence](./evidence/P0-R-OWN5-HELD-0053-OPERATOR-ISSUER-GRANTS-20261109.md).
+- **Not a provider settlement:** this review only acknowledges an operator-submitted digest. No independently validated provider confirmation, refunded payment, final financial disposition, commercial retention, hosted 0053 adoption/backup or real Neon role grants. `R-OWN-5` **OPEN**, `P0-RECEIPT-OWNERSHIP-POLICY` **OPEN**, PR #550 draft, NO-GO; known-row fraction unchanged at 64.4%. Older chronological notes below are source-state snapshots and are superseded where they describe missing isolated intake or second-review logic.
+
 ## Exact current source boundary
 
 - `artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts` exposes operator receipt list, replay-review and replay, and now draft held-case intake/escalation HTTP routes. None is a general missing-order ownership repair endpoint.
