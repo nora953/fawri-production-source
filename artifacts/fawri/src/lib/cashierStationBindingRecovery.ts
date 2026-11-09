@@ -1,6 +1,7 @@
 import {
   getOrCreateCashierDeviceIdentity,
   writeCashierDeviceIdentityIfUnchanged,
+  clearCashierStationBindingIfMatches,
   type CashierStationBinding,
 } from './cashierOperatorSessionRuntime';
 
@@ -165,35 +166,8 @@ export async function refreshDurableCashierStationBindingMetadata(): Promise<voi
 export async function clearInvalidCashierStationBinding(
   expected: CashierStationBinding,
 ): Promise<boolean> {
-  // The error belongs to the exact merchant/station/device/token which sent
-  // the failed HTTP request. A newer re-pair must NEVER be cleared by an old
-  // response. Never treat a missing request identity as permission to unpair.
-  if (!expected || !expected.merchant_id || !expected.station_id ||
-      !expected.device_id || !expected.station_token) return false;
-  const identity = await getOrCreateCashierDeviceIdentity();
-  if (identity.cloud_merchant_id !== expected.merchant_id ||
-      identity.device_id !== expected.device_id ||
-      identity.station_id !== expected.station_id ||
-      identity.station_token !== expected.station_token ||
-      identity.location_id !== expected.location_id ||
-      identity.branch_key !== expected.branch_key ||
-      identity.station_name !== expected.station_name ||
-      identity.station_credential_expires_at !== expected.credential_expires_at ||
-      (identity.branch_label || '') !== (expected.branch_label || '') ||
-      (identity.offline_inventory_authority === true) !== expected.offline_inventory_authority) {
-    return false;
-  }
-  const next = { ...identity };
-  delete next.station_id;
-  delete next.station_name;
-  delete next.location_id;
-  delete next.branch_key;
-  delete next.branch_label;
-  delete next.offline_inventory_authority;
-  delete next.station_token;
-  delete next.station_credential_expires_at;
-  delete next.last_catalog_sync_at;
-  // The second, atomic check closes the race between this validation and
-  // transaction commit. No unsynced operation data is ever erased.
-  return writeCashierDeviceIdentityIfUnchanged(identity, next);
+  // The server error must be associated with a captured request binding.
+  // Compare and revoke in ONE IndexedDB transaction; never clear the
+  // current pairing because a previous request used a now-invalid token.
+  return clearCashierStationBindingIfMatches(expected);
 }

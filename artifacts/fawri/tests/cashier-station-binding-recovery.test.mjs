@@ -10,6 +10,10 @@ const recovery = fs.readFileSync(
   path.join(root, 'src/lib/cashierStationBindingRecovery.ts'),
   'utf8',
 );
+const runtime = fs.readFileSync(
+  path.join(root, 'src/lib/cashierOperatorSessionRuntime.ts'),
+  'utf8',
+);
 const gate = fs.readFileSync(
   path.join(root, 'src/components/cashier/CashierOperatorGate.tsx'),
   'utf8',
@@ -32,25 +36,28 @@ test('invalid station credentials clear only station binding fields', () => {
     'station_token',
     'station_credential_expires_at',
   ]) {
-    assert.match(recovery, new RegExp(`delete next\\.${field}`));
+    assert.match(runtime, new RegExp(`delete next\\.${field}`));
   }
-  assert.doesNotMatch(recovery, /delete next\.device_id/);
-  assert.doesNotMatch(recovery, /delete next\.cloud_merchant_id/);
+  assert.doesNotMatch(runtime, /delete next\.device_id/);
+  assert.doesNotMatch(runtime, /delete next\.cloud_merchant_id/);
   assert.doesNotMatch(recovery, /clear\(\)/);
 });
 
-test('delayed invalid-credential denial cannot clear a newer paired station',()=>{
+test('delayed invalid-credential denial can only clear captured binding in one IDB transaction',()=>{
   assert.match(recovery, /clearInvalidCashierStationBinding\(\s*expected: CashierStationBinding/);
+  assert.match(recovery, /return clearCashierStationBindingIfMatches\(expected\)/);
+  assert.match(runtime, /export async function clearCashierStationBindingIfMatches/);
+  assert.match(runtime, /openBootstrapDatabase\(true\)/);
+  assert.match(runtime, /database.transaction\(BOOTSTRAP_STORE, 'readwrite'\)/);
   for(const term of [
-    'identity.cloud_merchant_id !== expected.merchant_id',
-    'identity.device_id !== expected.device_id',
-    'identity.station_id !== expected.station_id',
-    'identity.station_token !== expected.station_token',
-    'identity.location_id !== expected.location_id',
-    'identity.branch_key !== expected.branch_key',
-    'identity.station_credential_expires_at !== expected.credential_expires_at',
-  ])assert.ok(recovery.includes(term),'must compare request binding: '+term);
-  assert.match(recovery, /return writeCashierDeviceIdentityIfUnchanged\(identity, next\)/);
+    'current.cloud_merchant_id !== expected.merchant_id',
+    'current.device_id !== expected.device_id',
+    'current.station_id !== expected.station_id',
+    'current.station_token !== expected.station_token',
+    'current.location_id !== expected.location_id',
+    'current.branch_key !== expected.branch_key',
+    'current.station_credential_expires_at !== expected.credential_expires_at',
+  ])assert.ok(runtime.includes(term),'guard captured request identity: '+term);
   assert.match(gate, /attemptedBinding = binding/);
   assert.match(gate, /recoverStationBinding\(error, attemptedBinding\)/);
   assert.match(gate, /recoverStationBinding\(error, state\.binding\)/);

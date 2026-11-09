@@ -233,6 +233,59 @@ export async function writeCashierDeviceIdentityIfUnchanged(
   }
 }
 
+/**
+ * Revoke ONLY the rejected station pairing, if it is still the exact
+ * merchant/station/device/token from the failed request. No new bootstrap
+ * database or device identity may be created to service a stale error.
+ *
+ * The condition and station-only field deletion occur in the SAME native
+ * IndexedDB readwrite transaction. Preserves merchant/device IDs and all
+ * cashier financial records. Separate from metadata-only CAS, which must
+ * continue rejecting station/token mutations.
+ */
+export async function clearCashierStationBindingIfMatches(
+  expected: CashierStationBinding,
+): Promise<boolean> {
+  if (!expected || !expected.merchant_id || !expected.station_id ||
+      !expected.station_token || !expected.device_id) return false;
+  const database = await openBootstrapDatabase(true);
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(BOOTSTRAP_STORE);
+    const current = await requestResult(store.get('default')) as CashierDeviceIdentity | undefined;
+    if (!current ||
+        current.cloud_merchant_id !== expected.merchant_id ||
+        current.device_id !== expected.device_id ||
+        current.station_id !== expected.station_id ||
+        current.station_token !== expected.station_token ||
+        current.location_id !== expected.location_id ||
+        current.branch_key !== expected.branch_key ||
+        current.station_name !== expected.station_name ||
+        current.station_credential_expires_at !== expected.credential_expires_at ||
+        (current.branch_label || '') !== (expected.branch_label || '') ||
+        (current.offline_inventory_authority === true) !== expected.offline_inventory_authority) {
+      await completion;
+      return false;
+    }
+    const next = { ...current };
+    delete next.station_id;
+    delete next.station_name;
+    delete next.location_id;
+    delete next.branch_key;
+    delete next.branch_label;
+    delete next.offline_inventory_authority;
+    delete next.station_token;
+    delete next.station_credential_expires_at;
+    delete next.last_catalog_sync_at;
+    store.put(next);
+    await completion;
+    return true;
+  } finally {
+    database.close();
+  }
+}
+
 function stationBinding(
   identity: CashierDeviceIdentity,
 ): CashierStationBinding | null {
