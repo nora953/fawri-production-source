@@ -152,9 +152,28 @@ export async function runCashierBackupSequenceRegression(): Promise<void> {
     await cashier.close();
     await new Promise<void>((resolve, reject) => {
       const request = indexedDB.deleteDatabase(databaseName);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error || new Error('Cleanup failed'));
-      request.onblocked = () => reject(new Error('Cleanup blocked'));
+      let blockedTimeout: ReturnType<typeof setTimeout> | undefined;
+      const clearBlockedTimeout = () => {
+        if (blockedTimeout !== undefined) clearTimeout(blockedTimeout);
+      };
+      request.onsuccess = () => {
+        clearBlockedTimeout();
+        resolve();
+      };
+      request.onerror = () => {
+        clearBlockedTimeout();
+        reject(request.error || new Error('Cleanup failed'));
+      };
+      // A deleteDatabase request can emit "blocked" before another open
+      // connection's versionchange close is observed. The request may still
+      // succeed. Do not mask a truly leaked connection: if it remains blocked
+      // beyond this bounded fixture-cleanup window, fail the regression.
+      request.onblocked = () => {
+        blockedTimeout ??= setTimeout(
+          () => reject(new Error('Cleanup blocked for more than 5 seconds')),
+          5_000,
+        );
+      };
     });
   }
 }
