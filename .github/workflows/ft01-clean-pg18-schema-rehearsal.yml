@@ -8,6 +8,7 @@ on:
       - "lib/db/scripts/smoke-migration.mjs"
       - "lib/db/scripts/ft01-disposable-three-login-rehearsal.mjs"
       - "lib/db/scripts/ft01-disposable-nologin-role-reservation.mjs"
+      - "lib/db/scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs"
       - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-THREE-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql"
       - "artifacts/api-server/tests/ft01-disposable-production-startup-pg18.ts"
       - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-ROLE-ADMIN-CAPABILITY-READONLY-20261109.sql"
@@ -214,6 +215,17 @@ jobs:
         run: |
           node --check scripts/ft01-disposable-nologin-role-reservation.mjs
           node scripts/ft01-disposable-nologin-role-reservation.mjs
+
+      # Not the CI PostgreSQL superuser: exercises the actual canonical Drizzle
+      # sequence against a second empty local PostgreSQL18 owned by a LOGIN
+      # with Neon fawri_owner-like CREATEROLE/BYPASSRLS but NOSUPERUSER.
+      - name: FT-01 prove 53 migrations work with Neon-like non-superuser owner
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_NON_SUPERUSER_OWNER_REHEARSAL: "1"
+        run: |
+          node --check scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
+          node scripts/ft01-disposable-nonsuperuser-owner-schema-rehearsal.mjs
 
       - name: FT-01 prove independent ephemeral tenant auth operator LOGINs on PG18
         working-directory: lib/db
