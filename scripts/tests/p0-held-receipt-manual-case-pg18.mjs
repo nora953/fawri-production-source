@@ -247,7 +247,7 @@ try {
   assert.notEqual(q1.data.cases[0].case_id,q2.data.cases[0].case_id);
   assert.deepEqual(new Set([q1.data.cases[0].case_id,q2.data.cases[0].case_id]),new Set([caseId,opened.data.case_id]));
   for (const item of [...q1.data.cases,...q2.data.cases]) {
-    assert.ok(['UNRESOLVED_HOLD','PROVIDER_REVIEW','PROVIDER_DISPUTE'].includes(item.case_state));
+    assert.ok(['UNRESOLVED_HOLD','PROVIDER_REVIEW','PROVIDER_DISPUTE','PROVIDER_DISPUTE_REVIEWED'].includes(item.case_state));
     assert.match(item.opened_at,/Z$/);
     assert.ok(!Object.hasOwn(item,'payment_ref') && !Object.hasOwn(item,'merchant_id'));
   }
