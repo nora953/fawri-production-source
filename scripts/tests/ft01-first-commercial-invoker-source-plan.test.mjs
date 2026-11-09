@@ -37,7 +37,8 @@ test("FT01 0052 first-commercial variant is pinned source-only, never authorized
     "aaf7ee97fbdef0c1b4600e905216117ee8ff89f31ccd67d783ab61a9c4bd9b8e");
   assert.notEqual(plan.reviewed_invoker_variant_0052_sha256,plan.canonical_0052_sha256);
   for(const key of ["canonical_0052_sha256","reviewed_invoker_variant_0052_sha256",
-     "reviewed_invoker_function_body_sha256","canonical_journal_sha256","source_manifest_sha256"])
+     "reviewed_invoker_function_body_sha256","four_role_reservation_sql_sha256",
+     "canonical_journal_sha256","source_manifest_sha256"])
     assert.match(plan[key],/^[0-9a-f]{64}$/,key);
   for(const key of [
    "production_startup_profile_adopted","canonical_source_or_journal_modified",
@@ -66,4 +67,12 @@ test("FT01 0052 review plan rejects historical missing journal or stale source",
     /FT01_JOURNAL_UNEXPECTED/);
   assert.throws(()=>variant({["lib/db/drizzle/0051_residual_merchant_privacy_scoped_authority.sql"]:""}),
     /FT01_MIGRATION_SOURCE_EMPTY/);
+});
+
+test("FT01 four-role grant-free reservation cannot omit the separate writer group", () => {
+  const sql = "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-FOUR-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql";
+  assert.throws(() => variant({[sql]:readFile(sql).replace(
+    "CREATE ROLE fawri_cashier_retirement_writer\n",
+    "CREATE ROLE missing_retirement_writer\n",
+  )}),/FT01_FIRST_COMMERCIAL_ROLE_RESERVATION_INCOMPLETE/);
 });

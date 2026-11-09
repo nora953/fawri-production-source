@@ -12,6 +12,7 @@ on:
       - "lib/db/scripts/ft01-disposable-invoker-retirement-rehearsal.mjs"
       - "lib/db/scripts/lib/ft01-0052-nonsuperuser-invoker-candidate.mjs"
       - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-THREE-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql"
+      - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-FOUR-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql"
       - "artifacts/api-server/tests/ft01-disposable-production-startup-pg18.ts"
       - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-ROLE-ADMIN-CAPABILITY-READONLY-20261109.sql"
       - "artifacts/api-server/src/services/authenticationPostgresAuthority.ts"
@@ -253,7 +254,7 @@ jobs:
       # Positive and negative *new-target lookalike* only. This deliberately
       # creates/drops a SECOND disposable PG18 DB to test the exact held SQL;
       # no credentials, DBs or roles are ever provisioned on hosted Neon.
-      - name: FT-01 three NOLOGIN role proposal positive negative SQL admission
+      - name: FT-01 four isolated NOLOGIN role proposal positive negative SQL admission
         working-directory: lib/db
         env:
           FAWRI_ALLOW_FT01_DISPOSABLE_NOLOGIN_ADMISSION: "1"

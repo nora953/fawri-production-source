@@ -28,6 +28,7 @@ import {
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql";
 const SOURCE_TAG = "0052_cashier_stream_receipt_storage";
+const ROLE_RESERVATION_PATH = "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-FOUR-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql";
 
 const sha256 = source => createHash("sha256").update(source, "utf8").digest("hex");
 
@@ -48,6 +49,14 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
   assert.equal(historical.approved_to_execute, false);
   assert.ok(hasPinnedFt01InvokerFingerprints(), "FT01_INVOKER_POLICY_FINGERPRINTS_NOT_PINNED");
 
+  const reservationSql = readFile(ROLE_RESERVATION_PATH);
+  for (const role of ["fawri_restricted_runtime","fawri_auth_issuer",
+    "fawri_operator_issuer","fawri_cashier_retirement_writer"]) {
+    assert.ok(reservationSql.includes("CREATE ROLE " + role + "\n"),
+      "FT01_FIRST_COMMERCIAL_ROLE_RESERVATION_INCOMPLETE");
+  }
+  assert.match(reservationSql,/IF role_count <> 4 THEN/);
+  assert.match(reservationSql,/FT01_FOUR_NOLOGIN_ROLE_POSTIMAGE_UNSAFE/);
   const variant = disposableInvokerVariant(readFile(SOURCE_PATH));
   const variantSha256 = sha256(variant);
   assert.notEqual(variantSha256, EXPECTED_CANONICAL_0052_SHA256,
@@ -71,6 +80,7 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
     canonical_0052_sha256: historical.held_migration.sha256,
     reviewed_invoker_variant_0052_sha256: variantSha256,
     reviewed_invoker_function_body_sha256: INVOKER_MERCHANT_DELETION_SHA256,
+    four_role_reservation_sql_sha256: sha256(reservationSql),
     canonical_journal_sha256: historical.migration_journal_sha256,
     source_manifest_sha256: historical.source_manifest_sha256,
     source_provenance: "in-memory replacement of held 0052 ONLY",
