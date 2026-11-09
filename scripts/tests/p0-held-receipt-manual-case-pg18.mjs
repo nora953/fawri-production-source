@@ -60,6 +60,51 @@ try {
   }
   await admin.query(`CREATE ROLE ${caseRole} LOGIN PASSWORD '${password}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);
   await admin.query(`GRANT USAGE ON SCHEMA public TO ${caseRole}`);
+  // First-commercial HELD grant artifact, exercised on this fresh disposable
+  // PG18 with the intended exact LOGIN name. Never a hosted GRANT.
+  const grantFile = readFileSync(new URL('../../lib/db/first-commercial/held/0053_receipt_manual_case_operator_grants.sql',import.meta.url),'utf8');
+  const onlyStatements=grantFile.split('\n').map(s=>s.trim()).filter(s=>s && !s.startsWith('--'));
+  const exactGrants=[
+    'GRANT USAGE ON SCHEMA public TO fawri_operator_issuer;',
+    'GRANT EXECUTE ON FUNCTION public.fawri_open_unmatched_verified_receipt_case(text,text,text,text,text) TO fawri_operator_issuer;',
+    'GRANT EXECUTE ON FUNCTION public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text,text,text) TO fawri_operator_issuer;',
+    'GRANT EXECUTE ON FUNCTION public.fawri_list_verified_receipt_manual_cases(text,text,text,integer,timestamptz,text,text,text) TO fawri_operator_issuer;',
+    'GRANT EXECUTE ON FUNCTION public.fawri_read_verified_receipt_manual_case_history(text,text,text,text,integer,bigint,text,text) TO fawri_operator_issuer;',
+    'GRANT EXECUTE ON FUNCTION public.fawri_acknowledge_receipt_dispute_second_review(text,text,text,text,text,text) TO fawri_operator_issuer;',
+  ];
+  assert.deepEqual(onlyStatements,exactGrants,'no widened/replaced hosted GRANT may pass');
+  const exactRole='fawri_operator_issuer';
+  assert.equal((await admin.query('SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=$1) AS exists',[exactRole])).rows[0].exists,false);
+  const exactRolePassword=randomBytes(22).toString('hex');
+  await admin.query("CREATE ROLE "+exactRole+" LOGIN PASSWORD '"+exactRolePassword+"' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION");
+  await admin.query(grantFile);
+  const exactRoleFlags=(await admin.query('SELECT rolcanlogin,rolsuper,rolbypassrls,rolcreaterole,rolcreatedb,rolinherit,rolreplication FROM pg_roles WHERE rolname=$1',[exactRole])).rows[0];
+  assert.deepEqual(exactRoleFlags,{rolcanlogin:true,rolsuper:false,rolbypassrls:false,rolcreaterole:false,rolcreatedb:false,rolinherit:false,rolreplication:false});
+  const roleUrl = new URL(target);
+  roleUrl.username=exactRole;
+  roleUrl.password=exactRolePassword;
+  const exactClient=new Client({connectionString:roleUrl.toString(),connectionTimeoutMillis:5000});
+  try {
+    await exactClient.connect();
+    assert.deepEqual((await exactClient.query('SELECT session_user AS login,current_user AS active')).rows[0],{login:exactRole,active:exactRole});
+    for(const source of [
+      'public.verified_provider_payment_receipts','public.verified_receipt_manual_cases',
+      'public.verified_receipt_manual_case_events','public.saas_billing_orders',
+      'public.cashier_billing_orders'
+    ]) {
+      assert.equal((await exactClient.query('SELECT has_table_privilege(session_user,$1,$2) AS allowed',[source,'SELECT,INSERT,UPDATE,DELETE'])).rows[0].allowed,false,source);
+    }
+    for(const fn of exactGrants.slice(1).map(x=>x.split('ON FUNCTION ')[1].split(' TO ')[0])) {
+      assert.equal((await exactClient.query('SELECT has_function_privilege(session_user,$1,$2) AS allowed',[fn,'EXECUTE'])).rows[0].allowed,true,fn);
+    }
+    assert.equal((await exactClient.query("SELECT has_schema_privilege(session_user,'public','CREATE') AS allowed")).rows[0].allowed,false);
+    await sqlstate(exactClient.query('SELECT * FROM public.verified_receipt_manual_cases'),'42501');
+    await sqlstate(exactClient.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[
+      'forged-actor','forged-session','a'.repeat(64),'receipt-case-'+'e'.repeat(64),'receipt-event'
+    ]),'42501');
+  } finally { await exactClient.end(); }
+  console.log('P0_RECEIPT_CASE_HELD_EXACT_OPERATOR_GRANTS_PG18_PASS');
+
   const identity=(await admin.query('SELECT rolcanlogin,rolsuper,rolbypassrls,rolcreaterole FROM pg_roles WHERE rolname=$1',[caseRole])).rows[0];
   assert.deepEqual(identity,{rolcanlogin:true,rolsuper:false,rolbypassrls:false,rolcreaterole:false});
   await admin.query(`INSERT INTO public.accounts(id,kind,phone,password_hash,state,phone_verified)
