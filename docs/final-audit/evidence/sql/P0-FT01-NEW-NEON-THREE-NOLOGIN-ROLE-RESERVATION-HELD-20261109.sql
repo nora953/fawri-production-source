@@ -4,8 +4,12 @@
 -- and provider connection. This is a WRITE operation even though NOLOGIN.
 -- New project ID crimson-cherry-65705041, branch br-holy-waterfall-b993zglb.
 -- SQL CANNOT independently prove provider project/branch identity.
--- No LIVE application role is created, NO password/LOGIN, NO grants, NO import,
--- NO migration, NO app deploy. Transaction rolls back on SQL failure.
+-- No LIVE application role is created, NO password/LOGIN or object grants,
+-- NO migration or app deploy. PostgreSQL18 automatically gives the creating
+-- fawri_owner a single ADMIN-only membership on each new NOLOGIN role:
+-- ADMIN=true, SET=false, INHERIT=false. This is NOT zero membership;
+-- the postimage requires exactly that edge, and no others.
+-- Transaction rolls back on SQL failure.
 -- First run only; deliberately fails if even one role already exists.
 
 BEGIN;
@@ -59,8 +63,22 @@ BEGIN
        'fawri_restricted_runtime','fawri_auth_issuer','fawri_operator_issuer')
      AND NOT (r.rolcanlogin OR r.rolinherit OR r.rolsuper OR r.rolbypassrls
               OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication)
+     -- These group roles must never inherit some other role.
      AND NOT EXISTS (
        SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.member=r.oid)
+     -- PostgreSQL 18 CREATEROLE automatically grants role-creator ADMIN.
+     -- Enforce exactly ONE inbound creator-only ADMIN edge, without SET
+     -- or INHERIT. An unknown extra member or writable membership aborts.
+     AND (SELECT count(*)::integer FROM pg_catalog.pg_auth_members m
+           WHERE m.roleid=r.oid)=1
+     AND EXISTS (
+       SELECT 1 FROM pg_catalog.pg_auth_members m
+       JOIN pg_catalog.pg_roles u ON u.oid=m.member
+       WHERE m.roleid=r.oid
+         AND u.rolname='fawri_owner'
+         AND m.admin_option IS TRUE
+         AND m.inherit_option IS FALSE
+         AND m.set_option IS FALSE)
      AND NOT has_schema_privilege(r.oid,'public','CREATE');
   IF role_count <> 3 THEN
      RAISE EXCEPTION 'FT01_THREE_NOLOGIN_ROLE_POSTIMAGE_UNSAFE';
