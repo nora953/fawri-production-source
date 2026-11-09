@@ -65,7 +65,8 @@ test('operator outbox keeps a full boundary operation intact instead of uploadin
   const sync = await source('src/lib/cashierOperatorCloudSync.ts');
 
   assert.match(sync, /function completeOperationWindow/);
-  assert.match(sync, /pending\.length < MAX_PENDING_ENVELOPES/);
+  assert.match(sync, /batch\\.length <= MAX_PENDING_ENVELOPES/);
+  assert.match(sync, /listPendingSync\\(MAX_PENDING_ENVELOPES \\+ 1\\)/);
   assert.match(sync, /CASHIER_OPERATOR_OPERATION_TOO_LARGE/);
   assert.match(sync, /return pending\.slice\(0, firstBoundaryIndex\)/);
 });
