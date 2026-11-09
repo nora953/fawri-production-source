@@ -49,4 +49,4 @@ jobs:
       - name: Apply exact canonical 53 migrations to disposable empty PG18
         run: cd lib/db && node scripts/smoke-migration.mjs
       - name: Apply held SQL only to disposable PG18 and prove restricted LOGIN
-        run: node scripts/tests/p0-held-receipt-manual-case-pg18.mjs
+        run: pnpm exec tsx scripts/tests/p0-held-receipt-manual-case-pg18.mjs
