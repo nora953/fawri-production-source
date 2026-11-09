@@ -7,6 +7,8 @@ on:
       - "lib/db/drizzle/**"
       - "lib/db/scripts/smoke-migration.mjs"
       - "lib/db/scripts/ft01-disposable-three-login-rehearsal.mjs"
+      - "lib/db/scripts/ft01-disposable-nologin-role-reservation.mjs"
+      - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-THREE-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql"
       - "artifacts/api-server/tests/ft01-disposable-production-startup-pg18.ts"
       - "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-ROLE-ADMIN-CAPABILITY-READONLY-20261109.sql"
       - "artifacts/api-server/src/services/authenticationPostgresAuthority.ts"
@@ -201,6 +203,17 @@ jobs:
             console.log('FT01_READONLY_NEW_NEON_ROLE_PREFLIGHT_LOCAL_REJECTION_PASS');
           } finally { await db.end(); }
           NODE
+
+      # Positive and negative *new-target lookalike* only. This deliberately
+      # creates/drops a SECOND disposable PG18 DB to test the exact held SQL;
+      # no credentials, DBs or roles are ever provisioned on hosted Neon.
+      - name: FT-01 three NOLOGIN role proposal positive negative SQL admission
+        working-directory: lib/db
+        env:
+          FAWRI_ALLOW_FT01_DISPOSABLE_NOLOGIN_ADMISSION: "1"
+        run: |
+          node --check scripts/ft01-disposable-nologin-role-reservation.mjs
+          node scripts/ft01-disposable-nologin-role-reservation.mjs
 
       - name: FT-01 prove independent ephemeral tenant auth operator LOGINs on PG18
         working-directory: lib/db
