@@ -102,6 +102,42 @@ async function stationRaceInRealBrowser() {
     })===false,'stale metadata update must not win after another write');
     same(await runtime.getOrCreateCashierDeviceIdentity(),concurrent,
       'CAS cannot overwrite a concurrent renamed station');
+    // Separate P0 bug: an INVALID response for the *old* station token must
+    // not clear a brand-new pairing committed while its HTTP request waited.
+    // This invokes the exact public recovery routine on real IndexedDB.
+    const oldBinding = await runtime.getCashierStationBinding();
+    check(oldBinding?.station_id===old.station_id,
+      'old failing request must carry captured station binding');
+    const replaced = {
+      ...concurrent,
+      station_id:'p0-repaired-station-'+suffix,
+      station_token:'p0-repaired-token-'+suffix,
+      station_name:'Fresh Repaired Station',
+      location_id:'p0-repaired-location',
+      branch_key:'p0-repaired-branch',
+    };
+    await runtime.writeCashierDeviceIdentity(replaced);
+    const oldErrorClear=await recovery.clearInvalidCashierStationBinding(oldBinding);
+    check(oldErrorClear===false,
+      'stale invalid-credential response must not clear later pairing');
+    same(await runtime.getOrCreateCashierDeviceIdentity(),replaced,
+      'stale invalidation must leave new station/token intact');
+
+    // A genuinely rejected CURRENT station must still be unpaired. The
+    // financial device/merchant identity and all local operation stores stay.
+    const currentBinding=await runtime.getCashierStationBinding();
+    check(currentBinding?.station_id===replaced.station_id,
+      'current request carries current binding');
+    const currentErrorClear=await recovery.clearInvalidCashierStationBinding(currentBinding);
+    check(currentErrorClear===true,
+      'current invalid-credential response must clear only station binding');
+    const afterClearing=await runtime.getOrCreateCashierDeviceIdentity();
+    check(!afterClearing.station_id && !afterClearing.station_token &&
+      !afterClearing.location_id && !afterClearing.branch_key &&
+      afterClearing.device_id===replaced.device_id &&
+      afterClearing.cloud_merchant_id===replaced.cloud_merchant_id &&
+      afterClearing.local_merchant_id===replaced.local_merchant_id,
+      'current invalidation must preserve durable identity while unpairing');
     return {
       real_chromium_indexeddb:true,
       old_http_response_overwrite_denied:true,
@@ -109,6 +145,8 @@ async function stationRaceInRealBrowser() {
       stale_transaction_cas_denied:true,
       matching_original_station_hydrated:true,
       canonical_device_identity_preserved:true,
+      stale_invalid_credentials_did_not_clear_new_binding:true,
+      current_invalid_credentials_cleared_only_station:true,
       synthetic_transport_only:true,
       server_sql_or_http_accepted:false,
       physical_device_attested:false,
