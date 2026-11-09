@@ -24,7 +24,7 @@ loginUrl.password=password;
 const operator = new Client({connectionString:loginUrl.toString(),connectionTimeoutMillis:5000});
 const actorId='receipt-case-actor-'+randomUUID();
 const strangerId='receipt-case-stranger-'+randomUUID();
-const caseId='receipt-case-'+randomUUID();
+const caseId='receipt-case-'+randomBytes(32).toString('hex');
 const paymentId='payment-'+randomUUID();
 const eventId='receipt-'+randomUUID();
 const testHash='a'.repeat(64);
@@ -96,12 +96,19 @@ try {
   await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,eventId]),'42501');
   await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_open_unmatched_verified_receipt_case(text,text,text,text,text) TO ${caseRole}`);
   await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text,text,text) TO ${caseRole}`);
+  const queueSql="SELECT * FROM public.fawri_list_verified_receipt_manual_cases($1,$2,$3,$4,$5,$6,$7,$8)";
+  const historySql="SELECT * FROM public.fawri_read_verified_receipt_manual_case_history($1,$2,$3,$4,$5,$6,$7,$8)";
+  await sqlstate(operator.query(queueSql,[actorId,sessionId,deviceHash,20,null,null,'audit-no-grant',testHash]),'42501');
+  await sqlstate(operator.query(historySql,[actorId,sessionId,deviceHash,caseId,20,null,'audit-no-grant-2',testHash]),'42501');
+  await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_list_verified_receipt_manual_cases(text,text,text,integer,timestamptz,text,text,text) TO ${caseRole}`);
+  await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_read_verified_receipt_manual_case_history(text,text,text,text,integer,bigint,text,text) TO ${caseRole}`);
+  await sqlstate(operator.query('SELECT * FROM public.verified_receipt_manual_case_events'),'42501');
   await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[strangerId,sessionId,deviceHash,caseId,eventId]),'42501');
   await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,'absent-receipt']),'23514');
   const open=(await operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,eventId])).rows;
   assert.deepEqual(open,[{case_id:caseId,receipt_event_id:eventId,case_state:'UNRESOLVED_HOLD',applied:false}]);
   assert.deepEqual((await operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,eventId])).rows,open);
-  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,'different-case',eventId]),'23505');
+  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,'receipt-case-'+randomBytes(32).toString('hex'),eventId]),'23505');
   await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'RECORD_PROVIDER_DISPUTE','bad-order',testHash]),'23514');
   const forward=(await operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7) AS state',[actorId,sessionId,deviceHash,caseId,'ESCALATE_TO_PROVIDER','escalate-'+randomUUID(),null])).rows[0];
   assert.equal(forward.state,'PROVIDER_REVIEW');
@@ -172,6 +179,56 @@ try {
   assert.deepEqual(httpEvents.map(x=>x.action),['OPEN_HOLD','ESCALATE_TO_PROVIDER']);
   assert.ok(httpEvents.every(x=>x.actor_id===actorId && x.session_id===sessionId && x.device_hash===deviceHash));
   console.log('P0_RECEIPT_MANUAL_CASE_MOUNTED_HTTP_RESTRICTED_PG18_PASS');
+  // Real permissioned operator case work queue: no table read, no raw provider
+  // refs, bounded pagination and durable actor/audit evidence.
+  async function get(path,authenticate=true) {
+    const response=await fetch(base+path,{headers:{
+      Origin:'https://operator.example.invalid',
+      ...(authenticate?{Cookie:'fawri_admin_session_v2='+issued.token,'X-Fawri-Device-Id':deviceId}:{})
+    }});
+    return {status:response.status,cache:response.headers.get('cache-control'),data:await response.json()};
+  }
+  assert.equal((await get('/verified-receipt-manual-cases',false)).status,401);
+  assert.equal((await get('/verified-receipt-manual-cases?merchant_id=forged')).status,400);
+  assert.equal((await get('/verified-receipt-manual-cases?limit=0')).status,400);
+  assert.equal((await get('/verified-receipt-manual-cases?cursor=bad')).status,400);
+  const q1=await get('/verified-receipt-manual-cases?limit=1');
+  assert.equal(q1.status,200,JSON.stringify(q1.data));
+  assert.match(q1.cache,/no-store/);
+  assert.equal(q1.data.cases.length,1);
+  assert.ok(q1.data.next_cursor);
+  const q2=await get('/verified-receipt-manual-cases?limit=1&cursor='+encodeURIComponent(q1.data.next_cursor));
+  assert.equal(q2.status,200,JSON.stringify(q2.data));
+  assert.equal(q2.data.cases.length,1);
+  assert.notEqual(q1.data.cases[0].case_id,q2.data.cases[0].case_id);
+  assert.deepEqual(new Set([q1.data.cases[0].case_id,q2.data.cases[0].case_id]),new Set([caseId,opened.data.case_id]));
+  for (const item of [...q1.data.cases,...q2.data.cases]) {
+    assert.ok(['UNRESOLVED_HOLD','PROVIDER_REVIEW','PROVIDER_DISPUTE'].includes(item.case_state));
+    assert.match(item.opened_at,/Z$/);
+    assert.ok(!Object.hasOwn(item,'payment_ref') && !Object.hasOwn(item,'merchant_id'));
+  }
+  const path='/verified-receipt-manual-cases/'+opened.data.case_id+'/history';
+  assert.equal((await get(path,false)).status,401);
+  assert.equal((await get(path+'?merchant_id=other')).status,400);
+  assert.equal((await get('/verified-receipt-manual-cases/receipt-case-'+'f'.repeat(64)+'/history')).status,404);
+  const h1=await get(path+'?limit=1');
+  assert.equal(h1.status,200,JSON.stringify(h1.data));
+  assert.deepEqual(h1.data.events.map(e=>e.event_action),['ESCALATE_TO_PROVIDER']);
+  assert.ok(h1.data.next_cursor);
+  const h2=await get(path+'?limit=1&cursor='+encodeURIComponent(h1.data.next_cursor));
+  assert.equal(h2.status,200,JSON.stringify(h2.data));
+  assert.deepEqual(h2.data.events.map(e=>e.event_action),['OPEN_HOLD']);
+  assert.equal(h2.data.next_cursor,null);
+  assert.equal(h1.data.events[0].actor_id,actorId);
+  assert.ok(!Object.hasOwn(h1.data.events[0],'device_hash'));
+  const auditKinds=(await admin.query(`SELECT reason_code,count(*)::int AS n
+    FROM public.database_admin_access_audits WHERE admin_account_id=$1
+      AND reason_code IN ('BILLING_MANUAL_CASE_QUEUE_READ','BILLING_MANUAL_CASE_HISTORY_READ')
+    GROUP BY reason_code ORDER BY reason_code`,[actorId])).rows;
+  assert.deepEqual(auditKinds.map(v=>v.reason_code),['BILLING_MANUAL_CASE_HISTORY_READ','BILLING_MANUAL_CASE_QUEUE_READ']);
+  assert.ok(auditKinds.every(v=>v.n>=2));
+  console.log('P0_RECEIPT_MANUAL_CASE_AUDITED_QUEUE_HISTORY_PG18_HTTP_PASS');
+
 
   assert.equal(await authPostgresSessionAuthority.revokeSession(issued.token,'admin','manual_revocation'),true);
   await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'ESCALATE_TO_PROVIDER','revoked-'+randomUUID(),null]),'42501');
