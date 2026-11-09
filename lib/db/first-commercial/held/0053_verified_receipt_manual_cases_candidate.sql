@@ -97,7 +97,7 @@ CREATE FUNCTION public.fawri_open_unmatched_verified_receipt_case(
 ) RETURNS TABLE(case_id text,receipt_event_id text,case_state text,applied boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET row_security=off AS $$
 DECLARE actor_role text; receipt public.verified_provider_payment_receipts%ROWTYPE;
-        inserted integer; existing_case_id text;
+        inserted integer; existing_case_id text; actual_state text;
 BEGIN
   IF p_actor IS NULL OR char_length(p_actor) NOT BETWEEN 1 AND 180
     OR p_session_id IS NULL OR char_length(p_session_id) NOT BETWEEN 1 AND 180
@@ -177,8 +177,14 @@ BEGIN
     IF existing_case_id IS DISTINCT FROM p_case_id THEN
       RAISE EXCEPTION 'manual case event already assigned' USING ERRCODE='23505';
     END IF;
+    SELECT event.to_state INTO actual_state
+      FROM public.verified_receipt_manual_case_events event WHERE event.case_id=p_case_id
+      ORDER BY event.sequence DESC LIMIT 1;
+    IF actual_state IS NULL THEN
+      RAISE EXCEPTION 'manual case history missing' USING ERRCODE='23514';
+    END IF;
   END IF;
-  RETURN QUERY SELECT p_case_id,p_event_id,'UNRESOLVED_HOLD'::text,false;
+  RETURN QUERY SELECT p_case_id,p_event_id,COALESCE(actual_state,'UNRESOLVED_HOLD'::text),false;
 END $$;
 
 -- This does NOT mark a payment settled or refunded. A second independent
