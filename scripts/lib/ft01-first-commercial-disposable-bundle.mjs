@@ -18,6 +18,12 @@ import {stabilizeMigrationDependencyOrder} from "../../lib/db/scripts/lib/migrat
 const defaultRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const HELD_SQL="lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql";
 const DRIZZLE_DIR="lib/db/drizzle";
+/** SHA of the exact reviewed 53-stage post-stabilization SQL chain from
+ * successful isolated PostgreSQL18 CI #42626425487. Changes to migration
+ * ordering or selected 0052 require fresh review, not silent rebinding.
+ */
+export const FT01_PINNED_DISPOSABLE_CHAIN_SHA256=
+  "1036c70db367b3153b6d070bfbb2d0af3edeb6cf02bdf618e47614e0a0104a05";
 const hash=source=>createHash("sha256").update(source,"utf8").digest("hex");
 const fail=reason=>{const error=new Error(reason);error.code=reason;throw error;};
 
@@ -54,6 +60,12 @@ export function buildFt01DisposableBundleManifest({
       selected_kind:entry.index===52?"HELD_FIRST_COMMERCIAL_INVOKER":"PINNED_CANONICAL",
     });
   });
+  const stagedDigest=hash(JSON.stringify(rows.map(x=>[
+    x.index,x.tag,x.executable_sha256,
+  ])));
+  if(stagedDigest!==FT01_PINNED_DISPOSABLE_CHAIN_SHA256){
+    fail("FT01_DISPOSABLE_BUNDLE_CHAIN_PIN_DRIFT");
+  }
   const manifest=Object.freeze({
     decision:"FT01_DISPOSABLE_ONLY_FIRST_COMMERCIAL_MIGRATION_BUNDLE",
     source_manifest_sha256:canonical.source_manifest_sha256,
@@ -66,9 +78,7 @@ export function buildFt01DisposableBundleManifest({
     four_role_reservation_sha256:review.four_role_reservation_sql_sha256,
     ledger_variant_noncanonical:true,
     entries:Object.freeze(rows),
-    staged_chain_sha256:hash(JSON.stringify(rows.map(x=>[
-      x.index,x.tag,x.executable_sha256,
-    ]))),
+    staged_chain_sha256:stagedDigest,
     source_only:true,
     new_target_bootstrap_authorized:false,
     hosted_execution_authorized:false,

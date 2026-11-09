@@ -6,6 +6,7 @@ import {fileURLToPath} from "node:url";
 import {
   buildFt01DisposableBundleManifest,
   materializeFt01LocalOnlyBundle,
+  FT01_PINNED_DISPOSABLE_CHAIN_SHA256,
 } from "../lib/ft01-first-commercial-disposable-bundle.mjs";
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
@@ -25,6 +26,11 @@ test("FT01 immutable canonical 53 stage chain differs ONLY in held final 0052",(
   assert.notEqual(m.canonical_0052_sha256,m.selected_0052_sha256);
   assert.equal(m.entries[52].executable_sha256,m.selected_0052_executable_sha256);
   assert.match(m.staged_chain_sha256,/^[a-f0-9]{64}$/);
+  assert.equal(m.staged_chain_sha256,
+    FT01_PINNED_DISPOSABLE_CHAIN_SHA256,
+    "FT01_SOURCE_REVIEWED_STAGED_CHAIN_IMMUTABLE");
+  assert.equal(FT01_PINNED_DISPOSABLE_CHAIN_SHA256,
+    "1036c70db367b3153b6d070bfbb2d0af3edeb6cf02bdf618e47614e0a0104a05");
   assert.match(m.cashier_grants_sha256,/^[a-f0-9]{64}$/);
   assert.match(m.four_role_reservation_sha256,/^[a-f0-9]{64}$/);
   assert.equal(m.ledger_variant_noncanonical,true);
