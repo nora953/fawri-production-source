@@ -24,6 +24,8 @@ on:
       - "scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs"
       - "lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql"
       - "lib/db/first-commercial/held/0052_cashier_retirement_issuer_grants.sql"
+      - "scripts/lib/ft01-first-commercial-disposable-bundle.mjs"
+      - "scripts/tests/ft01-first-commercial-disposable-bundle.test.mjs"
       - "scripts/lib/ft01-first-commercial-invoker-source-plan.mjs"
       - "scripts/tests/ft01-first-commercial-invoker-source-plan.test.mjs"
       - "scripts/tests/ft01-production-cashier-storage-profile.test.mjs"
@@ -145,6 +147,7 @@ jobs:
         run: |
           node --test scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs
           node --test scripts/tests/ft01-first-commercial-invoker-source-plan.test.mjs
+          node --test scripts/tests/ft01-first-commercial-disposable-bundle.test.mjs
           node --test scripts/tests/ft01-production-cashier-storage-profile.test.mjs
           node scripts/lib/ft01-first-commercial-invoker-source-plan.mjs > "$RUNNER_TEMP/ft01-invoker-review.json"
           node - "$RUNNER_TEMP/ft01-invoker-review.json" <<'NODE'
