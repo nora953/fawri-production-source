@@ -113,7 +113,7 @@ try {
   const history=(await admin.query('SELECT action,from_state,to_state,actor_id,session_id,device_hash FROM public.verified_receipt_manual_case_events WHERE case_id=$1 ORDER BY sequence',[caseId])).rows;
   assert.deepEqual(history.map(x=>x.action),['OPEN_HOLD','ESCALATE_TO_PROVIDER','RECORD_PROVIDER_DISPUTE']);
   assert.ok(history.every(x=>x.actor_id===actorId && x.session_id===sessionId && x.device_hash===deviceHash));
-  await admin.query('UPDATE public.account_sessions SET status=\'revoked\',revoked_at=clock_timestamp() WHERE id=$1',[sessionId]);
+  assert.equal(await authPostgresSessionAuthority.revokeSession(issued.token,'admin','manual_revocation'),true);
   await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'ESCALATE_TO_PROVIDER','revoked-'+randomUUID(),null]),'42501');
   await sqlstate(admin.query('DELETE FROM public.verified_receipt_manual_cases WHERE id=$1',[caseId]),'42501');
   await sqlstate(admin.query('UPDATE public.verified_receipt_manual_case_events SET action=\'OPEN_HOLD\' WHERE case_id=$1',[caseId]),'42501');
