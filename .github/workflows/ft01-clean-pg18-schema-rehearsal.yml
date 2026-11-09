@@ -21,6 +21,9 @@ on:
       - "lib/db/scripts/tests/isolated-neon-migration-static.test.mjs"
       - "scripts/lib/ft01-clean-bootstrap-source-plan.mjs"
       - "scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs"
+      - "scripts/lib/ft01-first-commercial-invoker-source-plan.mjs"
+      - "scripts/tests/ft01-first-commercial-invoker-source-plan.test.mjs"
+      - "lib/db/scripts/lib/ft01-held-invoker-storage-readiness.mjs"
       - "pnpm-lock.yaml"
   push:
     branches:
@@ -135,6 +138,21 @@ jobs:
       - name: Validate exact source-only migration inventory with 0052 still HELD
         run: |
           node --test scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs
+          node --test scripts/tests/ft01-first-commercial-invoker-source-plan.test.mjs
+          node scripts/lib/ft01-first-commercial-invoker-source-plan.mjs > "$RUNNER_TEMP/ft01-invoker-review.json"
+          node - "$RUNNER_TEMP/ft01-invoker-review.json" <<'NODE'
+          const fs = require('node:fs');
+          const p = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (p.decision !== 'FT01_REVIEWABLE_NEW_COMMERCIAL_0052_INVOKER_SOURCE' ||
+              p.source_migrations_count !== 53 ||
+              p.approved_to_execute !== false ||
+              p.commercial_release_authorized !== false ||
+              p.production_startup_profile_adopted !== false ||
+              p.canonical_0052_sha256 === p.reviewed_invoker_variant_0052_sha256) {
+            throw new Error('FT01_REVIEW_PROFILE_BYPASS_NOT_ALLOWED');
+          }
+          console.log('FT01_FIRST_COMMERCIAL_0052_INVOKER_REVIEW_MANIFEST_FAIL_CLOSED_PASS');
+          NODE
           node scripts/lib/ft01-clean-bootstrap-source-plan.mjs > "$RUNNER_TEMP/ft01-plan.json"
           node - "$RUNNER_TEMP/ft01-plan.json" <<'NODE'
           const fs = require('node:fs');
