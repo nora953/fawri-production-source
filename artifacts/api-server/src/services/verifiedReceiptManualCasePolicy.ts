@@ -8,13 +8,11 @@
 export type ManualCaseState =
   | "UNRESOLVED_HOLD"
   | "PROVIDER_REVIEW"
-  | "PROVIDER_DISPUTE"
-  | "PROVIDER_OUTCOME_VERIFIED";
+  | "PROVIDER_DISPUTE";
 
 export type ManualCaseAction =
   | "ESCALATE_TO_PROVIDER"
-  | "RECORD_PROVIDER_DISPUTE"
-  | "RECORD_PROVIDER_OUTCOME";
+  | "RECORD_PROVIDER_DISPUTE";
 
 export type ManualCaseTransition = {
   action: ManualCaseAction;
@@ -33,9 +31,6 @@ export class ManualReceiptCasePolicyError extends Error {
 }
 
 function deny(): never { throw new ManualReceiptCasePolicyError(); }
-function own(value: object, key: string): boolean {
-  return Object.prototype.hasOwnProperty.call(value, key);
-}
 function boundedId(value: unknown, max: number): value is string {
   return typeof value === "string" && value.length > 0 && value.length <= max
     && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value);
@@ -65,12 +60,11 @@ export function parseManualCaseTransition(value: unknown): ManualCaseTransition 
   const action = data.action;
   const before = data.expectedState;
   const after = data.nextState;
-  if (action !== "ESCALATE_TO_PROVIDER" && action !== "RECORD_PROVIDER_DISPUTE"
-      && action !== "RECORD_PROVIDER_OUTCOME") deny();
-  if (before !== "UNRESOLVED_HOLD" && before !== "PROVIDER_REVIEW"
-      && before !== "PROVIDER_DISPUTE") deny();
-  if (after !== "PROVIDER_REVIEW" && after !== "PROVIDER_DISPUTE"
-      && after !== "PROVIDER_OUTCOME_VERIFIED") deny();
+  // A terminal outcome needs an authenticated second approver and provider
+  // reconciliation; it cannot be certified by a caller-supplied actor ID.
+  if (action !== "ESCALATE_TO_PROVIDER" && action !== "RECORD_PROVIDER_DISPUTE") deny();
+  if (before !== "UNRESOLVED_HOLD" && before !== "PROVIDER_REVIEW") deny();
+  if (after !== "PROVIDER_REVIEW" && after !== "PROVIDER_DISPUTE") deny();
   if (data.independentlyApprovedBy !== null
       && !boundedId(data.independentlyApprovedBy, 180)) deny();
   if (data.providerEvidenceHash !== null && !digest(data.providerEvidenceHash)) deny();
@@ -78,15 +72,9 @@ export function parseManualCaseTransition(value: unknown): ManualCaseTransition 
   if (action === "ESCALATE_TO_PROVIDER") {
     if (before !== "UNRESOLVED_HOLD" || after !== "PROVIDER_REVIEW"
       || data.independentlyApprovedBy !== null || data.providerEvidenceHash !== null) deny();
-  } else if (action === "RECORD_PROVIDER_DISPUTE") {
+  } else {
     if (before !== "PROVIDER_REVIEW" || after !== "PROVIDER_DISPUTE"
       || !digest(data.providerEvidenceHash) || data.independentlyApprovedBy !== null) deny();
-  } else {
-    if ((before !== "PROVIDER_REVIEW" && before !== "PROVIDER_DISPUTE")
-      || after !== "PROVIDER_OUTCOME_VERIFIED"
-      || !digest(data.providerEvidenceHash)
-      || !boundedId(data.independentlyApprovedBy, 180)
-      || data.independentlyApprovedBy === data.actorId) deny();
   }
   return data as unknown as ManualCaseTransition;
 }
