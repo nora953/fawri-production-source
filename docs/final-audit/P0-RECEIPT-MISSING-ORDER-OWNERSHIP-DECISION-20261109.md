@@ -1,6 +1,6 @@
 # P0-RECEIPT-OWNERSHIP-POLICY — one bounded business decision
 
-**Decision state:** `OWNER_APPROVAL_REQUIRED`, not approved. **Date:** 2026-11-09. **Gate:** `P0-RECEIPT-OWNERSHIP-POLICY` (OPEN). **Parent:** issue #523; PR #550 draft.
+**Decision state:** `OWNER_APPROVED_POLICY_ONLY` (explicit owner authorization received in Fawri conversation on 2026-11-09); implementation/operations gate remains OPEN. **Date:** 2026-11-09. **Gate:** `P0-RECEIPT-OWNERSHIP-POLICY` (OPEN). **Parent:** issue #523; PR #550 draft.
 
 ## Exact current source boundary
 
@@ -9,7 +9,7 @@
 - `artifacts/api-server/src/services/verifiedReceiptReplayExecution.ts` requires privileged session/device authorization, independently re-authorizes during the financial transaction, and accepts only `applied` or `duplicate`. Existing-order fixture recovery is not proof that arbitrary missing-order financial ownership can be created.
 - Existing accepted durable receipt inbox/immutable first-seen time and idempotence are **not** re-opened. See issue #523's 2026-10-24 reconciliation.
 
-## Recommended narrow product policy — decision REQUIRED
+## Adopted narrow product policy — owner approved 2026-11-09
 
 **`HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH`**
 
@@ -23,7 +23,7 @@ This protects against cross-tenant payment theft and double application, while p
 
 ## Finite closure acceptance — no generic re-audit
 
-**Policy acceptance must be explicit:** the product owner approves this specific choice `HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH` by comment / direct message. A generic instruction to continue work is NOT approval.
+**Policy approval RECEIVED (2026-11-09):** owner explicitly stated: «أوافق رسمياً على سياسة HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH في مشروع فوري، ضمن حدودها المذكورة. واصل تنفيذ متطلبات الإغلاق المتبقية على GitHub دون إعادة الفحوصات المقبولة، ولا تعتبر القسم مغلقاً قبل اكتمال أدلته.» This authorizes only the bounded nonassignment policy, not automatic refunds, permanent retention, hosted SQL, schema grants, broad reassignment or release. Do not treat this as approval of a distinct operational refund/retention/deletion workflow.
 
 After the choice, verify exactly the remaining policy-specific cases on current PR source using targeted original suite:
 - `R-OWN-1` Verified orphan survives retry, remains immutable and unassigned; zero entitlement/application.
@@ -44,7 +44,7 @@ Mapped the five finite closure requirements directly onto **current already-acce
 | R-OWN-4, concurrency/fault/idempotence | `artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs`, lines 175–191; `artifacts/api-server/tests/receipt-execution-operator-pool-postgres.integration.test.mjs`, lines 152–201; `artifacts/api-server/tests/verified-provider-receipt-inbox-postgres.integration.test.mjs`, lines 126–170 | BOUNDED SOURCE EVIDENCE EXISTS |
 | R-OWN-5, missing-original-order manual settlement and incident case owner | No approved official operational owner, refund execution route, case register/access/retention or signed manual settlement procedure exists in the reviewed current source. Must not infer this from an operator replay route or fixture. | **STILL OPEN: policy owner choice plus real operational disposition** |
 
-**Narrow proposed manual case SOP for R-OWN-5, pending approval:**
+**Narrow manual case SOP proposal for R-OWN-5 — operational implementation and approvals still unverified:**
 - Intake only the verified receipt's provider event ID, original payment reference *minimized* as already projected, first-received timestamp, amount/currency, actor and contact/claim case reference in a restricted audit; never save raw credentials, customer payment secrets or a guessed merchant/order.
 - Reconcile independently against original provider ledger and merchant/order history. Require audit of who reviewed, reviewed source reference, decision time, and second independent approval for irreversible settlement. No direct SQL/manual `UPDATE` to the immutable inbox or order ownership.
 - If original order cannot be proved, keep the entitlement/payment unresolved and escalate to a provider-authorized refund or formal dispute mechanism; separate approval is required for any actual refund and retention/disposal.
@@ -54,4 +54,4 @@ Mapped the five finite closure requirements directly onto **current already-acce
 
 The gate changes from `OPEN` to `CLOSED_SOURCE` **only when policy is approved and all R-OWN-1..5 are evidenced or explicitly approved inapplicable**. No percentage increase beforehand. The implementation, source-specific evidence and register change must occur together. No hosted SQL, actual provider refund, production/Neon/Railway write, role/grant change, merge or deployment is approved by this decision.
 
-**Single product-owner choice requested:** Approve `HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH` for unlinked verified payments, with manual provider-side resolution rather than invented ownership? Approval is scoped to this policy only, not P0 launch or retention.
+**Decision resolved:** the owner approved `HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH` on 2026-11-09. **Next measurable blocker:** prove an actual restricted/manual case intake and independently audited escalation/resolution path (`R-OWN-5`) or obtain a separately justified, documented nonapplicability decision. A written SOP alone is not evidence of a functioning intake route. Four other cases remain bounded to already accepted source evidence; do not rerun broad CI. **Gate remains OPEN**, release NO-GO, PR draft. The case workflow has not been implemented or tested by this policy-document-only commit.
