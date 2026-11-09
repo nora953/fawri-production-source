@@ -8,6 +8,7 @@ import {
   FT01_ROLE_RESERVATION_SHA_ENV,
   FT01_INVOKER_PROFILE,
   FT01_CANONICAL_PROFILE,
+  FT01_PINNED_FIRST_COMMERCIAL_SOURCE,
 } from '../../lib/db/scripts/lib/ft01-production-cashier-storage-profile.mjs';
 
 const plan=buildFt01FirstCommercialInvokerReviewPlan();
@@ -21,6 +22,21 @@ const manifest=Object.freeze({
   data_import_requested:false,
   restore_requested:false,
 });
+test('bundled-runtime source pins match source-reviewed migration, four roles and Neon target',()=>{
+ const pins=FT01_PINNED_FIRST_COMMERCIAL_SOURCE;
+ assert.equal(Object.isFrozen(pins),true);
+ assert.equal(pins.projectId,plan.target.project_id);
+ assert.equal(pins.branchId,plan.target.branch_id);
+ assert.equal(pins.database,plan.target.database_name);
+ assert.equal(pins.postgresMajor,plan.target.postgres_major);
+ assert.equal(pins.canonical0052Sha256,plan.canonical_0052_sha256);
+ assert.equal(pins.variant0052Sha256,plan.reviewed_invoker_variant_0052_sha256);
+ assert.equal(pins.fourRoleReservationSha256,plan.four_role_reservation_sql_sha256);
+ assert.equal(plan.approved_to_execute,false);
+ assert.equal(plan.production_startup_profile_adopted,false);
+ assert.equal(plan.commercial_release_authorized,false);
+});
+
 const approvedEnv=()=>({
  [FT01_CASHIER_STORAGE_PROFILE_ENV]:FT01_INVOKER_PROFILE,
  [FT01_INVOKER_0052_SHA_ENV]:plan.reviewed_invoker_variant_0052_sha256,

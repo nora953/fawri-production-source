@@ -4,6 +4,15 @@ export const FT01_INVOKER_0052_SHA_ENV:"FAWRI_FT01_REVIEWED_INVOKER_0052_SHA256"
 export const FT01_ROLE_RESERVATION_SHA_ENV:"FAWRI_FT01_REVIEWED_FOUR_ROLE_SQL_SHA256";
 export const FT01_INVOKER_PROFILE:"first-commercial-invoker-v1";
 export const FT01_CANONICAL_PROFILE:"canonical-owner-v1";
+export const FT01_PINNED_FIRST_COMMERCIAL_SOURCE:Readonly<{
+  projectId:"crimson-cherry-65705041";
+  branchId:"br-holy-waterfall-b993zglb";
+  database:"fawri";
+  postgresMajor:18;
+  canonical0052Sha256:string;
+  variant0052Sha256:string;
+  fourRoleReservationSha256:string;
+}>;
 export type Ft01CashierStorageProfile=Readonly<
   | {mode:"canonical";explicitOptIn:false}
   | {
