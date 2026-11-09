@@ -1308,6 +1308,69 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       .map(({ outbox_id: _id, ...envelope }) => envelope);
   }
 
+  /**
+   * An operator receipt ACK authorizes deletion of precisely the envelopes
+   * sent to the server, not every row sharing a mutable operation ID.
+   *
+   * Read and delete in one IndexedDB readwrite transaction so a restore,
+   * concurrent write or previously unseen inventory movement cannot be
+   * silently discarded after the network ACK. Failure leaves all rows held.
+   */
+  async acknowledgeSyncedExact(
+    operationId: string,
+    expectedEnvelopes: CashierSyncEnvelope[],
+  ): Promise<void> {
+    const normalizedId = String(operationId || '').trim();
+    if (!normalizedId || normalizedId !== operationId ||
+        !Array.isArray(expectedEnvelopes) || expectedEnvelopes.length === 0) {
+      throw new CashierIndexedDbError(
+        'CASHIER_LOCAL_ACK_EVIDENCE_MISMATCH',
+        'Original cashier operation evidence is missing or invalid',
+      );
+    }
+    const expected = new Map<string, string>();
+    for (const envelope of expectedEnvelopes) {
+      if (!envelope || envelope.operation_id !== normalizedId ||
+          !String(envelope.entity_id || '').trim()) {
+        throw new CashierIndexedDbError(
+          'CASHIER_LOCAL_ACK_EVIDENCE_MISMATCH',
+          'Original cashier operation evidence has conflicting identity',
+        );
+      }
+      const key = outboxId(envelope.operation_id, envelope.entity_type, envelope.entity_id);
+      if (expected.has(key)) {
+        throw new CashierIndexedDbError(
+          'CASHIER_LOCAL_ACK_EVIDENCE_MISMATCH',
+          'Original cashier operation evidence contains duplicate entities',
+        );
+      }
+      expected.set(key, JSON.stringify(envelope));
+    }
+
+    const database = await this.databasePromise;
+    const transaction = database.transaction(STORE_OUTBOX, 'readwrite');
+    const completion = writeTransactionDone(transaction);
+    const outbox = transaction.objectStore(STORE_OUTBOX);
+    try {
+      const current = (await requestResult(
+        outbox.index('operation_id').getAll(normalizedId),
+      )) as OutboxRecord[];
+      if (current.length !== expected.size ||
+          current.some(({ outbox_id, ...envelope }) =>
+            expected.get(outbox_id) !== JSON.stringify(envelope))) {
+        throw new CashierIndexedDbError(
+          'CASHIER_LOCAL_ACK_EVIDENCE_MISMATCH',
+          'Local cashier outbox changed after the server accepted the operation',
+        );
+      }
+      for (const envelope of current) outbox.delete(envelope.outbox_id);
+      await completion;
+    } catch (error) {
+      await abortAndDrain(transaction, completion);
+      throw error;
+    }
+  }
+
   async acknowledgeSynced(operationIds: string[]): Promise<void> {
     const ids = [...new Set(operationIds.map(value => String(value || '').trim()))]
       .filter(Boolean);
