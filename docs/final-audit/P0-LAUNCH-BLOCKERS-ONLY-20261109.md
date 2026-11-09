@@ -16,7 +16,7 @@ This file supersedes **audit-work sequencing only**, not canonical authorization
 | 6 | CASHIER-SYNC-SEQUENCE-001 | OPEN, cashier financial protocol | SEQ-R1/R2/R3: preserve unsupported v2 fence; decide v2 movement-only compatibility and independent reviewed device provenance, then targeted ordered replay/restore/negative acceptance. No assumed counter reset |
 | 7 | P0-OFFLINE-DEVICE-ACCEPTANCE | OPEN, physical acceptance | Real device/profile/7-day-expiry and power-loss/restore cases. Native local tests are not physical evidence |
 | 8 | P0-OFFLINE-KEY-RELEASE | BLOCKED, key provider | Approved production key ID/public-key/release manifest and rotation + offline grant/rollback, no generated fixture keys |
-| 9 | P0-RECEIPT-OWNERSHIP-POLICY | OPEN, product/authorization decision | Define original receipt owner and reviewer-assisted exception flow with immutable provenance and anti-replay; approve before repair actions |
+| 9 | P0-RECEIPT-OWNERSHIP-POLICY | OPEN, owner nonassignment policy APPROVED 2026-11-09; R-OWN-5 operations outstanding | Reuse accepted R-OWN-1..4 receipt/replay source evidence. Prove restricted manual-case intake, independent audit, provider-side escalation and controlled resolution without any guessed order reassignment; no automatic refund/retention grant. Record implementation evidence before closure |
 | 10 | P0-RETENTION-PRIVILEGED-DELETION-POLICY | OPEN, data-governance decision | Class-by-class purpose/retention/hold/deletion-reader matrix and tests. Do not truncate financial/legal evidence merely to produce a green status |
 | 11 | P0-HOSTED-PROVIDER-PAYMENT | BLOCKED, commercial gateway | Supported real subscription provider/account and bounded signed webhook, idempotence and settlement reconciliation; sandbox does not count |
 | 12 | P0-HOSTED-PROVIDER-META | BLOCKED, Meta/KMS | Approved Meta app, KMS trust, real OAuth/webhook subscriptions and one bounded negative/positive live test, within 24-hour/compliance rules |
@@ -77,3 +77,10 @@ This file supersedes **audit-work sequencing only**, not canonical authorization
 ## Stop criteria
 
 No release traffic, hosted DB mutations, old-Neon migration/import, Railway deployment, PR merge or secrets exposure on the authority of this file. For each gate, the only valid status update is an exact source+CI/SQL/HTTP/provider evidence record and an explicit scoped release decision. **FIELD002 OPEN, PR #550 DRAFT, launch NO-GO**.
+
+
+## Receipt missing-order owner decision checkpoint — 2026-11-09
+
+- The product owner **explicitly approved** `HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH` (bounded nonassignment/hold and provider-side manual handling), recorded in [decision document](./P0-RECEIPT-MISSING-ORDER-OWNERSHIP-DECISION-20261109.md) at policy commit [`a0e6e61a`](https://github.com/nora953/fawri-production-source/commit/a0e6e61a30cd96c6bbe390c9d4fc400fc1b11a4e).
+- `R-OWN-1..4` have previously accepted bounded SQL/HTTP source evidence; no blanket CI rerun authorized or needed for a docs-only owner approval. `R-OWN-5` remains OPEN because a verifiable restricted case-intake/independent audit/provider escalation workflow has not been accepted. The policy does **not** approve execution of refunds, broad mapping updates, data disposal, permanent retention, hosted credentials, staging/production writes or release.
+- Do not advance the source count (29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED) or the historical 64.4%-of-known-gates figure until real R-OWN-5 evidence and closure register update exist. Overall P0% remains uncertified and release NO-GO.
