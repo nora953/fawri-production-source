@@ -798,7 +798,29 @@ async function postOperation(
   };
 }
 
+// Auto-sync and manual "Sync now" run in the same app module. Prevent two
+// drain loops from racing the same IndexedDB outbox and device timeline.
+// This is per JavaScript app instance only; it does not attest cross-tab locks
+// or replace the server's authoritative sequencing/replay constraints.
+let operatorOutboxSyncInProgress = false;
+
 export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperatorOutboxSyncResult> {
+  if (operatorOutboxSyncInProgress) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_SYNC_IN_PROGRESS',
+      'A cashier outbox synchronization is already in progress',
+      409,
+    );
+  }
+  operatorOutboxSyncInProgress = true;
+  try {
+    return await performCashierOperatorOutboxSync();
+  } finally {
+    operatorOutboxSyncInProgress = false;
+  }
+}
+
+async function performCashierOperatorOutboxSync(): Promise<CashierOperatorOutboxSyncResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     throw new CashierOperatorCloudSyncError(
       'CASHIER_OPERATOR_OUTBOX_OFFLINE',
