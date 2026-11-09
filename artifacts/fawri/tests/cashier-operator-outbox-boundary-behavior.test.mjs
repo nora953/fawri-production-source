@@ -110,3 +110,63 @@ test('operator blocks corrupted multi-primary groups before network and leaves h
   const upload=source.indexOf('const uploadedResult = await postOperation(',preflight);
   assert.ok(preflight>=0 && rejectAt>preflight && upload>rejectAt);
 });
+
+function actualOperatorDrainWrapper(core) {
+  const start=source.indexOf('let operatorOutboxSyncInProgress = false;');
+  const end=source.indexOf('async function performCashierOperatorOutboxSync(',start);
+  assert.ok(start>=0 && end>start,'same-app-instance cashier serialization guard is present');
+  const block=source.slice(start,end).replace('export async function','async function');
+  const javascript=ts.transpileModule(block,{
+    compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}
+  }).outputText;
+  return new Function('performCashierOperatorOutboxSync','CashierOperatorCloudSyncError',
+    javascript+';return syncCashierOperatorOutboxToCloud;')(core,OperatorSyncError);
+}
+
+test('manual and automatic operator outbox drains cannot run in parallel in one app instance',async()=>{
+  let settle;let runs=0;
+  const sync=actualOperatorDrainWrapper(async()=>{
+    runs++;
+    return new Promise(resolve=>{settle=resolve;});
+  });
+  const first=sync();
+  assert.equal(runs,1);
+  await assert.rejects(sync(),error=>
+    error instanceof OperatorSyncError &&
+    error.code==='CASHIER_OPERATOR_SYNC_IN_PROGRESS' && error.status===409);
+  assert.equal(runs,1,'rejected contender must not open IndexedDB or call provider');
+  const answer={pending_before:1,pending_after:0,acknowledged_operations:1};
+  settle(answer);
+  assert.deepEqual(await first,answer);
+  const second=sync();
+  assert.equal(runs,2,'after final ACK the mutex must release');
+  settle(answer);
+  assert.deepEqual(await second,answer);
+});
+
+test('operator sync lock releases on failure and never silently reports success',async()=>{
+  let count=0;const bad=new OperatorSyncError('CASHIER_OPERATOR_ACK_INVALID','invalid ack',409);
+  const sync=actualOperatorDrainWrapper(async()=>{
+    count++;
+    if(count===1) throw bad;
+    return {pending_before:1,pending_after:1,acknowledged_operations:0};
+  });
+  await assert.rejects(sync(),error=>error===bad);
+  assert.deepEqual(await sync(),{
+    pending_before:1,pending_after:1,acknowledged_operations:0,
+  });
+  assert.equal(count,2);
+});
+
+test('manual and auto entrypoints interpret same-process in-progress drain without false retry success',async()=>{
+  const [automatic,manual]=await Promise.all([
+    readFile(new URL('../src/cashierMain.tsx',import.meta.url),'utf8'),
+    readFile(new URL('../src/pages/CashierCatalogSyncPage.tsx',import.meta.url),'utf8'),
+  ]);
+  assert.match(automatic,/syncErrorCode\(cause\) === 'CASHIER_OPERATOR_SYNC_IN_PROGRESS'/);
+  assert.match(automatic,/nextOutboxAttemptAt = Date\.now\(\) \+ AUTO_SYNC_RETRY_BACKOFF_MS/);
+  assert.match(manual,/cause\.code === 'CASHIER_OPERATOR_SYNC_IN_PROGRESS'/);
+  assert.match(manual,/setError\(labels\.wait\)/);
+  assert.match(source,/return await performCashierOperatorOutboxSync\(\)/);
+  assert.match(source,/finally \{\s*operatorOutboxSyncInProgress = false;/);
+});
