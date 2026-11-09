@@ -615,6 +615,24 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         'A failed payment must not be committed as a completed cashier sale',
       );
     }
+    // TypeScript unions are not runtime validation: a restored/untyped caller
+    // must never persist an unknown payment method or state into the immutable
+    // outbox, consuming a sequence that the trusted server cannot reconcile.
+    if (input.payment_status !== 'paid' && input.payment_status !== 'pending') {
+      throw new CashierIndexedDbError(
+        'CASHIER_PAYMENT_STATUS_INVALID',
+        'Cashier payment status must be paid or pending',
+      );
+    }
+    if (input.payment_method !== 'cash' &&
+        input.payment_method !== 'card' &&
+        input.payment_method !== 'electronic' &&
+        input.payment_method !== 'other') {
+      throw new CashierIndexedDbError(
+        'CASHIER_PAYMENT_METHOD_INVALID',
+        'Cashier payment method is unsupported',
+      );
+    }
     for (const line of input.lines) {
       if (!isPositiveSafeInteger(line.quantity)) {
         throw new CashierIndexedDbError(
