@@ -19,6 +19,7 @@ export const OPERATOR_DATABASE_CAPABILITIES = {
   receiptManualCaseEscalation: "public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text,text,text)",
   receiptManualCaseList: "public.fawri_list_verified_receipt_manual_cases(text,text,text,integer,timestamptz,text,text,text)",
   receiptManualCaseHistory: "public.fawri_read_verified_receipt_manual_case_history(text,text,text,text,integer,bigint,text,text)",
+  receiptDisputeSecondReview: "public.fawri_acknowledge_receipt_dispute_second_review(text,text,text,text,text,text)",
 } as const;
 type OwnedPool = OperationalDatabasePool & { end(): Promise<void> };
 
