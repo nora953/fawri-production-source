@@ -698,6 +698,11 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       const rawRecords = (await Promise.all(recordRequests)) as Array<
         CatalogRecord | undefined
       >;
+      // IndexedDB returns a separate clone for each get(), even when two
+      // sale lines reference the same SKU. Validate the TOTAL requested
+      // quantity per catalog key before writing anything. Checking each line
+      // against the same starting stock permits overselling duplicated lines.
+      const stockRequirements = new Map<string, number>();
       const records = rawRecords.map((record, index) => {
         if (!record) {
           throw new CashierIndexedDbError(
@@ -714,12 +719,22 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
               'Local stock projection is corrupt',
             );
           }
-          if (currentStock < input.lines[index].quantity) {
+          const key = catalogKey(record.product_id, record.variant_id);
+          const totalRequested = (stockRequirements.get(key) || 0) +
+            input.lines[index].quantity;
+          if (!isPositiveSafeInteger(totalRequested)) {
+            throw new CashierIndexedDbError(
+              'CASHIER_SALE_QUANTITY_INVALID',
+              'Combined sale quantity for one stock item exceeds safe integer limits',
+            );
+          }
+          if (currentStock < totalRequested) {
             throw new CashierIndexedDbError(
               'CASHIER_OUT_OF_STOCK',
               'Insufficient local stock for this sale',
             );
           }
+          stockRequirements.set(key, totalRequested);
         }
         return record;
       });
@@ -857,14 +872,29 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       const deviceSequence = await nextDeviceSequence(meta);
       const occurredAt = pricing.priced_at;
       const inventoryMovements: CashierInventoryMovement[] = [];
+      const stockKeysUpdated = new Set<string>();
 
       for (const [index, record] of records.entries()) {
         const inputLine = input.lines[index];
         if (!record.track_inventory) continue;
-        const currentStock = Number(record.stock_quantity);
-        record.stock_quantity = currentStock - inputLine.quantity;
-        record.local_updated_at = occurredAt;
-        catalog.put(record);
+        const key = catalogKey(record.product_id, record.variant_id);
+        // Persist each distinct SKU once, with the aggregate deduction.
+        // Still generate the individual immutable movement per sale line.
+        if (!stockKeysUpdated.has(key)) {
+          const requested = stockRequirements.get(key);
+          if (!requested) {
+            throw new CashierIndexedDbError(
+              'CASHIER_LOCAL_STOCK_CORRUPT',
+              'Sale inventory allocation is incomplete',
+            );
+          }
+          catalog.put({
+            ...record,
+            stock_quantity: Number(record.stock_quantity) - requested,
+            local_updated_at: occurredAt,
+          });
+          stockKeysUpdated.add(key);
+        }
 
         const movement: CashierInventoryMovement = {
           movement_id: movementId(operationId, index),
