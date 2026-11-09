@@ -111,7 +111,7 @@ test('operator blocks corrupted multi-primary groups before network and leaves h
   assert.ok(preflight>=0 && rejectAt>preflight && upload>rejectAt);
 });
 
-function actualOperatorDrainWrapper(core) {
+function actualOperatorDrainWrapper(core, browserNavigator = undefined) {
   const start=source.indexOf('let operatorOutboxSyncInProgress = false;');
   const end=source.indexOf('async function performCashierOperatorOutboxSync(',start);
   assert.ok(start>=0 && end>start,'same-app-instance cashier serialization guard is present');
@@ -119,8 +119,8 @@ function actualOperatorDrainWrapper(core) {
   const javascript=ts.transpileModule(block,{
     compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}
   }).outputText;
-  return new Function('performCashierOperatorOutboxSync','CashierOperatorCloudSyncError',
-    javascript+';return syncCashierOperatorOutboxToCloud;')(core,OperatorSyncError);
+  return new Function('performCashierOperatorOutboxSync','CashierOperatorCloudSyncError','navigator',
+    javascript+';return syncCashierOperatorOutboxToCloud;')(core,OperatorSyncError,browserNavigator);
 }
 
 test('manual and automatic operator outbox drains cannot run in parallel in one app instance',async()=>{
@@ -169,4 +169,54 @@ test('manual and auto entrypoints interpret same-process in-progress drain witho
   assert.match(manual,/setError\(labels\.wait\)/);
   assert.match(source,/return await performCashierOperatorOutboxSync\(\)/);
   assert.match(source,/finally \{\s*operatorOutboxSyncInProgress = false;/);
+});
+
+test('two independent cashier tabs cannot both drain the same origin while Web Lock is held',async()=>{
+  let busy=false;
+  const granted=[];
+  const navigatorWithLocks={locks:{request:async(name,options,handler)=>{
+    assert.equal(name,'fawri:cashier-operator-outbox:v1');
+    assert.deepEqual(options,{mode:'exclusive',ifAvailable:true});
+    granted.push(!busy);
+    if(busy) return handler(null);
+    busy=true;
+    try{return await handler({name});}finally{busy=false;}
+  }}};
+  let releaseFirst;let firstCalls=0;let secondCalls=0;
+  const firstTab=actualOperatorDrainWrapper(async()=>{
+    firstCalls++;
+    return new Promise(resolve=>releaseFirst=resolve);
+  },navigatorWithLocks);
+  const secondTab=actualOperatorDrainWrapper(async()=>{
+    secondCalls++;
+    return {pending_before:0,pending_after:0};
+  },navigatorWithLocks);
+  const first=firstTab();
+  assert.equal(firstCalls,1);
+  await assert.rejects(secondTab(),e=>
+    e instanceof OperatorSyncError && e.code==='CASHIER_OPERATOR_SYNC_IN_PROGRESS' &&
+    e.status===409);
+  assert.equal(secondCalls,0,'second tab must not access the outbox while first owns lock');
+  releaseFirst({pending_before:1,pending_after:0});
+  assert.deepEqual(await first,{pending_before:1,pending_after:0});
+  assert.deepEqual(await secondTab(),{pending_before:0,pending_after:0});
+  assert.equal(secondCalls,1);
+  assert.deepEqual(granted,[true,false,true]);
+});
+
+test('browser lock infrastructure errors fail closed and release the same-app guard',async()=>{
+  let denied=true;let calls=0;
+  const nav={locks:{request:async(_name,_options,fn)=>{
+    if(denied)throw new Error('browser lock access denied');
+    return fn({name:'fawri:cashier-operator-outbox:v1'});
+  }}};
+  const sync=actualOperatorDrainWrapper(async()=>{
+    calls++;
+    return {pending_before:0,pending_after:0};
+  },nav);
+  await assert.rejects(sync(),/browser lock access denied/);
+  assert.equal(calls,0);
+  denied=false;
+  assert.deepEqual(await sync(),{pending_before:0,pending_after:0});
+  assert.equal(calls,1);
 });
