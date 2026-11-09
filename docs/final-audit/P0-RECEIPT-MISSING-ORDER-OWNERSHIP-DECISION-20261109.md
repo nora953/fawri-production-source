@@ -32,6 +32,26 @@ After the choice, verify exactly the remaining policy-specific cases on current 
 - `R-OWN-4` Duplicate, concurrency, lost-ACK and SQL fault preserve first verified receipt and never apply twice; reuse previously accepted evidence, do not regenerate generic cases.
 - `R-OWN-5` Manual-resolution case cannot directly mutate order ownership and has a documented escalation path. If case intake is not implemented, document precisely that missing operation rather than falsely closing the gate.
 
+## Evidence reuse completed now — no duplicate tests
+
+Mapped the five finite closure requirements directly onto **current already-accepted integration source**, rather than starting another 60-workflow audit. These are *bounded scenario matches*, not a blanket gate clearance:
+
+| Case | Exact existing source evidence | Status |
+|---|---|---|
+| R-OWN-1, verified orphan held with no guessed tenant | `artifacts/api-server/tests/verified-provider-receipt-inbox-postgres.integration.test.mjs`, lines 39 and 126–170 (orphan survives concurrent redelivery, entitlement zero before restored existing order, replay once, first-received time preserved) | BOUNDED SOURCE EVIDENCE EXISTS |
+| R-OWN-2, arbitrary reassignment, foreign, mismatched provider, no side effects | `artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs`, lines 139–173 and 207–212 (body injection denied, unassigned receipt 409 and provider not called, mapping-change denial); `artifacts/api-server/tests/verified-receipt-replay-review-http-postgres.integration.test.mjs`, lines 128–164 (mismatched order, cross-authority ambiguity, provider differences) | BOUNDED SOURCE EVIDENCE EXISTS; full production reassignment remains unsupported |
+| R-OWN-3, reviewed existing-order replay | `artifacts/api-server/tests/verified-receipt-replay-review-http-postgres.integration.test.mjs`, lines 134–139, 149–154; `artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs`, lines 175–181 (real HTTP actor, provider reconfirmation, durable review/execution audit, once-only) | BOUNDED SOURCE EVIDENCE EXISTS |
+| R-OWN-4, concurrency/fault/idempotence | `artifacts/api-server/tests/verified-receipt-replay-execution-http-postgres.integration.test.mjs`, lines 175–191; `artifacts/api-server/tests/receipt-execution-operator-pool-postgres.integration.test.mjs`, lines 152–201; `artifacts/api-server/tests/verified-provider-receipt-inbox-postgres.integration.test.mjs`, lines 126–170 | BOUNDED SOURCE EVIDENCE EXISTS |
+| R-OWN-5, missing-original-order manual settlement and incident case owner | No approved official operational owner, refund execution route, case register/access/retention or signed manual settlement procedure exists in the reviewed current source. Must not infer this from an operator replay route or fixture. | **STILL OPEN: policy owner choice plus real operational disposition** |
+
+**Narrow proposed manual case SOP for R-OWN-5, pending approval:**
+- Intake only the verified receipt's provider event ID, original payment reference *minimized* as already projected, first-received timestamp, amount/currency, actor and contact/claim case reference in a restricted audit; never save raw credentials, customer payment secrets or a guessed merchant/order.
+- Reconcile independently against original provider ledger and merchant/order history. Require audit of who reviewed, reviewed source reference, decision time, and second independent approval for irreversible settlement. No direct SQL/manual `UPDATE` to the immutable inbox or order ownership.
+- If original order cannot be proved, keep the entitlement/payment unresolved and escalate to a provider-authorized refund or formal dispute mechanism; separate approval is required for any actual refund and retention/disposal.
+- Close a manual case only on a provider-confirmed outcome plus independent audit evidence. If no safe mechanism exists, keep the case `UNRESOLVED_HOLD`; no automatic expiry or financial gain.
+
+**What approval unlocks:** formal adoption of this *non-assignment* policy and a bounded verification of the remaining manual case channel. It does not authorize auto refunds, unrestricted retention, broad database grants or hosted migration. Until real R-OWN-5 operational evidence is available, the P0 parent gate remains OPEN even after choosing the policy.
+
 The gate changes from `OPEN` to `CLOSED_SOURCE` **only when policy is approved and all R-OWN-1..5 are evidenced or explicitly approved inapplicable**. No percentage increase beforehand. The implementation, source-specific evidence and register change must occur together. No hosted SQL, actual provider refund, production/Neon/Railway write, role/grant change, merge or deployment is approved by this decision.
 
 **Single product-owner choice requested:** Approve `HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH` for unlinked verified payments, with manual provider-side resolution rather than invented ownership? Approval is scoped to this policy only, not P0 launch or retention.
