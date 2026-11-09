@@ -63,7 +63,7 @@ function audit(prefix: string, input: unknown) {
   return {id,hash};
 }
 function validState(value: unknown): value is string {
-  return value==="UNRESOLVED_HOLD" || value==="PROVIDER_REVIEW" || value==="PROVIDER_DISPUTE";
+  return value==="UNRESOLVED_HOLD" || value==="PROVIDER_REVIEW" || value==="PROVIDER_DISPUTE" || value==="PROVIDER_DISPUTE_REVIEWED";
 }
 
 /** Explicit operator read capability: no raw receipt/provider credentials, no direct SELECT grant. */
@@ -124,7 +124,7 @@ export async function readVerifiedReceiptManualCaseHistory(
     for(const item of rows) {
       const n=String(item.event_sequence);
       if(!/^[1-9][0-9]{0,18}$/.test(n) || !validState(item.case_state) ||
-         !["OPEN_HOLD","ESCALATE_TO_PROVIDER","RECORD_PROVIDER_DISPUTE"].includes(item.event_action) ||
+         !["OPEN_HOLD","ESCALATE_TO_PROVIDER","RECORD_PROVIDER_DISPUTE","ACKNOWLEDGE_DISPUTE_SECOND_REVIEW"].includes(item.event_action) ||
          !isoMicroseconds(item.recorded_at) ||
          typeof item.actor_id!=="string" ||
          (item.provider_evidence_hash!==null && !/^[a-f0-9]{64}$/.test(item.provider_evidence_hash))) {
