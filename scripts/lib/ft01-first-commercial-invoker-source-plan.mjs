@@ -29,6 +29,19 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const SOURCE_PATH = "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql";
 const SOURCE_TAG = "0052_cashier_stream_receipt_storage";
 const ROLE_RESERVATION_PATH = "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-FOUR-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql";
+const REVIEWED_CASHIER_GRANTS_PATH = "lib/db/first-commercial/held/0052_cashier_retirement_issuer_grants.sql";
+export const FT01_EXPECTED_RESTRICTED_CASHIER_GRANTS_SQL = [
+  "-- FT-01 HELD: restricted cashier retirement grants for FIRST-COMMERCIAL review ONLY.",
+  "-- Not a migration and NOT approved for hosted execution by this file.",
+  "GRANT USAGE ON SCHEMA public TO fawri_auth_issuer, fawri_restricted_runtime;",
+  "GRANT USAGE ON SCHEMA fawri_security TO fawri_auth_issuer, fawri_restricted_runtime;",
+  "GRANT EXECUTE ON FUNCTION fawri_security.allows_merchant(text) TO fawri_auth_issuer, fawri_restricted_runtime;",
+  "GRANT SELECT, UPDATE(retention_status, status) ON public.merchants TO fawri_auth_issuer, fawri_restricted_runtime;",
+  "GRANT SELECT ON public.cashier_device_streams TO fawri_auth_issuer, fawri_restricted_runtime;",
+  "GRANT UPDATE(state, device_id, version) ON public.cashier_device_streams TO fawri_auth_issuer;",
+  "GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime() TO fawri_auth_issuer;",
+  "GRANT fawri_cashier_retirement_writer TO fawri_auth_issuer WITH SET FALSE, INHERIT TRUE;",
+].join("\n") + "\n";
 const REVIEWED_INVOCER_SQL_PATH = "lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql";
 
 const sha256 = source => createHash("sha256").update(source, "utf8").digest("hex");
@@ -62,6 +75,9 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
   // not a dynamically rewritten copy of canonical 0052 at deploy time.
   // Preserve the canonical journal/stage; never silently substitute this
   // candidate in the existing production migration directory.
+  const retirementGrants = readFile(REVIEWED_CASHIER_GRANTS_PATH);
+  assert.equal(retirementGrants, FT01_EXPECTED_RESTRICTED_CASHIER_GRANTS_SQL,
+    "FT01_HELD_RESTRICTED_GRANT_SOURCE_DRIFT");
   const variant = readFile(REVIEWED_INVOCER_SQL_PATH);
   const expectedVariant = disposableInvokerVariant(readFile(SOURCE_PATH));
   assert.equal(variant, expectedVariant, "FT01_HELD_COMMITTED_0052_SOURCE_DRIFT");
@@ -88,6 +104,8 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
     reviewed_invoker_variant_0052_sha256: variantSha256,
     reviewed_invoker_function_body_sha256: INVOKER_MERCHANT_DELETION_SHA256,
     four_role_reservation_sql_sha256: sha256(reservationSql),
+    reviewed_retirement_grants_sql_sha256: sha256(retirementGrants),
+    held_retirement_grants_source_path: REVIEWED_CASHIER_GRANTS_PATH,
     canonical_journal_sha256: historical.migration_journal_sha256,
     source_manifest_sha256: historical.source_manifest_sha256,
     snapshot_0052_sha256: historical.snapshot_0052_sha256,

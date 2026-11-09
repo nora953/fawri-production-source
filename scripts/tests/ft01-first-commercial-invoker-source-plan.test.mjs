@@ -42,6 +42,7 @@ test("FT01 0052 first-commercial variant is pinned source-only, never authorized
   assert.notEqual(plan.reviewed_invoker_variant_0052_sha256,plan.canonical_0052_sha256);
   for(const key of ["canonical_0052_sha256","reviewed_invoker_variant_0052_sha256",
      "reviewed_invoker_function_body_sha256","four_role_reservation_sql_sha256",
+     "reviewed_retirement_grants_sql_sha256",
      "canonical_journal_sha256","source_manifest_sha256",
      "snapshot_0052_sha256","stage_0052_sha256"])
     assert.match(plan[key],/^[0-9a-f]{64}$/,key);
@@ -95,4 +96,21 @@ test("FT01 held first-commercial 0052 file is immutable and not silently reconst
   )}), /FT01_HELD_COMMITTED_0052_SOURCE_DRIFT/);
   assert.throws(() => variant({[source]: ""}),
     /FT01_HELD_COMMITTED_0052_SOURCE_DRIFT/);
+});
+
+test("FT01 committed HELD cashier issuer grants deny ANY privilege expansion", () => {
+  const file = "lib/db/first-commercial/held/0052_cashier_retirement_issuer_grants.sql";
+  const actual = readFile(file);
+  const review = variant({});
+  assert.equal(review.held_retirement_grants_source_path,file);
+  assert.match(review.reviewed_retirement_grants_sql_sha256,/^[0-9a-f]{64}$/);
+  for(const altered of [
+    actual+"\nGRANT ALL ON public.cashier_device_streams TO fawri_operator_issuer;\n",
+    actual.replace("GRANT UPDATE(state, device_id, version)",
+      "GRANT UPDATE(state, device_id, version, last_sequence)"),
+    actual.replace("WITH SET FALSE, INHERIT TRUE",
+      "WITH SET TRUE, INHERIT TRUE"),
+    "",
+  ])assert.throws(()=>variant({[file]:altered}),
+    /FT01_HELD_RESTRICTED_GRANT_SOURCE_DRIFT/);
 });
