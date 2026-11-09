@@ -28,6 +28,7 @@ const caseId='receipt-case-'+randomUUID();
 const paymentId='payment-'+randomUUID();
 const eventId='receipt-'+randomUUID();
 const testHash='a'.repeat(64);
+let sessionId,deviceHash;
 let connected=false;
 async function sqlstate(promise,code) {
   await assert.rejects(promise,e=>e?.code===code, 'expected SQLSTATE '+code);
@@ -52,8 +53,8 @@ try {
     ORDER BY relname`)).rows;
   assert.equal(classes.length,2);
   assert.ok(classes.every(c=>c.relrowsecurity));
-  for(const fn of ['public.fawri_open_unmatched_verified_receipt_case(text,text,text)',
-                   'public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text)']) {
+  for(const fn of ['public.fawri_open_unmatched_verified_receipt_case(text,text,text,text,text)',
+                   'public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text,text,text)']) {
     assert.equal((await admin.query(`SELECT EXISTS(SELECT 1 FROM pg_proc p, LATERAL aclexplode(p.proacl) acl WHERE p.oid=$1::regprocedure AND acl.grantee=0 AND acl.privilege_type='EXECUTE') AS allowed`,[fn])).rows[0].allowed,false);
   }
   await admin.query(`CREATE ROLE ${caseRole} LOGIN PASSWORD '${password}' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION`);
@@ -67,6 +68,21 @@ try {
     strangerId,'+1991'+String(Math.floor(Math.random()*100000000)).padStart(8,'0')]);
   await admin.query(`INSERT INTO public.admin_profiles(id,account_id,display_name,role,enabled,must_change_password)
     VALUES($1,$1,'Synthetic','owner_admin',true,false)`,[actorId]);
+  Object.assign(process.env,{
+    FAWRI_OPERATIONAL_POSTGRES_AUTHORITY:'required',
+    FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY:'required',
+    FAWRI_AUTH_SECURITY_SECRET:'synthetic-manual-case-security-secret-at-least-32-chars',
+    FAWRI_PASSWORD_SALT:'synthetic-manual-case-password-salt-at-least-32-chars'
+  });
+  const {registerAdminDeviceAuthoritative,setAdminDeviceTrustAuthoritative} = await import('../../artifacts/api-server/src/services/postgresAdminSecurityAuthority.ts');
+  const {authPostgresSessionAuthority} = await import('../../artifacts/api-server/src/services/authPostgresSessionAuthority.ts');
+  const deviceId = 'case-device-'+randomUUID();
+  const device = await registerAdminDeviceAuthoritative({accountId:actorId,accountKind:'admin',deviceId,deviceLabel:'Synthetic CI'});
+  const trust = await setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:actorId});
+  assert.equal(trust.status,'trusted');
+  deviceHash=device.device_hash;
+  const issued = await authPostgresSessionAuthority.issueSession({accountId:actorId,accountKind:'admin',tenantId:actorId,deviceId,deviceLabel:'Synthetic CI',adminRole:'owner_admin',permissions:['manage_subscriptions']});
+  sessionId=issued.session.id;
   await admin.query(`INSERT INTO public.verified_provider_payment_receipts
     (provider,provider_event_id,payment_ref,request_ref,event_type,amount_iqd,payload_hash,first_received_at)
     VALUES('superqi_sandbox',$1,$2,$3,'payment_succeeded',49000,$4,clock_timestamp())`,[
@@ -77,26 +93,28 @@ try {
   assert.deepEqual(runtime,{login:caseRole,active:caseRole});
   await sqlstate(operator.query('SELECT * FROM public.verified_receipt_manual_cases'),'42501');
   await sqlstate(operator.query('INSERT INTO public.verified_receipt_manual_cases(id,provider_event_id,opened_by) VALUES($1,$2,$3)',[caseId,eventId,actorId]),'42501');
-  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3)',[actorId,caseId,eventId]),'42501');
-  await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_open_unmatched_verified_receipt_case(text,text,text) TO ${caseRole}`);
-  await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text) TO ${caseRole}`);
-  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3)',[strangerId,caseId,eventId]),'42501');
-  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3)',[actorId,caseId,'absent-receipt']),'23514');
-  const open=(await operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3)',[actorId,caseId,eventId])).rows;
+  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,eventId]),'42501');
+  await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_open_unmatched_verified_receipt_case(text,text,text,text,text) TO ${caseRole}`);
+  await admin.query(`GRANT EXECUTE ON FUNCTION public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text,text,text) TO ${caseRole}`);
+  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[strangerId,sessionId,deviceHash,caseId,eventId]),'42501');
+  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,'absent-receipt']),'23514');
+  const open=(await operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,eventId])).rows;
   assert.deepEqual(open,[{case_id:caseId,receipt_event_id:eventId,case_state:'UNRESOLVED_HOLD',applied:false}]);
-  assert.deepEqual((await operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3)',[actorId,caseId,eventId])).rows,open);
-  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3)',[actorId,'different-case',eventId]),'23505');
-  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5)',[actorId,caseId,'RECORD_PROVIDER_DISPUTE','bad-order',testHash]),'23514');
-  const forward=(await operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5) AS state',[actorId,caseId,'ESCALATE_TO_PROVIDER','escalate-'+randomUUID(),null])).rows[0];
+  assert.deepEqual((await operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,caseId,eventId])).rows,open);
+  await sqlstate(operator.query('SELECT * FROM public.fawri_open_unmatched_verified_receipt_case($1,$2,$3,$4,$5)',[actorId,sessionId,deviceHash,'different-case',eventId]),'23505');
+  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'RECORD_PROVIDER_DISPUTE','bad-order',testHash]),'23514');
+  const forward=(await operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7) AS state',[actorId,sessionId,deviceHash,caseId,'ESCALATE_TO_PROVIDER','escalate-'+randomUUID(),null])).rows[0];
   assert.equal(forward.state,'PROVIDER_REVIEW');
-  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5)',[actorId,caseId,'ESCALATE_TO_PROVIDER','second-'+randomUUID(),null]),'23514');
-  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5)',[actorId,caseId,'RECORD_PROVIDER_DISPUTE','bad-'+randomUUID(),null]),'23514');
-  const dispute=(await operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5) AS state',[actorId,caseId,'RECORD_PROVIDER_DISPUTE','dispute-'+randomUUID(),testHash])).rows[0];
+  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'ESCALATE_TO_PROVIDER','second-'+randomUUID(),null]),'23514');
+  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'RECORD_PROVIDER_DISPUTE','bad-'+randomUUID(),null]),'23514');
+  const dispute=(await operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7) AS state',[actorId,sessionId,deviceHash,caseId,'RECORD_PROVIDER_DISPUTE','dispute-'+randomUUID(),testHash])).rows[0];
   assert.equal(dispute.state,'PROVIDER_DISPUTE');
-  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5)',[actorId,caseId,'RECORD_PROVIDER_OUTCOME','outcome-'+randomUUID(),testHash]),'22023');
-  const history=(await admin.query('SELECT action,from_state,to_state,actor_id FROM public.verified_receipt_manual_case_events WHERE case_id=$1 ORDER BY sequence',[caseId])).rows;
+  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'RECORD_PROVIDER_OUTCOME','outcome-'+randomUUID(),testHash]),'22023');
+  const history=(await admin.query('SELECT action,from_state,to_state,actor_id,session_id,device_hash FROM public.verified_receipt_manual_case_events WHERE case_id=$1 ORDER BY sequence',[caseId])).rows;
   assert.deepEqual(history.map(x=>x.action),['OPEN_HOLD','ESCALATE_TO_PROVIDER','RECORD_PROVIDER_DISPUTE']);
-  assert.ok(history.every(x=>x.actor_id===actorId));
+  assert.ok(history.every(x=>x.actor_id===actorId && x.session_id===sessionId && x.device_hash===deviceHash));
+  await admin.query('UPDATE public.account_sessions SET status=\'revoked\',revoked_at=clock_timestamp() WHERE id=$1',[sessionId]);
+  await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'ESCALATE_TO_PROVIDER','revoked-'+randomUUID(),null]),'42501');
   await sqlstate(admin.query('DELETE FROM public.verified_receipt_manual_cases WHERE id=$1',[caseId]),'42501');
   await sqlstate(admin.query('UPDATE public.verified_receipt_manual_case_events SET action=\'OPEN_HOLD\' WHERE case_id=$1',[caseId]),'42501');
   const after=(await admin.query('SELECT (SELECT count(*)::int FROM saas_entitlement_applications)+(SELECT count(*)::int FROM cashier_entitlement_applications) AS n')).rows[0].n;
