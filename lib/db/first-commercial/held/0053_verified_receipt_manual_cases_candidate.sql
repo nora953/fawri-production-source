@@ -8,8 +8,11 @@ CREATE TABLE public.verified_receipt_manual_cases (
   provider text NOT NULL DEFAULT 'superqi_sandbox',
   provider_event_id text NOT NULL,
   opened_by text NOT NULL REFERENCES public.accounts(id) ON DELETE RESTRICT,
+  opened_session_id text NOT NULL,
+  opened_device_hash text NOT NULL,
   opened_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   CONSTRAINT manual_case_id_check CHECK (char_length(id) BETWEEN 1 AND 180),
+  CONSTRAINT manual_case_session_check CHECK (char_length(opened_session_id) BETWEEN 1 AND 180 AND char_length(opened_device_hash) BETWEEN 32 AND 128),
   CONSTRAINT manual_case_provider_check CHECK (provider = 'superqi_sandbox'),
   CONSTRAINT manual_case_event_id_check CHECK (char_length(provider_event_id) BETWEEN 1 AND 300),
   CONSTRAINT manual_case_receipt_unique UNIQUE(provider,provider_event_id),
@@ -25,9 +28,12 @@ CREATE TABLE public.verified_receipt_manual_case_events (
   from_state text,
   to_state text NOT NULL,
   actor_id text NOT NULL REFERENCES public.accounts(id) ON DELETE RESTRICT,
+  session_id text NOT NULL,
+  device_hash text NOT NULL,
   provider_evidence_hash text,
   recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   CONSTRAINT manual_case_history_event_id_check CHECK(char_length(event_id) BETWEEN 1 AND 180),
+  CONSTRAINT manual_case_history_session_check CHECK (char_length(session_id) BETWEEN 1 AND 180 AND char_length(device_hash) BETWEEN 32 AND 128),
   CONSTRAINT manual_case_history_evidence_check CHECK (
     provider_evidence_hash IS NULL OR provider_evidence_hash ~ '^[a-f0-9]{64}$'),
   CONSTRAINT manual_case_history_action_check CHECK (
@@ -87,13 +93,15 @@ EXECUTE FUNCTION public.fawri_manual_case_event_append_guard();
 -- Privileged stored capability. No runtime role is granted EXECUTE by this
 -- candidate. Session authentication and restricted issuer are separately gated.
 CREATE FUNCTION public.fawri_open_unmatched_verified_receipt_case(
-  p_actor text,p_case_id text,p_event_id text
+  p_actor text,p_session_id text,p_device_hash text,p_case_id text,p_event_id text
 ) RETURNS TABLE(case_id text,receipt_event_id text,case_state text,applied boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET row_security=off AS $$
 DECLARE actor_role text; receipt public.verified_provider_payment_receipts%ROWTYPE;
         inserted integer; existing_case_id text;
 BEGIN
   IF p_actor IS NULL OR char_length(p_actor) NOT BETWEEN 1 AND 180
+    OR p_session_id IS NULL OR char_length(p_session_id) NOT BETWEEN 1 AND 180
+    OR p_device_hash IS NULL OR char_length(p_device_hash) NOT BETWEEN 32 AND 128
     OR p_case_id IS NULL OR p_case_id !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,179}$'
     OR p_event_id IS NULL OR char_length(p_event_id) NOT BETWEEN 1 AND 300 THEN
     RAISE EXCEPTION 'invalid manual case intake' USING ERRCODE='22023';
@@ -113,6 +121,23 @@ BEGIN
     IF NOT FOUND THEN
       RAISE EXCEPTION 'manual case actor not authorized' USING ERRCODE='42501';
     END IF;
+  END IF;
+  -- Revalidate the real current session/device in the same SQL transaction;
+  -- actor ID alone is never independent financial-operation authority.
+  PERFORM 1 FROM public.account_sessions s JOIN public.accounts a ON a.id=s.account_id
+    WHERE s.id=p_session_id AND s.account_id=p_actor AND s.kind='admin' AND s.status='active'
+      AND s.device_fingerprint_hash=p_device_hash
+      AND s.session_version=a.session_version AND s.security_version=a.security_version
+      AND s.idle_expires_at>clock_timestamp() AND s.absolute_expires_at>clock_timestamp()
+    FOR SHARE OF s,a;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'manual case session not authorized' USING ERRCODE='42501';
+  END IF;
+  PERFORM 1 FROM public.trusted_devices d
+    WHERE d.account_id=p_actor AND d.kind='admin'
+      AND d.device_fingerprint_hash=p_device_hash AND d.status='trusted' FOR SHARE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'manual case device not authorized' USING ERRCODE='42501';
   END IF;
   SELECT * INTO receipt FROM public.verified_provider_payment_receipts
    WHERE provider='superqi_sandbox' AND provider_event_id=p_event_id
@@ -138,14 +163,14 @@ BEGIN
   THEN
     RAISE EXCEPTION 'receipt has a candidate original order' USING ERRCODE='23514';
   END IF;
-  INSERT INTO public.verified_receipt_manual_cases(id,provider,provider_event_id,opened_by)
-    VALUES(p_case_id,receipt.provider,receipt.provider_event_id,p_actor)
+  INSERT INTO public.verified_receipt_manual_cases(id,provider,provider_event_id,opened_by,opened_session_id,opened_device_hash)
+    VALUES(p_case_id,receipt.provider,receipt.provider_event_id,p_actor,p_session_id,p_device_hash)
     ON CONFLICT (provider,provider_event_id) DO NOTHING;
   GET DIAGNOSTICS inserted=ROW_COUNT;
   IF inserted=1 THEN
     INSERT INTO public.verified_receipt_manual_case_events
-      (event_id,case_id,action,from_state,to_state,actor_id)
-    VALUES ('open:'||p_case_id,p_case_id,'OPEN_HOLD',NULL,'UNRESOLVED_HOLD',p_actor);
+      (event_id,case_id,action,from_state,to_state,actor_id,session_id,device_hash)
+    VALUES ('open:'||p_case_id,p_case_id,'OPEN_HOLD',NULL,'UNRESOLVED_HOLD',p_actor,p_session_id,p_device_hash);
   ELSE
     SELECT id INTO existing_case_id FROM public.verified_receipt_manual_cases
      WHERE provider=receipt.provider AND provider_event_id=receipt.provider_event_id FOR SHARE;
@@ -159,12 +184,14 @@ END $$;
 -- This does NOT mark a payment settled or refunded. A second independent
 -- authenticated decision is required before any terminal provider outcome.
 CREATE FUNCTION public.fawri_escalate_verified_receipt_manual_case(
-  p_actor text,p_case_id text,p_action text,p_event_id text,p_evidence_hash text
+  p_actor text,p_session_id text,p_device_hash text,p_case_id text,p_action text,p_event_id text,p_evidence_hash text
 ) RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET row_security=off AS $$
 DECLARE actor_role text; latest text; new_state text;
 BEGIN
   IF p_actor IS NULL OR char_length(p_actor) NOT BETWEEN 1 AND 180
+    OR p_session_id IS NULL OR char_length(p_session_id) NOT BETWEEN 1 AND 180
+    OR p_device_hash IS NULL OR char_length(p_device_hash) NOT BETWEEN 32 AND 128
     OR p_case_id IS NULL OR char_length(p_case_id) NOT BETWEEN 1 AND 180
     OR p_event_id IS NULL OR p_event_id !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,179}$'
     OR p_action NOT IN ('ESCALATE_TO_PROVIDER','RECORD_PROVIDER_DISPUTE') THEN
@@ -186,6 +213,23 @@ BEGIN
       RAISE EXCEPTION 'manual case actor not authorized' USING ERRCODE='42501';
     END IF;
   END IF;
+  -- Revalidate the real current session/device in the same SQL transaction;
+  -- actor ID alone is never independent financial-operation authority.
+  PERFORM 1 FROM public.account_sessions s JOIN public.accounts a ON a.id=s.account_id
+    WHERE s.id=p_session_id AND s.account_id=p_actor AND s.kind='admin' AND s.status='active'
+      AND s.device_fingerprint_hash=p_device_hash
+      AND s.session_version=a.session_version AND s.security_version=a.security_version
+      AND s.idle_expires_at>clock_timestamp() AND s.absolute_expires_at>clock_timestamp()
+    FOR SHARE OF s,a;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'manual case session not authorized' USING ERRCODE='42501';
+  END IF;
+  PERFORM 1 FROM public.trusted_devices d
+    WHERE d.account_id=p_actor AND d.kind='admin'
+      AND d.device_fingerprint_hash=p_device_hash AND d.status='trusted' FOR SHARE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'manual case device not authorized' USING ERRCODE='42501';
+  END IF;
   PERFORM 1 FROM public.verified_receipt_manual_cases WHERE id=p_case_id FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'manual case not found' USING ERRCODE='23514';
@@ -200,15 +244,15 @@ BEGIN
     RAISE EXCEPTION 'manual case transition denied' USING ERRCODE='23514';
   END IF;
   INSERT INTO public.verified_receipt_manual_case_events
-    (event_id,case_id,action,from_state,to_state,actor_id,provider_evidence_hash)
-  VALUES(p_event_id,p_case_id,p_action,latest,new_state,p_actor,p_evidence_hash);
+    (event_id,case_id,action,from_state,to_state,actor_id,session_id,device_hash,provider_evidence_hash)
+  VALUES(p_event_id,p_case_id,p_action,latest,new_state,p_actor,p_session_id,p_device_hash,p_evidence_hash);
   RETURN new_state;
 END $$;
 
 REVOKE ALL ON FUNCTION
   public.fawri_manual_case_immutable(),
   public.fawri_manual_case_event_append_guard(),
-  public.fawri_open_unmatched_verified_receipt_case(text,text,text),
-  public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text)
+  public.fawri_open_unmatched_verified_receipt_case(text,text,text,text,text),
+  public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text,text,text)
 FROM PUBLIC;
 -- No EXECUTE grants to auth/operator/merchant/tenant LOGIN in this HELD source.
