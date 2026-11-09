@@ -79,5 +79,5 @@ test("P0 0053 cannot rewrite predecessor 0052 held journal or canonical history"
     /FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT/);
   const historical=original(canonical);
   assert.throws(()=>substitute({[canonical]:historical.replace("0052_cashier_stream_receipt_storage","0052_untrusted")}),
-    /FT01_JOURNAL_UNEXPECTED|FT01_FIRST_COMMERCIAL_CANONICAL_JOURNAL_TAG_UNTRUSTED|FT01_SOURCE_MANIFEST/);
+    /FT01_MIGRATION_SOURCE_MISSING|FT01_JOURNAL_UNEXPECTED|FT01_FIRST_COMMERCIAL_CANONICAL_JOURNAL_TAG_UNTRUSTED|FT01_SOURCE_MANIFEST/);
 });
