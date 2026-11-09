@@ -29,3 +29,9 @@
 ## Precise status
 
 `FT-01 recovery policy decision/review` **DOCUMENTED**, no provider restore evidence accepted. `P0-HOSTED-RECOVERY BLOCKED`, `P0-ACCESS-HOSTED-IDENTITY BLOCKED`, `P0-ACCESS-HOSTED-ROLLOUT BLOCKED`, `FIELD002 OPEN`, `0052 HOSTED BLOCKED`, Draft PR #550, commercial `NO-GO`. No schema, role, customer data, Meta/payment or app deployment changes performed.
+
+## 2026-11-09 — actual owner console Backup & Restore view observed (read-only)
+
+Owner supplied a mobile screenshot of **the independently created new project's** `Backup & Restore` page, project label ending `production-prep-20261108`, branch `production` and `Default`. The **Enhanced view** toggle is ON. Visible UI offers **Restore from history** with text *past 6 hour history window*, a point-in-time selector localized to `Asia/Baghdad GMT+03:00`, **Preview data** and **Restore** buttons; a separate **snapshot** section includes **Create** and **Upgrade for schedules** buttons. No click on Create, Restore or Preview was requested or performed, and screenshot does not provide a snapshot ID, a completed backup, a successful restore, an available recovery history interval measured by SQL, or any offsite backup. This confirms provider **feature visibility** only, not `P0-HOSTED-RECOVERY` acceptance.
+
+**Decision:** `FT01_NEW_PROVIDER_RECOVERY_UI_VISIBLE` — bounded PASS for existence of root-branch instant restore UI and manual snapshot creation control. **Keep the single manual snapshot slot unused for now** while the hosted database is still empty, pending separately approved schema and grants. After actual bootstrap and before merchants: create, record and restore-test a post-schema snapshot on a verified isolated branch; re-attest changed branch IDs before promotion. Actual provider snapshot and restore still UNPROVEN. `P0-HOSTED-RECOVERY BLOCKED` / `FIELD002 OPEN` / commercial `NO-GO`.
