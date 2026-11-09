@@ -42,6 +42,8 @@ CREATE TABLE public.verified_receipt_manual_case_events (
         AND to_state = 'PROVIDER_REVIEW' AND provider_evidence_hash IS NULL)
     OR (action = 'RECORD_PROVIDER_DISPUTE' AND from_state = 'PROVIDER_REVIEW'
         AND to_state = 'PROVIDER_DISPUTE' AND provider_evidence_hash IS NOT NULL)
+    OR (action = 'ACKNOWLEDGE_DISPUTE_SECOND_REVIEW' AND from_state = 'PROVIDER_DISPUTE'
+        AND to_state = 'PROVIDER_DISPUTE_REVIEWED' AND provider_evidence_hash IS NOT NULL)
   )
 );
 
@@ -382,3 +384,42 @@ REVOKE ALL ON FUNCTION
   public.fawri_read_verified_receipt_manual_case_history(text,text,text,text,integer,bigint,text,text)
 FROM PUBLIC;
 -- HELD: no EXECUTE on these read capabilities for any production LOGIN.
+
+
+-- Second human reviewer acknowledges the same immutable dispute evidence hash.
+-- This is NOT provider confirmation, entitlement, refund, settlement or closure.
+-- Separate actor + live authenticated session + trusted device checked by SQL.
+-- EXECUTE stays revoked; production operator adoption is separately gated.
+CREATE FUNCTION public.fawri_acknowledge_receipt_dispute_second_review(
+  p_actor text,p_session_id text,p_device_hash text,
+  p_case_id text,p_event_id text,p_evidence_hash text
+) RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET row_security=off AS $$
+DECLARE latest public.verified_receipt_manual_case_events%ROWTYPE;
+        initial_actor text;
+BEGIN
+  IF p_case_id IS NULL OR p_case_id !~ '^receipt-case-[a-f0-9]{64}$'
+    OR p_event_id IS NULL OR p_event_id !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,179}$'
+    OR p_evidence_hash IS NULL OR p_evidence_hash !~ '^[a-f0-9]{64}$' THEN
+    RAISE EXCEPTION 'invalid second review' USING ERRCODE='22023';
+  END IF;
+  PERFORM public.fawri_assert_manual_receipt_case_reader(p_actor,p_session_id,p_device_hash);
+  SELECT opened_by INTO initial_actor FROM public.verified_receipt_manual_cases
+    WHERE id=p_case_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'manual case unavailable' USING ERRCODE='23514'; END IF;
+  SELECT * INTO latest FROM public.verified_receipt_manual_case_events
+    WHERE case_id=p_case_id ORDER BY sequence DESC LIMIT 1;
+  IF NOT FOUND OR latest.action <> 'RECORD_PROVIDER_DISPUTE'
+    OR latest.to_state <> 'PROVIDER_DISPUTE'
+    OR latest.provider_evidence_hash IS DISTINCT FROM p_evidence_hash
+    OR latest.actor_id IS NOT DISTINCT FROM p_actor
+    OR initial_actor IS NOT DISTINCT FROM p_actor THEN
+    RAISE EXCEPTION 'independent dispute review denied' USING ERRCODE='23514';
+  END IF;
+  INSERT INTO public.verified_receipt_manual_case_events
+    (event_id,case_id,action,from_state,to_state,actor_id,session_id,device_hash,provider_evidence_hash)
+  VALUES(p_event_id,p_case_id,'ACKNOWLEDGE_DISPUTE_SECOND_REVIEW','PROVIDER_DISPUTE',
+         'PROVIDER_DISPUTE_REVIEWED',p_actor,p_session_id,p_device_hash,p_evidence_hash);
+  RETURN 'PROVIDER_DISPUTE_REVIEWED';
+END $$;
+REVOKE ALL ON FUNCTION public.fawri_acknowledge_receipt_dispute_second_review(text,text,text,text,text,text) FROM PUBLIC;
