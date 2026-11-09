@@ -28,6 +28,8 @@ import {
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql";
 const SOURCE_TAG = "0052_cashier_stream_receipt_storage";
+const HELD_JOURNAL_PATH = "lib/db/first-commercial/held/meta/_journal.json";
+export const FT01_HELD_FIRST_COMMERCIAL_JOURNAL_SHA256 = "7683b1fe807a514c0662ffb216e995492712433302f8292f9b2966582ed46339";
 const ROLE_RESERVATION_PATH = "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-FOUR-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql";
 const REVIEWED_CASHIER_GRANTS_PATH = "lib/db/first-commercial/held/0052_cashier_retirement_issuer_grants.sql";
 export const FT01_EXPECTED_RESTRICTED_CASHIER_GRANTS_SQL = [
@@ -75,6 +77,16 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
   // not a dynamically rewritten copy of canonical 0052 at deploy time.
   // Preserve the canonical journal/stage; never silently substitute this
   // candidate in the existing production migration directory.
+  const canonicalJournal = readFile("lib/db/drizzle/meta/_journal.json");
+  const heldJournal = readFile(HELD_JOURNAL_PATH);
+  const originalTag = '"tag": "0052_cashier_stream_receipt_storage"';
+  const reviewedTag = '"tag": "0052_cashier_stream_receipt_storage_invoker"';
+  assert.equal(canonicalJournal.split(originalTag).length, 2,
+    "FT01_FIRST_COMMERCIAL_CANONICAL_JOURNAL_TAG_UNTRUSTED");
+  assert.equal(heldJournal, canonicalJournal.replace(originalTag,reviewedTag),
+    "FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT");
+  assert.equal(sha256(heldJournal), FT01_HELD_FIRST_COMMERCIAL_JOURNAL_SHA256,
+    "FT01_FIRST_COMMERCIAL_HELD_JOURNAL_PIN_DRIFT");
   const retirementGrants = readFile(REVIEWED_CASHIER_GRANTS_PATH);
   assert.equal(retirementGrants, FT01_EXPECTED_RESTRICTED_CASHIER_GRANTS_SQL,
     "FT01_HELD_RESTRICTED_GRANT_SOURCE_DRIFT");
@@ -107,6 +119,9 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
     reviewed_retirement_grants_sql_sha256: sha256(retirementGrants),
     held_retirement_grants_source_path: REVIEWED_CASHIER_GRANTS_PATH,
     canonical_journal_sha256: historical.migration_journal_sha256,
+    held_journal_source_path: HELD_JOURNAL_PATH,
+    held_journal_0052_tag: "0052_cashier_stream_receipt_storage_invoker",
+    reviewed_held_journal_sha256: FT01_HELD_FIRST_COMMERCIAL_JOURNAL_SHA256,
     source_manifest_sha256: historical.source_manifest_sha256,
     snapshot_0052_sha256: historical.snapshot_0052_sha256,
     stage_0052_sha256: historical.stage_0052_sha256,

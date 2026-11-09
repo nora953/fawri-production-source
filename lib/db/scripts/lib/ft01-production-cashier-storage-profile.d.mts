@@ -2,6 +2,7 @@
 export const FT01_CASHIER_STORAGE_PROFILE_ENV:"FAWRI_CASHIER_STORAGE_PROFILE";
 export const FT01_INVOKER_0052_SHA_ENV:"FAWRI_FT01_REVIEWED_INVOKER_0052_SHA256";
 export const FT01_ROLE_RESERVATION_SHA_ENV:"FAWRI_FT01_REVIEWED_FOUR_ROLE_SQL_SHA256";
+export const FT01_HELD_JOURNAL_SHA_ENV:"FAWRI_FT01_REVIEWED_HELD_JOURNAL_SHA256";
 export const FT01_INVOKER_PROFILE:"first-commercial-invoker-v1";
 export const FT01_CANONICAL_PROFILE:"canonical-owner-v1";
 export const FT01_PINNED_FIRST_COMMERCIAL_SOURCE:Readonly<{
@@ -11,6 +12,7 @@ export const FT01_PINNED_FIRST_COMMERCIAL_SOURCE:Readonly<{
   postgresMajor:18;
   canonical0052Sha256:string;
   canonicalJournalSha256:string;
+  heldJournalSha256:string;
   sourceManifestSha256:string;
   snapshot0052Sha256:string;
   stage0052Sha256:string;
@@ -25,6 +27,7 @@ export type Ft01CashierStorageProfile=Readonly<
       migrationOwnerRole:"fawri_owner";
       exactCandidateSha256:string;
       exactRoleReservationSha256:string;
+      exactHeldJournalSha256:string;
       hostedTargetAttested:false;
       releaseAuthorized:false;
     }

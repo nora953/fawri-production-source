@@ -36,6 +36,11 @@ test("FT01 0052 first-commercial variant is pinned source-only, never authorized
     "lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql");
   assert.equal(plan.source_provenance,
     "separately committed HELD SQL, exact canonical source-derived match");
+  assert.equal(plan.held_journal_source_path,"lib/db/first-commercial/held/meta/_journal.json");
+  assert.equal(plan.held_journal_0052_tag,"0052_cashier_stream_receipt_storage_invoker");
+  assert.equal(plan.reviewed_held_journal_sha256,
+    "7683b1fe807a514c0662ffb216e995492712433302f8292f9b2966582ed46339");
+  assert.notEqual(plan.canonical_journal_sha256,plan.reviewed_held_journal_sha256);
   assert.equal(plan.canonical_0052_tag,"0052_cashier_stream_receipt_storage");
   assert.equal(plan.canonical_0052_sha256,
     "aaf7ee97fbdef0c1b4600e905216117ee8ff89f31ccd67d783ab61a9c4bd9b8e");
@@ -43,7 +48,8 @@ test("FT01 0052 first-commercial variant is pinned source-only, never authorized
   for(const key of ["canonical_0052_sha256","reviewed_invoker_variant_0052_sha256",
      "reviewed_invoker_function_body_sha256","four_role_reservation_sql_sha256",
      "reviewed_retirement_grants_sql_sha256",
-     "canonical_journal_sha256","source_manifest_sha256",
+     "canonical_journal_sha256","reviewed_held_journal_sha256",
+     "source_manifest_sha256",
      "snapshot_0052_sha256","stage_0052_sha256"])
     assert.match(plan[key],/^[0-9a-f]{64}$/,key);
   for(const key of [
@@ -113,4 +119,18 @@ test("FT01 committed HELD cashier issuer grants deny ANY privilege expansion", (
     "",
   ])assert.throws(()=>variant({[file]:altered}),
     /FT01_HELD_RESTRICTED_GRANT_SOURCE_DRIFT/);
+});
+
+test("FT01 held journal identity rejects extra, missing, or renamed 0052 lineage",()=>{
+ const file="lib/db/first-commercial/held/meta/_journal.json";
+ const original=readFile(file);
+ assert.throws(()=>variant({[file]:original+"\n-- changed\n"}),
+  /FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT/);
+ assert.throws(()=>variant({[file]:original.replace(
+  '"tag": "0052_cashier_stream_receipt_storage_invoker"',
+  '"tag": "0052_cashier_stream_receipt_storage"',
+ )}),/FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT/);
+ const amended=JSON.parse(original);amended.entries[1].when+=1;
+ assert.throws(()=>variant({[file]:JSON.stringify(amended)}),
+  /FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT/);
 });

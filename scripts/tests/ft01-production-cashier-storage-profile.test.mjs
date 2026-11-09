@@ -6,6 +6,7 @@ import {
   FT01_CASHIER_STORAGE_PROFILE_ENV,
   FT01_INVOKER_0052_SHA_ENV,
   FT01_ROLE_RESERVATION_SHA_ENV,
+  FT01_HELD_JOURNAL_SHA_ENV,
   FT01_INVOKER_PROFILE,
   FT01_CANONICAL_PROFILE,
   FT01_PINNED_FIRST_COMMERCIAL_SOURCE,
@@ -31,6 +32,7 @@ test('bundled-runtime source pins match source-reviewed migration, four roles an
  assert.equal(pins.postgresMajor,plan.target.postgres_major);
  assert.equal(pins.canonical0052Sha256,plan.canonical_0052_sha256);
  assert.equal(pins.canonicalJournalSha256,plan.canonical_journal_sha256);
+ assert.equal(pins.heldJournalSha256,plan.reviewed_held_journal_sha256);
  assert.equal(pins.sourceManifestSha256,plan.source_manifest_sha256);
  assert.equal(pins.snapshot0052Sha256,plan.snapshot_0052_sha256);
  assert.equal(pins.stage0052Sha256,plan.stage_0052_sha256);
@@ -45,6 +47,7 @@ const approvedEnv=()=>({
  [FT01_CASHIER_STORAGE_PROFILE_ENV]:FT01_INVOKER_PROFILE,
  [FT01_INVOKER_0052_SHA_ENV]:plan.reviewed_invoker_variant_0052_sha256,
  [FT01_ROLE_RESERVATION_SHA_ENV]:plan.four_role_reservation_sql_sha256,
+ [FT01_HELD_JOURNAL_SHA_ENV]:plan.reviewed_held_journal_sha256,
  FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON:JSON.stringify(manifest),
 });
 const denied=(env,reason)=>assert.throws(()=>selectFt01CashierStorageProfile(env),
@@ -61,6 +64,7 @@ test('new profile is exact-source-pinned, explicit, and never release approval',
  assert.equal(selected.mode,'first-commercial-invoker');
  assert.equal(selected.exactCandidateSha256,plan.reviewed_invoker_variant_0052_sha256);
  assert.equal(selected.exactRoleReservationSha256,plan.four_role_reservation_sql_sha256);
+ assert.equal(selected.exactHeldJournalSha256,plan.reviewed_held_journal_sha256);
  assert.equal(selected.migrationOwnerRole,'fawri_owner');
  assert.equal(selected.explicitOptIn,true);
  assert.equal(selected.hostedTargetAttested,false);
@@ -95,4 +99,14 @@ test('missing/forged variant or role digest cannot select invoker',()=>{
   denied({...base,[key]:'0'.repeat(64)},'EXACT_VARIANT_AND_ROLE_SOURCE_HASHES_REQUIRED');
   denied({...base,[key]:'BAD_HASH'},'EXACT_VARIANT_AND_ROLE_SOURCE_HASHES_REQUIRED');
  }
+});
+
+test('missing or forged independent 0052 journal digest is fail-closed',()=>{
+ const base=approvedEnv();
+ denied({...base,[FT01_HELD_JOURNAL_SHA_ENV]:''},
+  'EXACT_HELD_JOURNAL_SOURCE_HASH_REQUIRED');
+ denied({...base,[FT01_HELD_JOURNAL_SHA_ENV]:'0'.repeat(64)},
+  'EXACT_HELD_JOURNAL_SOURCE_HASH_REQUIRED');
+ denied({...base,[FT01_HELD_JOURNAL_SHA_ENV]:plan.canonical_journal_sha256},
+  'EXACT_HELD_JOURNAL_SOURCE_HASH_REQUIRED');
 });
