@@ -70,6 +70,10 @@ This file supersedes **audit-work sequencing only**, not canonical authorization
 
 - [`75fbf317`](https://github.com/nora953/fawri-production-source/commit/75fbf317d6898ac8e2ce1c14216f5809b41ad9d7): second real IndexedDB station-race defect fixed. Old `CASHIER_STATION_CREDENTIAL_INVALID` for a previous token could erase a newer pairing. [RED #42642136673](https://github.com/nora953/fawri-production-source/actions/runs/42642136673) reproduced the overwrite; [GREEN #42643829722](https://github.com/nora953/fawri-production-source/actions/runs/42643829722) verified **atomic, exact request-bound revocation** that refuses stale invalidations and still clears only an actually rejected current station. The metadata-only guard remains unweakened. [Scoped evidence](./evidence/P0-CASHIER-STALE-INVALIDATION-ATOMIC-20261109.md). This fixes a source defect only; CASHIER-SYNC-SEQUENCE-001 and device/hosted acceptance stay OPEN.
 
+## Receipt ownership — policy approval boundary (2026-11-09)
+
+- `P0-RECEIPT-OWNERSHIP-POLICY` remains **OPEN**, now reduced to one explicit proposed choice: **`HOLD_WITHOUT_ORDER; NO_ARBITRARY_ATTACH`**. Existing proven order -> tightly permissioned reviewed replay; *missing* original order -> immutable orphan HOLD, never guessed or directly attached, separate manual provider-side resolution. [Source-grounded exact owner decision and finite R-OWN-1..5 closure criteria](./P0-RECEIPT-MISSING-ORDER-OWNERSHIP-DECISION-20261109.md). **Owner approval pending**. No new test or CI run, no policy adoption or change to register. Generic "continue" is not a product choice.
+
 ## Stop criteria
 
 No release traffic, hosted DB mutations, old-Neon migration/import, Railway deployment, PR merge or secrets exposure on the authority of this file. For each gate, the only valid status update is an exact source+CI/SQL/HTTP/provider evidence record and an explicit scoped release decision. **FIELD002 OPEN, PR #550 DRAFT, launch NO-GO**.
