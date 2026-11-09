@@ -527,7 +527,20 @@ function groupByOperation(
   envelopes: CashierSyncEnvelope[],
 ): Map<string, CashierSyncEnvelope[]> {
   const groups = new Map<string, CashierSyncEnvelope[]>();
+  const completed = new Set<string>();
+  let activeOperationId: string | null = null;
   for (const envelope of envelopes) {
+    if (envelope.operation_id !== activeOperationId) {
+      if (activeOperationId !== null) completed.add(activeOperationId);
+      if (completed.has(envelope.operation_id)) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+          'Pending cashier operation envelopes are not contiguous',
+          409,
+        );
+      }
+      activeOperationId = envelope.operation_id;
+    }
     if (!envelope.operation_id || !String(envelope.operation_id).trim()) {
       throw new CashierOperatorCloudSyncError(
         'CASHIER_OPERATOR_OUTBOX_CORRUPT',
@@ -564,22 +577,47 @@ function groupByOperation(
 }
 
 /**
- * listPendingSync is envelope-count limited. When it returns a full window we
- * cannot know whether the final operation continues just beyond that window.
- * Never upload that final operation partially: process only operations that end
- * before the boundary and leave the boundary operation intact for the next sync.
+ * Peek one envelope beyond the safe upload limit. A full window of 1000
+ * envelopes may already contain 1000 *complete* operations, including one
+ * operation with exactly 1000 envelopes. Never stall or discard that case.
+ * If the 1001st continues the boundary operation, leave that entire
+ * operation pending for a later upload; a single operation larger than the
+ * limit remains blocked for explicit recovery, never partially uploaded.
  */
 function completeOperationWindow(
-  pending: CashierSyncEnvelope[],
+  batch: CashierSyncEnvelope[],
 ): CashierSyncEnvelope[] {
-  if (pending.length < MAX_PENDING_ENVELOPES) return pending;
-  const boundaryOperationId = String(
-    pending[pending.length - 1]?.operation_id || '',
-  ).trim();
-  if (!boundaryOperationId) {
+  const pending = batch.slice(0, MAX_PENDING_ENVELOPES);
+  if (batch.length <= MAX_PENDING_ENVELOPES) return pending;
+  const last = pending[pending.length - 1];
+  const next = batch[MAX_PENDING_ENVELOPES];
+  const boundaryOperationId = String(last?.operation_id || '').trim();
+  const nextOperationId = String(next?.operation_id || '').trim();
+  if (!boundaryOperationId || !nextOperationId ||
+      !Number.isSafeInteger(last.device_sequence) ||
+      !Number.isSafeInteger(next.device_sequence) ||
+      last.device_sequence <= 0 || next.device_sequence <= 0) {
     throw new CashierOperatorCloudSyncError(
       'CASHIER_OPERATOR_OUTBOX_CORRUPT',
-      'Pending cashier operation identity is missing',
+      'Pending cashier batch boundary is invalid',
+      409,
+    );
+  }
+  if (last.operation_id !== next.operation_id) {
+    if (last.device_sequence === next.device_sequence ||
+        next.device_sequence < last.device_sequence) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+        'Different cashier operations share or reverse the device sequence',
+        409,
+      );
+    }
+    return pending;
+  }
+  if (last.device_sequence !== next.device_sequence) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+      'One cashier operation has inconsistent device sequences',
       409,
     );
   }
@@ -794,8 +832,11 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     databaseName: `fawri-cashier-${identity.local_merchant_id}-v1`,
   });
   try {
-    const pending = await authority.listPendingSync(MAX_PENDING_ENVELOPES);
-    const uploadable = completeOperationWindow(pending);
+    // Look ahead by one envelope before deciding whether the boundary is
+    // complete. The extra envelope is never uploaded in this drain.
+    const batch = await authority.listPendingSync(MAX_PENDING_ENVELOPES + 1);
+    const pending = batch.slice(0, MAX_PENDING_ENVELOPES);
+    const uploadable = completeOperationWindow(batch);
     const groups = groupByOperation(uploadable);
     // Reject the entire bounded batch before network I/O when an earlier
     // operation belongs to another staff member or station. Same-staff prior
