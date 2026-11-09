@@ -814,6 +814,26 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
   }
   operatorOutboxSyncInProgress = true;
   try {
+    // Web Locks serialize outbox drains across tabs on the same browser origin.
+    // ifAvailable never queues a stale attempt behind a later shift/login.
+    // Older browsers without Web Locks retain the same-app guard and server
+    // sequencing; cross-device admission remains solely server-authoritative.
+    if (typeof navigator !== 'undefined' && navigator.locks?.request) {
+      return await navigator.locks.request(
+        'fawri:cashier-operator-outbox:v1',
+        { mode: 'exclusive', ifAvailable: true },
+        async (lock) => {
+          if (!lock) {
+            throw new CashierOperatorCloudSyncError(
+              'CASHIER_OPERATOR_SYNC_IN_PROGRESS',
+              'Another cashier tab is already synchronizing this outbox',
+              409,
+            );
+          }
+          return await performCashierOperatorOutboxSync();
+        },
+      );
+    }
     return await performCashierOperatorOutboxSync();
   } finally {
     operatorOutboxSyncInProgress = false;
