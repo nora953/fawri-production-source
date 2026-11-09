@@ -88,7 +88,7 @@ export function parseManualCaseTransition(value: unknown): ManualCaseTransition 
       || !boundedId(data.independentlyApprovedBy, 180)
       || data.independentlyApprovedBy === data.actorId) deny();
   }
-  return data as ManualCaseTransition;
+  return data as unknown as ManualCaseTransition;
 }
 
 /** The only non-applying case-intake result permitted by the policy. */
