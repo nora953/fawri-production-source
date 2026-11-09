@@ -29,7 +29,7 @@ const paymentId='payment-'+randomUUID();
 const eventId='receipt-'+randomUUID();
 const testHash='a'.repeat(64);
 let sessionId,deviceHash;
-let connected=false;
+let connected=false,server;
 async function sqlstate(promise,code) {
   await assert.rejects(promise,e=>e?.code===code, 'expected SQLSTATE '+code);
 }
@@ -113,6 +113,65 @@ try {
   const history=(await admin.query('SELECT action,from_state,to_state,actor_id,session_id,device_hash FROM public.verified_receipt_manual_case_events WHERE case_id=$1 ORDER BY sequence',[caseId])).rows;
   assert.deepEqual(history.map(x=>x.action),['OPEN_HOLD','ESCALATE_TO_PROVIDER','RECORD_PROVIDER_DISPUTE']);
   assert.ok(history.every(x=>x.actor_id===actorId && x.session_id===sessionId && x.device_hash===deviceHash));
+  // The real mounted operator HTTP route must not authorize guessed financial
+  // ownership. Use its production session/permission/device middleware and the
+  // same actual restricted LOGIN, not mocked route handlers.
+  process.env.FAWRI_OPERATOR_DATABASE_URL=loginUrl.toString();
+  process.env.FAWRI_ALLOWED_ORIGINS='https://operator.example.invalid';
+  const [{default:express},{default:cookieParser},{default:router},{enforceAuthOrigin}]=await Promise.all([
+    import('express'),import('cookie-parser'),
+    import('../../artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts'),
+    import('../../artifacts/api-server/src/middleware/authSession.ts'),
+  ]);
+  const httpApp=express();
+  httpApp.use(cookieParser());
+  httpApp.use(express.json());
+  httpApp.use('/api/auth',enforceAuthOrigin,router);
+  server=await new Promise((resolve,reject)=>{
+    const listener=httpApp.listen(0,'127.0.0.1',()=>resolve(listener));
+    listener.once('error',reject);
+  });
+  const httpEventId='receipt-http-'+randomUUID();
+  await admin.query(`INSERT INTO public.verified_provider_payment_receipts
+    (provider,provider_event_id,payment_ref,request_ref,event_type,amount_iqd,payload_hash,first_received_at)
+    VALUES('superqi_sandbox',$1,$2,$3,'payment_succeeded',49000,$4,clock_timestamp())`,[
+    httpEventId,'payment-http-'+randomUUID(),'request-http-'+randomUUID(),testHash]);
+  const base='http://127.0.0.1:'+server.address().port+'/api/auth/admin/billing';
+  async function post(path,body,authenticate=true) {
+    const response=await fetch(base+path,{method:'POST',headers:{
+      Origin:'https://operator.example.invalid',
+      'Content-Type':'application/json',
+      ...(authenticate?{Cookie:'fawri_admin_session_v2='+issued.token,'X-Fawri-Device-Id':deviceId}:{})
+    },body:JSON.stringify(body)});
+    return {status:response.status,data:await response.json()};
+  }
+  const intakePath='/verified-receipts/'+httpEventId+'/manual-case';
+  assert.equal((await post(intakePath,{},false)).status,401);
+  assert.equal((await post(intakePath,{merchant_id:'forged'})).status,400);
+  assert.equal((await post(intakePath,{order_id:'new-order'})).status,400);
+  assert.equal((await post(intakePath,{amount_iqd:49000})).status,400);
+  const opened=await post(intakePath,{});
+  assert.equal(opened.status,200,JSON.stringify(opened.data));
+  assert.equal(opened.data.status,'UNRESOLVED_HOLD');
+  assert.equal(opened.data.applied,false);
+  assert.ok(/^receipt-case-[a-f0-9]{64}$/.test(opened.data.case_id));
+  assert.deepEqual((await post(intakePath,{})).data,opened.data);
+  const escalationPath='/verified-receipt-manual-cases/'+opened.data.case_id+'/escalation';
+  assert.equal((await post(escalationPath,{action:'RECORD_PROVIDER_OUTCOME',provider_evidence_hash:testHash})).status,400);
+  assert.equal((await post(escalationPath,{action:'ESCALATE_TO_PROVIDER',provider_evidence_hash:null,merchant_id:'foreign'})).status,400);
+  const escalated=await post(escalationPath,{action:'ESCALATE_TO_PROVIDER',provider_evidence_hash:null});
+  assert.equal(escalated.status,200,JSON.stringify(escalated.data));
+  assert.deepEqual({status:escalated.data.status,applied:escalated.data.applied,provider_settled:escalated.data.provider_settled},
+    {status:'PROVIDER_REVIEW',applied:false,provider_settled:false});
+  const reopened=await post(intakePath,{});
+  assert.equal(reopened.status,200);
+  assert.equal(reopened.data.case_id,opened.data.case_id);
+  assert.equal(reopened.data.status,'PROVIDER_REVIEW','lost HTTP response recheck returns current case state');
+  const httpEvents=(await admin.query('SELECT action,actor_id,session_id,device_hash FROM public.verified_receipt_manual_case_events WHERE case_id=$1 ORDER BY sequence',[opened.data.case_id])).rows;
+  assert.deepEqual(httpEvents.map(x=>x.action),['OPEN_HOLD','ESCALATE_TO_PROVIDER']);
+  assert.ok(httpEvents.every(x=>x.actor_id===actorId && x.session_id===sessionId && x.device_hash===deviceHash));
+  console.log('P0_RECEIPT_MANUAL_CASE_MOUNTED_HTTP_RESTRICTED_PG18_PASS');
+
   assert.equal(await authPostgresSessionAuthority.revokeSession(issued.token,'admin','manual_revocation'),true);
   await sqlstate(operator.query('SELECT public.fawri_escalate_verified_receipt_manual_case($1,$2,$3,$4,$5,$6,$7)',[actorId,sessionId,deviceHash,caseId,'ESCALATE_TO_PROVIDER','revoked-'+randomUUID(),null]),'42501');
   await sqlstate(admin.query('DELETE FROM public.verified_receipt_manual_cases WHERE id=$1',[caseId]),'42501');
@@ -123,6 +182,7 @@ try {
   console.log('P0_RECEIPT_MANUAL_CASE_HELD_PG18_RESTRICTED_LOGIN_PASS');
   console.log('P0_RECEIPT_MANUAL_CASE_HELD_NOT_DEPLOYMENT_AUTHORIZATION');
 } finally {
+  if(server) await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
   if(connected) await operator.end();
   await admin.end();
 }
