@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'artifacts/fawri/src/lib/cashierOperatorCloudSync.ts'
+      - 'artifacts/fawri/src/cashierMain.tsx'
+      - 'artifacts/fawri/src/pages/CashierCatalogSyncPage.tsx'
       - 'artifacts/fawri/tests/cashier-operator-outbox-boundary-behavior.test.mjs'
       - 'artifacts/fawri/tests/cashier-operator-outbox-hardening.test.mjs'
       - 'artifacts/fawri/tests/cashier-active-sync-entrypoints-contract.test.mjs'
