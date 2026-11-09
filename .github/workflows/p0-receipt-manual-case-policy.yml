@@ -1,0 +1,28 @@
+name: P0 unmatched receipt manual case policy
+on:
+  pull_request:
+    paths:
+      - 'artifacts/api-server/src/services/verifiedReceiptManualCasePolicy.ts'
+      - 'artifacts/api-server/tests/verified-receipt-manual-case-policy.test.ts'
+      - '.github/workflows/p0-receipt-manual-case-policy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  manual-case-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: R-OWN-5 pure fail-closed contract only (no database or providers)
+        run: pnpm exec tsx --test artifacts/api-server/tests/verified-receipt-manual-case-policy.test.ts
