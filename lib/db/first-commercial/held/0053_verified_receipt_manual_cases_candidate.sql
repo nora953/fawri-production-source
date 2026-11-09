@@ -262,3 +262,123 @@ REVOKE ALL ON FUNCTION
   public.fawri_escalate_verified_receipt_manual_case(text,text,text,text,text,text,text)
 FROM PUBLIC;
 -- No EXECUTE grants to auth/operator/merchant/tenant LOGIN in this HELD source.
+
+
+-- R-OWN-5 HELD case-work queue/history; read-only, audited, no table grants.
+-- No change to canonical Drizzle journal or any hosted database.
+CREATE INDEX verified_receipt_manual_cases_opened_cursor_idx
+  ON public.verified_receipt_manual_cases(opened_at DESC,id DESC);
+CREATE INDEX verified_receipt_manual_case_events_latest_idx
+  ON public.verified_receipt_manual_case_events(case_id,sequence DESC);
+
+CREATE FUNCTION public.fawri_assert_manual_receipt_case_reader(
+  p_actor text,p_session_id text,p_device_hash text
+) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET row_security=off AS $$
+DECLARE actor_role text;
+BEGIN
+  IF p_actor IS NULL OR char_length(p_actor) NOT BETWEEN 1 AND 180
+    OR p_session_id IS NULL OR char_length(p_session_id) NOT BETWEEN 1 AND 180
+    OR p_device_hash IS NULL OR char_length(p_device_hash) NOT BETWEEN 32 AND 128 THEN
+    RAISE EXCEPTION 'manual case reader invalid' USING ERRCODE='22023';
+  END IF;
+  SELECT profile.role::text INTO actor_role
+    FROM public.accounts a JOIN public.admin_profiles profile ON profile.account_id=a.id
+   WHERE a.id=p_actor AND a.kind='admin' AND a.state='active'
+     AND profile.enabled AND NOT profile.must_change_password
+   FOR SHARE OF a,profile;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'manual case reader unauthorized' USING ERRCODE='42501';
+  END IF;
+  IF actor_role<>'owner_admin' THEN
+    PERFORM 1 FROM public.admin_permissions permission
+     WHERE permission.admin_id=p_actor AND permission.permission='manage_subscriptions'
+     FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'manual case reader unauthorized' USING ERRCODE='42501';
+    END IF;
+  END IF;
+  PERFORM 1 FROM public.account_sessions s JOIN public.accounts a ON a.id=s.account_id
+   WHERE s.id=p_session_id AND s.account_id=p_actor
+     AND s.kind='admin' AND s.status='active'
+     AND s.device_fingerprint_hash=p_device_hash
+     AND s.session_version=a.session_version AND s.security_version=a.security_version
+     AND s.idle_expires_at>clock_timestamp() AND s.absolute_expires_at>clock_timestamp()
+   FOR SHARE OF s,a;
+  IF NOT FOUND THEN RAISE EXCEPTION 'manual case reader unauthorized' USING ERRCODE='42501'; END IF;
+  PERFORM 1 FROM public.trusted_devices d
+   WHERE d.account_id=p_actor AND d.kind='admin'
+     AND d.device_fingerprint_hash=p_device_hash AND d.status='trusted'
+   FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'manual case reader unauthorized' USING ERRCODE='42501'; END IF;
+END $$;
+
+CREATE FUNCTION public.fawri_list_verified_receipt_manual_cases(
+  p_actor text,p_session_id text,p_device_hash text,
+  p_limit integer,p_before_at timestamptz,p_before_id text,
+  p_audit_id text,p_request_hash text
+) RETURNS TABLE(case_id text,receipt_event_id text,case_state text,
+                opened_at text,last_changed_at text)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET row_security=off AS $$
+BEGIN
+  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 51
+     OR ((p_before_at IS NULL) <> (p_before_id IS NULL))
+     OR (p_before_at IS NOT NULL AND NOT isfinite(p_before_at))
+     OR (p_before_id IS NOT NULL AND char_length(p_before_id) NOT BETWEEN 1 AND 180)
+     OR p_audit_id IS NULL OR char_length(p_audit_id) NOT BETWEEN 1 AND 180
+     OR p_request_hash IS NULL OR p_request_hash !~ '^[a-f0-9]{64}$' THEN
+    RAISE EXCEPTION 'manual case list invalid' USING ERRCODE='22023';
+  END IF;
+  PERFORM public.fawri_assert_manual_receipt_case_reader(p_actor,p_session_id,p_device_hash);
+  -- If audit insertion fails, the same transaction returns zero case data.
+  INSERT INTO public.database_admin_access_audits
+    (id,admin_account_id,reason_code,request_hash,expires_at)
+  VALUES(p_audit_id,p_actor,'BILLING_MANUAL_CASE_QUEUE_READ',p_request_hash,now()+interval '1 minute');
+  RETURN QUERY
+  SELECT c.id,c.provider_event_id,e.to_state,
+    to_char(c.opened_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+    to_char(e.recorded_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
+  FROM public.verified_receipt_manual_cases c
+  JOIN LATERAL (
+    SELECT ev.to_state,ev.recorded_at
+    FROM public.verified_receipt_manual_case_events ev
+    WHERE ev.case_id=c.id ORDER BY ev.sequence DESC LIMIT 1
+  ) e ON true
+  WHERE p_before_at IS NULL OR (c.opened_at,c.id)<(p_before_at,p_before_id)
+  ORDER BY c.opened_at DESC,c.id DESC LIMIT p_limit;
+END $$;
+
+CREATE FUNCTION public.fawri_read_verified_receipt_manual_case_history(
+  p_actor text,p_session_id text,p_device_hash text,p_case_id text,
+  p_limit integer,p_before_sequence bigint,p_audit_id text,p_request_hash text
+) RETURNS TABLE(event_sequence bigint,event_action text,case_state text,
+                actor_id text,provider_evidence_hash text,recorded_at text)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET row_security=off AS $$
+BEGIN
+  IF p_case_id IS NULL OR p_case_id !~ '^receipt-case-[a-f0-9]{64}$'
+     OR p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 51
+     OR (p_before_sequence IS NOT NULL AND p_before_sequence<=0)
+     OR p_audit_id IS NULL OR char_length(p_audit_id) NOT BETWEEN 1 AND 180
+     OR p_request_hash IS NULL OR p_request_hash !~ '^[a-f0-9]{64}$' THEN
+    RAISE EXCEPTION 'manual case history invalid' USING ERRCODE='22023';
+  END IF;
+  PERFORM public.fawri_assert_manual_receipt_case_reader(p_actor,p_session_id,p_device_hash);
+  PERFORM 1 FROM public.verified_receipt_manual_cases WHERE id=p_case_id FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'manual case history missing' USING ERRCODE='23514'; END IF;
+  INSERT INTO public.database_admin_access_audits
+    (id,admin_account_id,reason_code,request_hash,expires_at)
+  VALUES(p_audit_id,p_actor,'BILLING_MANUAL_CASE_HISTORY_READ',p_request_hash,now()+interval '1 minute');
+  RETURN QUERY
+  SELECT ev.sequence,ev.action,ev.to_state,ev.actor_id,ev.provider_evidence_hash,
+    to_char(ev.recorded_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
+  FROM public.verified_receipt_manual_case_events ev
+  WHERE ev.case_id=p_case_id AND (p_before_sequence IS NULL OR ev.sequence<p_before_sequence)
+  ORDER BY ev.sequence DESC LIMIT p_limit;
+END $$;
+
+REVOKE ALL ON FUNCTION
+  public.fawri_assert_manual_receipt_case_reader(text,text,text),
+  public.fawri_list_verified_receipt_manual_cases(text,text,text,integer,timestamptz,text,text,text),
+  public.fawri_read_verified_receipt_manual_case_history(text,text,text,text,integer,bigint,text,text)
+FROM PUBLIC;
+-- HELD: no EXECUTE on these read capabilities for any production LOGIN.
