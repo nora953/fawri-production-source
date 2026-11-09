@@ -29,6 +29,7 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const SOURCE_PATH = "lib/db/drizzle/0052_cashier_stream_receipt_storage.sql";
 const SOURCE_TAG = "0052_cashier_stream_receipt_storage";
 const ROLE_RESERVATION_PATH = "docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-FOUR-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql";
+const REVIEWED_INVOCER_SQL_PATH = "lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql";
 
 const sha256 = source => createHash("sha256").update(source, "utf8").digest("hex");
 
@@ -57,7 +58,13 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
   }
   assert.match(reservationSql,/IF role_count <> 4 THEN/);
   assert.match(reservationSql,/FT01_FOUR_NOLOGIN_ROLE_POSTIMAGE_UNSAFE/);
-  const variant = disposableInvokerVariant(readFile(SOURCE_PATH));
+  // THIS separate, committed SQL file is the reviewed launch candidate,
+  // not a dynamically rewritten copy of canonical 0052 at deploy time.
+  // Preserve the canonical journal/stage; never silently substitute this
+  // candidate in the existing production migration directory.
+  const variant = readFile(REVIEWED_INVOCER_SQL_PATH);
+  const expectedVariant = disposableInvokerVariant(readFile(SOURCE_PATH));
+  assert.equal(variant, expectedVariant, "FT01_HELD_COMMITTED_0052_SOURCE_DRIFT");
   const variantSha256 = sha256(variant);
   assert.notEqual(variantSha256, EXPECTED_CANONICAL_0052_SHA256,
     "FT01_INVOKER_VARIANT_MUST_DIFFER_FROM_CANONICAL");
@@ -85,7 +92,8 @@ export function buildFt01FirstCommercialInvokerReviewPlan({
     source_manifest_sha256: historical.source_manifest_sha256,
     snapshot_0052_sha256: historical.snapshot_0052_sha256,
     stage_0052_sha256: historical.stage_0052_sha256,
-    source_provenance: "in-memory replacement of held 0052 ONLY",
+    source_provenance: "separately committed HELD SQL, exact canonical source-derived match",
+    held_invoker_source_path: REVIEWED_INVOCER_SQL_PATH,
     deployment_roles: Object.freeze({
       primary_login: "fawri_restricted_runtime",
       authentication_login: "fawri_auth_issuer",

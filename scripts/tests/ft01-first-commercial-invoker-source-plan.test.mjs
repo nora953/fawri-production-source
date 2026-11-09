@@ -32,6 +32,10 @@ test("FT01 0052 first-commercial variant is pinned source-only, never authorized
   });
   assert.ok(new Set(Object.values(plan.deployment_roles)).size===4,
     "Login role names must be disjoint from NOLOGIN writer role");
+  assert.equal(plan.held_invoker_source_path,
+    "lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql");
+  assert.equal(plan.source_provenance,
+    "separately committed HELD SQL, exact canonical source-derived match");
   assert.equal(plan.canonical_0052_tag,"0052_cashier_stream_receipt_storage");
   assert.equal(plan.canonical_0052_sha256,
     "aaf7ee97fbdef0c1b4600e905216117ee8ff89f31ccd67d783ab61a9c4bd9b8e");
@@ -76,4 +80,19 @@ test("FT01 four-role grant-free reservation cannot omit the separate writer grou
     "CREATE ROLE fawri_cashier_retirement_writer\n",
     "CREATE ROLE missing_retirement_writer\n",
   )}),/FT01_FIRST_COMMERCIAL_ROLE_RESERVATION_INCOMPLETE/);
+});
+
+test("FT01 held first-commercial 0052 file is immutable and not silently reconstructed", () => {
+  const source = "lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql";
+  const actual = readFile(source);
+  assert.match(actual, /LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog/);
+  assert.doesNotMatch(actual, /OWNER TO fawri_cashier_retirement_owner/);
+  assert.throws(() => variant({[source]: actual + "\n-- unreviewed change\n"}),
+    /FT01_HELD_COMMITTED_0052_SOURCE_DRIFT/);
+  assert.throws(() => variant({[source]: actual.replace(
+    "session_user <> 'fawri_auth_issuer'",
+    "session_user <> 'fawri_restricted_runtime'",
+  )}), /FT01_HELD_COMMITTED_0052_SOURCE_DRIFT/);
+  assert.throws(() => variant({[source]: ""}),
+    /FT01_HELD_COMMITTED_0052_SOURCE_DRIFT/);
 });
