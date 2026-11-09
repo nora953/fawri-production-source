@@ -7,6 +7,7 @@ import {
   buildFt01DisposableBundleManifest,
   materializeFt01LocalOnlyBundle,
   FT01_PINNED_DISPOSABLE_CHAIN_SHA256,
+  FT01_HELD_JOURNAL_LAST_TAG,
 } from "../lib/ft01-first-commercial-disposable-bundle.mjs";
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
@@ -22,6 +23,12 @@ test("FT01 immutable canonical 53 stage chain differs ONLY in held final 0052",(
     x.selected_kind==="PINNED_CANONICAL"&&
     x.canonical_sha256===x.selected_sha256));
   assert.equal(m.entries[52].selected_kind,"HELD_FIRST_COMMERCIAL_INVOKER");
+  assert.equal(m.entries[52].tag,"0052_cashier_stream_receipt_storage");
+  assert.equal(m.entries[52].selected_tag,FT01_HELD_JOURNAL_LAST_TAG);
+  assert.equal(m.held_journal_distinct_from_canonical,true);
+  assert.match(m.held_journal_sha256,/^[a-f0-9]{64}$/);
+  assert.notEqual(m.held_journal_sha256,m.journal_sha256);
+  assert.ok(m.entries.slice(0,52).every(x=>x.selected_tag===x.tag));
   assert.equal(m.entries[52].selected_sha256,m.selected_0052_sha256);
   assert.notEqual(m.canonical_0052_sha256,m.selected_0052_sha256);
   assert.equal(m.entries[52].executable_sha256,m.selected_0052_executable_sha256);
@@ -49,6 +56,22 @@ test("FT01 denies source drift in canonical earlier stage and alternate 0052",()
   const held="lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql";
   assert.throws(()=>mutated({[held]:read(held)+"\n--unexpected\n"}),
     /FT01_HELD_COMMITTED_0052_SOURCE_DRIFT/);
+});
+test("FT01 distinct first-commercial journal rejects renamed 0052, earlier drift and extra entries",()=>{
+  const path="lib/db/first-commercial/held/meta/_journal.json";
+  const text=read(path);
+  const obj=JSON.parse(text);
+  assert.equal(obj.entries[52].tag,FT01_HELD_JOURNAL_LAST_TAG);
+  assert.throws(()=>mutated({[path]:text.replace(
+    '"tag": "'+FT01_HELD_JOURNAL_LAST_TAG+'"',
+    '"tag": "0052_cashier_stream_receipt_storage"',
+  )}),/FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT/);
+  obj.entries[1].when+=1;
+  assert.throws(()=>mutated({[path]:JSON.stringify(obj)}),
+    /FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT/);
+  obj.entries.push({...obj.entries[52],idx:53});
+  assert.throws(()=>mutated({[path]:JSON.stringify(obj)}),
+    /FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT/);
 });
 test("FT01 materializer cannot run outside local GitHub Actions CI",()=>{
   assert.throws(()=>materializeFt01LocalOnlyBundle({env:{}}),

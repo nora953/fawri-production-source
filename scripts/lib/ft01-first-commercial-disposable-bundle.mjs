@@ -17,6 +17,9 @@ import {stabilizeMigrationDependencyOrder} from "../../lib/db/scripts/lib/migrat
 
 const defaultRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const HELD_SQL="lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql";
+const HELD_JOURNAL="lib/db/first-commercial/held/meta/_journal.json";
+const CANONICAL_TAG="0052_cashier_stream_receipt_storage";
+export const FT01_HELD_JOURNAL_LAST_TAG="0052_cashier_stream_receipt_storage_invoker";
 const DRIZZLE_DIR="lib/db/drizzle";
 /** SHA of the exact reviewed 53-stage post-stabilization SQL chain from
  * successful isolated PostgreSQL18 CI #42626425487. Changes to migration
@@ -34,6 +37,22 @@ export function buildFt01DisposableBundleManifest({
   const canonical=buildFt01CleanBootstrapSourcePlan({root,readFile});
   const review=buildFt01FirstCommercialInvokerReviewPlan({root,readFile});
   const entries=canonical.inventoried_migrations;
+  // Separate first-commercial journal: same 0000..0051 source and timeline,
+  // but an independently named 0052 lineage. Avoid silently deploying
+  // alternate SQL under the historical tag without a distinct audit trail.
+  const originalJournal=readFile("lib/db/drizzle/meta/_journal.json");
+  const heldJournal=readFile(HELD_JOURNAL);
+  const expectedOriginal=`"tag": "${CANONICAL_TAG}"`;
+  if(originalJournal.split(expectedOriginal).length!==2 ||
+     heldJournal!==originalJournal.replace(expectedOriginal,
+       `"tag": "${FT01_HELD_JOURNAL_LAST_TAG}"`)){
+    fail("FT01_FIRST_COMMERCIAL_HELD_JOURNAL_DRIFT");
+  }
+  const heldLedger=JSON.parse(heldJournal);
+  if(heldLedger.entries.length!==53 ||
+     heldLedger.entries[52].tag!==FT01_HELD_JOURNAL_LAST_TAG){
+    fail("FT01_FIRST_COMMERCIAL_HELD_LEDGER_UNEXPECTED");
+  }
   if(entries.length!==53 || review.source_migrations_count!==53 ||
       review.approved_to_execute!==false ||
       review.commercial_release_authorized!==false ||
@@ -54,6 +73,7 @@ export function buildFt01DisposableBundleManifest({
     return Object.freeze({
       index:entry.index,
       tag:entry.tag,
+      selected_tag:entry.index===52?FT01_HELD_JOURNAL_LAST_TAG:entry.tag,
       canonical_sha256:canonicalDigest,
       selected_sha256:effectiveDigest,
       executable_sha256:hash(stabilizeMigrationDependencyOrder(activeSql)),
@@ -70,6 +90,8 @@ export function buildFt01DisposableBundleManifest({
     decision:"FT01_DISPOSABLE_ONLY_FIRST_COMMERCIAL_MIGRATION_BUNDLE",
     source_manifest_sha256:canonical.source_manifest_sha256,
     journal_sha256:canonical.migration_journal_sha256,
+    held_journal_sha256:hash(heldJournal),
+    held_journal_distinct_from_canonical:true,
     snapshot_0052_sha256:canonical.snapshot_0052_sha256,
     canonical_0052_sha256:review.canonical_0052_sha256,
     selected_0052_sha256:review.reviewed_invoker_variant_0052_sha256,
@@ -116,8 +138,9 @@ export function materializeFt01LocalOnlyBundle({root=defaultRoot,env=process.env
   const source=path.join(root,DRIZZLE_DIR);
   const actual=fs.readdirSync(source,{withFileTypes:true})
     .filter(x=>x.name.endsWith(".sql"));
-  const expected=new Set(manifest.entries.map(x=>x.tag+".sql"));
-  if(actual.length!==53 || actual.some(x=>!x.isFile()||!expected.has(x.name))){
+  const expectedCanonical=new Set(manifest.entries.map(x=>x.tag+".sql"));
+  const expected=new Set(manifest.entries.map(x=>x.selected_tag+".sql"));
+  if(actual.length!==53 || actual.some(x=>!x.isFile()||!expectedCanonical.has(x.name))){
     fail("FT01_DISPOSABLE_BUNDLE_UNINVENTORIED_SQL");
   }
   const folder=fs.mkdtempSync(path.join(os.tmpdir(),"fawri-ft01-review-only-"));
@@ -129,10 +152,18 @@ export function materializeFt01LocalOnlyBundle({root=defaultRoot,env=process.env
       if(hash(sql)!==item.executable_sha256){
         fail("FT01_DISPOSABLE_BUNDLE_STAGED_SQL_DRIFT");
       }
-      fs.writeFileSync(path.join(folder,item.tag+".sql"),sql,{flag:"wx",mode:0o600});
+      fs.writeFileSync(path.join(folder,item.selected_tag+".sql"),sql,{flag:"wx",mode:0o600});
     }
-    const journal=readFile("lib/db/drizzle/meta/_journal.json");
-    if(hash(journal)!==manifest.journal_sha256)fail("FT01_DISPOSABLE_BUNDLE_JOURNAL_DRIFT");
+    const canonicalJournal=readFile("lib/db/drizzle/meta/_journal.json");
+    const journal=readFile(HELD_JOURNAL);
+    const journalOriginalTag=`"tag": "${CANONICAL_TAG}"`;
+    if(hash(canonicalJournal)!==manifest.journal_sha256 ||
+       canonicalJournal.split(journalOriginalTag).length!==2 ||
+       journal!==canonicalJournal.replace(journalOriginalTag,
+         `"tag": "${FT01_HELD_JOURNAL_LAST_TAG}"`) ||
+       hash(journal)!==manifest.held_journal_sha256){
+      fail("FT01_DISPOSABLE_BUNDLE_JOURNAL_DRIFT");
+    }
     fs.writeFileSync(path.join(folder,"meta","_journal.json"),journal,{flag:"wx",mode:0o600});
     const snapshot=readFile("lib/db/drizzle/meta/0052_snapshot.json");
     if(hash(snapshot)!==manifest.snapshot_0052_sha256)

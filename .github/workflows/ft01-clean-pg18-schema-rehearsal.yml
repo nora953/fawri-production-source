@@ -23,6 +23,7 @@ on:
       - "scripts/lib/ft01-clean-bootstrap-source-plan.mjs"
       - "scripts/tests/ft01-clean-bootstrap-source-plan.test.mjs"
       - "lib/db/first-commercial/held/0052_cashier_stream_receipt_storage_invoker.sql"
+      - "lib/db/first-commercial/held/meta/_journal.json"
       - "lib/db/first-commercial/held/0052_cashier_retirement_issuer_grants.sql"
       - "scripts/lib/ft01-first-commercial-disposable-bundle.mjs"
       - "scripts/tests/ft01-first-commercial-disposable-bundle.test.mjs"
