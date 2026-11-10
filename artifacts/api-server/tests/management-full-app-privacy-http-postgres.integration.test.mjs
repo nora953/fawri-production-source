@@ -496,6 +496,85 @@ test('full application management privacy preserves cutover ordering and current
     )).rows[0];
     assert.deepEqual(restored,{merchant_id:original.merchant_id,metadata:original.metadata});
   });
+  await t.test('historic tenant attribution outside 2000-row history window still protects newer system-labelled episode',async()=>{
+    const unique=randomUUID();
+    const key='p0-archived-merchant-incident-'+a.id+'-'+unique;
+    const fillerPrefix='p0-truncated-scope-'+unique+'-';
+    const oldTime=Date.now();
+    const historic={scope:'merchant',severity:'warning',code:'SYNTHETIC_OLD_TENANT_LINK',
+      area:'synthetic',runbook:'synthetic',value:1,merchant_id:a.id,merchant_name:'private-archived-name'};
+    const newer={scope:'system',severity:'warning',code:'SYNTHETIC_STALE_SYSTEM',
+      area:'synthetic',runbook:'synthetic',value:1,merchant_id:null,merchant_name:null};
+    const create=async(action,merchant,metadata,when)=>admin.query(
+      `INSERT INTO audit_events
+        (id,actor_kind,merchant_id,action_type,entity_type,entity_id,metadata,created_at)
+       VALUES($1,'system',$2,$3,'early_warning_incident',$4,$5::jsonb,$6)`,
+      ['p0-old-scope-'+randomUUID(),merchant,action,key,JSON.stringify(metadata),new Date(when)],
+    );
+    assert.equal((await admin.query(
+      "SELECT count(*)::int AS n FROM audit_events WHERE entity_id=$1 OR entity_id LIKE $2",
+      [key,fillerPrefix+'%'])).rows[0].n,0);
+    try{
+      // Both protected source events are older than the bounded 2000-row read.
+      await create('early_warning_incident_opened',a.id,historic,oldTime-90000);
+      await create('early_warning_incident_resolved',a.id,historic,oldTime-85000);
+      await admin.query(
+        `INSERT INTO audit_events
+           (id,actor_kind,merchant_id,action_type,entity_type,entity_id,metadata,created_at)
+         SELECT $1::text || g::text,'system',NULL,'early_warning_incident_resolved',
+                'early_warning_incident',$2::text || g::text,$3::jsonb,
+                $4::timestamptz+(g * interval '1 millisecond')
+         FROM generate_series(1, 2005) AS g`,
+        [fillerPrefix,fillerPrefix,JSON.stringify({scope:'system',code:'SYNTHETIC_PADDING'}),new Date(oldTime-65000)],
+      );
+      await create('early_warning_incident_opened',null,newer,oldTime-1500);
+      const recent=(await admin.query(
+        `SELECT entity_id,merchant_id,metadata FROM audit_events
+          WHERE entity_type='early_warning_incident'
+          AND action_type=ANY(ARRAY['early_warning_incident_opened','early_warning_incident_resolved'])
+          ORDER BY created_at DESC LIMIT 2000`,
+      )).rows;
+      assert.ok(recent.some(row=>row.entity_id===key&&row.metadata.scope==='system'));
+      assert.equal(recent.some(row=>row.entity_id===key&&row.merchant_id===a.id),false,
+        'historical merchant proof must truly be outside the bounded 2000-row window');
+      const ownerRead=await req('/api/auth/admin/early-warning?window=1h',owner);
+      assert.equal(ownerRead.status,200);
+      assert.equal(ownerRead.body.snapshot.incident_history_status,'available');
+      const episode=ownerRead.body.snapshot.incident_history.find(row=>row.incident_key===key);
+      assert.ok(episode,'authorized owner must retain newest episode');
+      assert.equal(episode.scope,'merchant','historic merchant SQL evidence outside page must still classify key');
+      const before=(await admin.query(
+        "SELECT to_jsonb(t) AS row FROM audit_events t WHERE entity_id=$1 ORDER BY id",[key],
+      )).rows;
+      for(const url of ['/api/auth/admin/early-warning?window=1h',
+        '/API/Auth/Admin/Early-Warning/?window=1h&view_merchants=true']){
+        const logOnly=await req(url,viewer);
+        assert.equal(logOnly.status,200);
+        assert.equal(logOnly.body.snapshot.incident_history_status,'available');
+        assert.equal(logOnly.body.snapshot.merchant_health_visible,false);
+        assert.equal(JSON.stringify(logOnly.body).includes(key),false,
+          'log-only HTTP must not disclose archived tenant-bearing incident key');
+        assert.equal(JSON.stringify(logOnly.body).includes('private-archived-name'),false);
+      }
+      assert.deepEqual((await admin.query(
+        "SELECT to_jsonb(t) AS row FROM audit_events t WHERE entity_id=$1 ORDER BY id",[key],
+      )).rows,before,'log-only reads must not mutate episode ledger');
+      console.log('P0_EARLY_WARNING_TRUNCATED_MERCHANT_HISTORY_BOUNDARY '+JSON.stringify({
+        realAppHttp:true,actualPostgres:true,olderMerchantEvidenceOutside2000:true,
+        ownerEpisodeClassifiedMerchant:true,logOnlyKeyDenied:true,existingRowsUnchanged:true,
+        hostedAccepted:false,
+      }));
+    }finally{
+      // Cleanup is strictly inside the disposable PG test fixture.
+      await admin.query(
+        "DELETE FROM audit_events WHERE entity_id=$1 OR entity_id LIKE $2",
+        [key,fillerPrefix+'%'],
+      );
+    }
+    assert.equal((await admin.query(
+      "SELECT count(*)::int AS n FROM audit_events WHERE entity_id=$1 OR entity_id LIKE $2",
+      [key,fillerPrefix+'%'])).rows[0].n,0);
+  });
   await t.test('view_logs-only early-warning response omits merchant identity in every nested projection while retaining system history and aggregates',async()=>{
     const before=await incidentSnapshot(),peer=await snapshot();
     for(const path of ['/api/auth/admin/early-warning?window=1h','/API/Auth/Admin/Early-Warning/?window=1h&view_merchants=true&owner=true']){
