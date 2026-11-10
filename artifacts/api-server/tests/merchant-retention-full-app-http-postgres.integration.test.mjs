@@ -63,7 +63,7 @@ test('real full app merchant HTTP cannot mutate a retention-suspended account on
     `INSERT INTO subscriptions
        (id,merchant_id,plan_name,status,billing_anchor_day,starts_at,expires_at,
         base_reply_limit,base_replies_used,base_replies_remaining,addon_replies_remaining)
-     VALUES($1,$2,'silver','pending_activation',1,$3,$4,10,0,10,0)`,
+     VALUES($1,$2,'silver','active',1,$3,$4,10,0,10,0)`,
     ['sub-'+held.id,held.id,'2025-01-01T00:00:00Z',expiry],
   );
   const {authPostgresSessionAuthority:auth}=await import('../src/services/authPostgresSessionAuthority.ts');
@@ -96,6 +96,11 @@ test('real full app merchant HTTP cannot mutate a retention-suspended account on
     'pre-suspension merchant may use its legitimate session');
   await admin.query('UPDATE notifications SET read_at=NULL WHERE id=$1',[held.noticeId]);
   assert.deepEqual(await snapshot(),before,'fixture reset restores original read state');
+
+  // The pre-suspension session was genuinely accepted under an active term.
+  // Simulate a later loss of subscription activation using disposable test
+  // bootstrap, so we do NOT mistake initial setup suspension for a cookie bug.
+  await admin.query("UPDATE subscriptions SET status='pending_activation' WHERE merchant_id=$1",[held.id]);
 
   // Simulate retention enforcement in the actual isolated database, then
   // test requests with the previously valid, real session cookie.
