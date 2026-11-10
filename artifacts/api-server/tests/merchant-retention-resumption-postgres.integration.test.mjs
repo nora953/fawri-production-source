@@ -51,7 +51,7 @@ test('retention suspension only restores from an activated unexpired subscriptio
           base_reply_limit,base_replies_used,base_replies_remaining,
           addon_replies_remaining,auto_reply_enabled)
        VALUES($1,$2,'silver',$3,1,$4,$5,$6,0,$6,0,false)`,
-      ['sub-'+id,id,entry.status,oldEnd,entry.expired?oldEnd:future,entry.replies],
+      ['sub-'+id,id,entry.status,new Date('2024-12-10T03:00:00.000Z'),entry.expired?oldEnd:future,entry.replies],
     );
   }
   const snapshot=async()=> (await admin.query(
