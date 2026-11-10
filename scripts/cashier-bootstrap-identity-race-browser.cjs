@@ -41,7 +41,7 @@ module.exports=async function runCashierBootstrapIdentityRace(browser){
     console.log('P0_CASHIER_BOOTSTRAP_ATOMIC_CREATE_REAL_INDEXEDDB '+JSON.stringify({
       nativeIndexedDb:true,realChromium:true,independentTabs:2,
       simultaneousCallers:all.length,uniqueIdentities:distinct.length,
-      stableAfterReload:true,serverAcceptance:false,physicalDeviceAcceptance:false
+      stableAcrossBothTabs:true,serverAcceptance:false,physicalDeviceAcceptance:false
     }));
   }finally{await context.close();}
 };
