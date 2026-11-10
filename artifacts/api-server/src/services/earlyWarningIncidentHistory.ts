@@ -25,6 +25,7 @@ type IncidentAuditRow = {
   entity_id: unknown;
   action_type: unknown;
   metadata: unknown;
+  merchant_id: unknown;
   created_at: unknown;
 };
 
@@ -70,17 +71,23 @@ function record(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function normalizedMetadata(value: unknown): IncidentMetadata {
+function normalizedMetadata(value: unknown, persistedMerchantId?: unknown): IncidentMetadata {
   const metadata = record(value);
+  const ownedMerchantId = text(persistedMerchantId);
+  const historicMerchantId = text(metadata.merchant_id);
+  const historicMerchantName = text(metadata.merchant_name);
+  // Durable SQL ownership outranks mutable/historical JSON classification.
+  const merchantLinked = Boolean(ownedMerchantId || historicMerchantId ||
+    historicMerchantName || metadata.scope === 'merchant');
   return {
     severity: metadata.severity === "critical" ? "critical" : "warning",
     area: text(metadata.area),
     code: text(metadata.code),
     value: numberValue(metadata.value),
     runbook: text(metadata.runbook),
-    scope: metadata.scope === "merchant" ? "merchant" : "system",
-    merchant_id: text(metadata.merchant_id) || null,
-    merchant_name: text(metadata.merchant_name) || null,
+    scope: merchantLinked ? "merchant" : "system",
+    merchant_id: ownedMerchantId || historicMerchantId || null,
+    merchant_name: historicMerchantName || null,
   };
 }
 
@@ -134,13 +141,21 @@ function buildHistory(
 ): EarlyWarningIncidentHistoryItem[] {
   const episodes: EarlyWarningIncidentHistoryItem[] = [];
   const openByKey = new Map<string, EarlyWarningIncidentHistoryItem>();
+  // A later resolution may carry the SQL tenant link absent in older open
+  // metadata. Suppress the entire historical episode for log-only readers.
+  const merchantLinkedKeys = new Set(rows.filter((row) => {
+    const stored = record(row.metadata);
+    return Boolean(text(row.merchant_id) || text(stored.merchant_id) ||
+      text(stored.merchant_name) || stored.scope === 'merchant');
+  }).map((row) => text(row.entity_id)).filter(Boolean));
 
   for (const row of rows) {
     const incidentKey = text(row.entity_id);
     const createdAt = timestamp(row.created_at);
     if (!incidentKey || !createdAt) continue;
     const actionType = text(row.action_type);
-    const metadata = normalizedMetadata(row.metadata);
+    const metadata = normalizedMetadata(row.metadata, row.merchant_id);
+    if (merchantLinkedKeys.has(incidentKey)) metadata.scope = 'merchant';
 
     if (actionType === OPENED_ACTION) {
       const episode: EarlyWarningIncidentHistoryItem = {
@@ -217,7 +232,7 @@ export async function syncEarlyWarningIncidentHistory(input: {
 
     const latest = await client.query<IncidentAuditRow>(
       `SELECT DISTINCT ON (entity_id)
-          entity_id, action_type, metadata, created_at
+          entity_id, action_type, metadata, merchant_id, created_at
        FROM audit_events
        WHERE entity_type = $1
          AND action_type = ANY($2::text[])
@@ -243,14 +258,14 @@ export async function syncEarlyWarningIncidentHistory(input: {
       await insertLifecycleEvent(client, {
         actionType: RESOLVED_ACTION,
         incidentKey,
-        metadata: normalizedMetadata(row.metadata),
+        metadata: normalizedMetadata(row.metadata, row.merchant_id),
       });
     }
 
     const history = await client.query<IncidentAuditRow>(
-      `SELECT entity_id, action_type, metadata, created_at
+      `SELECT entity_id, action_type, metadata, merchant_id, created_at
        FROM (
-         SELECT entity_id, action_type, metadata, created_at
+         SELECT entity_id, action_type, metadata, merchant_id, created_at
          FROM audit_events
          WHERE entity_type = $1
            AND action_type = ANY($2::text[])
