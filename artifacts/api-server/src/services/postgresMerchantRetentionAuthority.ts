@@ -77,13 +77,38 @@ async function selectSubscriptionForUpdate(
   return rows[0] || null;
 }
 
+function permitsRetentionResumption(
+  subscription: SubscriptionRetentionRow | null,
+  now: Date,
+): boolean {
+  // A future expiry timestamp is not a payment or activation attestation.
+  // Pending-activation, suspended and expired subscriptions may not restore
+  // a retention-suspended merchant, even if their expiry was extended.
+  return Boolean(
+    subscription &&
+      (subscription.status === "active" ||
+        subscription.status === "replies_exhausted") &&
+      Number.isFinite(subscription.expires_at.getTime()) &&
+      subscription.expires_at.getTime() > now.getTime(),
+  );
+}
+
 function effectiveSubscriptionEnd(
   merchant: MerchantRetentionRow,
   subscription: SubscriptionRetentionRow | null,
+  now: Date,
 ): string | undefined {
+  const subscriptionEnd = subscription?.expires_at.getTime();
+  const includeSubscriptionEnd = Boolean(
+    subscription &&
+      subscription.status !== "pending_activation" &&
+      (permitsRetentionResumption(subscription, now) ||
+        (Number.isFinite(subscriptionEnd) &&
+          (subscriptionEnd as number) <= now.getTime())),
+  );
   const values = [
     merchant.last_subscription_ended_at?.getTime(),
-    subscription?.expires_at?.getTime(),
+    includeSubscriptionEnd ? subscriptionEnd : undefined,
   ].filter((value): value is number => Number.isFinite(value));
   if (values.length === 0) return undefined;
   return new Date(Math.max(...values)).toISOString();
@@ -130,11 +155,9 @@ export async function refreshMerchantRetentionPostgres(
     const merchant = await selectMerchantForUpdate(client, merchantId);
     if (!merchant || merchant.account_state === "closed") return null;
     const subscription = await selectSubscriptionForUpdate(client, merchantId);
-    const effectiveEnd = effectiveSubscriptionEnd(merchant, subscription);
+    const effectiveEnd = effectiveSubscriptionEnd(merchant, subscription, now);
     const retention = calculateRetentionStatus(effectiveEnd, now);
-    const activeSubscription = Boolean(
-      subscription && subscription.expires_at.getTime() > now.getTime(),
-    );
+    const activeSubscription = permitsRetentionResumption(subscription, now);
     const wasRetentionSuspended = Boolean(merchant.retention_suspended_at);
 
     if (activeSubscription && wasRetentionSuspended) {
