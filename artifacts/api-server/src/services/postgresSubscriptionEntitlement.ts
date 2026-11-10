@@ -546,7 +546,14 @@ async function refreshLockedSubscription(
   const totalRemaining = baseRemaining + addonRemaining;
   const totalUsed = baseUsed + addonUsed;
   let nextStatus = row.status;
-  if (nextStatus !== "suspended" && nextStatus !== "pending_activation") {
+  // Expired is also an authorization state, not merely a timestamp hint.
+  // A stale/future expires_at must not silently resurrect a subscription
+  // that has not gone through an explicit paid activation/renewal.
+  if (
+    nextStatus !== "suspended" &&
+    nextStatus !== "pending_activation" &&
+    nextStatus !== "expired"
+  ) {
     nextStatus =
       row.expires_at.getTime() <= now.getTime()
         ? "expired"
@@ -1302,8 +1309,19 @@ export async function applySubscriptionActionPostgres(input: {
       await client.query(
         `UPDATE subscriptions
             SET emergency_debt = $3,
-                status = CASE WHEN expires_at > $4 THEN 'active' ELSE status END,
-                auto_reply_enabled = CASE WHEN expires_at > $4 THEN TRUE ELSE auto_reply_enabled END,
+                -- Adding reply credit is NOT evidence of a paid plan activation.
+                -- Refill is allowed to revive an exhausted, already activated
+                -- term; pending/suspended/expired plans keep their state.
+                status = CASE
+                  WHEN status IN ('active', 'replies_exhausted') AND expires_at > $4
+                    THEN 'active'::subscription_status
+                  ELSE status
+                END,
+                auto_reply_enabled = CASE
+                  WHEN status IN ('active', 'replies_exhausted') AND expires_at > $4
+                    THEN TRUE
+                  ELSE auto_reply_enabled
+                END,
                 version = version + 1,
                 updated_at = $4
           WHERE id = $1 AND merchant_id = $2`,
