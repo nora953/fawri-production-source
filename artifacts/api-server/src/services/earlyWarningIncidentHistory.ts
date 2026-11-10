@@ -135,19 +135,27 @@ async function insertLifecycleEvent(
 
 function buildHistory(
   rows: IncidentAuditRow[],
-  currentIncidentKeys: Set<string>,
+  currentIncidents: Map<string, EarlyWarningIncidentWithScope>,
   now: Date,
   window: EarlyWarningWindow,
 ): EarlyWarningIncidentHistoryItem[] {
   const episodes: EarlyWarningIncidentHistoryItem[] = [];
   const openByKey = new Map<string, EarlyWarningIncidentHistoryItem>();
-  // A later resolution may carry the SQL tenant link absent in older open
-  // metadata. Suppress the entire historical episode for log-only readers.
+  const currentIncidentKeys = new Set(currentIncidents.keys());
+  // Historical SQL/JSON and current authoritative merchant evaluation must
+  // both classify an incident. An old system-labelled OPENED row with no
+  // tenant columns must not leak its tenant-bearing key to view_logs actors.
   const merchantLinkedKeys = new Set(rows.filter((row) => {
     const stored = record(row.metadata);
     return Boolean(text(row.merchant_id) || text(stored.merchant_id) ||
       text(stored.merchant_name) || stored.scope === 'merchant');
   }).map((row) => text(row.entity_id)).filter(Boolean));
+  for (const [key, incident] of currentIncidents) {
+    if (incident.scope === "merchant" ||
+        text(incident.merchant_id) || text(incident.merchant_name)) {
+      merchantLinkedKeys.add(key);
+    }
+  }
 
   for (const row of rows) {
     const incidentKey = text(row.entity_id);
@@ -276,6 +284,6 @@ export async function syncEarlyWarningIncidentHistory(input: {
       [ENTITY_TYPE, [OPENED_ACTION, RESOLVED_ACTION], MAX_HISTORY_EVENTS],
     );
 
-    return buildHistory(history.rows, new Set(currentByKey.keys()), now, input.window);
+    return buildHistory(history.rows, currentByKey, now, input.window);
   });
 }
