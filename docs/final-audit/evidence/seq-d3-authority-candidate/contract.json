@@ -456,7 +456,7 @@
     },
     {
       "path": "scripts/run-isolated-postgres-audit.sh",
-      "sha256": "c726e6f097ea91f9df98f88fbc7ce6c8bc741566e6c6a7c16453473b38941b32"
+      "sha256": "00d73e9b5eebbfcbf4e44d0a83dcc6029ea353aab44ca63cc9268b17629f208f"
     },
     {
       "path": "docs/final-audit/evidence/seq-d3-authority-candidate/schema/cashier-staff.ts",
