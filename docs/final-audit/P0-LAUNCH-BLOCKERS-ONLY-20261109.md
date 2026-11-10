@@ -4,7 +4,7 @@
 
 **Checkpoint:** 2026-11-09, Draft PR [#550](https://github.com/nora953/fawri-production-source/pull/550); source-only work. **NO-GO** until every necessary P0 blocker has real acceptance, external setup and deployment/recovery proof.
 
-This file supersedes **audit-work sequencing only**, not canonical authorization policy or `docs/final-audit/evidence/P0-CLOSURE-REGISTER.json`. That 2026-10-24 registry has **45 known bounded source gates: 29 CLOSED_SOURCE, 7 OPEN, 9 BLOCKED**. It explicitly declares `completeP0Inventory=false`, `overallPercentage=null`. **29/45 = 64.4% counts source-gate rows, not launch readiness.** Do not use a percent as evidence of release closure.
+**Historical 2026-11-09 rule (superseded for work order on 2026-11-11):** this register previously superseded audit-work sequencing only. **Current execution priority now belongs exclusively to root `LAUNCH_PLAN.md`.** Canonical authorization policy and `docs/final-audit/evidence/P0-CLOSURE-REGISTER.json` remain authoritative for evidence/status, not historical 'next' actions. That 2026-10-24 registry has **45 known bounded source gates: 29 CLOSED_SOURCE, 7 OPEN, 9 BLOCKED**. It explicitly declares `completeP0Inventory=false`, `overallPercentage=null`. **29/45 = 64.4% counts source-gate rows, not launch readiness.** Do not use a percent as evidence of release closure.
 
 ## P0 launch-blocker execution order
 
