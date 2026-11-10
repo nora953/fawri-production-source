@@ -81,7 +81,42 @@ async function insertOperationalNotification(input: {
         createdAt(input.createdAt),
       ],
     );
-    return { notification_id: id, deduplicated: inserted.rows.length === 0 };
+    if (inserted.rows.length === 1) {
+      return { notification_id: id, deduplicated: false };
+    }
+
+    // A globally conflicting ID alone is not proof that this merchant
+    // already received the same operational event. A foreign or malformed
+    // row can otherwise suppress a real payment-conflict notification.
+    // Compare identity, source, and the immutable event payload under the
+    // original merchant-scoped transaction; never overwrite historical rows.
+    const prior = await client.query<{ id: string }>(
+      `SELECT id FROM notifications
+        WHERE id = $1 AND audience = 'merchant'
+          AND merchant_id = $2
+          AND account_id = (SELECT account_id FROM merchants WHERE id = $2)
+          AND type = $3 AND title_key = $4 AND body_key = $5
+          AND source_entity_type = $6 AND source_entity_id = $7
+          AND variables = $8::jsonb
+        LIMIT 1`,
+      [
+        id,
+        merchantId,
+        input.type,
+        input.titleKey,
+        input.bodyKey,
+        source.sourceEntityType,
+        source.sourceEntityId,
+        JSON.stringify(input.variables),
+      ],
+    );
+    if (prior.rows.length !== 1) {
+      throw Object.assign(
+        new Error("operational notification identity conflicts with existing event evidence"),
+        { code: "OPERATIONAL_NOTIFICATION_SOURCE_CONFLICT" },
+      );
+    }
+    return { notification_id: id, deduplicated: true };
   });
 }
 
