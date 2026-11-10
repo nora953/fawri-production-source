@@ -163,6 +163,17 @@ export async function getOrCreateCashierDeviceIdentity(): Promise<CashierDeviceI
       await completion;
       return existing;
     }
+    if (existing) {
+      // A damaged/partial bootstrap row may still identify durable offline
+      // sales or outbox records. Never silently invent a new merchant/device
+      // ID over it, which would orphan the original financial history.
+      await completion;
+      throw new CashierOperatorSessionClientError(
+        'CASHIER_BOOTSTRAP_IDENTITY_INVALID',
+        'Existing cashier device identity is incomplete; preserve it for recovery',
+        409,
+      );
+    }
 
     const identity: CashierDeviceIdentity = {
       id: 'default',
