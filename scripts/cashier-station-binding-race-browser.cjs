@@ -316,6 +316,131 @@ async function lateOutboxDuringPairInRealBrowser() {
   }
 }
 
+
+// Mandatory cross-tab Web Lock for a cashier write versus the final re-pair
+// step. A sale must not slip between the last outbox read and station CAS.
+// The name is kept literal here to reproduce RED before source implementation.
+async function financialLockVsPairingInRealBrowser() {
+  const runtime=await import('/src/lib/cashierOperatorSessionRuntime.ts');
+  const {IndexedDbCashierAuthority}=await import('/src/lib/cashierIndexedDbAuthority.ts');
+  const check=(ok,msg)=>{if(!ok)throw Error('P0_SHARED_FINANCIAL_WEB_LOCK '+msg);};
+  check(Boolean(navigator.locks?.request&&navigator.locks?.query),
+    'real browser cross-tab lock manager required');
+  const suffix=crypto.randomUUID();
+  const identity={
+    id:'default',local_merchant_id:'p0-web-lock-local-'+suffix,
+    cloud_merchant_id:'p0-web-lock-merchant-'+suffix,
+    device_id:'p0-web-lock-device-'+suffix,
+    created_at:new Date().toISOString(),cloud_bound_at:new Date().toISOString(),
+    station_id:'p0-web-lock-old-station-'+suffix,
+    station_name:'Original web-lock station',
+    location_id:'p0-web-lock-location',branch_key:'p0-web-lock-branch',
+    station_token:'p0-web-lock-old-token-'+suffix,
+    station_credential_expires_at:'9999-12-31T23:59:59.999Z',
+  };
+  const lockName='fawri-cashier-local-financial:'+identity.local_merchant_id+':'+identity.device_id;
+  const authority=new IndexedDbCashierAuthority({
+    localMerchantId:identity.local_merchant_id,
+    cloudMerchantId:identity.cloud_merchant_id,
+    deviceId:identity.device_id,
+    databaseName:'fawri-cashier-'+identity.local_merchant_id+'-v1',
+  });
+  const priorFetch=globalThis.fetch;
+  let releaseHeld, pairingResponse, enteredHold, enteredFetch;
+  const heldGate=new Promise(resolve=>{releaseHeld=resolve;});
+  const heldReady=new Promise(resolve=>{enteredHold=resolve;});
+  const requestReady=new Promise(resolve=>{enteredFetch=resolve;});
+  let held;
+  try{
+    await runtime.writeCashierDeviceIdentity(identity);
+    await authority.upsertCatalogSnapshot([{
+      product_id:'p0-locked-item',item_type:'product',name:'Financial lock item',
+      track_inventory:true,stock_quantity:3,currency_code:'IQD',
+      currency_fraction_digits:0,base_unit_price_minor:1000,catalog_version:1,
+    }],{preserveLocalInventory:false});
+    globalThis.fetch=(url,opts)=>{
+      check(url==='/api/cashier/station/pair'&&opts?.method==='POST',
+        'only real pairing POST should be called');
+      enteredFetch();
+      return new Promise(resolve=>{pairingResponse=resolve;});
+    };
+    const pairing=runtime.pairCashierStation('p0-web-lock-pair').then(
+      value=>({ok:true,value}),error=>({ok:false,code:error?.code}));
+    await requestReady;
+    check((await runtime.getCashierPendingEnvelopeCount())===0,
+      'preflight must have passed before the sale starts');
+    held=navigator.locks.request(lockName,{mode:'exclusive'},async()=>{
+      enteredHold();
+      await heldGate;
+    });
+    await heldReady;
+    const saleId='p0-web-lock-sale-'+suffix;
+    let saleSettled=false;
+    const sale=authority.commitSale({
+      operation_id:saleId,payment_method:'cash',payment_status:'paid',
+      lines:[{product_id:'p0-locked-item',quantity:1}],
+    }).then(result=>{saleSettled=true;return result;},
+      error=>{saleSettled=true;throw error;});
+    // The protected financial operation is queued FIRST under the real lock.
+    // Older source without a lock writes immediately here (RED).
+    let financialQueued=false;
+    for(let attempt=0;attempt<30;attempt++){
+      const info=await navigator.locks.query();
+      financialQueued=info.pending.some(item=>item.name===lockName);
+      if(financialQueued||saleSettled)break;
+      await new Promise(resolve=>setTimeout(resolve,15));
+    }
+    check(financialQueued&&!saleSettled,
+      'real sale must queue under the shared held lock before writing');
+    pairingResponse(new Response(JSON.stringify({
+      ok:true,merchant_id:identity.cloud_merchant_id,
+      station_id:'p0-web-lock-new-station',station_name:'New station',
+      location_id:identity.location_id,branch_key:identity.branch_key,
+      station_token:'p0-web-lock-new-token',
+      credential_expires_at:'9999-12-31T23:59:59.999Z',
+    }),{status:200,headers:{'Content-Type':'application/json'}}));
+    let pairingQueued=false, pairingSettled=false;
+    const outcome=pairing.then(value=>{pairingSettled=true;return value;});
+    for(let attempt=0;attempt<30;attempt++){
+      const info=await navigator.locks.query();
+      pairingQueued=info.pending.filter(item=>item.name===lockName).length>=2;
+      if(pairingQueued||pairingSettled)break;
+      await new Promise(resolve=>setTimeout(resolve,15));
+    }
+    check(pairingQueued&&!pairingSettled,
+      'station re-pair must queue BEHIND the financial writer, not bypass its lock');
+    releaseHeld();
+    await held;held=undefined;
+    await sale;
+    const denied=await outcome;
+    check(denied.ok===false&&denied.code==='CASHIER_PAIRING_PENDING_OPERATIONS',
+      're-pair must observe the prior real sale then fail closed');
+    const after=await runtime.getOrCreateCashierDeviceIdentity();
+    check(JSON.stringify(after)===JSON.stringify(identity),
+      'original station identity unchanged after rejected re-pair');
+    const outbox=await authority.listPendingSync(20);
+    check(outbox.length>=2&&outbox.some(x=>x.entity_type==='sale')&&
+      outbox.some(x=>x.entity_type==='inventory_movement'),
+      'sale and stock movement must remain in outbox');
+    check((await authority.getCatalogItem('p0-locked-item')).stock_quantity===2,
+      'sale decremented stock exactly once');
+    check(Boolean(await authority.getSale('sale:'+saleId)),
+      'sale remains durable');
+    return {
+      nativeIndexedDb:true,realWebLocks:true,
+      saleQueuedBeforePairing:true,serializedFinancialBeforePairing:true,
+      pairingDeniedOnPendingSale:true,oldStationPreserved:true,
+      saleAndMovementPreserved:true,realHttpProvider:false,
+      physicalDeviceAttested:false,hostedAccepted:false,
+    };
+  }finally{
+    releaseHeld?.();
+    if(held)await held.catch(()=>{});
+    globalThis.fetch=priorFetch;
+    await authority.close();
+  }
+}
+
 module.exports=async function runStationBindingRace(browser){
   const context=await browser.newContext();
   try {
@@ -328,6 +453,8 @@ module.exports=async function runStationBindingRace(browser){
     console.log('P0_STATION_CONCURRENT_PAIRING_CAS_REAL_INDEXEDDB '+JSON.stringify(concurrent));
     const lateOutbox=await page.evaluate(lateOutboxDuringPairInRealBrowser);
     console.log('P0_STATION_PAIRING_LATE_OUTBOX_NATIVE_INDEXEDDB '+JSON.stringify(lateOutbox));
-    return {recovery:result,concurrentPairing:concurrent,lateOutbox};
+    const serial=await page.evaluate(financialLockVsPairingInRealBrowser);
+    console.log('P0_STATION_PAIRING_SHARED_FINANCIAL_WEB_LOCK '+JSON.stringify(serial));
+    return {recovery:result,concurrentPairing:concurrent,lateOutbox,serial};
   } finally {await context.close();}
 };
