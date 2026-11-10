@@ -5,6 +5,7 @@ on:
       - 'artifacts/api-server/src/services/postgresMerchantRetentionAuthority.ts'
       - 'artifacts/api-server/tests/merchant-retention-resumption-fail-closed.test.mjs'
       - 'artifacts/api-server/tests/merchant-retention-resumption-postgres.integration.test.mjs'
+      - 'artifacts/api-server/tests/merchant-retention-full-app-http-postgres.integration.test.mjs'
       - 'scripts/run-isolated-postgres-audit.sh'
       - 'scripts/execute-disposable-postgres-audit.mjs'
       - '.github/workflows/p0-merchant-retention-resumption.yml'
