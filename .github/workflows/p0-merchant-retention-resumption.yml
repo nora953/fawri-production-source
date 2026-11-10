@@ -4,6 +4,9 @@ on:
     paths:
       - 'artifacts/api-server/src/services/postgresMerchantRetentionAuthority.ts'
       - 'artifacts/api-server/tests/merchant-retention-resumption-fail-closed.test.mjs'
+      - 'artifacts/api-server/tests/merchant-retention-resumption-postgres.integration.test.mjs'
+      - 'scripts/run-isolated-postgres-audit.sh'
+      - 'scripts/execute-disposable-postgres-audit.mjs'
       - '.github/workflows/p0-merchant-retention-resumption.yml'
   workflow_dispatch:
 
@@ -14,7 +17,7 @@ jobs:
   retention-safety:
     if: github.repository == 'nora953/fawri-production-source'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -27,3 +30,11 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Exercise actual retention restoration and negative auth SQL branches
         run: node --test artifacts/api-server/tests/merchant-retention-resumption-fail-closed.test.mjs
+      - name: Run real restricted-login PostgreSQL retention regression in disposable isolated Docker
+        run: bash scripts/run-isolated-postgres-audit.sh retention-resumption
+      - name: Destroy disposable audit containers and anonymous volumes
+        if: always()
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi
+
