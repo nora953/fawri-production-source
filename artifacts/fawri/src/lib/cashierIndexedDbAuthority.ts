@@ -1,3 +1,4 @@
+import { withCashierFinancialMutationLock } from './cashierFinancialMutationLock';
 import {
   CASHIER_LOCAL_SCHEMA_VERSION,
   type CashierCatalogLookup,
@@ -602,6 +603,16 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
   }
 
   async commitSale(input: CashierCommitSaleInput): Promise<CashierCommitSaleResult> {
+    return withCashierFinancialMutationLock(
+      this.localMerchantId,
+      this.deviceId,
+      () => this.commitSaleUnderFinancialLock(input),
+    );
+  }
+
+  private async commitSaleUnderFinancialLock(
+    input: CashierCommitSaleInput,
+  ): Promise<CashierCommitSaleResult> {
     const operationId = requiredIdentifier(input.operation_id, 'operation id');
     if (!Array.isArray(input.lines) || input.lines.length === 0) {
       throw new CashierIndexedDbError(
@@ -1014,6 +1025,16 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
   }
 
   async adjustInventory(
+    input: CashierInventoryAdjustmentInput,
+  ): Promise<CashierInventoryMovement> {
+    return withCashierFinancialMutationLock(
+      this.localMerchantId,
+      this.deviceId,
+      () => this.adjustInventoryUnderFinancialLock(input),
+    );
+  }
+
+  private async adjustInventoryUnderFinancialLock(
     input: CashierInventoryAdjustmentInput,
   ): Promise<CashierInventoryMovement> {
     // Refuse before opening a write transaction, reading or incrementing the
