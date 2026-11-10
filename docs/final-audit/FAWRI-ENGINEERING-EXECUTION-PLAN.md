@@ -1,4 +1,7 @@
-# FAWRI — Engineering Execution and Commercial Release Plan
+# FAWRI — Engineering Execution and Commercial Release Plan (HISTORICAL / SUPERSEDED)
+
+> **ARCHIVED EXECUTION PLAN / أُلغِي كخطة تنفيذ — 2026-11-11.** بأمر مالكة فوري، أصبحت [`LAUNCH_PLAN.md`](../../LAUNCH_PLAN.md) **الخطة التشغيلية الوحيدة**. كل ترتيب مهام و«الخطوة التالية» ومرحلة FT-01→FT-04 المجمّدة أدناه **تاريخي ولا يُتبع عند بدء محادثة جديدة**. الأدلة ومتطلبات الأمان والقبول السابقة لا تُحذف ولا تُعفى. ابدأ من [`AGENTS.md`](../../AGENTS.md)، ثم `LAUNCH_PLAN.md` وأحدث `PROGRESS.md`.
+
 Version: 1.0 | Adopted: 2026-10-24 | Status: ACTIVE ON P0 AUDIT BRANCH
 
 ## 2026-11-08 binding execution amendment — FAST TRACK TO SAFE FIRST LAUNCH
