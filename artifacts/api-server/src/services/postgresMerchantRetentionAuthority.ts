@@ -187,7 +187,18 @@ export async function refreshMerchantRetentionPostgres(
       await client.query(
         `UPDATE subscriptions
             SET status = $2::subscription_status,
-                auto_reply_enabled = ($2::subscription_status = 'active'),
+                -- Restoration is NOT fresh opt-in. Preserve the durable
+                -- merchant setting when resuming a previously suspended
+                -- subscription; missing/hidden preference fails closed.
+                -- Subscription activation and reply permission are separate.
+                auto_reply_enabled = (
+                  $2::subscription_status = 'active'
+                  AND EXISTS (
+                    SELECT 1 FROM merchant_settings settings
+                     WHERE settings.merchant_id = $1
+                       AND settings.auto_reply_enabled IS TRUE
+                  )
+                ),
                 suspended_at = NULL,
                 version = version + 1,
                 updated_at = now()
