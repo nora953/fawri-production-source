@@ -27,9 +27,9 @@ assert.equal(process.env.FAWRI_ALLOW_HELD_0053_DISPOSABLE,'1');
 assert.equal(process.env.FAWRI_HELD_0053_COMPOSITE_HTTP_CI,'1');
 const ownerUrl=localUrl(process.env.DATABASE_URL,'fawri_receipt_case_0053_owner_ci');
 const operatorUrl=localUrl(process.env.FAWRI_OPERATOR_DATABASE_URL,'fawri_operator_issuer');
-// CI uses the accepted synthetic-session fallback; it is NOT hosted auth
-// LOGIN parity, which remains an explicit P0 external acceptance requirement.
-assert.equal(process.env.FAWRI_AUTH_DATABASE_URL,'');
+// Independent restricted AUTH issuer on exactly the same disposable database.
+// This is NOT verified hosted identity/secret/production grant admission.
+const authUrl=localUrl(process.env.FAWRI_AUTH_DATABASE_URL,'fawri_auth_issuer');
 assert.equal(process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY,'required');
 assert.equal(process.env.FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY,'required');
 assert.equal(process.env.FAWRI_ALLOWED_ORIGINS,'https://operator.example.invalid');
@@ -39,12 +39,23 @@ const apiRequire=createRequire(new URL('../../artifacts/api-server/package.json'
 const {Client}=dbRequire('pg');
 const owner=new Client({connectionString:ownerUrl.toString(),connectionTimeoutMillis:5000});
 const operator=new Client({connectionString:operatorUrl.toString(),connectionTimeoutMillis:5000});
+const auth=new Client({connectionString:authUrl.toString(),connectionTimeoutMillis:5000});
 const actorId=randomUUID(),reviewerId=randomUUID();
 const deviceId='composite-open-'+randomUUID(),reviewDeviceId='composite-review-'+randomUUID();
 let listener;
 async function main() {
   await owner.connect();
   await operator.connect();
+  await auth.connect();
+  const authRole=(await auth.query(`SELECT session_user AS login,current_user AS active,
+    (r.rolsuper OR r.rolbypassrls OR r.rolcreaterole OR r.rolcreatedb) AS privileged,
+    has_function_privilege(session_user,'public.fawri_authentication_runtime()','EXECUTE') AS can_auth,
+    has_table_privilege(session_user,'public.verified_receipt_manual_cases',
+      'SELECT,INSERT,UPDATE,DELETE') AS can_case
+    FROM pg_roles r WHERE r.rolname=session_user`)).rows[0];
+  assert.deepEqual(authRole,{login:'fawri_auth_issuer',active:'fawri_auth_issuer',
+    privileged:false,can_auth:true,can_case:false},
+    'independent authenticated session issuer must be restricted');
   const identity=(await owner.query("SELECT current_database() AS db,(current_setting('server_version_num')::int/10000) AS major,(SELECT count(*)::int FROM drizzle.__drizzle_migrations) AS stages")).rows[0];
   assert.deepEqual(identity,{db:'fawri_receipt_case_0053_ci',major:18,stages:54},
     'P0_HELD_COMPOSITE_HTTP_REQUIRES_54_STAGES');
@@ -60,12 +71,18 @@ async function main() {
     await owner.query("INSERT INTO admin_profiles(id,account_id,display_name,role,enabled,must_change_password) VALUES($1,$1,$2,'owner_admin',true,false)",[id,name]);
   }
   const [{registerAdminDeviceAuthoritative,setAdminDeviceTrustAuthoritative},
-    {authPostgresSessionAuthority},{default:receiptRouter},{enforceAuthOrigin}]=await Promise.all([
+    {authPostgresSessionAuthority},{default:receiptRouter},{enforceAuthOrigin},
+    {withAuthenticationTransaction}]=await Promise.all([
     import('../../artifacts/api-server/src/services/postgresAdminSecurityAuthority.ts'),
     import('../../artifacts/api-server/src/services/authPostgresSessionAuthority.ts'),
     import('../../artifacts/api-server/src/routes/auth-verified-receipts-postgres-routes.ts'),
-    import('../../artifacts/api-server/src/middleware/authSession.ts')
+    import('../../artifacts/api-server/src/middleware/authSession.ts'),
+    import('../../artifacts/api-server/src/services/authenticationPostgresAuthority.ts')
   ]);
+  const actualAuth=await withAuthenticationTransaction(async client=>
+    (await client.query('SELECT session_user AS login,current_user AS active')).rows[0]);
+  assert.deepEqual(actualAuth,{login:'fawri_auth_issuer',active:'fawri_auth_issuer'},
+    'production auth authority must lease the independent LOGIN, not owner');
   async function login(id,deviceId) {
     const device=await registerAdminDeviceAuthoritative({accountId:id,accountKind:'admin',deviceId,deviceLabel:'Isolated composite HTTP'});
     assert.equal((await setAdminDeviceTrustAuthoritative({deviceRecordId:device.id,trusted:true,actorAccountId:id})).status,'trusted');
@@ -139,6 +156,7 @@ async function main() {
   assert.equal((await call('POST',intake,{},opener)).status,401);
   console.log('P0_HELD_0053_COMPOSITE_54_STAGE_MOUNTED_HTTP_RESTRICTED_PG18_PASS '+JSON.stringify({
     stages:54,actualPostgres:true,realAppHttp:true,operatorLoginRestricted:true,
+    authLoginRestricted:true,authSessionIssuerIndependentlyAuthenticated:true,
     independentSecondReviewer:true,noEntitlementMutation:true,hostedAccepted:false,
     providerSettlementVerified:false
   }));
@@ -151,6 +169,7 @@ try{
 }finally{
   if(listener)await new Promise(resolve=>listener.close(resolve));
   await operator.end().catch(()=>{});
+  await auth.end().catch(()=>{});
   await owner.end().catch(()=>{});
   const [{closeAuthenticationPool},{closeOperatorDirectoryPool}]=await Promise.all([
     import('../../artifacts/api-server/src/services/authenticationPostgresAuthority.ts'),
