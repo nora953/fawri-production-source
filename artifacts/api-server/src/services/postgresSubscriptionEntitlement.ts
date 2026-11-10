@@ -1317,8 +1317,11 @@ export async function applySubscriptionActionPostgres(input: {
                     THEN 'active'::subscription_status
                   ELSE status
                 END,
+                -- Credit must not override an active merchant's manual
+                -- auto-reply opt-out. Only an exhausted, already authorized
+                -- term resumes auto replies when replenished.
                 auto_reply_enabled = CASE
-                  WHEN status IN ('active', 'replies_exhausted') AND expires_at > $4
+                  WHEN status = 'replies_exhausted' AND expires_at > $4
                     THEN TRUE
                   ELSE auto_reply_enabled
                 END,
