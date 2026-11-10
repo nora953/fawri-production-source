@@ -156,6 +156,73 @@ async function stationRaceInRealBrowser() {
     globalThis.fetch=originalFetch;
   }
 }
+
+async function concurrentPairingInRealBrowser() {
+  const runtime=await import('/src/lib/cashierOperatorSessionRuntime.ts');
+  const assert=(ok,message)=>{if(!ok)throw Error('P0_STATION_CONCURRENT_PAIRING_CAS '+message);};
+  const initial=await runtime.getOrCreateCashierDeviceIdentity();
+  const original={...initial,cloud_merchant_id:'p0-pair-merchant-'+crypto.randomUUID()};
+  // Use already initialized local cashier DB from the smoke test. No local
+  // pending receipts exist in this fresh isolated browser context.
+  await runtime.writeCashierDeviceIdentity(original);
+  const responses=[];
+  let ready;
+  const bothSent=new Promise(resolve=>{ready=resolve;});
+  const originalFetch=globalThis.fetch;
+  try {
+    globalThis.fetch=(url,options)=>{
+      assert(url==='/api/cashier/station/pair','unexpected pairing URL');
+      assert(options?.method==='POST','pairing must be POST');
+      const body=JSON.parse(options.body);
+      assert(body.device_id===original.device_id,'pairing must retain device identity');
+      return new Promise(resolve=>{
+        responses.push({code:body.pairing_code,resolve});
+        if(responses.length===2)ready();
+      });
+    };
+    const first=runtime.pairCashierStation('old-code').then(
+      value=>({ok:true,value}),error=>({ok:false,code:error?.code}));
+    const second=runtime.pairCashierStation('new-code').then(
+      value=>({ok:true,value}),error=>({ok:false,code:error?.code}));
+    await bothSent;
+    assert(responses.length===2,'two different outstanding HTTP requests required');
+    const oldRequest=responses.find(r=>r.code==='old-code');
+    const newRequest=responses.find(r=>r.code==='new-code');
+    assert(oldRequest&&newRequest,'both pairing requests must be captured');
+    const response=(stationId,token)=>new Response(JSON.stringify({
+      ok:true,merchant_id:original.cloud_merchant_id,
+      station_id:stationId,station_name:stationId,
+      location_id:'p0-concurrent-location',branch_key:'p0-concurrent-branch',
+      station_token:token,credential_expires_at:'9999-12-31T23:59:59.999Z',
+    }),{status:200,headers:{'Content-Type':'application/json'}});
+    // The SECOND request is legitimately accepted first while the original
+    // HTTP attempt is stalled. The original response must not replace it.
+    const currentStation='p0-newer-paired-station';
+    const currentToken='p0-newer-station-token';
+    newRequest.resolve(response(currentStation,currentToken));
+    const accepted=await second;
+    assert(accepted.ok===true,'newer pairing must succeed');
+    const afterNew=await runtime.getOrCreateCashierDeviceIdentity();
+    assert(afterNew.station_id===currentStation &&
+      afterNew.station_token===currentToken,'new pairing must commit first');
+    oldRequest.resolve(response('p0-old-stale-station','p0-old-stale-token'));
+    const stale=await first;
+    const final=await runtime.getOrCreateCashierDeviceIdentity();
+    assert(stale.ok===false && stale.code==='CASHIER_PAIRING_STALE_RESPONSE',
+      'late original response must fail closed, not report a successful re-pair');
+    assert(JSON.stringify(final)===JSON.stringify(afterNew),
+      'late original response must not overwrite new token/station/metadata');
+    return {
+      real_chromium_indexeddb:true,synthetic_http_response_only:true,
+      late_original_pairing_denied:true,new_station_preserved:true,
+      pending_financial_sequence_not_attested:true,
+      physical_device_or_hosted_v2_accepted:false,
+    };
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+}
+
 module.exports=async function runStationBindingRace(browser){
   const context=await browser.newContext();
   try {
@@ -164,6 +231,8 @@ module.exports=async function runStationBindingRace(browser){
       {waitUntil:'networkidle'});
     const result=await page.evaluate(stationRaceInRealBrowser);
     console.log('P0_STATION_BINDING_RACE_REAL_INDEXEDDB '+JSON.stringify(result));
-    return result;
+    const concurrent=await page.evaluate(concurrentPairingInRealBrowser);
+    console.log('P0_STATION_CONCURRENT_PAIRING_CAS_REAL_INDEXEDDB '+JSON.stringify(concurrent));
+    return {recovery:result,concurrentPairing:concurrent};
   } finally {await context.close();}
 };
