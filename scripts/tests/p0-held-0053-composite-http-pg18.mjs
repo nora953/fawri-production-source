@@ -27,7 +27,9 @@ assert.equal(process.env.FAWRI_ALLOW_HELD_0053_DISPOSABLE,'1');
 assert.equal(process.env.FAWRI_HELD_0053_COMPOSITE_HTTP_CI,'1');
 const ownerUrl=localUrl(process.env.DATABASE_URL,'fawri_receipt_case_0053_owner_ci');
 const operatorUrl=localUrl(process.env.FAWRI_OPERATOR_DATABASE_URL,'fawri_operator_issuer');
-assert.equal(process.env.FAWRI_AUTH_DATABASE_URL,ownerUrl.toString());
+// CI uses the accepted synthetic-session fallback; it is NOT hosted auth
+// LOGIN parity, which remains an explicit P0 external acceptance requirement.
+assert.equal(process.env.FAWRI_AUTH_DATABASE_URL,'');
 assert.equal(process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY,'required');
 assert.equal(process.env.FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY,'required');
 assert.equal(process.env.FAWRI_ALLOWED_ORIGINS,'https://operator.example.invalid');
