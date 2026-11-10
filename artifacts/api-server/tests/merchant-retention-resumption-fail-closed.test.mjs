@@ -89,14 +89,14 @@ test('future active subscription reactivates after proper renewal without sessio
   const subUpdate=ctx.sql.find(row=>/SET status = \$2::subscription_status/.test(row.sql));
   assert.deepEqual(subUpdate.params,['merchant-test','active']);
 });
-test('replies exhausted allows account restoration but keeps automated replies disabled',async()=>{
-  const ctx=arrange(subscription('replies_exhausted'));
+test('future replies-exhausted subscription restores account without re-enabling zero-balance autoresponses',async()=>{
+  const exhausted={...subscription('replies_exhausted'),base_replies_remaining:0};
+  const ctx=arrange(exhausted);
   const result=await ctx.refreshMerchantRetentionPostgres('merchant-test',now);
   assert.equal(result.accountSuspended,false);
   const update=ctx.sql.find(row=>/SET status = \$2::subscription_status/.test(row.sql));
-  assert.deepEqual(update.params,['merchant-test','active']);
-  // The stored original reply balance is 10, so status becomes active.
-  // The SQL itself still guarantees auto_reply_enabled iff final status active.
+  assert.deepEqual(update.params,['merchant-test','replies_exhausted']);
+  // The actual PostgreSQL UPDATE disables auto reply for this final status.
   assert.match(update.sql,/auto_reply_enabled = \(\$2::subscription_status = 'active'\)/);
 });
 test('expired active subscription and unsafe future-only pending date cannot grant retention renewal',async()=>{
