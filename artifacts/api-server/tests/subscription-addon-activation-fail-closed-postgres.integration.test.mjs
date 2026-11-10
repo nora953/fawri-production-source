@@ -39,6 +39,8 @@ test('adding reply credits cannot activate pending/suspended/expired subscriptio
     {key:'expired-past',status:'expired',expiry:past,baseUsed:0,expected:'expired',auto:false,allowed:false},
     {key:'exhausted',status:'replies_exhausted',expiry:future,baseUsed:10,expected:'active',auto:true,allowed:true},
     {key:'active',status:'active',expiry:future,baseUsed:0,expected:'active',auto:true,allowed:true},
+    {key:'active-opted-out',status:'active',expiry:future,baseUsed:0,
+      expected:'active',initialAuto:false,auto:false,allowed:false},
   ];
   for(const entry of cases){
     const id='addon-activation-'+entry.key+'-'+randomUUID();
@@ -59,7 +61,7 @@ test('adding reply credits cannot activate pending/suspended/expired subscriptio
         addon_replies_remaining,auto_reply_enabled)
         VALUES($1,$2,'silver',$3,10,$4,$5,10,$6,$7,0,$8)`,
       ['sub-'+id,id,entry.status,starts,entry.expiry,entry.baseUsed,
-        10-entry.baseUsed,entry.status==='active'],
+        10-entry.baseUsed,entry.initialAuto ?? entry.status==='active'],
     );
   }
   const {applySubscriptionActionPostgres,reserveMerchantAutoReplyPostgres,
@@ -105,17 +107,18 @@ test('adding reply credits cannot activate pending/suspended/expired subscriptio
     assert.equal(persisted.status,entry.expected,'read projection must not autoactivate old status');
     if(!entry.allowed)assert.equal(persisted.auto_reply_enabled,false);
   }
-  assert.equal(denied,4);
+  assert.equal(denied,5);
   assert.equal(legitimate,2);
   const originalStatuses=Object.fromEntries(cases.map(e=>[e.key,e.status]));
   const resultingStatuses=Object.fromEntries(cases.map(e=>[e.key,e.expected]));
-  assert.equal(catalogBefore.length,6);
+  assert.equal(catalogBefore.length,7);
   console.log('P0_ADDON_SUBSCRIPTION_ACTIVATION_FAIL_CLOSED_REAL_PG '+JSON.stringify({
-    actualPostgres:true,restrictedMerchantScopedSql:true,syntheticMerchants:6,
+    actualPostgres:true,restrictedMerchantScopedSql:true,syntheticMerchants:7,
     originalStatuses,resultingStatuses,
     pendingAndSuspendedStayBlocked:true,expiredFutureCannotReactivate:true,
     expiredPastCannotReactivate:true,activeAndExhaustedStayFunctional:true,
     deniedAutoReplies:denied,acceptedAutoReplies:legitimate,
+    activeManualOptOutPreserved:true,
     peerRowsUnchanged:true,syntheticAddonOnly:true,
     realPaymentProviderVerified:false,hostedAccepted:false,
   }));
