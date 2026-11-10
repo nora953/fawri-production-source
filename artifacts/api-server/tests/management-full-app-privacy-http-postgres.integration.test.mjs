@@ -432,6 +432,70 @@ test('full application management privacy preserves cutover ordering and current
       originalRowsUnchanged:true,hostedAccepted:false,
     }));
   });
+  await t.test('current merchant incident must override stale system-only historical scope for log-only HTTP readers',async()=>{
+    // Existing synthetic OPENED event remains OPEN: when its legacy SQL and
+    // JSON link are both absent, the fresh merchant evaluation still owns
+    // this same incident key. No second historical row may mask this case.
+    const key='merchant-channel-errors:'+a.id;
+    const originalRows=(await admin.query(
+      "SELECT id,merchant_id,metadata FROM audit_events WHERE entity_type='early_warning_incident' AND entity_id=$1 ORDER BY created_at",
+      [key],
+    )).rows;
+    assert.equal(originalRows.length,1,'requires exactly one previously opened merchant incident');
+    const original=originalRows[0];
+    const stale={...original.metadata,scope:'system',merchant_id:null,merchant_name:null};
+    await admin.query('UPDATE audit_events SET merchant_id=NULL,metadata=$2::jsonb WHERE id=$1',
+      [original.id,JSON.stringify(stale)]);
+    try{
+      const staleRows=(await admin.query(
+        "SELECT to_jsonb(t) AS row FROM audit_events t WHERE entity_type='early_warning_incident' AND entity_id=$1 ORDER BY id",
+        [key],
+      )).rows;
+      assert.equal(staleRows.length,1);
+      assert.equal(staleRows[0].row.merchant_id,null);
+      assert.equal(staleRows[0].row.metadata.scope,'system');
+      assert.equal(staleRows[0].row.metadata.merchant_id,null);
+      assert.equal(staleRows[0].row.metadata.merchant_name,null);
+
+      for(const path of ['/api/auth/admin/early-warning?window=1h',
+        '/API/Auth/Admin/Early-Warning/?window=1h&view_merchants=true']){
+        const allowed=await req(path,owner);
+        assert.equal(allowed.status,200);
+        assert.equal(allowed.body.snapshot.incident_history_status,'available');
+        assert.ok(allowed.body.snapshot.incidents.some(row=>row.id===key&&row.scope==='merchant'),
+          'fresh merchant evaluation still owns the incident key');
+        const history=allowed.body.snapshot.incident_history.find(row=>row.incident_key===key);
+        assert.ok(history,'authorized owner retains old incident evidence');
+        assert.equal(history.scope,'merchant','current merchant scope must outrank stale history');
+
+        const restricted=await req(path,viewer);
+        assert.equal(restricted.status,200);
+        assert.equal(restricted.body.snapshot.incident_history_status,'available');
+        assert.equal(restricted.body.snapshot.merchant_health_visible,false);
+        assert.equal(JSON.stringify(restricted.body).includes(key),false,
+          'view_logs-only actor must not see incident key containing tenant ID');
+        assert.ok(restricted.body.snapshot.incident_history.some(row=>
+          row.scope==='system'&&row.incident_key==='channel-recent-errors'));
+      }
+      assert.deepEqual((await admin.query(
+        "SELECT to_jsonb(t) AS row FROM audit_events t WHERE entity_type='early_warning_incident' AND entity_id=$1 ORDER BY id",
+        [key],
+      )).rows,staleRows,'HTTP reads must not mutate historical incident evidence');
+      console.log('P0_EARLY_WARNING_ACTIVE_MERCHANT_OVERRIDES_STALE_HISTORY '+JSON.stringify({
+        actualPostgres:true,realAppHttp:true,currentMerchantEvidenceWins:true,
+        ownerCanRead:true,viewLogsOnlyCannotSeeKey:true,historicalHttpMutation:false,
+        hostedAccepted:false,
+      }));
+    }finally{
+      // Test-only restoration of the synthetic fixture, not a runtime ledger rewrite.
+      await admin.query('UPDATE audit_events SET merchant_id=$2,metadata=$3::jsonb WHERE id=$1',
+        [original.id,original.merchant_id,JSON.stringify(original.metadata)]);
+    }
+    const restored=(await admin.query(
+      "SELECT merchant_id,metadata FROM audit_events WHERE id=$1",[original.id],
+    )).rows[0];
+    assert.deepEqual(restored,{merchant_id:original.merchant_id,metadata:original.metadata});
+  });
   await t.test('view_logs-only early-warning response omits merchant identity in every nested projection while retaining system history and aggregates',async()=>{
     const before=await incidentSnapshot(),peer=await snapshot();
     for(const path of ['/api/auth/admin/early-warning?window=1h','/API/Auth/Admin/Early-Warning/?window=1h&view_merchants=true&owner=true']){
