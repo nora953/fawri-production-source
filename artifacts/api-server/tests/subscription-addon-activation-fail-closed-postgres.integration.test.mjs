@@ -42,6 +42,9 @@ test('adding reply credits cannot activate pending/suspended/expired subscriptio
     {key:'active-opted-out',status:'active',expiry:future,baseUsed:0,
       expected:'active',initialAuto:false,auto:false,allowed:false},
   ];
+  // Audit uses a fixed logical 'now' for deterministic financial outcomes.
+  // Explicitly seed creation/update times before it: the schema requires
+  // updated_at >= created_at, regardless of the GitHub runner wall clock.
   for(const entry of cases){
     const id='addon-activation-'+entry.key+'-'+randomUUID();
     merchantIds.push(id);
@@ -58,8 +61,8 @@ test('adding reply credits cannot activate pending/suspended/expired subscriptio
       `INSERT INTO subscriptions(
         id,merchant_id,plan_name,status,billing_anchor_day,starts_at,expires_at,
         base_reply_limit,base_replies_used,base_replies_remaining,
-        addon_replies_remaining,auto_reply_enabled)
-        VALUES($1,$2,'silver',$3,10,$4,$5,10,$6,$7,0,$8)`,
+        addon_replies_remaining,auto_reply_enabled,created_at,updated_at)
+        VALUES($1,$2,'silver',$3,10,$4,$5,10,$6,$7,0,$8,$4,$4)`,
       ['sub-'+id,id,entry.status,starts,entry.expiry,entry.baseUsed,
         10-entry.baseUsed,entry.initialAuto ?? entry.status==='active'],
     );
