@@ -9,6 +9,7 @@ on:
       - 'scripts/lib/p0-held-0053-source-admission-plan.mjs'
       - 'scripts/lib/ft01-first-commercial-disposable-bundle.mjs'
       - 'lib/db/scripts/p0-held-0053-first-commercial-disposable-rehearsal.mjs'
+      - 'scripts/tests/p0-held-0053-composite-http-pg18.mjs'
       - '.github/workflows/p0-held-0053-composite-pg18.yml'
   workflow_dispatch:
 
