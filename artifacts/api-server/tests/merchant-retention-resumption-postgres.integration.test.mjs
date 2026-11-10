@@ -48,8 +48,9 @@ test('retention suspension only restores from an activated unexpired subscriptio
     await admin.query(
       `INSERT INTO subscriptions
          (id,merchant_id,plan_name,status,billing_anchor_day,starts_at,expires_at,
-          base_replies_remaining,addon_replies_remaining,auto_reply_enabled)
-       VALUES($1,$2,'silver',$3,1,$4,$5,$6,0,false)`,
+          base_reply_limit,base_replies_used,base_replies_remaining,
+          addon_replies_remaining,auto_reply_enabled)
+       VALUES($1,$2,'silver',$3,1,$4,$5,$6,0,$6,0,false)`,
       ['sub-'+id,id,entry.status,oldEnd,entry.expired?oldEnd:future,entry.replies],
     );
   }
