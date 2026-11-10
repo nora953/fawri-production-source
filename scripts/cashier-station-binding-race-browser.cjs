@@ -223,6 +223,99 @@ async function concurrentPairingInRealBrowser() {
   }
 }
 
+
+// P0 re-pair boundary: the pending-outbox preflight can become stale
+// during a slow HTTP pairing response. Commit a REAL offline cashier sale
+// while the station/pair request waits, then require denial with no rebind.
+async function lateOutboxDuringPairInRealBrowser() {
+  const runtime=await import('/src/lib/cashierOperatorSessionRuntime.ts');
+  const {IndexedDbCashierAuthority}=await import('/src/lib/cashierIndexedDbAuthority.ts');
+  const check=(ok,label)=>{if(!ok)throw Error('P0_PAIRING_LATE_OUTBOX '+label);};
+  const suffix=crypto.randomUUID();
+  const original={
+    id:'default',local_merchant_id:'p0-race-local-'+suffix,
+    cloud_merchant_id:'p0-race-merchant-'+suffix,
+    device_id:'p0-race-device-'+suffix,
+    created_at:new Date().toISOString(),cloud_bound_at:new Date().toISOString(),
+    station_id:'p0-original-station-'+suffix,station_name:'Original assigned station',
+    location_id:'p0-race-location-'+suffix,branch_key:'p0-branch',
+    station_token:'p0-original-token-'+suffix,
+    station_credential_expires_at:'9999-12-31T23:59:59.999Z',
+  };
+  const authority=new IndexedDbCashierAuthority({
+    localMerchantId:original.local_merchant_id,
+    cloudMerchantId:original.cloud_merchant_id,
+    deviceId:original.device_id,
+    databaseName:'fawri-cashier-'+original.local_merchant_id+'-v1',
+  });
+  const priorFetch=globalThis.fetch;
+  let resolveRequest,startRequest;
+  const requestStarted=new Promise(resolve=>{startRequest=resolve;});
+  try{
+    await runtime.writeCashierDeviceIdentity(original);
+    await authority.upsertCatalogSnapshot([{
+      product_id:'p0-item',item_type:'product',name:'Offline synthetic item',
+      track_inventory:true,stock_quantity:3,currency_code:'IQD',
+      currency_fraction_digits:0,base_unit_price_minor:1000,catalog_version:1,
+    }],{preserveLocalInventory:false});
+    check((await runtime.getCashierPendingEnvelopeCount())===0,
+      'fixture must start without pending sales');
+    globalThis.fetch=(url,options)=>{
+      check(url==='/api/cashier/station/pair','only pairing endpoint expected');
+      check(options?.method==='POST','pairing requires POST');
+      const body=JSON.parse(options.body);
+      check(body.device_id===original.device_id,'original device must be used');
+      startRequest();
+      return new Promise(resolve=>{resolveRequest=resolve;});
+    };
+    const pairing=runtime.pairCashierStation('p0-race-new-pair-code').then(
+      value=>({ok:true,value}),error=>({ok:false,code:error?.code}),
+    );
+    await requestStarted;
+    const sale=await authority.commitSale({
+      operation_id:'p0-pending-sale-'+suffix,
+      payment_method:'cash',payment_status:'paid',
+      lines:[{product_id:'p0-item',quantity:1}],
+    });
+    check(Boolean(sale),'actual IndexedDB sale must commit while HTTP waits');
+    const pendingBefore=await authority.listPendingSync(20);
+    check(pendingBefore.length>=2,
+      'committed sale AND stock movement must be pending before pairing resolves');
+    check((await runtime.getCashierPendingEnvelopeCount())===pendingBefore.length,
+      'real pairing preflight source must now report pending envelopes');
+    resolveRequest(new Response(JSON.stringify({
+      ok:true,merchant_id:original.cloud_merchant_id,
+      station_id:'p0-new-station-'+suffix,station_name:'New unapproved station',
+      location_id:original.location_id,branch_key:original.branch_key,
+      station_token:'p0-new-token-'+suffix,
+      credential_expires_at:'9999-12-31T23:59:59.999Z',
+    }),{status:200,headers:{'Content-Type':'application/json'}}));
+    const result=await pairing;
+    const after=await runtime.getOrCreateCashierDeviceIdentity();
+    check(result.ok===false && result.code==='CASHIER_PAIRING_PENDING_OPERATIONS',
+      'new unsynced financial operation must block delayed station re-pair');
+    check(JSON.stringify(after)===JSON.stringify(original),
+      'failed delayed re-pair must retain exact original station/device/token');
+    const pendingAfter=await authority.listPendingSync(20);
+    check(JSON.stringify(pendingAfter)===JSON.stringify(pendingBefore),
+      'pairing denial must not mutate or ACK local sale/movement outbox');
+    check(Boolean(await authority.getSale('sale:'+'p0-pending-sale-'+suffix)),
+      'original committed sale retained');
+    check((await authority.getCatalogItem('p0-item')).stock_quantity===2,
+      'source stock must remain reduced exactly once');
+    return {
+      nativeIndexedDb:true,actualCommittedSale:true,
+      pendingSaleAndMovementRetained:true,
+      delayedPairingDenied:true,originalBindingUnchanged:true,
+      sourceStockPreserved:true,syntheticPairingHttpOnly:true,
+      crossDbLinearizableGuarantee:false,hostedOrPhysicalDeviceAccepted:false,
+    };
+  }finally{
+    globalThis.fetch=priorFetch;
+    await authority.close();
+  }
+}
+
 module.exports=async function runStationBindingRace(browser){
   const context=await browser.newContext();
   try {
@@ -233,6 +326,8 @@ module.exports=async function runStationBindingRace(browser){
     console.log('P0_STATION_BINDING_RACE_REAL_INDEXEDDB '+JSON.stringify(result));
     const concurrent=await page.evaluate(concurrentPairingInRealBrowser);
     console.log('P0_STATION_CONCURRENT_PAIRING_CAS_REAL_INDEXEDDB '+JSON.stringify(concurrent));
-    return {recovery:result,concurrentPairing:concurrent};
+    const lateOutbox=await page.evaluate(lateOutboxDuringPairInRealBrowser);
+    console.log('P0_STATION_PAIRING_LATE_OUTBOX_NATIVE_INDEXEDDB '+JSON.stringify(lateOutbox));
+    return {recovery:result,concurrentPairing:concurrent,lateOutbox};
   } finally {await context.close();}
 };
