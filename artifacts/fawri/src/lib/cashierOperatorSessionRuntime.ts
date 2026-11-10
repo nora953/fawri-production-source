@@ -149,11 +149,20 @@ function openBootstrapDatabase(existingOnly = false): Promise<IDBDatabase> {
 export async function getOrCreateCashierDeviceIdentity(): Promise<CashierDeviceIdentity> {
   const database = await openBootstrapDatabase();
   try {
-    const read = database.transaction(BOOTSTRAP_STORE, 'readonly');
+    // The first creation must be atomic across tabs. Two separate readonly
+    // reads followed by readwrite puts can BOTH observe a missing identity,
+    // return incompatible device IDs, and overwrite one another's bootstrap.
+    // Serialize the read and conditional put in ONE native IDB transaction.
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(BOOTSTRAP_STORE);
     const existing = (await requestResult(
-      read.objectStore(BOOTSTRAP_STORE).get('default'),
+      store.get('default'),
     )) as CashierDeviceIdentity | undefined;
-    if (existing?.local_merchant_id && existing.device_id) return existing;
+    if (existing?.local_merchant_id && existing.device_id) {
+      await completion;
+      return existing;
+    }
 
     const identity: CashierDeviceIdentity = {
       id: 'default',
@@ -161,9 +170,7 @@ export async function getOrCreateCashierDeviceIdentity(): Promise<CashierDeviceI
       device_id: randomId('device'),
       created_at: new Date().toISOString(),
     };
-    const write = database.transaction(BOOTSTRAP_STORE, 'readwrite');
-    const completion = transactionDone(write);
-    write.objectStore(BOOTSTRAP_STORE).put(identity);
+    store.put(identity);
     await completion;
     return identity;
   } finally {
