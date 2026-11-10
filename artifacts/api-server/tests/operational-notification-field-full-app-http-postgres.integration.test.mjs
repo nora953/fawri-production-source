@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {randomInt, randomUUID} from 'node:crypto';
+import {createHash, randomInt, randomUUID} from 'node:crypto';
 import fs from 'node:fs';
 import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
@@ -634,6 +634,83 @@ test('operational SQL producers round trip through actual app and frontend valid
       actualPostgres:true,restrictedTransaction:true,merchantCount:2,
       calls:8,distinctNotices:2,newWinners:2,deduplicatedLosers:6,
       peerDenied:true,firstFieldsUnchanged:true,hostedAccepted:false,
+    }));
+  });
+
+  await t.test('subscription notification global ID conflict never falsely marks reminder sent or crosses tenants',async()=>{
+    // Source-only synthetic corruption scenario: an unrelated merchant row
+    // already has the deterministic ID of A's newly due reminder. This is
+    // NOT evidence that a public caller can choose notification IDs.
+    const futureExpiry=new Date(Date.now()+3*day).toISOString();
+    await admin.query(
+      'UPDATE subscriptions SET expires_at=$2,expiry_reminder_sent_at=NULL WHERE id=$1',
+      [a.subscriptionId,futureExpiry],
+    );
+    const sourceId=a.subscriptionId+':'+futureExpiry;
+    const id='notification-'+createHash('sha256')
+      .update('subscription_expiry_reminder:'+a.id+':'+sourceId).digest('hex');
+    const originalB=await snapshot([b.id]);
+    await admin.query(
+      `INSERT INTO notifications
+        (id,audience,merchant_id,account_id,type,title_key,body_key,variables,
+         source_entity_type,source_entity_id,created_at)
+        VALUES($1,'merchant',$2,$2,'subscription_expiry_reminder',
+          'notifications.subscription_expiry_reminder.title',
+          'notifications.subscription_expiry_reminder.body',
+          $3::jsonb,'subscription',$4,$5::timestamptz)`,
+      [id,b.id,JSON.stringify({plan_name:'synthetic-foreign',expires_at:futureExpiry,days_remaining:3}),
+        b.subscriptionId,'2026-10-25T00:00:00Z'],
+    );
+    const before=await subscriptionRows();
+    const denied=await req('/api/auth/notifications?limit=50',a);
+    assert.equal(denied.status,409,'foreign notification ID collision must fail closed');
+    assert.equal(denied.body.code,'NOTIFICATION_SOURCE_ID_CONFLICT');
+    assert.equal(denied.body.notifications,undefined);
+    assert.deepEqual(await subscriptionRows(),before,
+      'no own sent markers, subscriptions, notices or foreign row may change');
+    assert.equal((await admin.query(
+      'SELECT expiry_reminder_sent_at FROM subscriptions WHERE id=$1',
+      [a.subscriptionId],
+    )).rows[0].expiry_reminder_sent_at,null);
+    assert.equal((await req('/api/auth/notifications/'+id+'/read',a,'PATCH')).status,404);
+    assert.deepEqual(await subscriptionRows(),before);
+    // Undo only the synthetic bootstrap collision in this disposable DB.
+    await admin.query('DELETE FROM notifications WHERE id=$1 AND merchant_id=$2',[id,b.id]);
+    assert.deepEqual(await snapshot([b.id]),originalB,'peer original records restored');
+
+    // An exact, already recorded own-merchant source ID IS a legitimate
+    // immutable replay and may set the missing sent marker without overwriting
+    // payload, original timestamp or read state.
+    await admin.query(
+      `INSERT INTO notifications
+        (id,audience,merchant_id,account_id,type,title_key,body_key,variables,
+         source_entity_type,source_entity_id,created_at)
+        VALUES($1,'merchant',$2,$2,'subscription_expiry_reminder',
+          'notifications.subscription_expiry_reminder.title',
+          'notifications.subscription_expiry_reminder.body',
+          $3::jsonb,'subscription',$4,$5::timestamptz)`,
+      [id,a.id,JSON.stringify({plan_name:'silver',expires_at:futureExpiry,days_remaining:3}),
+        a.subscriptionId,'2026-10-25T00:00:00Z'],
+    );
+    const original=(await admin.query('SELECT to_jsonb(n) AS row FROM notifications n WHERE id=$1',[id])).rows[0].row;
+    const accepted=await req('/api/auth/notifications?limit=50',a);
+    assert.equal(accepted.status,200);
+    assert.ok(accepted.body.notifications.some(n=>n.id===id&&isMerchantNotificationRecord(n)));
+    assert.deepEqual((await admin.query('SELECT to_jsonb(n) AS row FROM notifications n WHERE id=$1',[id])).rows[0].row,
+      original,'valid same-source idempotent notice must never be overwritten');
+    assert.ok((await admin.query(
+      'SELECT expiry_reminder_sent_at FROM subscriptions WHERE id=$1',
+      [a.subscriptionId],
+    )).rows[0].expiry_reminder_sent_at);
+    const after=await subscriptionRows();
+    assert.equal((await req('/api/auth/notifications?limit=50',a)).status,200);
+    assert.deepEqual(await subscriptionRows(),after,'legitimate retry remains stable');
+    assert.deepEqual(await snapshot([b.id]),originalB,'peer merchant never modified');
+    console.log('P0_SUBSCRIPTION_NOTIFICATION_CONFLICT_FAIL_CLOSED '+JSON.stringify({
+      realPostgres:true,actualAuthenticatedHttp:true,restrictedMerchantSql:true,
+      foreignIdConflict409:true,ownSentMarkerPreservedOnError:true,
+      exactOwnSourceReplayAccepted:true,existingNotificationImmutable:true,
+      peerPreserved:true,hostedAccepted:false,
     }));
   });
 
