@@ -16,7 +16,7 @@ The existing `getOrCreateCashierDeviceIdentity` in `artifacts/fawri/src/lib/cash
   `P0_CASHIER_BOOTSTRAP_ATOMIC_CREATE_REAL_INDEXEDDB {"nativeIndexedDb":true,"realChromium":true,"independentTabs":2,"simultaneousCallers":48,"uniqueIdentities":1,"stableAfterReload":true,"serverAcceptance":false,"physicalDeviceAcceptance":false}`.
 
   **Trace interpretation clarification:** this first run asserted identical returned identities and fresh repeated reads from both tabs, **not a browser page reload**; the trace field `stableAfterReload` was too broad and is corrected to `stableAcrossBothTabs` in test-only [`6e39af3e`](https://github.com/nora953/fawri-production-source/commit/6e39af3e627d13a4993e9c2f70cf1eab0d902f79). It does not invalidate the proven 48-caller atomicity.
-- [Updated browser run for corrected evidence wording](https://github.com/nora953/fawri-production-source/actions/workflows/p0-cashier-indexeddb-browser.yml) and [final quality workflow](https://github.com/nora953/fawri-production-source/actions/workflows/final-quality.yml) must have exact acceptance checked independently on the later source/test SHA; do not infer a green job while pending.
+- [Updated browser run for corrected evidence wording](https://github.com/nora953/fawri-production-source/actions/workflows/p0-cashier-indexeddb-browser.yml) and [final quality workflows](https://github.com/nora953/fawri-production-source/actions) must have exact acceptance checked independently on the later source/test SHA; do not infer a green job while pending.
 
 ## Remaining launch boundary
 
