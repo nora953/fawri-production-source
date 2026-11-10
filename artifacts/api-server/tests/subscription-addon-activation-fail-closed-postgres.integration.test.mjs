@@ -40,7 +40,7 @@ test('adding reply credits cannot activate pending/suspended/expired subscriptio
     {key:'exhausted',status:'replies_exhausted',expiry:future,baseUsed:10,expected:'active',auto:true,allowed:true},
     {key:'active',status:'active',expiry:future,baseUsed:0,expected:'active',auto:true,allowed:true},
     {key:'active-opted-out',status:'active',expiry:future,baseUsed:0,
-      expected:'active',initialAuto:false,auto:false,allowed:false},
+      expected:'active',auto:false,allowed:false},
   ];
   // Audit uses a fixed logical 'now' for deterministic financial outcomes.
   // Explicitly seed creation/update times before it: the schema requires
@@ -64,7 +64,7 @@ test('adding reply credits cannot activate pending/suspended/expired subscriptio
         addon_replies_remaining,auto_reply_enabled,created_at,updated_at)
         VALUES($1,$2,'silver',$3,10,$4,$5,10,$6,$7,0,$8,$4,$4)`,
       ['sub-'+id,id,entry.status,starts,entry.expiry,entry.baseUsed,
-        10-entry.baseUsed,entry.initialAuto ?? entry.status==='active'],
+        10-entry.baseUsed,entry.status==='active'],
     );
   }
   const {applySubscriptionActionPostgres,reserveMerchantAutoReplyPostgres,
@@ -75,7 +75,20 @@ test('adding reply credits cannot activate pending/suspended/expired subscriptio
        FROM subscriptions WHERE merchant_id=ANY($1::text[]) ORDER BY merchant_id`,
     [merchantIds],
   )).rows;
+  // Exercise the production merchant preference mutation, rather than
+  // simply bootstrapping a synthetic false flag. The refill must respect
+  // this explicit opt-out from an otherwise active merchant.
+  const optedOut=cases.find(entry=>entry.key==='active-opted-out');
+  assert.ok(optedOut);
+  const userDisabled=await applySubscriptionActionPostgres({
+    merchantId:optedOut.merchantId,actorAccountId:actor,
+    action:'set_auto_reply',enabled:false,now,
+  });
+  assert.equal(userDisabled.status,'active');
+  assert.equal(userDisabled.auto_reply_enabled,false);
   const catalogBefore=await catalog();
+  assert.equal(catalogBefore.find(row=>row.merchant_id===optedOut.merchantId)?.auto_reply_enabled,false,
+    'actual preference update must be durable before any credit');
   let denied=0,legitimate=0;
   for(const entry of cases){
     const peersBefore=(await catalog()).filter(row=>row.merchant_id!==entry.merchantId);
