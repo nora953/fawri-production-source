@@ -338,7 +338,7 @@ async function financialLockVsPairingInRealBrowser() {
     station_token:'p0-web-lock-old-token-'+suffix,
     station_credential_expires_at:'9999-12-31T23:59:59.999Z',
   };
-  const lockName='fawri-cashier-local-financial:'+identity.local_merchant_id+':'+identity.device_id;
+  const lockName='fawri-cashier-local-financial:'+JSON.stringify([identity.local_merchant_id,identity.device_id]);
   const authority=new IndexedDbCashierAuthority({
     localMerchantId:identity.local_merchant_id,
     cloudMerchantId:identity.cloud_merchant_id,
