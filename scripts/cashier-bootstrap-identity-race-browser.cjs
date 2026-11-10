@@ -43,5 +43,73 @@ module.exports=async function runCashierBootstrapIdentityRace(browser){
       simultaneousCallers:all.length,uniqueIdentities:distinct.length,
       stableAcrossBothTabs:true,serverAcceptance:false,physicalDeviceAcceptance:false
     }));
+    // Financial safety: an existing but damaged bootstrap row must NOT be
+    // treated like a fresh device. Replacing it would orphan local stores
+    // keyed by its older merchant/device identity.
+    const partialEvidence=await pages[0].evaluate(async()=>{
+      const runtime=await import('/src/lib/cashierOperatorSessionRuntime.ts');
+      const opened=()=>new Promise((resolve,reject)=>{
+        const req=indexedDB.open('fawri-cashier-bootstrap-v1',1);
+        req.onsuccess=()=>resolve(req.result);
+        req.onerror=()=>reject(req.error);
+      });
+      const write=async(record)=>{
+        const db=await opened();
+        try{
+          await new Promise((resolve,reject)=>{
+            const tx=db.transaction('identity','readwrite');
+            tx.oncomplete=()=>resolve();
+            tx.onerror=()=>reject(tx.error);
+            tx.onabort=()=>reject(tx.error);
+            tx.objectStore('identity').put(record);
+          });
+        }finally{db.close();}
+      };
+      const read=async()=>{
+        const db=await opened();
+        try{
+          return await new Promise((resolve,reject)=>{
+            const tx=db.transaction('identity','readonly');
+            const req=tx.objectStore('identity').get('default');
+            req.onsuccess=()=>resolve(req.result);
+            req.onerror=()=>reject(req.error);
+          });
+        }finally{db.close();}
+      };
+      const cases=[
+        {id:'default',local_merchant_id:'p0-existing-local-financial-data',
+          cloud_merchant_id:'p0-existing-merchant',device_id:'',
+          station_id:'p0-old-station',station_token:'p0-old-token',
+          created_at:'2025-01-01T00:00:00.000Z'},
+        {id:'default',local_merchant_id:'',device_id:'p0-existing-device',
+          cloud_merchant_id:'p0-existing-merchant',
+          created_at:'2025-01-01T00:00:00.000Z'},
+      ];
+      const outcomes=[];
+      for(const damaged of cases){
+        await write(damaged);
+        const before=await read();
+        const result=await runtime.getOrCreateCashierDeviceIdentity().then(
+          identity=>({accepted:true,identity}),
+          error=>({accepted:false,code:error?.code}),
+        );
+        const after=await read();
+        if(result.accepted||result.code!=='CASHIER_BOOTSTRAP_IDENTITY_INVALID'||
+          JSON.stringify(before)!==JSON.stringify(after)){
+          throw Error('P0_BOOTSTRAP_PARTIAL_IDENTITY_OVERWRITE '+JSON.stringify({
+            accepted:result.accepted,code:result.code,
+            originalMerchantRetained:before.local_merchant_id===after.local_merchant_id,
+            originalDeviceRetained:before.device_id===after.device_id,
+          }));
+        }
+        outcomes.push(result.code);
+      }
+      return {nativeIndexedDb:true,partialRowsDenied:outcomes.length,
+        previousMerchantAndDeviceEvidencePreserved:true,
+        noNewIdentityOrFinancialRecoveryAuthorized:true,
+        physicalDeviceAcceptance:false};
+    });
+    console.log('P0_CASHIER_BOOTSTRAP_PARTIAL_IDENTITY_FAIL_CLOSED '+
+      JSON.stringify(partialEvidence));
   }finally{await context.close();}
 };
