@@ -18,6 +18,7 @@ test('retention suspension only restores from an activated unexpired subscriptio
   const future=new Date('2026-12-10T03:00:00.000Z');
   t.after(()=>cleanupResources([
     ['subscriptions',()=>admin.query('DELETE FROM subscriptions WHERE merchant_id=ANY($1::text[])',[ids])],
+    ['merchant settings',()=>admin.query('DELETE FROM merchant_settings WHERE merchant_id=ANY($1::text[])',[ids])],
     ['merchants',()=>admin.query('DELETE FROM merchants WHERE id=ANY($1::text[])',[ids])],
     ['accounts',()=>admin.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[ids])],
     ['restricted runtime',()=>runtime.dispose()],
@@ -26,7 +27,9 @@ test('retention suspension only restores from an activated unexpired subscriptio
     {label:'future-pending',status:'pending_activation',replies:10,restore:false},
     {label:'future-suspended',status:'suspended',replies:10,restore:false},
     {label:'future-expired',status:'expired',replies:10,restore:false},
-    {label:'future-active',status:'active',replies:10,restore:true,final:'active'},
+    {label:'future-active',status:'active',replies:10,restore:true,final:'active',merchantSetting:true},
+    {label:'future-active-opted-out',status:'active',replies:10,restore:true,final:'active',merchantSetting:false},
+    {label:'future-active-missing-settings',status:'active',replies:10,restore:true,final:'active'},
     {label:'future-exhausted',status:'replies_exhausted',replies:0,restore:true,final:'replies_exhausted'},
     {label:'past-active',status:'active',replies:10,restore:false,expired:true},
   ];
@@ -45,6 +48,12 @@ test('retention suspension only restores from an activated unexpired subscriptio
               'eligible_for_deletion',4,true,$3)`,
       [id,oldEnd,new Date('2026-09-01T00:00:00Z')],
     );
+    if(typeof entry.merchantSetting==='boolean'){
+      await admin.query(
+        'INSERT INTO merchant_settings(merchant_id,auto_reply_enabled) VALUES($1,$2)',
+        [id,entry.merchantSetting],
+      );
+    }
     await admin.query(
       `INSERT INTO subscriptions
          (id,merchant_id,plan_name,status,billing_anchor_day,starts_at,expires_at,
@@ -91,7 +100,9 @@ test('retention suspension only restores from an activated unexpired subscriptio
       assert.equal(own.retention_suspended_at,null);
       assert.equal(own.products_read_only,false);
       assert.equal(own.subscription_status,entry.final);
-      assert.equal(own.auto_reply_enabled,entry.final==='active');
+      assert.equal(own.auto_reply_enabled,
+        entry.final==='active'&&entry.merchantSetting===true,
+        'resuming an account must not override merchant opt-out or invent a missing preference');
       protectedCount++;
     } else {
       assert.equal(result.accountSuspended,true,entry.label);
@@ -112,12 +123,13 @@ test('retention suspension only restores from an activated unexpired subscriptio
     // stable ownership, entitlement and retention projections are compared.
     assert.deepEqual(replay,first,'retention refresh must be semantically idempotent');
   }
-  assert.equal(protectedCount,2);
+  assert.equal(protectedCount,4);
   assert.equal(deniedCount,4);
   assert.equal(await refreshMerchantRetentionPostgres('synthetic-missing-'+randomUUID(),testNow),null);
   console.log('P0_RETENTION_REAL_AUTH_LOGIN_POSTGRES '+JSON.stringify({
     actualPostgres:true,separateAuthenticationLogin:true,restrictedRole:login.login===runtime.authRole,
-    merchants:6,unapprovedFutureDenied:3,expiredActiveDenied:true,
+    merchants:8,unapprovedFutureDenied:3,expiredActiveDenied:true,
+    optedOutStillDisabled:true,missingSettingsFailClosed:true,
     properlyActivatedRestored:true,repliesExhaustedNoAutoReply:true,
     noCrossMerchantMutation:true,idempotentReplay:true,hostedAccepted:false,
   }));
