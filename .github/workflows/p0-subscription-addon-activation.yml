@@ -1,0 +1,34 @@
+name: P0 subscription addon activation fail-closed
+on:
+  pull_request:
+    paths:
+      - 'artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts'
+      - 'artifacts/api-server/tests/subscription-addon-activation-fail-closed-postgres.integration.test.mjs'
+      - 'scripts/run-isolated-postgres-audit.sh'
+      - 'scripts/execute-disposable-postgres-audit.mjs'
+      - '.github/workflows/p0-subscription-addon-activation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  addon-activation:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Run restricted real PostgreSQL add-on credit eligibility and negative SQL cases
+        run: bash scripts/run-isolated-postgres-audit.sh subscription-addon-activation
+      - name: Destroy test-only containers and volumes
+        if: always()
+        run: |
+          mapfile -t audit_containers < <(docker ps -aq --filter "label=fawri.audit=${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}")
+          if [ "${#audit_containers[@]}" -gt 0 ]; then docker rm -fv "${audit_containers[@]}"; fi
