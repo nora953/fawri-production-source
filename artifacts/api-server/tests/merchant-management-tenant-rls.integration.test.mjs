@@ -69,7 +69,21 @@ test("merchant management and retention use authoritative subscriptions under re
       const row = (await admin.query("SELECT status,auto_reply_enabled FROM subscriptions WHERE merchant_id=$1", [merchants[0]])).rows[0];
       assert.deepEqual(row, { status: "active", auto_reply_enabled: true });
     });
-    await t.test("renewed subscription restores retention-suspended merchant", async () => {
+    await t.test("future suspended subscription cannot restore retention account; explicitly activated renewal can", async () => {
+      // A future expires_at is NOT proof of an activated paid term.
+      // This original synthetic fixture still has status='suspended'.
+      const denied = await retention.refreshMerchantRetentionPostgres(merchants[1]);
+      assert.equal(denied.accountSuspended, true);
+      assert.equal(denied.retentionStatus, "eligible_for_deletion");
+      assert.equal((await admin.query("SELECT state FROM accounts WHERE id=$1", [merchants[1]])).rows[0].state, "suspended");
+      assert.equal((await admin.query("SELECT status FROM subscriptions WHERE merchant_id=$1", [merchants[1]])).rows[0].status, "suspended");
+
+      // Model an already-approved plan renewal in disposable CI fixture only.
+      // Not a provider/webhook/payment verification and not a public API.
+      await admin.query(
+        "UPDATE subscriptions SET status='active', activated_at=now(), suspended_at=NULL WHERE merchant_id=$1",
+        [merchants[1]],
+      );
       const result = await retention.refreshMerchantRetentionPostgres(merchants[1]);
       assert.equal(result.retentionStatus, "protected");
       assert.equal(result.accountSuspended, false);
