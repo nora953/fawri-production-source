@@ -1,4 +1,6 @@
-# Fawri P0 — launch blockers only: executable closure queue
+# Fawri P0 — known blocker status / evidence register (execution order superseded)
+
+> **2026-11-11: STATUS/EVIDENCE ONLY; prior ordered work queue superseded.** [`LAUNCH_PLAN.md`](../../LAUNCH_PLAN.md) is the **single owner-approved active execution plan**. The order column below and historical «Next concrete acceptance» are **not automatic instructions**. First classify the 16 remaining gate rows against the approved smallest viable commercial merchant journey, with no automatic waiver or closed status for a proposed deferment. Keep all current OPEN/BLOCKED statuses, accepted evidence and required release security gates unchanged.
 
 **Checkpoint:** 2026-11-09, Draft PR [#550](https://github.com/nora953/fawri-production-source/pull/550); source-only work. **NO-GO** until every necessary P0 blocker has real acceptance, external setup and deployment/recovery proof.
 
