@@ -87,14 +87,15 @@ async function insertMerchantNotification(
 ): Promise<void> {
   assertNotificationTypeWritable(input.type);
   const source = requireNotificationSourceReference(input.sourceEntityType, input.sourceEntityId);
-  await client.query(
+  const inserted = await client.query<{ id: string }>(
     `INSERT INTO notifications
        (id, audience, merchant_id, account_id, type, title_key, body_key,
         variables, source_entity_type, source_entity_id, created_at)
      VALUES ($1, 'merchant', $2,
              (SELECT account_id FROM merchants WHERE id = $2),
              $3, $4, $5, $6::jsonb, $7, $8, $9::timestamptz)
-     ON CONFLICT (id) DO NOTHING`,
+     ON CONFLICT (id) DO NOTHING
+     RETURNING id`,
     [
       input.id,
       input.merchantId,
@@ -107,6 +108,36 @@ async function insertMerchantNotification(
       input.createdAt,
     ],
   );
+  if (inserted.rows.length === 1) return;
+
+  // A globally unique ID conflict is NOT evidence that the current merchant
+  // actually received this reminder. Require an exact tenant/audience/source
+  // match before marking the subscription reminder as sent. A foreign row,
+  // malformed historic row or unrelated type must roll back every marker.
+  const prior = await client.query<{ id: string }>(
+    `SELECT id FROM notifications
+       WHERE id = $1 AND audience = 'merchant' AND merchant_id = $2
+         AND account_id = (SELECT account_id FROM merchants WHERE id = $2)
+         AND type = $3 AND title_key = $4 AND body_key = $5
+         AND source_entity_type = $6 AND source_entity_id = $7
+       LIMIT 1`,
+    [
+      input.id,
+      input.merchantId,
+      input.type,
+      input.titleKey,
+      input.bodyKey,
+      source.sourceEntityType,
+      source.sourceEntityId,
+    ],
+  );
+  if (prior.rows.length !== 1) {
+    throw new MerchantNotificationPostgresError(
+      "NOTIFICATION_SOURCE_ID_CONFLICT",
+      "subscription reminder identity conflicts with existing notification evidence",
+      409,
+    );
+  }
 }
 
 export async function refreshSubscriptionNotificationsPostgres(
