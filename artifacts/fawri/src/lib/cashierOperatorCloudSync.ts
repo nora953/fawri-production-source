@@ -22,7 +22,7 @@ import {
   cashierOperatorHeaders,
   getCashierOperatorSession,
   getOrCreateCashierDeviceIdentity,
-  writeCashierDeviceIdentity,
+  writeCashierDeviceIdentityIfUnchanged,
   type CashierOperatorSession,
 } from './cashierOperatorSessionRuntime';
 
@@ -460,8 +460,12 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
   if (
     identity.cloud_merchant_id !== session.context.merchant_id ||
     identity.device_id !== session.context.device_id ||
-    identity.location_id !== session.context.location_id
+    identity.location_id !== session.context.location_id ||
+    identity.station_id !== session.context.station_id ||
+    identity.station_token !== session.context.station_token
   ) {
+    // Catalog HTTP may finish after another tab has already re-paired this
+    // device. Never apply the older station's response to the new binding.
     throw new CashierOperatorCloudSyncError(
       'CASHIER_OPERATOR_DEVICE_MISMATCH',
       'Cashier local identity does not match the paired operator station',
@@ -507,10 +511,20 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
     preserveLocalInventory,
     syncedAt,
   });
-  await writeCashierDeviceIdentity({
+  // A second tab may re-pair the station while the IndexedDB catalog and
+  // cost-evidence writes await completion. Do not write the captured old
+  // station/token back over a newer bootstrap identity at the end.
+  const unchanged = await writeCashierDeviceIdentityIfUnchanged(identity, {
     ...identity,
     last_catalog_sync_at: syncedAt,
   });
+  if (!unchanged) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_DEVICE_MISMATCH',
+      'Cashier station changed during catalog synchronization',
+      409,
+    );
+  }
 
   return {
     merchant_id: session.context.merchant_id,
