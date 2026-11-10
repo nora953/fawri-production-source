@@ -11,6 +11,7 @@ on:
       - 'scripts/cashier-operator-ack-race-native-browser.cjs'
       - 'scripts/cashier-duplicate-sku-stock-native-browser.cjs'
       - 'scripts/cashier-station-binding-race-browser.cjs'
+      - 'scripts/cashier-catalog-stale-binding-native-browser.cjs'
       - 'artifacts/fawri/src/lib/cashierStationBindingRecovery.ts'
       - 'artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts'
       - '.github/workflows/p0-cashier-indexeddb-browser.yml'
@@ -78,6 +79,7 @@ jobs:
               await require('./scripts/cashier-operator-ack-race-native-browser.cjs')(browser);
               await require('./scripts/cashier-duplicate-sku-stock-native-browser.cjs')(browser);
               await require('./scripts/cashier-station-binding-race-browser.cjs')(browser);
+              await require('./scripts/cashier-catalog-stale-binding-native-browser.cjs')(browser);
             } finally { await browser.close(); }
           })().catch(e => { console.error(e); process.exitCode = 1; });
           NODE
