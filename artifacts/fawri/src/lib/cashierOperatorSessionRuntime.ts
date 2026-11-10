@@ -234,6 +234,57 @@ export async function writeCashierDeviceIdentityIfUnchanged(
 }
 
 /**
+ * Commit a new station pairing only when the identity captured BEFORE its
+ * network request is still current. Separate from the metadata-only CAS:
+ * pairing is permitted to change station/token but must never mutate the
+ * durable local merchant/device identity, or silently switch merchants.
+ *
+ * Concurrent browser tabs can both pass the pending-outbox preflight and
+ * receive different server results in reverse order. The newer committed
+ * pairing wins, and a delayed original response must not overwrite it.
+ * This guards local bootstrap only; authoritative station admission remains
+ * server-side and no payment sequence is reset or declared recovered here.
+ */
+export async function writeCashierDevicePairingIfUnchanged(
+  expected: CashierDeviceIdentity,
+  next: CashierDeviceIdentity,
+): Promise<boolean> {
+  if (!expected || !expected.local_merchant_id || !expected.device_id ||
+      expected.id !== 'default' || next.id !== 'default' ||
+      next.local_merchant_id !== expected.local_merchant_id ||
+      next.device_id !== expected.device_id ||
+      next.created_at !== expected.created_at ||
+      (expected.cloud_merchant_id &&
+        next.cloud_merchant_id !== expected.cloud_merchant_id) ||
+      !next.cloud_merchant_id || !next.station_id || !next.station_token ||
+      !next.location_id || !next.branch_key) {
+    throw new CashierOperatorSessionClientError(
+      'CASHIER_PAIRING_IDENTITY_UNSAFE',
+      'Pairing attempted to change durable cashier device identity',
+      409,
+    );
+  }
+  const database = await openBootstrapDatabase(true);
+  try {
+    const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(BOOTSTRAP_STORE);
+    const current = await requestResult(
+      store.get('default'),
+    ) as CashierDeviceIdentity | undefined;
+    if (!current || JSON.stringify(current) !== JSON.stringify(expected)) {
+      await completion;
+      return false;
+    }
+    store.put(next);
+    await completion;
+    return true;
+  } finally {
+    database.close();
+  }
+}
+
+/**
  * Revoke ONLY the rejected station pairing, if it is still the exact
  * merchant/station/device/token from the failed request. No new bootstrap
  * database or device identity may be created to service a stale error.
@@ -607,7 +658,15 @@ export async function pairCashierStation(
     station_token: stationToken,
     station_credential_expires_at: credentialExpiresAt,
   };
-  await writeCashierDeviceIdentity(next);
+  // This pairing response may be older than a different tab's already
+  // committed station. Compare and write in ONE native IDB transaction.
+  if (!await writeCashierDevicePairingIfUnchanged(identity, next)) {
+    throw new CashierOperatorSessionClientError(
+      'CASHIER_PAIRING_STALE_RESPONSE',
+      'Station pairing changed while this request was in progress',
+      409,
+    );
+  }
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
   }
