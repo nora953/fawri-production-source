@@ -676,6 +676,22 @@ export async function pairCashierStation(
     station_token: stationToken,
     station_credential_expires_at: credentialExpiresAt,
   };
+  // A sale may commit in a different tab AFTER the first pending-outbox
+  // preflight but BEFORE this HTTP pairing response returns. Refuse the
+  // re-pair if new unsynchronized evidence now exists: otherwise a successful
+  // station change could strand the old station's sale or inventory movement.
+  // This second fail-closed check narrows the network wait window; it is NOT
+  // an atomic transaction across the financial and bootstrap databases.
+  const pendingAfterPairingResponse =
+    await getCashierPendingEnvelopeCountForIdentity(identity);
+  if (pendingAfterPairingResponse > 0) {
+    throw new CashierOperatorSessionClientError(
+      'CASHIER_PAIRING_PENDING_OPERATIONS',
+      'Pending cashier operations must synchronize before station pairing',
+      409,
+    );
+  }
+
   // This pairing response may be older than a different tab's already
   // committed station. Compare and write in ONE native IDB transaction.
   if (!await writeCashierDevicePairingIfUnchanged(identity, next)) {
