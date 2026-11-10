@@ -96,8 +96,13 @@ test('future replies-exhausted subscription restores account without re-enabling
   assert.equal(result.accountSuspended,false);
   const update=ctx.sql.find(row=>/SET status = \$2::subscription_status/.test(row.sql));
   assert.deepEqual(update.params,['merchant-test','replies_exhausted']);
-  // The actual PostgreSQL UPDATE disables auto reply for this final status.
-  assert.match(update.sql,/auto_reply_enabled = \(\$2::subscription_status = 'active'\)/);
+  // Exhaustion and a missing or disabled merchant preference both fail
+  // closed. Renewal never overrides an explicit merchant opt-out.
+  assert.match(update.sql,/auto_reply_enabled = \(/);
+  assert.match(update.sql,/\$2::subscription_status = 'active'/);
+  assert.match(update.sql,/EXISTS \(/);
+  assert.match(update.sql,/FROM merchant_settings settings/);
+  assert.match(update.sql,/settings\.auto_reply_enabled IS TRUE/);
 });
 test('expired active subscription and unsafe future-only pending date cannot grant retention renewal',async()=>{
   const expired=arrange(subscription('active',oldEnd));
