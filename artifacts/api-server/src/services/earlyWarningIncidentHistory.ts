@@ -136,6 +136,7 @@ async function insertLifecycleEvent(
 function buildHistory(
   rows: IncidentAuditRow[],
   currentIncidents: Map<string, EarlyWarningIncidentWithScope>,
+  historicalMerchantKeys: Set<string>,
   now: Date,
   window: EarlyWarningWindow,
 ): EarlyWarningIncidentHistoryItem[] {
@@ -145,11 +146,17 @@ function buildHistory(
   // Historical SQL/JSON and current authoritative merchant evaluation must
   // both classify an incident. An old system-labelled OPENED row with no
   // tenant columns must not leak its tenant-bearing key to view_logs actors.
-  const merchantLinkedKeys = new Set(rows.filter((row) => {
+  // Some tenant-linked evidence predates the bounded recent-row window.
+  // A key remains private if any durable lifecycle event ever linked it.
+  const merchantLinkedKeys = new Set(historicalMerchantKeys);
+  for (const row of rows.filter((row) => {
     const stored = record(row.metadata);
     return Boolean(text(row.merchant_id) || text(stored.merchant_id) ||
       text(stored.merchant_name) || stored.scope === 'merchant');
-  }).map((row) => text(row.entity_id)).filter(Boolean));
+  })) {
+    const incidentKey = text(row.entity_id);
+    if (incidentKey) merchantLinkedKeys.add(incidentKey);
+  }
   for (const [key, incident] of currentIncidents) {
     if (incident.scope === "merchant" ||
         text(incident.merchant_id) || text(incident.merchant_name)) {
@@ -284,6 +291,31 @@ export async function syncEarlyWarningIncidentHistory(input: {
       [ENTITY_TYPE, [OPENED_ACTION, RESOLVED_ACTION], MAX_HISTORY_EVENTS],
     );
 
-    return buildHistory(history.rows, currentByKey, now, input.window);
+    // The UI intentionally limits its rendered audit window. Attribution
+    // cannot share that limit: older SQL/JSON tenant evidence must still
+    // protect a key even after >2000 newer unrelated events.
+    const historyKeys = [...new Set(
+      history.rows.map((row) => text(row.entity_id)).filter(Boolean),
+    )];
+    const historicalMerchantEvidence = historyKeys.length
+      ? await client.query<{ entity_id: unknown }>(
+          `SELECT DISTINCT entity_id
+           FROM audit_events
+           WHERE entity_type = $1
+             AND action_type = ANY($2::text[])
+             AND entity_id = ANY($3::text[])
+             AND (
+               NULLIF(BTRIM(merchant_id::text), '') IS NOT NULL
+               OR NULLIF(BTRIM(metadata->>'merchant_id'), '') IS NOT NULL
+               OR NULLIF(BTRIM(metadata->>'merchant_name'), '') IS NOT NULL
+               OR metadata->>'scope' = 'merchant'
+             )`,
+          [ENTITY_TYPE, [OPENED_ACTION, RESOLVED_ACTION], historyKeys],
+        )
+      : { rows: [] };
+    const protectedKeys = new Set(
+      historicalMerchantEvidence.rows.map((row) => text(row.entity_id)).filter(Boolean),
+    );
+    return buildHistory(history.rows, currentByKey, protectedKeys, now, input.window);
   });
 }
