@@ -8,6 +8,10 @@ import {
   clearCashierEntitlementAuthority,
   type CashierServerEntitlementSnapshot,
 } from './cashierOfflineEntitlementAuthority';
+import {
+  cashierCrossTabLockAvailable,
+  withCashierFinancialMutationLock,
+} from './cashierFinancialMutationLock';
 import type { CashierOfflineEnvelope } from './cashierOfflineEntitlementSignature.mjs';
 import {
   bindCashierOperation,
@@ -602,6 +606,16 @@ export async function pairCashierStation(
       0,
     );
   }
+  // Re-pairing without a cross-tab lock is not safe: concurrent sales use a
+  // different IndexedDB database from this bootstrap station identity.
+  // Check BEFORE sending a potentially single-use network pairing code.
+  if (!cashierCrossTabLockAvailable()) {
+    throw new CashierOperatorSessionClientError(
+      'CASHIER_PAIRING_CROSS_TAB_LOCK_UNAVAILABLE',
+      'Browser cross-tab coordination is required to re-pair cashier station',
+      503,
+    );
+  }
   const identity = await getOrCreateCashierDeviceIdentity();
   const pending = await getCashierPendingEnvelopeCountForIdentity(identity);
   if (pending > 0) {
@@ -676,45 +690,49 @@ export async function pairCashierStation(
     station_token: stationToken,
     station_credential_expires_at: credentialExpiresAt,
   };
-  // A sale may commit in a different tab AFTER the first pending-outbox
-  // preflight but BEFORE this HTTP pairing response returns. Refuse the
-  // re-pair if new unsynchronized evidence now exists: otherwise a successful
-  // station change could strand the old station's sale or inventory movement.
-  // This second fail-closed check narrows the network wait window; it is NOT
-  // an atomic transaction across the financial and bootstrap databases.
-  const pendingAfterPairingResponse =
-    await getCashierPendingEnvelopeCountForIdentity(identity);
-  if (pendingAfterPairingResponse > 0) {
-    throw new CashierOperatorSessionClientError(
-      'CASHIER_PAIRING_PENDING_OPERATIONS',
-      'Pending cashier operations must synchronize before station pairing',
-      409,
-    );
-  }
+  // The shared Web Lock serializes financial outbox writers against the
+  // FINAL pending check + station CAS + old-cost cleanup. No network wait is
+  // held under this lock. A queued earlier sale always wins and is observed
+  // before station admission; a later sale cannot interleave the two IDB DBs.
+  return withCashierFinancialMutationLock(
+    identity.local_merchant_id,
+    identity.device_id,
+    async () => {
+      const pendingAfterPairingResponse =
+        await getCashierPendingEnvelopeCountForIdentity(identity);
+      if (pendingAfterPairingResponse > 0) {
+        throw new CashierOperatorSessionClientError(
+          'CASHIER_PAIRING_PENDING_OPERATIONS',
+          'Pending cashier operations must synchronize before station pairing',
+          409,
+        );
+      }
 
-  // This pairing response may be older than a different tab's already
-  // committed station. Compare and write in ONE native IDB transaction.
-  if (!await writeCashierDevicePairingIfUnchanged(identity, next)) {
-    throw new CashierOperatorSessionClientError(
-      'CASHIER_PAIRING_STALE_RESPONSE',
-      'Station pairing changed while this request was in progress',
-      409,
-    );
-  }
-  if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
-  }
-  await scrubCashierRawCostsForIdentity(next);
-
-  const binding = stationBinding(next);
-  if (!binding) {
-    throw new CashierOperatorSessionClientError(
-      'CASHIER_PAIRING_RESPONSE_INVALID',
-      'Cashier station credential is invalid',
-      502,
-    );
-  }
-  return binding;
+      // This response may be older than a pairing committed from another
+      // tab. The authoritative bootstrap change stays an atomic IDB CAS.
+      if (!await writeCashierDevicePairingIfUnchanged(identity, next)) {
+        throw new CashierOperatorSessionClientError(
+          'CASHIER_PAIRING_STALE_RESPONSE',
+          'Station pairing changed while this request was in progress',
+          409,
+        );
+      }
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+      }
+      await scrubCashierRawCostsForIdentity(next);
+      const binding = stationBinding(next);
+      if (!binding) {
+        throw new CashierOperatorSessionClientError(
+          'CASHIER_PAIRING_RESPONSE_INVALID',
+          'Cashier station credential is invalid',
+          502,
+        );
+      }
+      return binding;
+    },
+    { requireCrossTab: true },
+  );
 }
 
 export async function listCashierLoginStaff(): Promise<CashierLoginStaff[]> {
