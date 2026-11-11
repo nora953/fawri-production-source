@@ -157,7 +157,7 @@ export default function SubscriptionPage() {
         </>
       )}
 
-      <CashierSubscriptionPanel />
+      {!import.meta.env.PROD ? <CashierSubscriptionPanel /> : null}
     </div>
   );
 }
