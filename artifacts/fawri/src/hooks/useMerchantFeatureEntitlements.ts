@@ -18,11 +18,15 @@ type MerchantFeatureEntitlements = {
 async function loadMerchantFeatureEntitlements(): Promise<MerchantFeatureEntitlements> {
   const [bot, cashierResponse] = await Promise.all([
     loadCurrentSubscriptionAuthority(),
-    fetch('/api/cashier/subscription', {
-      cache: 'no-store',
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-    }).catch(() => null),
+    // Production first-commercial V1 does not offer POS. Do not even query
+    // excluded cashier entitlements, including on inherited legacy accounts.
+    import.meta.env.PROD
+      ? Promise.resolve(null)
+      : fetch('/api/cashier/subscription', {
+          cache: 'no-store',
+          credentials: 'include',
+          headers: { Accept: 'application/json' },
+        }).catch(() => null),
   ]);
 
   const botVisible =
