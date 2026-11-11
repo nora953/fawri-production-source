@@ -1,5 +1,13 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-11 — P0-ACCESS-HOSTED-IDENTITY: owner authorized metadata read; Neon connection scope blocks target
+
+- **Owner decision recorded:** Explicit approval to inspect **only** the already named candidate Neon project `crimson-cherry-65705041` and branch `br-holy-waterfall-b993zglb` in **read-only metadata mode**. No SQL, merchant-data reads, migrations, role/branch changes, deployment, original Neon/Railway access or secrets.
+- **Attempted actual read-only Neon API checks:** `describe_project`, `list_branches`, and `list_postgres_endpoints` with **exact target project_id**. All rejected before any target read with `INVALID_ARGUMENT`: the currently connected Neon integration is **project-scoped to `round-fire-18493605`**, and the target id does not match. Neon instructs reconnecting with access to the requested project. **Did not omit project_id or read the other project's metadata.** No SQL or writes attempted.
+- **Current external action:** Owner needs to reconnect/select the Neon integration scoped to `crimson-cherry-65705041`; do not ask for passwords or connection strings in chat. Once available, reattempt only the approved metadata check and record independently observed project/branch/endpoints, without presuming hosted SQL/RLS acceptance or additional authorization.
+- **No new accepted tests or closure:** screenshot's 67/70 is a prior in-progress UI snapshot, not a verified exact-SHA final success. P0 known register 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; V1 13 essential + 3 POS scope exclusions proof-pending; `completeP0Inventory=false`, `overallPercentage=null`, **NO-GO**. Draft PR #550 not merged; no Neon/SQL/runtime/provider changes.
+
+
 ## 2026-11-11 — launch handoff correction: candidate independent Neon target is already named (authorization PENDING)
 
 - **Correction to previous imprecise "choose a new host" wording:** the owner provided a screenshot of the prior execution handoff naming candidate Neon project `crimson-cherry-65705041` and candidate branch `br-holy-waterfall-b993zglb`. **Do NOT ask the owner to choose a new project again.** These are candidate identifiers from owner-provided handoff, **not independent verification of project ownership, branch identity, cleanliness, least-privileged credentials or commercial readiness**.
