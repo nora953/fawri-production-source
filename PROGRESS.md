@@ -1,5 +1,14 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-11 — launch handoff correction: candidate independent Neon target is already named (authorization PENDING)
+
+- **Correction to previous imprecise "choose a new host" wording:** the owner provided a screenshot of the prior execution handoff naming candidate Neon project `crimson-cherry-65705041` and candidate branch `br-holy-waterfall-b993zglb`. **Do NOT ask the owner to choose a new project again.** These are candidate identifiers from owner-provided handoff, **not independent verification of project ownership, branch identity, cleanliness, least-privileged credentials or commercial readiness**.
+- **Exact next dependency:** request **specific read-only authorization** to inspect only that candidate project's identity/branch/direct-and-pool endpoint association, using minimal metadata; do not view secrets or merchant data. If approved, gather factual hosted evidence for `P0-ACCESS-HOSTED-IDENTITY`. **No authorization for Neon writes, SQL migrations, role creation, data reads/writes, merging, deployment or original Neon/Railway.**
+- Screenshot reports **67/70 tests successful and 3 in progress at its captured moment**, not independently confirmed latest CI completion. Keep prior accepted exact-SHA CI intact; do not claim these three passing or a newly closed P0 gate.
+- **Status unchanged:** 45 known source P0 = 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; first-commercial 13 essential + 3 owner-approved POS deferrals pending real safety proof; no new acceptance; `completeP0Inventory=false`, `overallPercentage=null`, **NO-GO**.
+- The root `LAUNCH_PLAN.md` remains the only active execution plan. This note corrects the next target, not release scope or authorization.
+
+
 
 ## 2026-11-11 — V1 Meta OAuth production-profile safety mismatch fixed; source CI accepted
 
