@@ -336,7 +336,7 @@ async function bootstrapCashier(): Promise<void> {
 if (cashierV1Disabled) {
   createRoot(document.getElementById('cashier-root')!).render(
     <main role="alert" style={{ padding: 24, fontFamily: 'sans-serif' }}>
-      خدمة الكاشير غير متاحة في الإصدار التجاري الأول من فوري.
+      {storedCashierCopy().runtime.firstCommercialPosUnavailable}
     </main>,
   );
 } else {
