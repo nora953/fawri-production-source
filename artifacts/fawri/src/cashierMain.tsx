@@ -51,8 +51,14 @@ const history = params.get('history') === '1';
 const reports = params.get('reports') === '1';
 const demoRequested = params.get('demo') === '1';
 
-installCashierConnectivityAuthority();
-installCashierOfflineOperatorResume();
+// Defense in depth: if an old HTML entry is accidentally served by a
+// noncanonical build, the commercial UI must not restore an operator session,
+// start offline sync, register a cashier SW or touch financial IndexedDB.
+const cashierV1Disabled = import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1';
+if (!cashierV1Disabled) {
+  installCashierConnectivityAuthority();
+  installCashierOfflineOperatorResume();
+}
 
 const AUTO_SYNC_INTERVAL_MS = 3_000;
 const AUTO_SYNC_RETRY_BACKOFF_MS = 30_000;
@@ -327,4 +333,12 @@ async function bootstrapCashier(): Promise<void> {
   void registerCashierOfflineAppShell();
 }
 
-void bootstrapCashier();
+if (cashierV1Disabled) {
+  createRoot(document.getElementById('cashier-root')!).render(
+    <main role="alert" style={{ padding: 24, fontFamily: 'sans-serif' }}>
+      خدمة الكاشير غير متاحة في الإصدار التجاري الأول من فوري.
+    </main>,
+  );
+} else {
+  void bootstrapCashier();
+}
