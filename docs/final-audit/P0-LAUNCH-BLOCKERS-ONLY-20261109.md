@@ -6,6 +6,14 @@
 
 **Historical 2026-11-09 rule (superseded for work order on 2026-11-11):** this register previously superseded audit-work sequencing only. **Current execution priority now belongs exclusively to root `LAUNCH_PLAN.md`.** Canonical authorization policy and `docs/final-audit/evidence/P0-CLOSURE-REGISTER.json` remain authoritative for evidence/status, not historical 'next' actions. That 2026-10-24 registry has **45 known bounded source gates: 29 CLOSED_SOURCE, 7 OPEN, 9 BLOCKED**. It explicitly declares `completeP0Inventory=false`, `overallPercentage=null`. **29/45 = 64.4% counts source-gate rows, not launch readiness.** Do not use a percent as evidence of release closure.
 
+## 2026-11-11 — launch-scope interpretation (replaces this file's older 17-step ordering)
+
+- **Execution authority:** root [`LAUNCH_PLAN.md`](../../LAUNCH_PLAN.md), with current [`LAUNCH_SCOPE_MATRIX.md`](../../LAUNCH_SCOPE_MATRIX.md). The older numbered table below is **HISTORICAL evidence / dependency descriptions only**, **not** an authorized sequential work queue. The row `FT-01/0052` remains a dependent work item under hosted rollout, **not a separately counted 17th P0 gate**.
+- **Known register counts unchanged:** 45 P0 rows = 29 CLOSED_SOURCE + **7 OPEN + 9 BLOCKED**; of those **16 outstanding**, **13 affect first-commercial V1** and **3 POS/offline are excluded from V1 selling scope subject to actual shutdown/device/financial evidence**. No original P0 row is silently closed. Overall readiness remains uncertified and launch remains **NO-GO**.
+- **P1/P2:** limited check of open GitHub issues did not reveal separately identified P1/P2 tasks; this does not prove an exhaustive P1/P2 inventory. Any proven P1/P2 affecting login, subscription, online ordering, tenant isolation, payment, storage or recovery becomes **BLOCKS_LAUNCH** under an existing gate; genuinely noncritical improvements remain post-launch. Do not launch new exploratory audit queues.
+- **Next actionable external blocker:** `P0-ACCESS-HOSTED-IDENTITY`. Owner must explicitly select/authorize a **new independent commercial host**; GitHub source CI alone cannot certify its actual separate login/role identities, hosted RLS, PostgreSQL migration, Meta/payment, durable media or restore. The full request and no-secret handling are in the scope matrix. Keep proceeding on a **specific evidenced independent source blocker** if one appears; do not rerun accepted POS/SQL/HTTP work without a changed acceptance condition.
+- **Status/evidence correction only:** this paragraph does not provide hosted acceptance, authorize Neon/Railway writes, merge/deploy, payment transactions or reopen the approved POS scope decision. [Latest real source CI acceptance and limits](../../PROGRESS.md).
+
 ## P0 launch-blocker execution order
 
 | Order | Exact outstanding P0 gate (or source-critical dependency) | Closure type | Next concrete acceptance, without redundant broad audit |
