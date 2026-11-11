@@ -1096,17 +1096,22 @@ export default function ReportsPage() {
   const { lang, dir } = useI18n();
   const [location] = useLocation();
   const copy = COPY[lang] || COPY.en;
-  const section = location.includes('/online')
+  // First commercial V1 offers online merchant reports only.
+  const section = import.meta.env.PROD
     ? 'online'
-    : location.includes('/combined')
-      ? 'combined'
-      : 'cashier';
+    : location.includes('/online')
+      ? 'online'
+      : location.includes('/combined')
+        ? 'combined'
+        : 'cashier';
 
-  const tabs = [
-    { key: 'cashier', href: '/dashboard/reports/cashier', label: copy.cashier },
-    { key: 'online', href: '/dashboard/reports/online', label: copy.online },
-    { key: 'combined', href: '/dashboard/reports/combined', label: copy.combined },
-  ] as const;
+  const tabs = import.meta.env.PROD
+    ? [{ key: 'online', href: '/dashboard/reports/online', label: copy.online }]
+    : [
+        { key: 'cashier', href: '/dashboard/reports/cashier', label: copy.cashier },
+        { key: 'online', href: '/dashboard/reports/online', label: copy.online },
+        { key: 'combined', href: '/dashboard/reports/combined', label: copy.combined },
+      ];
 
   return (
     <div className="report-print-root space-y-5 pb-8" dir={dir}>
