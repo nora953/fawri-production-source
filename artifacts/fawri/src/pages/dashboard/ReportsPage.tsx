@@ -1097,7 +1097,7 @@ export default function ReportsPage() {
   const [location] = useLocation();
   const copy = COPY[lang] || COPY.en;
   // First commercial V1 offers online merchant reports only.
-  const section = import.meta.env.PROD
+  const section = import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1'
     ? 'online'
     : location.includes('/online')
       ? 'online'
@@ -1105,7 +1105,7 @@ export default function ReportsPage() {
         ? 'combined'
         : 'cashier';
 
-  const tabs = import.meta.env.PROD
+  const tabs = import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1'
     ? [{ key: 'online', href: '/dashboard/reports/online', label: copy.online }]
     : [
         { key: 'cashier', href: '/dashboard/reports/cashier', label: copy.cashier },
