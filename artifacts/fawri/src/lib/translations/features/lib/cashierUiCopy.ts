@@ -3,6 +3,7 @@ import type { Lang } from '@/lib/types';
 export const CASHIER_UI_COPY = {
   ar: {
     runtime: {
+      firstCommercialPosUnavailable: 'الكاشير غير متاح في النسخة التجارية الأولى من فوري. ستظل بيانات المبيعات السابقة محفوظة على الجهاز.',
       offlineUpload: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
       syncingOperations: 'جارٍ مزامنة عمليات الكاشير.',
       pendingOperations: 'بعض عمليات الكاشير ما زالت بانتظار المزامنة. اضغط للمحاولة مرة أخرى.',
@@ -167,6 +168,7 @@ export const CASHIER_UI_COPY = {
   },
   ku: {
     runtime: {
+      firstCommercialPosUnavailable: 'کاشێر لە وەشانی یەکەمی بازرگانی فەوری بەردەست نییە. زانیاریی فرۆشتنەکانی پێشووت لەسەر ئامێرەکە دەپارێزرێن.',
       offlineUpload: 'کاتێک پەیوەندی گەڕایەوە مامەڵەکان خۆکارانە بار دەکرێن.',
       syncingOperations: 'مامەڵەکانی کاشێر هاوکات دەکرێن.',
       pendingOperations: 'هەندێک مامەڵەی کاشێر هێشتا چاوەڕێی هاوکاتکردنن. بۆ هەوڵدانەوە کرتە بکە.',
@@ -331,6 +333,7 @@ export const CASHIER_UI_COPY = {
   },
   en: {
     runtime: {
+      firstCommercialPosUnavailable: 'Cashier/POS is not available in the first commercial Fawri release. Existing local sales data remains preserved on this device.',
       offlineUpload: 'Operations will upload automatically when the connection returns.',
       syncingOperations: 'Syncing cashier operations.',
       pendingOperations: 'Some cashier operations are still waiting to sync. Click to try again.',
