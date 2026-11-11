@@ -503,6 +503,32 @@ test("Meta OAuth remains blocked when any explicit production cutover prerequisi
   );
 });
 
+test("Meta OAuth applies production safeguards when deployment mode is production even under test NODE_ENV", () => {
+  const launchEnv = productionEnv({
+    NODE_ENV: "test",
+    FAWRI_DEPLOYMENT_MODE: "production",
+  });
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(launchEnv), []);
+  assert.equal(metaConnectionActivationConfigured(launchEnv), true);
+
+  for (const [label, overrides] of [
+    ["fake reply transport", { FAWRI_META_REPLY_TRANSPORT: "fake" }],
+    ["unprotected credential provider", { FAWRI_META_CREDENTIAL_PROVIDER: "environment" }],
+    ["insecure callback", { META_REDIRECT_URI: "http://api.fawri.example/api/meta/callback" }],
+    ["local callback", { META_REDIRECT_URI: "https://localhost/api/meta/callback" }],
+  ] as const) {
+    assert.equal(metaConnectionActivationConfigured({ ...launchEnv, ...overrides }), false, label);
+  }
+
+  // Do not weaken the prior safeguard for NODE_ENV=production just because
+  // a staging deployment mode was deliberately selected.
+  assert.equal(metaConnectionActivationConfigured(productionEnv({
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "staging",
+    FAWRI_META_CREDENTIAL_PROVIDER: "environment",
+  })), false);
+});
+
 test("legacy Meta router contains no Replit redirect fallback", () => {
   const current = path.dirname(fileURLToPath(import.meta.url));
   const routerPath = path.resolve(current, "../src/routes/indexModulePart1.ts");

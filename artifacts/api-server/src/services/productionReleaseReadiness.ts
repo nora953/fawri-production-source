@@ -386,7 +386,10 @@ export function metaConnectionActivationConfigured(
 ): boolean {
   if (text(env.FAWRI_META_CUTOVER_READY) !== "1") return false;
   if (text(env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY) !== "required") return false;
-  if (env.NODE_ENV === "production") {
+  // An explicit production deployment profile must never bypass Meta OAuth
+  // safeguards merely because NODE_ENV is not production. Keep the existing
+  // strict behavior when NODE_ENV itself is production (even for staging).
+  if (env.NODE_ENV === "production" || productionReleaseGateRequired(env)) {
     if (text(env.FAWRI_META_REPLY_TRANSPORT).toLowerCase() !== "live") return false;
     if (text(env.FAWRI_META_CREDENTIAL_PROVIDER).toLowerCase() !== "aws-kms") return false;
     if (!isSafeProductionRedirect(env.META_REDIRECT_URI)) return false;
