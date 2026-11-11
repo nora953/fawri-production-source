@@ -1,3 +1,4 @@
+import { firstCommercialPosDisabled } from "../middleware/firstCommercialPosCutover";
 import {issueMerchantTransactionScope} from "./tenantTransactionScope";
 import { withOperationalTransaction } from "./operationalPostgresAuthority";
 import {resolveConfirmedProviderBillingScope,authorizeConfirmedProviderBillingScope,type ConfirmedProviderBillingScope} from './confirmedProviderBillingScope';
@@ -242,6 +243,17 @@ export async function handleSuperQiSandboxWebhook(input: {
   }
   if (order.amount_iqd !== settledAmount) {
     throw new SuperQiSandboxProviderError("SUPERQI_SANDBOX_ORDER_AMOUNT_MISMATCH", "confirmed amount conflicts with billing order", 409);
+  }
+  if (order.authority === "cashier_subscription" && firstCommercialPosDisabled()) {
+    // IMPORTANT: the verified provider receipt was durably admitted above.
+    // Do not discard that money evidence, nor activate an excluded POS seat.
+    // A retryable response keeps provider reconciliation pending for review.
+    // This branch cannot affect ordinary SaaS/bot subscription settlement.
+    throw new SuperQiSandboxProviderError(
+      "FAWRI_V1_POS_PAYMENT_HELD_FOR_RECONCILIATION",
+      "Verified legacy cashier payment retained but POS entitlement is not offered in V1",
+      503,
+    );
   }
   await attachProviderPaymentReference(order, confirmed.paymentId, confirmed.requestId, scope!);
 
