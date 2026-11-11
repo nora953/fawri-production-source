@@ -20,7 +20,7 @@ async function loadMerchantFeatureEntitlements(): Promise<MerchantFeatureEntitle
     loadCurrentSubscriptionAuthority(),
     // Production first-commercial V1 does not offer POS. Do not even query
     // excluded cashier entitlements, including on inherited legacy accounts.
-    import.meta.env.PROD
+    import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1'
       ? Promise.resolve(null)
       : fetch('/api/cashier/subscription', {
           cache: 'no-store',
