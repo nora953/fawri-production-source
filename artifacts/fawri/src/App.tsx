@@ -31,7 +31,7 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const OwnerRecoveryPage = lazy(() => import("@/pages/OwnerRecoveryPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
-const firstCommercialPosDisabled = import.meta.env.PROD;
+const firstCommercialPosDisabled = import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1';
 const cashierSmokeEnabled = !firstCommercialPosDisabled && import.meta.env.VITE_CASHIER_SMOKE === "1";
 const CashierIndexedDbSmokePage = cashierSmokeEnabled
   ? lazy(() => import("@/pages/CashierIndexedDbSmokePage"))
