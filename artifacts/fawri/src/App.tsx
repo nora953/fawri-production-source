@@ -31,7 +31,8 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const OwnerRecoveryPage = lazy(() => import("@/pages/OwnerRecoveryPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
-const cashierSmokeEnabled = import.meta.env.VITE_CASHIER_SMOKE === "1";
+const firstCommercialPosDisabled = import.meta.env.PROD;
+const cashierSmokeEnabled = !firstCommercialPosDisabled && import.meta.env.VITE_CASHIER_SMOKE === "1";
 const CashierIndexedDbSmokePage = cashierSmokeEnabled
   ? lazy(() => import("@/pages/CashierIndexedDbSmokePage"))
   : null;
@@ -182,7 +183,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/reports/combined">
-          {() => <DashboardRoute Page={ReportsPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={ReportsPage} />}
         </Route>
 
         <Route path="/dashboard/reports/online">
@@ -190,7 +191,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/reports/cashier">
-          {() => <DashboardRoute Page={ReportsPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={ReportsPage} />}
         </Route>
 
         <Route path="/dashboard/reports">
@@ -198,15 +199,15 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/cashiers/reports">
-          {() => <DashboardRoute Page={ReportsPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={ReportsPage} />}
         </Route>
 
         <Route path="/dashboard/cashiers/discounts">
-          {() => <DashboardRoute Page={CashierDiscountPoliciesPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={CashierDiscountPoliciesPage} />}
         </Route>
 
         <Route path="/dashboard/cashiers">
-          {() => <DashboardRoute Page={CashierManagementPage} />}
+          {() => firstCommercialPosDisabled ? <NotFound /> : <DashboardRoute Page={CashierManagementPage} />}
         </Route>
 
         <Route path="/dashboard/saved-answers">
