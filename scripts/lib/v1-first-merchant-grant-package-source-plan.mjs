@@ -33,6 +33,38 @@ const HELD_GRANTS=Object.freeze({
     role:'fawri_operator_issuer',
   }),
 });
+// Exact later V1 first-merchant HELD additions, applied only after an
+// approved 54-stage migration and the three independent minimal LOGIN grants.
+// These are never interpreted as permission to run SQL on a hosted database.
+const HELD_ADDITIVE=Object.freeze([
+  Object.freeze({
+    path:'lib/db/first-commercial/held/v1_meta_channel_onboarding_grants.sql',
+    blob:'6d87f7e87ff2e7210b4929a4ba9572bc5a1e5b41',
+    purpose:'META_AUTH_CREDENTIALS_AND_TENANT_PUBLIC_ROUTING',
+  }),
+  Object.freeze({
+    path:'lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls.sql',
+    blob:'a56842ad262c3a83ed41dd24109d241eb4fb6861',
+    purpose:'META_JOB_HISTORY_TENANT_RLS_AND_DML',
+  }),
+  Object.freeze({
+    path:'lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard.sql',
+    blob:'bd08142e26547aeaa78850c8aa9644ec7495f217',
+    purpose:'POS_OFF_MERCHANT_RETENTION_GUARD',
+  }),
+]);
+const HELD_FAIL_CLOSED_REVERTS=Object.freeze([
+  Object.freeze({
+    path:'lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls_failclosed_revert.sql',
+    blob:'3e27c9efb75803676db083acd4e1e4e7eb5deee0',
+    purpose:'STOP_WORKER_DML_PRESERVE_JOB_HISTORY',
+  }),
+  Object.freeze({
+    path:'lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard_revert.sql',
+    blob:'f6a98b30cb053c13b5321283b8d63d8929f38f0e',
+    purpose:'RESTORE_ORIGINAL_TRIGGER_PRESERVE_FINANCIAL_HISTORY',
+  }),
+]);
 const LEGACY_HELD=[
   'lib/db/first-commercial/held/0052_cashier_retirement_issuer_grants.sql',
   'lib/db/first-commercial/held/0053_receipt_manual_case_operator_grants.sql',
@@ -77,6 +109,23 @@ export function buildV1FirstMerchantGrantSourcePlan({
   }
   const uniqueRoles=new Set(selected.map(item=>item.role));
   if(uniqueRoles.size!==3)reject('V1_INDEPENDENT_ROLE_SET_MISSING');
+  const stagePinned=(entries,errorCode)=>Object.freeze(entries.map(entry=>{
+    const bytes=readFile(entry.path);
+    if(typeof bytes!=='string'||gitBlob(bytes)!==entry.blob)
+      reject(errorCode);
+    if(/\bGRANT\s+ALL\s+(?:PRIVILEGES\s+)?ON\b/i.test(
+      bytes.replace(/^\s*--.*$/gm,'')))
+      reject('V1_STAGE_GRANT_ALL_FORBIDDEN');
+    return Object.freeze({
+      source_path:entry.path,
+      reviewed_git_blob_sha1:entry.blob,
+      purpose:entry.purpose,
+      status:'HELD_SOURCE_ONLY_NOT_APPROVED_FOR_HOSTED',
+    });
+  }));
+  const additions=stagePinned(HELD_ADDITIVE,'V1_HELD_ADDITIVE_SOURCE_SHA_DRIFT');
+  const failClosedReverts=stagePinned(
+    HELD_FAIL_CLOSED_REVERTS,'V1_HELD_REVERT_SOURCE_SHA_DRIFT');
   const selectedPaths=new Set(selected.map(x=>x.source_path));
   if(LEGACY_HELD.some(x=>selectedPaths.has(x)))
     reject('V1_LEGACY_CASHIER_OR_DUPLICATE_OPERATOR_GRANTS_FORBIDDEN');
@@ -91,6 +140,10 @@ export function buildV1FirstMerchantGrantSourcePlan({
     pinned_held_journal_sha256:source.reviewed_held_journal_sha256,
     reservation_sql_sha256:source.four_role_reservation_sql_sha256,
     selected_grant_sources:Object.freeze(selected),
+    // Exact ordered stage references, not a deploy script or greenlight.
+    additional_held_sql_sources:additions,
+    failclosed_revert_sources:failClosedReverts,
+
     legacy_not_selected:Object.freeze([...LEGACY_HELD]),
     cashier_retirement_writer_may_remain_dormant_nologin:true,
     data_import_allowed:false,
