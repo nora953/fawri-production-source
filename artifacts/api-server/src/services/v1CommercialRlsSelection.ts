@@ -12,7 +12,7 @@ export const V1_FIRST_COMMERCIAL_WORKER_RLS_TABLES = [
 
 export function selectProtectedRlsTablesForRuntime(
   baseline: readonly string[],
-  env: Pick<NodeJS.ProcessEnv, "FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE">,
+  env: { readonly FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE?: string },
 ): readonly string[] {
   if (String(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim() !==
       "fawri_restricted_runtime") {
