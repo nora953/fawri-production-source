@@ -1,5 +1,8 @@
 # Fawri P0 — known blocker status / evidence register (execution order superseded)
 
+> **2026-11-13 — bounded P0-ACCESS-HOSTED-ROLLOUT source correction (not closure):** Merchant promotion routes need `commerce_promotions` CRUD but the new V1 tenant role lacked that GRANT. A RLS-preflighted HELD grant and exact-source pin plus targeted tests were changed at `1639bb4073641b4b39ed3765bf0256019080414e`; code CI pending at this checkpoint. Remaining merchant region lookup against globally denied `merchants` must be resolved without unscoped tenant enumeration. **No true hosted SQL/HTTP or provider/backup acceptance, no P0 status changes, no scope expansion**: 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; 13 first-commercial essentials + 3 POS deferred with proof pending, NO-GO. See [PROGRESS.md](../../PROGRESS.md).
+
+
 > **2026-11-12 targeted P0-ACCESS-HOSTED-IDENTITY evidence:** On the owner-selected **fresh** Neon project `crimson-cherry-65705041`, branch `br-holy-waterfall-b993zglb`, database `fawri`, the specifically owner-approved **single read-only pg_roles SELECT** returned `role_exists=false` for all three required `fawri_restricted_runtime`, `fawri_auth_issuer`, `fawri_operator_issuer` roles. **Hosted principal provisioning is demonstrably missing**, not merely unverified from UI. No grants, role creation, migrations, merchant data access or other writes were authorized or performed. Accepted negative SELECT need not be repeated unchanged. Next: narrowly prepare verified first-commercial migration/role/ACL/rollback source plan on GitHub; seek new owner approval before executing on this new target. `P0-ACCESS-HOSTED-IDENTITY` remains BLOCKED; 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; **NO-GO**.
 
 
