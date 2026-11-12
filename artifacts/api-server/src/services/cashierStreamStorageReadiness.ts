@@ -13,6 +13,15 @@ export async function assertProductionCashierStreamStorageReady(env:NodeJS.Proce
   // This opt-in NEVER turns an unverified local proof into hosted approval.
   // No default fallback: a malformed variant request must block the listener.
   const profile=selectFt01CashierStorageProfile(env);
+  const v1Selected=String(
+    env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim()===
+      "fawri_restricted_runtime";
+  // No fallthrough: the V1 restricted merchant LOGIN MUST use the exactly
+  // pinned first-commercial source profile. A missing/mismatched profile
+  // cannot silently return to legacy cashier-writer startup semantics.
+  if(v1Selected!==(profile.mode==='first-commercial-invoker')){
+    throw new Error("V1 POS-off storage profile does not match restricted runtime");
+  }
   const primary=target||await operationalDatabasePool();
   const primaryRole=(await primary.query<{login:string}>("SELECT session_user::text AS login")).rows[0]?.login;
   const authenticationRole=await withAuthenticationTransaction(async client=>(await client.query<{login:string}>("SELECT session_user::text AS login")).rows[0]?.login);
