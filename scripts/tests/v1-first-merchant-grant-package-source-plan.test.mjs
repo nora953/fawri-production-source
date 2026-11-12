@@ -22,9 +22,10 @@ test('source-only V1 grant selection pins three roles without cashier or old man
   assert.deepEqual(plan.selected_grant_sources.map(x=>x.role),[
     'fawri_auth_issuer','fawri_restricted_runtime','fawri_operator_issuer']);
   assert.equal(plan.selected_grant_sources.length,3);
-  assert.equal(plan.additional_held_sql_sources.length,3);
+  assert.equal(plan.additional_held_sql_sources.length,4);
   assert.deepEqual(plan.additional_held_sql_sources.map(x=>x.purpose),[
     'META_AUTH_CREDENTIALS_AND_TENANT_PUBLIC_ROUTING',
+    'META_INBOUND_CONVERSATIONS_OUTBOUND_QUEUED_REPLY_DELETE_ONLY',
     'META_JOB_HISTORY_TENANT_RLS_AND_DML',
     'POS_OFF_MERCHANT_RETENTION_GUARD',
   ]);
