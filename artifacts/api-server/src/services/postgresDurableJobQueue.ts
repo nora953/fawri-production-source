@@ -33,6 +33,20 @@ const DEFAULT_VISIBILITY_TIMEOUT_MS = 5 * 60 * 1000;
 const DEFAULT_POLL_INTERVAL_MS = 1_000;
 const MAX_BACKOFF_MS = 15 * 60 * 1000;
 const INTERNAL_REQUEUE_POLICY = "_fawri_requeue_policy";
+
+/**
+ * Canonical 0000..0052 job history has no merchant_id on its attempt/DLQ
+ * tables. Preserve that historical contract ONLY inside disposable NODE_ENV
+ * test runs. V1 / every non-test runtime requires the new merchant-bound
+ * HELD schema and must fail closed if those columns or RLS are absent.
+ * Never use this test compatibility path to admit commercial traffic.
+ */
+function usesV1MerchantBoundJobHistory(): boolean {
+  return process.env.NODE_ENV !== "test" ||
+    process.env.FAWRI_DEPLOYMENT_MODE === "production" ||
+    process.env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE ===
+      "fawri_restricted_runtime";
+}
 let configuredProvider: MetaCredentialKeyProvider | null = null;
 
 export function configurePostgresDurableJobCredentialKeyProvider(
@@ -641,21 +655,32 @@ async function claimForMerchant(
       [merchantId, row.id, now.toISOString(), workerId, leaseExpiry.toISOString()],
     );
     const claimed = updated.rows[0]!;
-    await client.query(
-      `INSERT INTO job_attempts
-        (id, job_id, merchant_id, attempt_number, worker_id, lease_generation,
-         status, started_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'processing', $7::timestamptz)`,
-      [
-        `attempt-${crypto.randomUUID()}`,
-        claimed.id,
-        merchantId,
-        claimed.attempts,
-        workerId,
-        claimed.lease_generation || claimed.attempts,
-        now.toISOString(),
-      ],
-    );
+    const attemptId = `attempt-${crypto.randomUUID()}`;
+    if (usesV1MerchantBoundJobHistory()) {
+      await client.query(
+        `INSERT INTO job_attempts
+          (id, job_id, merchant_id, attempt_number, worker_id,
+           lease_generation, status, started_at)
+         VALUES ($1, $2, $3, $4, $5, $6, 'processing', $7::timestamptz)`,
+        [
+          attemptId, claimed.id, merchantId, claimed.attempts, workerId,
+          claimed.lease_generation || claimed.attempts, now.toISOString(),
+        ],
+      );
+    } else {
+      // A disposable canonical schema compatibility path ONLY; never use
+      // it under an expected commercial runtime role or in production.
+      await client.query(
+        `INSERT INTO job_attempts
+          (id, job_id, attempt_number, worker_id, lease_generation,
+           status, started_at)
+         VALUES ($1, $2, $3, $4, $5, 'processing', $6::timestamptz)`,
+        [
+          attemptId, claimed.id, claimed.attempts, workerId,
+          claimed.lease_generation || claimed.attempts, now.toISOString(),
+        ],
+      );
+    }
     return hydrateJob(client, claimed);
   });
 }
@@ -698,14 +723,24 @@ async function finishAttempt(
   errorCode: string | null,
   now: Date,
 ): Promise<void> {
-  await client.query(
-    `UPDATE job_attempts
-        SET status = $4::job_attempt_status, error_code = $5,
-            finished_at = $6::timestamptz
-      WHERE merchant_id = $1 AND job_id = $2
-        AND attempt_number = $3 AND status = 'processing'`,
-    [merchantId, jobId, attemptNumber, status, errorCode, now.toISOString()],
-  );
+  if (usesV1MerchantBoundJobHistory()) {
+    await client.query(
+      `UPDATE job_attempts
+          SET status = $4::job_attempt_status, error_code = $5,
+              finished_at = $6::timestamptz
+        WHERE merchant_id = $1 AND job_id = $2
+          AND attempt_number = $3 AND status = 'processing'`,
+      [merchantId, jobId, attemptNumber, status, errorCode, now.toISOString()],
+    );
+  } else {
+    await client.query(
+      `UPDATE job_attempts
+          SET status = $3::job_attempt_status, error_code = $4,
+              finished_at = $5::timestamptz
+        WHERE job_id = $1 AND attempt_number = $2 AND status = 'processing'`,
+      [jobId, attemptNumber, status, errorCode, now.toISOString()],
+    );
+  }
 }
 
 async function deadLetter(
@@ -746,23 +781,32 @@ async function deadLetter(
     [current.id],
   );
   const occurrence = Number(occurrenceResult.rows[0]?.occurrence || 1);
-  await client.query(
-    `INSERT INTO job_dead_letters
-      (id, job_id, merchant_id, occurrence, reason_code, attempts,
-       payload_sha256, metadata, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::timestamptz)`,
-    [
-      `dlq-${crypto.randomUUID()}`,
-      current.id,
-      tenantId,
-      occurrence,
-      errorCode,
-      current.attempts,
-      current.payload_hash,
-      JSON.stringify({ requeue_safe: requeueSafe }),
-      now.toISOString(),
-    ],
-  );
+  const deadLetterId = `dlq-${crypto.randomUUID()}`;
+  if (usesV1MerchantBoundJobHistory()) {
+    await client.query(
+      `INSERT INTO job_dead_letters
+        (id, job_id, merchant_id, occurrence, reason_code, attempts,
+         payload_sha256, metadata, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::timestamptz)`,
+      [
+        deadLetterId, current.id, tenantId, occurrence, errorCode,
+        current.attempts, current.payload_hash,
+        JSON.stringify({ requeue_safe: requeueSafe }), now.toISOString(),
+      ],
+    );
+  } else {
+    await client.query(
+      `INSERT INTO job_dead_letters
+        (id, job_id, occurrence, reason_code, attempts,
+         payload_sha256, metadata, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::timestamptz)`,
+      [
+        deadLetterId, current.id, occurrence, errorCode,
+        current.attempts, current.payload_hash,
+        JSON.stringify({ requeue_safe: requeueSafe }), now.toISOString(),
+      ],
+    );
+  }
   await finishAttempt(client, tenantId, current.id, current.attempts, "failed", errorCode, now);
   return hydrateJob(client, updated.rows[0]!);
 }
