@@ -12,6 +12,9 @@ on:
       - "lib/db/first-commercial/held/v1_meta_channel_onboarding_grants.sql"
       - "artifacts/api-server/src/services/postgresDurableJobQueue.ts"
       - "scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs"
+      - "scripts/tests/v1-meta-worker-tenant-history-source.test.mjs"
+      - "lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls.sql"
+      - "lib/db/src/schema/jobs.ts"
 
 permissions:
   contents: read
@@ -64,5 +67,6 @@ jobs:
         working-directory: lib/db
         run: |
           node --test ../../scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs
+          node --test ../../scripts/tests/v1-meta-worker-tenant-history-source.test.mjs
           node --check scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs
           node scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs
