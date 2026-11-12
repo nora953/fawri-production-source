@@ -1,5 +1,14 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-12 — NEW exact-role capability postflight PG18 CI successful; no Neon write / P0 closure
+
+- `P0-ACCESS-HOSTED-IDENTITY`: owner-executed one-time SQL on new Neon `crimson-cherry-65705041`/`br-holy-waterfall-b993zglb`/`fawri` still proves 3/3 required LOGIN roles absent. No new SQL on host, original staging untouched.
+- **Actual GitHub source additions**: held [single SELECT role capability postflight](docs/final-audit/evidence/sql/P0-V1-FIRST-MERCHANT-ROLE-POSTFLIGHT-READONLY-HELD-20261112.sql) plus [targeted local PG18 role matrix test](lib/db/scripts/v1-hosted-role-postflight-pg18.mjs) and [CI workflow](.github/workflows/v1-role-postflight-local-pg18.yml). The test exercises tenant/auth/operator allowed and prohibited function/table privileges under synthetic identities, 9 negative escalation cases, with transaction/savepoint rollback and zero persisted roles/fixtures.
+- **Exact final executable SHA `94a6f2d6e98c99793366ab04ce1a8070c8debca9`**: [V1 identity capability postflight CI #43227214240](https://github.com/nora953/fawri-production-source/actions/runs/43227214240) **COMPLETED SUCCESS** all steps. Logs: `V1_ROLE_POSTFLIGHT_LOCAL_PG18_POSITIVE_NEGATIVE_PASS`, `V1_ROLE_POSTFLIGHT_TRANSACTION_ROLLBACK_PASS`, `V1_ROLE_POSTFLIGHT_NO_NEON_NO_MERCHANT_DATA_NO_RELEASE_PASS`. Two previous NEW-test red runs were debugged; only this green run counts. Not re-running already accepted unrelated SQL/HTTP suites.
+- **Acceptance limit:** SQL is HELD; owner approved one earlier SELECT, **not** execution of this new query nor any writes. Test schema uses synthetic functions/tables, no full V1 migration, no real LOGIN/connection URI, RLS/HTTP, payment, backup, provider, or release acceptance. This is one new bounded source proof, not complete role grant provisioning; held 0052 cashier grants are not full V1 grants.
+- **Next independent fix:** produce a source-pinned complete minimal operational role/grant/credentials-separation + rollback package based on V1 tenant/auth/operator API routes, then seek new exact owner approval before any hosted write after independent recoverable backup. P0 inventory remains 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, **13 V1-essential + 3 POS proof-pending deferrals**, `overallPercentage=null`; `P0-ACCESS-HOSTED-IDENTITY` remains **BLOCKED**, PR #550 DRAFT, **NO-GO**.
+
+
 ## 2026-11-12 — NEW V1 hosted identity source guard + bounded GitHub CI SUCCESS (hosted roles still absent)
 
 - **Precisely named blocker:** `P0-ACCESS-HOSTED-IDENTITY`; 3/3 required independent LOGIN roles absent on owner-selected Neon `crimson-cherry-65705041`/`br-holy-waterfall-b993zglb`/`fawri`, proved by owner-executed SELECT. No repeat SQL, no new production write permission.
