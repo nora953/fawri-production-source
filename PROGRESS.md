@@ -1,5 +1,7 @@
 # FAWRI — launch-blocker execution checkpoint
 
+> **Next owner-decision boundary prepared, NOT authorized:** [first hosted-write / backup / role / migration handoff](docs/final-audit/evidence/P0-V1-FIRST-HOSTED-ROLLOUT-OWNER-DECISION-PACKET-20261112.md). It reuses all accepted CI and explicitly **withholds** any deployment permission until source coverage, secure credentials and independent DB+media restore are evidenced. No owner action needed yet, no Neon/Railway writes.
+
 ## 2026-11-12 — V1 POS-off merchant retention trigger conflict fixed in HELD source, rollback and true 54-stage schema CI GREEN
 
 - **Direct V1 launch blocker located in actual reviewed source:** HELD `0052_cashier_stream_receipt_storage_invoker.sql` binds merchant retention deletion to `fawri_cashier_retirement_writer` membership + cashier DML. The owner-approved V1 POS-off auth role correctly has **neither**; thus even a merchant with **ZERO** cashier streams can be rejected on deletion. Preserve the original 0052 migration, its history/role/stream/receipt policies and all financial data; do not re-enable POS or grant cashier rights to bypass this conflict.
