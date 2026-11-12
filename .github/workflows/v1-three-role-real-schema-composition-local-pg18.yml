@@ -13,6 +13,9 @@ on:
       - "lib/db/first-commercial/held/v1_meta_inbound_conversation_grants.sql"
       - "artifacts/api-server/src/services/postgresDurableJobQueue.ts"
       - "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts"
+      - "artifacts/api-server/src/services/v1PosOffStorageReadiness.ts"
+      - "artifacts/api-server/src/services/cashierStreamStorageReadiness.ts"
+      - "scripts/tests/v1-pos-off-startup-storage.test.mjs"
       - "artifacts/api-server/src/services/v1CommercialRlsSelection.ts"
       - "scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs"
       - "scripts/tests/v1-meta-worker-tenant-history-source.test.mjs"
@@ -75,6 +78,7 @@ jobs:
         run: |
           node --test ../../scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs
           node --test ../../scripts/tests/v1-meta-worker-tenant-history-source.test.mjs
+          node --import tsx --test ../../scripts/tests/v1-pos-off-startup-storage.test.mjs
           node --import tsx --test ../../scripts/tests/v1-runtime-rls-selection.test.mjs
           node --check scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs
           node scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs
