@@ -158,9 +158,11 @@ BEGIN
         ('orders','SELECT,INSERT,UPDATE'),
         ('order_items','SELECT,INSERT,UPDATE')
     ) AS required(table_name, rights)
+    CROSS JOIN LATERAL regexp_split_to_table(
+      required.rights, ',') AS privilege(privilege_name)
     WHERE NOT has_table_privilege(r,
        ('public.' || quote_ident(required.table_name))::text,
-       required.rights)
+       privilege.privilege_name)
   ) THEN RAISE EXCEPTION 'V1_ONLINE_TENANT_REQUIRED_DML_MISSING'; END IF;
   SELECT name INTO bad_table FROM (
     VALUES ('products'),('product_variants'),('catalog_variant_options'),
