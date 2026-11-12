@@ -253,7 +253,15 @@ async function hydrateJob(
 }
 
 async function merchantIds(): Promise<string[]> {
-  return withOperationalTransaction(async (client) => {
+  // The worker must enumerate merchant identities before it can bind an
+  // individual merchant transaction. The restricted tenant LOGIN must NOT
+  // receive broad SELECT on merchants just to discover other tenants.
+  // Use the already dedicated authentication LOGIN for this catalog-only
+  // enumeration, then claim every job through the tenant-scoped runtime.
+  const { withAuthenticationTransaction } = await import(
+    "./authenticationPostgresAuthority"
+  );
+  return withAuthenticationTransaction(async (client) => {
     const result = await client.query<{ id: string }>(
       `SELECT id FROM merchants ORDER BY id`,
     );
