@@ -1,5 +1,13 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-12 — hosted role catalog SELECT explicitly approved; wrong-project Neon MCP scope still blocks direct execution
+
+- **Owner explicitly authorized exactly one SELECT** of nonsecret `pg_catalog.pg_roles` flags for `fawri_restricted_runtime`, `fawri_auth_issuer`, `fawri_operator_issuer` on fresh candidate project `crimson-cherry-65705041` / branch `br-holy-waterfall-b993zglb` / database `fawri`; no writes, no merchant data, no running old saved scripts.
+- **Preflight failed safely before any SQL**: direct read-only `describe_project(project_id='crimson-cherry-65705041')` was rejected with `INVALID_ARGUMENT` because the connected Neon MCP is still pinned to `round-fire-18493605`. Did not omit the target ID and did not access the other project. Never run approved SQL against the mismatched connector.
+- **Next bounded operator action**: use the owner's Neon Console SQL Editor on the already UI-confirmed new `production` branch and `fawri` database to execute the one three-role `pg_catalog.pg_roles` SELECT only, provide a screenshot of the three results without sensitive data. Keep P0 blocked until actually verified hosted role evidence. Do not claim the read was executed or that roles are absent merely because Console Roles UI showed only `fawri_owner`.
+- **No closure or release-state change:** P0 source rows 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; 13 V1 essential and 3 POS scope deferrals pending; `overallPercentage=null`; NO-GO; PR #550 remains draft.
+
+
 ## 2026-11-12 — P0-ACCESS-HOSTED-IDENTITY: primary compute metadata seen on approved new branch
 
 - Owner-supplied **Neon UI screenshot**, breadcrumb `fawri-production-prep-20261108 / production`: one **primary compute endpoint ID** `ep-polished-poetry-b9jpvn4r`, status `SUSPENDED` after inactivity and autoscale range `0.25–2 CU`. A suspended idle compute is not itself a fault. This is a **compute ID**, **not** verification of direct/pool hostname pair, authenticated runtime login, network settings, or healthy production application.
