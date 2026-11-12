@@ -34,6 +34,7 @@ BEGIN
      OR session_user <> 'fawri_owner' OR current_user <> session_user
      OR to_regclass('drizzle.__drizzle_migrations') IS NULL
      OR to_regprocedure('fawri_security.allows_merchant(text)') IS NULL
+     OR to_regprocedure('fawri_security.issue_scope(name,integer,bigint,text)') IS NULL
      OR to_regprocedure('public.fawri_authentication_runtime()') IS NULL
      OR to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)') IS NULL
   THEN RAISE EXCEPTION 'V1_ONLINE_TENANT_PREIMAGE_REJECTED'; END IF;
