@@ -21,6 +21,22 @@ The source-only fail-closed parser `scripts/lib/v1-first-merchant-hosted-identit
 - `scripts/lib/ft01-clean-bootstrap-source-plan.mjs`, `scripts/lib/ft01-first-commercial-invoker-source-plan.mjs` and `scripts/lib/ft01-first-commercial-disposable-bundle.mjs` pin reviewed candidate migration/journal/role bytes and local PG18 rehearsal. They all **withhold** hosted execution approval. Canonical 0052 cannot be silently substituted or skipped.
 - `lib/db/first-commercial/held/0052_cashier_retirement_issuer_grants.sql` is **only a cashier-retirement grant subset**, not complete tenant/auth/operator operational privileges. `0053_receipt_manual_case_operator_grants.sql` is a similarly HELD narrow operator subset. Neither can be promoted as the only role grant file for V1.
 
+## First-merchant API startup capabilities — mapped from existing source, not invented grants
+
+The following source contracts define **required and forbidden capabilities**, rather than a speculative `GRANT ALL` list. Missing table-specific DML is an explicit source gap to resolve before a reviewed hosted change; a source-only reviewer must not guess its SQL.
+
+| Actual authenticated LOGIN | Required by production application | Explicit denials | Source |
+|---|---|---|---|
+| `fawri_restricted_runtime` (tenant/primary) | Genuine `session_user=current_user`, reviewed private transaction-scope guard, RLS-protected merchant flows; source-pinned schema policy and protected tenant predicate | no superuser, BYPASSRLS, CREATEROLE, privileged role reachability, protected table ownership, auth marker, operator issuer, credential reads, arbitrary TRUNCATE/TRIGGER/REFERENCES | `artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts` (prelistener checks) |
+| `fawri_auth_issuer` (auth pool) | independent login matching `FAWRI_AUTH_DATABASE_URL`, `public.fawri_authentication_runtime()` EXECUTE and `fawri_security.issue_scope(name,integer,bigint,text)` EXECUTE, with trusted marker/transaction admission | no direct read/mutation rights over tenant notification, order-draft, sensitive support/deletion/audit tables; no owner or reachable admin role | `artifacts/api-server/src/services/authenticationPostgresAuthority.ts` |
+| `fawri_operator_issuer` (operator pool) | independent login matching `FAWRI_OPERATOR_DATABASE_URL`, `public.fawri_issue_admin_directory_audit(text,text,text)` EXECUTE and approved scoped operator functions only | no authentication-runtime EXECUTE, no private `issue_scope` EXECUTE, no unrestricted tenant table access, no owner/issuer role escalation | `artifacts/api-server/src/services/operatorDirectoryPostgresAuthority.ts` |
+
+*Existing disposable PG18 acceptance* already proved the NOLOGIN-to-LOGIN pattern and selected held 0052 narrowly scoped rights on a **disposable local database** (`lib/db/scripts/ft01-disposable-invoker-retirement-rehearsal.mjs` plus accepted CI). This **cannot** be reused as a hosted credentials or grant acceptance result. Never use the local test passwords or SQL snippets as production credentials.
+
+### Where the source plan still needs narrowly bounded engineering
+
+The current held files do **not** yet include a complete reviewed V1 login/secret-store/operational grant source for the actual first merchant's online orders and subscriptions. Before an executable role bootstrap can be admitted, derive only the necessary role-specific SQL from the above real prelistener predicates and API query paths; prove deny-by-default privileges on a **new disposable** PostgreSQL18 fixture for the newly authored GRANT plan. A prelistener success alone is not full merchant E2E, and the approved POS cutoff must remain enforced. **Do not recreate the entire legacy auditor's workload.**
+
 ## Smallest safe path from this blocker to first merchant
 
 | Order | Deliverable and responsible party | Required evidence to proceed | Current state |
