@@ -66,7 +66,7 @@ test('V1 startup adds separate guarded admission only for pinned invoker profile
   assert.match(code,/selectFt01CashierStorageProfile\(env\)/);
   assert.match(code,/v1Selected/);
   assert.match(code,/FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE/);
-  assert.match(code,/v1Selected!==(profile\.mode==='first-commercial-invoker')/);
+  assert.match(code,/v1Selected!==\(profile\.mode==='first-commercial-invoker'\)/);
   assert.match(code,/if\(profile\.mode==='canonical'\)/);
   assert.match(code,/await assertCashierStreamStorageReady\(primary,/);
   assert.match(code,/await assertV1PosOffStorageReady\(primary,/);
