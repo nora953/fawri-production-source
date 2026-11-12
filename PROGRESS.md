@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-13 — V1 first-merchant scoped regional profile source patch; CI unverified
+
+- **Direct `P0-ACCESS-HOSTED-ROLLOUT` dependency:** `/catalog/context` and promotion CRUD read `public.merchants` using the first-commercial restricted tenant SQL login that intentionally lacks global merchant SELECT. Current new code substitutes an authenticated-`session_user`-selected, four-column, issuer-transaction-scoped `public.fawri_v1_scoped_merchant_region(text,boolean)`. For promotion mutation the own-row `FOR UPDATE` remains on the same SQL transaction, not a second pool. Unscoped or foreign merchant lookup is denied and no global `merchants SELECT`, POS/receipt or payment grants are added. Historical/non-V1 read behavior remains unchanged.
+- **Evidence state:** proposed HELD source, immutable source pin, focused disposable PG18 grant negative, and real 54-stage three-LOGIN SQL own/foreign/lock tests updated together. This new changed code **has no CI acceptance yet**. The unchanged parent `73de0bcb7b18e34e9ffdf65545c62a5b2aefad8d` has **70/70 completed GitHub Actions SUCCESS** by independent current check; do not repeat it manually.
+- **Hard stop:** no Neon/old project writes, no Meta or payment provider action, no merchant financial data deletion, no PR merge or hosted deployment. Exactly **0 newly closed P0**: 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED (45 known); V1 has 13 essential blockers and 3 POS deferrals, `overallPercentage=null`, commercial NO-GO. Next: check exact new-SHA CI and, only upon focused acceptance, proceed to approved independent backup / first hosted roles and merchant E2E with new owner authorization.
+
 ## 2026-11-13 — first merchant promotional catalog ACL gap patched in HELD source; complete runtime acceptance still OPEN
 
 - **Verified launch-path defect:** the exposed `/catalog/promotions` CRUD handlers call `postgresCommercePromotionAuthority` under the restricted merchant SQL transaction, but reviewed V1 `v1_tenant_online_commerce_grants.sql` omitted `commerce_promotions` table privileges. This was a direct, bounded `P0-ACCESS-HOSTED-ROLLOUT` catalog dependency, not a new standalone P0 or unrelated exploratory task.

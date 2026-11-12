@@ -13,8 +13,9 @@
 -- postgresOnlineOrderFulfillmentCommit (stock reconciliation)
 -- postgresMerchantSettingsAuthority (delivery and settings)
 -- postgresCommercePromotionAuthority (tenant RLS-protected promotion CRUD)
--- WARNING: promotion merchant-region lookup separately requires an approved
--- restricted auth/merchant-identity read; do not grant global merchants SELECT.
+-- V1 merchant-region reads use a scoped owner-owned SECURITY DEFINER projection
+-- of four fields with issuer-bound scope and same-transaction row locking.
+-- No SELECT on merchants is granted to the tenant LOGIN.
 --
 -- This is one V1 ONLINE MERCHANT DML fragment, NOT complete tenant GRANTs:
 -- channel jobs, conversations, subscriptions, receipts/payment,
@@ -39,6 +40,8 @@ BEGIN
      OR to_regprocedure('fawri_security.allows_merchant(text)') IS NULL
      OR to_regprocedure('fawri_security.issue_scope(name,integer,bigint,text)') IS NULL
      OR to_regprocedure('public.fawri_authentication_runtime()') IS NULL
+     OR to_regclass('public.merchants') IS NULL
+     OR to_regprocedure('public.fawri_v1_scoped_merchant_region(text,boolean)') IS NOT NULL
      OR to_regprocedure('public.fawri_issue_admin_directory_audit(text,text,text)') IS NULL
   THEN RAISE EXCEPTION 'V1_ONLINE_TENANT_PREIMAGE_REJECTED'; END IF;
   SELECT oid INTO r FROM pg_catalog.pg_roles
@@ -99,6 +102,43 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.commerce_promotions
 GRANT SELECT, INSERT ON public.inventory_mutations
   TO fawri_restricted_runtime;
 
+
+-- Scoped merchant region projection for first-commercial merchant sessions:
+-- four non-secret columns only, no raw/global merchants SELECT, no cross-tenant
+-- enumeration. A genuine separately issued scope is REQUIRED for each call.
+-- Optional FOR UPDATE is executed in the caller's SAME merchant transaction,
+-- preserving promotions-versus-currency row locks.
+CREATE FUNCTION public.fawri_v1_scoped_merchant_region(
+  p_merchant_id text, p_lock boolean
+)
+RETURNS TABLE(id text, country_code text, timezone text, currency_code text)
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path=pg_catalog SET row_security=off
+AS $v1_scoped_region$
+BEGIN
+  IF p_merchant_id IS NULL OR length(p_merchant_id) NOT BETWEEN 1 AND 200
+     OR p_lock IS NULL
+     OR session_user <> 'fawri_restricted_runtime'
+     OR current_setting('transaction_isolation') <> 'read committed'
+     OR NOT fawri_security.allows_merchant(p_merchant_id)
+  THEN RAISE EXCEPTION 'V1_MERCHANT_REGION_SCOPE_REQUIRED'
+       USING ERRCODE='42501'; END IF;
+  IF p_lock THEN
+    RETURN QUERY SELECT m.id::text, m.country_code::text,
+      m.timezone::text, m.currency_code::text
+      FROM public.merchants AS m WHERE m.id=p_merchant_id LIMIT 2 FOR UPDATE;
+  ELSE
+    RETURN QUERY SELECT m.id::text, m.country_code::text,
+      m.timezone::text, m.currency_code::text
+      FROM public.merchants AS m WHERE m.id=p_merchant_id LIMIT 2;
+  END IF;
+END;
+$v1_scoped_region$;
+REVOKE ALL ON FUNCTION public.fawri_v1_scoped_merchant_region(text,boolean)
+  FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fawri_v1_scoped_merchant_region(text,boolean)
+  TO fawri_restricted_runtime;
+
 -- First-merchant online order acceptance and permitted order lifecycle.
 -- Financial decision/provider event/receipt tables intentionally excluded.
 GRANT SELECT, INSERT, UPDATE ON public.orders, public.order_items
@@ -123,6 +163,26 @@ BEGIN
        'fawri_security.issue_scope(name,integer,bigint,text)','EXECUTE')
     OR has_schema_privilege(r,'public','CREATE')
     OR has_schema_privilege(r,'fawri_security','CREATE')
+    OR has_table_privilege(r,'public.merchants','SELECT')
+    OR NOT has_function_privilege(r,
+       'public.fawri_v1_scoped_merchant_region(text,boolean)','EXECUTE')
+    OR NOT EXISTS (
+       SELECT 1 FROM pg_catalog.pg_proc p
+       WHERE p.oid=to_regprocedure(
+          'public.fawri_v1_scoped_merchant_region(text,boolean)')
+         AND p.prosecdef AND p.proowner=(SELECT oid FROM pg_catalog.pg_roles
+           WHERE rolname=session_user)
+         AND 'search_path=pg_catalog'=ANY(p.proconfig)
+         AND 'row_security=off'=ANY(p.proconfig)
+    )
+    OR EXISTS (
+       SELECT 1 FROM pg_catalog.pg_proc p,
+         LATERAL aclexplode(COALESCE(p.proacl,
+           acldefault('f',p.proowner))) acl
+       WHERE p.oid=to_regprocedure(
+          'public.fawri_v1_scoped_merchant_region(text,boolean)')
+         AND acl.grantee=0 AND acl.privilege_type='EXECUTE'
+    )
     OR has_table_privilege(r,'public.accounts',
        'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
     OR has_table_privilege(r,'public.auth_otp_challenges',

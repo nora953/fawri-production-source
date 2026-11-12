@@ -1,5 +1,7 @@
 # فوري — مصفوفة موانع إطلاق النسخة التجارية الأولى (القرار التنفيذي الجاري)
 
+> **2026-11-13 latest bounded source delta (pending exact-SHA CI):** V1 first-merchant catalog context and promotion region reads now use a scoped four-field, same-transaction merchant-profile function. No global merchants table SELECT, no new P0 closure, no live Neon operation. Parent `73de0bcb` 70/70 complete GitHub workflow success. **13 essential V1 + 3 POS deferred, NO-GO.** See [PROGRESS.md](PROGRESS.md).
+
 > **2026-11-13 first-merchant code delta, not gate closure:** The V1 tenant HELD grant omitted `commerce_promotions` despite active merchant catalog promotion CRUD. Restricted RLS-only privilege was added at executable SHA `1639bb4073641b4b39ed3765bf0256019080414e`, SQL blob `5ca9ebf5d8bdcecf68996369e813488267633b71`; source pin and targeted local/real-schema tests changed. **Not yet an accepted green CI at this checkpoint.** `/catalog/context` and promotion region lookups still select global `merchants` via restricted tenant role, deliberately denied by current role policy: no broad `merchants SELECT` workaround. Resolve as a bounded dependency of `P0-ACCESS-HOSTED-ROLLOUT` before hosted first-merchant acceptance. No P0 closed; same 13 commercial + 3 POS deferrals, NO-GO. See [PROGRESS.md](PROGRESS.md).
 
 

@@ -1,5 +1,7 @@
 # Fawri P0 — known blocker status / evidence register (execution order superseded)
 
+> **2026-11-13 updated source patch (new-SHA CI NOT YET ACCEPTED):** Bound first merchant region/context and promotion own-row locking to true V1 restricted tenant scope via HELD SQL function, preserving deny-global merchants table SELECT. New real SQL test pending; prior `73de0bcb` 70/70 workflows completed SUCCESS. P0 still 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, **13 V1 essentials + 3 deferred POS, NO-GO**.
+
 > **2026-11-13 — bounded P0-ACCESS-HOSTED-ROLLOUT source correction (not closure):** Merchant promotion routes need `commerce_promotions` CRUD but the new V1 tenant role lacked that GRANT. A RLS-preflighted HELD grant and exact-source pin plus targeted tests were changed at `1639bb4073641b4b39ed3765bf0256019080414e`; code CI pending at this checkpoint. Remaining merchant region lookup against globally denied `merchants` must be resolved without unscoped tenant enumeration. **No true hosted SQL/HTTP or provider/backup acceptance, no P0 status changes, no scope expansion**: 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; 13 first-commercial essentials + 3 POS deferred with proof pending, NO-GO. See [PROGRESS.md](../../PROGRESS.md).
 
 
