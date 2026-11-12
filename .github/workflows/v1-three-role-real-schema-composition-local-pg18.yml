@@ -15,6 +15,7 @@ on:
       - "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts"
       - "scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs"
       - "scripts/tests/v1-meta-worker-tenant-history-source.test.mjs"
+      - "scripts/tests/v1-runtime-rls-selection.test.mjs"
       - "lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls.sql"
       - "lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls_failclosed_revert.sql"
       - "lib/db/src/schema/jobs.ts"
@@ -73,5 +74,6 @@ jobs:
         run: |
           node --test ../../scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs
           node --test ../../scripts/tests/v1-meta-worker-tenant-history-source.test.mjs
+          node --import tsx --test ../../scripts/tests/v1-runtime-rls-selection.test.mjs
           node --check scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs
           node scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs
