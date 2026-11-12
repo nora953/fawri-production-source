@@ -22,6 +22,24 @@ test('source-only V1 grant selection pins three roles without cashier or old man
   assert.deepEqual(plan.selected_grant_sources.map(x=>x.role),[
     'fawri_auth_issuer','fawri_restricted_runtime','fawri_operator_issuer']);
   assert.equal(plan.selected_grant_sources.length,3);
+  assert.equal(plan.additional_held_sql_sources.length,3);
+  assert.deepEqual(plan.additional_held_sql_sources.map(x=>x.purpose),[
+    'META_AUTH_CREDENTIALS_AND_TENANT_PUBLIC_ROUTING',
+    'META_JOB_HISTORY_TENANT_RLS_AND_DML',
+    'POS_OFF_MERCHANT_RETENTION_GUARD',
+  ]);
+  assert.equal(plan.failclosed_revert_sources.length,2);
+  assert.deepEqual(plan.failclosed_revert_sources.map(x=>x.purpose),[
+    'STOP_WORKER_DML_PRESERVE_JOB_HISTORY',
+    'RESTORE_ORIGINAL_TRIGGER_PRESERVE_FINANCIAL_HISTORY',
+  ]);
+  for(const p of [
+    ...plan.additional_held_sql_sources,...plan.failclosed_revert_sources
+  ]){
+    assert.equal(p.status,'HELD_SOURCE_ONLY_NOT_APPROVED_FOR_HOSTED');
+    assert.match(p.reviewed_git_blob_sha1,/^[0-9a-f]{40}$/);
+  }
+
   assert.equal(plan.legacy_not_selected.length,2);
   for(const legacy of plan.legacy_not_selected) {
     assert.ok(legacy.includes('0052_')||legacy.includes('0053_'));
@@ -60,4 +78,21 @@ test('historical cashier source remains pinned evidence, never selects it for V1
   assert.ok(plan.cashier_retirement_writer_may_remain_dormant_nologin);
   assert.ok(plan.reservation_sql_sha256);
   assert.ok(plan.reviewed_invoker_variant_0052_sha256);
+});
+
+test('changed Meta/POS additions and fail-closed revert sources never enter unpinned rollout',()=>{
+  const original=buildV1FirstMerchantGrantSourcePlan();
+  for(const item of [...original.additional_held_sql_sources,
+    ...original.failclosed_revert_sources]){
+    const isRevert=original.failclosed_revert_sources.some(
+      x=>x.source_path===item.source_path);
+    assert.throws(()=>buildV1FirstMerchantGrantSourcePlan({
+      root,
+      readFile:relative=>relative===item.source_path?
+        readOriginal(relative)+'\n-- unaudited change\n':
+        readOriginal(relative),
+    }),isRevert?
+      /V1_HELD_REVERT_SOURCE_SHA_DRIFT/:
+      /V1_HELD_ADDITIVE_SOURCE_SHA_DRIFT/,item.source_path);
+  }
 });
