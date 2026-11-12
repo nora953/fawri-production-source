@@ -1,5 +1,14 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-12 — V1 core AUTH signup/session GRANT source committed and local PG18 accepted
+
+- **Active launch blocker:** `P0-ACCESS-HOSTED-IDENTITY`. New Neon target `crimson-cherry-65705041` / `br-holy-waterfall-b993zglb` / `fawri` remains unchanged; last owner-authorized one-time SELECT proved `fawri_auth_issuer`, `fawri_restricted_runtime`, `fawri_operator_issuer` ALL **ABSENT**. NO new Neon authorization or execution.
+- **Implementation:** [`lib/db/first-commercial/held/v1_authentication_core_grants.sql`](lib/db/first-commercial/held/v1_authentication_core_grants.sql) is a guarded, rollback-on-error **HELD** source for the authentication LOGIN only. It allows first-merchant signup/OTP/account/session core table DML and merchant enrollment settings, plus trusted auth and private issue_scope function execute. No grants for POS/cashier, tenant order drafts/notifications, operator issuer, generic ALL, membership, owner, bypass RLS or CREATE. Source blob SHA `33b39c539b16e9187d70fa6945422325f737032d` is immutable in the [new local PG18 test](lib/db/scripts/v1-auth-core-held-grants-pg18.mjs). **Not a complete V1 grant/role/secret/recovery package.**
+- **Changed-code CI only:** [V1 auth-core grants (disposable local PG18 only) #43229235455](https://github.com/nora953/fawri-production-source/actions/runs/43229235455) **COMPLETED SUCCESS** on SHA `4b1f25f1964338bd07883eb88260563041740094`. New SQL body grant positive tested with seven negative escalations and complete transaction rollback; no real host contact, roles/data persisted 0. No repeat of prior accepted historical tests. Source map: [admission evidence](docs/final-audit/evidence/P0-V1-HOSTED-IDENTITY-ROLE-ADMISSION-20261112.md).
+- **Still needed before actual P0 closure:** separate complete restricted tenant merchant catalog/orders/inventory grants; operator directory/payment grant boundary; protected first-commercial migration/GRANT ordering + secret store + independent recoverable hosted backup and rollback; real direct/pool LOGIN identities, RLS, own/foreign merchant HTTP and financial reconciliation. **Owner approval needed only for eventual bounded hosted writes**; not needed for current source work.
+- **State unchanged:** 13 first commercial essentials BLOCKS_LAUNCH, 3 POS deferral proofs pending; historical 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED of 45, `overallPercentage=null`. PR #550 DRAFT, NO-GO. No merge, deploy, Neon or original Railway writes.
+
+
 ## 2026-11-12 — NEW exact-role capability postflight PG18 CI successful; no Neon write / P0 closure
 
 - `P0-ACCESS-HOSTED-IDENTITY`: owner-executed one-time SQL on new Neon `crimson-cherry-65705041`/`br-holy-waterfall-b993zglb`/`fawri` still proves 3/3 required LOGIN roles absent. No new SQL on host, original staging untouched.
