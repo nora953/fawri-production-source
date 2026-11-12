@@ -158,6 +158,8 @@ export const jobAttempts = pgTable(
     jobId: text("job_id")
       .notNull()
       .references(() => backgroundJobs.id, { onDelete: "cascade" }),
+    // V1 HELD worker patch: authenticated tenant identity for RLS + FK.
+    merchantId: text("merchant_id").notNull(),
     attemptNumber: integer("attempt_number").notNull(),
     workerId: text("worker_id").notNull(),
     leaseGeneration: integer("lease_generation").notNull(),
@@ -173,6 +175,14 @@ export const jobAttempts = pgTable(
     finishedAt: timestamp("finished_at", { withTimezone: true }),
   },
   (table) => ({
+    v1JobTenantForeignKey: foreignKey({
+      name: "v1_job_attempts_merchant_fk",
+      columns: [table.jobId, table.merchantId],
+      foreignColumns: [backgroundJobs.id, backgroundJobs.merchantId],
+    }).onDelete("cascade"),
+    v1MerchantJobIndex: index("v1_job_attempts_merchant_idx").on(
+      table.merchantId, table.jobId, table.attemptNumber,
+    ),
     jobAttemptUnique: uniqueIndex("job_attempts_job_number_unique").on(
       table.jobId,
       table.attemptNumber,
@@ -198,7 +208,7 @@ export const jobAttempts = pgTable(
       sql`(${table.status} = 'processing') OR ${table.finishedAt} IS NOT NULL`,
     ),
   }),
-);
+).enableRLS();
 
 export const jobDeadLetters = pgTable(
   "job_dead_letters",
@@ -207,6 +217,8 @@ export const jobDeadLetters = pgTable(
     jobId: text("job_id")
       .notNull()
       .references(() => backgroundJobs.id, { onDelete: "cascade" }),
+    // V1 HELD worker patch: full tenant boundary on dead-letter history.
+    merchantId: text("merchant_id").notNull(),
     occurrence: integer("occurrence").notNull().default(1),
     reasonCode: text("reason_code").notNull(),
     attempts: integer("attempts").notNull(),
@@ -222,6 +234,14 @@ export const jobDeadLetters = pgTable(
     requeuedByAccountId: text("requeued_by_account_id"),
   },
   (table) => ({
+    v1JobTenantForeignKey: foreignKey({
+      name: "v1_job_dead_letters_merchant_fk",
+      columns: [table.jobId, table.merchantId],
+      foreignColumns: [backgroundJobs.id, backgroundJobs.merchantId],
+    }).onDelete("cascade"),
+    v1MerchantJobIndex: index("v1_job_dead_letters_merchant_idx").on(
+      table.merchantId, table.jobId, table.occurrence,
+    ),
     jobOccurrenceUnique: uniqueIndex(
       "job_dead_letters_job_occurrence_unique",
     ).on(table.jobId, table.occurrence),
@@ -239,7 +259,7 @@ export const jobDeadLetters = pgTable(
       sql`${table.payloadSha256} IS NULL OR char_length(${table.payloadSha256}) BETWEEN 32 AND 128`,
     ),
   }),
-);
+).enableRLS();
 
 export type BackgroundJob = typeof backgroundJobs.$inferSelect;
 export type BackgroundJobPayload = typeof backgroundJobPayloads.$inferSelect;
