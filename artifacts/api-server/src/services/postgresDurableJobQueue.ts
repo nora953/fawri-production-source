@@ -715,7 +715,7 @@ async function deadLetter(
   requeueSafe: boolean,
   now: Date,
 ): Promise<DurableJob> {
-  const tenantId = text(tenantId);
+  const tenantId = text(current.merchant_id);
   if (!tenantId) {
     throw Object.assign(new Error("durable dead-letter requires a merchant tenant"), {
       code: "DURABLE_JOB_TENANT_REQUIRED",
