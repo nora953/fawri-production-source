@@ -46,3 +46,22 @@ test('canonical Drizzle jobs.ts remains unchanged pending HELD additive migratio
   // Role admission prelistener and held candidate SQL are the *new*
   // commercial gate; accepted 0000..0052 canonical reproduction stays exact.
 });
+
+test('V1 role-pinned production prelistener requires worker RLS without changing historical canonical inventory',()=>{
+  const ts=load('artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts');
+  const start=ts.indexOf('export const PRODUCTION_TENANT_RLS_TABLES = [');
+  const end=ts.indexOf('] as const;',start);
+  assert.ok(start>=0&&end>start);
+  const base=ts.slice(start,end);
+  assert.ok(base.includes('"background_jobs"'));
+  assert.ok(base.includes('"background_job_payloads"'));
+  for(const table of ['job_attempts','job_dead_letters']){
+    assert.ok(!base.includes('"'+table+'"'),
+      'HISTORIC_RLS_INVENTORY_MUST_PRESERVE_ACCEPTED_SCHEMA_'+table);
+    assert.ok(ts.includes('"'+table+'"'),'V1_EXTRA_RLS_MUST_INCLUDE_'+table);
+  }
+  assert.match(ts,/export function protectedRlsTablesForRuntime\(/);
+  assert.match(ts,/FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE/);
+  assert.match(ts,/protectedRlsTablesForRuntime\(env\)/);
+  assert.match(ts,/Array\.from\(protectedTables\)/);
+});
