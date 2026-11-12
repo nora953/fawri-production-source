@@ -1,0 +1,55 @@
+# FAWRI V1 — first hosted write decision packet (HELD, no action permitted)
+
+**Execution rule:** This is a single *bounded* handoff under the approved [LAUNCH_PLAN.md](../../../LAUNCH_PLAN.md). It does **not** replace that plan, request immediate permission, or represent a deployable runbook. No Neon write, deployment, migration, credentials, backup transfer or production release is authorized by this document. `P0-ACCESS-HOSTED-IDENTITY`, `P0-ACCESS-HOSTED-ROLLOUT`, `P0-HOSTED-RECOVERY` remain BLOCKED / NO-GO, PR #550 DRAFT.
+
+## Exact target, distinct from historical staging
+
+| Attribute | Expected value / evidence |
+|---|---|
+| Provider | Neon, **new separate first-commercial prep project only** |
+| Project | `fawri-production-prep-20261108`, `crimson-cherry-65705041` |
+| Branch | `production`, `br-holy-waterfall-b993zglb` |
+| Database | `fawri`, PostgreSQL 18 |
+| Compute UI identity | `ep-polished-poetry-b9jpvn4r` — **not** proof of direct/pool hostnames |
+| DB owner UI | `fawri_owner`; selected project branch UI accepted |
+| Actual roles | **0/3 present**, from owner's explicitly approved **one** catalog SELECT; do not rerun unchanged |
+| Current connector | Neon MCP scoped to `round-fire-18493605` (WRONG PROJECT). Do not omit project ID / reuse that connector |
+| Backup state | Neon Free history **6 hours** seen on UI; independent tested logical DB **and media** restore **NOT evidenced** |
+
+**Never** touch the older `Fawri-Staging` project, any original Neon/Railway or import staging/customer data. The first hosted write requires a new *explicit and granular* owner approval tied to this project+branch+DB+exact reviewed source SHA and independent backup evidence; the earlier approval covered a single read-only SQL query **only**.
+
+## Source candidate evidence available and reusable (do not rerun accepted tests)
+
+| Source | Pinned reviewed blob / receipt | What it actually proves |
+|---|---|---|
+| First-commercial 0052 INVOKER + held 0053 migration | Existing `scripts/lib/ft01-first-commercial-disposable-bundle.mjs` / `scripts/lib/p0-held-0053-source-admission-plan.mjs` | Reviewed **54-stage** local-only lineage. Canonical Drizzle journal MUST remain untouched; both variant sources still HELD |
+| Four-NOLOGIN reservation | `docs/final-audit/evidence/sql/P0-FT01-NEW-NEON-FOUR-NOLOGIN-ROLE-RESERVATION-HELD-20261109.sql` | Safe local-only role reservation, *not* a usable commercial LOGIN |
+| Auth core rights | `lib/db/first-commercial/held/v1_authentication_core_grants.sql`, blob `fe314f951f3836009a18a505ae1547572a270f28` | Signup/session restricted role **partial** rights; no cashier/PUBLIC issuer |
+| Merchant online catalog/order/stock rights | `lib/db/first-commercial/held/v1_tenant_online_commerce_grants.sql`, blob `f5e0d171616566fbd832303ab3b2d34372c902a2` | Scoped merchant online basic grants on RLS tables |
+| Operator manual receipt review rights | `lib/db/first-commercial/held/v1_operator_receipt_review_grants.sql`, blob `22445192803ea7043d30ffb87c4ee355c0497566` | Nine reviewed functions, no raw provider-financial table access |
+| POS-off retention safeguard | `lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard.sql`, blob `bd08142e26547aeaa78850c8aa9644ec7495f217` | No-stream authorized deletion vs fail-closed any historical cashier stream; owner-owned SECURITY DEFINER source is HELD |
+| POS-off retention fail-closed revert | `lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard_revert.sql`, blob `f6a98b30cb053c13b5321283b8d63d8929f38f0e` | Rebind original old 0052 trigger and remove only V1 function; preserved merchant and cashier records locally |
+
+Source CI accepted: [first merchant actual 54-stage 3 authenticated LOGINs #43247830548](https://github.com/nora953/fawri-production-source/actions/runs/43247830548), [new POS-off guarded deletion + rollback under real auth LOGIN #43251982413](https://github.com/nora953/fawri-production-source/actions/runs/43251982413), and [POS-off patch/revert with actual 54-stage schema and three roles #43252441514](https://github.com/nora953/fawri-production-source/actions/runs/43252441514), **all COMPLETED SUCCESS**. Last executed integration SHA `49d0aedc2f7f58469b7c7cce678ffd8808434511`. No hosted calls or CI environment secrets retained.
+
+## Exact order of proof **before requesting owner permission**
+
+1. **No open source dependency may be promoted by implication.** Decide whether merchant channel/background-job/subscription/payment SQL permission coverage, provider receipts, Meta auth and restricted API prelistener require **additional V1 privileges**. Resolve only actual first merchant online paths, not POS. Do not grant ALL or old cashier writer group merely to make hosted startup green. Avoid laundering a partial auth+tenant+operator package as "full V1".
+2. **Independent recovery readiness:** choose approved DB+object/media backup location outside the database project and GitHub, encryption, credential ownership, restoration access, retention and recovery point. Take a controlled **prewrite** logical snapshot of the exact new database and a separate media/object snapshot; store SHA-256/checksums and secure manifests **outside chat/repo**; prove restore to a separate isolated target with equivalent schema/ledger, ACL and media retrieval, without returning customer data in evidence. Six-hour Neon history alone is insufficient. If no independent restore proven, STOP before any hosted write.
+3. **Exact immutable source and endpoint preflight:** record this PR's reviewed commit SHA, selected 53-stage 0052 INVOKER + held 0053 journal SHA, 3 V1 GRANT blob SHAs and POS-off patch/revert SHAs. Verify provider UI project ID, branch ID, database, actual direct/pool endpoint identities and owner privileges; don't use incorrect Neon MCP OAuth. In the **separately authorized read-only SQL** phase check empty source/ledger, roles, schema ownership, any existing merchant/financial records, saved job state and drift. Any nonempty unexpected preimage => abort, no dropped or replaced records.
+4. **Credentials and role life-cycle:** accept only strong unique per-role passwords from the approved secret system (not chat, docs, console screenshots, GitHub commits or Action logs), rotated/retained via approved ownership process. Require 3 independent tenant/auth/operator LOGINs, no `SUPERUSER`, `BYPASSRLS`, `CREATEROLE`, `CREATEDB`, role memberships or ownership, no public function default EXECUTE; restrict connection limits and correct direct/pool usage. `fawri_cashier_retirement_writer` must remain dormant `NOLOGIN` with no auth writer membership in V1.
+5. **Only after explicit owner write approval**: execute exact source-pinned 54 migration chain on new empty target, reserve roles, promote 3 independently authenticated LOGINs with secret injection, apply selected three V1 least-privilege GRANTs, then the separately reviewed POS-off trigger adaptation. Record ledger hashes and pre/post privilege matrix; stop on any unexpected role, grant, schema or payment path. Never auto-run source merely because a CI test passed.
+6. **Mounted hosted admission:** prove real `session_user=current_user` for all three via correct direct/pool paths; own-merchant allowed, foreign-merchant denied with zero effects, revoked login rejected, trusted auth/operator function ACL separation, no POS route/API/UI/sync/entitlement exposure, merchant lifecycle safe. Then live Meta-permitted response window, actual order receiving/handling, payment receipt HOLD_WITHOUT_ORDER/NO_ARBITRARY_ATTACH reconciliation and storage/restore. Explicit owner signoff comes last. A local PG18 success is *not* a hosted release approval.
+
+## Safe stop and rollback boundaries
+
+- **Before first hosted write:** a drift, missing recoverable independent backup, a wrong project, unapproved source pin, policy or real credentials blocker => **DO NOT PROCEED**. Don't request unnecessary repeated checks.
+- **During schema/GRANT writes:** transactionally rollback each bounded change if it fails; preserve the independently verified snapshot. PostgreSQL role changes and migrations need a separately reviewed transaction boundary; **do not** claim an automatic all-or-nothing rollback spanning DDL, role password secret store, external provider and media.
+- **After any merchant/financial data exists:** **never drop database, roles, POS receipts or financial records as a quick rollback**. Stop new writes; use confirmed incident/recovery procedure with owner decision and provider receipts reconciled.
+- **POS-off hook rollback only:** the reviewed revert rebinds the historic 0052 trigger without deleting data. Future retention deletion can become blocked again (fail-closed); don't silently promote legacy cashier writer privileges to "fix" it. Source function `SECURITY DEFINER` needs separate security signoff before any hosted execution.
+
+## Permission/status decision
+
+No action requested from the owner yet for an executable script: the required source (complete channel/worker/finance role coverage) and independent restore evidence have **NOT** been accepted. Before actual hosted write, present one narrow owner decision identifying (a) approved project/branch/db, (b) exact immutable source SHA/steps, (c) verified external backup/restore receipt, (d) secret storage method and roles, (e) bounded rollback and acceptance criteria. A yes to that specific request would cover *only* the described action, not arbitrary SQL, migration/merge, production fund activity or public release.
+
+**Current state:** historical 45 P0 = 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; 13 V1-essential plus 3 POS approved deferrals with runtime proof pending; overall readiness denominator remains unverified. NO-GO.
