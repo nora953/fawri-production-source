@@ -24,7 +24,7 @@ const HELD_GRANTS=Object.freeze({
   }),
   tenant:Object.freeze({
     path:'lib/db/first-commercial/held/v1_tenant_online_commerce_grants.sql',
-    blob:'f5e0d171616566fbd832303ab3b2d34372c902a2',
+    blob:'5ca9ebf5d8bdcecf68996369e813488267633b71',
     role:'fawri_restricted_runtime',
   }),
   operator:Object.freeze({
