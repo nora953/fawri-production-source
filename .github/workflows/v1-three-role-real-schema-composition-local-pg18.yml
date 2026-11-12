@@ -13,6 +13,7 @@ on:
       - "lib/db/first-commercial/held/v1_meta_inbound_conversation_grants.sql"
       - "artifacts/api-server/src/services/postgresDurableJobQueue.ts"
       - "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts"
+      - "artifacts/api-server/src/services/v1CommercialRlsSelection.ts"
       - "scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs"
       - "scripts/tests/v1-meta-worker-tenant-history-source.test.mjs"
       - "scripts/tests/v1-runtime-rls-selection.test.mjs"
