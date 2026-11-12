@@ -12,6 +12,9 @@
 -- postgresOrderOperationsAuthority (orders and items)
 -- postgresOnlineOrderFulfillmentCommit (stock reconciliation)
 -- postgresMerchantSettingsAuthority (delivery and settings)
+-- postgresCommercePromotionAuthority (tenant RLS-protected promotion CRUD)
+-- WARNING: promotion merchant-region lookup separately requires an approved
+-- restricted auth/merchant-identity read; do not grant global merchants SELECT.
 --
 -- This is one V1 ONLINE MERCHANT DML fragment, NOT complete tenant GRANTs:
 -- channel jobs, conversations, subscriptions, receipts/payment,
@@ -52,7 +55,7 @@ BEGIN
   SELECT expected.name INTO missing_table FROM (
     VALUES ('products'),('product_variants'),('catalog_variant_options'),
       ('catalog_identifiers'),('catalog_image_references'),
-      ('catalog_idempotency_keys'),('merchant_locations'),
+      ('catalog_idempotency_keys'),('commerce_promotions'),('merchant_locations'),
       ('location_inventory_levels'),('inventory_mutations'),
       ('orders'),('order_items'),('merchant_settings'),
       ('merchant_delivery_area_rates'),('merchant_location_delivery_areas')
@@ -90,6 +93,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON
   public.merchant_delivery_area_rates, public.merchant_location_delivery_areas
 TO fawri_restricted_runtime;
 GRANT SELECT, INSERT, DELETE ON public.product_variants
+  TO fawri_restricted_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.commerce_promotions
   TO fawri_restricted_runtime;
 GRANT SELECT, INSERT ON public.inventory_mutations
   TO fawri_restricted_runtime;
@@ -152,6 +157,7 @@ BEGIN
         ('catalog_identifiers','SELECT,INSERT,UPDATE,DELETE'),
         ('catalog_image_references','SELECT,INSERT,UPDATE,DELETE'),
         ('catalog_idempotency_keys','SELECT,INSERT,UPDATE,DELETE'),
+        ('commerce_promotions','SELECT,INSERT,UPDATE,DELETE'),
         ('merchant_delivery_area_rates','SELECT,INSERT,UPDATE,DELETE'),
         ('merchant_location_delivery_areas','SELECT,INSERT,UPDATE,DELETE'),
         ('inventory_mutations','SELECT,INSERT'),
@@ -167,7 +173,7 @@ BEGIN
   SELECT name INTO bad_table FROM (
     VALUES ('products'),('product_variants'),('catalog_variant_options'),
       ('catalog_identifiers'),('catalog_image_references'),
-      ('catalog_idempotency_keys'),('merchant_locations'),
+      ('catalog_idempotency_keys'),('commerce_promotions'),('merchant_locations'),
       ('location_inventory_levels'),('inventory_mutations'),
       ('orders'),('order_items'),('merchant_settings'),
       ('merchant_delivery_area_rates'),('merchant_location_delivery_areas')
