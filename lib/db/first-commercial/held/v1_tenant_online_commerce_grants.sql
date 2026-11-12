@@ -128,9 +128,40 @@ BEGIN
        'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
     OR has_table_privilege(r,'public.verified_provider_payment_receipts',
        'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
+    OR has_table_privilege(r,'public.products','DELETE')
+    OR has_table_privilege(r,'public.orders','DELETE')
+    OR has_table_privilege(r,'public.order_items','DELETE')
+    OR has_table_privilege(r,'public.inventory_mutations','UPDATE,DELETE')
+    OR has_table_privilege(r,'public.merchant_settings','DELETE')
+    OR has_table_privilege(r,'public.merchant_locations','DELETE')
+    OR has_table_privilege(r,'public.location_inventory_levels','DELETE')
     OR has_table_privilege(r,'public.saas_billing_refunds',
        'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
   THEN RAISE EXCEPTION 'V1_ONLINE_TENANT_POSTIMAGE_UNSAFE'; END IF;
+  -- Fail-closed on missing minimum DML; an inadvertently revoked grant is
+  -- NOT accepted merely because forbidden privileges remain absent.
+  IF EXISTS (
+    SELECT 1 FROM (
+      VALUES
+        ('products','SELECT,INSERT,UPDATE'),
+        ('product_variants','SELECT,INSERT,UPDATE,DELETE'),
+        ('merchant_locations','SELECT,INSERT,UPDATE'),
+        ('location_inventory_levels','SELECT,INSERT,UPDATE'),
+        ('merchant_settings','SELECT,INSERT,UPDATE'),
+        ('catalog_variant_options','SELECT,INSERT,UPDATE,DELETE'),
+        ('catalog_identifiers','SELECT,INSERT,UPDATE,DELETE'),
+        ('catalog_image_references','SELECT,INSERT,UPDATE,DELETE'),
+        ('catalog_idempotency_keys','SELECT,INSERT,UPDATE,DELETE'),
+        ('merchant_delivery_area_rates','SELECT,INSERT,UPDATE,DELETE'),
+        ('merchant_location_delivery_areas','SELECT,INSERT,UPDATE,DELETE'),
+        ('inventory_mutations','SELECT,INSERT'),
+        ('orders','SELECT,INSERT,UPDATE'),
+        ('order_items','SELECT,INSERT,UPDATE')
+    ) AS required(table_name, rights)
+    WHERE NOT has_table_privilege(r,
+       ('public.' || quote_ident(required.table_name))::text,
+       required.rights)
+  ) THEN RAISE EXCEPTION 'V1_ONLINE_TENANT_REQUIRED_DML_MISSING'; END IF;
   SELECT name INTO bad_table FROM (
     VALUES ('products'),('product_variants'),('catalog_variant_options'),
       ('catalog_identifiers'),('catalog_image_references'),
