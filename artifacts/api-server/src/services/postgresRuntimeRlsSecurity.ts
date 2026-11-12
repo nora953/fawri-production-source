@@ -6,6 +6,11 @@ import {
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { productionReleaseGateRequired } from "./productionReleaseReadiness";
+import {
+  V1_FIRST_COMMERCIAL_WORKER_RLS_TABLES,
+  selectProtectedRlsTablesForRuntime,
+} from "./v1CommercialRlsSelection";
+export { V1_FIRST_COMMERCIAL_WORKER_RLS_TABLES } from "./v1CommercialRlsSelection";
 
 export const PRODUCTION_TENANT_RLS_TABLES = [
   "cashier_device_streams", "cashier_operation_receipts",
@@ -84,20 +89,11 @@ export const PRODUCTION_PROTECTED_RLS_TABLES = [
 // The approved first-commercial deployment has a separately required and
 // URL-checked FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE=fawri_restricted_runtime.
 // It cannot use the old cashier runtime as a substitution.
-export const V1_FIRST_COMMERCIAL_WORKER_RLS_TABLES = [
-  "job_attempts",
-  "job_dead_letters",
-] as const;
-
 export function protectedRlsTablesForRuntime(
   env: NodeJS.ProcessEnv = process.env,
 ): readonly string[] {
-  if (String(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim() !==
-      "fawri_restricted_runtime") {
-    return PRODUCTION_PROTECTED_RLS_TABLES;
-  }
-  return [...PRODUCTION_PROTECTED_RLS_TABLES,
-    ...V1_FIRST_COMMERCIAL_WORKER_RLS_TABLES];
+  return selectProtectedRlsTablesForRuntime(
+    PRODUCTION_PROTECTED_RLS_TABLES, env);
 }
 
 export const AUTHENTICATION_INTEGRITY_TABLES = [
