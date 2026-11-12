@@ -10,6 +10,7 @@ on:
       - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard.sql"
       - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard_revert.sql"
       - "lib/db/first-commercial/held/v1_meta_channel_onboarding_grants.sql"
+      - "lib/db/first-commercial/held/v1_meta_inbound_conversation_grants.sql"
       - "artifacts/api-server/src/services/postgresDurableJobQueue.ts"
       - "artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts"
       - "scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs"
