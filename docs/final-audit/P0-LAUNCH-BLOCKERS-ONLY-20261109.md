@@ -1,5 +1,8 @@
 # Fawri P0 — known blocker status / evidence register (execution order superseded)
 
+> **2026-11-12 targeted P0-ACCESS-HOSTED-IDENTITY evidence:** On the owner-selected **fresh** Neon project `crimson-cherry-65705041`, branch `br-holy-waterfall-b993zglb`, database `fawri`, the specifically owner-approved **single read-only pg_roles SELECT** returned `role_exists=false` for all three required `fawri_restricted_runtime`, `fawri_auth_issuer`, `fawri_operator_issuer` roles. **Hosted principal provisioning is demonstrably missing**, not merely unverified from UI. No grants, role creation, migrations, merchant data access or other writes were authorized or performed. Accepted negative SELECT need not be repeated unchanged. Next: narrowly prepare verified first-commercial migration/role/ACL/rollback source plan on GitHub; seek new owner approval before executing on this new target. `P0-ACCESS-HOSTED-IDENTITY` remains BLOCKED; 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; **NO-GO**.
+
+
 > **2026-11-11: STATUS/EVIDENCE ONLY; prior ordered work queue superseded.** [`LAUNCH_PLAN.md`](../../LAUNCH_PLAN.md) is the **single owner-approved active execution plan**. The order column below and historical «Next concrete acceptance» are **not automatic instructions**. First classify the 16 remaining gate rows against the approved smallest viable commercial merchant journey, with no automatic waiver or closed status for a proposed deferment. Keep all current OPEN/BLOCKED statuses, accepted evidence and required release security gates unchanged.
 
 **Checkpoint:** 2026-11-09, Draft PR [#550](https://github.com/nora953/fawri-production-source/pull/550); source-only work. **NO-GO** until every necessary P0 blocker has real acceptance, external setup and deployment/recovery proof.
