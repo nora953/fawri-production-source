@@ -715,6 +715,12 @@ async function deadLetter(
   requeueSafe: boolean,
   now: Date,
 ): Promise<DurableJob> {
+  const tenantId = text(tenantId);
+  if (!tenantId) {
+    throw Object.assign(new Error("durable dead-letter requires a merchant tenant"), {
+      code: "DURABLE_JOB_TENANT_REQUIRED",
+    });
+  }
   const policy = requeueSafe ? "safe" : "blocked";
   const result = {
     ...(current.result || {}),
@@ -732,7 +738,7 @@ async function deadLetter(
                 available_at, locked_at, locked_by, lease_expires_at,
                 lease_generation, last_error_code, result, completed_at,
                 dead_lettered_at, created_at, updated_at`,
-    [current.merchant_id, current.id, errorCode, JSON.stringify(result), now.toISOString()],
+    [tenantId, current.id, errorCode, JSON.stringify(result), now.toISOString()],
   );
   const occurrenceResult = await client.query<{ occurrence: number }>(
     `SELECT COALESCE(MAX(occurrence), 0) + 1 AS occurrence
@@ -748,7 +754,7 @@ async function deadLetter(
     [
       `dlq-${crypto.randomUUID()}`,
       current.id,
-      current.merchant_id,
+      tenantId,
       occurrence,
       errorCode,
       current.attempts,
@@ -757,7 +763,7 @@ async function deadLetter(
       now.toISOString(),
     ],
   );
-  await finishAttempt(client, current.merchant_id, current.id, current.attempts, "failed", errorCode, now);
+  await finishAttempt(client, tenantId, current.id, current.attempts, "failed", errorCode, now);
   return hydrateJob(client, updated.rows[0]!);
 }
 
