@@ -42,3 +42,17 @@ test('Drizzle table schema retains merchant-bound foreign keys and RLS',()=>{
     assert.match(declaration,/columns: \[table\.jobId, table\.merchantId\]/);
   }
 });
+
+test('production prelistener fails closed without worker history merchant RLS',()=>{
+  const ts=load('artifacts/api-server/src/services/postgresRuntimeRlsSecurity.ts');
+  const start=ts.indexOf('export const PRODUCTION_TENANT_RLS_TABLES = [');
+  const end=ts.indexOf('] as const;',start);
+  assert.ok(start>=0&&end>start,'V1_WORKER_RLS_PRELISTENER_INVENTORY_MISSING');
+  const inventory=ts.slice(start,end);
+  for(const table of ['background_jobs','background_job_payloads',
+    'job_attempts','job_dead_letters']){
+    assert.ok(inventory.includes('"'+table+'"'),
+      'V1_WORKER_RLS_PRELISTENER_MUST_INCLUDE_'+table);
+  }
+  assert.match(ts,/PRODUCTION_PROTECTED_RLS_TABLES = \[\s*\.\.\.PRODUCTION_TENANT_RLS_TABLES/);
+});
