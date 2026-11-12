@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/v1-pos-off-retention-local-pg18.yml"
       - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard.sql"
+      - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard_revert.sql"
       - "lib/db/scripts/v1-pos-off-merchant-retention-pg18.mjs"
 
 permissions:
