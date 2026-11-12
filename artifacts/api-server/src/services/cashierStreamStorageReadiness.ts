@@ -1,5 +1,5 @@
 import { assertCashierStreamStorageReady } from "../../../../lib/db/scripts/lib/cashier-stream-storage-candidate-readiness.mjs";
-import { assertFt01HeldInvokerStorageReady } from "../../../../lib/db/scripts/lib/ft01-held-invoker-storage-readiness.mjs";
+import { assertV1PosOffStorageReady } from "./v1PosOffStorageReadiness";
 import { selectFt01CashierStorageProfile } from "../../../../lib/db/scripts/lib/ft01-production-cashier-storage-profile.mjs";
 import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import { withOperatorDirectoryTransaction } from "./operatorDirectoryPostgresAuthority";
@@ -27,9 +27,14 @@ export async function assertProductionCashierStreamStorageReady(env:NodeJS.Proce
     if(!operatorRole || new Set([primaryRole,authenticationRole,operatorRole]).size!==3){
       throw new Error("three independent authenticated database logins required");
     }
-    await assertFt01HeldInvokerStorageReady(primary,{
+    // V1 explicitly excludes POS and its legacy cashier-writer membership.
+    // The old held INVOKER cashier admission expects the auth issuer to
+    // inherit cashier grants, conflicting with the approved first release.
+    // Demand the source-pinned V1 POS-off retention trigger, intact historical
+    // cashier RLS/guards and ZERO application cashier table privileges instead.
+    // This is a SELECT-only metadata check; it cannot turn on cashier routes.
+    await assertV1PosOffStorageReady(primary,{
       primaryRole,authenticationRole,operatorRole,
-      migrationOwnerRole:profile.migrationOwnerRole,
     });
   }
  }catch{
