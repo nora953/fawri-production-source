@@ -9,6 +9,9 @@ on:
       - "lib/db/scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs"
       - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard.sql"
       - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard_revert.sql"
+      - "lib/db/first-commercial/held/v1_meta_channel_onboarding_grants.sql"
+      - "artifacts/api-server/src/services/postgresDurableJobQueue.ts"
+      - "scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs"
 
 permissions:
   contents: read
@@ -60,5 +63,6 @@ jobs:
       - name: New V1 integration only - real held 54-stage schema plus three role grants
         working-directory: lib/db
         run: |
+          node --test ../../scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs
           node --check scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs
           node scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs
