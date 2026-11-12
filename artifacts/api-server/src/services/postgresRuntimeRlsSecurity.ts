@@ -28,6 +28,11 @@ export const PRODUCTION_TENANT_RLS_TABLES = [
   "order_terminal_decision_links",
   "background_jobs",
   "background_job_payloads",
+  // New V1 Meta worker attempt/dead-letter relations carry merchant_id
+  // only after the HELD tenant-RLS patch; production must fail closed if
+  // that schema and its RLS policies are not mounted.
+  "job_attempts",
+  "job_dead_letters",
   "merchant_channels",
   "channel_inbound_events",
   "reply_reservations",
