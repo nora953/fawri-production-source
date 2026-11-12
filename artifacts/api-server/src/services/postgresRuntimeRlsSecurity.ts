@@ -28,11 +28,6 @@ export const PRODUCTION_TENANT_RLS_TABLES = [
   "order_terminal_decision_links",
   "background_jobs",
   "background_job_payloads",
-  // New V1 Meta worker attempt/dead-letter relations carry merchant_id
-  // only after the HELD tenant-RLS patch; production must fail closed if
-  // that schema and its RLS policies are not mounted.
-  "job_attempts",
-  "job_dead_letters",
   "merchant_channels",
   "channel_inbound_events",
   "reply_reservations",
@@ -79,6 +74,31 @@ export const PRODUCTION_PROTECTED_RLS_TABLES = [
   "emergency_authorizations", "emergency_access_requests",
   "emergency_owner_alerts", "emergency_merchant_notices",
 ] as const;
+
+// First-commercial V1 alone requires additive merchant-bound job-history
+// tables; historical canonical migration 0000..0052 intentionally predates
+// these HELD additions. Keep the legacy production RLS inventory immutable
+// for legacy disposable HTTP tests, while refusing V1 listener admission if
+// the new worker isolation is missing on the actual V1 restricted LOGIN.
+//
+// The approved first-commercial deployment has a separately required and
+// URL-checked FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE=fawri_restricted_runtime.
+// It cannot use the old cashier runtime as a substitution.
+export const V1_FIRST_COMMERCIAL_WORKER_RLS_TABLES = [
+  "job_attempts",
+  "job_dead_letters",
+] as const;
+
+export function protectedRlsTablesForRuntime(
+  env: NodeJS.ProcessEnv = process.env,
+): readonly string[] {
+  if (String(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE || "").trim() !==
+      "fawri_restricted_runtime") {
+    return PRODUCTION_PROTECTED_RLS_TABLES;
+  }
+  return [...PRODUCTION_PROTECTED_RLS_TABLES,
+    ...V1_FIRST_COMMERCIAL_WORKER_RLS_TABLES];
+}
 
 export const AUTHENTICATION_INTEGRITY_TABLES = [
   "accounts", "admin_profiles", "admin_permissions", "account_sessions", "trusted_devices",
@@ -171,6 +191,7 @@ function stringArray(value: unknown): string[] {
 
 export async function getProductionDatabaseRlsReadiness(
   target?: OperationalQueryTarget,
+  protectedTables: readonly string[] = PRODUCTION_PROTECTED_RLS_TABLES,
 ): Promise<ProductionDatabaseRlsReadiness> {
   const queryTarget = target || (await operationalDatabasePool());
   const rows = await operationalQueryRows<{
@@ -380,7 +401,7 @@ export async function getProductionDatabaseRlsReadiness(
            WHERE NOT table_exists OR NOT rls_enabled),
          ARRAY[]::text[]
        ) AS missing_or_unprotected_tenant_tables`,
-    [Array.from(PRODUCTION_PROTECTED_RLS_TABLES), Object.values(OPERATOR_DATABASE_CAPABILITIES), Array.from(AUTHENTICATION_INTEGRITY_TABLES), Array.from(ADMIN_AUTHORITY_AUDIT_TABLES), JSON.stringify(AUTHENTICATION_SENSITIVE_COLUMNS)],
+    [Array.from(protectedTables), Object.values(OPERATOR_DATABASE_CAPABILITIES), Array.from(AUTHENTICATION_INTEGRITY_TABLES), Array.from(ADMIN_AUTHORITY_AUDIT_TABLES), JSON.stringify(AUTHENTICATION_SENSITIVE_COLUMNS)],
   );
 
   const row = rows[0];
@@ -439,7 +460,8 @@ export async function assertProductionDatabaseRlsReady(
 
   let readiness: ProductionDatabaseRlsReadiness;
   try {
-    readiness = await getProductionDatabaseRlsReadiness(target);
+    readiness = await getProductionDatabaseRlsReadiness(
+      target, protectedRlsTablesForRuntime(env));
   } catch (error) {
     if (error instanceof ProductionDatabaseRlsSecurityError) throw error;
     fail(
