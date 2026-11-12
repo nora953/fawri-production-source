@@ -14,6 +14,7 @@ on:
       - "scripts/tests/v1-meta-worker-auth-merchant-enumeration.test.mjs"
       - "scripts/tests/v1-meta-worker-tenant-history-source.test.mjs"
       - "lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls.sql"
+      - "lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls_failclosed_revert.sql"
       - "lib/db/src/schema/jobs.ts"
 
 permissions:
