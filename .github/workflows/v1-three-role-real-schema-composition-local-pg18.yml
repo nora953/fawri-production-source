@@ -65,6 +65,8 @@ jobs:
         run: corepack enable
       - name: Frozen dependency install without package scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Verify changed API worker TypeScript compiles before SQL test
+        run: pnpm --filter @workspace/api-server run typecheck
       - name: New V1 integration only - real held 54-stage schema plus three role grants
         working-directory: lib/db
         run: |
