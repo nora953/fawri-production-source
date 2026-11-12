@@ -569,7 +569,7 @@ async function settleExpired(
           now.toISOString(),
         ],
       );
-      await finishAttempt(client, job.id, current.attempts, "timed_out", null, now);
+      await finishAttempt(client, merchantId, job.id, current.attempts, "timed_out", null, now);
       return hydrateJob(client, updated.rows[0]!);
     }
     const retry = resolution.action === "retry" && current.attempts < current.max_attempts;
@@ -596,7 +596,7 @@ async function settleExpired(
           now.toISOString(),
         ],
       );
-      await finishAttempt(client, job.id, current.attempts, "timed_out", resolution.code, now);
+      await finishAttempt(client, merchantId, job.id, current.attempts, "timed_out", resolution.code, now);
       return hydrateJob(client, updated.rows[0]!);
     }
     return deadLetter(client, current, resolution.code, resolution.action === "retry", now);
@@ -643,11 +643,13 @@ async function claimForMerchant(
     const claimed = updated.rows[0]!;
     await client.query(
       `INSERT INTO job_attempts
-        (id, job_id, attempt_number, worker_id, lease_generation, status, started_at)
-       VALUES ($1, $2, $3, $4, $5, 'processing', $6::timestamptz)`,
+        (id, job_id, merchant_id, attempt_number, worker_id, lease_generation,
+         status, started_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'processing', $7::timestamptz)`,
       [
         `attempt-${crypto.randomUUID()}`,
         claimed.id,
+        merchantId,
         claimed.attempts,
         workerId,
         claimed.lease_generation || claimed.attempts,
@@ -689,6 +691,7 @@ async function heartbeat(
 
 async function finishAttempt(
   client: OperationalSqlClient,
+  merchantId: string,
   jobId: string,
   attemptNumber: number,
   status: "succeeded" | "failed" | "timed_out",
@@ -697,10 +700,11 @@ async function finishAttempt(
 ): Promise<void> {
   await client.query(
     `UPDATE job_attempts
-        SET status = $3::job_attempt_status, error_code = $4,
-            finished_at = $5::timestamptz
-      WHERE job_id = $1 AND attempt_number = $2 AND status = 'processing'`,
-    [jobId, attemptNumber, status, errorCode, now.toISOString()],
+        SET status = $4::job_attempt_status, error_code = $5,
+            finished_at = $6::timestamptz
+      WHERE merchant_id = $1 AND job_id = $2
+        AND attempt_number = $3 AND status = 'processing'`,
+    [merchantId, jobId, attemptNumber, status, errorCode, now.toISOString()],
   );
 }
 
@@ -738,11 +742,13 @@ async function deadLetter(
   const occurrence = Number(occurrenceResult.rows[0]?.occurrence || 1);
   await client.query(
     `INSERT INTO job_dead_letters
-      (id, job_id, occurrence, reason_code, attempts, payload_sha256, metadata, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::timestamptz)`,
+      (id, job_id, merchant_id, occurrence, reason_code, attempts,
+       payload_sha256, metadata, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::timestamptz)`,
     [
       `dlq-${crypto.randomUUID()}`,
       current.id,
+      current.merchant_id,
       occurrence,
       errorCode,
       current.attempts,
@@ -751,7 +757,7 @@ async function deadLetter(
       now.toISOString(),
     ],
   );
-  await finishAttempt(client, current.id, current.attempts, "failed", errorCode, now);
+  await finishAttempt(client, current.merchant_id, current.id, current.attempts, "failed", errorCode, now);
   return hydrateJob(client, updated.rows[0]!);
 }
 
@@ -785,7 +791,7 @@ async function completeJob(
                   dead_lettered_at, created_at, updated_at`,
       [merchantId, job.id, workerId, JSON.stringify(result || {}), now.toISOString()],
     );
-    await finishAttempt(client, job.id, current.rows[0].attempts, "succeeded", null, now);
+    await finishAttempt(client, merchantId, job.id, current.rows[0].attempts, "succeeded", null, now);
     return hydrateJob(client, updated.rows[0]!);
   });
 }
@@ -833,7 +839,7 @@ async function failJob(
         now.toISOString(),
       ],
     );
-    await finishAttempt(client, job.id, current.attempts, "failed", failure.code, now);
+    await finishAttempt(client, merchantId, job.id, current.attempts, "failed", failure.code, now);
     return hydrateJob(client, updated.rows[0]!);
   });
 }
