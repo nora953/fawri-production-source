@@ -1,5 +1,13 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-12 — P0-ACCESS-HOSTED-IDENTITY: owner-visible Roles page evidence, restricted login proof pending
+
+- **Owner-provided Neon console UI only**, independently matched by page breadcrumb to project `fawri-production-prep-20261108` and default `production` branch: `Databases` shows database `fawri` owned by `fawri_owner`. `Roles` page visibly lists only the Neon-managed `fawri_owner` role. These observations add new bounded UI evidence to the already verified project/branch IDs; they do **not** establish database-level SQL catalog completeness, whether roles created directly through SQL exist, role LOGIN flags, security attributes, production client identity, RLS, role privileges, direct/pool endpoints or installed migrations.
+- Required separate hosted least-privileged LOGIN roles `fawri_restricted_runtime`, `fawri_auth_issuer`, `fawri_operator_issuer` were **not visible** in the console UI, and their existence and separation remain **unverified**, not conclusively absent. **Do not press Add role, modify any grants or run saved SQL** under the current read-only metadata authorization.
+- **Next bounded non-mutating evidence:** inspect existing project Branch/Compute connection metadata and, once separately authorized through a verified least-privileged route, independently read SQL catalog role flags and migration/RLS metadata; do not treat UI screenshots as SQL acceptance.
+- **P0 closures: 0 in this checkpoint.** `P0-ACCESS-HOSTED-IDENTITY` BLOCKED; 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED of 45 known source rows, 13 V1-essential + 3 POS deferrals pending proof, `overallPercentage=null`; NO-GO, Draft PR #550, no deploy/merge/Neon write.
+
+
 ## 2026-11-12 — P0-ACCESS-HOSTED-IDENTITY: owner-visible Neon console project/branch IDs confirmed (UI evidence only)
 
 - **Non-secret screenshot of Neon Branch overview provided by owner** (not a direct authenticated API attestation): independent listed project `fawri-production-prep-20261108`, exact project ID `crimson-cherry-65705041`; default branch `production`, exact branch ID `br-holy-waterfall-b993zglb`; branch created 2026-11-08. Project listing showed this as a distinct project from `Fawri-Staging` (one branch here, ten on staging). Region AWS Europe Central 1 (Frankfurt), Postgres 18; overview displays 1 database and 1 compute. These match the previously selected project+branch and settle the need to choose one; **do not claim direct/pool endpoint, privileged role checks, data-free first-commercial lineage, RLS or migrations from this UI alone**.
