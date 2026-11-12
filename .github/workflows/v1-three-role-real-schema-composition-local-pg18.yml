@@ -7,6 +7,8 @@ on:
     paths:
       - ".github/workflows/v1-three-role-real-schema-composition-local-pg18.yml"
       - "lib/db/scripts/v1-three-role-real-migrations-grant-composition-pg18.mjs"
+      - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard.sql"
+      - "lib/db/first-commercial/held/v1_pos_off_merchant_deletion_guard_revert.sql"
 
 permissions:
   contents: read
