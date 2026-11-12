@@ -76,6 +76,14 @@ The first-commercial V1 **role-fragment source** now includes three separately b
 
 **Closure:** `P0-ACCESS-HOSTED-IDENTITY` and `P0-ACCESS-HOSTED-ROLLOUT` remain **BLOCKED**; 13 V1 essentials, 3 POS scope deferrals proof-pending; historical 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED of 45, overall readiness unverified; PR #550 DRAFT, NO-GO. **No hosted SQL or new role was executed in this work.**
 
+## 2026-11-12 — three-role V1 GRANT source-only selection accepted (not deployment)
+
+[`scripts/lib/v1-first-merchant-grant-package-source-plan.mjs`](../../../scripts/lib/v1-first-merchant-grant-package-source-plan.mjs) reuses the existing pinned 53-stage INVOKER migration source review and pins AUTH/tenant/operator held V1 GRANT Git blob SHAs independently. The selection **excludes** the prior held cashier-retirement issuer privileges (which conflict with approved POS-off and auth no-cashier/membership checks) and separately held 0053 manual-case operator overlap, while retaining both files and the original migration chain for audit/legitimate dependency review. It is not a migration script or runner.
+
+**New focused source-only CI:** [#43244735507](https://github.com/nora953/fawri-production-source/actions/runs/43244735507) completed **SUCCESS** on exact SHA `b2a6ad385baf9771a83d2b77b222396b87dce739`: three grants selected, old cashier/overlap omitted, all three source-pin tampering attempts rejected. No database was opened and none of the accepted PG18 tests was repeated. Its output explicitly denies `approved_to_execute`, `approved_to_deploy`, provisioned roles, credential readiness, independent backup, actual tenant/HTTP acceptance and P0 closure.
+
+**Release blocker still unresolved:** SQL role promotion for the three independent LOGINs, complete merchant V1 grant coverage beyond the currently bounded tables and functions (Meta/background jobs/payment), safe canonical 0052/0053 migration and role membership combination, real recovery and target E2E. The new role source manifest is a coherent **reviewable subset** but NOT a commercial ready-to-run package. Next: bounded test of a true three-role LOGIN promotion and V1 ACL postimage on source-pinned disposable first-commercial schema, with safe rollback; obtain owner approval only after backup and exact targeted writes are reviewable.
+
 ## Smallest safe path from this blocker to first merchant
 
 | Order | Deliverable and responsible party | Required evidence to proceed | Current state |
