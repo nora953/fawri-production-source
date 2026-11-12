@@ -59,6 +59,13 @@ $v1_auth_preimage$;
 
 -- These identity tables are needed for V1 signup, SMS OTP and sessions.
 -- Never grant direct table access to tenant or operator LOGIN.
+-- Explicitly remove dangerous default PUBLIC EXECUTE on the trusted
+-- marker and scope issuer before granting only the dedicated auth LOGIN.
+-- The canonical migrations already revoke them; this is a fail-safe guard.
+REVOKE ALL ON FUNCTION public.fawri_authentication_runtime() FROM PUBLIC;
+REVOKE ALL ON FUNCTION
+  fawri_security.issue_scope(name,integer,bigint,text) FROM PUBLIC;
+
 GRANT USAGE ON SCHEMA public TO fawri_auth_issuer;
 GRANT USAGE ON SCHEMA fawri_security TO fawri_auth_issuer;
 GRANT EXECUTE ON FUNCTION public.fawri_authentication_runtime()
@@ -99,6 +106,17 @@ BEGIN
        'fawri_security.issue_scope(name,integer,bigint,text)', 'EXECUTE')
     OR has_function_privilege(auth,
        'public.fawri_issue_admin_directory_audit(text,text,text)', 'EXECUTE')
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.pg_roles other
+      WHERE other.rolname IN (
+        'fawri_restricted_runtime','fawri_operator_issuer'
+      ) AND (
+        has_function_privilege(other.oid,
+          'public.fawri_authentication_runtime()', 'EXECUTE')
+        OR has_function_privilege(other.oid,
+          'fawri_security.issue_scope(name,integer,bigint,text)', 'EXECUTE')
+      )
+    )
     OR has_table_privilege(auth,'public.cashier_device_streams',
        'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
     OR has_table_privilege(auth,'public.notifications',
