@@ -1,5 +1,12 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-12 — P0-ACCESS-HOSTED-IDENTITY: primary compute metadata seen on approved new branch
+
+- Owner-supplied **Neon UI screenshot**, breadcrumb `fawri-production-prep-20261108 / production`: one **primary compute endpoint ID** `ep-polished-poetry-b9jpvn4r`, status `SUSPENDED` after inactivity and autoscale range `0.25–2 CU`. A suspended idle compute is not itself a fault. This is a **compute ID**, **not** verification of direct/pool hostname pair, authenticated runtime login, network settings, or healthy production application.
+- No Connect dialog opened, no credential/connection URI disclosed, no modifications, SQL, role creation, migration, merge or deployment. The owner has only authorized **read-only metadata inspection**. Next shortest non-destructive evidence for the hosted-identity gate requires a separate narrow approval for a `SELECT` against `pg_catalog.pg_roles` to verify the three expected LOGIN role flags; use only safe bounded catalog fields and no merchant data. Then, if needed, independently certify endpoint routing/role admission with separately scoped acceptance.
+- Closure delta 0: `P0-ACCESS-HOSTED-IDENTITY` BLOCKED. Historical 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED; 13 V1 essential + 3 POS scope exclusions pending real evidence; NO-GO. Reuse previous accepted source CI.
+
+
 ## 2026-11-12 — P0-ACCESS-HOSTED-IDENTITY: owner-visible Roles page evidence, restricted login proof pending
 
 - **Owner-provided Neon console UI only**, independently matched by page breadcrumb to project `fawri-production-prep-20261108` and default `production` branch: `Databases` shows database `fawri` owned by `fawri_owner`. `Roles` page visibly lists only the Neon-managed `fawri_owner` role. These observations add new bounded UI evidence to the already verified project/branch IDs; they do **not** establish database-level SQL catalog completeness, whether roles created directly through SQL exist, role LOGIN flags, security attributes, production client identity, RLS, role privileges, direct/pool endpoints or installed migrations.
