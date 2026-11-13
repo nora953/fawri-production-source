@@ -1,10 +1,14 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
+import { assertCashierOfflinePublicKeyConfig } from "./build/cashierOfflinePublicKeyConfig.mjs";
+import { retirePosForCommercialBuild } from "./build/firstCommercialPosRetirement.mjs";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-export default defineConfig(async ({ command }) => {
+export default defineConfig(async ({ command, mode }) => {
+  const publicEnv = loadEnv(mode, import.meta.dirname, 'VITE_FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS');
+  assertCashierOfflinePublicKeyConfig(publicEnv.VITE_FAWRI_CASHIER_OFFLINE_PUBLIC_KEYS);
   const isServe = command === "serve";
   const rawPort = process.env.PORT;
 
@@ -28,7 +32,20 @@ export default defineConfig(async ({ command }) => {
 
   return {
     base: basePath,
+    // Release artifacts always disable POS even if NODE_ENV was set to
+    // development during the build; no override through VITE_* secrets.
+    define: {
+      'import.meta.env.VITE_FAWRI_V1_POS_DISABLED': JSON.stringify(!isServe ? '1' : '0'),
+    },
     plugins: [
+      ...(!isServe ? [{
+        name: 'fawri-v1-retire-pos-offline-shell',
+        async closeBundle() {
+          await retirePosForCommercialBuild(
+            path.resolve(import.meta.dirname, 'dist/public'),
+          );
+        },
+      }] : []),
       react(),
       tailwindcss(),
       runtimeErrorOverlay(),
@@ -55,7 +72,8 @@ export default defineConfig(async ({ command }) => {
       rollupOptions: {
         input: {
           app: path.resolve(import.meta.dirname, "index.html"),
-          cashier: path.resolve(import.meta.dirname, "cashier.html"),
+          // The commercial build must not emit cashier.html or its POS entry.
+          ...(isServe ? { cashier: path.resolve(import.meta.dirname, "cashier.html") } : {}),
         },
       },
     },

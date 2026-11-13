@@ -23,12 +23,21 @@ test("notification server authority is session-derived and tenant filtered", () 
 
 test("notification authority validates records and rejects unsafe action URLs", () => {
   assert.match(authority, /export function isMerchantNotificationRecord/);
-  assert.match(authority, /body\.notifications\.every\(isMerchantNotificationRecord\)/);
+  // R1: known notices remain strictly validated; safe metadata-only unknown
+  // history is skipped so it cannot disable the whole merchant feed.
+  assert.match(authority, /if \(isMerchantNotificationRecord\(candidate\)\)/);
+  assert.match(authority, /else if \(!isSafeUnknownNotificationMetadata\(candidate\)\)/);
+  assert.match(authority, /!SUPPORTED_MERCHANT_NOTIFICATION_TYPES\.has\(String\(candidate\.type\)\)/);
+  assert.match(authority, /Object\.keys\(candidate\)\.every\(key => UNKNOWN_NOTIFICATION_METADATA_KEYS\.has\(key\)\)/);
+  assert.match(authority, /throw new Error\("merchant notification authority unavailable"\)/);
   assert.match(authority, /credentials: "same-origin"/);
   assert.match(authority, /cache: "no-store"/);
   assert.match(authority, /headers: \{ Accept: "application\/json" \}/);
   assert.match(authority, /value\.startsWith\("\/"\)/);
-  assert.match(authority, /!value\.startsWith\("\/\/"\)/);
+  // The negative double-slash check now lives inside the early-reject branch.
+  // Runtime tests cover newline/CR/tab URL-parser normalization and safe paths.
+  assert.match(authority, /value\.startsWith\("\/\/"\)/);
+  assert.match(authority, /new URL\(value, base\)\.origin === base/);
   assert.match(page, /readMerchantNotificationsAuthority\(\)/);
   assert.doesNotMatch(page, /as MerchantNotification\[\]/);
 });

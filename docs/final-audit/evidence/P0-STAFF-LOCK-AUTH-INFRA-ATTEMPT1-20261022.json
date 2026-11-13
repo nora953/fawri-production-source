@@ -1,0 +1,15 @@
+{
+  "recordedDate": "2026-10-22",
+  "source": "44f46431c63e7ca723d4e1e283259a9872ab8abf",
+  "runId": 39749682683,
+  "attempt": 1,
+  "jobId": 119726809062,
+  "conclusion": "failure",
+  "failedStep": "Run all current Auth unit and cutover tests in an owned offline cluster",
+  "command": "bash scripts/run-isolated-postgres-audit.sh auth-contract",
+  "classification": "infrastructure image download failure before isolated auth-contract tests",
+  "error": "Docker registry blob download failed: read: connection reset by peer",
+  "applicationTestFailureDemonstrated": false,
+  "correction": "one bounded same-source failed-job rerun; no source/dependency/guard/policy changes",
+  "releaseAccepted": false
+}

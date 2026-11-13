@@ -1,0 +1,7 @@
+{
+  "index": 35,
+  "name": "order_items_tenant_rls",
+  "when": 1791936000007,
+  "mode": "manual_sql",
+  "preimage_files": []
+}

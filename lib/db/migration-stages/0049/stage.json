@@ -1,0 +1,11 @@
+{
+  "index": 49,
+  "name": "order_items_declarative_rls_alignment",
+  "when": 1791936000021,
+  "mode": "reviewed_sql",
+  "sql_sha256": "72f41752819cbccc57a8857d0a4aceb84477a40cc3c0a816cae4be4154a32e19",
+  "preimage_files": [
+    "orders.ts",
+    "tenant-security.ts"
+  ]
+}

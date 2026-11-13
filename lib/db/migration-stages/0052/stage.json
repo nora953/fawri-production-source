@@ -1,0 +1,10 @@
+{
+  "index": 52,
+  "name": "cashier_stream_receipt_storage",
+  "when": 1791936000024,
+  "mode": "reviewed_sql",
+  "sql_sha256": "aaf7ee97fbdef0c1b4600e905216117ee8ff89f31ccd67d783ab61a9c4bd9b8e",
+  "preimage_files": [
+    "cashier-staff.ts"
+  ]
+}

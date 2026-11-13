@@ -1,0 +1,145 @@
+[
+  {
+    "name": "enrollment_owner_stream_read",
+    "table": "cashier_device_streams",
+    "operation": "select",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true"
+  },
+  {
+    "name": "enrollment_owner_stream_insert",
+    "table": "cashier_device_streams",
+    "operation": "insert",
+    "role": "fawri_cashier_enrollment_owner",
+    "check": "state='active' AND last_sequence=0 AND version=1"
+  },
+  {
+    "name": "enrollment_owner_review_read",
+    "table": "cashier_stream_enrollment_reviews",
+    "operation": "select",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true"
+  },
+  {
+    "name": "enrollment_owner_review_insert",
+    "table": "cashier_stream_enrollment_reviews",
+    "operation": "insert",
+    "role": "fawri_cashier_enrollment_owner",
+    "check": "true"
+  },
+  {
+    "name": "enrollment_owner_timeline_read",
+    "table": "cashier_device_operation_timeline",
+    "operation": "select",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true"
+  },
+  {
+    "name": "enrollment_owner_attribution_read",
+    "table": "cashier_operation_attribution",
+    "operation": "select",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true"
+  },
+  {
+    "name": "enrollment_owner_order_read",
+    "table": "orders",
+    "operation": "select",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true"
+  },
+  {
+    "name": "enrollment_owner_station_read",
+    "table": "merchant_cashier_stations",
+    "operation": "select",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true"
+  },
+  {
+    "name": "enrollment_owner_station_lock",
+    "table": "merchant_cashier_stations",
+    "operation": "update",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true",
+    "check": "false"
+  },
+  {
+    "name": "enrollment_owner_merchant_read",
+    "table": "merchants",
+    "operation": "select",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true"
+  },
+  {
+    "name": "enrollment_owner_merchant_lock",
+    "table": "merchants",
+    "operation": "update",
+    "role": "fawri_cashier_enrollment_owner",
+    "using": "true",
+    "check": "false"
+  },
+  {
+    "name": "receipt_owner_stream_read",
+    "table": "cashier_device_streams",
+    "operation": "select",
+    "role": "fawri_cashier_receipt_owner",
+    "using": "true"
+  },
+  {
+    "name": "receipt_owner_stream_update",
+    "table": "cashier_device_streams",
+    "operation": "update",
+    "role": "fawri_cashier_receipt_owner",
+    "using": "state='active'",
+    "check": "state='active'"
+  },
+  {
+    "name": "receipt_owner_receipt_read",
+    "table": "cashier_operation_receipts",
+    "operation": "select",
+    "role": "fawri_cashier_receipt_owner",
+    "using": "true"
+  },
+  {
+    "name": "receipt_owner_receipt_insert",
+    "table": "cashier_operation_receipts",
+    "operation": "insert",
+    "role": "fawri_cashier_receipt_owner",
+    "check": "true"
+  },
+  {
+    "name": "receipt_owner_order_read",
+    "table": "orders",
+    "operation": "select",
+    "role": "fawri_cashier_receipt_owner",
+    "using": "true"
+  },
+  {
+    "name": "receipt_owner_session_read",
+    "table": "cashier_operator_sessions",
+    "operation": "select",
+    "role": "fawri_cashier_receipt_owner",
+    "using": "true"
+  },
+  {
+    "name": "receipt_owner_shift_read",
+    "table": "cashier_shifts",
+    "operation": "select",
+    "role": "fawri_cashier_receipt_owner",
+    "using": "true"
+  },
+  {
+    "name": "receipt_owner_station_read",
+    "table": "merchant_cashier_stations",
+    "operation": "select",
+    "role": "fawri_cashier_receipt_owner",
+    "using": "true"
+  },
+  {
+    "name": "receipt_owner_credential_read",
+    "table": "cashier_station_credentials",
+    "operation": "select",
+    "role": "fawri_cashier_receipt_owner",
+    "using": "true"
+  }
+]

@@ -1,7 +1,8 @@
+import { assertNotificationTypeWritable, requireNotificationSourceReference } from "./postgresNotificationSourceReference";
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   operationalPostgresAuthorityRequired,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { SupportPostgresError } from "./postgresSupportAuthority";
@@ -105,6 +106,8 @@ async function insertMerchantNotification(
     createdAt: string;
   },
 ): Promise<void> {
+  assertNotificationTypeWritable(input.type);
+  const source = requireNotificationSourceReference(input.sourceEntityType, input.sourceEntityId);
   await target.query(
     `INSERT INTO notifications
        (id, audience, merchant_id, account_id, type, title_key, body_key,
@@ -120,8 +123,8 @@ async function insertMerchantNotification(
       `notifications.${input.type}.title`,
       `notifications.${input.type}.body`,
       JSON.stringify(input.variables),
-      input.sourceEntityType,
-      input.sourceEntityId,
+      source.sourceEntityType,
+      source.sourceEntityId,
       input.createdAt,
     ],
   );
@@ -160,7 +163,7 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
   const nowIso = now.toISOString();
   const nowMs = now.getTime();
 
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const expiredPending = await client.query(
       `UPDATE support_inspection_requests
           SET status = 'expired', expired_at = $1::timestamptz,

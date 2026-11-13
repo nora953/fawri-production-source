@@ -1,0 +1,350 @@
+name: FIELD002 original staging read-only portable owner ACL restore (isolated local destination)
+
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - "docs/final-audit/evidence/field002-original-staging-portable-restore-request.json"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: field002-original-staging-portable-proof
+  cancel-in-progress: false
+
+jobs:
+  original-readonly-local-restore:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout exact push commit without credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Require exact user-reviewed one-file request and branch
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = nora953/fawri-production-source
+          test "$GITHUB_REF" = refs/heads/fix/p0-provider-receipt-order-discovery-20261015
+          test "$GITHUB_EVENT_NAME" = push
+          changed="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+          test "$changed" = docs/final-audit/evidence/field002-original-staging-portable-restore-request.json
+          node <<'NODE'
+          const fs=require('node:fs');
+          const cp=require('node:child_process');
+          const name='docs/final-audit/evidence/field002-original-staging-portable-restore-request.json';
+          const request=JSON.parse(fs.readFileSync(name,'utf8'));
+          const keys=Object.keys(request).sort();
+          if (JSON.stringify(keys)!==JSON.stringify([
+            'approval','approved_branch','approved_parent_sha'
+          ])) process.exit(2);
+          const parent=cp.execFileSync('git',['rev-parse','HEAD^'],{encoding:'utf8'}).trim();
+          if (request.approval!=='APPROVE_ORIGINAL_STAGING_READONLY_PORTABLE_OBJECT_ACL_RESTORE' ||
+              request.approved_branch!=='br-falling-dust-b1km4gix' ||
+              !/^[0-9a-f]{40}$/.test(request.approved_parent_sha) ||
+              request.approved_parent_sha!==parent) process.exit(2);
+          NODE
+          echo FIELD002_EXACT_ONE_FILE_OBJECT_ACL_REQUEST_ACCEPTED
+
+      - name: Pin original staging direct-host credential and source-catalog digest
+        env:
+          FIELD002_ADMIN_URL: "${{ secrets.FAWRI_FIELD002_ORIGINAL_STAGING_ADMIN_URL }}"
+        run: |
+          set -euo pipefail
+          umask 077
+          work="$RUNNER_TEMP/field002-original-portable-proof"
+          mkdir -p "$work"
+          cp docs/final-audit/evidence/sql/P0-FIELD002-ISOLATED-PORTABLE-OBJECT-ACL-CATALOG-20261108.sql "$work/acl.sql"
+          node <<'NODE'
+          const fs=require('node:fs');
+          const raw=process.env.FIELD002_ADMIN_URL||'';
+          let u;
+          try { u=new URL(raw); } catch { process.exit(2); }
+          const allowedParams=new Set(['sslmode','channel_binding']);
+          if (!['postgres:','postgresql:'].includes(u.protocol) ||
+              u.hostname!=='ep-plain-leaf-b1wtzjr3.c-5.eu-central-1.aws.neon.tech' ||
+              u.username!=='neondb_owner' || u.pathname!=='/neondb' ||
+              !u.password || /[\r\n]/.test(raw) ||
+              !['require','verify-full','verify-ca'].includes(u.searchParams.get('sslmode')) ||
+              [...u.searchParams.keys()].some(k=>!allowedParams.has(k)) ||
+              (u.port && u.port!=='5432') ||
+              u.hash) {
+            process.stderr.write('FIELD002_ORIGINAL_CONNECTION_IDENTITY_NOT_ACCEPTED\n');
+            process.exit(2);
+          }
+          fs.writeFileSync(process.env.RUNNER_TEMP+'/field002-original-portable-proof/remote.env',
+            'FIELD002_ADMIN_URL='+raw+'\n',{mode:0o600});
+          NODE
+          cat > "$work/preflight.sql" <<'SQL'
+          SELECT concat_ws('|', current_database(), session_user,
+            (SELECT count(*) FROM drizzle.__drizzle_migrations),
+            (SELECT count(*) FROM public.notifications),
+            current_setting('server_version_num'));
+          SQL
+          cat > "$work/digest.sql" <<'SQL'
+          WITH rels AS (
+            SELECT n.nspname sn,c.relname tn
+            FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+            WHERE n.nspname IN ('public','drizzle','fawri_security')
+              AND c.relkind IN ('r','p')
+          ), v AS (
+            SELECT sn,tn,
+              (xpath('/row/n/text()',query_to_xml(
+                format('SELECT COUNT(*) AS n FROM %I.%I',sn,tn),
+                false,true,'')))[1]::text::bigint n,
+              (xpath('/row/h/text()',query_to_xml(
+                format('SELECT md5(coalesce(string_agg(md5(to_jsonb(t)::text), '''' ORDER BY md5(to_jsonb(t)::text)), '''')) AS h FROM %I.%I t',sn,tn),
+                false,true,'')))[1]::text h
+            FROM rels
+          )
+          SELECT count(*)::text||'|'||sum(n)::text||'|'||
+                 md5(string_agg(sn||'.'||tn||':'||n||':'||h,E'\n' ORDER BY sn,tn))
+          FROM v;
+          SQL
+
+      - name: Read-only source preflight and portable PostgreSQL 18 custom archive
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/field002-original-portable-proof"
+          if ! docker run --rm --network host --env-file "$work/remote.env" -v "$work:/work" postgres:18-alpine \
+               sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -f /work/preflight.sql' \
+               > "$work/preflight.txt" 2>/dev/null; then
+            echo FIELD002_ORIGINAL_READONLY_PREFLIGHT_FAILED >&2; exit 1
+          fi
+          test "$(cat "$work/preflight.txt")" = 'neondb|neondb_owner|28|0|180006'
+          if ! docker run --rm --network host --env-file "$work/remote.env" \
+               -v "$work:/work" postgres:18-alpine \
+               sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -f /work/digest.sql' \
+               > "$work/source-before.txt" 2>/dev/null; then
+            echo FIELD002_ORIGINAL_SOURCE_DIGEST_FAILED >&2; exit 1
+          fi
+          # Original's approved observed noncommercial baseline. Abort before
+          # pg_dump on any data drift; this never authorizes app writes.
+          if [ "$(cat "$work/source-before.txt")" != '95|437|8dcad805b36a3f8f8d33fd13a567e7cd' ]; then
+            echo FIELD002_ORIGINAL_PRECHANGE_DATA_BASELINE_DRIFT_BLOCKED >&2
+            exit 1
+          fi
+          if ! docker run --rm --network host --env-file "$work/remote.env" \
+               -v "$work:/work" postgres:18-alpine \
+               sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -f /work/acl.sql' \
+               > "$work/acl-source-before.txt" 2>/dev/null; then
+            echo FIELD002_ORIGINAL_SOURCE_ACL_CATALOG_FAILED >&2; exit 1
+          fi
+          # FIELD002 R1/R2: a restore can be faithfully wrong. Freeze the
+          # separately reviewed, independently observed exact source digest
+          # baseline; reject a permissive policy/grant/owner change *before*
+          # exporting data. Print only a rejection code, never catalog details.
+          cat > "$work/acl-approved-baseline.txt" <<'CATALOG'
+          default_acl|4|2c3a21d7a1011f2fbbd745ed7280dfd3
+          policies|45|340b969aff1b615b0105985598695069
+          relations|96|872e96f87f2675a36fa30c1f573ffe49
+          routines|3|ecf3c858cf63f7a549f65b6aaacb7990
+          schemas|2|4f509330ba572a6727e34a550b9c4127
+          CATALOG
+          if ! cmp -s "$work/acl-approved-baseline.txt" "$work/acl-source-before.txt"; then
+            echo FIELD002_ORIGINAL_SOURCE_ACL_BASELINE_DRIFT_BLOCKED >&2
+            exit 1
+          fi
+          if ! docker run --rm --network host --env-file "$work/remote.env" \
+               -v "$work:/work" postgres:18-alpine \
+               sh -ec 'pg_dump --dbname="$FIELD002_ADMIN_URL" --format=custom --no-password --serializable-deferrable --file=/work/original-staging.dump' \
+               > /dev/null 2>&1; then
+            echo FIELD002_PORTABLE_READONLY_DUMP_FAILED >&2; exit 1
+          fi
+          test -s "$work/original-staging.dump"
+          echo FIELD002_HOSTED_ORIGINAL_STAGING_READONLY_DUMP_CREATED_NO_ARTIFACT
+
+      - name: Restore owner and ACL retaining archive in fresh loopback-only PostgreSQL 18
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/field002-original-portable-proof"
+          local_url='postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci'
+          # Dummy local-only NOLOGIN roles for Neon platform ACL grant references.
+          # Even cloud_admin is NOT recreated with superuser or BYPASSRLS.
+          for role in neondb_owner fawri_staging_runtime fawri_staging_rls_runtime fawri_field002_tenant_probe fawri_field002_auth_probe fawri_field002_operator_probe token_roles neon_superuser cloud_admin neon_service; do
+            if ! docker run --rm --network host postgres:18-alpine \
+                 psql "$local_url" -X -v ON_ERROR_STOP=1 -c "CREATE ROLE $role NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE" \
+                 > /dev/null 2>&1; then
+              echo FIELD002_LOCAL_DISPOSABLE_ROLE_BOOTSTRAP_FAILED >&2; exit 1
+            fi
+          done
+          if ! docker run --rm --network host postgres:18-alpine \
+               psql "$local_url" -X -v ON_ERROR_STOP=1 -c "CREATE DATABASE fawri_field002_portable_restore" \
+               > /dev/null 2>&1; then
+            echo FIELD002_LOCAL_DISPOSABLE_DATABASE_CREATE_FAILED >&2; exit 1
+          fi
+          if ! docker run --rm --network host -v "$work:/work" postgres:18-alpine \
+               pg_restore --dbname="postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_field002_portable_restore" \
+               --exit-on-error /work/original-staging.dump > /dev/null 2>&1; then
+            echo FIELD002_PORTABLE_DATA_ONLY_RESTORE_FAILED >&2; exit 1
+          fi
+
+      - name: Verify full table-row parity, object owners, ACLs, policies and source stability
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/field002-original-portable-proof"
+          if ! docker run --rm --network host -v "$work:/work" postgres:18-alpine \
+               psql 'postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_field002_portable_restore' \
+               -X -A -t -v ON_ERROR_STOP=1 -f /work/digest.sql \
+               > "$work/restored.txt" 2>/dev/null; then
+            echo FIELD002_PORTABLE_RESTORED_DIGEST_FAILED >&2; exit 1
+          fi
+          if ! docker run --rm --network host --env-file "$work/remote.env" -v "$work:/work" postgres:18-alpine \
+               sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -f /work/digest.sql' \
+               > "$work/source-after.txt" 2>/dev/null; then
+            echo FIELD002_PORTABLE_SOURCE_RECHECK_FAILED >&2; exit 1
+          fi
+          if ! cmp -s "$work/source-before.txt" "$work/source-after.txt" ||
+             ! cmp -s "$work/source-before.txt" "$work/restored.txt"; then
+            echo FIELD002_PORTABLE_DATA_PARITY_MISMATCH >&2; exit 1
+          fi
+          if ! docker run --rm --network host -v "$work:/work" postgres:18-alpine \
+               psql 'postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_field002_portable_restore' \
+               -X -A -t -v ON_ERROR_STOP=1 -f /work/acl.sql \
+               > "$work/acl-restored.txt" 2>/dev/null; then
+            echo FIELD002_PORTABLE_RESTORED_OBJECT_ACL_FAILED >&2; exit 1
+          fi
+          if ! docker run --rm --network host --env-file "$work/remote.env" -v "$work:/work" postgres:18-alpine \
+               sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -f /work/acl.sql' \
+               > "$work/acl-source-after.txt" 2>/dev/null; then
+            echo FIELD002_PORTABLE_RECHECK_SOURCE_OBJECT_ACL_FAILED >&2; exit 1
+          fi
+          if ! cmp -s "$work/acl-source-before.txt" "$work/acl-source-after.txt" ||
+             ! cmp -s "$work/acl-source-before.txt" "$work/acl-restored.txt"; then
+            # Only catalog category names/counts/digests (never raw ACL, rows,
+            # SQL metadata, credentials or archive bytes) enter the job log.
+            node <<'NODE'
+          const fs=require('node:fs');
+          const root=process.env.RUNNER_TEMP+'/field002-original-portable-proof/';
+          const parse=name=>new Map(fs.readFileSync(root+name,'utf8').trim().split('\n')
+            .map(line=>line.split('|'))
+            .filter(row=>row.length===3 && /^[a-z_]+$/.test(row[0]) &&
+              /^\d+$/.test(row[1]) && /^[0-9a-f]{32}$/.test(row[2]))
+            .map(([key,count,digest])=>[key,{count:Number(count),digest}]));
+          const src=parse('acl-source-before.txt');
+          const after=parse('acl-source-after.txt');
+          const restored=parse('acl-restored.txt');
+          const report=[...new Set([...src.keys(),...after.keys(),...restored.keys()])].sort()
+            .map(group=>({
+              group,
+              source_count:src.get(group)?.count??null,
+              restored_count:restored.get(group)?.count??null,
+              source_unchanged:src.get(group)?.digest===after.get(group)?.digest,
+              restored_digest_matches:src.get(group)?.digest===restored.get(group)?.digest,
+              source_digest:src.get(group)?.digest??null,
+              restored_digest:restored.get(group)?.digest??null,
+            }));
+          console.error('FIELD002_OBJECT_ACL_CATEGORY_DIGEST_ONLY '+JSON.stringify(report));
+          NODE
+            # Category mismatch only: interrogate which metadata FIELDS diverge.
+            # Keep full normalized object metadata on ephemeral private runner;
+            # print only object identifiers and FIELD NAMES (never ACL contents,
+            # SQL bodies, user data or credentials) to runner logs.
+            node <<'NODE'
+          const fs=require('node:fs');
+          const dir=process.env.RUNNER_TEMP+'/field002-original-portable-proof/';
+          const sql=fs.readFileSync(dir+'acl.sql','utf8');
+          const last="SELECT grp,count(*)::int n,md5(string_agg(val,E'\\n' ORDER BY val)) digest FROM rec GROUP BY grp ORDER BY grp;";
+          if(!sql.includes(last)) process.exit(2);
+          fs.writeFileSync(dir+'acl-detail.sql',sql.replace(last,
+            "SELECT grp||'|'||val FROM rec WHERE grp IN ('relations','routines') ORDER BY grp,val;"),{mode:0o600});
+          NODE
+            if ! docker run --rm --network host --env-file "$work/remote.env" -v "$work:/work" postgres:18-alpine \
+                 sh -ec 'psql --dbname="$FIELD002_ADMIN_URL" -X -A -t -v ON_ERROR_STOP=1 -f /work/acl-detail.sql' \
+                 > "$work/acl-detail-source.txt" 2>/dev/null; then
+              echo FIELD002_SOURCE_OBJECT_DIAGNOSTIC_FAILED >&2; exit 1
+            fi
+            if ! docker run --rm --network host -v "$work:/work" postgres:18-alpine \
+                 psql 'postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_field002_portable_restore' \
+                 -X -A -t -v ON_ERROR_STOP=1 -f /work/acl-detail.sql \
+                 > "$work/acl-detail-restored.txt" 2>/dev/null; then
+              echo FIELD002_RESTORED_OBJECT_DIAGNOSTIC_FAILED >&2; exit 1
+            fi
+            node <<'NODE'
+          const fs=require('node:fs');
+          const dir=process.env.RUNNER_TEMP+'/field002-original-portable-proof/';
+          const parse=file=>new Map(fs.readFileSync(dir+file,'utf8').trim().split('\n').map(line=>{
+            const parts=line.split('|');
+            const group=parts.shift(),object=parts.shift();
+            if(!['relations','routines'].includes(group)||!object)process.exit(2);
+            const fields={};
+            for(const item of parts){const i=item.indexOf('=');if(i<1)process.exit(2);fields[item.slice(0,i)]=item.slice(i+1);}
+            return [group+'|'+object,{group,object,fields}];
+          }));
+          const source=parse('acl-detail-source.txt'), restored=parse('acl-detail-restored.txt');
+          const report=[];
+          for(const key of [...new Set([...source.keys(),...restored.keys()])].sort()){
+            const a=source.get(key),b=restored.get(key);
+            if(!a||!b){report.push({object:key,different_fields:['missing_object']});continue;}
+            const different_fields=[...new Set([...Object.keys(a.fields),...Object.keys(b.fields)])]
+              .filter(field=>a.fields[field]!==b.fields[field]);
+            if(different_fields.length)report.push({object:key,different_fields});
+          }
+          console.error('FIELD002_OBJECT_ACL_FIELD_DIFF_NAMES_ONLY '+JSON.stringify({
+            total_mismatched_objects:report.length,objects:report.slice(0,80),
+            truncated:report.length>80,contains_metadata_values:false,
+          }));
+          NODE
+            echo FIELD002_PORTABLE_OBJECT_ACL_PARITY_MISMATCH >&2; exit 1
+          fi
+          test "$(wc -l < "$work/acl-restored.txt" | tr -d ' ')" = 5
+          node <<'NODE'
+          const fs=require('node:fs');
+          const line=fs.readFileSync(process.env.RUNNER_TEMP+'/field002-original-portable-proof/restored.txt','utf8').trim();
+          const match=/^(\d+)\|(\d+)\|([a-f0-9]{32})$/.exec(line);
+          if(!match || Number(match[1])<95) process.exit(2);
+          console.log('FIELD002_ORIGINAL_STAGING_LOCAL_OWNER_ACL_RESTORE_PASS '+
+            JSON.stringify({tables:Number(match[1]),rows:Number(match[2]),
+              completeTableRowChecksumsMatch:true,sourceStableBeforeAfter:true,
+              portableArchiveRestoredToFreshPostgres18:true,
+              objectOwnerAclPolicyDigestParity:true,roleGlobalsRestored:false,externalDurableBackupProven:false,
+              originalStagingReadOnly:true,commercialReleaseAuthorized:false}));
+          NODE
+          touch "$work/accepted-owner-acl"
+
+      - name: Record metadata-only owner and ACL hosted proof on draft PR #550
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/field002-original-portable-proof"
+          verdict=NOT_ACCEPTED_INSPECT_RUN
+          if [ -f "$work/accepted-owner-acl" ]; then
+            verdict=BOUNDED_ORIGINAL_LOCAL_OWNER_ACL_PASS
+          fi
+          body="FIELD002 genuine hosted original staging portable owner and ACL restore — exact source ${GITHUB_SHA}; branch br-falling-dust-b1km4gix; run #${GITHUB_RUN_ID} https://github.com/nora953/fawri-production-source/actions/runs/${GITHUB_RUN_ID}; verdict ${verdict}. Original SQL READ-ONLY only; no raw backup uploaded, no original staging mutation. This proves only object owner and ACL/policy digest parity, NOT global role flags/memberships or durable offsite backup, not deployment approval, FIELD002 stays OPEN and 0052 BLOCKED."
+          gh api repos/nora953/fawri-production-source/issues/550/comments -f body="$body" >/dev/null 2>&1 || true
+
+      - name: Erase all temporary database dump and connection bytes
+        if: always()
+        run: |
+          set +e
+          if [ -d "$RUNNER_TEMP/field002-original-portable-proof" ]; then
+            rm -rf "$RUNNER_TEMP/field002-original-portable-proof"
+          fi
+          echo FIELD002_EPHEMERAL_FILES_CLEANUP_REQUESTED_NO_DATA_UPLOADED

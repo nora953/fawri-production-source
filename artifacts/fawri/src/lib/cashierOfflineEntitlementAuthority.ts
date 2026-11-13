@@ -1,3 +1,6 @@
+import { verifyCashierOfflineAuthorization, type CashierOfflineEnvelope, type CashierOfflineBinding } from './cashierOfflineEntitlementSignature.mjs';
+import { cashierOfflineTrustedKeys } from './cashierOfflineTrustedKeys';
+
 const BOOTSTRAP_DATABASE = 'fawri-cashier-bootstrap-v1';
 const BOOTSTRAP_STORE = 'identity';
 const ENTITLEMENT_RECORD_ID = 'cashier-entitlement-authority-v1';
@@ -10,6 +13,11 @@ export type CashierCachedEntitlementAuthority = {
   merchant_id: string;
   station_id: string;
   subscription_id: string;
+  device_id: string;
+  location_id: string;
+  credential_version: number;
+  envelope: CashierOfflineEnvelope;
+  expires_at: string;
   state: CashierCachedEntitlementState;
   licensed_seats: number;
   version: number;
@@ -115,6 +123,9 @@ function validAuthority(value: unknown): CashierCachedEntitlementAuthority | nul
     !requiredText(row.merchant_id) ||
     !requiredText(row.station_id) ||
     !requiredText(row.subscription_id) ||
+    !requiredText(row.device_id) || !requiredText(row.location_id) ||
+    !positiveSafeInteger(row.credential_version) || !row.envelope ||
+    !Number.isFinite(instantMs(row.expires_at)) ||
     (row.state !== 'active' && row.state !== 'grace') ||
     !positiveSafeInteger(row.licensed_seats) ||
     !positiveSafeInteger(row.version)
@@ -172,8 +183,23 @@ export async function clearCashierEntitlementAuthority(): Promise<void> {
 export async function persistCashierEntitlementAuthority(input: {
   snapshot: CashierServerEntitlementSnapshot;
   stationId: string;
-}): Promise<CashierCachedEntitlementAuthority> {
-  const snapshot = input.snapshot;
+  deviceId: string;
+  locationId: string;
+  credentialVersion: number;
+  envelope?: CashierOfflineEnvelope | null;
+}): Promise<CashierCachedEntitlementAuthority | null> {
+  // Legacy unsigned cache is never promoted. Missing configuration preserves
+  // online login but removes offline authority until a signed refresh succeeds.
+  if (!input.envelope) {
+    await clearCashierEntitlementAuthority();
+    return null;
+  }
+  const claims = await verifyCashierOfflineAuthorization(input.envelope, cashierOfflineTrustedKeys(), {
+    merchant_id: input.snapshot.merchant_id, station_id: input.stationId,
+    device_id: input.deviceId, location_id: input.locationId,
+    credential_version: input.credentialVersion,
+  }, Date.now());
+  const snapshot = claims;
   const merchantId = requiredText(snapshot.merchant_id);
   const stationId = requiredText(input.stationId);
   const subscriptionId = requiredText(snapshot.subscription_id);
@@ -229,6 +255,11 @@ export async function persistCashierEntitlementAuthority(input: {
       merchant_id: merchantId,
       station_id: stationId,
       subscription_id: subscriptionId,
+      device_id: claims.device_id,
+      location_id: claims.location_id,
+      credential_version: claims.credential_version,
+      envelope: input.envelope,
+      expires_at: claims.expires_at,
       state: snapshot.state,
       licensed_seats: seats,
       version,
@@ -285,48 +316,67 @@ function estimatedServerNow(authority: CashierCachedEntitlementAuthority): numbe
   );
 }
 
+async function verifyCachedAuthority(
+  authority: CashierCachedEntitlementAuthority,
+  binding: CashierOfflineBinding,
+): Promise<void> {
+  const claims = await verifyCashierOfflineAuthorization(
+    authority.envelope, cashierOfflineTrustedKeys(), binding, Date.now(),
+  );
+  for (const field of ['merchant_id', 'station_id', 'device_id', 'location_id',
+    'credential_version', 'subscription_id', 'licensed_seats', 'version',
+    'billing_period_end', 'grace_until', 'server_time', 'expires_at'] as const) {
+    if (authority[field] !== claims[field]) {
+      throw new CashierOfflineEntitlementError('CASHIER_ENTITLEMENT_REFRESH_REQUIRED',
+        'Cached authority does not match the signed claims');
+    }
+  }
+}
+
 export async function assertCashierSaleEntitlementFromCache(input: {
   merchantId: string;
   stationId: string;
+  deviceId: string;
+  locationId: string;
+  credentialVersion: number;
 }): Promise<CashierCachedEntitlementAuthority> {
   const merchantId = requiredText(input.merchantId);
   const stationId = requiredText(input.stationId);
+  const authority = await readAuthority();
+  if (
+    !authority ||
+    authority.merchant_id !== merchantId ||
+    authority.station_id !== stationId
+  ) {
+    throw new CashierOfflineEntitlementError('CASHIER_ENTITLEMENT_REFRESH_REQUIRED',
+      'Reconnect to obtain signed offline cashier authority');
+  }
+  await verifyCachedAuthority(authority, {
+    merchant_id: merchantId, station_id: stationId, device_id: input.deviceId,
+    location_id: input.locationId, credential_version: input.credentialVersion,
+  });
+  const estimatedNow = estimatedServerNow(authority);
+  const graceUntilMs = Math.min(instantMs(authority.grace_until), instantMs(authority.expires_at));
+  if (!Number.isFinite(graceUntilMs) || estimatedNow >= graceUntilMs) {
+    throw new CashierOfflineEntitlementError('CASHIER_SUBSCRIPTION_RESTRICTED',
+      'Offline cashier authorization has expired; reconnect to refresh');
+  }
   const database = await openBootstrapDatabase();
   try {
     const transaction = database.transaction(BOOTSTRAP_STORE, 'readwrite');
     const completion = transactionDone(transaction);
     const store = transaction.objectStore(BOOTSTRAP_STORE);
-    const authority = validAuthority(
-      await requestResult(store.get(ENTITLEMENT_RECORD_ID)),
-    );
-    if (
-      !authority ||
-      authority.merchant_id !== merchantId ||
-      authority.station_id !== stationId
-    ) {
+    const current = validAuthority(await requestResult(store.get(ENTITLEMENT_RECORD_ID)));
+    // A concurrent refresh/clear/clock advance requires a fresh verification.
+    if (!current || JSON.stringify(current) !== JSON.stringify(authority)) {
       transaction.abort();
       await completion.catch(() => undefined);
-      throw new CashierOfflineEntitlementError(
-        'CASHIER_ENTITLEMENT_REFRESH_REQUIRED',
-        'Cashier subscription authority must be refreshed online before sales can continue',
-      );
+      throw new CashierOfflineEntitlementError('CASHIER_ENTITLEMENT_REFRESH_REQUIRED',
+        'Cashier authority changed during verification; retry');
     }
-
-    const estimatedNow = estimatedServerNow(authority);
-    const graceUntilMs = instantMs(authority.grace_until);
-    if (!Number.isFinite(graceUntilMs) || estimatedNow >= graceUntilMs) {
-      transaction.abort();
-      await completion.catch(() => undefined);
-      throw new CashierOfflineEntitlementError(
-        'CASHIER_SUBSCRIPTION_RESTRICTED',
-        'Cashier subscription grace period has ended; renewal is required',
-      );
-    }
-
     const updated: CashierCachedEntitlementAuthority = {
       ...authority,
-      state:
-        estimatedNow >= instantMs(authority.billing_period_end) ? 'grace' : 'active',
+      state: estimatedNow >= instantMs(authority.billing_period_end) ? 'grace' : 'active',
       last_local_time_ms: Date.now(),
       last_estimated_server_time_ms: estimatedNow,
     };

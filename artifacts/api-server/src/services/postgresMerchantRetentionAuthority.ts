@@ -1,12 +1,11 @@
+import { authenticationDatabasePool, withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import {
   calculateRetentionStatus,
   MerchantRetentionStatus,
 } from "./merchantLifecycle";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withMerchantOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -78,13 +77,38 @@ async function selectSubscriptionForUpdate(
   return rows[0] || null;
 }
 
+function permitsRetentionResumption(
+  subscription: SubscriptionRetentionRow | null,
+  now: Date,
+): boolean {
+  // A future expiry timestamp is not a payment or activation attestation.
+  // Pending-activation, suspended and expired subscriptions may not restore
+  // a retention-suspended merchant, even if their expiry was extended.
+  return Boolean(
+    subscription &&
+      (subscription.status === "active" ||
+        subscription.status === "replies_exhausted") &&
+      Number.isFinite(subscription.expires_at.getTime()) &&
+      subscription.expires_at.getTime() > now.getTime(),
+  );
+}
+
 function effectiveSubscriptionEnd(
   merchant: MerchantRetentionRow,
   subscription: SubscriptionRetentionRow | null,
+  now: Date,
 ): string | undefined {
+  const subscriptionEnd = subscription?.expires_at.getTime();
+  const includeSubscriptionEnd = Boolean(
+    subscription &&
+      subscription.status !== "pending_activation" &&
+      (permitsRetentionResumption(subscription, now) ||
+        (Number.isFinite(subscriptionEnd) &&
+          (subscriptionEnd as number) <= now.getTime())),
+  );
   const values = [
     merchant.last_subscription_ended_at?.getTime(),
-    subscription?.expires_at?.getTime(),
+    includeSubscriptionEnd ? subscriptionEnd : undefined,
   ].filter((value): value is number => Number.isFinite(value));
   if (values.length === 0) return undefined;
   return new Date(Math.max(...values)).toISOString();
@@ -127,15 +151,13 @@ export async function refreshMerchantRetentionPostgres(
   const merchantId = String(merchantIdValue || "").trim();
   if (!merchantId) return null;
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const merchant = await selectMerchantForUpdate(client, merchantId);
     if (!merchant || merchant.account_state === "closed") return null;
     const subscription = await selectSubscriptionForUpdate(client, merchantId);
-    const effectiveEnd = effectiveSubscriptionEnd(merchant, subscription);
+    const effectiveEnd = effectiveSubscriptionEnd(merchant, subscription, now);
     const retention = calculateRetentionStatus(effectiveEnd, now);
-    const activeSubscription = Boolean(
-      subscription && subscription.expires_at.getTime() > now.getTime(),
-    );
+    const activeSubscription = permitsRetentionResumption(subscription, now);
     const wasRetentionSuspended = Boolean(merchant.retention_suspended_at);
 
     if (activeSubscription && wasRetentionSuspended) {
@@ -165,7 +187,18 @@ export async function refreshMerchantRetentionPostgres(
       await client.query(
         `UPDATE subscriptions
             SET status = $2::subscription_status,
-                auto_reply_enabled = ($2::subscription_status = 'active'),
+                -- Restoration is NOT fresh opt-in. Preserve the durable
+                -- merchant setting when resuming a previously suspended
+                -- subscription; missing/hidden preference fails closed.
+                -- Subscription activation and reply permission are separate.
+                auto_reply_enabled = (
+                  $2::subscription_status = 'active'
+                  AND EXISTS (
+                    SELECT 1 FROM merchant_settings settings
+                     WHERE settings.merchant_id = $1
+                       AND settings.auto_reply_enabled IS TRUE
+                  )
+                ),
                 suspended_at = NULL,
                 version = version + 1,
                 updated_at = now()
@@ -252,7 +285,7 @@ export async function refreshAllMerchantRetentionPostgres(
   if (!operationalPostgresAuthorityRequired()) {
     return { checked: 0, suspended: 0 };
   }
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<{ id: string }>(
     pool,
     `SELECT m.id
@@ -281,7 +314,7 @@ export async function isRetentionSuspendedPhonePostgres(
   if (!operationalPostgresAuthorityRequired()) return false;
   const phone = String(phoneValue || "").replace(/\D/g, "");
   if (!phone) return false;
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const rows = await operationalQueryRows<{ suspended: boolean }>(
     pool,
     `SELECT (

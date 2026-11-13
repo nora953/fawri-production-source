@@ -112,6 +112,12 @@ export default function CashierCatalogSyncPage() {
           publishCashierOperatorSessionInvalidated();
           return;
         }
+        if (cause instanceof CashierOperatorCloudSyncError &&
+            cause.code === 'CASHIER_OPERATOR_SYNC_IN_PROGRESS') {
+          // Automatic cashier sync already owns this local drain.
+          setError(labels.wait);
+          return;
+        }
         setError(outboxErrorMessage(cause, labels));
         return;
       }

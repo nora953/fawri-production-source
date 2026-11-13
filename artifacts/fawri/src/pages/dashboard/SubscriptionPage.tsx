@@ -157,7 +157,7 @@ export default function SubscriptionPage() {
         </>
       )}
 
-      <CashierSubscriptionPanel />
+      {import.meta.env.VITE_FAWRI_V1_POS_DISABLED !== '1' ? <CashierSubscriptionPanel /> : null}
     </div>
   );
 }

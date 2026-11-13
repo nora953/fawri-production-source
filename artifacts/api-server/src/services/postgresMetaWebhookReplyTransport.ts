@@ -251,6 +251,22 @@ async function beginDelivery(input: {
       return "superseded";
     }
 
+    // V1 paid reply credit and provider send must be mutually exclusive
+    // with a concurrent restore/release. The owner-owned narrow function
+    // locks the actual debit ledger row until this transaction commits.
+    // No generic tenant UPDATE on reply_ledger is ever granted.
+    const login = await client.query<{ session_login: string }>(
+      "SELECT session_user::text AS session_login",
+    );
+    if (login.rows[0]?.session_login === "fawri_restricted_runtime") {
+      const admission = await client.query<{ can_send: boolean }>(
+        `SELECT public.fawri_v1_auto_reply_send_admit(
+          $1::text,$2::text) AS can_send`,
+        [prepared.merchantId, prepared.eventId],
+      );
+      if (admission.rows[0]?.can_send !== true) return "superseded";
+    }
+
     const current = await client.query<DeliveryRow>(
       `SELECT outcome::text AS outcome, provider_message_id, failure_code,
               attempted_at, finalized_at

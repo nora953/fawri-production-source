@@ -22,7 +22,7 @@ import {
   cashierOperatorHeaders,
   getCashierOperatorSession,
   getOrCreateCashierDeviceIdentity,
-  writeCashierDeviceIdentity,
+  writeCashierDeviceIdentityIfUnchanged,
   type CashierOperatorSession,
 } from './cashierOperatorSessionRuntime';
 
@@ -460,8 +460,12 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
   if (
     identity.cloud_merchant_id !== session.context.merchant_id ||
     identity.device_id !== session.context.device_id ||
-    identity.location_id !== session.context.location_id
+    identity.location_id !== session.context.location_id ||
+    identity.station_id !== session.context.station_id ||
+    identity.station_token !== session.context.station_token
   ) {
+    // Catalog HTTP may finish after another tab has already re-paired this
+    // device. Never apply the older station's response to the new binding.
     throw new CashierOperatorCloudSyncError(
       'CASHIER_OPERATOR_DEVICE_MISMATCH',
       'Cashier local identity does not match the paired operator station',
@@ -507,10 +511,20 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
     preserveLocalInventory,
     syncedAt,
   });
-  await writeCashierDeviceIdentity({
+  // A second tab may re-pair the station while the IndexedDB catalog and
+  // cost-evidence writes await completion. Do not write the captured old
+  // station/token back over a newer bootstrap identity at the end.
+  const unchanged = await writeCashierDeviceIdentityIfUnchanged(identity, {
     ...identity,
     last_catalog_sync_at: syncedAt,
   });
+  if (!unchanged) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_DEVICE_MISMATCH',
+      'Cashier station changed during catalog synchronization',
+      409,
+    );
+  }
 
   return {
     merchant_id: session.context.merchant_id,
@@ -527,31 +541,97 @@ function groupByOperation(
   envelopes: CashierSyncEnvelope[],
 ): Map<string, CashierSyncEnvelope[]> {
   const groups = new Map<string, CashierSyncEnvelope[]>();
+  const completed = new Set<string>();
+  let activeOperationId: string | null = null;
   for (const envelope of envelopes) {
+    if (envelope.operation_id !== activeOperationId) {
+      if (activeOperationId !== null) completed.add(activeOperationId);
+      if (completed.has(envelope.operation_id)) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+          'Pending cashier operation envelopes are not contiguous',
+          409,
+        );
+      }
+      activeOperationId = envelope.operation_id;
+    }
+    if (!envelope.operation_id || !String(envelope.operation_id).trim()) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+        'Pending cashier envelope has no operation identity',
+        409,
+      );
+    }
     const list = groups.get(envelope.operation_id) || [];
+    if (list.length > 0 && list[0].device_sequence !== envelope.device_sequence) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+        'Pending cashier operation has inconsistent device sequences',
+        409,
+      );
+    }
     list.push(envelope);
     groups.set(envelope.operation_id, list);
+  }
+  // IndexedDB orders pending envelopes by sequence, but an inconsistent
+  // operation identity must never let a later sequence overtake an earlier one.
+  let previousSequence = 0;
+  for (const [, operation] of groups) {
+    const sequence = operation[0].device_sequence;
+    if (!Number.isSafeInteger(sequence) || sequence <= previousSequence) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+        'Pending cashier operation sequence is not strictly increasing',
+        409,
+      );
+    }
+    previousSequence = sequence;
   }
   return groups;
 }
 
 /**
- * listPendingSync is envelope-count limited. When it returns a full window we
- * cannot know whether the final operation continues just beyond that window.
- * Never upload that final operation partially: process only operations that end
- * before the boundary and leave the boundary operation intact for the next sync.
+ * Peek one envelope beyond the safe upload limit. A full window of 1000
+ * envelopes may already contain 1000 *complete* operations, including one
+ * operation with exactly 1000 envelopes. Never stall or discard that case.
+ * If the 1001st continues the boundary operation, leave that entire
+ * operation pending for a later upload; a single operation larger than the
+ * limit remains blocked for explicit recovery, never partially uploaded.
  */
 function completeOperationWindow(
-  pending: CashierSyncEnvelope[],
+  batch: CashierSyncEnvelope[],
 ): CashierSyncEnvelope[] {
-  if (pending.length < MAX_PENDING_ENVELOPES) return pending;
-  const boundaryOperationId = String(
-    pending[pending.length - 1]?.operation_id || '',
-  ).trim();
-  if (!boundaryOperationId) {
+  const pending = batch.slice(0, MAX_PENDING_ENVELOPES);
+  if (batch.length <= MAX_PENDING_ENVELOPES) return pending;
+  const last = pending[pending.length - 1];
+  const next = batch[MAX_PENDING_ENVELOPES];
+  const boundaryOperationId = String(last?.operation_id || '').trim();
+  const nextOperationId = String(next?.operation_id || '').trim();
+  if (!boundaryOperationId || !nextOperationId ||
+      !Number.isSafeInteger(last.device_sequence) ||
+      !Number.isSafeInteger(next.device_sequence) ||
+      last.device_sequence <= 0 || next.device_sequence <= 0) {
     throw new CashierOperatorCloudSyncError(
       'CASHIER_OPERATOR_OUTBOX_CORRUPT',
-      'Pending cashier operation identity is missing',
+      'Pending cashier batch boundary is invalid',
+      409,
+    );
+  }
+  if (last.operation_id !== next.operation_id) {
+    if (last.device_sequence === next.device_sequence ||
+        next.device_sequence < last.device_sequence) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+        'Different cashier operations share or reverse the device sequence',
+        409,
+      );
+    }
+    return pending;
+  }
+  if (last.device_sequence !== next.device_sequence) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+      'One cashier operation has inconsistent device sequences',
       409,
     );
   }
@@ -571,27 +651,20 @@ function completeOperationWindow(
 function operationKind(
   envelopes: CashierSyncEnvelope[],
 ): 'sale' | 'return' | 'void' | 'skip' {
-  if (
-    envelopes.some(
-      (item) => item.entity_type === 'return' && item.operation === 'append',
-    )
-  ) {
-    return 'return';
+  // An operation has exactly one primary entity. A return, sale, or void
+  // appearing anywhere in a mixed/corrupted group must not select a route
+  // that could upload only a prefix or reinterpret an older financial event.
+  // An inventory-only adjustment has no supported operator upload contract.
+  const primary = envelopes.filter((item) => item.entity_type !== 'inventory_movement');
+  if (primary.length !== 1 ||
+      envelopes.some((item) =>
+        item.entity_type === 'inventory_movement' && item.operation !== 'append')) {
+    return 'skip';
   }
-  if (
-    envelopes.some(
-      (item) => item.entity_type === 'sale' && item.operation === 'void',
-    )
-  ) {
-    return 'void';
-  }
-  if (
-    envelopes.some(
-      (item) => item.entity_type === 'sale' && item.operation === 'append',
-    )
-  ) {
-    return 'sale';
-  }
+  const anchor = primary[0];
+  if (anchor.entity_type === 'return' && anchor.operation === 'append') return 'return';
+  if (anchor.entity_type === 'sale' && anchor.operation === 'void') return 'void';
+  if (anchor.entity_type === 'sale' && anchor.operation === 'append') return 'sale';
   return 'skip';
 }
 
@@ -739,7 +812,49 @@ async function postOperation(
   };
 }
 
+// Auto-sync and manual "Sync now" run in the same app module. Prevent two
+// drain loops from racing the same IndexedDB outbox and device timeline.
+// This is per JavaScript app instance only; it does not attest cross-tab locks
+// or replace the server's authoritative sequencing/replay constraints.
+let operatorOutboxSyncInProgress = false;
+
 export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperatorOutboxSyncResult> {
+  if (operatorOutboxSyncInProgress) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_SYNC_IN_PROGRESS',
+      'A cashier outbox synchronization is already in progress',
+      409,
+    );
+  }
+  operatorOutboxSyncInProgress = true;
+  try {
+    // Web Locks serialize outbox drains across tabs on the same browser origin.
+    // ifAvailable never queues a stale attempt behind a later shift/login.
+    // Older browsers without Web Locks retain the same-app guard and server
+    // sequencing; cross-device admission remains solely server-authoritative.
+    if (typeof navigator !== 'undefined' && navigator.locks?.request) {
+      return await navigator.locks.request(
+        'fawri:cashier-operator-outbox:v1',
+        { mode: 'exclusive', ifAvailable: true },
+        async (lock) => {
+          if (!lock) {
+            throw new CashierOperatorCloudSyncError(
+              'CASHIER_OPERATOR_SYNC_IN_PROGRESS',
+              'Another cashier tab is already synchronizing this outbox',
+              409,
+            );
+          }
+          return await performCashierOperatorOutboxSync();
+        },
+      );
+    }
+    return await performCashierOperatorOutboxSync();
+  } finally {
+    operatorOutboxSyncInProgress = false;
+  }
+}
+
+async function performCashierOperatorOutboxSync(): Promise<CashierOperatorOutboxSyncResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     throw new CashierOperatorCloudSyncError(
       'CASHIER_OPERATOR_OUTBOX_OFFLINE',
@@ -766,9 +881,53 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     databaseName: `fawri-cashier-${identity.local_merchant_id}-v1`,
   });
   try {
-    const pending = await authority.listPendingSync(MAX_PENDING_ENVELOPES);
-    const uploadable = completeOperationWindow(pending);
+    // Look ahead by one envelope before deciding whether the boundary is
+    // complete. The extra envelope is never uploaded in this drain.
+    const batch = await authority.listPendingSync(MAX_PENDING_ENVELOPES + 1);
+    const pending = batch.slice(0, MAX_PENDING_ENVELOPES);
+    const uploadable = completeOperationWindow(batch);
     const groups = groupByOperation(uploadable);
+    // Reject the entire bounded batch before network I/O when an earlier
+    // operation belongs to another staff member or station. Same-staff prior
+    // shifts may upload only after the server verifies historical attribution.
+    // This is only a best-effort preflight: IndexedDB can change between
+    // awaits, so the per-operation binding check below remains mandatory.
+    // Neither check authorizes historical-shift recovery or rewrites binding.
+    // Classify the full batch first: an unsupported later operation must not
+    // be masked by an earlier missing binding or trigger a partial upload.
+    for (const [, envelopes] of groups) {
+      if (operationKind(envelopes) === 'skip') {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_UNSUPPORTED_OPERATION',
+          'Pending cashier operation requires reconciliation before the outbox can sync',
+          409,
+        );
+      }
+    }
+    for (const [operationId, envelopes] of groups) {
+      const kind = operationKind(envelopes);
+      const binding = await getCashierOperationBinding(operationId);
+      if (!binding) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_OPERATION_BINDING_MISSING',
+          'Pending cashier operation has no operator binding',
+          409,
+        );
+      }
+      if (
+        binding.operation_kind !== kind ||
+        binding.merchant_id !== session.context.merchant_id ||
+        binding.station_id !== session.context.station_id ||
+        binding.staff_id !== session.context.staff_id ||
+        binding.device_id !== session.context.device_id
+      ) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT',
+          'Pending cashier operation belongs to another operator, station, or device',
+          409,
+        );
+      }
+    }
     let uploaded = 0;
     let replayed = 0;
     let skipped = 0;
@@ -777,8 +936,15 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
     for (const [operationId, envelopes] of groups) {
       const kind = operationKind(envelopes);
       if (kind === 'skip') {
-        skipped += 1;
-        continue;
+        // Do not advance the server timeline past a locally pending sequence
+        // that has no supported upload contract. Preserve every envelope for
+        // explicit reconciliation instead of making a later operation appear
+        // to be the next durable sequence.
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_UNSUPPORTED_OPERATION',
+          'Pending cashier operation requires reconciliation before later operations can sync',
+          409,
+        );
       }
       const binding = await getCashierOperationBinding(operationId);
       if (!binding) {
@@ -793,12 +959,11 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
         binding.merchant_id === session.context.merchant_id &&
         binding.station_id === session.context.station_id &&
         binding.staff_id === session.context.staff_id &&
-        binding.shift_id === session.context.shift_id &&
         binding.device_id === session.context.device_id;
       if (!bindingMatches) {
         throw new CashierOperatorCloudSyncError(
           'CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT',
-          'Pending cashier operation belongs to another operator or shift',
+          'Pending cashier operation belongs to another operator, station, or device',
           409,
         );
       }
@@ -815,7 +980,7 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
           409,
         );
       }
-      await authority.acknowledgeSynced([operationId]);
+      await authority.acknowledgeSyncedExact(operationId, envelopes);
       acknowledged += 1;
       if (uploadedResult.replayed) replayed += 1;
       else uploaded += 1;

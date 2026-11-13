@@ -297,6 +297,104 @@ export function isKnownHistoricalEntrypointFenceFixture(finding, objectPath, obj
     finding.rule === "credential-url" && finding.index === 641 && finding.length === 54;
 }
 
+// Fabricated pre-import rejection input from the initial fresh-role rehearsal.
+ // The current test no longer embeds credentials. Only this immutable historical
+ // blob/path/rule/span is classified as a fixture; all changed findings still fail.
+export function isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) {
+  return objectId === "5b2ebc7b8262d8cc44fda859a2bab52337bafb59" &&
+    normalizeRepositoryPath(objectPath) === "scripts/tests/disposable-cashier-role-recovery.test.mjs" &&
+    finding.rule === "credential-url" && finding.index === 2607 && finding.length === 54;
+}
+
+
+ // A 2026-11-04 FIELD002 documentation revision briefly contained a generic
+ // illustrative connection URL, without any real credential or endpoint.
+ // Its immutable historical Git blob remains reachable even after the current
+ // file was corrected. Recognize only that exact synthetic substring at its
+ // precise position in that one immutable blob, never other URLs or findings.
+ const FIELD002_ILLUSTRATIVE_CONNECTION = [
+   "postgresql://role:", "password", "@host",
+ ].join("");
+ export function isKnownHistoricalField002IllustrativeUrl(text, finding, objectPath, objectId) {
+   if (objectId !== "ed0250ab4e829f4317b189f3a1696c3940d3b42b" ||
+       normalizeRepositoryPath(objectPath) !==
+         "docs/final-audit/evidence/P0-FIELD002-RAILWAY-NEON-LIVE-ENDPOINT-CORRELATION-20261104.md" ||
+       finding.rule !== "credential-url" ||
+       finding.index !== 13302 ||
+       finding.length !== 31) return false;
+   return String(text).slice(finding.index, finding.index + finding.length) ===
+     FIELD002_ILLUSTRATIVE_CONNECTION;
+ }
+
+// These three immutable FIELD002 test blobs contained a deliberately fake
+// password fragment in a SOURCE-STRING BUILDER. The apparent credential URL
+// ends at a quote; the hostname was concatenated separately, never committed
+// as a credential-bearing URL. The test now builds the fixture at runtime.
+// Pin exact blob/path/regex-span and synthetic substring; all other findings
+// remain reportable, including real URLs or any future modified file.
+const FIELD002_SYNTHETIC_URL_FRAGMENT = [
+  "postgresql://neondb_owner:", "encoded%40fixture", "@'",
+].join("");
+export function isKnownHistoricalField002SyntheticBuilderFixture(text, finding, objectPath, objectId) {
+  if (normalizeRepositoryPath(objectPath) !==
+      "scripts/tests/field002-isolated-acceptance-plan.test.mjs" ||
+      finding.rule !== "credential-url") return false;
+  const locations = {
+    "d739b637f04a36187727eed4714ea29958b27919": [280, 45],
+    "03acd56b7185a1be6b7ab0e3e4b0b997997009cc": [280, 45],
+    "65f004befa5e5d6c8e4c8cbf8f3d6777d5aeaef8": [255, 45],
+  };
+  const expected = locations[objectId];
+  return !!expected && finding.index === expected[0] &&
+    finding.length === expected[1] &&
+    String(text).slice(finding.index, finding.index + finding.length) ===
+      FIELD002_SYNTHETIC_URL_FRAGMENT;
+}
+
+// FIELD002 2026-11-07: three immutable historical test blobs briefly held
+// *synthetic* credential-shaped URLs used only by production-config rejection
+// tests. Current source constructs these URLs at runtime. Preserve the full
+// history scanner and pin every reviewed fixture by immutable Git blob, path,
+// rule, byte span, AND exact synthetic bytes; never allow a host or path broadly.
+const FIELD002_HISTORICAL_AUTH_URI_FRAGMENTS = Object.freeze([
+  ["postgresql://fawri_restricted_runtime:", "tenant-synthetic", "@db.internal:5432"].join(""),
+  ["postgresql://fawri_auth_issuer:", "auth-synthetic", "@db.internal:5432"].join(""),
+  ["postgresql://%2X:", "secret", "@db.internal:5432"].join(""),
+  ["postgresql://${username}:", "not-a-secret", "@db.internal:5432"].join(""),
+  ["postgresql://fawri_restricted_runtime:", "x", "@ep-test-case.c-5.eu-central-1.aws.neon.tech:5432"].join(""),
+  ["postgresql://fawri_auth_issuer:", "y", "@ep-test-case-pooler.c-5.eu-central-1.aws.neon.tech"].join(""),
+  ["postgresql://fawri_restricted_runtime:", "changed-not-real", "@db.internal:5432"].join(""),
+  ["postgresql://fawri_auth_issuer:", "changed-not-real", "@db.internal:5432"].join(""),
+  ["postgresql://fawri_tenant_runtime_v2:", "synthetic", "@db.internal:5432"].join(""),
+]);
+const FIELD002_HISTORICAL_AUTH_URI_SPANS = Object.freeze({
+  "12dad94ed53c718f9aab732559a3aec5775f6cdb": [
+    [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+    [4192, 71, 6], [4302, 64, 7],
+  ],
+  "d42ab0e7ef1ed156e675b84acbed4bbb6cea444f": [
+    [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+    [4502, 88, 4], [4630, 83, 5], [5352, 71, 6], [5462, 64, 7],
+  ],
+  "9de3f64f0023b551e0f925476cf11e121839adb6": [
+    [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+    [4502, 88, 4], [4630, 83, 5], [5352, 71, 6], [5462, 64, 7],
+    [15945, 63, 8],
+  ],
+});
+
+export function isKnownHistoricalField002AuthConfigFixture(text, finding, objectPath, objectId) {
+  if (normalizeRepositoryPath(objectPath) !==
+      "artifacts/api-server/tests/production-release-readiness.test.ts" ||
+      finding.rule !== "credential-url") return false;
+  const spans = FIELD002_HISTORICAL_AUTH_URI_SPANS[objectId] || [];
+  const match = spans.find(([index, length]) =>
+    finding.index === index && finding.length === length);
+  return !!match && String(text).slice(finding.index,
+    finding.index + finding.length) ===
+    FIELD002_HISTORICAL_AUTH_URI_FRAGMENTS[match[2]];
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -375,7 +473,11 @@ function scanHistory(root) {
         isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath) ||
         isKnownHistoricalRestoreRejectionFixture(finding, objectPath, objectId) ||
         isKnownHistoricalDisposableGuardFixture(finding, objectPath, objectId) ||
-        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId)
+        isKnownHistoricalEntrypointFenceFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) ||
+        isKnownHistoricalField002IllustrativeUrl(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalField002SyntheticBuilderFixture(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalField002AuthConfigFixture(objectText, finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,
@@ -455,6 +557,26 @@ function scanOutput(inputs) {
   return findings.length === 0 ? 0 : 1;
 }
 
+export function summarizeBlockingAdvisories(payload) {
+  const advisories = payload?.advisories;
+  if (!advisories || typeof advisories !== "object" || Array.isArray(advisories)) return [];
+  const rows = [];
+  for (const advisory of Object.values(advisories)) {
+    if (!advisory || !["high", "critical"].includes(advisory.severity)) continue;
+    const name = advisory.module_name;
+    const ghsa = advisory.github_advisory_id;
+    // Only bounded public identifiers, never advisory text, URLs, findings,
+    // dependency paths, request headers or raw registry error payloads.
+    const row = { severity: advisory.severity };
+    if (typeof name === "string" && name.length <= 128 &&
+        /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(name)) row.package = name;
+    if (typeof ghsa === "string" && /^GHSA-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}$/.test(ghsa)) row.ghsa = ghsa;
+    rows.push(row);
+    if (rows.length === 50) break;
+  }
+  return rows;
+}
+
 function dependencyAudit() {
   const result = spawnSync("pnpm", ["audit", "--json", "--audit-level=high"], {
     cwd: process.cwd(),
@@ -478,6 +600,7 @@ function dependencyAudit() {
     status: evaluation.status,
     vulnerabilities: counts,
     blocking_severities: ["high", "critical"],
+    blocking_advisories: summarizeBlockingAdvisories(payload),
   };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 

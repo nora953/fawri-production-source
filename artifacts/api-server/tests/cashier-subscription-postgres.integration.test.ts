@@ -29,6 +29,9 @@ test(
       FAWRI_CASHIER_GRACE_SECONDS: String(7 * 24 * 60 * 60),
     });
 
+    const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    // Application imports below use the actual tenant LOGIN, never this root inspector.
     const [
       { pool },
       { hashPassword },
@@ -36,7 +39,7 @@ test(
       cashier,
       entitlement,
     ] = await Promise.all([
-      import("@workspace/db"),
+      Promise.resolve({pool:runtimeFixture.admin}),
       import("../src/services/authPasswordService.js"),
       import("../src/services/postgresMerchantAccountAuthority.js"),
       import("../src/services/postgresCashierStaffAuthority.js"),
@@ -47,7 +50,7 @@ test(
 
     t.after(async () => cleanupResources([
       ['fixture accounts', () => pool.query('DELETE FROM accounts WHERE id = ANY($1::text[])', [merchantIds])],
-      ['pool', () => pool.end()],
+      ['actual runtime fixture', () => runtimeFixture.dispose()],
     ]));
 
     async function createMerchant(label: string) {

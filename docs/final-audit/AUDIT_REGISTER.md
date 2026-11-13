@@ -1,3 +1,363 @@
+## P0 0050 source accepted;0051 remaining tenant boundaries prepared — 2026-10-24
+
+Verified executable `931acbfcfb0cbd2601eec053a7bd2e06aefb02cf` completed **52/52 workflows SUCCESS**. Checkout `c75d12964487717e6166101f82062fe8d65a996d` matches tree `1ca16a25ad732a1979bf6e3a842cd3ba9edd39bd`. Normal quality40056263139/job120759808005 **4new declarative/snapshot regressions PASS**, API879PASS/1existing opt-in SKIP. Native40056263207/job120759808022 SUCCESS (8cases). Isolated40056263189/job120759883715 **91clean invocations/89unique files/709TAP passes,0fail/skip/cancel**. Strict3-table marker confirms9read/18mutation denials,3readiness disable probes and actual note/override/request creation/review/rollback/peer preservation. Restore51migrations/95tables/69effective policies/17functions and equal seed/verify fingerprint7ffaa54596f36b785acf3d408f7d53d936e140bc46b814e8e216fc845bbc8564. Management3-table source subgate VERIFIED; HTTP/hosted acceptance still OPEN. Residual diagnostic separately confirms3protected/5remaining unprotected; green harness not privacy acceptance.
+
+Prepared smallest remaining5-table tenant isolation correction for audit_events,manual_reply_requests,notifications,order_drafts,processed_channel_events: preserve genuine own-tenant operations, allow existing trusted auth global work, deny directory-only authority, keep administrative notifications invisible/unwritable to ordinary tenant scope. Existing admin audit append/system incident history now use the already-required authentication transaction rather than unscoped primary; response/business behavior unchanged. Other own-merchant notification/manual services retain their existing scoped transaction routing.
+
+Append-only reviewed0051SQL/journal/preimages pinned SHA256 `1773f8314f11c832a1c03453204af2896b204b80695066ebc06cded7b11e62ea`; source readiness requires all5boundaries. New owned strict suite preserves documented broad fixture grants and checks genuine own reads/no-op writes/rollback, no-scope/foreign read-write denial, admin notification protection, directory-only rejection, actual notification dedupe, manual failure persistence, admin audit and global incident lifecycle. No provider send/network or hosted access. Syntax, unattested refusal before SQL, pinned SQL and existing journal/preflight2PASS locally; new runtime assertions **PREPARED/CI_PENDING**. Generated0051snapshot is pending candidate retrieval; intermediate smoke failures until artifact completion are not final product results.
+
+Exact next: inspect canonical0051generation, retrieve/hash-review snapshot and unchanged historical files, adopt, then require all5strict actual-service assertions plus retained3-table private proof and8-table diagnostic with no foreign visibility/mutation. Preserve source/HTTP/hosted distinctions. P0-RESIDUAL-MERCHANT-PRIVACY-001 remains OPEN; complete actor/field/retention inventory, hosted key/role/schema/provider/device/rollout, incident and retention/ownership policy remain OPEN/BLOCKED_HOSTED_VERIFICATION. **NO-GO**; no percentage/main/merge/deploy/P1/P2.
+
+---
+
+## P0 0050 generated management snapshot adopted — 2026-10-24
+
+Source9b767e5 canonical candidate40055851337/job120758548939 **SUCCESS**: committed_reproducible=true,historical_reproducible=true,51entries. Artifact12544339907 ZIP SHA256 `9ecdc4ee9757065c9dc76a7b6a896a8ab68f627eb8744de1d698f4ef46e17c42` verified; all102existing canonical/historical files byte-identical. Adopted only generated0050snapshot,626498bytes,SHA256 `e74addb89781fdb3b0577ea6aabfb0bc2b950b8f7915941434b971bf92b2a305`. Semantic changes limited to policies+isRLSEnabled for merchant_admin_notes,merchant_channel_overrides,merchant_deletion_requests plus snapshot identifiers.95tables/1245fields retained; all70required RLS declarations present.
+
+Four actual Drizzle/latest-snapshot unit regressions now join the strict3-table SQL/service proof. Current containing source is complete for0050 metadata but **normal exact-source CI PENDING**. Prior missing0050snapshot smoke failures are intermediate artifact-completion failures, not accepted final source. No prior snapshots/SQL, tenant predicate, source service routing, fixture grants, smoke expectations or security thresholds changed.
+
+Keep P0-RESIDUAL-MERCHANT-PRIVACY-001 OPEN pending strict9read/18mutation denial targets and actual trusted note/override/request creation/review/rollback/peer results; these counters are targets until raw proof is read. Retained8-table diagnostic must separately show3protected and5remaining unresolved tables. No inference from a green diagnostic or synthetic grant plan to hosted/HTTP acceptance. Last fully executed source62bed3c remains52/52 with90invocations/704TAP but observed privacy gap.
+
+Next inspect completed-source4units, strict management marker, residual observations, canonical51entry reproduction, owned full migration/restore/SQL/native/security/quality CI; fix real failures, preserve baseline evidence and trusted operations. Remaining5tables, full field-role/privacy/retention inventory and hosted/incident/ownership gates stay OPEN/BLOCKED_HOSTED_VERIFICATION. **NO-GO**; no percentage/main/merge/deploy/P1/P2.
+
+---
+
+## P0 residual privacy baseline verified;0050 management remediation prepared — 2026-10-24
+
+Executed source `62bed3cd19dfe6ec4273194cc1d0e5045b825752` finished **52/52 workflows SUCCESS**. Isolated40054814184/job120755341034: **90clean invocations/88unique files/704TAP passes,0fail/skip/cancel**, including new residual suite4PASS. Its diagnostic success explicitly does NOT accept foreign visibility. Two synthetic merchants/actual restricted primary LOGIN with documented broad fixture CRUD: all8tables lacked RLS, unscoped/scoped queries each exposed own+foreign synthetic records, foreign no-op UPDATE affected1row per table then forcibly rolled back; trusted global reads/exact rollback/pooled scope reset PASS. No HTTP breach or hosted privilege exposure inferred. Canonical finding **P0-RESIDUAL-MERCHANT-PRIVACY-001 HIGH/OPEN** is bounded to that verified authority/privilege configuration; no complete P0 privacy acceptance.
+
+Source trace identifies3 private administrative management tables—merchant_admin_notes,merchant_channel_overrides,merchant_deletion_requests—whose legitimate consumers already exclusively use authenticationDatabasePool/withAuthenticationTransaction/withMerchantAuthenticationTransaction in postgresMerchantManagementAuthority.ts. Prepared smallest3-table correction: auth-only actual-LOGIN RLS policies, matching declarative flags and readiness requirements, append-only reviewed0050SQL/journal/preimages. No new service routing/configuration/business policy or grants. Pinned SQL SHA256 `75ec211ebfec841219fd37b2c8f68324e8b10059cf81dd02c7c7f274cdef53f1`. Historical0000–0049 unchanged.
+
+New strict owned suite exercises readiness fail-closed for each table, no-scope and genuine tenant read denials, update/delete/upsert denials with forced rollback, actual trusted note/channel-override/deletion-create/review services, peer preservation and rollback. Registered before the retained8-table diagnostic in the existing audit-boundary lane. New SQL assertions **PREPARED/CI_PENDING**, not executed locally. Syntax/whitespace, pinnedSQL/journal controls2PASS and unattested refusal before DBsetupPASS. Generated0050snapshot intentionally pending; smoke gates may report its absence until canonical candidate is retrieved and committed. No expectation/guard weakening.
+
+Remaining5 residual tables audit_events,manual_reply_requests,notifications,order_drafts,processed_channel_events stay OPEN; do not apply blanket policy without preserving own-tenant/background/admin contracts. Complete field/actor/privacy/retention denominator, hosted identity/ACL/keys/provider/device/rollout, incident and retention/ownership policy stay OPEN/BLOCKED_HOSTED_VERIFICATION. **NO-GO**, no overall percentage/main/merge/deploy/P1/P2.
+
+Exact next: retrieve canonical0050candidate and verify unchanged historical artifacts, adopt only generated0050snapshot; inspect new3-table strict proof and revised8-table diagnostic (3denied/5still open), fix fixtures vs product failures distinctly; require final exact-source canonical/build/types/native/full SQL/restore/security acceptance before bounded source closure.
+
+---
+
+## P0 0049 exact-source accepted; residual privacy baseline prepared — 2026-10-24
+
+Verified executable `62d274f4f05a5332ed8bd62b733c20b3e1bf87b9`: **52/52 workflows SUCCESS**,0pending/failed/cancelled. Checkout `092ec1038b08c2e0d98b0d4f29ebe2c90f0a9445` independently matches tree `88f0095fbdb50fecb49d0e2749d2cc39e29aa757`. Three actual Drizzle table/policy/latest-snapshot regressions PASS in normal quality40054017738/job120752842495: API875PASS/1existing opt-in SKIP, frontend188PASS/0SKIP. Canonical40054017544 and complete-schema40054017389 SUCCESS; prior missingSQL/missingSnapshot failures retained, no rule weakened.
+
+Isolated40054017508/job120753095194 **89clean invocations/87unique files/700TAP passes,0fail/skip/cancel**. Full restore50migrations/95tables/66effective policies/17functions, seed/verify fingerprintf3fbabc87766315742be46f49c723f5a557493a60ef3fe8306883c39e111b8a7 identical; restricted tenant reads/private scope ACL preserved. Native40054017403 initial120752840020 timed out launching Chrome before0assertions; exactly one scoped failed-job retry120753320590 **8/8PASS** on same source. Native ACK remains synthetic; HTTP/SQL proof separate. Security40054017603 all4jobsSUCCESS; dependency120752841266 **0High/0Critical/4Moderate** at latest scan (earlier2Moderate was historical). No advisory exceptions.
+
+0049 source-generation drift subgate is SOURCE_RUNTIME_VERIFIED. Existing runtime0035 tenant policy is unchanged; no new tenant authority/grants or hosted acceptance. Previous snapshots/SQL immutable. Full field/actor/privacy/retention inventory still incomplete.
+
+Next authorized test-only batch adds residual-merchant-privacy-authority-postgres.integration.test.mjs first in existing owned audit-boundary/priority lane:8 previously unclassified merchant-key tables,2 synthetic merchants, actual restricted primary LOGIN plus distinct trusted auth, genuine scoped/unscoped/global reads, no-op foreign UPDATE with unconditional rollback, exact trusted snapshots and pooled authority reset. Observational diagnostic only: successful harness execution does NOT accept any observed foreign visibility or certify HTTP/hosted permissions. Existing broad fixture CRUD is explicit, not a production grant plan. New runtime assertions **PREPARED/CI_PENDING**, not counted executed; syntax, unattested refusal before DB setup and15existing guard controlsPASS locally. Current containing head is new test/evidence source and not the verified62d274f executable above.
+
+Exact next: inspect new suite's P0_RESIDUAL_MERCHANT_PRIVACY_BASELINE plus AUDIT_SUITE_RESULT/cleanup, distinguish fixture errors from authority observations; reconcile intended actor/privacy boundaries before focused remediation while preserving trusted legitimate operations. Expected new suite/invocation totals must be taken from logs, not inferred. Hosted key/schema/role/provider/device/rollout BLOCKED_HOSTED_VERIFICATION; incident review, complete P0 inventory and retention/ownership policy OPEN. **NO-GO**; no percentage/main/merge/deploy/P1/P2.
+
+---
+
+## CURRENT VERIFIED P0 CHECKPOINT — 2026-10-24
+
+Executable `2f782c850c50526e2fe977f026b6f07ff0d867b7`, tree `8b0f1905cceaad6e9e25a6f0efa7441bb896fb36`; actual CI checkout `310e19e98baf809e455f2a20045d46443a5063db` independently has the identical tree. **52/52 workflows SUCCESS;0pending/failed/cancelled.** This final source evidence supersedes pending observations above/below only within its tested scope. A containing documentation-only checkpoint does not imply a separate runtime execution.
+
+**Completed:** authenticated server-only ES256/P-256 offline issuance; merchant/station/device/location/credential/subscription/version/expiry/main-station claims; pinned release-key checks before persistence, offline restore and each offline sale; unsigned legacy-cache rejection; safe online-only/missing-key rollout behavior; current employee policy before online sale; preserved authorized discount permissions and reconnect refresh; pre-bundle rejection of private JWK material; validated zod3.25.76→4.6.7 catalog/lock migration. Private signing key never included in browser/API/source. No operational key provisioned.
+
+**Executed evidence:** native40032570066/job120684154158 Chrome155.0.8059.39 **8/8PASS**. Isolated40032569968/job120684424579 **89/89clean invocations/87unique files,700TAP passes,0fail/skip/cancel**, including actual signed login/refresh/secondary/missing-config HTTP and retained historical-sale ACK/replay/stock/attribution proof. Quality40032570016 full build/typecheck SUCCESS: source413PASS/1retained opt-in SKIP, API871PASS/1retained opt-in SKIP, frontend188PASS/0SKIP; these broader skips are not hidden in native counts. Security40032569921 all four jobs SUCCESS: **0high/0critical/2moderate**. Candidate40032569923/job120684152253 SUCCESS confirms exact adopted catalog/lock hashes and isolated HTTP compatibility; original candidate40031885405 also ultimately SUCCESS after slow oversized optional log emission. Bounded hash-only output now replaces that unnecessary text. Failed cleanup/startup attempts and scoped failed-job retry remain recorded, not overwritten.
+
+[Exact current evidence and all52 runs](evidence/P0-CASHIER-OFFLINE-SIGNED-20261024.json) · [bounded access proof reconciliation](evidence/P0-ACCESS-CONTROL-PROOF-INVENTORY-20261023.json) · [offline implementation/rotation/migration/limits](P0-CASHIER-OFFLINE-ENTITLEMENT-TRUST-BOUNDARY-20261023.md).
+
+| Requirement | Current disposition |
+| --- | --- |
+| CASHIER-OFFLINE-001 | SOURCE_RUNTIME_VERIFIED; hosted acceptance OPEN/BLOCKED_HOSTED_VERIFICATION |
+| GHSA-mrhx-c7xc-m3w5 / zod High | SOURCE_REMEDIATED_AND_CI_VERIFIED on4.6.7; no exception or weakened threshold |
+| Existing emergency0048 source scope | Current strict remediation/HTTP regressions PASS; obsolete pending inventory row reconciled; no hosted acceptance inferred |
+| Hosted key/release/schema/role/identity/pooling/device/branch/provider/rollout evidence | BLOCKED_HOSTED_VERIFICATION under GitHub-only restriction; no hosted connector or mutation performed |
+| Incident review and complete unique P0 requirement/role/privacy inventory | OPEN; bounded proof inventory is not the full P0 denominator |
+
+**Release NO-GO.** No overall P0 percentage. Seven-day signed licensing/grace bounds do not extend operator-session lifetime or provide instant offline revocation/trusted hardware time; complete-profile/OS-clock tampering and hosted production readiness are not certified. Native acknowledgement is synthetic; actual network-none SQL/HTTP original-shift recovery is separately verified.
+
+**Exact next GitHub-only action:** use the updated bounded proof inventory to reconcile remaining unique P0 requirement/actor/privacy/retention/missing-order rows and their evidence; keep whole-P0 completeness false until every required row is accounted for. Do not restart signed-entitlement, zod, Support or0048 remediation without changed code/new demonstrated failure. Any live key provisioning, hosted identity/schema/ACL/provider/device acceptance, rollout or deployment remains blocked under current authorization. Keep PR550 Draft and existing base; no main/merge/deploy/P1/P2.
+
+---
+
+## CURRENT P0 SOURCE ACCEPTANCE — 2026-10-23
+
+0048 candidate `655b7a37dddb987778cda7e589fbd3a438b7fc8d` passed 48/48 GitHub workflows and 89/89 native suite invocations (700 TAP passes). Its synthetic PR merge has zero changed files compared with the candidate. Documentation-only checkpoint `5aac594263a17707b4572f59f0b0a9e18f12869e` also finished 48/48 workflows successfully. Earlier 0048 PENDING statements below are retained historical observations, not the current source CI state. Evidence: [0048 CI verification](P0-0048-CI-VERIFICATION-20261023.md), [documentation CI observation](P0-0048-DOC-HEAD-CI-OBSERVATION-20261023.md).
+
+Still OPEN for release: hosted schema/role/identity parity, incident review, and full P0 release inventory. No hosted certification or overall P0 percentage. **NO-GO**. GitHub-only; no Railway/Neon, deploy, merge, main changes or P1/P2.
+
+---
+
+## Support privacy accepted; next emergency authority proof prepared — 2026-10-23
+
+## Emergency baseline verified;0048 correction prepared — 2026-10-23
+
+Baseline `fc4534402723d3cc75294518450f28683dce1f93` has48/48 successful workflows; native39901265636/job12024315331888 complete clean invocations/86 files,693 TAP passes,0 failure/skip/cancel. Actual checkout169c3701ab5932edd99b5c5ea50cbdb88c2ac5c7 matches treeaae824855c025cc7b3fa69f7f81b2ae5f2fb7575. Diagnostic4PASS and retained actual-session HTTP1PASS confirm measurement/authorized behavior, not emergency SQL privacy closure. Four emergency tables remain a demonstrated source privacy blocker in that baseline; mutation was not attempted. Foundation final PASS, owned image5PASS; quality build/typecheck PASS with two retained opt-in skips. Exact evidence:`evidence/P0-EMERGENCY-PRIVACY-BASELINE-20261023.json`.
+
+Prepared0048 source correction protects all four tables through the existing trusted authentication authority, preserves secure actor/session routes, filters merchant notices by session merchant, validates notice ancestry and keeps snapshots tenant-scoped. New strict SQL denial/rollback/legitimate notice tests join the retained baseline/HTTP suites. Local syntax/whitespace and source expiry1PASS; new canonical/runtime CI PENDING,89 native invocations is only a target. See`P0-EMERGENCY-PRIVACY-REMEDIATION-20261023.md`.
+
+Next: inspect exact candidate checkout/tree and49-migration reproducibility, all89 native summaries, strict emergency marker, existing owner/assistant/session/expiry/revocation/audit HTTP behavior and Support/Foundation regression. Accept only actual same-source results. Accepted Support94bc0546 remains preserved. Release **NO-GO**; hosted gates, incident review and complete P0 inventory open; no defensible overall percentage. No hosted changes/deploy/migration/ACL/secrets/main/merge/P1/P2.
+
+
+Accepted executable94bc0546a8cdfa54884f1b0d3826ba2d43c52fe0:48/48 workflows SUCCESS,0 pending/failed/cancelled. Native39900140208/job12023959573886/86 complete clean invocations across84 unique files,688 TAP passes including parents/repeated lanes,0 failed/skipped/cancelled. Executed checkoutd59c77488804981b9e6b6673f9d99bf577225eab independently matches source treeb4d530918b95c115d576c62884ea268feb9a1067. Actual Support25 read denials/15 mutation denials, authorized merchant/global/observability operations, parent checks/preflight, rollback and atomic reminders PASS. This closes the5-table Support source scope only;4 emergency tables stay OPEN.
+
+Foundation39900140195/job120239595525 final marker PASS, owned image5PASS/0FAIL/SKIP/CANCEL. Schema39900140237/job120239596022 reproduces committed/historical0047 and all48 migrations; SQLd2201f98.../snapshot61b7ef0f... match. Artifact12478463250 saved with digest. Quality39900140221 full build/typecheck SUCCESS; broader groups retain2 existing skips separately documented, not hidden in native counts. Security39900140290 audit120239596097/review1202395961880 high/0 critical/2 moderate. Previous39/48 and45/48 source failures preserved without retry/cancellation or duplicate requirement credit. [Acceptance](P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.md) · [Exact runs/counters/artifact](evidence/P0-SUPPORT-PRIVACY-ACCEPTANCE-20261023.json).
+
+Next batch contains only missing emergency proof: actual restricted-LOGIN4-table read/catalog classification with2 synthetic merchants and exact restoration; existing owner/assistant/merchant HTTP assertion set moved to owned actual tenant/auth LOGINs, mandatory attestation and visible scoped cleanup. No production source/SQL/privilege change in this next batch. Local MJS/TS syntax and whitespace PASS only; native results PENDING, target88 invocations not accepted count. [Next scope](P0-EMERGENCY-PRIVACY-PROOF-20261023.md). Next exact action: inspect containing new test source, every native summary and P0_EMERGENCY_PRIVACY_AUTHORITY_BASELINE plus unchanged authorized HTTP cases, classify before focused remediation.
+
+Release NO-GO. Hosted deployment/schema/identity/pooling, incident handling and completeP0 inventory stay open; no percentage. No hosted operation/change/deploy/migration/ACL/secret rotation/main push/merge/P1/P2.
+
+---
+
+## Support runtime proof green; final declarative RLS alignment prepared — 2026-10-23
+
+Source e2c1da253a496b3987ecc27bf00a097bc8c30c60 completed45/48 workflows SUCCESS,3 schema reproducibility failures; it is NOT full-source accepted. Native39887868060/job120200194366:86/86 complete clean invocations across84 files,688 TAP passes including parents/repeated lanes,0 failed/skipped/cancelled. Actual Support marker25 read denials/15 mutation denials PASS, authorized merchant/global operations and rollback PASS. Existing Support HTTP permission/session and deletion regressions PASS. Foundation39887868166/job120200194694 final marker PASS; owned image5PASS/0FAIL/SKIP/CANCEL. [Exact bounded runtime proof](evidence/P0-SUPPORT-PRIVACY-RUNTIME-PROOF-20261023.json).
+
+Isolated canonical mismatch reproduced exactly by changing only5 snapshot RLS booleans to false and recomputing canonical ID: generated21dfde8e... vs committed61b7ef0f.... Root cause is missing declarative enableRLS() on Support tables. Final correction keeps protective SQL/snapshot unchanged, adds enableRLS() to5 table definitions and adds original support.ts preimage to0047 so prior history remains reproducible. No tests cancelled or manually rerun; previous native completed before this source update.
+
+Next exact action: inspect containing source canonical0047/all48 migrations and full CI/native acceptance, require exact source/checkout/tree, counters and Support marker before bounded source closure. Emergency authorizations/owner alerts have no tenant key and need distinct trusted-role/privacy treatment; request data and merchant notices require an explicit actor/field matrix. Existing emergency HTTP test is not in the current owned audit runner, so no current restricted-runtime acceptance is claimed. Emergency4-table scope, hosted identity/parity/incident and fullP0 inventory remain OPEN. NO-GO; no percentage; no hosted operation/change/deploy/main/merge/P1/P2.
+
+---
+
+## Support privacy first CI rejected; focused corrections saved — 2026-10-23
+
+Source651785caa2b521ac4b800cd880f75104ad31d4e5 completed39/48 workflows SUCCESS,9 FAILURE. It is NOT accepted. Native39886897793/job120197063608 ran86 complete summaries:83 clean invocations,3 failed suites; exact TAP counters retained. Support own/foreign read/write and preflight subtests passed4 TAP items; authorized-global transaction subtest failed. No security closure from partial positives. [Original failure evidence](evidence/P0-SUPPORT-PRIVACY-FIRST-CI-20261023.json).
+
+Corrected static schema SQL representation and synchronized reviewed SQL/snapshot. Policies use explicit trusted-auth first evaluation, reject directory-only authority, and delegate tenant scope to the accepted public/private predicate boundary. No added private predicate grants for global LOGINs. Restored authorized deletion/Support global compatibility without broadening primary authority. Updated reminder source contract to assert all resets in both message transactions and no post-commit route SQL. Moved Foundation image test into existing owned network-none provisioner; attestation remains mandatory. Added directory-only denial plus actual global observability/Support positives without private-predicate grants.
+
+Local9 updated Support guards plus2 related contracts PASS; MJS/bash syntax/whitespace PASS. Typecheck and full build passed on first source; new exact-source native/canonical/CI acceptance PENDING. Original 86 summaries and9 failed workflow conclusions remain preserved; no manual retry or assertion weakening. Next inspect containing correction's canonical0047 and all86 native summaries, Support HTTP, authorized deletion, observability and Foundation image assertions. Emergency4-table privacy scope and hosted/fullP0 gates remain OPEN. NO-GO; no percentage; no hosted operations/change/deploy/main/merge/P1/P2.
+
+---
+
+## Baseline CI complete; scoped Support privacy correction prepared — 2026-10-23
+
+Recovered remote f6301e56/PR550 unchanged. Diagnostic d4ccf125 completed48/48 workflows SUCCESS,0 pending/failed/cancelled. Native39875671648/job120160553076:85 complete clean invocations/83 unique files,680 TAP passes including parents/repeated lanes,0 failed/skipped/cancelled. Schema39875671590/job120160553610 committed/historical reproduction PASS. Focused39875671803/job1201605536864PASS remains a diagnostic confirming the bounded finding, not remediation acceptance. [Final exact baseline evidence](evidence/P0-SUPPORT-PRIVACY-AUTHORITY-BASELINE-20261023.json).
+
+Prepared canonical0047 Support privacy controls for5 tables: scoped merchant access, explicit existing trusted authentication LOGIN for global Support/lifecycle/observability operations, parent-reference checks and historical-link preflight. Directory audit authority is not added to these policies. No new roles/credential/grant path. Primary readiness now requires all5 tables protected. Merchant image operations use scoped transactions; authorized admin/worker/image reads use existing identity-checked trusted transactions. Reminder resets move into message transactions, eliminating post-commit unscoped route updates. Existing route permission/session checks preserved.
+
+New owned native regression joins priority audit: effective RLS/readiness, missing-policy rejection, unscoped/foreign reads and writes, parent consistency, canonical historical preflight, authorized merchant/global operations, rollback/restoration and reminder semantics. Existing actual-HTTP Support5 and image-before-write tests retained; image fixture now uses restricted tenant/trusted auth LOGINs. Local10 contracts and MJS syntax/whitespace PASS. Native/typecheck/canonical/current-source acceptance PENDING. [Scope](P0-SUPPORT-PRIVACY-REMEDIATION-20261023.md).
+
+Next exact action: inspect containing source CI, particularly canonical0047 snapshot reproduction, new P0_SUPPORT_PRIVACY_REMEDIATION marker, all86 expected native summaries and existing Support/image/retention/observability regressions. Fix actual failures without weakening denial assertions. Emergency4-table privacy scope remains OPEN and unchanged. NO-GO; fullP0 denominator incomplete; no hosted action/change/deploy/ACL/secrets/main/merge/P1/P2.
+
+---
+
+## Support privacy baseline completed; bounded SQL privacy blocker confirmed — 2026-10-23
+
+Diagnostic source d4ccf125b67d8cb05c61190fa71dd7c46b67da20, executed checkout834f94d6a259849c252c2fee1fa4be4c6a02363f, identical tree55cf7686fc45500015a16f2f630be21abca9de6a. Focused run39875671803/job120160553686 SUCCESS:4 TAP passes,0 failed/skipped/cancelled; owned cleanup SUCCESS. Whole-source CI last snapshot43/48 SUCCESS,5 executing,0 failures; this is not final global acceptance.
+
+New P0-SUPPORT-PRIVACY-AUTHORITY-001 OPEN_CONFIRMED_BOUNDED_SQL: isolated effective-authority measurement confirms missing SQL privacy separation in the tested Support record boundary, while legitimate same-merchant reads and exact restoration pass. Nine Support/emergency tables have no effective RLS in the canonical isolated schema. No mutation attempt, HTTP exploitability, emergency payload access or hosted conclusion. [Exact bounded evidence](evidence/P0-SUPPORT-PRIVACY-AUTHORITY-BASELINE-20261023.json).
+
+Next exact action: finish remaining d4cc CI acceptance, then implement the smallest canonical Support privacy authority boundary with explicit trusted global administrator/background operations and scoped merchant reads/writes. Derive required actors from current routes/services; preserve permission revocation, exact-session preview, consent/expiry, lifecycle/image cleanup and audit-chain behavior. Do not add blanket RLS without preserving these paths or broaden primary authority. Settings00c56c26 remains accepted47/47+85/85; prior cashier acceptance untouched. NO-GO, no overall percentage, no hosted operation/change/deploy/main/merge/P1/P2.
+
+---
+
+## Support privacy authority diagnostic prepared — 2026-10-23
+
+Settings source00c56c26 remains accepted47/47 workflows and85/85 native invocations; acceptance checkpoint3571f5ab independently verified remotely. No repeated cashier remediation or passing-suite retry.
+
+Historical Support evidence already covers authenticated matching tenant, current permission revocation despite stale session claims, exact-session read-only preview and terminated preview denial. These assertions ran on00c56c26 as5 complete clean TAP tests in native39873207354/job120152397388. Historical consent-expiry/lifecycle evidence is retained in SEQ_286_289_SUPPORT_EXPIRY_POSTGRES_20261013.md and is not reclassified as current proof.
+
+Next bounded gap is effective SQL privacy authority outside the existing protected-table inventory. Prepared a separate owned network-none diagnostic for9 Support/emergency tables, actual restricted LOGIN metadata, two synthetic merchants, legitimate scoped reads, read-only visibility classification and exact restoration. No HTTP/hosted/privacy closure inferred from a green diagnostic. Existing authorized global Support, lifecycle and emergency operations must be mapped before any ACL/RLS change. [Scope](P0-SUPPORT-PRIVACY-AUTHORITY-20261023.md). Local node/bash syntax and whitespace PASS only; runtime PENDING.
+
+Next exact action: read containing P0 Support privacy authority diagnostic run and its P0_SUPPORT_PRIVACY_AUTHORITY_BASELINE/SUPPORT_PRIVACY_SUITE_RESULT markers, classify actual facts, then prepare a defensive access-control correction only if evidence warrants it. All prior accepted evidence remains bound to its original source. No hosted changes or deployment; NO-GO, complete P0 percentage UNMEASURED.
+
+---
+
+## Settings access controls accepted; remaining privacy matrix continues — 2026-10-23
+
+Accepted executable `00c56c26b2a76e0b709aa616a745dc3681b15f2a`: **47/47 workflows SUCCESS**, zero pending/failed/cancelled. Native39873207354/job120152397388 completed85/85 clean invocations across83 unique files:680 TAP passes (includes parents and repeated lanes),0 failed/skipped/cancelled. Executed checkout135948477cb9b4ed5c9188174eca3865fb596542 independently matches source tree d6ce5e3bdde05f0d222e90418eb1e20a738219ca.
+
+Focused settings proof:8 mutation-denial cases,105 grant/reachability cases; authorized management, default configuration, version checks, pending-approval invalidation, tenant boundaries, lock COMMIT/ROLLBACK and exact restoration PASS. Foundation final marker, canonical0046/all47 migrations, quality and security SUCCESS; dependency audit/review0 high/0 critical/2 moderate. Prior approval remediation4acf1351 acceptance preserved. No successful-suite rerun. [Acceptance](P0-CASHIER-SETTINGS-ACCESS-ACCEPTANCE-20261023.md) · [Exact evidence](evidence/P0-CASHIER-SETTINGS-ACCESS-ACCEPTANCE-20261023.json).
+
+Next exact action: reconcile Support/emergency privacy actors and existing restricted-runtime tests against effective SQL and global authorized operations; add only missing defensive proof before any further source authority change. Existing Support cutover on this source passed5 TAP tests; that alone is not full-domain acceptance. Whole-P0 inventory incomplete; percentage UNMEASURED. Hosted last verified28 migrations vs accepted source47, deployed DB target/login/pooling and approved rollout unresolved. **NO-GO**. No hosted action, deployment, migration, privilege/secret change, main push, merge, P1 or P2.
+
+---
+
+## Settings authority diagnostic complete; access-control fix prepared — 2026-10-23
+
+Diagnostic6fe2d4a4ab56a17dcacc134f7a6d3cca1c1f1112 completed47/47 workflows SUCCESS; native39871639878/job120147216866 has85/85 complete clean invocations/83 files. Checkoutffd8e0c1f9669fccab4bee7d9537b2bc44a29712 matches source tree32d60a328a86bba5ac36f695a5faeb9c713b56ff. Configuration mutation authority requires remediation; authorized management/tenant boundary/rollback/restoration PASS. Diagnostic green is not fix acceptance. [Exact evidence](evidence/P0-CASHIER-SETTINGS-AUTHORITY-BASELINE-20261023.json).
+
+Prepared source: settings mutations require trusted auth; merchant kind-management PUT dispatches through existing identity-checked auth transaction, with scoped primary lock/read retained by0046 projection. Pending invalidation accepts existing trusted auth or private scope; no GUC trust/new principal or role grants. Version/advisory/row lock/transaction/invalidation/replay invariants preserved. Native regression requires mutation denial, authorized management/default/version0 positives, auth marker revocation, lock COMMIT/ROLLBACK behavior, column/role ACL recovery and safe callable metadata/owner boundary. Local24 contracts/syntax/diff PASS; full native/typecheck/canonical/CI PENDING. [Scope and verification](P0-CASHIER-SETTINGS-ACCESS-CONTROL-20261023.md).
+
+Next inspect containing source P0_CASHIER_DISCOUNT_SETTINGS_AUTHORITY_REMEDIATION plus85 clean summaries and all workflows/Foundation/canonical47/security. Last accepted remediation4acf1351 remains47/47+84/84. Proof inventory updated to preserve the settings finding, not claim closure. Source candidate47 vs hosted last28; no hosted operations/change/deploy/migration/ACL/secrets/main push/merge/P1/P2. NO-GO, full P0 percentage UNMEASURED. Keep user-facing reporting high-level.
+
+---
+
+## Approval access controls accepted; settings authority diagnostic prepared — 2026-10-23
+
+Accepted executable4acf13517337a4038f46f2fb672d76fde42db77a:47/47 workflows SUCCESS; native39869692485/job120140702367 has84/84 complete clean invocations/82 files, zero failures/skips/cancellations. Actual checkout3d64dfc90f8f46eb9e9899fb8d2bb66afe2fbc70 matches source tree8e910f6ac0ded63664f9161b51fcbc25f9c80aaa.14 direct denial/195 grant-reachability cases PASS; authorized flows, replay, tenant boundaries, transaction rollback/locking and exact restoration preserved. Foundation final marker,0045 canonical schema reproduction/all46 migrations, quality and security SUCCESS. Audit120140702494/review120140702455:0 high/0 critical/2 moderate. [Acceptance](P0-CASHIER-APPROVAL-ACCESS-ACCEPTANCE-20261023.md) · [Exact counters/runs](evidence/P0-CASHIER-APPROVAL-ACCESS-ACCEPTANCE-20261023.json). No retry or rerun.
+
+Next group: new settings-authority actual-LOGIN diagnostic prepared/registered, covering two-merchant boundary, configuration authority/business validation consistency, authorized versioned management/pending invalidation/rollback and exact snapshots. Local syntax/diff PASS; native/CI PENDING. No production/schema modification in this next group. Read containing executable's P0_CASHIER_DISCOUNT_SETTINGS_AUTHORITY_BASELINE and all complete native summaries before classification/remediation. Diagnostic success is not security acceptance. Current approval source acceptance must not be confused with the containing new test executable.
+
+NO-GO; P0 percentage UNMEASURED; full requirement/proof inventory and other critical gates OPEN. No hosted operations/deploy/migration/ACL/secret/main push/merge/P1/P2. Source46 vs hosted last28; actual deployed DB identity/pooler unresolved. User-facing security updates stay high-level.
+
+---
+
+## Approval provenance bypass proven; scoped mutation remediation prepared — 2026-10-23
+
+Diagnostic1716a354153fff43994dc80a33c184f880046dc1:47/47 workflows SUCCESS,84/84 clean native invocations/82 files. Native39867836738/job120134422668, checkoutab9913435a238b01d6cca2eac9b02c7d51f0b21b matches source treedd691a701a05f0d8b6c437dad8fd933bd85da4e4. Actual primary forged pending/pre-consumed approvals accepted by unchanged validator without issuance/PIN; issued operation rebind/consumed reset accepted by actual consumer. Cross-tenant denial/genuine issuance/replay/restoration PASS. No HTTP/full sale/hosted exploit claimed. [Exact baseline](evidence/P0-CASHIER-APPROVAL-PROVENANCE-BASELINE-20261023.json).
+
+Prepared fix: approval mutations join auth-only admission inventory;0045 scope-checked locking/independently validated consumption/pending invalidation capabilities remain on original commerce transaction. Settings->approval->staff lock order, binding/window/exact replay/current manager policy, kind advisory lock/invalidation/rollback retained. No auth-connection consumption or hosted ACL change. New readiness requires safe existing callable capabilities/unreachable owners. Expanded native regression requires original attacks denied plus direct RPC denial, column/role grant matrix, metadata safety and preserved genuine flows. Local24 contract tests and syntax/diff PASS; native/canonical/typecheck/complete CI PENDING. [Design/tests/limits](P0-CASHIER-APPROVAL-PROVENANCE-20261023.md).
+
+Next read containing exact-source P0_CASHIER_APPROVAL_PROVENANCE_REMEDIATION marker/full native84 summaries and complete CI/Foundation/schema/security. Green diagnostic is not fix acceptance; last accepted remediation bcebf0e remains47/47+83/83. No passing-suite rerun. Source candidate46 migrations vs last hosted28;28/28 historical canonical hashes match. Actual deployed DB login/target/pooler and hosted rollout remain unverified/unapproved. NO-GO; whole P0 percentage UNMEASURED. No hosted changes/deploy/main push/merge/P1/P2.
+
+---
+
+## Canonical hosted ledger reconciliation — 2026-10-23
+
+Read-only hosted staging ledger matches **28/28 canonical executable hashes and timestamps**, after applying the repository preflight's stabilizeMigrationDependencyOrder transformation. The earlier raw-file comparison's3 differences are expected normalization, **not migration drift**. Source45 versus hosted28 leaves17 missing migrations0028–0044. Canonical per-entry hashes appended to [hosted evidence](evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json). No migration or hosted write executed.
+
+Approval provenance diagnostic executable1716a354153fff43994dc80a33c184f880046dc1 is remotely saved and47 CI workflows started; native39867836738 PENDING. Last accepted remediation remains bcebf0e (47/47+83/83), documentation checkpoint d9c0e72c is not an executable acceptance. Next read the exact baseline marker and full clean summaries; green diagnostic may establish a defect, not fix acceptance. Preserve real primary setting->approval->staff lock order, exact replay and transaction rollback/kind invalidation; do not solve provenance with a separate auth transaction. NO-GO; P0 percent unmeasured.
+
+---
+
+## Approval provenance diagnostic prepared — 2026-10-23
+
+Previous source bcebf0e accepted47/47 workflows+83/83 clean invocations; checkpoint d9c0e72c remotely verified. New actual-LOGIN diagnostic covers genuine PIN-issued approvals and replay for two merchants, missing/cross-tenant denial, primary forged pending/consumed INSERT through actual manual-discount validator, immutable operation rebinding and consumed reset through real consumer with exact rollback/snapshot checks. No production or schema change. Node syntax and diff checks PASS; native runtime/CI PENDING. Green diagnostic may prove a defect and is not remediation acceptance.
+
+Next: inspect exact P0_CASHIER_APPROVAL_PROVENANCE_BASELINE marker and complete native summaries; classify before any provenance fix. Preserve lock order and primary transaction atomicity. Never transfer consumption onto a separate auth connection. Source acceptance and fresh hosted drift evidence: [report](P0-SOURCE-HOSTED-RECONCILIATION-20261023.md).17 missing0028–0044 migrations need approved rollout; all28 hosted canonical hashes match; actual deployed DB target/login/pooler still unverified. NO-GO, percentage UNMEASURED. No hosted writes/deploy/main/merge/P1/P2.
+
+---
+
+## Discount policy accepted; hosted read-only recovery complete — 2026-10-23
+
+Executable bcebf0e436a7805b60822d0338a5d4e511b36846 accepted:47/47 workflows SUCCESS;83/83 clean native invocations/81 unique files; actual checkout95ce575d0cafd9f9862311dfcb86cc7801a960f7 tree80dae12b29f96bd1c25b9745ba406873f32cb816 matches. Primary mutation42501/approval-required validator/trusted-auth positive/exact rollback,12 denials/165 grant cases PASS. Foundation/schema/quality/security accepted;0 high/0 critical/2 moderate. No test rerun. [Acceptance](evidence/P0-CASHIER-DISCOUNT-POLICY-ACCEPTANCE-20261023.json).
+
+Railway connection restored and identities verified; hosted old main d38d292 (2026-10-10) ready200, not current P0. Neon explicit staging-runtime still28 vs45 source migrations, no private scope, unsafe candidate role attributes/non-RLS grants. Actual deployed DB target/login/pooler UNVERIFIED; no secrets read. [Report, limits and incident checklist](P0-SOURCE-HOSTED-RECONCILIATION-20261023.md) · [Hosted catalogs](evidence/P0-HOSTED-READONLY-RECOVERY-20261023.json). Latest user instruction authorizes read-only Railway/Neon; historical GitHub-only restriction superseded for these reads only.
+
+Next exact engineering task: actual-LOGIN approval provenance diagnostic with trusted issuance/replay/rollback and two-tenant controls, then classify before remediation. Hosted rollout/ACL/rotation requires separate approval. NO-GO; whole P0 percentage UNMEASURED; full remaining P0 inventory OPEN. No hosted writes/deploy/main push/merge/P1/P2.
+
+---
+
+
+## VERIFIED recovery / central merchant scope acceptance — 2026-10-21
+
+**Accepted executable: `c60914b8d954cb1d82e9a3706adfd0b669d9144d`. ALL46/46 workflows completed SUCCESS.** Isolated [39649327517](https://github.com/nora953/fawri-production-source/actions/runs/39649327517),job119393191547: **75/75 invocations exit0/fail0/skip0/cancel0/complete**. Actual checkout6f6ab7f3cbcdd017bb72151d0c1335b84ec7282c and source have identical tree8d33b3364a5f47461a2df7940fcf892121d8bc92. Full dump/restore and41 migrations PASS. Exact workflow links, all75 counters, proof flags and limits: [P0-CENTRAL-SCOPE-FINAL-ACCEPTANCE-20261021.json](evidence/P0-CENTRAL-SCOPE-FINAL-ACCEPTANCE-20261021.json). Containing checkpoint is documentation/evidence ONLY [skip ci]; do not claim a new executable run for its SHA.
+
+Recovery independently confirmed previous74fc702f:46 green/72 clean and12 saved commits after251b8329. Only TWO production source files changed during this recovery: central merchant operational/subscription wrappers now commit private issuance after BEGIN/before locks; generic/auth wrappers do not mint. Actual LOGIN fixtures retain original billing/receipt races, HTTP, refund, wire-loss, Meta and clock/lease assertions. Central scope6, scope protocol16/auth10/admin9/runtime81, discovery19/inbox18, executor15/HTTP20/wire17, Meta full-app13/restore6, clock1/lease6 and every other invocation PASS. Counts include parents/repeated runtimes, not unique P0 coverage. Earlier failures/cancellations remain preserved in attempt JSONs.
+
+**PUBLIC RAW TENANT GUC TRUST REMAINS OPEN.** The actual successful P0_TENANT_GUC_TRUST_PROOF remains in this accepted log. Private caller acceptance is preparatory, not global RLS closure. Fresh read-only hosted evidence shows staging28 vs source41 migrations, no private scope schema/resolver, unsafe candidate runtime role attributes/non-RLS grants, old main deployment, deployed DB login unverified. [Hosted evidence](evidence/P0-HOSTED-READONLY-RECOVERY-20261021.json). [Complete status/measurement/effort](P0-RECOVERY-RELEASE-STATUS-20261021.md). Full-P0 percent NOT MEASURABLE; historical85% unverified. Provisional20–40 focused engineering hours excludes waiting/new defects. **RELEASE NO-GO.** No hosted write/migration/grant/deploy/main push/merge.
+
+**Next exact action:** fetch live branch HEAD/use a fresh clean checkout; preserve dirty old worktrees. Implement canonical0041 public predicate cutover to private allows_merchant, with stage/journal/deterministic snapshot reproduction and removal of six transitional source tenant GUC writes. Update only affected old SQL fixtures to actual trusted issuance, retain GUC-forgery denial and all positive business/rollback/session/expiry/race proofs. No issuer grants to primary, no bootstrap/role bypass, no hosted rollout. Then reconcile remaining hosted/privacy/cashier/offline/retention/provider/storage/full-inventory gates. P1/P2 remain out of scope.
+
+---
+
+## All73 isolated invocations accepted; Foundation clock/lease caller correction — 2026-10-21
+
+Exact executable `6706aafbf18c14ded0aab864ac83018667024e5e`: **45/46 workflows SUCCESS**; only Foundation clock test FAILURE. Isolated39648267076/job119389499701 SUCCESS: **73/73 invocations exit0/fail0/skip0/cancel0/complete**. Meta full-app13 PASS (all original refunds/release/once-only assertions); scope6, provider19/inbox18, receipt executor15/HTTP20/wire17, all other counters and schema/restore41 PASS. Evidence: [P0-CENTRAL-SCOPE-73-ACCEPTANCE-20261021.json](evidence/P0-CENTRAL-SCOPE-73-ACCEPTANCE-20261021.json). Not full46-workflow acceptance.
+
+Foundation then exposed old clock fixture's root application identity (OPERATIONAL_TENANT_SCOPE_ROLE_UNSAFE), with queue lease fixture queued behind it. Containing correction moves BOTH unchanged clock-skew and five lease-race scenario assertions to actual tenant/auth LOGINs and owned network-none runner. Both also join priority audit (expected75 invocations, actual count pending). No product source/migration/grant/admission change. Local syntax/whitespace/YAML PASS. New exact-source acceptance PENDING. Next verify containing source and all75 counters, save final evidence; public predicate cutover/hosted/privacy/full-P0 inventory still open. **NO-GO**. No hosted write/deploy/main/merge.
+
+---
+
+## Central scope 72/73 clean; final Meta privacy expectation correction — 2026-10-21
+
+Source `34fdfcc4c90121fb2ba44471b1dc23d066db5a1e`:43/46 workflows SUCCESS,3 FAILURE. Isolated39647042910/job119385472074:73 invocations,72 clean and only Meta full-app not clean (9PASS/4FAIL, parent/cascade included). New scope6, provider discovery19/inbox18/receipt executor15/HTTP20/wire17, auth compatibility11, private16/auth10/admin9/runtime81, cashier and restore/migration41 accepted at this exact scope. Detailed counters: [P0-CENTRAL-SCOPE-META-ATTEMPT-20261021.json](evidence/P0-CENTRAL-SCOPE-META-ATTEMPT-20261021.json). Earlier cb5 attempt40SUCCESS/2FAIL/4CANCELLED, isolated cancelled; not accepted.
+
+Containing correction changes ONE obsolete parent Meta denial expectation: actual restricted tenant cannot see foreign reservation, so expects reservation_not_found (matching existing child), instead of bootstrap-only reservation_identity_invalid. Preserves restored=false/no-credit and all following refund/release/once-only/balance/transport assertions; no source/security/migration change. New exact-source CI PENDING; markers alone never establish acceptance.
+
+Fresh read-only Neon/Railway catalog confirms hosted13-migration gap, missing private schema/resolver, unsafe candidate role attributes/non-RLS broad grants, old main deployment and actual deployed login unknown. [Hosted evidence](evidence/P0-HOSTED-READONLY-RECOVERY-20261021.json), [full status/measurement/estimate](P0-RECOVERY-RELEASE-STATUS-20261021.md). Whole-P0 percentage NOT MEASURABLE; provisional20–40 engineering hours excluding access/policy waiting and new findings. Public raw GUC trust remains OPEN. Next verify containing source then canonical public predicate cutover; no hosted writes/deploy/main/merge. **NO-GO**.
+
+---
+
+## Explicit owned-bootstrap fixture attestation — 2026-10-21
+
+Published consumer correction `cb5eaa4eb4d92811d480eac7200062ed9a7407fc` is pending CI. Source review found that role-grant helpers re-attested process DATABASE_URL after it had correctly changed to tenant LOGIN. Containing helper correction verifies the EXPLICIT original bootstrap URL against the SAME network-none/namespace/database/user/marker guard; no flag or role bypass. Authentication creation already receives that URL; tenant-revocation/executor grant helpers now accept it explicitly, with old default unchanged. Original role-grant SQL and production source unchanged. Native lock observer in receipt executor uses explicit bootstrap connection, while replay remains forbidden from borrowing the primary pool. Local guard/security34 and syntax/whitespace PASS. Native new results PENDING; public GUC exploit and other P0 gates OPEN, NO-GO. Inspect latest exact-source CI before further changes; do not call cb5 or containing source accepted without counters.
+
+---
+
+## Central private scope proof / legacy consumer correction — 2026-10-21
+
+Exact executable `2fe24ef4cdae762d657e8551505ace9f7642e238`: **35/46 workflows SUCCESS,11 FAILURE**. Isolated39645535304/job119379983364:73 invocations,61 clean/12 not clean. **New central actual-LOGIN scope proof6 PASS** (includes parent), including committed issuer before locks, generic no-mint, forged setting cannot rebind private scope, rollback/reuse, issuer revoke/recovery and subscription caller. Existing core private16/auth10/admin9/runtime81 and cashier proofs retain their exact-source counters. Full migration41/schema/restore unchanged. This is NOT full-source acceptance. Evidence: [P0-CENTRAL-SCOPE-CONSUMERS-ATTEMPT-20261021.json](evidence/P0-CENTRAL-SCOPE-CONSUMERS-ATTEMPT-20261021.json).
+
+Containing correction separates primary/auth actual LOGINs from root seed/inspection in six legacy settings/regional/channel/catalog/inventory/media fixtures, Auth compatibility child, four Meta parent fixtures, receipt executor/HTTP/wire parents, provider discovery/race parents and Meta directory. Keeps original child credentials, transport faults, chronology, concurrency, source business assertions and operator-only execution. Seven dedicated legacy workflow proofs move to the canonical network-none runner with committed migrations; all original Auth unit files retained. No bootstrap bypass or primary issuer grants. Source/migrations/security checks UNCHANGED by correction. Local syntax/whitespace/YAML PASS; new DB/CI acceptance PENDING.
+
+Raw public tenant GUC trust remains OPEN; public predicate cutover must follow exact-source consumer acceptance. Hosted identity/ACL/pooler, auth/privacy/cashier integrity, provider/storage/retention and full P0 case inventory remain uncertified. No measured whole-P0 percentage. No hosted write/deploy/main/merge. **NO-GO**. Next inspect containing HEAD/CI and all counters, repair remaining failures before cutover.
+
+---
+
+## Central merchant scope increment — 2026-10-21
+
+Recovered fixture source `5b7f7cb9065d2686ccd3ffdc209c4e27addfb3ad`: isolated39644611813/job119376758882 **72/72 clean invocations**, support5/reminder1/reviewHTTP20/MetaRestore6 PASS using actual LOGINs. Overall45/46 workflows SUCCESS; Foundation host-service attestation failure retained. Evidence: [P0-RECOVERY-FIXTURE-ACCEPTANCE-20261021.json](evidence/P0-RECOVERY-FIXTURE-ACCEPTANCE-20261021.json).
+
+Containing source now awaits canonical private issuance in central operational/subscription merchant transactions AFTER BEGIN/BEFORE locks. Generic/auth transactions do not mint. Adds actual-LOGIN central scope/rollback/revocation/subscription regression; Foundation reminder uses an owned network-none suite. Local actual-function/control29 and guard/security34 PASS; native SQL/new full CI PENDING. Transitional tenant setting/public predicate are UNCHANGED; raw GUC exploit remains OPEN. No hosted writes/deploy/main/merge. Full P0 denominator remains unreconciled (UI manifest is P1 only), so85% and a replacement whole-P0 percentage are not defensible. **NO-GO**. Next inspect containing exact-source CI, repair failures, then public predicate canonical migration and remaining consumers/hosted/privacy gates.
+
+---
+
+## Crash recovery verified — 2026-10-21
+
+GitHub branch HEAD recovered at `74fc702f8d7759abd4f34ac4d367e8e126439c21`, exactly the user-observed checkpoint. PR #550 remains open Draft, actual base `test/p0-integrated-billing-meta-20261015`; no merge. Fresh independent API inspection: **46/46 exact-HEAD workflows SUCCESS**, isolated run39541854104/job119031160756, **72/72 invocation summaries exit0/fail0/skip0/cancel0/complete**. Evidence: [P0-CRASH-RECOVERY-20261021.json](evidence/P0-CRASH-RECOVERY-20261021.json). Source and saved handoff confirm 12 subsequent commits after251b8329, covering transaction discard, receipt/provider scope issuance, explicit direct billing context, actual tenant/auth fixtures and subscription directory operator. Prior session uncommitted files are inaccessible; no claim that unsaved work was recovered. Current recovery checkout was clean at74fc702f.
+
+**OPEN P0:** actual log still records successful `P0_TENANT_GUC_TRUST_PROOF` (raw tenant setting trusted; arbitrary SQL and foreign tenant identifier required; HTTP exploit not tested). Green CI must not be interpreted as exploit remediation. Remaining canonical central issuance/public predicate cutover, hosted identities/owners/ACL/pooler, auth/privacy/cashier integrity and provider/storage/retention gates remain uncertified. Historical85% is not a measured completion rate.
+
+Containing fixture increment separates actual tenant/auth LOGINs for support and subscription reminders, Meta restore parent/child, and actual review-only LOGIN from primary checkout/auth in receipt review HTTP. Native bootstrap stays setup/inspection/cleanup only. Retains original fault/chronology/exactly-once/owner assertions. **New increment is PENDING CI**; four JS syntax checks and whitespace PASS. No local PostgreSQL/Docker. Local frozen pnpm11 install rejected xlsx@0.20.3 missing tarball integrity; no lockfile or policy relaxation. Source remains unchanged in this increment. Inspect new exact-source CI before central merchant issuance; fix actual failures without bypass/grants/skips. No hosted DB writes/deployment/main push/merge. **NO-GO**.
+
+---
+
+## Replay capability owner matrix — initial acceptance, 2026-10-16 UTC
+
+Source `f14c3cb354cc7723efbb270df2249eee1e276bfe`,Draft#550: **362PASS/0FAIL/0CANCELLED/0SKIP**,55unique/57invocations;25/25workflowsSUCCESS. Isolated [38969053191](https://github.com/nora953/fawri-production-source/actions/runs/38969053191),job117202615539. Both replay review/execution suites20PASS each, including8newcases each. All16native owner proofs cover0031/0032 x SaaS/cashier x no FORCE/receipt/SaaS-order/cashier-order FORCE; exact identity/current denied operator/audit/42501/rollback checks pass, original real HTTP assertions retained. Fullrestore/cleanupPASS,34migrations/95tables/45policies/9functions and unchanged matching fingerprint. Evidence `evidence/P0_REPLAY_OWNER_RESULTS_20261016.json` retains this initial source. Counts overlap346/344/342; no wholeP0 percentage inferred.
+
+A subsequent assertion-only source additionally measures receipt/order/entitlement state inside the transaction BEFORE fixture rollback for0029/0030/0031/0032. This is necessary to certify absence of temporary grants/writes, independently of post-rollback equality. Local syntax/diffPASS; actual stronger SQL/CI PENDING at publication. No product defect was established or production implementation changed. Hosted/policy/offline/mapping gates remainOPEN; releaseNO-GO.
+
+---
+
+## Audited directory owner acceptance — 2026-10-16 UTC
+
+Draft #550 source `2ddc4cc11190b7f87f5dfbe83bc4505469e6ad02`: **346 PASS /0 FAIL /0 CANCELLED /0 SKIP**,55unique/57invocations;25/25workflowsSUCCESS. Isolated [38968339665](https://github.com/nora953/fawri-production-source/actions/runs/38968339665),job117200274011. Directory11PASS includes two new0030 bounded SQL owner cases: original actor authorization/redaction/audit succeeds with restricted shared owner; receipt FORCE raises42501 and no audit survives. All principals/catalog owners/RLS/function configuration/receipts/audits/entitlement counts restored after rollback. Original real HTTP/session/device/pagination/audit-fault assertions retained. Fullrestore34migrations/95tables/45policies/9functions and original matching fingerprint. Evidence `evidence/P0_DIRECTORY_OWNER_RESULTS_20261016.json`. Counts overlap344/342. Not hosted or alternate-owner full HTTP acceptance. P0 percentage unmeasured/releaseNO-GO; no production source/migrations/main/hosted changes.
+
+---
+
+## Receipt admission owner acceptance — 2026-10-16 UTC
+
+Draft #550 source `66a1259c64f9f2c61f935b2d710e42da9ff4d241`: **344 PASS / 0 FAIL / 0 CANCELLED / 0 SKIP**,55unique files/57invocations; **25/25 observed workflows SUCCESS**. Isolated [38967543213](https://github.com/nora953/fawri-production-source/actions/runs/38967543213),job117197651440,mergefaa06f7. Inbox18PASS includes two new0029 restricted shared function/table owner cases: no-FORCE exact timestamp-only admission/immutable next-day replay/hash collision denial/naked DML denial; FORCE42501 with no receipt. Both rollback to original catalog owners/RLS/function configuration, no synthetic role/receipt remains, entitlement counts unchanged. Fullrestore34migrations/95tables/45policies/9functions; original matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Evidence `evidence/P0_ADMISSION_OWNER_RESULTS_20261016.json`. Counts overlap342, not additive. Bounded SQL proof, not hosted or alternate-owner full handler acceptance.
+
+Recovered eight staged acceptance files are published at `d721571111d616e47a8c6bed7490a3b331628ed8`. Fresh read-only Railway still oldmain/d38d2922,200ready,checkSuitesfalse/noRailwayvolumes/buckets/pendingwork; Neon connector still Tool list_projects not found. Evidence `evidence/P0_RAILWAY_READONLY_RECOVERY_20261016.json`; hosted/policy gates OPEN, P0 percentage unmeasured/releaseNO-GO. No production source/migrations/hosted writes/main merge/deploy.
+
+---
+
+# Latest verified P0 continuation — 2026-10-15
+
+Draft#550 / `fix/p0-provider-receipt-order-discovery-20261015`, tested source **`6c34961a36ceec848f53060f87990437c9fc13f0`**: **342 PASS /0 FAIL /0 CANCELLED /0 SKIP**,55unique files/57invocations including parent/repeated-runtime counts; **25/25 observed workflows SUCCESS**. Isolated [38785273961](https://github.com/nora953/fawri-production-source/actions/runs/38785273961),job116595545067,merge98016d8. Signed billing11PASS and original complete Meta app→queue→subscription→worker13PASS now use actual restricted LOGIN connections: current_user=session_user after RESET ROLE, original production RLS readiness accepted. Synthetic fixture credentials only. Both billing authorities apply once/preserve immutable receipt/original time; original duplicate/denial/isolation assertions retained. RLS28PASS; Meta bounded resolver10PASS; full restore34migrations/95tables/45policies/9functions and matching fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035.
+
+Prior e91e6d96 also342PASS/25green includes8new original confirmed-provider SQL owner/FORCE-RLS cases, with restricted owner success and expected42501 per protected dependency, unchanged receipts/orders and0premature grants after rollback. Sourcef4a40de1 is retained as failed workflow:331PASS/0failed assertions/3CANCELLED/0SKIP from incorrect nested test context, not8SQLfailures. Context repaired without raising original timeouts; runner now emits explicit cancellations in all57summaries. Counts overlap and are not additive. Report `P0_REACHABLE_ROLE_AND_META_OWNER_ACCEPTANCE_20261015.md`; exact evidence `evidence/P0_DIRECT_LOGIN_FULL_PATH_RESULTS_20261015.json`, `P0_BILLING_OWNER_MATRIX_RESULTS_20261015.json`, and baseline JSON.
+
+Fresh read-only Railway snapshot18:10Z still old main/d38d2922/deployment11f22954SUCCESS, one online replica, readiness200/ready without runtime role flags; checkSuitesfalse/no Railway volume or bucket/pending work. This does not prove absence of external storage or GitHub branch protection; previous Neon tool BLOCKED and protection403 UNKNOWN remain unverified, not retried. No hosted changes, main merge/deploy, real payments or credential changes. Hosted owner/EXECUTE/provider/storage/deployment acceptance and retention/privileged deletion/manual missing-order ownership policy remain open. Provider mapping race remains NOT RUN. Historical P0 **85% complete/15% remaining is unmeasured**; no new percentage inferred from test counts. Release **NO-GO**.
+
+---
+
+## Session and receipt RLS readiness accepted — 2026-10-15
+
+Draft#550 / fix/p0-provider-receipt-order-discovery-20261015, tested source `92ad7bbef94bda674194205220975d0220190856`: **25/25 workflows SUCCESS**. Isolated `38723072880` / job `116382166372`, checkout `8b9eaca442f46c605aabb85fee59d25a32707f18`: **329 PASS / 0 FAIL / 0 SKIP**,55unique/57invocations including parents/repeated runtimes. RLS25PASS; knowledge and deletion each1PASS using direct restricted LOGIN connections with current_user=session_user. Production gate checks current and session role superuser/BYPASSRLS/protected-table ownership; the protected inventory includes the global receipt inbox and an independent migration inventory test. Local unit8/0. Fullrestore/cleanupPASS, unchanged34migrations/95tables/45policies/9functions/fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Exact evidence: evidence/P0_SESSION_RLS_READINESS_RESULTS_20261015.json; report SEQ_377_P0_RLS_RESTORE_ADMIN_SYNC_READINESS_20261014.md. Current commands and remaining gates in WORK_HANDOFF. Historical85%/15% unmeasured; releaseNO-GO. Earlier pending headings below are superseded only by this accepted source.
+
+## Active session identity readiness hardening — CI pending, 2026-10-15
+
+Active Draft#550 / fix/p0-provider-receipt-order-discovery-20261015. Separate root cause: readiness checked current_user only; a privileged session_user can remain behind SET ROLE. New local unit reproduced7PASS/1FAIL (missing rejection), repaired8/0; TypeScript/diffPASS. New code separately checks session role superuser/BYPASSRLS/protected-table ownership. New disposable cases reject bootstrap-superuser session behind restricted current role, and independently test non-superuser session roles with BYPASSRLS or receipt-table ownership; RESET ROLE is observed to restore unsafe RLS state, all fixture DDL rolls back. Existing normal acceptance fixtures now set both current/session identities to the restricted role with SET SESSION AUTHORIZATION, preserving original ownership membership cases. Actual new SQL/CI NOT RUN until publication; do not count previous326PASS as this source's acceptance.
+
+Next: inspect new CI/source, exact session-role SQL outcomes, fullrestore/cleanup and all workflows; record results. Resume git fetch origin fix/p0-provider-receipt-order-discovery-20261015; git switch --detach FETCH_HEAD. Owned runner only: bash scripts/run-isolated-postgres-audit.sh tenant. Prior provider mapping-change concurrency remainsNOTRUN after delegated content flag; no bypass of that block is attempted here. Hosted owner/grants/provider/storage/deployment and ownership/retention policy remainOPEN; historical85%/15% unmeasured, releaseNO-GO. No main merge/deploy/hosted writes. PostgreSQL rationale: https://www.postgresql.org/docs/17/sql-set-role.html and https://www.postgresql.org/docs/17/role-attributes.html . This is bounded startup/session-readiness hardening, not certification of actual hosted credentials or every reachable privileged-role configuration.
+
+## Receipt inbox RLS readiness accepted — 2026-10-15
+
+Draft#550 source `e1b31378ff7acc3ead9850db2eb418dee90b31c7`: **25/25 workflows SUCCESS**. Isolated run `38684893840`, job `116257386044`, checkout `2f4abef901f29cb9295800f80ae0e5b25472abfa`: **326 PASS / 0 FAIL / 0 SKIP**,55unique/57invocations (parents/repeated runtimes included). RLS suite22/0/0 includes two new global inbox drift cases. Independent migration-inventory unit baseline6/1 identified only verified_provider_payment_receipts missing; repaired7/0. Runtime protected-table inventory now covers the capability-only inbox alongside tenant tables, while keeping legacy field/error IDs compatible. No policy/migration/grant changes. Fullrestore/ownedcleanupPASS:34migrations/95tables/45policies/9functions, unchanged fingerprint388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035. Evidence: evidence/P0_RECEIPT_INBOX_RLS_READINESS_RESULTS_20261015.json.
+
+## Current acceptance and handoff — 2026-10-15
+
+Active Draft #550, branch `fix/p0-provider-receipt-order-discovery-20261015`, base Draft #549. Tested code commit: `cd7408ee178393a5a63a02e6bbdc9a163cd54c00`. All **25/25 observed workflows SUCCESS**. Isolated run `38681867802`, job `116247985222`, merge checkout `181b04e212b5c98e8848652e56d4f517b19464e5`: **324 PASS / 0 FAIL / 0 SKIP**, 55 unique files / 57 invocations. Counts include parent tests and repeated runtimes; never add overlapping workflow totals.
+
+The original signed SaaS/cashier callback now finds an existing mapped order under a nonowner, non-superuser, NOBYPASSRLS runtime with empty tenant/admin context. Independent SQL proves one immutable receipt, one application and one subscription for each authority; fresh duplicate replay retains original receipt/paid time. Naked global reads remain zero and pooled context resets. Permission denial, request/amount mismatch, same-authority and cross-authority ambiguity fail closed without grants. The capability only resolves existing authoritative orders; arbitrary ownership repair is not implemented. Operator authorization remains separate.
+
+Baseline failure is preserved: source `1f3d743a78d7716b21b6e875e62e4fe477e324a4`, run `38681215276` / job `116245975903`, 321 PASS / 3 FAIL / 0 SKIP (parent plus two new cases). Both returned ORDER_NOT_FOUND despite mapped orders, with receipt1/apps0/grants0. Exact report: `P0_RESTRICTED_PROVIDER_ORDER_DISCOVERY_20261015.md`; baseline and repair JSON evidence under `evidence/P0_RESTRICTED_PROVIDER_DISCOVERY_*_20261015.json`.
+
+Canonical regeneration/reproducibility and actual SQL PASS in schema run `38681868158`, job `116247986045`; this provides CI evidence despite the local symlinked-pnpm generator block. Full restore PASS: 34 migrations / 95 tables / 45 policies / 9 functions, matching seed/verify fingerprint `388515b2f9bd94c03cded652f5f39a5414fb1f6950f80f2521d033c237392035`. New resolver remains non-PUBLIC after restore. Owned container/volume cleanup PASS. Parent #549 cashier RLS readiness repair `36f955e` remains accepted (321/0/0, 14 workflows), now included in this source.
+
+Remaining: provider-specific mapping changes after initial discovery and between receipt-admission commit/application are **NOT RUN**. Additional delegated instrumentation was interrupted by an automated content flag; incomplete unpublished changes were removed, so they are not part of this accepted source. Next exact unit is a controlled fixture concurrency proof at those actual database boundaries, with immutable receipt/no premature grant/context-reset assertions. Merchant mutation after admission is constrained by existing composite FKs; do not weaken them. Also independently review receipt/function-owner readiness coverage. Hosted owner/RLS/EXECUTE/provider acceptance, deployment gating/storage, arbitrary ownership repair and retention-duration/privileged-deletion policy remain OPEN. No new percentage is measured: historical85% complete/15% remaining only; release **NO-GO**.
+
+No main merge, Railway deployment, hosted migration/grant/secret changes or real payment was performed or authorized. Documentation-only final checkpoint uses [skip ci]; tested code is the SHA above. No tests are running at this checkpoint.
+
+Exact resume commands and remaining unit are in WORK_HANDOFF.
+
+## Restricted signed-provider discovery repair — 2026-10-15 (CI pending)
+
+Active dependent Draft#550/fix/p0-provider-receipt-order-discovery-20261015, base#549. Baseline1f3d743a78d7716b21b6e875e62e4fe477e324a4, isolated38681215276/job116245975903 FAIL:321PASS/3FAIL/0SKIP,55unique/57invocations (failing new suite0PASS/3FAIL includes parent+2cases). Five other workflowsSUCCESS. Both actual signed original callbacks (SaaS/cashier) returnSUPERQI_SANDBOX_VERIFIED_PAYMENT_ORDER_NOT_FOUND under nonowner/NOBYPASSRLS with empty tenant/admin context despite mapped orders. Independent SQL proves durable inbox1/originaltime, orders unchanged/apps0/grants0; nakedreads0 and pooledcontextempty. This is availability failure, not demonstrated tenant leakage.
+
+New bounded repair adds non-PUBLIC0033 confirmed-receipt/order resolver, separate private-symbol provider scope, tenant-scoped reference attachment and revalidation inside both original billing transactions; operator replay authorization unchanged. Existing authoritative order only, no inferred ownership repair. Negative cases cover absentEXECUTE/request/amount mismatch/same-authority/cross-authorityambiguity/decoyisolation, followed by success/duplicate/originaltime checks. Restore asserts newcapabilitynonPUBLIC. Localtypecheck/syntax/diff/staticmigrationlineagePASS. Full local canonical generation BLOCKED by symlinkedpnpm module directory restriction atlegacy stage2; actual newSQL/CI NOT RUN until published.
+
+Current resume commands in WORK_HANDOFF.
+
 ## Cashier production RLS readiness acceptance — 2026-10-15
 
 Draft#549 source36f955e32d0f6f7284b5fcfb850ea117e0c00ee0, isolated38681113382/job116245665218:321PASS/0FAIL/0SKIP,54unique/56invocations;14/14workflowsSUCCESS. Runtime gate now includes all7 cashier licensing/billing RLS tables omitted after0027. Local baseline5PASS/1FAIL→repair6/0; actual RLS suite20/0/0 includes14new disabled-RLS/runtime-ownership drift cases and rollback-restored readiness. Fullrestore33migrations/95tables/45policies/8functions and cleanupPASS, identical fingerprint793d8e3837c86ee820bb3189ce5003c2368b80326284dc6f1e831762c1e71498. Exact report: SEQ_377_P0_RLS_RESTORE_ADMIN_SYNC_READINESS_20261014.md; evidence/P0_CASHIER_RLS_READINESS_RESULTS_20261015.json.

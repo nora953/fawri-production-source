@@ -1,5 +1,8 @@
+import {issueMerchantTransactionScope} from "./tenantTransactionScope";
 import crypto from 'node:crypto';
-import {operationalDatabasePool,operationalPostgresAuthorityRequired} from './operationalPostgresAuthority';
+import {withReceiptOperatorExecutionTransaction} from './operatorReceiptExecutionPostgresAuthority';
+import type {BillingReplayScope} from './billingReplayScope';
+import {operationalPostgresAuthorityRequired,OperationalPostgresAuthorityError,type OperationalQueryTarget} from './operationalPostgresAuthority';
 import {parseReceiptReplayIntent,confirmReceiptReplay,ReceiptReplayReviewError,type ReviewRow} from './verifiedReceiptReplayReview';
 import {applyVerifiedSaasBillingProviderEvent} from './saasBillingAuthority';
 import {applyVerifiedCashierBillingProviderEvent} from './cashierBillingAuthority';
@@ -8,8 +11,16 @@ import type {SuperQiFetch} from './superQiSandboxTransport';
 type ExecutionRow=ReviewRow & {merchant_id:string};
 export async function executeVerifiedReceiptReplay(actor:{id:string;sessionId:string;deviceHash:string},eventId:string,body:unknown,fetchImpl?:SuperQiFetch) {
   if(!operationalPostgresAuthorityRequired())throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_UNAVAILABLE',503);
-  const intent=parseReceiptReplayIntent(eventId,body),database=await operationalDatabasePool();
-  const authorize=async(client:SubscriptionPlanCycleTransaction):Promise<ExecutionRow>=>{
+  const intent=parseReceiptReplayIntent(eventId,body);
+  const transaction = async <T>(work:(client:OperationalQueryTarget)=>Promise<T>):Promise<T> => {
+    try { return await withReceiptOperatorExecutionTransaction(work); }
+    catch(error) {
+      if(error instanceof OperationalPostgresAuthorityError) throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_UNAVAILABLE',503);
+      if(error instanceof Error && 'status' in error) throw error;
+      throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_UNAVAILABLE',503);
+    }
+  };
+  const authorize=async(client:SubscriptionPlanCycleTransaction,phase="billing-transaction"):Promise<ExecutionRow>=>{
     const auditId=`billing-execute-${crypto.randomUUID()}`;
     const hash=crypto.createHash('sha256').update(JSON.stringify({auditId,eventId,...intent})).digest('hex');
     try {
@@ -23,14 +34,17 @@ export async function executeVerifiedReceiptReplay(actor:{id:string;sessionId:st
         if(error.code==='23514'&&error.message==='verified receipt replay conflict')throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_CONFLICT',409);
       }
       const sqlstate=error&&typeof error==='object'&&'code' in error&&typeof error.code==='string'&&/^[A-Z0-9]{5}$/.test(error.code)?error.code:'unknown';
-      console.warn('RECEIPT_REPLAY_AUTHORIZATION_SQL_FAILURE '+JSON.stringify({phase:client===database?'admission':'transaction',sqlstate}));
+      console.warn('RECEIPT_REPLAY_AUTHORIZATION_SQL_FAILURE '+JSON.stringify({phase,sqlstate}));
       throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_UNAVAILABLE',503);
     }
   };
-  // Autocommit execution attempt audit before fresh provider access.
-  const receipt=await authorize(database);
+  // Commit execution audit and release actor locks before provider I/O.
+  const receipt=await transaction(client=>authorize(client,"provider-admission"));
   await confirmReceiptReplay(receipt,fetchImpl);
-  const scope={merchantId:receipt.merchant_id,requestId:receipt.request_ref,firstReceivedAt:receipt.first_received_at,authorize:async(client:SubscriptionPlanCycleTransaction)=>{
+  const scope:BillingReplayScope={transaction:work=>transaction(async client=>{
+    await issueMerchantTransactionScope(client,receipt.merchant_id);
+    return work(client);
+  }),merchantId:receipt.merchant_id,requestId:receipt.request_ref,firstReceivedAt:receipt.first_received_at,authorize:async(client:SubscriptionPlanCycleTransaction)=>{
     const current=await authorize(client);
     if(JSON.stringify(current)!==JSON.stringify(receipt))throw new ReceiptReplayReviewError('RECEIPT_REPLAY_EXECUTION_CONFLICT',409);
   }};

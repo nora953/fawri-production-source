@@ -1,7 +1,10 @@
 // @ts-nocheck
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pool } from "@workspace/db";
+import { cleanupResources } from "./helpers/cleanup-resources.mjs";
+import { createDisposableKnowledgeRuntime } from "./helpers/disposable-knowledge-runtime.mjs";
+const runtimeFixture = await createDisposableKnowledgeRuntime();
+const pool = runtimeFixture.admin;
 import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
 import {
   PostgresKnowledgeManagementRuntime,
@@ -59,13 +62,14 @@ function decisionEngine(): KnowledgeDecisionEngine {
 test("merchant Knowledge management and decision runtime share one PostgreSQL authority", async (t) => {
   assert.ok(process.env.DATABASE_URL, "DATABASE_URL is required");
 
+  t.after(() => cleanupResources([
+    ["owned accounts", () => pool.query("DELETE FROM accounts WHERE id=ANY($1::text[])", [merchantIds])],
+    ["runtime fixture", () => runtimeFixture.dispose()],
+  ]));
+
   await seedMerchant(merchantIds[0], "+9647990000001");
   await seedMerchant(merchantIds[1], "+9647990000002");
 
-  t.after(async () => {
-    await pool.query(`DELETE FROM accounts WHERE id = ANY($1::text[])`, [merchantIds]);
-    await pool.end();
-  });
 
   const managementA = new PostgresKnowledgeManagementRuntime({
     embeddingProvider: fakeEmbedding,

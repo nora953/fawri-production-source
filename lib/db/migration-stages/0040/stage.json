@@ -1,0 +1,7 @@
+{
+  "index": 40,
+  "name": "transaction_scoped_tenant_authority",
+  "when": 1791936000012,
+  "mode": "manual_sql",
+  "preimage_files": []
+}

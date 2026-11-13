@@ -1,3 +1,4 @@
+import { assertNotificationTypeWritable, requireNotificationSourceReference } from "./postgresNotificationSourceReference";
 import crypto from "node:crypto";
 import {
   operationalDatabasePool,
@@ -79,19 +80,22 @@ async function insertMerchantNotification(
     titleKey: string;
     bodyKey: string;
     variables: Record<string, string | number | boolean | null>;
-    sourceEntityType?: string;
-    sourceEntityId?: string;
+    sourceEntityType: string;
+    sourceEntityId: string;
     createdAt: string;
   },
 ): Promise<void> {
-  await client.query(
+  assertNotificationTypeWritable(input.type);
+  const source = requireNotificationSourceReference(input.sourceEntityType, input.sourceEntityId);
+  const inserted = await client.query<{ id: string }>(
     `INSERT INTO notifications
        (id, audience, merchant_id, account_id, type, title_key, body_key,
         variables, source_entity_type, source_entity_id, created_at)
      VALUES ($1, 'merchant', $2,
              (SELECT account_id FROM merchants WHERE id = $2),
              $3, $4, $5, $6::jsonb, $7, $8, $9::timestamptz)
-     ON CONFLICT (id) DO NOTHING`,
+     ON CONFLICT (id) DO NOTHING
+     RETURNING id`,
     [
       input.id,
       input.merchantId,
@@ -99,11 +103,41 @@ async function insertMerchantNotification(
       input.titleKey,
       input.bodyKey,
       JSON.stringify(input.variables),
-      input.sourceEntityType || null,
-      input.sourceEntityId || null,
+      source.sourceEntityType,
+      source.sourceEntityId,
       input.createdAt,
     ],
   );
+  if (inserted.rows.length === 1) return;
+
+  // A globally unique ID conflict is NOT evidence that the current merchant
+  // actually received this reminder. Require an exact tenant/audience/source
+  // match before marking the subscription reminder as sent. A foreign row,
+  // malformed historic row or unrelated type must roll back every marker.
+  const prior = await client.query<{ id: string }>(
+    `SELECT id FROM notifications
+       WHERE id = $1 AND audience = 'merchant' AND merchant_id = $2
+         AND account_id = (SELECT account_id FROM merchants WHERE id = $2)
+         AND type = $3 AND title_key = $4 AND body_key = $5
+         AND source_entity_type = $6 AND source_entity_id = $7
+       LIMIT 1`,
+    [
+      input.id,
+      input.merchantId,
+      input.type,
+      input.titleKey,
+      input.bodyKey,
+      source.sourceEntityType,
+      source.sourceEntityId,
+    ],
+  );
+  if (prior.rows.length !== 1) {
+    throw new MerchantNotificationPostgresError(
+      "NOTIFICATION_SOURCE_ID_CONFLICT",
+      "subscription reminder identity conflicts with existing notification evidence",
+      409,
+    );
+  }
 }
 
 export async function refreshSubscriptionNotificationsPostgres(
@@ -251,6 +285,43 @@ export async function refreshSubscriptionNotificationsPostgres(
   });
 }
 
+// FIELD002: Only display fields declared for each notification type. Stored
+// variables remain unchanged and may contain older or external writer keys.
+// Unknown types keep canonical identity fields so callers can reject them.
+const NOTIFICATION_RESPONSE_VARIABLE_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  "subscription_expiry_reminder": ["plan_name","expires_at","days_remaining"],
+  "subscription_expired": ["plan_name","expired_at","addon_replies_remaining"],
+  "addon_expiry_reminder": ["addon_batch_id","source","remaining_replies","expires_at","days_remaining"],
+  "operational_new_order": ["order_id","action_url","conversation_id"],
+  "operational_payment_conflict": ["order_id","action_url","conversation_id","provider"],
+  "operational_knowledge_gap": ["training_request_id","action_url","conversation_id"],
+  "operational_customer_message": ["conversation_id","action_url"],
+  "inspection_session_request": ["ticket_id","inspection_request_id","ticket_subject","admin_name","mode","request_expires_at","action_url","request_status","consent_decision","responded_at","session_expires_at","ended_at","end_reason"],
+  "support_reply_reminder": ["ticket_id","ticket_subject","action_url"],
+  "subscription_balance_purchase": ["purchased_replies","emergency_debt_paid","addon_replies_added","emergency_debt_remaining","base_replies_remaining","emergency_replies_remaining","addon_replies_remaining","total_replies_available","addon_batch_id","addon_batch_expires_at"],
+  "subscription_plan_event": ["operation","plan_name","start_date","expires_at","emergency_debt_paid","emergency_debt_remaining","base_replies_remaining","addon_replies_remaining","total_replies_available","previous_plan_name"],
+  "subscription_emergency_activated": ["addon_batch_id","emergency_replies_added","emergency_debt","expires_at"],
+};
+
+function projectNotificationResponseFields(notification: Record<string, unknown>): Record<string, unknown> {
+  const projected: Record<string, unknown> = {
+    id: notification.id,
+    type: notification.type,
+    created_at: notification.created_at,
+  };
+  if (Object.hasOwn(notification, "read_at")) projected.read_at = notification.read_at;
+  // Historical notification types can match inherited object names such as
+  // constructor, __proto__ or toString; only own type contracts are allowed.
+  const notificationType = String(notification.type);
+  const allowedFields = Object.hasOwn(NOTIFICATION_RESPONSE_VARIABLE_FIELDS, notificationType)
+    ? NOTIFICATION_RESPONSE_VARIABLE_FIELDS[notificationType]
+    : [];
+  for (const key of allowedFields) {
+    if (Object.hasOwn(notification, key)) projected[key] = notification[key];
+  }
+  return projected;
+}
+
 function mapNotification(row: {
   id: string;
   type: string;
@@ -258,13 +329,74 @@ function mapNotification(row: {
   read_at: Date | string | null;
   created_at: Date | string;
 }) {
+  // Stored template data must not replace canonical record identity or read
+  // state. Copy first so projection never edits the persisted variables.
+  const variables = { ...record(row.variables) };
+  for (const key of ["id", "type", "created_at", "read_at"]) delete variables[key];
   return {
     id: row.id,
     type: row.type,
-    ...record(row.variables),
+    ...variables,
     created_at: iso(row.created_at) || new Date().toISOString(),
     ...(row.read_at ? { read_at: iso(row.read_at) } : {}),
   };
+}
+
+type NotificationProjectionRow = {
+  id: string;
+  type: string;
+  variables: unknown;
+  read_at: Date | string | null;
+  created_at: Date | string;
+  source_entity_type: string | null;
+  source_entity_id: string | null;
+};
+
+// Inspection lifecycle is mutable. Read it from the tenant-owned request rather
+// than persisting a pending snapshot in notification variables.
+async function mapNotificationRows(
+  client: { query<T extends Record<string, unknown>>(sql: string, values?: unknown[]): Promise<{ rows: T[] }> },
+  merchantId: string,
+  rows: NotificationProjectionRow[],
+) {
+  const requestIds = [...new Set(rows
+    .filter(row => row.type === "inspection_session_request" && row.source_entity_type === "support_inspection_request")
+    .map(row => text(row.source_entity_id)).filter(Boolean))];
+  const requests = requestIds.length ? await client.query<{
+    id: string; ticket_id: string; status: string; consent_decision: string | null;
+    responded_at: Date | string | null; session_expires_at: Date | string | null;
+    ended_at: Date | string | null; end_reason: string | null;
+  }>(
+    `SELECT id, ticket_id, status::text AS status,
+            consent_decision::text AS consent_decision, responded_at,
+            approved_at + (session_duration_minutes * interval '1 minute') AS session_expires_at,
+            ended_at, end_reason
+       FROM support_inspection_requests
+      WHERE merchant_id = $1 AND id = ANY($2::text[])`,
+    [merchantId, requestIds],
+  ) : { rows: [] };
+  const byId = new Map(requests.rows.map(request => [request.id, request]));
+  return rows.map(row => {
+    const mapped = mapNotification(row);
+    if (row.type !== "inspection_session_request") return projectNotificationResponseFields(mapped);
+    const variables = record(row.variables);
+    // Lifecycle keys are authoritative even if historical variables contain
+    // stale values. Unlinked/legacy rows are not assigned a fabricated status.
+    const projected: Record<string, unknown> = { ...mapped };
+    for (const key of ["request_status", "consent_decision", "responded_at", "session_expires_at", "ended_at", "end_reason"]) delete projected[key];
+    const request = row.source_entity_type === "support_inspection_request"
+      ? byId.get(text(row.source_entity_id)) : undefined;
+    if (!request || variables.inspection_request_id !== request.id || variables.ticket_id !== request.ticket_id) return projectNotificationResponseFields(projected);
+    return projectNotificationResponseFields({
+      ...projected,
+      request_status: request.status,
+      ...(request.consent_decision ? { consent_decision: request.consent_decision } : {}),
+      ...(iso(request.responded_at) ? { responded_at: iso(request.responded_at) } : {}),
+      ...(iso(request.session_expires_at) ? { session_expires_at: iso(request.session_expires_at) } : {}),
+      ...(iso(request.ended_at) ? { ended_at: iso(request.ended_at) } : {}),
+      ...(request.end_reason ? { end_reason: request.end_reason } : {}),
+    });
+  });
 }
 
 export async function listMerchantNotificationsPostgresCanonical(input: {
@@ -279,14 +411,8 @@ export async function listMerchantNotificationsPostgresCanonical(input: {
     ? Math.max(1, Math.min(50, Number(input.limit)))
     : 20;
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const result = await client.query<{
-      id: string;
-      type: string;
-      variables: unknown;
-      read_at: Date | string | null;
-      created_at: Date | string;
-    }>(
-      `SELECT id, type, variables, read_at, created_at
+    const result = await client.query<NotificationProjectionRow>(
+      `SELECT id, type, variables, read_at, created_at, source_entity_type, source_entity_id
          FROM notifications
         WHERE audience = 'merchant' AND merchant_id = $1
           AND ($2::boolean = false OR read_at IS NULL)
@@ -295,7 +421,7 @@ export async function listMerchantNotificationsPostgresCanonical(input: {
         LIMIT $3`,
       [merchantId, Boolean(input.unreadOnly), limit],
     );
-    return result.rows.map(mapNotification);
+    return mapNotificationRows(client, merchantId, result.rows);
   });
 }
 
@@ -325,17 +451,11 @@ export async function markMerchantNotificationReadPostgresCanonical(input: {
   assertRequired();
   const merchantId = text(input.merchantId);
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const result = await client.query<{
-      id: string;
-      type: string;
-      variables: unknown;
-      read_at: Date | string | null;
-      created_at: Date | string;
-    }>(
+    const result = await client.query<NotificationProjectionRow>(
       `UPDATE notifications
           SET read_at = COALESCE(read_at, now())
         WHERE id = $1 AND audience = 'merchant' AND merchant_id = $2
-      RETURNING id, type, variables, read_at, created_at`,
+      RETURNING id, type, variables, read_at, created_at, source_entity_type, source_entity_id`,
       [text(input.notificationId), merchantId],
     );
     if (!result.rows[0]) {
@@ -345,7 +465,7 @@ export async function markMerchantNotificationReadPostgresCanonical(input: {
         404,
       );
     }
-    return mapNotification(result.rows[0]);
+    return (await mapNotificationRows(client, merchantId, result.rows))[0];
   });
 }
 

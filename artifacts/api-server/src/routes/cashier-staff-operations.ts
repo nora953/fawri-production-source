@@ -40,7 +40,15 @@ import {
   getCashierEntitlementAuthoritative,
 } from "../services/cashierEntitlementAuthority";
 
+import { issueCashierOfflineEntitlement } from "../services/cashierOfflineEntitlementIssuer";
+
 const router = Router();
+
+function offlineEntitlement(res: Response) {
+  return issueCashierOfflineEntitlement(
+    getCashierEntitlementContext(res), getCashierStationContext(res),
+  );
+}
 
 function mapCashierRuntimeUniqueConflict(
   error: unknown,
@@ -403,6 +411,7 @@ router.get(
       ok: true,
       station,
       cashier_entitlement: getCashierEntitlementContext(res),
+      cashier_offline_entitlement: offlineEntitlement(res),
     });
   },
 );
@@ -458,6 +467,7 @@ router.post(
         ok: true,
         ...result,
         cashier_entitlement: getCashierEntitlementContext(res),
+      cashier_offline_entitlement: offlineEntitlement(res),
       });
     } catch (error) {
       sendError(res, error);
@@ -475,6 +485,7 @@ router.get(
       ok: true,
       operator,
       cashier_entitlement: getCashierEntitlementContext(res),
+      cashier_offline_entitlement: offlineEntitlement(res),
     });
   },
 );

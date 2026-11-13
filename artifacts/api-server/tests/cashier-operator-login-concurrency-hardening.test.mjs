@@ -39,12 +39,19 @@ test('concurrent operator login unique conflicts map to stable cashier 409 error
   assert.match(route, /res\.status\(mapped\.status\)/);
 
   const loginStart = authority.indexOf('export async function loginCashierOperatorAuthoritative');
-  const transaction = authority.indexOf('withMerchantOperationalTransaction(', loginStart);
-  const shiftInsert = authority.indexOf('INSERT INTO cashier_shifts', transaction);
-  const sessionInsert = authority.indexOf('INSERT INTO cashier_operator_sessions', shiftInsert);
+  const loginEnd = authority.indexOf('export async function ', loginStart + 1);
+  const login = authority.slice(loginStart, loginEnd < 0 ? undefined : loginEnd);
+  const transaction = login.indexOf('withMerchantAuthenticationTransaction(');
+  const shiftInsert = login.indexOf('INSERT INTO cashier_shifts', transaction);
+  const sessionInsert = login.indexOf('INSERT INTO cashier_operator_sessions', shiftInsert);
 
   assert.ok(loginStart >= 0, 'operator login authority must exist');
-  assert.ok(transaction > loginStart, 'operator login must use one merchant transaction');
+  assert.equal((login.match(/withMerchantAuthenticationTransaction\(/g) || []).length, 1,
+    'operator login must use exactly one trusted authentication transaction');
+  assert.ok(transaction >= 0, 'operator login must use the credential-capable authentication pool');
+  assert.doesNotMatch(login, /withMerchantOperationalTransaction\(/,
+    'operator credentials must not use the tenant pool');
+  assert.match(login.slice(transaction), /station\.merchant_id/);
   assert.ok(shiftInsert > transaction, 'open shift creation must stay inside the login transaction');
   assert.ok(sessionInsert > shiftInsert, 'operator session creation must follow shift creation');
 });

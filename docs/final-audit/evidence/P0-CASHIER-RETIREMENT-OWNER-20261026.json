@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "gate": "CASHIER-SYNC-SEQUENCE-001",
+  "status": "BOUNDED_NONLOGIN_COLUMN_LIMITED_RETIREMENT_OWNER_ACCEPTED_CANONICAL_PROMOTION_PENDING",
+  "source": "e822ba57b63d6eb06b30ed86582f71d0cab28916",
+  "sourceTree": "ca5970026c26bb59d32e43a2e62b6f24a51b8180",
+  "checkout": "4767b90e14402a7f8a4a33efd090f341918755e8",
+  "checkoutTreeMatched": true,
+  "release": "NO-GO",
+  "gateClosed": false,
+  "fixture": "artifacts/api-server/tests/cashier-stream-storage-proposal-postgres.integration.test.mjs",
+  "proposal": "evidence/seq-d2-stream-receipt-schema-proposal.sql",
+  "fixtureTap": {
+    "passed": 8,
+    "functionalSubtests": 7,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "observed": [
+    "Retirement function owner is NOLOGIN/NOSUPERUSER/NOBYPASSRLS/NOCREATEDB/NOCREATEROLE/NOINHERIT/NOREPLICATION",
+    "Owner owns no tables or indexes and has no public schema CREATE",
+    "Owner SELECT on streams; UPDATE authority only state/device_id/version with explicit RLS retirement policies",
+    "No owner UPDATE on checkpoint/id/merchant/enrollment proof; no receipt/account/merchant read or mutation grants",
+    "Primary/authentication LOGIN cannot use or SET owner role and cannot directly execute trigger function",
+    "Actual unchanged deletion service succeeds with non-login owner and prior fault/retry/peer/receipt assertions",
+    "Revoked UPDATE(version) makes deletion fail42501 and rolls back exact selected target/peer data; restored grant permits deletion"
+  ],
+  "limits": [
+    "Only owned disposable fixture role/grant/owner changes; canonical migration/schema/journal and hosted untouched",
+    "No new live route or financial receipt writer",
+    "Role authority candidate is not canonical readiness/dump-restore or full policy acceptance",
+    "Retention/deletion FIELD005 policy and hosted requirements remain open"
+  ],
+  "nextAction": "Add proposal-inclusive dump/restore proof preserving non-login owner, function/trigger definitions, column ACLs, RLS policies and restricted caller denial/valid deletion before canonical migration promotion; then canonical Drizzle/readiness integration.",
+  "fixtureSha256": "bc7f641ec79129a1fb8d1299f0d554ada9a0a101dbf9b6bf6251cb68af36802c",
+  "ci": {
+    "total": 56,
+    "success": 56,
+    "target": {
+      "run": 40306955203,
+      "job": 121518318946,
+      "invocations": 14,
+      "files": 14,
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "4767b90e14402a7f8a4a33efd090f341918755e8"
+    },
+    "broader": {
+      "run": 40306955254,
+      "job": 121518317522,
+      "invocations": 93,
+      "files": 91,
+      "passed": 732,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "checkout": "4767b90e14402a7f8a4a33efd090f341918755e8"
+    }
+  }
+}

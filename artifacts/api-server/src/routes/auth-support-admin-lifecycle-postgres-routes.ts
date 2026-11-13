@@ -1,3 +1,4 @@
+import { authenticationDatabasePool } from "../services/authenticationPostgresAuthority";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import {
   getAuthContext,
@@ -6,7 +7,6 @@ import {
 } from "../middleware/authSession";
 import { hasAdminPermission } from "../services/authPolicy";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
 } from "../services/operationalPostgresAuthority";
 import { listAdminSupportTicketsPostgres } from "../services/postgresSupportAuthority";
@@ -51,7 +51,7 @@ router.get(
 
       await refreshSupportLifecyclePostgresCanonical();
       const tickets = await listAdminSupportTicketsPostgres();
-      const pool = await operationalDatabasePool();
+      const pool = await authenticationDatabasePool();
       const lifecycle = await pool.query<{
         id: string;
         assistant_reminder_sent_at: Date | string | null;

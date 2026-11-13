@@ -216,7 +216,9 @@ export type CashierOperationTimelineDecision =
       code:
         | "CASHIER_OPERATION_SEQUENCE_CONFLICT"
         | "CASHIER_OPERATION_CLOCK_ROLLBACK"
-        | "CASHIER_OPERATION_CLOCK_AHEAD";
+        | "CASHIER_OPERATION_CLOCK_AHEAD"
+        | "CASHIER_OPERATION_STREAM_REVIEW_REQUIRED"
+        | "CASHIER_OPERATION_STREAM_PROTOCOL_REQUIRED";
       reason: string;
     };
 
@@ -252,6 +254,30 @@ export async function recordCashierOperationTimelineInTransaction(input: {
       allowed: false,
       code: "CASHIER_OPERATION_CLOCK_AHEAD",
       reason: "cashier operation timestamp is too far ahead of server time",
+    };
+  }
+
+  // This is the legacy timeline writer shared by sale/return/void. Callers
+  // hold the merchant/device advisory transaction lock before reaching it.
+  // A v2 stream must never fall through to uncheckpointed v1 writes or replay.
+  // Enrollment is not implemented here; a future enrollment writer must take
+  // the same advisory lock even when no stream row exists (a row lock alone
+  // cannot serialize that absence). Scoped SELECT needs no new DML authority.
+  const streams = await operationalQueryRows<{ state: string }>(
+    input.target,
+    `SELECT state FROM cashier_device_streams
+      WHERE merchant_id = $1 AND device_id = $2
+        AND state IN ('review', 'active')
+      LIMIT 1`,
+    [input.merchantId, input.deviceId],
+  );
+  if (streams[0]) {
+    return {
+      allowed: false,
+      code: streams[0].state === "review"
+        ? "CASHIER_OPERATION_STREAM_REVIEW_REQUIRED"
+        : "CASHIER_OPERATION_STREAM_PROTOCOL_REQUIRED",
+      reason: "cashier device stream requires reviewed versioned admission",
     };
   }
 

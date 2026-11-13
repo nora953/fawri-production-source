@@ -3,9 +3,13 @@ import { getFawriDataDir } from "./lib/dataPaths";
 import type { DurableJobWorker } from "./services/durableJobQueue";
 import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningIncidentMonitor";
 import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
-import { assertProductionRuntimeConfiguration } from "./services/productionReleaseReadiness";
+import { assertProductionRuntimeConfiguration, productionReleaseGateRequired } from "./services/productionReleaseReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
+import { assertProductionCashierStreamStorageReady } from "./services/cashierStreamStorageReadiness";
 import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
+import { createPostgresAuthorityReadinessCheck } from "./observability/runtime";
+import { assertProductionAuthenticationDatabaseReady } from "./services/authenticationPostgresAuthority";
+import { assertProductionOperatorDatabaseReady } from "./services/operatorDirectoryPostgresAuthority";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
 
 const rawPort = process.env["PORT"];
@@ -22,6 +26,16 @@ if (!Number.isInteger(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+function safeStartupSourceLocation(error: unknown): string {
+  if (!(error instanceof Error)) return "unknown";
+  const frames = String(error.stack || "").split("\n").slice(1);
+  for (const frame of frames) {
+    const match = frame.match(/(?:src|dist)\/([a-zA-Z0-9_./-]+\.(?:ts|js|mjs)):(\d+):(\d+)/);
+    if (match) return match[1] + ":" + match[2];
+  }
+  return "unavailable";
+}
+
 function safeStartupErrorCode(error: unknown): string {
   const raw =
     error && typeof error === "object"
@@ -32,32 +46,50 @@ function safeStartupErrorCode(error: unknown): string {
     : "RUNTIME_PROVIDER_INITIALIZATION_FAILED";
 }
 
+type StartupStage = "runtime_configuration" | "database_rls" | "cashier_storage" | "owner_admin" | "provider_initialization" | "application_import" | "listener";
+let startupStage: StartupStage = "runtime_configuration";
+
 async function main(): Promise<void> {
   // Production fails closed before any provider bootstrap, listener, worker,
   // or application traffic. Staging/development must opt out explicitly.
   assertProductionRuntimeConfiguration(process.env);
+  startupStage = "database_rls";
   await assertProductionDatabaseRlsReady(process.env);
+  // FIELD002: readiness-only checks do not prevent ingress when a host
+  // ignores /ops/readiness. Admit the exact reviewed eight RLS policies on
+  // the same DATABASE_URL pool before loading the app or opening the listener.
+  if (productionReleaseGateRequired(process.env)) {
+    await createPostgresAuthorityReadinessCheck().check();
+    // FIELD002: verify the *authenticated* issuer pool too. Tenant RLS alone
+    // cannot certify that a separate auth LOGIN is safe or even reachable.
+    await assertProductionAuthenticationDatabaseReady(process.env);
+    // A third trusted issuer handles operator directory and receipt review;
+    // it must prove its separate SQL identity before any application traffic.
+    await assertProductionOperatorDatabaseReady(process.env);
+  }
+  startupStage = "cashier_storage";
+  await assertProductionCashierStreamStorageReady(process.env);
+  startupStage = "owner_admin";
   await assertProductionOwnerAdminReady(process.env);
 
+  startupStage = "provider_initialization";
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
     loadApplication: async () => {
-      const [
-        { default: app },
-        { startMetaWebhookWorker },
-        { startEarlyWarningIncidentMonitor },
-        { startMerchantPhysicalMediaCleanupReconciler },
-      ] = await Promise.all([
-        import("./app"),
-        import("./services/metaWebhookWorker"),
-        import("./services/earlyWarningIncidentMonitor"),
-        import("./services/merchantPhysicalMediaCleanup"),
-      ]);
-      return {
-        app,
-        startMetaWebhookWorker,
-        startEarlyWarningIncidentMonitor,
-        startMerchantPhysicalMediaCleanupReconciler,
-      };
+      startupStage = "application_import";
+      let importTarget = "app";
+      try {
+        const { default: app } = await import("./app");
+        importTarget = "meta_worker";
+        const { startMetaWebhookWorker } = await import("./services/metaWebhookWorker");
+        importTarget = "incident_monitor";
+        const { startEarlyWarningIncidentMonitor } = await import("./services/earlyWarningIncidentMonitor");
+        importTarget = "media_cleanup";
+        const { startMerchantPhysicalMediaCleanupReconciler } = await import("./services/merchantPhysicalMediaCleanup");
+        return { app, startMetaWebhookWorker, startEarlyWarningIncidentMonitor, startMerchantPhysicalMediaCleanupReconciler };
+      } catch (error) {
+        logger.error({ importTarget, code: safeStartupErrorCode(error), errorType: error instanceof Error ? error.name : "unknown", sourceLocation: safeStartupSourceLocation(error) }, "Application module import failed");
+        throw error;
+      }
     },
   });
   const {
@@ -72,6 +104,7 @@ async function main(): Promise<void> {
   let merchantMediaCleanupReconciler: MerchantPhysicalMediaCleanupReconciler | null = null;
   let shuttingDown = false;
 
+  startupStage = "listener";
   const server = app.listen(port, () => {
     logger.info({ port, dataDir: getFawriDataDir() }, "Server listening");
 
@@ -161,7 +194,7 @@ async function main(): Promise<void> {
 
 void main().catch((error) => {
   logger.fatal(
-    { code: safeStartupErrorCode(error) },
+    { code: safeStartupErrorCode(error), startupStage },
     "Production runtime provider bootstrap failed",
   );
   process.exit(1);

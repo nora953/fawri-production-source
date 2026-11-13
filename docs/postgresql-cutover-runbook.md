@@ -80,10 +80,12 @@ Before production write mode can be implemented, the operator must provide all o
 - a tested application maintenance/read-only procedure;
 - a maximum cutover window and an explicit abort deadline.
 
+P0 checkpoint 2026-10-26: preserve ownership and ACL statements for function authority and RLS. The disposable CLI v2 drill verifies two explicit non-login fixture roles; the full FAWRI role/credential bootstrap and hosted recovery plan remain unaccepted. Keep release NO-GO. Preprovision reviewed role definitions before restore; do not blindly execute a globals dump or omit owners/ACLs to make restoration pass.
+
 Example logical backup commands are templates only and must not be run by this branch:
 
 ```bash
-pg_dump --format=custom --no-owner --no-acl --file=fawri-before-cutover.dump "$PRODUCTION_DATABASE_URL"
+pg_dump --format=custom --file=fawri-before-cutover.dump "$PRODUCTION_DATABASE_URL"
 pg_dumpall --globals-only --file=fawri-before-cutover-globals.sql "$PRODUCTION_DATABASE_URL"
 sha256sum fawri-before-cutover.dump fawri-before-cutover-globals.sql
 ```
@@ -96,13 +98,15 @@ Restore only into an isolated database with no application traffic:
 
 ```bash
 createdb fawri_restore_rehearsal
-pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl \
+pg_restore --exit-on-error --clean --if-exists \
   --dbname=fawri_restore_rehearsal fawri-before-cutover.dump
 ```
 
 Then verify:
 
 - all expected schemas, tables, indexes, enums, checks, and foreign keys exist;
+- function owners, SECURITY DEFINER/search paths, column/table ACLs, policy role bindings and trigger definitions/enabled states match;
+- restricted actors still deny direct mutations and role activation while intended authority succeeds;
 - tenant-composite foreign keys reject cross-merchant references;
 - row counts match the backup inventory;
 - sampled deterministic hashes match;

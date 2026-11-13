@@ -174,6 +174,16 @@ async function authenticate(
     return;
   }
 
+  if (getSessionToken(req, "merchant") && getSessionToken(req, "admin")) {
+    sendAuthError(
+      res,
+      401,
+      "ROLE_SESSION_CONFUSION",
+      "merchant and administrator sessions cannot be combined",
+    );
+    return;
+  }
+
   const token = getSessionToken(req, expectedKind);
   if (!token) {
     sendAuthError(

@@ -15,7 +15,7 @@ function parseArgs(argv) {
     if (!key?.startsWith("--") || !value || values.has(key)) throw new Error("Invalid restore argument list");
     values.set(key, value);
   }
-  const allowed = new Set(["--url", "--backup", "--manifest", "--verify-sql", "--expect"]);
+  const allowed = new Set(["--url", "--backup", "--manifest", "--verify-sql", "--expect", "--field002-require-empty-notifications"]);
   for (const key of values.keys()) {
     if (!allowed.has(key)) throw new Error("Unknown restore argument");
   }
@@ -25,6 +25,7 @@ function parseArgs(argv) {
     manifest: values.get("--manifest"),
     verifySql: values.get("--verify-sql"),
     expect: values.get("--expect"),
+    field002RequireEmptyNotifications: values.get("--field002-require-empty-notifications"),
   };
 }
 
@@ -71,12 +72,12 @@ function sha256(file) {
   return createHash("sha256").update(readFileSync(file)).digest("hex");
 }
 
-function run(command, args, capture = false) {
+function run(command, args, capture = false, password = "") {
   const result = spawnSync(command, args, {
     stdio: ["ignore", "pipe", "pipe"],
     encoding: "utf8",
     // PGHOSTADDR/PGSERVICE/PGOPTIONS must not override the disposable URL.
-    env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))),
+    env: { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PG"))), ...(password ? { PGPASSWORD: password } : {}) },
   });
   if (result.error) throw new Error(`${command} could not start: ${redact(result.error.message)}`);
   if (result.status !== 0) {
@@ -91,43 +92,59 @@ function main() {
     throw new Error("PostgreSQL restore drill is disabled; explicit disposable guard is required");
   }
 
-  const { url, backup, manifest, verifySql, expect } = parseArgs(process.argv.slice(2));
+  const { url, backup, manifest, verifySql, expect, field002RequireEmptyNotifications } = parseArgs(process.argv.slice(2));
+  if (field002RequireEmptyNotifications !== undefined && field002RequireEmptyNotifications !== "1") {
+    throw new Error("FIELD002 release-fixture check requires explicit value 1");
+  }
   if (!url || !backup || !manifest || !verifySql || expect === undefined) {
     throw new Error(
       "Usage: node scripts/restore-postgresql.mjs --url <url> --backup <dump> --manifest <json> --verify-sql <sql> --expect <value>",
     );
   }
   assertDisposableRestoreUrl(url);
+  const connection = new URL(url);
+  const password = decodeURIComponent(connection.password);
+  connection.password = "";
   assertSafeVerificationSql(verifySql);
 
   const backupPath = path.resolve(backup);
   const metadata = JSON.parse(readFileSync(path.resolve(manifest), "utf8"));
   const stat = statSync(backupPath, { throwIfNoEntry: false });
   if (
-    metadata.format !== "fawri-postgresql-backup-v1" ||
+    metadata.format !== "fawri-postgresql-backup-v2" ||
+    metadata.security_model !== "preserve-owners-acls" ||
+    metadata.role_bootstrap !== "preprovision-global-roles-before-restore" ||
     typeof metadata.size !== "number" ||
     typeof metadata.sha256 !== "string" ||
     !stat?.isFile() ||
     stat.size !== metadata.size ||
     sha256(backupPath) !== metadata.sha256
   ) {
-    throw new Error("PostgreSQL backup checksum or metadata verification failed");
+    throw new Error("PostgreSQL backup checksum or security metadata verification failed; owner/ACL-preserving v2 backup required");
   }
 
   run("pg_restore", [
     "--dbname",
-    url,
+    connection.toString(),
     "--clean",
     "--if-exists",
-    "--no-owner",
-    "--no-privileges",
     "--exit-on-error",
     backupPath,
-  ]);
+  ], false, password);
 
-  const actual = run("psql", [url, "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", verifySql], true);
+  const actual = run("psql", [connection.toString(), "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", verifySql], true, password);
   if (actual !== expect) {
     throw new Error("PostgreSQL restore consistency verification failed");
+  }
+
+  // Release-preflight mode for a disposable restored copy only: never promote
+  // precommercial staging notifications into the commercial release target.
+  // An absent table, nonzero count or query failure MUST fail the check.
+  // This does not erase notifications, permit a hosted restore, or prove
+  // a future external import/deploy pipeline actually invokes this mode.
+  if (field002RequireEmptyNotifications === "1") {
+    const remaining = run("psql", [connection.toString(), "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", "SELECT count(*) FROM public.notifications"], true, password);
+    if (remaining !== "0") throw new Error("FIELD002 release-fixture exclusion failed: restored notifications must be empty");
   }
 
   process.stdout.write("PostgreSQL disposable restore completed and consistency verification passed\n");

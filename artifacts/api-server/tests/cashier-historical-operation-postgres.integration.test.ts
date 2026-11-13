@@ -36,6 +36,9 @@ test(
       FAWRI_SAAS_BILLING_PROVIDERS: "test_fake",
     });
 
+    const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    // Application imports below use the actual tenant LOGIN, never this root inspector.
     const [
       { pool },
       { hashPassword },
@@ -45,7 +48,7 @@ test(
       historical,
       operational,
     ] = await Promise.all([
-      import("@workspace/db"),
+      Promise.resolve({pool:runtimeFixture.admin}),
       import("../src/services/authPasswordService.js"),
       import("../src/services/postgresMerchantAccountAuthority.js"),
       import("../src/services/cashierBillingAuthority.js"),
@@ -59,7 +62,7 @@ test(
       if (merchantId) {
         await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]).catch(() => undefined);
       }
-      await pool.end();
+      await runtimeFixture.dispose();
     });
 
     const merchant = await merchants.upsertPendingMerchantAuthoritative({
@@ -90,7 +93,7 @@ test(
       idempotencyKey: "history-activate",
       provider: "test_fake",
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: activation.order.merchant_id,
       provider: "test_fake",
       providerEventId: "history-activation-event",
       orderId: activation.order.id,
@@ -173,7 +176,7 @@ test(
       idempotencyKey: "history-renew",
       provider: "test_fake",
     });
-    await billing.applyVerifiedCashierBillingProviderEvent({
+    await billing.applyVerifiedCashierBillingProviderEvent({ merchantId: renewal.order.merchant_id,
       provider: "test_fake",
       providerEventId: "history-renewal-event",
       orderId: renewal.order.id,
@@ -298,6 +301,59 @@ test(
           assert.equal(ahead.allowed, false);
           if (!ahead.allowed) assert.equal(ahead.code, "CASHIER_OPERATION_CLOCK_AHEAD");
         }
+        // A higher device sequence currently admits a gap. Once admitted, the
+        // missing lower sequence cannot be backfilled: preserve this as a
+        // regression observation until the client/server gap protocol is agreed.
+        const gapAt = new Date(validGraceAt.getTime() + 1000);
+        const gapSequence = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 103,
+          operationId: "history-gap-103",
+          operationKind: "sale",
+          occurredAt: gapAt.toISOString(),
+          authority: valid,
+        });
+        assert.deepEqual(gapSequence, { allowed: true, replayed: false },
+          "current server accepts a higher device sequence without a contiguous predecessor");
+        const missingSequence = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 102,
+          operationId: "history-missing-102",
+          operationKind: "sale",
+          occurredAt: gapAt.toISOString(),
+          authority: valid,
+        });
+        assert.equal(missingSequence.allowed, false,
+          "later delivery of a missing lower sequence is rejected after the gap");
+        if (!missingSequence.allowed) assert.equal(missingSequence.code, "CASHIER_OPERATION_SEQUENCE_CONFLICT");
+        const exactGapReplay = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 103,
+          operationId: "history-gap-103",
+          operationKind: "sale",
+          occurredAt: gapAt.toISOString(),
+          authority: valid,
+        });
+        assert.deepEqual(exactGapReplay, { allowed: true, replayed: true });
+        const alteredGapReplay = await historical.recordCashierOperationTimelineInTransaction({
+          target: client,
+          merchantId,
+          deviceId,
+          deviceSequence: 103,
+          operationId: "history-altered-gap-103",
+          operationKind: "sale",
+          occurredAt: gapAt.toISOString(),
+          authority: valid,
+        });
+        assert.equal(alteredGapReplay.allowed, false);
+        if (!alteredGapReplay.allowed) assert.equal(alteredGapReplay.code, "CASHIER_OPERATION_SEQUENCE_CONFLICT");
+
       },
     );
   },

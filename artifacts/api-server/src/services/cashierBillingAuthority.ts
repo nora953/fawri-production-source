@@ -1,3 +1,4 @@
+import {authorizeConfirmedProviderBillingScope,type ConfirmedProviderBillingScope} from './confirmedProviderBillingScope';
 import type {BillingReplayScope} from './billingReplayScope';
 import crypto from "node:crypto";
 import {
@@ -64,6 +65,9 @@ export type CashierBillingOrderRecord = {
 };
 
 export type VerifiedCashierBillingProviderEvent = {
+  // Authorized server context for direct merchant calls, never provider payload.
+  // Confirmed-provider and operator replay scopes resolve their own merchant.
+  merchantId?: string;
   provider: "test_fake" | "superqi_sandbox";
   providerEventId: string;
   orderId: string;
@@ -996,6 +1000,7 @@ async function applyPaidOrder(
 export async function applyVerifiedCashierBillingProviderEvent(
   input: VerifiedCashierBillingProviderEvent,
   replay?: BillingReplayScope,
+  confirmed?: ConfirmedProviderBillingScope,
 ): Promise<{
   status:
     | "applied"
@@ -1042,11 +1047,9 @@ export async function applyVerifiedCashierBillingProviderEvent(
     ? requiredText(input.providerPaymentRef, "provider_payment_ref", 300)
     : "";
 
-  const pool = await operationalDatabasePool();
-  const discovery = replay ? [] : await operationalQueryRows<{merchant_id:string}>(pool,
-    `SELECT merchant_id FROM cashier_billing_orders WHERE id = $1 LIMIT 2`,[orderId]);
-  if (!replay && discovery.length !== 1) fail("CASHIER_BILLING_ORDER_NOT_FOUND","cashier billing order not found",404);
-  const merchantId = replay ? requiredText(replay.merchantId,"merchant_id",200) : discovery[0].merchant_id;
+  const merchantId = confirmed ? requiredText(confirmed.merchantId,"merchant_id",200)
+    : replay ? requiredText(replay.merchantId,"merchant_id",200)
+    : requiredText(input.merchantId,"merchant_id",200);
   let sqlFailure: unknown;
   const processEvent = async (
     client: OperationalQueryTarget,
@@ -1058,6 +1061,11 @@ export async function applyVerifiedCashierBillingProviderEvent(
         `${input.provider}:${eventId}`,
       ]);
       if(replay) await replay.authorize(client);
+    if(confirmed){
+      if(replay || input.provider!=='superqi_sandbox' || new Date(input.occurredAt).getTime()!==new Date(confirmed.firstReceivedAt).getTime() || confirmed.orderId!==orderId || confirmed.authority!=="cashier_subscription" || confirmed.eventId!==eventId || confirmed.paymentId!==input.providerPaymentRef || confirmed.eventType!==input.eventType || confirmed.amountIqd!==input.amountIqd || confirmed.payloadHash!==input.payloadHash)
+        throw new Error('confirmed provider event scope conflict');
+      await authorizeConfirmedProviderBillingScope(client,confirmed);
+    }
       const duplicate = await operationalQueryRows<{
         order_id: string;
         status: string;
@@ -1433,10 +1441,26 @@ export async function applyVerifiedCashierBillingProviderEvent(
       }
   };
   // Admission and application retain the same merchant-scoped transaction API.
-  const admitted = await withMerchantOperationalTransaction(merchantId, (client) => processEvent(client, true));
+  const executeTransaction = replay ? replay.transaction : <T>(work:(client:OperationalQueryTarget)=>Promise<T>) => withMerchantOperationalTransaction(merchantId, work);
+  const runTransaction = async <T>(work: (client: OperationalQueryTarget) => Promise<T>): Promise<T> => {
+    try {
+      return await executeTransaction(work);
+    } catch (error) {
+      // RLS intentionally hides another merchant's order. The global unique
+      // constraint still rejects reuse; translate only its exact native error
+      // after the transaction wrapper has rolled back, without reading that row.
+      const violation = error as { code?: string; constraint?: string } | null;
+      if (violation?.code === "23505" &&
+          violation.constraint === "cashier_billing_orders_provider_payment_unique") {
+        fail("CASHIER_BILLING_PAYMENT_REPLAY", "cashier payment reference was already used by another billing order", 409);
+      }
+      throw error;
+    }
+  };
+  const admitted = await runTransaction((client) => processEvent(client, true));
   if (admitted.status !== "reconciliation_required" ||
       admitted.reasonCode !== "CASHIER_BILLING_RECEIPT_PENDING_APPLICATION") return admitted;
-  const outcome = await withMerchantOperationalTransaction(merchantId, (client) => processEvent(client, false));
+  const outcome = await runTransaction((client) => processEvent(client, false));
   // Throw only after COMMIT: the provider retries while durable receipt survives.
   if (sqlFailure) throw sqlFailure;
   return outcome;

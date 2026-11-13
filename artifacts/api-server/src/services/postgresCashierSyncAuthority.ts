@@ -1,4 +1,8 @@
 import {
+  prepareInternalCashierStreamBody, beginCashierStreamOperation, persistCashierStreamReceipt,
+  type CashierVersionedStreamContext, type CashierStreamAdmission,
+} from "./cashierStreamAdmissionAuthority";
+import {
   evaluateCashierHistoricalOperationAuthorityInTransaction,
   recordCashierOperationTimelineInTransaction,
 } from "./cashierHistoricalOperationAuthority";
@@ -140,6 +144,8 @@ type ExistingOrderRow = {
 };
 
 export type CashierSaleSyncResult = {
+  protocol_version?: 2;
+  stream_id?: string;
   operation_id: string;
   order_id: string;
   device_sequence: number;
@@ -171,6 +177,21 @@ function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+// Reserve the versioned-stream wire markers before enabling v2 admission.
+// Never strip them and ACK a request using legacy financial/replay semantics.
+export function assertLegacyCashierSyncProtocol(raw: Record<string, unknown>): void {
+  if (
+    (Object.hasOwn(raw, "protocol_version") && raw.protocol_version !== 1) ||
+    Object.hasOwn(raw, "stream_id")
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_PROTOCOL_UNSUPPORTED",
+      "versioned cashier stream admission is not available",
+      409,
+    );
+  }
 }
 
 function identifier(value: unknown, field: string, maxLength = 200): string {
@@ -598,6 +619,7 @@ function parseEnvelope(value: unknown): CashierEnvelope {
 
 export function validateCashierSaleSyncBundle(body: unknown): ValidatedBundle {
   const raw = record(body);
+  assertLegacyCashierSyncProtocol(raw);
   const cloudMerchantId = identifier(raw.cloud_merchant_id, "cloud_merchant_id");
   const localMerchantId = identifier(raw.local_merchant_id, "local_merchant_id");
   const deviceId = identifier(raw.device_id, "device_id");
@@ -1229,6 +1251,7 @@ export async function syncCashierSaleAuthoritative(params: {
   merchantId: unknown;
   locationId?: unknown;
   body: unknown;
+  versionedStream?: CashierVersionedStreamContext;
 }): Promise<CashierSaleSyncResult> {
   const merchantId = identifier(params.merchantId, "merchant_id");
   const requestedLocationId =
@@ -1242,7 +1265,7 @@ export async function syncCashierSaleAuthoritative(params: {
       503,
     );
   }
-  const bundle = validateCashierSaleSyncBundle(params.body);
+  const bundle = validateCashierSaleSyncBundle(params.versionedStream ? prepareInternalCashierStreamBody(params.body,params.versionedStream) : params.body);
   if (bundle.cloudMerchantId !== merchantId) {
     throw new CashierSyncError(
       "CASHIER_SYNC_TENANT_MISMATCH",
@@ -1270,6 +1293,13 @@ export async function syncCashierSaleAuthoritative(params: {
         403,
       );
     }
+    let admission: CashierStreamAdmission | undefined;
+    if(params.versionedStream){
+      admission=await beginCashierStreamOperation(client,params.versionedStream,{
+        merchantId,deviceId:bundle.deviceId,operationId:bundle.operationId,deviceSequence:bundle.deviceSequence,
+        kind:"sale",occurredAt:bundle.sale.occurred_at,requestHash:bundle.requestHash,resultId:bundle.sale.sale_id,
+      });
+    } else {
     const timeline = await recordCashierOperationTimelineInTransaction({
       target: client,
       merchantId,
@@ -1282,6 +1312,13 @@ export async function syncCashierSaleAuthoritative(params: {
     });
     if (!timeline.allowed) {
       throw new CashierSyncError(timeline.code, timeline.reason, 409);
+    }
+    }
+    async function finish(result: CashierSaleSyncResult): Promise<CashierSaleSyncResult> {
+      if(!admission)return result;
+      if(result.replayed!==admission.replayed)throw new CashierSyncError("CASHIER_STREAM_RECONCILIATION_REQUIRED","financial result and original receipt disagree",409);
+      await persistCashierStreamReceipt(client,admission);
+      return {...result,protocol_version:2,stream_id:admission.streamId};
     }
     const locationId = await requireCashierStationLocation(client, {
       merchantId,
@@ -1306,16 +1343,17 @@ export async function syncCashierSaleAuthoritative(params: {
           409,
         );
       }
-      return {
+      return finish({
         operation_id: bundle.operationId,
         order_id: existing.id,
         device_sequence: bundle.deviceSequence,
         replayed: true,
         inventory_mutation_count: 0,
         accepted_entity_ids: bundle.envelopes.map((item) => item.entity_id),
-      };
+      });
     }
 
+    if(admission?.replayed)throw new CashierSyncError("CASHIER_STREAM_RECONCILIATION_REQUIRED","receipt financial result is unavailable",409);
     await assertDeviceSequenceUnused(client, bundle);
     let inventoryMutationCount = 0;
     for (const line of bundle.sale.lines) {
@@ -1332,13 +1370,13 @@ export async function syncCashierSaleAuthoritative(params: {
       );
     }
     await insertCanonicalOrder(client, bundle, locationId);
-    return {
+    return finish({
       operation_id: bundle.operationId,
       order_id: bundle.sale.sale_id,
       device_sequence: bundle.deviceSequence,
       replayed: false,
       inventory_mutation_count: inventoryMutationCount,
       accepted_entity_ids: bundle.envelopes.map((item) => item.entity_id),
-    };
+    });
   });
 }

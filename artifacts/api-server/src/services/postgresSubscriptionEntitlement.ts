@@ -1,3 +1,5 @@
+import { withOperatorDirectoryTransaction } from "./operatorDirectoryPostgresAuthority";
+import { withOperationalTransaction, type OperationalQueryTarget, type OperationalTransactionClient, type OperationalDatabasePool } from "./operationalPostgresAuthority";
 import crypto from "node:crypto";
 import {
   applySubscriptionPlanCyclePostgres,
@@ -116,17 +118,9 @@ export class SubscriptionEntitlementAuthorityError extends Error {
   }
 }
 
-type QueryResult = {
-  rows: Record<string, unknown>[];
-  rowCount?: number | null;
-};
-
-type QueryTarget = {
-  query(sql: string, values?: unknown[]): Promise<QueryResult>;
-};
-
-type TransactionClient = QueryTarget & { release(): void };
-type DatabasePool = QueryTarget & { connect(): Promise<TransactionClient> };
+type QueryTarget = OperationalQueryTarget;
+type TransactionClient = OperationalTransactionClient;
+type DatabasePool = OperationalDatabasePool;
 
 type SubscriptionRow = {
   id: string;
@@ -409,19 +403,7 @@ async function queryRows<T extends Record<string, unknown>>(
 async function withTransaction<T>(
   work: (client: TransactionClient) => Promise<T>,
 ): Promise<T> {
-  const pool = await databasePool();
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const result = await work(client);
-    await client.query("COMMIT");
-    return result;
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+  return withOperationalTransaction(work, await databasePool());
 }
 
 // Tenant context belongs to this transaction only; pooled connections must not
@@ -431,7 +413,8 @@ async function withMerchantSubscriptionTransaction<T>(
   work: (client: TransactionClient) => Promise<T>,
 ): Promise<T> {
   return withTransaction(async (client) => {
-    await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
+    const { issueMerchantTransactionScope } = await import("./tenantTransactionScope");
+    await issueMerchantTransactionScope(client, merchantId);
     return work(client);
   });
 }
@@ -563,7 +546,14 @@ async function refreshLockedSubscription(
   const totalRemaining = baseRemaining + addonRemaining;
   const totalUsed = baseUsed + addonUsed;
   let nextStatus = row.status;
-  if (nextStatus !== "suspended" && nextStatus !== "pending_activation") {
+  // Expired is also an authorization state, not merely a timestamp hint.
+  // A stale/future expires_at must not silently resurrect a subscription
+  // that has not gone through an explicit paid activation/renewal.
+  if (
+    nextStatus !== "suspended" &&
+    nextStatus !== "pending_activation" &&
+    nextStatus !== "expired"
+  ) {
     nextStatus =
       row.expires_at.getTime() <= now.getTime()
         ? "expired"
@@ -608,6 +598,54 @@ async function refreshLockedSubscription(
   }
 
   return { row, batches, totalRemaining, totalUsed };
+}
+
+// V1 merchant subscription GET is a pure snapshot. Querying a balance is
+// NOT permission to UPDATE subscription balances or expire reply batches.
+// Mutating reservations/refunds remain separate, guarded billing operations.
+async function readOnlySubscriptionSnapshot(
+  client: QueryTarget,
+  row: SubscriptionRow,
+  now: Date,
+): Promise<LockedSubscription> {
+  const result = await queryRows<Record<string, unknown>>(
+    client,
+    `SELECT id, subscription_id, merchant_id, source, amount, remaining,
+            purchased_at, expires_at, expiry_reminder_sent_at
+       FROM subscription_reply_batches
+      WHERE subscription_id = $1 AND merchant_id = $2
+        AND remaining > 0 AND expires_at > $3
+      ORDER BY expires_at ASC, purchased_at ASC, id ASC`,
+    [row.id, row.merchant_id, now],
+  );
+  const batches = result.map(toBatchRow);
+  const baseUsed = Math.min(row.base_reply_limit, row.base_replies_used);
+  const baseRemaining = Math.max(0, row.base_reply_limit - baseUsed);
+  const addonRemaining = batches.reduce((n, batch) => n + batch.remaining, 0);
+  const addonUsed = batches.reduce(
+    (n, batch) => n + (batch.amount - batch.remaining), 0,
+  );
+  const totalRemaining = baseRemaining + addonRemaining;
+  const totalUsed = baseUsed + addonUsed;
+  let status = row.status;
+  if (status !== "suspended" && status !== "pending_activation" &&
+      status !== "expired") {
+    status = row.expires_at.getTime() <= now.getTime()
+      ? "expired" : totalRemaining <= 0 ? "replies_exhausted" : "active";
+  }
+  return {
+    row: {
+      ...row,
+      base_replies_used: baseUsed,
+      base_replies_remaining: baseRemaining,
+      addon_replies_remaining: addonRemaining,
+      status,
+      auto_reply_enabled: status === "active" ? row.auto_reply_enabled : false,
+    },
+    batches,
+    totalRemaining,
+    totalUsed,
+  };
 }
 
 function apiRecord(state: LockedSubscription): SubscriptionApiRecord {
@@ -703,20 +741,42 @@ export async function getCurrentSubscriptionPostgres(
 ): Promise<SubscriptionApiRecord | null> {
   const normalizedMerchantId = requiredText(merchantId, 160);
   return withMerchantSubscriptionTransaction(normalizedMerchantId, async (client) => {
-    const row = await loadSubscriptionRow(client, normalizedMerchantId, true);
+    // Decide by authenticated database LOGIN, not an HTTP header/merchant ID.
+    const identity = await queryRows<{ session_login: string }>(
+      client, "SELECT session_user::text AS session_login",
+    );
+    const firstCommercial = identity.length === 1 &&
+      identity[0].session_login === "fawri_restricted_runtime";
+    const row = await loadSubscriptionRow(
+      client, normalizedMerchantId, !firstCommercial,
+    );
     if (!row) return null;
-    return apiRecord(await refreshLockedSubscription(client, row, now));
+    return apiRecord(firstCommercial
+      ? await readOnlySubscriptionSnapshot(client, row, now)
+      : await refreshLockedSubscription(client, row, now));
   });
 }
 
 export async function listSubscriptionsPostgres(
+  actorAdminId: string,
   now: Date = new Date(),
 ): Promise<SubscriptionApiRecord[]> {
-  const pool = await databasePool();
-  const result = await queryRows<Record<string, unknown>>(
-    pool,
-    `SELECT merchant_id FROM subscriptions ORDER BY starts_at DESC, merchant_id ASC`,
-  );
+  const actor = requiredText(actorAdminId, 180);
+  // Only the separately configured directory LOGIN may issue this audit. The
+  // SQL issuer rechecks current actor state and permissions on every snapshot.
+  const result = await withOperatorDirectoryTransaction(async client => {
+    const auditId = `database-admin-${crypto.randomUUID()}`;
+    await client.query("SELECT public.fawri_issue_admin_directory_audit($1,$2,$3)",
+      [actor, auditId, crypto.createHash("sha256").update(auditId).digest("hex")]);
+    const permission = await client.query<{allowed:boolean}>(`SELECT
+      EXISTS(SELECT 1 FROM public.admin_profiles WHERE account_id=$1 AND role='owner_admin')
+      OR EXISTS(SELECT 1 FROM public.admin_permissions WHERE admin_id=$1 AND permission='manage_subscriptions') AS allowed`,[actor]);
+    if (permission.rows[0]?.allowed !== true) {
+      fail("SUBSCRIPTION_ADMIN_PERMISSION_REQUIRED", "subscription administrator permission is required", 403);
+    }
+    return (await client.query<{merchant_id:string}>(`SELECT merchant_id FROM subscriptions
+      ORDER BY starts_at DESC, merchant_id ASC`)).rows;
+  });
   const output: SubscriptionApiRecord[] = [];
   for (const item of result) {
     const current = await getCurrentSubscriptionPostgres(
@@ -747,6 +807,25 @@ export async function reserveMerchantAutoReplyPostgres(
 
   try {
     return await withMerchantSubscriptionTransaction(normalizedMerchantId, async (client) => {
+      // A V1 restricted LOGIN receives no subscription/ledger DML grants.
+      // Execute the owner-owned, issuer-scope-bound atomic writer instead.
+      const identity = await queryRows<{session_login: string}>(
+        client, "SELECT session_user::text AS session_login",
+      );
+      if (identity.length === 1 &&
+          identity[0].session_login === "fawri_restricted_runtime") {
+        const decision = await queryRows<{result: MerchantReplyEntitlementDecision}>(
+          client, `SELECT public.fawri_v1_auto_reply_reserve(
+            $1::text,$2::text) AS result`,
+          [normalizedMerchantId, normalizedEventId],
+        );
+        if (!decision[0]?.result ||
+            typeof decision[0].result.allowed !== "boolean") {
+          return denied("MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE",
+            "merchant reply reservation result is unavailable");
+        }
+        return decision[0].result;
+      }
       await advisoryEventLock(client, normalizedEventId);
       const existing = await readEventLedger(client, normalizedEventId);
       if (existing.debit) {
@@ -937,6 +1016,27 @@ export async function restoreMerchantAutoReplyPostgres(
         withMerchantSubscriptionTransaction(scopedMerchantId, work)
     : withTransaction;
   return transaction(async (client) => {
+    const identity = await queryRows<{session_login: string}>(
+      client, "SELECT session_user::text AS session_login",
+    );
+    if (identity.length === 1 &&
+        identity[0].session_login === "fawri_restricted_runtime") {
+      if (!scopedMerchantId) {
+        return {restored:false,reason:"merchant_scope_required"};
+      }
+      const reason = restore.kind === "refund"
+        ? "META_REPLY_FAILED" : restore.reasonCode;
+      const resolved = await queryRows<{result: ReplyRestoreResult}>(
+        client, `SELECT public.fawri_v1_auto_reply_restore(
+          $1::text,$2::text,$3::text,$4::text) AS result`,
+        [scopedMerchantId, normalizedEventId, restore.kind, reason],
+      );
+      if (!resolved[0]?.result ||
+          typeof resolved[0].result.restored !== "boolean") {
+        return {restored:false,reason:"reconciliation_unavailable"};
+      }
+      return resolved[0].result;
+    }
     await advisoryEventLock(client, normalizedEventId);
     const ledger = await readEventLedger(client, normalizedEventId);
     if (!ledger.debit) {
@@ -1307,8 +1407,22 @@ export async function applySubscriptionActionPostgres(input: {
       await client.query(
         `UPDATE subscriptions
             SET emergency_debt = $3,
-                status = CASE WHEN expires_at > $4 THEN 'active' ELSE status END,
-                auto_reply_enabled = CASE WHEN expires_at > $4 THEN TRUE ELSE auto_reply_enabled END,
+                -- Adding reply credit is NOT evidence of a paid plan activation.
+                -- Refill is allowed to revive an exhausted, already activated
+                -- term; pending/suspended/expired plans keep their state.
+                status = CASE
+                  WHEN status IN ('active', 'replies_exhausted') AND expires_at > $4
+                    THEN 'active'::subscription_status
+                  ELSE status
+                END,
+                -- Credit must not override an active merchant's manual
+                -- auto-reply opt-out. Only an exhausted, already authorized
+                -- term resumes auto replies when replenished.
+                auto_reply_enabled = CASE
+                  WHEN status = 'replies_exhausted' AND expires_at > $4
+                    THEN TRUE
+                  ELSE auto_reply_enabled
+                END,
                 version = version + 1,
                 updated_at = $4
           WHERE id = $1 AND merchant_id = $2`,

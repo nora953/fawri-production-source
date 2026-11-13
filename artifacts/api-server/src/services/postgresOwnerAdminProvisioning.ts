@@ -1,9 +1,8 @@
+import { authenticationDatabasePool, withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { productionReleaseGateRequired } from "./productionReleaseReadiness";
@@ -49,7 +48,7 @@ function fail(code: string, message: string): never {
 export async function getOwnerAdminReadiness(
   target?: OperationalQueryTarget,
 ): Promise<OwnerAdminReadiness> {
-  const queryTarget = target || (await operationalDatabasePool());
+  const queryTarget = target || (await authenticationDatabasePool());
   const rows = await operationalQueryRows<{
     owner_count: string | number;
     usable_owner_count: string | number;
@@ -148,7 +147,7 @@ export async function provisionOwnerAdminPostgres(input: {
   const adminId = `admin-${crypto.randomUUID()}`;
 
   try {
-    await withOperationalTransaction(async (client) => {
+    await withAuthenticationTransaction(async (client) => {
       // Serialize the one-time control-plane bootstrap even when no owner row
       // exists yet. This prevents concurrent provisioning from creating two
       // owner administrators.

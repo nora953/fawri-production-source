@@ -1,5 +1,6 @@
+import { withReceiptOperatorReadTransaction } from "./operatorReceiptReadPostgresAuthority";
 import crypto from "node:crypto";
-import { operationalDatabasePool, operationalPostgresAuthorityRequired, operationalQueryRows } from "./operationalPostgresAuthority";
+import { operationalPostgresAuthorityRequired, operationalQueryRows } from "./operationalPostgresAuthority";
 
 export class ReceiptOperatorReadError extends Error {
   constructor(readonly code: string, readonly status: number) { super(code); }
@@ -34,10 +35,9 @@ export async function readVerifiedReceiptsForOperator(actorId: string, query: Re
   const auditId = `billing-receipts-${crypto.randomUUID()}`;
   const requestHash = crypto.createHash("sha256").update(JSON.stringify({auditId,limit,before,beforeId})).digest("hex");
   try {
-    const database = await operationalDatabasePool();
-    const rows = await operationalQueryRows<ReceiptRow>(database,
+    const rows = await withReceiptOperatorReadTransaction(database => operationalQueryRows<ReceiptRow>(database,
       "SELECT * FROM public.fawri_read_verified_payment_receipts($1,$2,$3,$4,$5,$6)",
-      [actorId,limit+1,before,beforeId,auditId,requestHash]);
+      [actorId,limit+1,before,beforeId,auditId,requestHash]));
     const receipts = rows.slice(0,limit), last = receipts.at(-1);
     const nextCursor = rows.length > limit && last
       ? Buffer.from(JSON.stringify({first_received_at:last.first_received_at,event_id:last.provider_event_id})).toString("base64url") : null;

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import type { DurableJob } from "./durableJobQueue";
+import type { OperationalSqlClient } from "./operationalPostgresAuthority";
 import {
   parseMetaInboundMessage,
   selectMetaInboundImageUrl,
@@ -7,6 +8,30 @@ import {
   selectMetaInboundVideoUrl,
   selectMetaInboundSafeMediaManifest,
 } from "./metaInboundMessage";
+
+
+// Legacy processed rows preserve receive identifiers, not the original webhook
+// body or a current job/reply outcome. Never fabricate a current inbound hash or
+// acknowledge them as delivered; retain them for reconciliation before new work.
+export async function assertNoUnreconciledLegacyMetaEvent(
+  client: OperationalSqlClient,
+  merchantId: string,
+  eventId: string,
+): Promise<void> {
+  const legacy = await client.query(
+    `SELECT id FROM processed_channel_events
+      WHERE merchant_id = $1 AND external_event_id = $2
+      LIMIT 1`,
+    [merchantId, eventId],
+  );
+  if (legacy.rows.length > 0) {
+    throw Object.assign(new Error("Legacy Meta event history is unreconciled"), {
+      code: "META_LEGACY_EVENT_HISTORY_UNRECONCILED",
+      retryable: false,
+      requeueSafe: false,
+    });
+  }
+}
 
 export type ParsedMetaJob = {
   eventId: string;

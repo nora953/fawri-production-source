@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import {cleanupResources} from "./helpers/cleanup-resources.mjs";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "");
 assert.ok(DATABASE_URL, "DATABASE_URL is required");
@@ -61,6 +62,11 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
     FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
   });
 
+  const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+  const bootstrapUrl=process.env.DATABASE_URL;
+  const runtimeFixture=await createDisposableKnowledgeRuntime();
+  const {createDisposableSubscriptionDirectoryOperator}=await import("./helpers/disposable-subscription-directory-operator.mjs");
+  const operatorFixture=await createDisposableSubscriptionDirectoryOperator(runtimeFixture.admin,bootstrapUrl);
   const [
     { pool },
     { default: express },
@@ -68,7 +74,7 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
     { default: authSecurityRouter },
     { authPostgresSessionAuthority },
   ] = await Promise.all([
-    import("@workspace/db"),
+    Promise.resolve({pool:runtimeFixture.admin}),
     import("express"),
     import("cookie-parser"),
     import("../src/routes/auth-security.js"),
@@ -76,6 +82,7 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
   ]);
 
   async function cleanup(): Promise<void> {
+    await pool.query("DELETE FROM database_admin_access_audits WHERE admin_account_id=ANY($1::text[])",[identityIds]);
     await pool.query("DELETE FROM accounts WHERE id = ANY($1::text[])", [identityIds]);
   }
 
@@ -183,12 +190,13 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
     otherMerchantSession.token,
   );
 
-  t.after(async () => {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    await cleanup();
-    await pool.end();
-    await rm(runtimeDirectory, { recursive: true, force: true });
-  });
+  t.after(()=>cleanupResources([
+    ['HTTP server',()=>new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()))],
+    ['directory operator',()=>operatorFixture.dispose()],
+    ['owned audit and identities',()=>cleanup()],
+    ['tenant/auth runtime',()=>runtimeFixture.dispose()],
+    ['temporary directory',()=>rm(runtimeDirectory,{recursive:true,force:true})],
+  ]));
 
   const beforeActivation = await responseJson(await fetch(
     `${baseUrl}/api/auth/subscription/current`,
@@ -251,6 +259,15 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
   assert.equal(otherMerchantCurrent.response.status, 404);
   assert.equal(otherMerchantCurrent.body?.code, "SUBSCRIPTION_NOT_FOUND");
 
+  // Directory-only permission must not become subscription-list authority.
+  await pool.query("INSERT INTO admin_permissions(admin_id,permission,granted_by_admin_id) VALUES($1,'view_merchants',$2)",[deniedAdminId,allowedAdminId]);
+  const {listSubscriptionsPostgres}=await import('../src/services/postgresSubscriptionEntitlement.js');
+  await assert.rejects(()=>listSubscriptionsPostgres(deniedAdminId),error=>error.status===403 && error.code==='SUBSCRIPTION_ADMIN_PERMISSION_REQUIRED');
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM database_admin_access_audits WHERE admin_account_id=$1',[deniedAdminId])).rows[0].n,0);
+  const deniedList=await responseJson(await fetch(`${baseUrl}/api/auth/admin/subscriptions`,{headers:{Cookie:deniedAdminCookie}}));
+  assert.equal(deniedList.response.status,403);
+  assert.equal((await pool.query("SELECT has_function_privilege($1,'public.fawri_issue_admin_directory_audit(text,text,text)','EXECUTE') AS can_issue",[runtimeFixture.role])).rows[0].can_issue,false);
+
   const adminList = await responseJson(await fetch(
     `${baseUrl}/api/auth/admin/subscriptions`,
     { headers: { Cookie: allowedAdminCookie } },
@@ -261,6 +278,13 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
       (subscription: any) => subscription?.merchant_id === merchantId,
     ),
   );
+
+  const audits=(await pool.query("SELECT authority_transaction_id FROM database_admin_access_audits WHERE admin_account_id=$1 AND reason_code='MERCHANT_DIRECTORY_READ'",[allowedAdminId])).rows;
+  assert.ok(audits.length>0 && audits.every(row=>BigInt(row.authority_transaction_id)>0n));
+  const {withOperatorDirectoryTransaction}=await import('../src/services/operatorDirectoryPostgresAuthority.js');
+  const reset=await withOperatorDirectoryTransaction(async client=>(await client.query("SELECT session_user::text AS login,current_user::text AS active,nullif(current_setting('fawri.admin_audit_id',true),'') AS audit")).rows[0]);
+  assert.deepEqual(reset,{login:operatorFixture.role,active:operatorFixture.role,audit:null});
+  console.log('P0_SUBSCRIPTION_DIRECTORY_OPERATOR_PROOF '+JSON.stringify({actualOperatorLogin:true,primaryIssuerDenied:true,operatorAuditCrudDenied:true,actorFromSession:true,exactSubscriptionPermission:true,directoryOnlyActorDenied:true,rejectedAuditRolledBack:true,positiveTransactionBoundAudit:true,sessionReset:true,productionPredicateChanged:false,releaseAccepted:false}));
 
   const blockedPlanChange = await responseJson(await fetch(
     `${baseUrl}/api/auth/merchants/${encodeURIComponent(merchantId)}/subscription`,

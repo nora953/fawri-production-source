@@ -94,17 +94,20 @@ test('operator browser classifies return and void and ACKs only after complete s
   assert.match(source, /compensationKind !== kind/);
   assert.match(source, /payload\.accepted_entity_ids/);
   assert.match(source, /CASHIER_OPERATOR_ACK_INVALID/);
-  assert.match(source, /authority\.acknowledgeSynced\(\[operationId\]\)/);
+  assert.match(source, /authority\.acknowledgeSyncedExact\(operationId, envelopes\)/);
+  assert.doesNotMatch(source, /authority\.acknowledgeSynced\(\[operationId\]\)/,
+    'old operation-id-only ACK may delete rows never accepted by the server');
 
   const fetchCall = source.indexOf('fetch(`/api/cashier/operator/sync/${kind}`');
   const responseAccepted = source.indexOf('payload.ok !== true', fetchCall);
   const entityAckValidation = source.indexOf('acceptedEntityIds.length !== expectedEntityIds.length', responseAccepted);
   const compensationAckValidation = source.indexOf("kind !== 'sale' && compensationKind !== kind", entityAckValidation);
-  const localAck = source.indexOf('authority.acknowledgeSynced([operationId])');
+  const localAck = source.indexOf('authority.acknowledgeSyncedExact(operationId, envelopes)');
 
   assert.ok(fetchCall >= 0, 'operator outbox uploader must call the operator sync endpoint');
   assert.ok(responseAccepted > fetchCall, 'server success must be checked after upload');
   assert.ok(entityAckValidation > responseAccepted, 'complete entity acknowledgement must be verified');
   assert.ok(compensationAckValidation > entityAckValidation, 'return/void kind must be verified before ACK');
-  assert.ok(localAck > compensationAckValidation, 'local outbox must be deleted only after full operator ACK');
+  assert.ok(localAck > compensationAckValidation,
+    'exact original uploaded envelope snapshot may be ACKed only after full server return/void acceptance');
 });

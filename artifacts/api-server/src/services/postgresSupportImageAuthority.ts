@@ -1,11 +1,12 @@
+import { authenticationDatabasePool, withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { getFawriDataDir } from "../lib/dataPaths";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
-  withOperationalTransaction,
+  withMerchantOperationalTransaction,
+  type OperationalTransactionClient,
 } from "./operationalPostgresAuthority";
 import { SupportPostgresError } from "./postgresSupportAuthority";
 
@@ -194,7 +195,7 @@ export async function reconcileOrphanSupportImagesPostgres(input: {
     return { inspected: 0, removed: 0 };
   }
   const minimumAgeMs = Math.max(0, Number(input.minimumAgeMs ?? 5 * 60_000));
-  const pool = await operationalDatabasePool();
+  const pool = await authenticationDatabasePool();
   const referenced = await pool.query<{ storage_key: string }>(
     `SELECT storage_key
        FROM support_attachments
@@ -302,7 +303,7 @@ export async function saveSupportImagePostgres(input: {
 
   let filePersisted = false;
   try {
-    return await withOperationalTransaction(async (client) => {
+    return await withImageAuthorityTransaction(input.senderType === "merchant" ? text(input.merchantId) : undefined, async (client) => {
       const ticketResult = await client.query<{
         merchant_id: string;
         status: string;
@@ -431,7 +432,7 @@ export async function resolveSupportImagePostgres(input: {
       503,
     );
   }
-  return withOperationalTransaction(async (client) => {
+  return withImageAuthorityTransaction(input.merchantId, async (client) => {
     const result = await client.query<{
       merchant_id: string;
       original_file_name: string;
@@ -480,4 +481,10 @@ export async function resolveSupportImagePostgres(input: {
       file_path: filePath,
     };
   });
+}
+
+function withImageAuthorityTransaction<T>(merchantId: string | undefined, work: (client: OperationalTransactionClient) => Promise<T>): Promise<T> {
+  return merchantId === undefined
+    ? withAuthenticationTransaction(work)
+    : withMerchantOperationalTransaction(text(merchantId), work);
 }

@@ -203,7 +203,9 @@ test(
   "global merchant journey keeps one PostgreSQL merchant authoritative from login through cashier closeout",
   { skip: !process.env.DATABASE_URL },
   async (t) => {
-    const { pool } = await import("@workspace/db");
+    const {createDisposableKnowledgeRuntime}=await import("./helpers/disposable-knowledge-runtime.mjs");
+    const runtimeFixture=await createDisposableKnowledgeRuntime();
+    const pool=runtimeFixture.admin;
     const id = suffix();
     const merchantId = `golden-merchant-${id}`;
     const phone = `+96478${String(crypto.randomInt(0, 100_000_000)).padStart(8, "0")}`;
@@ -221,7 +223,7 @@ test(
       ["fixture accounts", async () => {
         await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
       }],
-      ["pool", () => pool.end()],
+      ["actual runtime fixture", () => runtimeFixture.dispose()],
       ["temporary directory", () => rm(dataDirectory, { recursive: true, force: true })],
     ]));
 

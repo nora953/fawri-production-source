@@ -1,3 +1,4 @@
+import { assertNotificationTypeWritable, requireNotificationSourceReference } from "./postgresNotificationSourceReference";
 import crypto from "node:crypto";
 import {
   withMerchantOperationalTransaction,
@@ -50,18 +51,14 @@ async function insertOperationalNotification(input: {
       code: "OPERATIONAL_NOTIFICATION_IDENTITY_INVALID",
     });
   }
+  assertNotificationTypeWritable(input.type);
+  const source = requireNotificationSourceReference(input.sourceEntityType, sourceEntityId);
   const id = deterministicId(input.type, merchantId, sourceEntityId);
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const existing = await client.query<{ id: string }>(
-      `SELECT id FROM notifications
-        WHERE merchant_id = $1 AND id = $2
-        LIMIT 1`,
-      [merchantId, id],
-    );
-    if (existing.rows[0]) {
-      return { notification_id: id, deduplicated: true };
-    }
-    await client.query(
+    // The INSERT must decide whether this caller created the notification.
+    // A SELECT before INSERT races another transaction and can falsely
+    // report "deduplicated: false" even if ON CONFLICT discarded the write.
+    const inserted = await client.query<{ id: string }>(
       `INSERT INTO notifications
         (id, audience, merchant_id, account_id, type,
          title_key, body_key, variables,
@@ -70,7 +67,8 @@ async function insertOperationalNotification(input: {
         ($1, 'merchant', $2,
          (SELECT account_id FROM merchants WHERE id = $2),
          $3, $4, $5, $6::jsonb, $7, $8, $9::timestamptz)
-       ON CONFLICT (id) DO NOTHING`,
+       ON CONFLICT (id) DO NOTHING
+       RETURNING id`,
       [
         id,
         merchantId,
@@ -78,12 +76,47 @@ async function insertOperationalNotification(input: {
         input.titleKey,
         input.bodyKey,
         JSON.stringify(input.variables),
-        input.sourceEntityType,
-        sourceEntityId,
+        source.sourceEntityType,
+        source.sourceEntityId,
         createdAt(input.createdAt),
       ],
     );
-    return { notification_id: id, deduplicated: false };
+    if (inserted.rows.length === 1) {
+      return { notification_id: id, deduplicated: false };
+    }
+
+    // A globally conflicting ID alone is not proof that this merchant
+    // already received the same operational event. A foreign or malformed
+    // row can otherwise suppress a real payment-conflict notification.
+    // Compare identity, source, and the immutable event payload under the
+    // original merchant-scoped transaction; never overwrite historical rows.
+    const prior = await client.query<{ id: string }>(
+      `SELECT id FROM notifications
+        WHERE id = $1 AND audience = 'merchant'
+          AND merchant_id = $2
+          AND account_id = (SELECT account_id FROM merchants WHERE id = $2)
+          AND type = $3 AND title_key = $4 AND body_key = $5
+          AND source_entity_type = $6 AND source_entity_id = $7
+          AND variables = $8::jsonb
+        LIMIT 1`,
+      [
+        id,
+        merchantId,
+        input.type,
+        input.titleKey,
+        input.bodyKey,
+        source.sourceEntityType,
+        source.sourceEntityId,
+        JSON.stringify(input.variables),
+      ],
+    );
+    if (prior.rows.length !== 1) {
+      throw Object.assign(
+        new Error("operational notification identity conflicts with existing event evidence"),
+        { code: "OPERATIONAL_NOTIFICATION_SOURCE_CONFLICT" },
+      );
+    }
+    return { notification_id: id, deduplicated: true };
   });
 }
 

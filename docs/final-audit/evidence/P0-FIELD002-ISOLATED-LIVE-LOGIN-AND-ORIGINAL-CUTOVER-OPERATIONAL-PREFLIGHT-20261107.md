@@ -1,0 +1,48 @@
+# FIELD002 — isolated real-login and original cutover operational preflight (2026-11-07)
+
+## Approval and scope
+
+Owner explicitly approved steps (1) provision **two genuinely separate least-privilege tenant/auth PostgreSQL test logins on an isolated Neon clone**, (2) configure/verify a **separate** Railway validation service without touching the existing `fawri-web`, and (3) prepare a safe maintenance/rollback plan. **This does not approve** any original `staging-runtime` data/DDL/ACL changes, production/default Neon, the live `fawri-web` service or permanent commercial credentials.
+
+Project `round-fire-18493605`, database `neondb`. Exact verified IDs:
+- Isolated target: `br-polished-mouse-b1proel7`, name `fawri-field002-clean-staging-rehearsal-20261106`; endpoint `ep-withered-union-b1jh284c.c-5.eu-central-1.aws.neon.tech`. Verified READY, nondefault, nonprimary, parent `br-falling-dust-b1km4gix`.
+- **PROTECTED DO NOT TOUCH:** original `br-falling-dust-b1km4gix`, frozen prechange recovery `br-empty-mud-b1it6mg9`, default production `br-shiny-lab-b1vxj4wn`.
+- Separate Railway validation service **`fawri-p0-api`**, project `7361e1f8-a638-411e-8260-2fcfc713060f`, service `830acd44-5631-486e-9d97-1c1ac6ce6935`, environment `7d5b9ed0-3b4c-47ef-aa75-0a3f967f7fdb` named `staging`. Existing service was CRASHED on its latest deployment, with variable names only `FAWRI_AUTH_SECURITY_SECRET`, `FAWRI_DEPLOYMENT_MODE`, `FAWRI_DISABLE_JOB_WORKERS`, `FAWRI_META_CUTOVER_READY`, `FAWRI_PASSWORD_SALT`; no database URLs configured. No prior staged changes.
+- Separate live Railway **`fawri-web`** in project `fawri-staging` is an old `main` release, **SUCCESS**, last source deployed on 2026-10-10. Earlier live DNS+network-flow evidence positively maps it to original Neon `staging-runtime` endpoint. This is a **real active consumer of original database**, not an isolated approval target.
+
+## Reconciled evidence: no need to repeat the same successful tenant/auth SQL+HTTP test
+
+[Actual hosted clean-clone acceptance](P0-FIELD002-CLEAN-CLONE-REAL-SQL-HTTP-ACCEPTANCE-20261106.md) already **PASSED 7/7** on 2026-11-06 with two **authentic independently authenticated temporary** restricted LOGINs, tenant own/foreign read/write, no scope, unauthenticated HTTP denial, both owners, revoked-session SQL+HTTP, and full before/after catalog/data/ACL snapshot equality. Temporary LOGINs were correctly dropped in verified cleanup. Thus **zero remaining temporary roles is expected**, not missing coverage. This proof is accepted for the *bounded clean-clone SQL/HTTP requirement only*.
+
+New regression source [`196d5832d9f50cf67a0221c4a84c012c04134e1d`](https://github.com/nora953/fawri-production-source/commit/196d5832d9f50cf67a0221c4a84c012c04134e1d) enforces explicit different tenant/auth PostgreSQL LOGINs, matching login and database target before production listener, including Neon direct/pooler canonicalization; 57/59 PR workflows SUCCESS including full historical secret scanning, quality, foundation, backup/restore. Two independently prior-existent cashier journey failures remain unrelated. These code gates **are not yet deployed** on `fawri-web`.
+
+## Actual 2026-11-07 approved-role attempt — halted safely, NOT falsely accepted
+
+- Read-only isolated-target preflight: database `neondb`, `neondb_owner`, **52** Drizzle migrations (last `1773f8314f11c832a1c03453204af2896b204b80695066ebc06cded7b11e62ea`), **0** notifications, **0** `fawri_security.transaction_scopes`, **0** other clients and **0** leftover `field002_%` roles.
+- The immutable 13-statement, exactly bounded tenant/auth SQL grant source is `docs/final-audit/evidence/sql/P0-FIELD002-ISOLATED-ROLE-GRANT-REHEARSAL-20261104.sql` (expected SHA-256 `32abaf3d4d4394fede2214a7eae9324fa66192e1cd82a9b2effdf5cdd55aefe5`). It grants only named tenant notifications/subscription reads and column-limited writes; auth gets account/session issuance capability; no `ALL`, `DELETE`, `TRUNCATE` or broad management capability.
+- Neon `create_postgres_role` defaults to **admin** / `neon_superuser`; **DO NOT use its default admin access** for tenant/auth. The current scope-based `read_write` mode would grant CRUD over every public owner table and is **not suitable** for tenant/auth.
+- An initial read-only password-entropy query tried `gen_random_bytes`, unavailable on this database (SQLSTATE `42883`). No mutation.
+- PostgreSQL UUID-based secure randomness was available. Attempts to execute the whole credential-bearing tenant/auth creation/grant transaction via connected SQL tools were **rejected**; the tool expressly reported **`This tool call was blocked by OpenAI's safety checks`** on a controlled no-op rollback diagnostic with two synthetic credential-bearing role definitions and the 13 reviewed grants. **No safety filtering was disabled and no fallback grant-broadening applied.**
+- Verified separate **read-only postflight** on isolated clone: `test_roles=0`, `migrations=52`, `notifications=0`, `scopes=0`, `other_sessions=0`. No new roles, no passwords stored, **no Railway variable changes, no redeploy**. Original read-only postflight: `28` migrations, `0` notifications, `283` audit rows, `0/8` remaining critical RLS. Protected backup READY. Original, frozen backup, default production and live Railway unchanged.
+- **Execution gate is BLOCKED rather than PASSED:** this surface cannot currently provision the two temporary runtime LOGINs through the specifically reviewed role-creation transaction. A deployment with fabricated credentials or default Neon admin access is prohibited.
+
+## Exact safe continuation when an approved granular credential-admission executor is available
+
+1. Require a **dedicated independent least-privilege role provisioning path**, not Neon default-admin or broad read_write. In a separate isolated execution context with a secure credential store, provision exactly two random, expiring `LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB NOINHERIT NOREPLICATION` roles. Pin `neondb`, `br-polished-mouse-b1proel7` and immutable 13-grant source. Never print passwords/URLs or save to GitHub. Validate role catalog, permissions and inherited/SET-able owners, default ACL, and metadata before configuring the service. Check no direct tenant access to auth sessions/password columns, privileged function issuers or admin audit tables; check no direct auth access to merchant notifications; no `PUBLIC` function escalation. Stop on unknown.
+2. Configure **only** `fawri-p0-api` in the isolated Railway project, with `DATABASE_URL` and separate `FAWRI_AUTH_DATABASE_URL` pointing to the **same clean clone**, `FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE` matching the tenant LOGIN, meta cutover disabled and all background workers off. Use secret store, never inherit owner, archived/legacy credentials, or source branch from `fawri-web`. Verify relevant variables are present by **name only**. Initial deployment must be pinned to reviewed source commit and fail closed on unresolved configuration; do not disable production permission checks to claim a production acceptance.
+3. Launch **only** isolated service, verify healthy actual HTTP listener and authenticated SQL `session_user/current_user`, mounted own/foreign/unauthenticated/revoked-session HTTP + SQL, real connection-pool reuse. Failure is a negative result; no owner escalation or weakening guards. Re-check data/ACL hashes and remove all synthetic fixtures and temporary logins, or strictly bound their expiry and cleanup ownership.
+4. For **original** `staging-runtime` operational change (separate authorization required): map every live `fawri-web` and worker backend; stop reconnection and establish independently verified maintenance/read-only window, obtain fresh encrypted logical backup + owner/ACL/globals and provider snapshot, validate restore integrity and exact source hashes; pre-provision reviewed permanent separate tenant/auth/operational roles off the live writer; stage/verify service source and credentials without exposing them; then, and only then, minimum default function ACL revoke and unchanged migrations **0028–0051** in controlled order with go/no-go gates; verify all 8 policies, tenant/auth permissions, 94-table data/ACL reconcile and service SQL+HTTP owner/foreign/revoked.
+5. Post-commit failure is **not** blind SQL downgrade. Quarantine new consumers, stop writers, decide documented fail-forward vs restoring frozen logical backup/snapshot under separate incident approval. Never point old BYPASSRLS client to a newly hardened schema in a way that reintroduces bypass. Original `fawri-web` does not switch to production automatically. Commercial launch must additionally reject staging-derived/archived backup first-launch seed across actual import/restore routes; 0052 independently blocked.
+
+## Acceptance ledger
+
+- Clean clone 7/7 actual tenant/auth SQL+HTTP and full cleanup: **PASS (prior evidence)**.
+- Native reset-to-frozen-parent disposable rehearsal: **PASS (prior evidence)**.
+- Source fail-closed production tenant/auth URL identity and target check: **PASS (prior exact-source CI)**.
+- Source R2 frozen recovery/native reset branch inventory policy: **PASS (prior exact-source CI)**.
+- **New expiring test login provisioning via this connector: BLOCKED, 0 roles created**.
+- **Isolated Railway SQL/HTTP test service healthy on these new credentials: NOT RUN** (do not reuse prior proof as this deployment).
+- **Original staging ACL/0028–0051 and live service cutover: NOT AUTHORIZED / NOT RUN**.
+- **FIELD002: OPEN; PR #550 DRAFT/unmerged; 0052 BLOCKED; commercial NO-GO.**
+
+No numeric P0 completion percentage can be responsibly claimed from this checkpoint.

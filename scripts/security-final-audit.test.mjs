@@ -6,11 +6,16 @@ import test from "node:test";
 import { findSensitiveText, parseAuditSeverityCounts, redactSensitiveText } from "./security-ci-lib.mjs";
 import {
   evaluateDependencyAudit,
+  summarizeBlockingAdvisories,
   isKnownTestFixtureCredentialUrl,
   isKnownHistoricalScannerSelfTestCredentialUrl,
   isKnownHistoricalRestoreRejectionFixture,
   isKnownHistoricalDisposableGuardFixture,
   isKnownHistoricalEntrypointFenceFixture,
+  isKnownHistoricalFreshRoleRecoveryFenceFixture,
+  isKnownHistoricalField002IllustrativeUrl,
+  isKnownHistoricalField002SyntheticBuilderFixture,
+  isKnownHistoricalField002AuthConfigFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -351,4 +356,166 @@ test("historical entrypoint rejection fixture exception is pinned to one immutab
   ]) {
     assert.equal(isKnownHistoricalEntrypointFenceFixture(changedFinding, file, blob), false);
   }
+});
+
+test("blocking advisory diagnostics expose only public bounded identifiers", () => {
+  const raw = makeToken("EAA", 45);
+  const report = summarizeBlockingAdvisories({ advisories: {
+    a: { severity: "high", module_name: "@scope/pkg", github_advisory_id: "GHSA-cfgh-jmpq-rvwx",
+      title: raw, url: "https://example.invalid/private", findings: [{ paths: [raw] }], overview: raw },
+    b: { severity: "moderate", module_name: "not-blocking" },
+    c: { severity: "critical", module_name: "package-name" },
+  } });
+  assert.deepEqual(report, [
+    { severity: "high", package: "@scope/pkg", ghsa: "GHSA-cfgh-jmpq-rvwx" },
+    { severity: "critical", package: "package-name" },
+  ]);
+  assert.equal(JSON.stringify(report).includes(raw), false);
+  assert.equal(JSON.stringify(report).includes("https:"), false);
+  assert.equal(evaluateDependencyAudit({ high: 1, critical: 1 }, 1).status, "fail");
+});
+
+test("malformed advisory identifier fields are omitted without changing audit failure", () => {
+  assert.deepEqual(summarizeBlockingAdvisories({ advisories: {
+    a: { severity: "high", module_name: "../bad\nname", github_advisory_id: "not-an-id", raw: "private" },
+  } }), [{ severity: "high" }]);
+  for (const payload of [null, {}, { advisories: [] }, { advisories: "unexpected" }]) {
+    assert.deepEqual(summarizeBlockingAdvisories(payload), []);
+  }
+  assert.equal(evaluateDependencyAudit({ high: 1, critical: 0 }, 1).status, "fail");
+});
+
+test("advisory diagnostics stay bounded for oversized registry lists", () => {
+  const advisories = Object.fromEntries(Array.from({length: 100}, (_, i) => [i, {
+    severity: "high", module_name: "package-name",
+  }]));
+  assert.equal(summarizeBlockingAdvisories({ advisories }).length, 50);
+});
+
+test("historical fresh role rejection fixture classification is bound to one immutable finding", () => {
+  const file = "scripts/tests/disposable-cashier-role-recovery.test.mjs";
+  const blob = "5b2ebc7b8262d8cc44fda859a2bab52337bafb59";
+  const target = new URL("postgresql://outside.invalid/fawri_ci");
+  target.username = "example";
+  target.password = ["private", "synthetic"].join("-");
+  const text = " ".repeat(2607) + target.toString();
+  const finding = findSensitiveText(text, { includePrivateData: false, includeAssignments: false }).find(x => x.rule === "credential-url");
+  assert.equal(finding.index, 2607);assert.equal(finding.length, 54);
+  assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, file, blob), true);
+  for(const otherBlob of [undefined, "0".repeat(40)])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, file, otherBlob), false);
+  for(const otherFile of ["scripts/restore-postgresql.mjs", "scripts/tests/other.test.mjs"])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, otherFile, blob), false);
+  for(const changed of [{...finding,index:finding.index+1},{...finding,length:finding.length+1},{...finding,rule:"private-key"}])assert.equal(isKnownHistoricalFreshRoleRecoveryFenceFixture(changed, file, blob), false);
+});
+
+test("FIELD002 historical documentation exception is one immutable synthetic span only", () => {
+  const file = "docs/final-audit/evidence/P0-FIELD002-RAILWAY-NEON-LIVE-ENDPOINT-CORRELATION-20261104.md";
+  const blob = "ed0250ab4e829f4317b189f3a1696c3940d3b42b";
+  const target = ["postgresql://role:", "password", "@host"].join("");
+  const historical = " ".repeat(13302) + target + "/...";
+  const findings = findSensitiveText(historical, { includePrivateData: false, includeAssignments: false });
+  assert.equal(findings.length, 1);
+  const finding = findings[0];
+  assert.deepEqual(finding, { rule: "credential-url", index: 13302, length: 31 });
+  assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file, blob), true);
+  for (const badBlob of [undefined, "0".repeat(40)]) {
+    assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file, badBlob), false);
+  }
+  for (const badPath of ["docs/final-audit/evidence/other.md", "scripts/tests/demo.test.mjs"]) {
+    assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, badPath, blob), false);
+  }
+  for (const changed of [
+    { ...finding, index: finding.index + 1 },
+    { ...finding, length: finding.length + 1 },
+    { ...finding, rule: "private-key" },
+  ]) {
+    assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, changed, file, blob), false);
+  }
+  const changedUrl = historical.replace("@host", "@real-database.example");
+  assert.equal(isKnownHistoricalField002IllustrativeUrl(changedUrl, finding, file, blob), false);
+  assert.equal(isKnownHistoricalField002IllustrativeUrl(historical, finding, file.replaceAll("/", String.fromCharCode(92)), blob), true);
+});
+
+test("FIELD002 synthetic connection builder historical findings are strictly pinned", () => {
+  const file = "scripts/tests/field002-isolated-acceptance-plan.test.mjs";
+  const fragment = ["postgresql://neondb_owner:", "encoded%40fixture", "@'"].join("");
+  const pairs = [
+    ["d739b637f04a36187727eed4714ea29958b27919", 280],
+    ["03acd56b7185a1be6b7ab0e3e4b0b997997009cc", 280],
+    ["65f004befa5e5d6c8e4c8cbf8f3d6777d5aeaef8", 255],
+  ];
+  for(const [blob,index] of pairs){
+    const content = " ".repeat(index) + fragment + " + CLONE_HOST;";
+    const matches = findSensitiveText(content, {includePrivateData:false,includeAssignments:false});
+    assert.deepEqual(matches, [{rule:"credential-url",index,length:45}]);
+    const finding=matches[0];
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,finding,file,blob),true);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,finding,file,"0".repeat(40)),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,finding,"scripts/tests/another.test.mjs",blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,{...finding,index:index+1},file,blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,{...finding,length:46},file,blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content,{...finding,rule:"private-key"},file,blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content.replace("fixture","production"),finding,file,blob),false);
+    assert.equal(isKnownHistoricalField002SyntheticBuilderFixture(content.replace("@'", "@actual-host.example"),finding,file,blob),false);
+  }
+});
+
+
+test("FIELD002 historical synthetic auth URL exceptions are exact-blob/span/bytes only", () => {
+  const path = "artifacts/api-server/tests/production-release-readiness.test.ts";
+  const fragments = [
+    ["postgresql://fawri_restricted_runtime:", "tenant-synthetic", "@db.internal:5432"].join(""),
+    ["postgresql://fawri_auth_issuer:", "auth-synthetic", "@db.internal:5432"].join(""),
+    ["postgresql://%2X:", "secret", "@db.internal:5432"].join(""),
+    ["postgresql://${username}:", "not-a-secret", "@db.internal:5432"].join(""),
+    ["postgresql://fawri_restricted_runtime:", "x", "@ep-test-case.c-5.eu-central-1.aws.neon.tech:5432"].join(""),
+    ["postgresql://fawri_auth_issuer:", "y", "@ep-test-case-pooler.c-5.eu-central-1.aws.neon.tech"].join(""),
+    ["postgresql://fawri_restricted_runtime:", "changed-not-real", "@db.internal:5432"].join(""),
+    ["postgresql://fawri_auth_issuer:", "changed-not-real", "@db.internal:5432"].join(""),
+    ["postgresql://fawri_tenant_runtime_v2:", "synthetic", "@db.internal:5432"].join(""),
+  ];
+  const blobs = {
+    "12dad94ed53c718f9aab732559a3aec5775f6cdb": [
+      [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+      [4192, 71, 6], [4302, 64, 7],
+    ],
+    "d42ab0e7ef1ed156e675b84acbed4bbb6cea444f": [
+      [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+      [4502, 88, 4], [4630, 83, 5], [5352, 71, 6], [5462, 64, 7],
+    ],
+    "9de3f64f0023b551e0f925476cf11e121839adb6": [
+      [610, 71, 0], [720, 62, 1], [2606, 40, 2], [3339, 54, 3],
+      [4502, 88, 4], [4630, 83, 5], [5352, 71, 6], [5462, 64, 7],
+      [15945, 63, 8],
+    ],
+  };
+  let reviewed = 0;
+  for (const [blob, spans] of Object.entries(blobs)) {
+    for (const [index, length, fragmentId] of spans) {
+      const fragment = fragments[fragmentId];
+      assert.equal(fragment.length, length);
+      const content = " ".repeat(index) + fragment + "/fixture-source";
+      const finding = findSensitiveText(content, {
+        includePrivateData: false, includeAssignments: false,
+      }).find(item => item.index === index && item.rule === "credential-url");
+      assert.ok(finding, "test fixture must itself be detected by the scanner");
+      assert.equal(finding.length, length);
+      assert.equal(isKnownHistoricalField002AuthConfigFixture(content, finding, path, blob), true);
+      for (const badFinding of [
+        { ...finding, rule: "private-key" },
+        { ...finding, index: finding.index + 1 },
+        { ...finding, length: finding.length - 1 },
+      ]) {
+        assert.equal(isKnownHistoricalField002AuthConfigFixture(content, badFinding, path, blob), false);
+      }
+      assert.equal(isKnownHistoricalField002AuthConfigFixture(content, finding, path, "0".repeat(40)), false);
+      assert.equal(isKnownHistoricalField002AuthConfigFixture(content, finding,
+        "artifacts/api-server/tests/other.test.ts", blob), false);
+      assert.equal(isKnownHistoricalField002AuthConfigFixture(
+        content.replace(fragment, fragment.replace("postgresql://", "mysql://")),
+        finding, path, blob,
+      ), false);
+      reviewed += 1;
+    }
+  }
+  assert.equal(reviewed, 23);
 });

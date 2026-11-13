@@ -1,13 +1,18 @@
+import {createDisposableAuthenticationRole,restrictTenantAuthenticationPrivileges} from "./helpers/disposable-authentication-role.mjs";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+import {assertDisposablePostgres} from "../../../scripts/lib/disposable-postgres-test-guard.mjs";
+await assertDisposablePostgres();
 
 test("default knowledge services preserve tenant RLS with a reused restricted connection", { timeout: 60_000 }, async () => {
   assert.ok(process.env.DATABASE_URL, "a disposable DATABASE_URL is required");
   const require = createRequire(import.meta.resolve("@workspace/db"));
   const { Pool } = require("pg");
   const originalUrl = process.env.DATABASE_URL;
+  const originalAuthUrl=process.env.FAWRI_AUTH_DATABASE_URL;
+  let authFixture;
   const targetUrl = new URL(originalUrl);
   assert.ok(["127.0.0.1", "localhost"].includes(targetUrl.hostname), "only local disposable PostgreSQL is permitted");
   assert.ok(["/fawri_ci", "/fawri_final_audit"].includes(targetUrl.pathname), "only the named disposable databases are permitted");
@@ -15,13 +20,20 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
   const suffix = randomUUID().replaceAll("-", "").slice(0, 12);
   const role = `knowledge_rls_${suffix}`;
   const tenants = [`knowledge-a-${suffix}`, `knowledge-b-${suffix}`];
+  const runtimePassword = randomUUID().replaceAll("-", "");
   let runtimePool;
+  let policies=[];
   let roleCreated = false;
   try {
-    await admin.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
+    await admin.query(`CREATE ROLE ${role} LOGIN PASSWORD '${runtimePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS`);
     roleCreated = true;
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${role}`);
     await admin.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);
+    await restrictTenantAuthenticationPrivileges(admin,role);
+    await admin.query(`GRANT USAGE ON SCHEMA fawri_security TO ${role}`);
+    await admin.query(`GRANT EXECUTE ON FUNCTION fawri_security.allows_merchant(text) TO ${role}`);
+    authFixture=await createDisposableAuthenticationRole(admin,originalUrl);
+    process.env.FAWRI_AUTH_DATABASE_URL=authFixture.url;
     for (const [index, id] of tenants.entries()) {
       await admin.query("INSERT INTO accounts(id,kind,phone,password_hash) VALUES($1,'merchant',$2,'synthetic-test-hash')",
         [id, `+1999${Date.now().toString().slice(-8)}${index}`]);
@@ -32,19 +44,24 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
         VALUES($1,$2,'custom','Gift wrapping?','gift wrapping','Yes','en')`, [`saved-${id}`, id]);
     }
 
-    // Authenticate with the disposable CI administrator, but start EVERY runtime
-    // connection as the restricted role. The application's real default pool and
-    // SQL adapter are used; no fake query client or database owner bypass is used.
+    // Every runtime connection authenticates as the owned restricted fixture role;
+    // administrator credentials remain exclusive to fixture setup and cleanup.
     const runtimeUrl = new URL(originalUrl);
-    runtimeUrl.searchParams.set("options", `-c role=${role}`);
+    runtimeUrl.username = role;
+    runtimeUrl.password = runtimePassword;
+    runtimeUrl.searchParams.delete("options");
     process.env.DATABASE_URL = runtimeUrl.toString();
     const db = await import("@workspace/db");
     runtimePool = db.pool;
     runtimePool.options.max = 1;
     runtimePool.options.connectionTimeoutMillis = 5_000;
-    assert.equal((await runtimePool.query("SELECT current_user AS name")).rows[0].name, role);
+    assert.deepEqual((await runtimePool.query("SELECT current_user AS active, session_user AS login")).rows[0], {active: role, login: role});
     const { assertProductionDatabaseRlsReady } = await import("../src/services/postgresRuntimeRlsSecurity.ts");
-    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required" });
+    await assertProductionDatabaseRlsReady({ NODE_ENV: "production", FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required", FAWRI_AUTH_DATABASE_URL:"postgresql://auth@127.0.0.1/fawri_ci", FAWRI_OPERATOR_DATABASE_URL: "postgresql://operator@127.0.0.1/fawri_ci" });
+    // Exercise the actual application caller through unchanged canonical public
+    // RLS policies after 0041; no disposable replacement predicate is installed.
+    policies=(await admin.query("SELECT tablename,policyname,qual,with_check FROM pg_policies WHERE schemaname='public' AND tablename=ANY($1::text[])",[["knowledge_embeddings","learned_answers","training_requests","saved_answers","knowledge_audit_events"]])).rows;
+    assert.equal(policies.length,5);
     const knowledge = await import("../src/services/knowledge/postgresKnowledgeRuntime.ts");
     const { PostgresKnowledgeManagementRuntime } = await import("../src/services/knowledge/postgresKnowledgeManagementRuntime.ts");
     const { deleteMerchantKnowledgePostgresData } = await import("../src/services/knowledge/postgresKnowledgeLifecycle.ts");
@@ -81,6 +98,18 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
     }), /intentional rollback/);
     await assert.rejects(() => scopedA.query(`INSERT INTO saved_answers(id,merchant_id,category,question_pattern,normalized_question,answer_text,language)
       VALUES($1,$2,'custom','Wrong tenant?','wrong tenant','No','en')`, [`wrong-${suffix}`, tenants[1]]), /row-level security/i);
+    await scopedA.transaction(async tx=>{
+      await tx.query("SELECT set_config('fawri.tenant_id',$1,true)",[tenants[1]]);
+      assert.deepEqual((await tx.query("SELECT DISTINCT merchant_id FROM saved_answers")).rows,[{merchant_id:tenants[0]}]);
+      assert.equal((await tx.query("UPDATE saved_answers SET answer_text='forged' WHERE merchant_id=$1 RETURNING id",[tenants[1]])).rows.length,0);
+      const target=(await tx.query("SELECT session_user::text AS login,pg_backend_pid() AS pid,txid_current()::text AS xid")).rows[0];
+      const binding=(await admin.query("SELECT merchant_id FROM fawri_security.transaction_scopes WHERE runtime_login=$1 AND backend_pid=$2 AND transaction_id=$3",[target.login,target.pid,target.xid])).rows;
+      assert.deepEqual(binding,[{merchant_id:tenants[0]}]);
+    });
+    await admin.query(`REVOKE EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) FROM ${authFixture.role}`);
+    let worked=false;
+    try {await assert.rejects(()=>scopedA.transaction(async()=>{worked=true;}),{code:"OPERATIONAL_TENANT_SCOPE_ROLE_UNSAFE"});assert.equal(worked,false);}
+    finally {await admin.query(`GRANT EXECUTE ON FUNCTION fawri_security.issue_scope(name,integer,bigint,text) TO ${authFixture.role}`);}
     const rowsB = await scopedB.query("SELECT merchant_id FROM saved_answers");
     assert.equal(rowsB.rows.length, 2);
     assert.ok(rowsB.rows.every(row => row.merchant_id === tenants[1]));
@@ -91,8 +120,13 @@ test("default knowledge services preserve tenant RLS with a reused restricted co
     assert.equal(deleted.savedAnswers, 2);
     assert.equal(deleted.trainingRequests, 1);
     assert.equal((await management.listSavedAnswers(tenants[1])).length, 2);
+    console.log('P0_KNOWLEDGE_SCOPE_CALLER_PROOF '+JSON.stringify({actualRuntimeLogin:true,separateAuthIssuer:true,canonicalPrivatePolicy:true,scopeTupleVerified:true,forgedTenantGucDenied:true,foreignUpdateDenied:true,issuerRevocationPreventsWork:true,rollbackIsolation:true,reusedPoolIsolation:true,productionPredicateChanged:false,releaseAccepted:false}));
   } finally {
+    const {closeAuthenticationPool}=await import("../src/services/authenticationPostgresAuthority.ts");
+    await closeAuthenticationPool();
     if (runtimePool) await runtimePool.end();
+    if(authFixture)await authFixture.dispose();
+    if(originalAuthUrl===undefined)delete process.env.FAWRI_AUTH_DATABASE_URL;else process.env.FAWRI_AUTH_DATABASE_URL=originalAuthUrl;
     process.env.DATABASE_URL = originalUrl;
     try {
       if (roleCreated) {

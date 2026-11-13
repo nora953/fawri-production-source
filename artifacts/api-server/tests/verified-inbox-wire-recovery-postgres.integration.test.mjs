@@ -16,7 +16,9 @@ Object.assign(process.env,{
   FAWRI_SUPERQI_SANDBOX_FINISH_URL:'https://merchant.example.invalid/dashboard/subscription',
   FAWRI_SUPERQI_SANDBOX_WEBHOOK_PUBLIC_KEY_B64:Buffer.from(publicKey.export({type:'spki',format:'pem'})).toString('base64'),
 });
-const {pool}=await import('@workspace/db');
+const {createDisposableProviderRuntime}=await import('./helpers/disposable-provider-runtime.mjs');
+const runtimeFixture=await createDisposableProviderRuntime();
+const pool=runtimeFixture.admin;
 const saas=await import('../src/services/saasBillingAuthority.ts');
 const cashier=await import('../src/services/cashierBillingAuthority.ts');
 const {getSaasPlan}=await import('../src/services/saasPlanCatalog.ts');
@@ -42,11 +44,11 @@ test('inbox autocommit acknowledgment loss preserves first confirmed receipt and
     ['owned children',async()=>{for(const child of children)await stopTestChild(child);}],
     ['owned inbox',()=>pool.query('DELETE FROM verified_provider_payment_receipts WHERE payment_ref=ANY($1::text[])',[paymentRefs])],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchantIds])],
-    ['pool',()=>pool.end()],
+    ['runtime fixture',()=>runtimeFixture.dispose()],
   ]));
   const providerEnv=Object.fromEntries(Object.entries(process.env).filter(([key])=>key.startsWith('FAWRI_SUPERQI_')||['FAWRI_OPERATIONAL_POSTGRES_AUTHORITY','FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY','FAWRI_SAAS_BILLING_PROVIDER','FAWRI_SAAS_BILLING_PROVIDERS'].includes(key)));
   async function run(payload,receivedAt,drop=false){
-    const child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/verified-inbox-wire-child.mjs',import.meta.url))],{env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
+    const child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./helpers/verified-inbox-wire-child.mjs',import.meta.url))],{env:{...process.env,DATABASE_URL:runtimeFixture.bootstrapUrl,FAWRI_TEST_BILLING_DATABASE_URL:runtimeFixture.runtimeUrl},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
     const messages=[];let readyResolve;
     const ready=new Promise(resolve=>{readyResolve=resolve;});
     child.on('message',message=>{messages.push(message);if(message.type==='ready')readyResolve();});

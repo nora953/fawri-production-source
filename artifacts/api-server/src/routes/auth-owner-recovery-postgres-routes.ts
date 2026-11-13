@@ -153,11 +153,12 @@ function clearRecoveryCookie(res: Response): void {
   });
 }
 
-function recoveryProof(req: Request, res: Response, recoveryId: string): RecoveryProof | null {
+function recoveryProof(req: Request, res: Response, recoveryId: string, expectedStage: RecoveryStage): RecoveryProof | null {
   const token = parseCookies(req)[RECOVERY_COOKIE];
   const proof = token ? decodeRecoveryProof(token) : null;
   if (
     !proof ||
+    proof.stage !== expectedStage ||
     proof.recoveryIdHash !== ownerRecoveryFingerprint("recovery-id", recoveryId)
   ) {
     clearRecoveryCookie(res);
@@ -294,7 +295,7 @@ router.post("/owner-recovery/:recoveryId/start", async (req, res) => {
 
 router.post("/owner-recovery/:recoveryId/otp/request", async (req, res) => {
   const recoveryId = String(req.params.recoveryId || "").trim();
-  const proof = recoveryProof(req, res, recoveryId);
+  const proof = recoveryProof(req, res, recoveryId, "key1_verified");
   if (!proof || proof.stage !== "key1_verified") return;
   const oldPhone = normalizePhone(req.body?.old_phone);
   const newPhone = normalizePhone(req.body?.new_phone);
@@ -365,7 +366,7 @@ router.post("/owner-recovery/:recoveryId/otp/request", async (req, res) => {
 
 router.post("/owner-recovery/:recoveryId/otp/verify", async (req, res) => {
   const recoveryId = String(req.params.recoveryId || "").trim();
-  const proof = recoveryProof(req, res, recoveryId);
+  const proof = recoveryProof(req, res, recoveryId, "otp_pending");
   if (!proof || proof.stage !== "otp_pending" || !proof.newPhone || !proof.challengeId) return;
   const code = String(req.body?.code || "").trim();
   if (!/^\d{6}$/.test(code)) {
@@ -397,7 +398,7 @@ router.post("/owner-recovery/:recoveryId/otp/verify", async (req, res) => {
 
 router.post("/owner-recovery/:recoveryId/complete", async (req, res) => {
   const recoveryId = String(req.params.recoveryId || "").trim();
-  const proof = recoveryProof(req, res, recoveryId);
+  const proof = recoveryProof(req, res, recoveryId, "otp_verified");
   if (!proof || proof.stage !== "otp_verified" || !proof.newPhone) return;
   const target = `owner-recovery-key2:${proof.recoveryIdHash}`;
   if (!(await rateLimit(req, res, target))) return;

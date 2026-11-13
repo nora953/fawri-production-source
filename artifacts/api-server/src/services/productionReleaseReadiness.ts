@@ -1,3 +1,5 @@
+import { assertField002FirstCommercialSourcePolicy } from "../../../../scripts/lib/field002-r2-precommercial-source-admission.mjs";
+
 export const PRODUCTION_RELEASE_GATE_ENV = "FAWRI_PRODUCTION_RELEASE_GATE";
 export const DEPLOYMENT_MODE_ENV = "FAWRI_DEPLOYMENT_MODE";
 
@@ -26,8 +28,50 @@ export type ProductionLaunchReadiness = {
   external_blockers: ProductionReleaseIssue[];
 };
 
+// FIELD002-R2: this is a *declarative* pre-listener safeguard for the first
+// commercial launch, NOT a trusted Neon branch attestation or an approved deploy.
+// The real provisioning/import/restore boundary must separately prove fresh
+// target creation, no historical data and the exact protected role/RLS state.
+export const FIRST_COMMERCIAL_SOURCE_MANIFEST_ENV = "FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON";
+const FIELD002_ORIGINAL_STAGING_DATABASE_HOST = "ep-plain-leaf-b1wtzjr3.c-5.eu-central-1.aws.neon.tech";
+
+function isKnownOriginalStagingUrl(value: unknown): boolean {
+  if (!isPostgresUrl(value)) return false;
+  try {
+    const host = new URL(text(value)).hostname.toLowerCase();
+    return host === FIELD002_ORIGINAL_STAGING_DATABASE_HOST ||
+      host === FIELD002_ORIGINAL_STAGING_DATABASE_HOST.replace(".", "-pooler.");
+  } catch {
+    return false;
+  }
+}
+
+function firstCommercialSourceManifestStatus(raw: unknown): "missing" | "refused" | "compatible" {
+  const input = text(raw);
+  if (!input) return "missing";
+  if (input.length > 4096) return "refused";
+  try {
+    assertField002FirstCommercialSourcePolicy(JSON.parse(input) as unknown);
+    return "compatible";
+  } catch {
+    return "refused";
+  }
+}
+
 const SAFE_SERVICE_VERSION = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 const SAFE_DEK_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/;
+// FIELD002: never promote historical broad-grant staging roles or Neon
+// ownership identities as commercial tenant application logins.
+export const FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES: ReadonlySet<string> = new Set([
+  "fawri_staging_runtime", "fawri_staging_rls_runtime",
+  // The owner LOGIN of the new independently created PG18 "fawri" project
+  // must never be used for tenant, authentication or operator application traffic.
+  "neondb_owner", "fawri_owner", "neon_superuser",
+  // Neon provider identities observed in the isolated PostgreSQL role
+  // inventory. Never accept an admin/BYPASSRLS or inherited DB owner as a
+  // tenant, auth or operator LOGIN merely because its URL looks valid.
+  "cloud_admin", "neon_service", "pg_database_owner", "postgres",
+]);
 const AWS_KMS_KEY_ARN = /^arn:aws[a-z-]*:kms:[a-z0-9-]+:\d{12}:key\/[A-Fa-f0-9-]{16,}$/;
 
 function text(value: unknown): string {
@@ -41,14 +85,82 @@ function issue(
   return { area, code };
 }
 
+// FIELD002: the authority, credential and branch identity used by
+// node-postgres must not be overridden by URL parameters after the prefix is
+// checked. Restrict to explicitly non-routing parameters; libpq-style host,
+// user, service, options, dbname etc are never an authority source.
+const FIELD002_SAFE_POSTGRES_URL_OPTIONS = new Set([
+  "sslmode", "channel_binding", "application_name", "connect_timeout",
+]);
+
 function isPostgresUrl(value: unknown): boolean {
   const raw = text(value);
   if (!raw) return false;
   try {
     const parsed = new URL(raw);
-    return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:";
+    if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+      return false;
+    }
+    const seenOptions = new Set<string>();
+    for (const [originalKey, rawValue] of parsed.searchParams) {
+      const key = originalKey.toLowerCase();
+      if (!FIELD002_SAFE_POSTGRES_URL_OPTIONS.has(key) || seenOptions.has(key)) {
+        return false;
+      }
+      seenOptions.add(key);
+      if (key === "sslmode" &&
+          !["require", "verify-ca", "verify-full"].includes(rawValue.toLowerCase())) {
+        return false;
+      }
+      if (key === "channel_binding" &&
+          !["require", "prefer"].includes(rawValue.toLowerCase())) {
+        return false;
+      }
+      if (key === "connect_timeout" &&
+          (!/^[1-9][0-9]?$/.test(rawValue) || Number(rawValue) > 30)) {
+        return false;
+      }
+      if (key === "application_name" &&
+          (!/^[a-zA-Z0-9._-]{1,63}$/.test(rawValue))) {
+        return false;
+      }
+    }
+    return true;
   } catch {
     return false;
+  }
+}
+
+// FIELD002: production auth must use a separately authenticated LOGIN.
+// This is a syntactic pre-listener identity check, not SQL privilege proof.
+// Never log or include URL/user-info in issue codes.
+function postgresLoginName(value: unknown): string | null {
+  if (!isPostgresUrl(value)) return null;
+  try {
+    const valueUrl = new URL(text(value));
+    const username = decodeURIComponent(valueUrl.username);
+    return /^[a-z_][a-z0-9_]{0,62}$/.test(username) ? username : null;
+  } catch {
+    return null;
+  }
+}
+
+// A trusted auth issuer and its tenant pool must address the same logical DB.
+// Neon offers pooled and direct hostnames for one compute; normalize only this
+// documented suffix. Exact endpoint identity still needs hosted verification.
+function postgresDatabaseTarget(value: unknown): string | null {
+  if (!isPostgresUrl(value)) return null;
+  try {
+    const parsed = new URL(text(value));
+    const rawHost = parsed.hostname.toLowerCase();
+    const host = rawHost.endsWith(".neon.tech")
+      ? rawHost.replace(/^([^.]+)-pooler(?=\.)/, "$1")
+      : rawHost;
+    const database = decodeURIComponent(parsed.pathname);
+    if (!host || !database || database === "/") return null;
+    return [host, parsed.port || "5432", database].join("\u0000");
+  } catch {
+    return null;
   }
 }
 
@@ -157,11 +269,78 @@ export function getProductionRuntimeConfigurationIssues(
     issues.push(issue("deployment", "DEPLOYMENT_MODE_INVALID"));
   }
 
+  // Block the known ORIGINAL staging connection, including its pooler, even if
+  // a caller supplies a seemingly safe first-launch plan. All three pools
+  // must be bound to a new, independently verified commercial destination.
+  if ([env.DATABASE_URL, env.FAWRI_AUTH_DATABASE_URL,
+       env.FAWRI_OPERATOR_DATABASE_URL].some(isKnownOriginalStagingUrl)) {
+    issues.push(issue("database", "FIELD002_ORIGINAL_STAGING_DATABASE_FORBIDDEN"));
+  }
+  const firstLaunchSource = firstCommercialSourceManifestStatus(
+    env[FIRST_COMMERCIAL_SOURCE_MANIFEST_ENV],
+  );
+  if (firstLaunchSource === "missing") {
+    issues.push(issue("deployment", "FIELD002_FIRST_COMMERCIAL_SOURCE_MANIFEST_REQUIRED"));
+  } else if (firstLaunchSource === "refused") {
+    issues.push(issue("deployment", "FIELD002_FIRST_COMMERCIAL_SOURCE_MANIFEST_FORBIDDEN"));
+  }
+
   if (!isPostgresUrl(env.DATABASE_URL)) {
     issues.push(issue("database", "PRODUCTION_DATABASE_URL_REQUIRED"));
   }
   if (text(env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "OPERATIONAL_POSTGRES_AUTHORITY_REQUIRED"));
+  }
+  // This is evaluated BEFORE the HTTP listener starts (index.ts). Production
+  // must pin the exact tenant runtime LOGIN role, not merely advertise that
+  // a database exists. Actual role privileges and RLS remain SQL-gated.
+  const selectedRuntimeRole = text(env.FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE);
+  if (!/^[a-z_][a-z0-9_]{0,62}$/.test(selectedRuntimeRole)) {
+    issues.push(issue("database", "PRODUCTION_POSTGRES_RUNTIME_ROLE_REQUIRED"));
+  } else if (FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(selectedRuntimeRole)) {
+    issues.push(issue("database", "FIELD002_LEGACY_OR_OWNER_RUNTIME_ROLE_FORBIDDEN"));
+  }
+  const tenantUrlLogin = postgresLoginName(env.DATABASE_URL);
+  // Preserve a single primary rejection for an already forbidden role;
+  // a secondary mismatch must not obscure the unsafe-role reason.
+  if (tenantUrlLogin && /^[a-z_][a-z0-9_]{0,62}$/.test(selectedRuntimeRole) &&
+      !FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(selectedRuntimeRole) &&
+      tenantUrlLogin !== selectedRuntimeRole) {
+    issues.push(issue("database", "FIELD002_TENANT_DATABASE_LOGIN_MISMATCH"));
+  }
+  const authUrlLogin = postgresLoginName(env.FAWRI_AUTH_DATABASE_URL);
+  if (!authUrlLogin) {
+    issues.push(issue("auth", "FIELD002_AUTH_DATABASE_URL_REQUIRED"));
+  } else if (authUrlLogin === tenantUrlLogin ||
+      authUrlLogin === selectedRuntimeRole ||
+      FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(authUrlLogin)) {
+    issues.push(issue("auth", "FIELD002_AUTH_DATABASE_LOGIN_UNSAFE"));
+  }
+  if (authUrlLogin && tenantUrlLogin) {
+    const tenantTarget = postgresDatabaseTarget(env.DATABASE_URL);
+    const authTarget = postgresDatabaseTarget(env.FAWRI_AUTH_DATABASE_URL);
+    if (!tenantTarget || !authTarget || tenantTarget !== authTarget) {
+      issues.push(issue("auth", "FIELD002_AUTH_DATABASE_TARGET_MISMATCH"));
+    }
+  }
+  // The operator directory and receipt-review issuer is a third authority,
+  // not an alias for tenant data or the authentication/session issuer.
+  // A syntactically valid URL alone is insufficient to accept a release.
+  const operatorUrlLogin = postgresLoginName(env.FAWRI_OPERATOR_DATABASE_URL);
+  if (!operatorUrlLogin) {
+    issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_URL_REQUIRED"));
+  } else if (operatorUrlLogin === tenantUrlLogin ||
+      operatorUrlLogin === selectedRuntimeRole ||
+      operatorUrlLogin === authUrlLogin ||
+      FIELD002_FORBIDDEN_RUNTIME_ROLE_NAMES.has(operatorUrlLogin)) {
+    issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_LOGIN_UNSAFE"));
+  }
+  if (operatorUrlLogin && tenantUrlLogin) {
+    const tenantTarget = postgresDatabaseTarget(env.DATABASE_URL);
+    const operatorTarget = postgresDatabaseTarget(env.FAWRI_OPERATOR_DATABASE_URL);
+    if (!tenantTarget || !operatorTarget || tenantTarget !== operatorTarget) {
+      issues.push(issue("database", "FIELD002_OPERATOR_DATABASE_TARGET_MISMATCH"));
+    }
   }
   if (text(env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY) !== "required") {
     issues.push(issue("database", "SUBSCRIPTION_POSTGRES_AUTHORITY_REQUIRED"));
@@ -207,7 +386,10 @@ export function metaConnectionActivationConfigured(
 ): boolean {
   if (text(env.FAWRI_META_CUTOVER_READY) !== "1") return false;
   if (text(env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY) !== "required") return false;
-  if (env.NODE_ENV === "production") {
+  // An explicit production deployment profile must never bypass Meta OAuth
+  // safeguards merely because NODE_ENV is not production. Keep the existing
+  // strict behavior when NODE_ENV itself is production (even for staging).
+  if (env.NODE_ENV === "production" || productionReleaseGateRequired(env)) {
     if (text(env.FAWRI_META_REPLY_TRANSPORT).toLowerCase() !== "live") return false;
     if (text(env.FAWRI_META_CREDENTIAL_PROVIDER).toLowerCase() !== "aws-kms") return false;
     if (!isSafeProductionRedirect(env.META_REDIRECT_URI)) return false;

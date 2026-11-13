@@ -1,0 +1,43 @@
+name: V1 hosted identity source-only gate (no Neon)
+
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-hosted-role-admission-source.yml"
+      - "scripts/lib/v1-first-merchant-hosted-identity-preflight.mjs"
+      - "scripts/tests/v1-first-merchant-hosted-identity-preflight.test.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-hosted-role-source-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bounded-catalog-regression:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact source, no persistent credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Prepare Node 24 (no dependencies or services)
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Source-only syntax and bounded observed-role regression
+        run: |
+          node --check scripts/lib/v1-first-merchant-hosted-identity-preflight.mjs
+          node --check scripts/tests/v1-first-merchant-hosted-identity-preflight.test.mjs
+          node --test scripts/tests/v1-first-merchant-hosted-identity-preflight.test.mjs
+          echo "V1_HOSTED_ROLE_CATALOG_SOURCE_ONLY_PASS"
+          echo "V1_NO_NEON_NO_SQL_NO_ROLE_PROVISIONING_NO_RELEASE_PASS"

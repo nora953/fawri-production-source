@@ -1,3 +1,4 @@
+import { withMerchantAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import {
   createEnvironmentMetaCredentialKeyProvider,
@@ -9,7 +10,6 @@ import {
 import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
 import {
   operationalPostgresAuthorityRequired,
-  withMerchantOperationalTransaction,
   withOperationalTransaction,
   type OperationalSqlClient,
 } from "./operationalPostgresAuthority";
@@ -197,7 +197,7 @@ export async function listMetaChannelsAuthoritative(
   merchantId: string,
 ): Promise<MetaChannelSummary[]> {
   if (!operationalPostgresAuthorityRequired()) return listMetaChannels(merchantId);
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const result = await client.query<ChannelRow>(
       `${SELECT_CHANNEL}
         WHERE merchant_id = $1
@@ -252,7 +252,7 @@ export async function connectMetaChannelAuthoritative(input: {
     });
   }
   const now = input.now || new Date();
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForChannelWrite(client, merchantId);
     const encrypted = encryptMetaCredential(
       input.accessToken,
@@ -323,7 +323,7 @@ export async function readMetaChannelCredentialAuthoritative(input: {
   if (!operationalPostgresAuthorityRequired()) return readMetaChannelCredential(input);
   const merchantId = text(input.merchantId);
   const pageId = text(input.pageId);
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const row = await findChannel(client, merchantId, input.platform, pageId);
     if (
       !row ||
@@ -366,7 +366,7 @@ export async function requestMetaChannelDisconnectAuthoritative(input: {
   const merchantId = text(input.merchantId);
   const pageId = text(input.pageId);
   const now = input.now || new Date();
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const current = await findChannel(client, merchantId, input.platform, pageId, true);
     if (!current) {
       throw Object.assign(new Error("Meta channel was not found"), {
@@ -411,7 +411,7 @@ export async function completeMetaChannelDisconnectAuthoritative(input: {
   if (!operationalPostgresAuthorityRequired()) return completeMetaChannelDisconnect(input);
   const merchantId = text(input.merchantId);
   const now = input.now || new Date();
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const updated = await client.query<{ id: string }>(
       `UPDATE merchant_channels
           SET status = 'disconnected',
@@ -449,7 +449,7 @@ export async function markMetaChannelErrorAuthoritative(input: {
   if (!operationalPostgresAuthorityRequired()) return markMetaChannelError(input);
   const merchantId = text(input.merchantId);
   const now = input.now || new Date();
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
+  return withMerchantAuthenticationTransaction(merchantId, async (client) => {
     const updated = await client.query<{ id: string }>(
       `UPDATE merchant_channels
           SET status = 'error',

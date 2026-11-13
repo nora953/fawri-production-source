@@ -1,3 +1,4 @@
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
 import crypto from "node:crypto";
 import { authSecurityStore } from "./authSecurityStore";
 import {
@@ -6,7 +7,6 @@ import {
 } from "./authSecurityTypes";
 import {
   operationalPostgresAuthorityRequired,
-  withOperationalTransaction,
   type OperationalSqlClient,
 } from "./operationalPostgresAuthority";
 
@@ -104,7 +104,7 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
   }
   const targetHash = fingerprint("otp-target", input.target);
   const ipHash = fingerprint("ip", input.ip);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     // Serialize issuance for both the target/purpose and source IP before
     // observing rate/cooldown state. Without this, concurrent transactions can
     // all read the same pre-insert state and create multiple live challenges.
@@ -228,7 +228,7 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
   if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.verifyOtpChallenge(input);
   }
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const result = await client.query<OtpRow>(
       `SELECT id, account_id, target_hash, code_hash, ip_hash,
               purpose::text AS purpose, created_at, expires_at, resend_after,
@@ -284,7 +284,7 @@ export async function revokeMerchantOtpChallengeAuthoritative(
     authSecurityStore.revokeOtpChallenge(challengeId);
     return;
   }
-  await withOperationalTransaction(async (client) => {
+  await withAuthenticationTransaction(async (client) => {
     await client.query(
       `UPDATE auth_otp_challenges
           SET revoked_at = now()
@@ -304,7 +304,7 @@ export async function checkMerchantLoginAllowedAuthoritative(input: {
   }
   const targetHash = fingerprint("login-target", input.target);
   const ipHash = fingerprint("ip", input.ip);
-  return withOperationalTransaction(async (client) => {
+  return withAuthenticationTransaction(async (client) => {
     const now = new Date();
     const since = new Date(now.getTime() - 15 * 60 * 1000);
     const targetFailures = await client.query<{ created_at: Date }>(
@@ -351,7 +351,7 @@ export async function recordMerchantLoginAttemptAuthoritative(input: {
     authSecurityStore.recordLoginAttempt(input);
     return;
   }
-  await withOperationalTransaction(async (client) => {
+  await withAuthenticationTransaction(async (client) => {
     const now = new Date();
     await client.query(
       `INSERT INTO login_attempts

@@ -4,25 +4,25 @@ import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import test from 'node:test';
 import {assertDisposablePostgres} from '../../../scripts/lib/disposable-postgres-test-guard.mjs';
+import {createDisposableKnowledgeRuntime} from './helpers/disposable-knowledge-runtime.mjs';
 import {cleanupResources,stopTestChild} from './helpers/cleanup-resources.mjs';
 await assertDisposablePostgres();
 process.env.FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY='required';
-const {pool}=await import('@workspace/db');
+const bootstrapUrl=process.env.DATABASE_URL;
+const runtime=await createDisposableKnowledgeRuntime();
+const pool=runtime.admin;
 const {reserveMerchantAutoReplyAuthoritative}=await import('../src/services/merchantReplyEntitlementAuthority.ts');
 const childPath=fileURLToPath(new URL('./helpers/meta-restore-wire-child.mjs',import.meta.url));
 
 test('actual tenant-scoped Meta restore wrappers recover once-only credit after real COMMIT loss and fresh-process replay',{timeout:180000},async t=>{
-  const role=`meta_restore_${randomUUID().replaceAll('-','')}`,merchants=[],children=[],markers=[];let roleCreated=false;
+  const role=runtime.role,merchants=[],children=[],markers=[];
   t.after(async()=>cleanupResources([
     ['owned backends',async()=>{for(const marker of markers)await pool.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE application_name=$1 AND datname=current_database() AND pid<>pg_backend_pid()',[marker]);}],
     ['owned children',async()=>{for(const child of children)await stopTestChild(child);}],
     ['owned ledger',()=>pool.query('DELETE FROM reply_ledger WHERE merchant_id=ANY($1::text[])',[merchants])],
     ['owned accounts',()=>pool.query('DELETE FROM accounts WHERE id=ANY($1::text[])',[merchants])],
-    ['owned grants',()=>roleCreated?pool.query(`DROP OWNED BY ${role}`):undefined],
-    ['owned role',()=>roleCreated?pool.query(`DROP ROLE ${role}`):undefined],['pool',()=>pool.end()],
+    ['runtime',()=>runtime.dispose()],
   ]));
-  await pool.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`);roleCreated=true;
-  await pool.query(`GRANT USAGE ON SCHEMA public TO ${role}`);await pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO ${role}`);await pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ${role}`);
   async function merchant(){
     const id=`restore-wire-merchant-${randomUUID()}`;merchants.push(id);
     await pool.query("INSERT INTO accounts(id,kind,phone,password_hash,state,phone_verified) VALUES($1,'merchant',$2,'synthetic','active',true)",[id,`+1995${String(randomInt(0,100000000)).padStart(8,'0')}`]);
@@ -37,7 +37,7 @@ test('actual tenant-scoped Meta restore wrappers recover once-only credit after 
   };}
   async function run(task){
     const marker=`meta-restore-owned-${randomUUID()}`;markers.push(marker);
-    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
+    const child=spawn(process.execPath,['--import','tsx',childPath],{env:{...process.env,DATABASE_URL:bootstrapUrl,FAWRI_TEST_RUNTIME_DATABASE_URL:process.env.DATABASE_URL},stdio:['ignore','pipe','pipe','ipc']});children.push(child);
     const messages=[];let readyResolve;const ready=new Promise(r=>{readyResolve=r;});
     child.stdout.on('data',()=>{});child.stderr.on('data',()=>{});child.on('message',m=>{messages.push(m);if(m.type==='ready')readyResolve();});
     const done=new Promise(r=>{child.once('exit',(code,signal)=>r({code,signal,messages}));child.once('error',()=>r({code:'SPAWN_FAILURE',messages}));});
@@ -50,15 +50,15 @@ test('actual tenant-scoped Meta restore wrappers recover once-only credit after 
     await pool.query("UPDATE subscriptions SET created_at=date_trunc('milliseconds',clock_timestamp())+interval '456 microseconds',updated_at=date_trunc('milliseconds',clock_timestamp())+interval '1 second' WHERE merchant_id=$1",[owned]);
     const created=(await pool.query('SELECT created_at FROM subscriptions WHERE merchant_id=$1',[owned])).rows[0].created_at;
     const before=await snapshot(owned,event),codes=[],observedClients=[];
-    const connect=pool.connect;
-    pool.connect=async function(){
+    const connect=runtime.runtimePool.connect;
+    runtime.runtimePool.connect=async function(){
       const client=await connect.call(this),query=client.query;observedClients.push({client,query});
       client.query=function(...args){return query.apply(this,args).catch(error=>{codes.push(error.code);throw error;});};
       return client;
     };
     let result;
     try{result=await reserveMerchantAutoReplyAuthoritative(owned,event,new Date(created));}
-    finally{pool.connect=connect;for(const {client,query} of observedClients)client.query=query;}
+    finally{runtime.runtimePool.connect=connect;for(const {client,query} of observedClients)client.query=query;}
     assert.equal(result.allowed,false);assert.equal(result.code,'MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE');
     assert.ok(codes.includes('23514'),'actual SQL constraint code required');assert.deepEqual(await snapshot(owned,event),before);
     console.log('META_RESTORE_FIXTURE_CHRONOLOGY_PROOF '+JSON.stringify({sqlstate:'23514',originalGuardRetained:true,rolledBack:true,wireFaultNotReached:true}));
