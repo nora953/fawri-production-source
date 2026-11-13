@@ -1,5 +1,12 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-13 — hosted recovery target reconnected READ-ONLY, source snapshot frozen, hosted data is empty
+
+- Connected Neon **explicit exact authorized** project `crimson-cherry-65705041` and `production` branch `br-holy-waterfall-b993zglb`, DB `fawri` PG18 as `fawri_owner`. The former wrong-project connector issue is now resolved; authorization is **one project, read-only**.
+- Two independent read-only mechanisms confirmed **0 public application tables** and **0/3 commercial runtime LOGINs**; separate Object Storage lookup confirmed **0 buckets**, `list_snapshots=[]`, `get_snapshot_schedule=[]`; history window only **6 hours**. The hosted target currently contains no migrated application schema or merchant/order/media objects; do not mistake 31.7 MB Neon branch allocation for merchant/business data.
+- Branch `backup/fawri-v1-prehosted-2026-11-13-241b978` frozen at exact Git SHA `241b978b056e6f5f32f2be4dae075b0ec990fe72`, but this alone is **not independent** of GitHub; a separately saved ZIP/bundle must be downloaded and verified. Independent DB dump/media backup/isolated restore will become mandatory before live migration/merchant data, not asserted accomplished in the empty target. No Neon snapshot created because integration is read-only; none exist.
+- Evidence: [current exact target / recovery checklist](docs/final-audit/evidence/V1-PREHOSTED-BACKUP-CHECKPOINT-20261113.md). `P0-HOSTED-RECOVERY` and `P0-ACCESS-HOSTED-ROLLOUT` remain BLOCKED, PR #550 DRAFT, **13 essential V1 + 3 POS safe deferrals, NO-GO**. No privileged writes or deployment on old/new Neon or Railway.
+
 ## 2026-11-13 — V1 first-commercial Meta auto-reply debit/restore: scoped owner writer + real concurrent delivery admission ACCEPTED in disposable PG18 ONLY
 
 - **Specific named blocker:** `P0-ACCESS-HOSTED-ROLLOUT` commercial Meta reply worker can no longer directly UPDATE `subscriptions` / `subscription_reply_batches` or INSERT into `reply_ledger` under the dedicated least-privilege `fawri_restricted_runtime` LOGIN. Broad financial DML grants are **not acceptable**; previously read-only credit GET was fixed independently. This phase implements a source-only held bounded owner function instead of granting unrestricted financial authority.
