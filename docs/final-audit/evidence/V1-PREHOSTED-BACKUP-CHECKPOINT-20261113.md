@@ -1,5 +1,14 @@
 # FAWRI V1 — backup checkpoint, 2026-11-13
 
+## 2026-11-13 — isolated Neon restore drill owner-approved; CONNECTOR WRITE TOOL BLOCKED
+
+- Owner **approved** a temporary isolated clone experiment within the exact independent Neon project `crimson-cherry-65705041`, testing schema setup and backup/restore without modifying `production` branch `br-holy-waterfall-b993zglb` or using real merchant data.
+- Fresh read-only `list_branches` returned exactly **one** ready/default/primary branch (`production`), so no experimental branch existed to reuse.
+- A single narrowly scoped `create_branch(project_id='crimson-cherry-65705041',parent_id='br-holy-waterfall-b993zglb',name='v1-recovery-drill-20261113',min_cu=0.25,max_cu=0.25)` call was **rejected before execution** with `Tool create_branch not found`, consistent with the previously authorized **Read only** connector capabilities. **Zero new branches, zero SQL writes, zero snapshots, zero production changes.**
+- **Exact next owner-dependent action:** In ChatGPT plugin Neon connection settings use Reconnect, select **One project** = `crimson-cherry-65705041`, **Read and write**, only necessary categories **Branches, Snapshots, Querying, Schema, Projects/Endpoints** as available; inspect and authorize the provider OAuth scope consciously. This broadens technical capability in the one project, including production: actual instructions remain **ISOLATED branch only, NO production writes, no financial/live data, no merge/deploy**. After connection verified, create only the named isolated clone and record its returned branch ID before issuing ANY SQL. No separate production permission is implied.
+- Scope of approved isolated drill: bounded synthetic database schema/read/backup, isolated recoverable snapshot or logical dump and restore to a **different** disposable branch, post-restore integrity/owner-role checks and no changes to original `production`. If additional snapshot storage fees/quota/role permissions are demanded, stop and ask owner instead of proceeding.
+- This is a **permission blocker** only, not an infrastructure failure or failure of existing accepted CI. `P0-HOSTED-RECOVERY` remains BLOCKED, PR #550 DRAFT, commercial NO-GO.
+
 
 ## 2026-11-13 — OFFSITE SOURCE RECOVERY READ-BACK ACCEPTED (current authoritative checkpoint)
 
