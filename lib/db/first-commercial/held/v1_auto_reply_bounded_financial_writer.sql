@@ -17,6 +17,7 @@ BEGIN
    OR to_regprocedure('fawri_security.allows_merchant(text)') IS NULL
    OR to_regprocedure('public.fawri_v1_auto_reply_reserve(text,text)') IS NOT NULL
    OR to_regprocedure('public.fawri_v1_auto_reply_restore(text,text,text,text)') IS NOT NULL
+   OR to_regprocedure('public.fawri_v1_auto_reply_send_admit(text,text)') IS NOT NULL
    OR NOT EXISTS(SELECT 1 FROM pg_roles r
       WHERE r.rolname='fawri_restricted_runtime' AND r.rolcanlogin
         AND NOT (r.rolinherit OR r.rolsuper OR r.rolbypassrls
@@ -272,11 +273,45 @@ BEGIN
 END
 $restore$;
 
+
+-- The delivery send transaction must lock the SAME debit row held by restore.
+-- Without this second admission an unsent release could commit between the
+-- earlier eligibility check and the outbound pending INSERT, yielding a free
+-- send. FOR UPDATE here is executed as the trusted owner, not via a DML GRANT.
+-- The lock is retained by the original caller until COMMIT/ROLLBACK.
+CREATE FUNCTION public.fawri_v1_auto_reply_send_admit(
+  p_merchant_id text,p_event_id text
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+SET search_path=pg_catalog SET row_security=off AS $send_admit$
+DECLARE v_debit public.reply_ledger%ROWTYPE;
+BEGIN
+ IF p_merchant_id IS NULL OR length(p_merchant_id) NOT BETWEEN 1 AND 200
+   OR p_event_id IS NULL OR length(p_event_id) NOT BETWEEN 1 AND 300
+   OR session_user<>'fawri_restricted_runtime'
+   OR current_setting('transaction_isolation')<>'read committed'
+   OR NOT fawri_security.allows_merchant(p_merchant_id)
+ THEN RAISE EXCEPTION 'V1_REPLY_WRITER_SCOPE_REQUIRED'
+   USING ERRCODE='42501'; END IF;
+ SELECT * INTO v_debit FROM public.reply_ledger l
+   WHERE l.external_event_id=p_event_id AND l.direction='debit'
+   FOR UPDATE;
+ IF NOT FOUND OR v_debit.merchant_id IS DISTINCT FROM p_merchant_id
+ THEN RETURN false; END IF;
+ IF EXISTS(SELECT 1 FROM public.reply_ledger l
+   WHERE l.external_event_id=p_event_id AND l.direction='credit')
+ THEN RETURN false; END IF;
+ RETURN true;
+END
+$send_admit$;
+
 REVOKE ALL ON FUNCTION public.fawri_v1_auto_reply_reserve(text,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.fawri_v1_auto_reply_restore(text,text,text,text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.fawri_v1_auto_reply_send_admit(text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.fawri_v1_auto_reply_reserve(text,text)
  TO fawri_restricted_runtime;
 GRANT EXECUTE ON FUNCTION public.fawri_v1_auto_reply_restore(text,text,text,text)
+ TO fawri_restricted_runtime;
+GRANT EXECUTE ON FUNCTION public.fawri_v1_auto_reply_send_admit(text,text)
  TO fawri_restricted_runtime;
 
 DO $post$
@@ -291,7 +326,8 @@ BEGIN
  THEN RAISE EXCEPTION 'V1_REPLY_WRITER_TENANT_INVALID'; END IF;
  FOREACH fn IN ARRAY ARRAY[
   'public.fawri_v1_auto_reply_reserve(text,text)',
-  'public.fawri_v1_auto_reply_restore(text,text,text,text)'
+  'public.fawri_v1_auto_reply_restore(text,text,text,text)',
+  'public.fawri_v1_auto_reply_send_admit(text,text)'
  ] LOOP
    IF NOT has_function_privilege(role_oid,fn,'EXECUTE')
       OR EXISTS (SELECT 1 FROM pg_proc p, LATERAL

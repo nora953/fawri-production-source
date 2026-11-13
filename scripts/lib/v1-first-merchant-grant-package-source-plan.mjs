@@ -49,7 +49,7 @@ const HELD_ADDITIVE=Object.freeze([
   }),
   Object.freeze({
     path:'lib/db/first-commercial/held/v1_auto_reply_bounded_financial_writer.sql',
-    blob:'d46342d1e4cefa8c88c5a04f10dd78ea7391a656',
+    blob:'9d03a49ad5d3719f485e2d63a25794204c4478a5',
     purpose:'META_REPLY_ISSUER_SCOPED_ATOMIC_DEBIT_REFUND_NO_DIRECT_DML',
   }),
   Object.freeze({
