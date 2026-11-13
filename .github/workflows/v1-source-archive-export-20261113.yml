@@ -1,0 +1,51 @@
+# Source-only disaster recovery export: no Neon, no secrets, no deployment.
+# The archived SHA is the frozen V1 source snapshot, NOT this exporter branch.
+name: FAWRI V1 pinned source backup export
+
+on:
+  push:
+    branches:
+      - backup/export-v1-source-20261113
+    paths:
+      - .github/workflows/v1-source-archive-export-20261113.yml
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source history without credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Export exact frozen SHA and checksum without live data
+        shell: bash
+        env:
+          SOURCE_SHA: 241b978b056e6f5f32f2be4dae075b0ec990fe72
+        run: |
+          set -euo pipefail
+          test "$(git cat-file -t "$SOURCE_SHA")" = commit
+          mkdir -p export
+          archive="fawri-source-20261113-241b978.zip"
+          git archive --format=zip \
+            --prefix="fawri-production-source-241b978/" \
+            --output="export/$archive" "$SOURCE_SHA"
+          unzip -tq "export/$archive" >/dev/null
+          test "$(unzip -Z1 "export/$archive" | wc -l)" -gt 500
+          sha256sum "export/$archive" > export/SHA256SUMS.txt
+          node -e 'const fs=require("node:fs"),crypto=require("node:crypto");const p="export/fawri-source-20261113-241b978.zip";const d=fs.readFileSync(p);const data={format:"fawri-v1-independent-source-export-v1",repository:"nora953/fawri-production-source",source_commit:"241b978b056e6f5f32f2be4dae075b0ec990fe72",archive_name:"fawri-source-20261113-241b978.zip",archive_size_bytes:d.length,sha256:crypto.createHash("sha256").update(d).digest("hex"),contains_git_history:false,contains_neon_data:false,contains_hosted_media:false,offsite_storage_verified:false};fs.writeFileSync("export/manifest.json",JSON.stringify(data,null,2)+"\n");'
+          echo "FAWRI_V1_PINNED_SOURCE_ARCHIVE_VERIFIED"
+
+      - name: Upload pinned source export for off-GitHub handoff
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fawri-v1-source-export-20261113-241b978
+          path: export/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
