@@ -807,6 +807,25 @@ export async function reserveMerchantAutoReplyPostgres(
 
   try {
     return await withMerchantSubscriptionTransaction(normalizedMerchantId, async (client) => {
+      // A V1 restricted LOGIN receives no subscription/ledger DML grants.
+      // Execute the owner-owned, issuer-scope-bound atomic writer instead.
+      const identity = await queryRows<{session_login: string}>(
+        client, "SELECT session_user::text AS session_login",
+      );
+      if (identity.length === 1 &&
+          identity[0].session_login === "fawri_restricted_runtime") {
+        const decision = await queryRows<{result: MerchantReplyEntitlementDecision}>(
+          client, `SELECT public.fawri_v1_auto_reply_reserve(
+            $1::text,$2::text) AS result`,
+          [normalizedMerchantId, normalizedEventId],
+        );
+        if (!decision[0]?.result ||
+            typeof decision[0].result.allowed !== "boolean") {
+          return denied("MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE",
+            "merchant reply reservation result is unavailable");
+        }
+        return decision[0].result;
+      }
       await advisoryEventLock(client, normalizedEventId);
       const existing = await readEventLedger(client, normalizedEventId);
       if (existing.debit) {
@@ -997,6 +1016,27 @@ export async function restoreMerchantAutoReplyPostgres(
         withMerchantSubscriptionTransaction(scopedMerchantId, work)
     : withTransaction;
   return transaction(async (client) => {
+    const identity = await queryRows<{session_login: string}>(
+      client, "SELECT session_user::text AS session_login",
+    );
+    if (identity.length === 1 &&
+        identity[0].session_login === "fawri_restricted_runtime") {
+      if (!scopedMerchantId) {
+        return {restored:false,reason:"merchant_scope_required"};
+      }
+      const reason = restore.kind === "refund"
+        ? "META_REPLY_FAILED" : restore.reasonCode;
+      const resolved = await queryRows<{result: ReplyRestoreResult}>(
+        client, `SELECT public.fawri_v1_auto_reply_restore(
+          $1::text,$2::text,$3::text,$4::text) AS result`,
+        [scopedMerchantId, normalizedEventId, restore.kind, reason],
+      );
+      if (!resolved[0]?.result ||
+          typeof resolved[0].result.restored !== "boolean") {
+        return {restored:false,reason:"reconciliation_unavailable"};
+      }
+      return resolved[0].result;
+    }
     await advisoryEventLock(client, normalizedEventId);
     const ledger = await readEventLedger(client, normalizedEventId);
     if (!ledger.debit) {

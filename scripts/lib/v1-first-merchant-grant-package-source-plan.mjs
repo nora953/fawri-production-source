@@ -48,6 +48,11 @@ const HELD_ADDITIVE=Object.freeze([
     purpose:'META_INBOUND_CONVERSATIONS_OUTBOUND_QUEUED_REPLY_DELETE_ONLY',
   }),
   Object.freeze({
+    path:'lib/db/first-commercial/held/v1_auto_reply_bounded_financial_writer.sql',
+    blob:'d46342d1e4cefa8c88c5a04f10dd78ea7391a656',
+    purpose:'META_REPLY_ISSUER_SCOPED_ATOMIC_DEBIT_REFUND_NO_DIRECT_DML',
+  }),
+  Object.freeze({
     path:'lib/db/first-commercial/held/v1_meta_worker_tenant_job_rls.sql',
     blob:'a56842ad262c3a83ed41dd24109d241eb4fb6861',
     purpose:'META_JOB_HISTORY_TENANT_RLS_AND_DML',
