@@ -9,7 +9,7 @@
 -- Narrow source map:
 -- postgresCatalogAuthorityCore (product/variant/image/idempotency/stock)
 -- postgresLocationInventoryAuthority (locations, stock, movement)
--- postgresOrderOperationsAuthority (orders and items)
+-- postgresOrderOperationsAuthority (orders and items, scoped payment audit projection)
 -- postgresOnlineOrderFulfillmentCommit (stock reconciliation)
 -- postgresMerchantSettingsAuthority (delivery and settings)
 -- postgresCommercePromotionAuthority (tenant RLS-protected promotion CRUD)
@@ -62,7 +62,8 @@ BEGIN
       ('catalog_identifiers'),('catalog_image_references'),
       ('catalog_idempotency_keys'),('commerce_promotions'),('merchant_locations'),
       ('location_inventory_levels'),('inventory_mutations'),
-      ('orders'),('order_items'),('merchant_settings'),
+      ('orders'),('order_items'),('order_payment_decisions'),
+      ('order_terminal_decision_links'),('merchant_settings'),
       ('merchant_delivery_area_rates'),('merchant_location_delivery_areas')
   ) AS expected(name)
   LEFT JOIN pg_catalog.pg_namespace n ON n.nspname='public'
@@ -190,9 +191,22 @@ GRANT EXECUTE ON FUNCTION public.fawri_v1_update_scoped_merchant_currency(text,t
   TO fawri_restricted_runtime;
 
 -- First-merchant online order acceptance and permitted order lifecycle.
--- Financial decision/provider event/receipt tables intentionally excluded.
 GRANT SELECT, INSERT, UPDATE ON public.orders, public.order_items
   TO fawri_restricted_runtime;
+
+-- Order list/detail ALWAYS invokes latestDecision() on these two tables.
+-- Permit ONLY its explicitly projected columns under existing merchant RLS.
+-- No whole-table SELECT, decision write, provider event, receipt or refund
+-- access. Payment confirmation/rejection writes remain a separate held gate.
+GRANT SELECT (merchant_id,order_id,decision_id)
+  ON public.order_terminal_decision_links TO fawri_restricted_runtime;
+GRANT SELECT (
+  id,merchant_id,order_id,operation,payment_channel,outcome,
+  confirmation_source,previous_order_status,resulting_order_status,
+  previous_payment_status,resulting_payment_status,actor_type,
+  actor_account_id,request_id,reason,expected_version,resulting_version,
+  decided_at
+) ON public.order_payment_decisions TO fawri_restricted_runtime;
 
 DO $v1_online_postimage$
 DECLARE r oid; bad_table text;
@@ -263,6 +277,18 @@ BEGIN
     OR has_table_privilege(r,'public.verified_provider_payment_receipts',
        'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
     OR has_table_privilege(r,'public.products','DELETE')
+    OR has_table_privilege(r,'public.order_payment_decisions',
+       'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
+    OR has_table_privilege(r,'public.order_terminal_decision_links',
+       'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
+    OR has_column_privilege(r,'public.order_payment_decisions',
+       'actor_session_fingerprint','SELECT')
+    OR has_column_privilege(r,'public.order_payment_decisions',
+       'source_file','SELECT')
+    OR has_column_privilege(r,'public.order_payment_decisions',
+       'source_sha256','SELECT')
+    OR has_table_privilege(r,'public.order_payment_provider_events',
+       'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
     OR has_table_privilege(r,'public.orders','DELETE')
     OR has_table_privilege(r,'public.order_items','DELETE')
     OR has_table_privilege(r,'public.inventory_mutations','UPDATE,DELETE')
@@ -299,12 +325,41 @@ BEGIN
        ('public.' || quote_ident(required.table_name))::text,
        privilege.privilege_name)
   ) THEN RAISE EXCEPTION 'V1_ONLINE_TENANT_REQUIRED_DML_MISSING'; END IF;
+  IF EXISTS (
+    SELECT 1 FROM (VALUES
+      ('order_terminal_decision_links','merchant_id'),
+      ('order_terminal_decision_links','order_id'),
+      ('order_terminal_decision_links','decision_id'),
+      ('order_payment_decisions','id'),
+      ('order_payment_decisions','merchant_id'),
+      ('order_payment_decisions','order_id'),
+      ('order_payment_decisions','operation'),
+      ('order_payment_decisions','payment_channel'),
+      ('order_payment_decisions','outcome'),
+      ('order_payment_decisions','confirmation_source'),
+      ('order_payment_decisions','previous_order_status'),
+      ('order_payment_decisions','resulting_order_status'),
+      ('order_payment_decisions','previous_payment_status'),
+      ('order_payment_decisions','resulting_payment_status'),
+      ('order_payment_decisions','actor_type'),
+      ('order_payment_decisions','actor_account_id'),
+      ('order_payment_decisions','request_id'),
+      ('order_payment_decisions','reason'),
+      ('order_payment_decisions','expected_version'),
+      ('order_payment_decisions','resulting_version'),
+      ('order_payment_decisions','decided_at')
+    ) AS required(table_name,column_name)
+    WHERE NOT has_column_privilege(r,
+      ('public.' || quote_ident(required.table_name))::text,
+      required.column_name,'SELECT')
+  ) THEN RAISE EXCEPTION 'V1_ONLINE_ORDER_DECISION_PROJECTED_READ_MISSING'; END IF;
   SELECT name INTO bad_table FROM (
     VALUES ('products'),('product_variants'),('catalog_variant_options'),
       ('catalog_identifiers'),('catalog_image_references'),
       ('catalog_idempotency_keys'),('commerce_promotions'),('merchant_locations'),
       ('location_inventory_levels'),('inventory_mutations'),
-      ('orders'),('order_items'),('merchant_settings'),
+      ('orders'),('order_items'),('order_payment_decisions'),
+      ('order_terminal_decision_links'),('merchant_settings'),
       ('merchant_delivery_area_rates'),('merchant_location_delivery_areas')
   ) AS expected(name)
   JOIN pg_catalog.pg_namespace n ON n.nspname='public'
