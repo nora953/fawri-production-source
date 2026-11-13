@@ -2,6 +2,21 @@
 
 Status: **SOURCE SNAPSHOT SAVED; INDEPENDENT DATA+MEDIA BACKUP AND RESTORE NOT DONE. Release NO-GO.**
 
+## 2026-11-13 — CONNECTOR READ-ONLY TARGET VERIFIED (not a backup or hosted acceptance)
+
+On the dedicated Neon connection, read-only checks were completed with **explicit target project and branch IDs**; the connection no longer pointed at the old project:
+
+- Project: `crimson-cherry-65705041`, name `fawri-production-prep-20261108`, Free plan, PostgreSQL 18, EU Central (Frankfurt).
+- Branch: `br-holy-waterfall-b993zglb` / `production`, default and ready. Database: `fawri`, owner: `fawri_owner`.
+- Public application schema: **0 base tables / 0 views** reported by schema discovery. A scoped single SELECT independently confirmed `current_database()='fawri'`, PostgreSQL major 18, **0 public base tables**, **0/3 commercial runtime LOGINs** (`fawri_restricted_runtime`, `fawri_auth_issuer`, `fawri_operator_issuer`). Neon branch role listing found only `fawri_owner`.
+- Neon object storage: enabled, **0 buckets**, hence no current Neon storage objects in this target.
+- Neon provider `list_snapshots`: **[]**. `get_snapshot_schedule`: **[]**. PITR/history retention **21600 seconds = 6 hours**.
+- **No hosted CREATE snapshot, DB dump, media export, schema migration, SQL write, restore drill, secrets read, or financial data operation occurred.** Connector was intentionally authorized for one project and **Read only**. Snapshot creation cannot be done through that permission without a separately approved change in authorization; do not impersonate READ ONLY as backup completion.
+- Because this *new* hosted target is **empty**, there are presently no hosted merchant rows, order tables or current Neon media objects to preserve. The crucial nonempty recovery requirement remains ahead of hosting migrations and onboarding real merchants; this is **not** proof that other environments or external media contain no data.
+- Code source backup branch `backup/fawri-v1-prehosted-2026-11-13-241b978` is verified as created from exact commit `241b978b056e6f5f32f2be4dae075b0ec990fe72`. This remains **inside GitHub**. To fulfill **independent source recovery**, user must separately download commit-pinned ZIP (https://github.com/nora953/fawri-production-source/archive/241b978b056e6f5f32f2be4dae075b0ec990fe72.zip) and retain in independently controlled secure storage; no off-GitHub copy has been verified by this run.
+- Priority before the first-hosted rollout: independently archived source ZIP and checksum, approved schema migration, a **tested independent encrypted PostgreSQL pg_dump custom-format export off Neon** plus isolated `pg_restore`, media backup/restore once buckets are populated, tenant-scoped roles and real merchant HTTP+Meta/provider validation. Neon-native snapshots are an additional convenience, **not an independent provider exit backup**.
+- Decision: `P0-HOSTED-RECOVERY` **BLOCKED**, `P0-ACCESS-HOSTED-ROLLOUT` **BLOCKED**, 13 essential V1 gates remain, PR #550 DRAFT, first commercial **NO-GO**. Do not use original Neon/Railway projects.
+
 ## 1. Source code (completed)
 
 - Exact source commit: `241b978b056e6f5f32f2be4dae075b0ec990fe72`.
