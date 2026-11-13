@@ -2,6 +2,15 @@
 
 Status: **SOURCE SNAPSHOT SAVED; INDEPENDENT DATA+MEDIA BACKUP AND RESTORE NOT DONE. Release NO-GO.**
 
+## 2026-11-13 — source archive verified, offsite transfer NOT YET VERIFIED
+
+- Exact frozen source SHA: `241b978b056e6f5f32f2be4dae075b0ec990fe72`. A separate non-production exporter branch `backup/export-v1-source-20261113` was created from this freeze, without moving original PR #550, main or the frozen backup branch.
+- Export-only GitHub Actions workflow [run #43445548915](https://github.com/nora953/fawri-production-source/actions/runs/43445548915) **COMPLETED SUCCESS**; ZIP artifact `fawri-v1-source-export-20261113-241b978` (artifact id `14046439246`, GitHub artifact retention 7 days). Exporter creates `git archive` from the exact pinned SHA, checks ZIP integrity and writes SHA256SUMS.txt and manifest.json. No credentials, Neon or production DB data used.
+- Downloaded and **independently verified** artifact ZIP: nested source `fawri-source-20261113-241b978.zip` is **18,543,800 bytes**, contains **3,179 ZIP entries** with no corrupt entries; nested archive SHA-256 = `43ca2c5ffca037058e0a2dc54318e51653abfd863c742656c52855499ae02fb4`, equal to manifest. Outer GitHub Actions artifact digest `sha256:8e636c5950d9ddd2ab7992c92b3a638517b34e719f913ad67aa534c7fea4d3f4` (outer packaging) is different by design.
+- User-visible downloadable nested archive + manifest artifact was created inside chat; **no Google Drive ZIP upload has succeeded yet**. A distinct Drive folder `FAWRI - Private Backup 2026-11-13` was created: https://drive.google.com/drive/folders/17Mb7uofA3A04MzRastzpICj2Ng-4cDAN. The connector rejects cross-app GitHub artifact `file_uri` upload due to type/interop mismatch. **Do not report successful offsite backup**. User needs to manually download the full artifact and upload it to this Drive folder, then verify Drive file size, download and SHA-256; maintain private sharing.
+- No database content: target Neon new project `crimson-cherry-65705041`, branch `br-holy-waterfall-b993zglb`, PG18 DB `fawri` previously verified **0 app tables, 0/3 roles, 0 buckets, no snapshots**. No hosted SQL, snapshot creation, migration, privileges, storage change or deployment attempted. No replacement for future independent PostgreSQL/media backups and isolated restore; source ZIP has no Git history.
+- Gate remains `P0-HOSTED-RECOVERY` **BLOCKED** until independent source storage read-back plus future real DB/media export and restore acceptance. Other V1 blockers, PR #550 draft and commercial NO-GO unchanged.
+
 ## 2026-11-13 — CONNECTOR READ-ONLY TARGET VERIFIED (not a backup or hosted acceptance)
 
 On the dedicated Neon connection, read-only checks were completed with **explicit target project and branch IDs**; the connection no longer pointed at the old project:
