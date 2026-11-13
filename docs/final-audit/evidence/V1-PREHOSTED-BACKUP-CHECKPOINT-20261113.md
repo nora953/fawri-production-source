@@ -1,5 +1,18 @@
 # FAWRI V1 — backup checkpoint, 2026-11-13
 
+
+## 2026-11-13 — OFFSITE SOURCE RECOVERY READ-BACK ACCEPTED (current authoritative checkpoint)
+
+**Sub-gate: independent SOURCE backup and restore ACCEPTED. Broader `P0-HOSTED-RECOVERY` remains BLOCKED** because hosted Postgres/media recovery is not proved.
+
+- User uploaded the GitHub Actions export archive to privately owned Google Drive folder [FAWRI - Private Backup 2026-11-13](https://drive.google.com/drive/folders/17Mb7uofA3A04MzRastzpICj2Ng-4cDAN). Exact file: [FAWRI-source-backup-2026-11-13 (2).zip](https://drive.google.com/file/d/1kE_lk0usxI-IVhbGAVllc30Y3Tr9OetA/view), Drive ID `1kE_lk0usxI-IVhbGAVllc30Y3Tr9OetA`, reported bytes **18,544,799**, shared=false / not_shared. No wider sharing was enabled.
+- **Independently downloaded the stored Drive ZIP** through the authenticated Drive connector and verified the actual bytes (not just filename/size). Outer ZIP SHA-256 = `8e636c5950d9ddd2ab7992c92b3a638517b34e719f913ad67aa534c7fea4d3f4`, EXACTLY the GitHub Actions artifact digest; three entries `SHA256SUMS.txt`, `fawri-source-20261113-241b978.zip`, `manifest.json`. ZIP CRC integrity PASS.
+- The nested `git archive` is 18,543,800 bytes with SHA-256 `43ca2c5ffca037058e0a2dc54318e51653abfd863c742656c52855499ae02fb4` matching both the outer manifest and SHA256SUMS. Its **3,179 ZIP entries** pass CRC validation with no path escape.
+- **Recovery rehearsal** extracted the NESTED archive from the verified Drive copy to an isolated throwaway folder (not a production checkout), confirmed required files existed, independently recomputed Git blob SHA-1 for `AGENTS.md`, `LAUNCH_PLAN.md`, `LAUNCH_SCOPE_MATRIX.md`, `PROGRESS.md`, `package.json`, `scripts/backup-postgresql.mjs`, `scripts/restore-postgresql.mjs`, `lib/db/drizzle/meta/_journal.json`, `artifacts/api-server/src/services/postgresSubscriptionEntitlement.ts`. All **9/9 Git blob digests MATCH the immutable source commit `241b978b056e6f5f32f2be4dae075b0ec990fe72`**, separately fetched from GitHub, without executing recovered code.
+- Original GitHub frozen SHA and PR #550 not modified by recovery rehearsal. The full Git history, production database, uploaded media and secrets are intentionally **not** included. For public repository source, Google Drive copy is independent of GitHub account loss; Google account and sharing remain the user's responsibility.
+- **Next necessary live recovery acceptance is not a repeat of this source test**: after scoped authorization to provision the currently empty Neon production-prep DB, take encrypted custom-format Postgres logical backup **outside Neon/GitHub**, reproduce it on an isolated database, verify 54-stage schema, application rows/role ACL + non-empty media restore before any merchant data or GO. Current connected Neon is **read-only**; 0 application tables, 0/3 runtime LOGINs, 0 object buckets, no snapshots. No live DB write or hosted promotion authorized.
+- Historic sections below predate Drive upload and are retained as dated evidence, **superseded only for source-offsite verification**. P0 known register remains 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, 13 essential V1 plus 3 deferred POS obligations, first-commercial **NO-GO**.
+
 Status: **SOURCE SNAPSHOT SAVED; INDEPENDENT DATA+MEDIA BACKUP AND RESTORE NOT DONE. Release NO-GO.**
 
 ## 2026-11-13 — source archive verified, offsite transfer NOT YET VERIFIED
