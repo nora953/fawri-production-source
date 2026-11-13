@@ -1,5 +1,10 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-13 — hosted owner pg_stat scope prerequisite VERIFIED READ-ONLY
+
+- Correct one-project read-only Neon connection `crimson-cherry-65705041` / `br-holy-waterfall-b993zglb`, DB `fawri` (PostgreSQL 18) returned `fawri_owner`, **trusted-owner `pg_read_all_stats` USAGE=true**, `rolbypassrls=true`, `rolcreaterole=true`, **0 public application relations**. This resolves the earlier *feasibility uncertainty* from disposable PG18 issuer session-scope test; never grant these elevated owner privileges to tenant/auth/operator roles. Separate authenticated tenant/issuer/operator LOGINs still **0/3**, independently recoverable hosted DB/media backups absent, no real HTTP/Meta/payment acceptance.
+- Source ZIP **offsite Drive read-back and isolated restore ACCEPTED** (outer archive SHA-256 `8e636c5950d9ddd2ab7992c92b3a638517b34e719f913ad67aa534c7fea4d3f4`; nested `43ca2c5ffca037058e0a2dc54318e51653abfd863c742656c52855499ae02fb4`; 3179 archive entries; 9/9 pinned source SHA1 matching). One source-recovery **sub-gate** resolved; `P0-HOSTED-RECOVERY` still BLOCKED. No Neon writes / live credentials / deployment / merge / hosted backup, PR #550 DRAFT, NO-GO; 13 essential V1 plus 3 POS deferred obligations unchanged.
+
 
 ## 2026-11-13 — OFFSITE SOURCE BACKUP RECOVERY ACCEPTED, database/media recovery still BLOCKED
 
