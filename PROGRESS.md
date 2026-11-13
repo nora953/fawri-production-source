@@ -1,5 +1,12 @@
 # FAWRI — launch-blocker execution checkpoint
 
+
+## 2026-11-13 — OFFSITE SOURCE BACKUP RECOVERY ACCEPTED, database/media recovery still BLOCKED
+
+- Frozen V1 Git commit `241b978b056e6f5f32f2be4dae075b0ec990fe72` is now **actually recoverable outside GitHub**: downloaded from owner's privately controlled [Drive file](https://drive.google.com/file/d/1kE_lk0usxI-IVhbGAVllc30Y3Tr9OetA/view); outer SHA-256 `8e636c5950d9ddd2ab7992c92b3a638517b34e719f913ad67aa534c7fea4d3f4` and nested SHA-256 `43ca2c5ffca037058e0a2dc54318e51653abfd863c742656c52855499ae02fb4` matched exactly; nested 3,179 ZIP entries passed CRC; **9/9 source Git blob digests** matched original immutable GitHub commit in isolated filesystem recovery rehearsal. [Exact evidence](docs/final-audit/evidence/V1-PREHOSTED-BACKUP-CHECKPOINT-20261113.md).
+- **Source offsite backup sub-gate ACCEPTED. Not a P0 closure.** No customer data / database dump / uploaded media / credentials / full Git history in this ZIP. New Neon first-commercial PG18 target remains **empty application schema, 0/3 runtime LOGINs, 0 media buckets, no provider snapshots**. Real encrypted independent PostgreSQL DB/media export and isolated restore after schema provisioning remain mandatory before merchant onboarding. No Neon writes/branch creation, secrets, deploy or merge.
+- **Unchanged release status:** 13 essential V1 blockers +3 POS source-history obligations deferred; 29 CLOSED_SOURCE /7 OPEN /9 BLOCKED among 45 known, PR #550 DRAFT, NO-GO. No extra unrelated QA / old accepted CI rerun.
+
 ## 2026-11-13 — hosted recovery target reconnected READ-ONLY, source snapshot frozen, hosted data is empty
 
 - Connected Neon **explicit exact authorized** project `crimson-cherry-65705041` and `production` branch `br-holy-waterfall-b993zglb`, DB `fawri` PG18 as `fawri_owner`. The former wrong-project connector issue is now resolved; authorization is **one project, read-only**.
