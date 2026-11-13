@@ -600,6 +600,54 @@ async function refreshLockedSubscription(
   return { row, batches, totalRemaining, totalUsed };
 }
 
+// V1 merchant subscription GET is a pure snapshot. Querying a balance is
+// NOT permission to UPDATE subscription balances or expire reply batches.
+// Mutating reservations/refunds remain separate, guarded billing operations.
+async function readOnlySubscriptionSnapshot(
+  client: QueryTarget,
+  row: SubscriptionRow,
+  now: Date,
+): Promise<LockedSubscription> {
+  const result = await queryRows<Record<string, unknown>>(
+    client,
+    `SELECT id, subscription_id, merchant_id, source, amount, remaining,
+            purchased_at, expires_at, expiry_reminder_sent_at
+       FROM subscription_reply_batches
+      WHERE subscription_id = $1 AND merchant_id = $2
+        AND remaining > 0 AND expires_at > $3
+      ORDER BY expires_at ASC, purchased_at ASC, id ASC`,
+    [row.id, row.merchant_id, now],
+  );
+  const batches = result.map(toBatchRow);
+  const baseUsed = Math.min(row.base_reply_limit, row.base_replies_used);
+  const baseRemaining = Math.max(0, row.base_reply_limit - baseUsed);
+  const addonRemaining = batches.reduce((n, batch) => n + batch.remaining, 0);
+  const addonUsed = batches.reduce(
+    (n, batch) => n + (batch.amount - batch.remaining), 0,
+  );
+  const totalRemaining = baseRemaining + addonRemaining;
+  const totalUsed = baseUsed + addonUsed;
+  let status = row.status;
+  if (status !== "suspended" && status !== "pending_activation" &&
+      status !== "expired") {
+    status = row.expires_at.getTime() <= now.getTime()
+      ? "expired" : totalRemaining <= 0 ? "replies_exhausted" : "active";
+  }
+  return {
+    row: {
+      ...row,
+      base_replies_used: baseUsed,
+      base_replies_remaining: baseRemaining,
+      addon_replies_remaining: addonRemaining,
+      status,
+      auto_reply_enabled: status === "active" ? row.auto_reply_enabled : false,
+    },
+    batches,
+    totalRemaining,
+    totalUsed,
+  };
+}
+
 function apiRecord(state: LockedSubscription): SubscriptionApiRecord {
   const { row, batches } = state;
   const activeBatchAmount = batches.reduce((total, batch) => total + batch.amount, 0);
@@ -693,9 +741,19 @@ export async function getCurrentSubscriptionPostgres(
 ): Promise<SubscriptionApiRecord | null> {
   const normalizedMerchantId = requiredText(merchantId, 160);
   return withMerchantSubscriptionTransaction(normalizedMerchantId, async (client) => {
-    const row = await loadSubscriptionRow(client, normalizedMerchantId, true);
+    // Decide by authenticated database LOGIN, not an HTTP header/merchant ID.
+    const identity = await queryRows<{ session_login: string }>(
+      client, "SELECT session_user::text AS session_login",
+    );
+    const firstCommercial = identity.length === 1 &&
+      identity[0].session_login === "fawri_restricted_runtime";
+    const row = await loadSubscriptionRow(
+      client, normalizedMerchantId, !firstCommercial,
+    );
     if (!row) return null;
-    return apiRecord(await refreshLockedSubscription(client, row, now));
+    return apiRecord(firstCommercial
+      ? await readOnlySubscriptionSnapshot(client, row, now)
+      : await refreshLockedSubscription(client, row, now));
   });
 }
 

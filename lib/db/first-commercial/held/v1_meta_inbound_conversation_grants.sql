@@ -43,7 +43,7 @@ BEGIN
   FOREACH t IN ARRAY ARRAY[
     'channel_inbound_events','conversations','messages',
     'manual_reply_requests','outbound_deliveries','reply_ledger',
-    'subscriptions'
+    'subscriptions','subscription_reply_batches'
   ] LOOP
     IF NOT EXISTS(
       SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
@@ -87,6 +87,15 @@ CREATE POLICY v1_meta_queued_unsent_reply_delete_only
 GRANT SELECT ON public.reply_ledger,public.subscriptions
   TO fawri_restricted_runtime;
 
+
+-- The first-merchant subscription GET must remain read-only. Grant only
+-- the nine actual snapshot columns on batches, never table-wide SELECT
+-- or INSERT/UPDATE/DELETE of paid reply credit and expiry bookkeeping.
+GRANT SELECT (
+  id,subscription_id,merchant_id,source,amount,remaining,
+  purchased_at,expires_at,expiry_reminder_sent_at
+) ON public.subscription_reply_batches TO fawri_restricted_runtime;
+
 DO $v1_meta_reply_postimage$
 DECLARE r oid; rel text; req text;
 BEGIN
@@ -107,6 +116,10 @@ BEGIN
        'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
     OR has_table_privilege(r,'public.subscriptions',
        'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
+    OR has_table_privilege(r,'public.subscription_reply_batches',
+       'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
+    OR has_column_privilege(r,'public.subscription_reply_batches',
+       'created_at','SELECT')
     OR has_table_privilege(r,'public.verified_provider_payment_receipts',
        'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES')
     OR has_table_privilege(r,'public.saas_billing_refunds',
@@ -132,6 +145,15 @@ BEGIN
     IF NOT has_table_privilege(r,'public.'||rel,req)
     THEN RAISE EXCEPTION 'V1_META_REPLY_REQUIRED_DML_MISSING'; END IF;
   END LOOP;
+  IF EXISTS(
+    SELECT 1 FROM (VALUES
+      ('id'),('subscription_id'),('merchant_id'),('source'),
+      ('amount'),('remaining'),('purchased_at'),('expires_at'),
+      ('expiry_reminder_sent_at')
+    ) AS expected(column_name)
+    WHERE NOT has_column_privilege(r,'public.subscription_reply_batches',
+      expected.column_name,'SELECT')
+  ) THEN RAISE EXCEPTION 'V1_META_SUBSCRIPTION_SNAPSHOT_READ_MISSING'; END IF;
   FOR rel IN SELECT table_name FROM (
     VALUES('channel_inbound_events'),('conversations'),
       ('manual_reply_requests'),('outbound_deliveries')

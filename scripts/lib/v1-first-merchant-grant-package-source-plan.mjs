@@ -44,7 +44,7 @@ const HELD_ADDITIVE=Object.freeze([
   }),
   Object.freeze({
     path:'lib/db/first-commercial/held/v1_meta_inbound_conversation_grants.sql',
-    blob:'2326d1c3294494396dbc31116c7ad8c778cc26c8',
+    blob:'9d2822c7b4c9323b2bd34be92e65990d6ddef594',
     purpose:'META_INBOUND_CONVERSATIONS_OUTBOUND_QUEUED_REPLY_DELETE_ONLY',
   }),
   Object.freeze({
