@@ -10,7 +10,7 @@ export const NEON_ISOLATED_TARGET=Object.freeze({
   branch_id:'br-rough-boat-b947xiir',
   endpoint_host:'ep-steep-star-b97qa95j.c-7.eu-central-1.aws.neon.tech',
   database:'fawri',
-  role:'fawri_owner',
+  role:'fawri_v1_backup_reader',
   synthetic_rows:3,
   synthetic_sum:606,
   synthetic_md5:'3e2688f4da2e3e49f2bf3cfef1c919c8',
