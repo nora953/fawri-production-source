@@ -2,20 +2,17 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/lib/i18n';
+import { MANUAL_ORDER_FORM_COPY } from '@/lib/translations/features/pages/ManualOrderForm';
 import { listCatalogProducts, type CatalogProduct } from '@/lib/catalogUiApi';
 
-const copy = {
-  ar: ['طلب جديد', 'اسم العميل', 'الهاتف', 'العنوان', 'منطقة التوصيل', 'المنتج', 'الكمية', 'إضافة منتج', 'حذف', 'حفظ الطلب', 'تعذّر إكمال الطلب. تحقّق من المنتجات وحاول مجددًا.', 'إلغاء', 'الدفع عند الاستلام'],
-  ku: ['داواکاری نوێ', 'ناوی کڕیار', 'تەلەفۆن', 'ناونیشان', 'ناوچەی گەیاندن', 'بەرهەم', 'بڕ', 'زیادکردنی بەرهەم', 'سڕینەوە', 'پاشەکەوتکردن', 'داواکاری تۆمار نەکرا. بەرهەمەکان بپشکنە و دووبارە هەوڵ بدە.', 'هەڵوەشاندنەوە', 'پارەدان لە کاتی وەرگرتن'],
-  en: ['New order', 'Customer name', 'Phone', 'Address', 'Delivery area', 'Product', 'Quantity', 'Add item', 'Remove', 'Save order', 'Could not complete the order. Check the products and try again.', 'Cancel', 'Cash on delivery'],
-};
+
 
 type Line = { id: string; selection: string; quantity: number };
 const newLine = (): Line => ({ id: crypto.randomUUID(), selection: '', quantity: 1 });
 
 export default function ManualOrderForm({ onSaved }: { onSaved: (id: string) => void }) {
   const { lang } = useI18n();
-  const [title, name, phone, address, area, productLabel, quantity, add, remove, save, failure, cancel, payment] = copy[lang];
+  const [title, name, phone, address, area, productLabel, quantity, add, remove, save, failure, cancel, payment] = MANUAL_ORDER_FORM_COPY[lang];
   const [open, setOpen] = useState(false);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
