@@ -1,5 +1,14 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-15 Baghdad — owner authorized first production schema/three-role setup; prewrite snapshot created, execution blocked
+
+- Explicit owner approval in current Render setup conversation now permits provisioning Fawri schema and three application LOGIN roles on project `crimson-cherry-65705041`, branch `br-holy-waterfall-b993zglb` (`production`), database `fawri`. Earlier read-only-only authorization is superseded for this bounded task. No blanket merge/public launch/other-project permission.
+- Preflight returned `public_tables=0` and `application_login_roles=0`. Selected immutable application source `2c299dafb727c64b6b8cc3f3c025a0a395567ceb`; reviewed existing 54-stage local harness, selected V1 grant sources and hosted rollout packet. Local-only test harness was NOT executed against hosted DB or modified to bypass its guard.
+- Created actual Neon prewrite snapshot `snap-polished-flower-b9pm9vpn`, name `fawri-before-first-schema-20261115`, source exact production branch, provider timestamp `2026-11-14T21:55:38Z`. This is a provider snapshot, NOT independently stored logical export/restore evidence.
+- Exact confirmed direct endpoint `ep-polished-poetry-b9jpvn4r.c-7.eu-central-1.aws.neon.tech`. Local execution environment has neither pg_dump/psql nor Docker; direct-host DNS/TCP preflight failed with gaierror. Connected Neon SQL/API remains available. No privileged password retrieved or printed.
+- **No schema migration, role creation/promotion, grant, secret rotation, Render service creation or deployment performed.** Existing hosted decision packet requires independently recoverable prewrite export/restore before writes; that dependency remains unresolved. The successful earlier synthetic child backup is not the production database backup.
+- Next: establish a credential-safe PG18 export/restore execution path for this exact prewrite state, then carry out the ALREADY AUTHORIZED schema/role provisioning. Do not ask the owner to approve the same provisioning scope again. Render form configuration is in progress, not a saved/running service. Commercial NO-GO remains.
+
 ## 2026-11-14 — V1 limited manual-commerce source and disposable PG18 acceptance
 
 - Owner-selected manual profile adds catalog-backed orders with cash on delivery, idempotent retries, tenant-bound stock fulfillment and audited admin subscription activation. It disables POS, external billing and Meta. Build the web release and run the API with `FAWRI_V1_MANUAL_COMMERCE=1`.
