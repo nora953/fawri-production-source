@@ -25,12 +25,7 @@ const landingTruthCopy = LANDING_PAGE_LANDING_TRUTH_COPY;
 
 function ManualCommerceLanding() {
   const { lang, dir } = useI18n();
-  const copy = {
-    ar: ['فوري', 'سجّل طلبات متجرك وأدر المنتجات والمخزون والتوصيل من لوحة واحدة.', 'إنشاء حساب', 'تسجيل الدخول'],
-    ku: ['فۆری', 'داواکاری و بەرهەم و کۆگا و گەیاندن لە یەک شوێن بەڕێوە ببە.', 'دروستکردنی هەژمار', 'چوونەژوورەوە'],
-    en: ['Fawri', 'Record store orders and manage products, stock, and delivery in one place.', 'Create account', 'Sign in'],
-  }[lang];
-  return (
+  const copy = LANDING_PAGE_LANDING_TRUTH_COPY[lang].manualCommerce;  return (
     <div dir={dir} className="min-h-screen bg-background">
       <Header />
       <main className="mx-auto max-w-2xl space-y-5 px-6 py-24 text-center">
