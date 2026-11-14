@@ -32,6 +32,7 @@ const OwnerRecoveryPage = lazy(() => import("@/pages/OwnerRecoveryPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 const firstCommercialPosDisabled = import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1';
+const manualCommercialOnly = import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1';
 const cashierSmokeEnabled = !firstCommercialPosDisabled && import.meta.env.VITE_CASHIER_SMOKE === "1";
 const CashierIndexedDbSmokePage = cashierSmokeEnabled
   ? lazy(() => import("@/pages/CashierIndexedDbSmokePage"))
@@ -132,7 +133,7 @@ function AppRouter() {
 
         {/* Admin */}
         <Route path="/admin/support-preview/:sessionId">
-          {(params) => <AdminSupportPreviewPage sessionId={params.sessionId} />}
+          {(params) => manualCommercialOnly ? <NotFound /> : <AdminSupportPreviewPage sessionId={params.sessionId} />}
         </Route>
         <Route path="/admin/emergency-access/:requestId/snapshot">
           {(params) => (
@@ -227,7 +228,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/support">
-          {() => <DashboardRoute Page={SupportPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={SupportPage} />}
         </Route>
 
         <Route path="/dashboard/settings">
@@ -309,7 +310,7 @@ function App() {
           <WouterRouter base={routerBase}>
             <AdminSessionRevalidator />
             <AppRouter />
-            <SupportPreviewLauncher />
+            {!manualCommercialOnly && <SupportPreviewLauncher />}
             <EmergencyIncidentNoticeBanner />
           </WouterRouter>
 
