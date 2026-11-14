@@ -1,5 +1,12 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-14 — source-to-offsite synthetic Neon SQL restore + Drive checksum ACCEPTED, real DB/media recovery still BLOCKED
+
+- Owner approved continuing with one-project Neon Read and write, **without granting writes to production**. Worked ONLY on previously approved disposable children: SQL `SELECT` source `br-rough-boat-b947xiir`; transactionally replayed independent portable schema+three synthetic rows into restored child `br-steep-shape-b9a9i4vi` (new schema `fawri_portable_restore_drill`). Source and result both **3 rows, sum 606, ordered md5 `3e2688f4da2e3e49f2bf3cfef1c919c8`**.
+- Independently created **synthetic-only** SQL ZIP (not PostgreSQL dump); SHA-256 `be31209faa3d1071428bcb4553a70082b04ebfa97ff340db81d08fb29324d3b4`, SQL SHA-256 `ff148b0087abc428b67d982bc17a9f3f3d69852f14beac5c25c353095af4a62b`. [Privately uploaded to Drive](https://drive.google.com/file/d/1i9TLZZh8jH7oL9Zf9M7B2W0pwBBsUF_1/view) and **downloaded back from Drive**; complete ZIP integrity and **identical SHA-256** verified. Sharing metadata: not_shared. No real customer data, API credentials or source Neon connection strings exported.
+- This is a **small portable data-recovery sub-gate** only; **NOT** independent full PG18 `pg_dump/pg_restore` of the first-commercial Fawri schema/RLS/ACL, no POS business data, no media backup, no hosted migration or role creation. Do not close `P0-HOSTED-RECOVERY`; the genuine DB/media exit backup and restored first-merchant topology remain mandatory. Snapshot feature refused child by policy. **Evidence:** [Neon recovery checkpoint](docs/final-audit/evidence/V1-PREHOSTED-BACKUP-CHECKPOINT-20261113.md).
+- First commercial `production` branch remains the original default. **13 essential V1 blockers +3 POS deferred; 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED among 45 known, completeP0Inventory=false, NO-GO, draft PR #550**. No deletion/merge/deployment; user explicitly chose to keep Neon Read and write, scope remains test children only.
+
 ## 2026-11-14 — first hosted Neon ISOLATED restore-clone/tenant separation mechanics ACCEPTED; actual backups still blocked
 
 - Owner-authorized scope: only disposable children under `crimson-cherry-65705041`, root `br-holy-waterfall-b993zglb` `production` **READ ONLY**. Created child `br-rough-boat-b947xiir` and independent readback child `br-steep-shape-b9a9i4vi` with Neon's provider branching mechanism. Default production branch remained unchanged.
