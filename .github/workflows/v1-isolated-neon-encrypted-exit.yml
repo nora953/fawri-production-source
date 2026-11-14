@@ -86,7 +86,7 @@ jobs:
         with:
           name: fawri-v1-isolated-neon-child-encrypted-pg18-handoff
           path: |
-            lib/db/.v1-neon-export-out/*.enc
-            lib/db/.v1-neon-export-out/manifest.json
+            lib/db/v1-neon-export-out/*.enc
+            lib/db/v1-neon-export-out/manifest.json
           if-no-files-found: error
           retention-days: 2
