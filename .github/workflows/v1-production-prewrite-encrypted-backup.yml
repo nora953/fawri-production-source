@@ -1,0 +1,98 @@
+name: V1 first-commercial production prewrite encrypted export (OPT-IN ONLY)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v1-production-prewrite-encrypted-backup.yml"
+      - "scripts/lib/v1-production-prewrite-backup-safety.mjs"
+      - "scripts/tests/v1-production-prewrite-backup-safety.test.mjs"
+      - "lib/db/scripts/v1-export-production-prewrite-backup.mjs"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-production-prewrite-encrypted-backup.yml"
+      - "scripts/lib/v1-production-prewrite-backup-safety.mjs"
+      - "scripts/tests/v1-production-prewrite-backup-safety.test.mjs"
+      - "lib/db/scripts/v1-export-production-prewrite-backup.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fawri-v1-prewrite-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-export-scope-test:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Fail-closed exact prewrite branch, role, TLS, zero-schema negative tests
+        run: node --test scripts/tests/v1-production-prewrite-backup-safety.test.mjs
+
+  real-empty-prewrite-export:
+    needs: offline-export-scope-test
+    if: >-
+      github.event_name == 'push'
+      && github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && vars.FAWRI_V1_PREWRITE_EXPORT_ENABLED == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      FAWRI_V1_PREWRITE_EXPORT_ENABLED: ${{ vars.FAWRI_V1_PREWRITE_EXPORT_ENABLED }}
+      FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL: ${{ secrets.FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL }}
+      FAWRI_V1_PRODUCTION_PREWRITE_PASSPHRASE: ${{ secrets.FAWRI_V1_PRODUCTION_PREWRITE_PASSPHRASE }}
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify two owner-controlled secrets before any network call
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL" || -z "$FAWRI_V1_PRODUCTION_PREWRITE_PASSPHRASE" ]]; then
+            echo "::error::V1_PREWRITE_BACKUP_OWNER_SECRETS_NOT_CONFIGURED"
+            exit 2
+          fi
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install pinned dependencies without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Export empty production prewrite only, restore on separate PG18, encrypt
+        working-directory: lib/db
+        run: |
+          node --check scripts/v1-export-production-prewrite-backup.mjs
+          node scripts/v1-export-production-prewrite-backup.mjs
+      - name: Hand off encrypted archive only, short retention
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fawri-first-production-empty-prewrite-encrypted-handoff
+          path: |
+            lib/db/v1-production-prewrite-export-out/*.enc
+            lib/db/v1-production-prewrite-export-out/manifest.json
+          if-no-files-found: error
+          retention-days: 2
