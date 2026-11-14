@@ -16,6 +16,7 @@ import {
   isKnownHistoricalField002IllustrativeUrl,
   isKnownHistoricalField002SyntheticBuilderFixture,
   isKnownHistoricalField002AuthConfigFixture,
+  isKnownHistoricalIsolatedNeonDumpFixture,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -239,6 +240,49 @@ test("history scanner fixture suppressions are narrowly scoped", () => {
       finding,
       "scripts/tests/production-connectivity.test.mjs",
     ),
+    false,
+  );
+});
+
+test("isolated Neon historical URL fixtures match immutable synthetic bytes only", () => {
+  const file = "scripts/tests/v1-isolated-neon-dump-safety.test.mjs";
+  const fixtures = [
+    {
+      blob: "dc69d5c013484983d3d346ea60e1e5f69eea3f7c",
+      index: 589, length: 68,
+      fragment: ["postgresql://", "'+'fawri_v1_backup_reader'+':'+'fake-not-a-secret'+'@'+"].join(""),
+    },
+    {
+      blob: "8c06a8fbd4eadf187c858004744a819f225ea317",
+      index: 438, length: 56,
+      fragment: ["postgresql://fawri_v1_backup_reader:", "fake-not-a-secret", "@'+"].join(""),
+    },
+    {
+      blob: "f5af2b8af7e0ddcc7e49569b33ef04da9bfa4c13",
+      index: 438, length: 45,
+      fragment: ["postgresql://fawri_owner:", "fake-not-a-secret", "@'+"].join(""),
+    },
+  ];
+  for (const { blob, index, length, fragment } of fixtures) {
+    assert.equal(fragment.length, length);
+    const text = "x".repeat(index) + fragment + "y";
+    const finding = { rule: "credential-url", index, length };
+    assert.equal(isKnownHistoricalIsolatedNeonDumpFixture(text, finding, file, blob), true);
+    assert.equal(isKnownHistoricalIsolatedNeonDumpFixture(text, finding, file, "0".repeat(40)), false);
+    assert.equal(isKnownHistoricalIsolatedNeonDumpFixture(text, finding, "scripts/tests/another.test.mjs", blob), false);
+    assert.equal(isKnownHistoricalIsolatedNeonDumpFixture(text, { ...finding, rule: "github-token" }, file, blob), false);
+    assert.equal(isKnownHistoricalIsolatedNeonDumpFixture(text, { ...finding, index: index + 1 }, file, blob), false);
+    assert.equal(isKnownHistoricalIsolatedNeonDumpFixture(text, { ...finding, length: length - 1 }, file, blob), false);
+    assert.equal(isKnownHistoricalIsolatedNeonDumpFixture(text.replace("fake-not-a-secret", "real-credential-value"), finding, file, blob), false);
+  }
+  const remoteReal = [
+    "postgresql://production_user:", "genuine-credential-not-a-fixture",
+    "@production.db.internal",
+  ].join("");
+  assert.equal(
+    isKnownHistoricalIsolatedNeonDumpFixture(remoteReal,
+      { rule: "credential-url", index: 0, length: remoteReal.length },
+      file, fixtures[0].blob),
     false,
   );
 });
