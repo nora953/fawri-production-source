@@ -3,6 +3,7 @@
 
 export const LANDING_PAGE_LANDING_TRUTH_COPY = {
   en: {
+    manualCommerce: ['Fawri', 'Record store orders and manage products, stock, and delivery in one place.', 'Create account', 'Sign in'],
     activationPending: 'Activation pending',
     instagramDescription:
       'Instagram support remains visible for already connected accounts, but new Instagram connections are currently unavailable until secure activation is enabled.',
@@ -17,6 +18,7 @@ export const LANDING_PAGE_LANDING_TRUTH_COPY = {
     inDevelopment: 'In development',
   },
   ar: {
+    manualCommerce: ['فوري', 'سجّل طلبات متجرك وأدر المنتجات والمخزون والتوصيل من لوحة واحدة.', 'إنشاء حساب', 'تسجيل الدخول'],
     activationPending: 'التفعيل قيد الانتظار',
     instagramDescription:
       'دعم Instagram يبقى ظاهراً للحسابات المرتبطة مسبقاً، لكن الربط الجديد غير متاح حالياً حتى يتم تفعيل الربط الآمن.',
@@ -31,6 +33,7 @@ export const LANDING_PAGE_LANDING_TRUTH_COPY = {
     inDevelopment: 'قيد التطوير',
   },
   ku: {
+    manualCommerce: ['فۆری', 'داواکاری و بەرهەم و کۆگا و گەیاندن لە یەک شوێن بەڕێوە ببە.', 'دروستکردنی هەژمار', 'چوونەژوورەوە'],
     activationPending: 'چالاککردن چاوەڕوانە',
     instagramDescription:
       'پشتیوانی Instagram بۆ هەژمارە پەیوەستکراوە پێشووترەکان دەردەکەوێت، بەڵام پەیوەستکردنی نوێ تا چالاککردنی پارێزراو بەردەست نییە.',
