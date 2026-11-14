@@ -1,5 +1,13 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-15 — historical scanner fix ACCEPTED, printer-only failed job selectively rerun
+
+- **Source-only security RED gate resolved and ACCEPTED on exact executable SHA `873663f0896cf1189c51bca1b0ce54a45e75971c`:** [Final security and supply chain #43648120242](https://github.com/nora953/fawri-production-source/actions/runs/43648120242) COMPLETED SUCCESS (full historical secret scan, current repository scan, immutable fixture negative tests and dependency checks); [Final quality gates #43648120108](https://github.com/nora953/fawri-production-source/actions/runs/43648120108) COMPLETED SUCCESS (build/typecheck/translation audit). Exact-head 72 PR workflows returned **71 success / 1 failure**.
+- The **one failure** [Report actual-component print #43648120393](https://github.com/nora953/fawri-production-source/actions/runs/43648120393) was `Browser prerequisite timed out` (infra setup, no report-component assertion ran); reran ONLY its failed job through GitHub Actions, without repeating the 71 successful workflows. Rerun result still pending at this checkpoint; never count the whole 72 green without real success.
+- This closes the bounded **source CI security-scanner issue** but **NO historical P0 gate**: 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED among known 45; scope 11 first-commercial manual V1 essentials + 5 deferred proof obligations; overall completion unknown, PR #550 DRAFT, commercial NO-GO.
+- Hosting first-commercial prewrite remains BLOCKED until **independently recoverable and encrypted actual production branch logical export+restore** before previously approved 54 stages / three LOGINs. Neon provider snapshot alone and child synthetic restore are insufficient. No production SQL writes, role changes, service deployment or merge performed.
+
+
 ## 2026-11-15 — historical synthetic Neon URL findings narrowly pinned (exact-head CI pending)
 
 - **Specific red gate:** last source SHA `a8ac3b78` completed **71/72 GitHub Actions SUCCESS**; only [Final security and supply chain #43647069353](https://github.com/nora953/fawri-production-source/actions/runs/43647069353) FAILED. Its history scan reviewed **12,459** Git blobs and reported exactly three `credential-url` locations in obsolete revisions of `scripts/tests/v1-isolated-neon-dump-safety.test.mjs`: blobs `dc69d5c013484983d3d346ea60e1e5f69eea3f7c`, `8c06a8fbd4eadf187c858004744a819f225ea317`, `f5af2b8af7e0ddcc7e49569b33ef04da9bfa4c13`. Reviewed bytes represent **fixed fake test passwords** or concatenated JS fragments, not known live credentials; current branch repository scan was clean. Do not treat this as a blanket incident signoff.
