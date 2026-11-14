@@ -1,0 +1,25 @@
+# FAWRI V1 — exact held 54-stage PostgreSQL 18 custom-format backup/restore in disposable CI
+
+**Gate:** `P0-HOSTED-RECOVERY` — one missing **source portability sub-gate accepted**; actual hosted database + media backup/restore still **BLOCKED**. No release GO.
+
+## Scope and exact acceptance
+
+- Executable commit: [`90d9b25855d14ca3109f76835d2868bf60ad13e3`](https://github.com/nora953/fawri-production-source/commit/90d9b25855d14ca3109f76835d2868bf60ad13e3).
+- Targeted GitHub Actions: [run #43617470358](https://github.com/nora953/fawri-production-source/actions/runs/43617470358), **completed/success**, one named job `exact-held-schema-portability`. Log markers: `V1_PG18_FULL_SCHEMA_CUSTOM_DUMP_RESTORE_RLS_ACL_PASS`, `V1_PG18_RECOVERY_DISPOSABLE_ONLY_NOT_NEON`, `V1_PG18_RECOVERY_DISPOSABLE_CLEANUP_PASS`.
+- New runner: [`lib/db/scripts/v1-portable-full-schema-pg18-restore.mjs`](../../../lib/db/scripts/v1-portable-full-schema-pg18-restore.mjs); new GitHub-only workflow: [`.github/workflows/v1-full-schema-pg18-dump-restore.yml`](../../../.github/workflows/v1-full-schema-pg18-dump-restore.yml).
+- Fresh isolated local PostgreSQL **18** service; source database `fawri`, separate restore database `fawri_recovery_target`, both newly created inside that same ephemeral runner only. No Neon connections, secrets, external provider data or production schema used.
+- Materialized the exact 53-stage first-commercial HELD/INVOKER bundle with reviewed 0052 replacement and pinned 0053 candidate, then ran **54 migrations**, not the already accepted behavioural QA suite.
+- Created local non-superuser `fawri_owner` and **three** distinct least-privilege LOGIN roles, applied exactly the source-pinned first-merchant auth/tenant/operator GRANT files, excluding cashier-specific legacy granting. Used **two entirely synthetic accounts, two merchants, two products, two orders**, with no real customer data.
+- Used an independent PostgreSQL 18 client through a disposable Docker container for genuine **`pg_dump -Fc`** and **`pg_restore --exit-on-error --single-transaction`**, preserving ownership and ACLs (no `--no-owner` or `--no-acl`). The custom-format dump was **640,700 bytes**, SHA-256 **`60954ebc76f7f5408835d7531d299c9c0466672f190e99ae2c4206895604595c`**. Temporary dump was deleted on cleanup; only secret-free counts/checksums report retained.
+- Actual before/after comparison was **equal** for all measured attributes: **54 migrations; 99 public tables; 78 public RLS policies; 79 RLS-enabled public tables; 2 accounts/2 merchants/2 products/2 orders**, order-id+merchant digest `3d7f60fb1e70f5f78f057fae17206938`. Tenant `orders SELECT = true`, tenant `cashier_device_streams INSERT = false`, auth `accounts SELECT = true`, operator `orders INSERT = false`. All three runtime roles remained `LOGIN=true`, `SUPERUSER=false`, `BYPASSRLS=false`, `INHERIT=false`.
+- After restore, inserting a third synthetic order into **restore DB only** left source DB at **two**, proving post-restore DB independence. Cleanup disposed of both test DBs and roles: **zero leftovers**.
+- Accepted machine report: GitHub Actions artifact `v1-54-stage-pg18-disposable-restore-report`, ID `14122905682`, SHA-256 of artifact envelope `d825d8f670d430732ee617c968ae43d5b05432453a887974d46a8f5756d9ca9f`. This artifact contains **JSON evidence only**, not source/client secrets and not the dump itself.
+- A first targeted run [#43617311422](https://github.com/nora953/fawri-production-source/actions/runs/43617311422) failed with the deliberately fail-closed `FT01_WRONG_NEW_TARGET_OR_ROLE`: source DB was named `fawri_recovery_source` rather than the required isolated `fawri`. Corrected only the disposable database name, **without relaxing the 0052 safety guard**, at the exact successful SHA above. No hosted mutation.
+
+## Exact limits and next actual acceptance
+
+This acceptance **is NOT** backup/restore of data from Neon `crimson-cherry-65705041`; it is only source portability of the actual first-commercial schema and synthetic records with preserved RLS/ACLs. The hosted `production` branch `br-holy-waterfall-b993zglb` was **not touched** and still has no application tables and none of the three commercial runtime LOGINs. The two earlier synthetic Neon branches remain retained, not deleted.
+
+**Still required before merchant data / GO:** independent secure custom-format `pg_dump` from an explicitly owner-authorized non-production instance containing the approved complete Fawri schema with separate media/object backup; store encrypted outside GitHub/Neon and prove `pg_restore` + media object recovery on another isolated target, plus hosted roles/META/payment/HTTP E2E and owner signoff. A Neon-native branch clone or 6h PITR is not an off-provider backup.
+
+**Commercial gate unchanged:** known P0 29 `CLOSED_SOURCE` / 7 `OPEN` / 9 `BLOCKED` among 45 known, 13 essential V1 gates plus 3 POS deferred source-history obligations; `completeP0Inventory=false`, `overallPercentage=null`. PR #550 remains DRAFT, no merge/deploy, **NO-GO**.
