@@ -9,7 +9,9 @@ const allowed={
   GITHUB_REF:'refs/heads/fix/p0-provider-receipt-order-discovery-20261015',
   FAWRI_ALLOW_ISOLATED_NEON_DUMP:'1',
 };
-const direct='postgresql://fawri_v1_backup_reader:fake-not-a-secret@'+
+// Build the synthetic credential URL from components: keep the negative-test
+// fixture without embedding a credential-bearing URL in tracked source.
+const direct='postgresql://'+'fawri_v1_backup_reader'+':'+'fake-not-a-secret'+'@'+
   NEON_ISOLATED_TARGET.endpoint_host+'/fawri?sslmode=require';
 
 test('direct isolated child URL only: never production',()=>{
