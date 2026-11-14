@@ -9,13 +9,13 @@ const allowed={
   GITHUB_REF:'refs/heads/fix/p0-provider-receipt-order-discovery-20261015',
   FAWRI_ALLOW_ISOLATED_NEON_DUMP:'1',
 };
-const direct='postgresql://fawri_owner:fake-not-a-secret@'+
+const direct='postgresql://fawri_v1_backup_reader:fake-not-a-secret@'+
   NEON_ISOLATED_TARGET.endpoint_host+'/fawri?sslmode=require';
 
 test('direct isolated child URL only: never production',()=>{
   assert.deepEqual(validateIsolatedDumpUrl(direct,{env:allowed}),{
     host:NEON_ISOLATED_TARGET.endpoint_host,port:5432,
-    username:'fawri_owner',database:'fawri',
+    username:'fawri_v1_backup_reader',database:'fawri',
   });
   assert.throws(()=>validateIsolatedDumpUrl(direct.replace(
     NEON_ISOLATED_TARGET.endpoint_host,
@@ -28,11 +28,11 @@ test('direct isolated child URL only: never production',()=>{
 });
 test('reject foreign DB role, query, SSL downgrades and unknown credentials',()=>{
   for(const candidate of [
-    direct.replace('fawri_owner:','postgres:'),
+    direct.replace('fawri_v1_backup_reader:','postgres:'),
     direct.replace('/fawri?','/neondb?'),
     direct.replace('sslmode=require','sslmode=disable'),
     direct+'&options=-csearch_path%3Dpublic',
-    'postgresql://fawri_owner@'+NEON_ISOLATED_TARGET.endpoint_host+
+    'postgresql://fawri_v1_backup_reader@'+NEON_ISOLATED_TARGET.endpoint_host+
       '/fawri?sslmode=require',
   ])assert.throws(()=>validateIsolatedDumpUrl(candidate,{env:allowed}));
 });
