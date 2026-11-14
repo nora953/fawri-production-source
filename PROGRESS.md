@@ -1,5 +1,13 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-14 — first hosted Neon ISOLATED restore-clone/tenant separation mechanics ACCEPTED; actual backups still blocked
+
+- Owner-authorized scope: only disposable children under `crimson-cherry-65705041`, root `br-holy-waterfall-b993zglb` `production` **READ ONLY**. Created child `br-rough-boat-b947xiir` and independent readback child `br-steep-shape-b9a9i4vi` with Neon's provider branching mechanism. Default production branch remained unchanged.
+- Source child synthetic schema `fawri_recovery_drill.recovery_proof` contains **3 test rows / checksum 606**; cloned child read-back **3 test rows / checksum 606**, same exact md5 `3e2688f4da2e3e49f2bf3cfef1c919c8`. Isolation tested by adding 4th **synthetic only** row to cloned child: **4 rows / 1010** in clone vs unchanged **3 / 606** source. Production read-only check: no drill schema.
+- **Neon snapshot of a non-root child NOT supported**: `create_snapshot` rejected HTTP400 `not allowed to snapshot non-root branch`; no provider snapshot created, and none requested from root. Source creation with bespoke compute suspend failed HTTP412, and default-compute retry succeeded. These were bounded permission/product-capability errors, not database data loss.
+- Independent `pg_dump`/media backup **still unproven**: cloning inside same Neon provider is not an off-provider restore, full 54-stage app/ACL migration not executed, target DB still 0/3 LOGIN. Source code recovery from private Google Drive ZIP accepted earlier. `P0-HOSTED-RECOVERY` remains **BLOCKED**; no P0 gate closed; 13 launch-essential +3 deferred POS remains, PR #550 DRAFT NO-GO.
+- **Evidence:** [Neon isolated restore drill 2026-11-14](docs/final-audit/evidence/V1-PREHOSTED-BACKUP-CHECKPOINT-20261113.md). Both test branches retained (not deleted); revert Neon MCP to **Read only** after isolated changes. **No production write, Neon migration, provider approval, financial update, role provisioning or deploy.**
+
 ## 2026-11-13 — hosted owner pg_stat scope prerequisite VERIFIED READ-ONLY
 
 - Correct one-project read-only Neon connection `crimson-cherry-65705041` / `br-holy-waterfall-b993zglb`, DB `fawri` (PostgreSQL 18) returned `fawri_owner`, **trusted-owner `pg_read_all_stats` USAGE=true**, `rolbypassrls=true`, `rolcreaterole=true`, **0 public application relations**. This resolves the earlier *feasibility uncertainty* from disposable PG18 issuer session-scope test; never grant these elevated owner privileges to tenant/auth/operator roles. Separate authenticated tenant/issuer/operator LOGINs still **0/3**, independently recoverable hosted DB/media backups absent, no real HTTP/Meta/payment acceptance.
