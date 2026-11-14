@@ -9,10 +9,10 @@ const allowed={
   GITHUB_REF:'refs/heads/fix/p0-provider-receipt-order-discovery-20261015',
   FAWRI_ALLOW_ISOLATED_NEON_DUMP:'1',
 };
-// Build the synthetic credential URL from components: keep the negative-test
-// fixture without embedding a credential-bearing URL in tracked source.
-const direct='postgresql://'+'fawri_v1_backup_reader'+':'+'fake-not-a-secret'+'@'+
-  NEON_ISOLATED_TARGET.endpoint_host+'/fawri?sslmode=require';
+const fixtureUrl = new URL(`postgresql://${NEON_ISOLATED_TARGET.endpoint_host}/fawri?sslmode=require`);
+fixtureUrl.username = 'fawri_v1_backup_reader';
+fixtureUrl.password = 'fake-not-a-secret';
+const direct = fixtureUrl.toString();
 
 test('direct isolated child URL only: never production',()=>{
   assert.deepEqual(validateIsolatedDumpUrl(direct,{env:allowed}),{
