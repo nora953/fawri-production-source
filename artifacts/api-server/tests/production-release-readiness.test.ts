@@ -464,6 +464,55 @@ test("core production runtime is provider-neutral while external launch stays bl
   );
 });
 
+test("V1 manual commerce omits only deferred providers, never backup or durable storage", () => {
+  const env = productionEnv({
+    FAWRI_V1_MANUAL_COMMERCE: "1",
+    FAWRI_META_CUTOVER_READY: "",
+    FAWRI_META_REPLY_TRANSPORT: "",
+    FAWRI_META_CREDENTIAL_PROVIDER: "",
+    META_APP_ID: "",
+    META_APP_SECRET: "",
+    META_CONFIG_ID: "",
+    META_VERIFY_TOKEN: "",
+    OPENAI_API_KEY: "",
+  });
+  const manual = getProductionLaunchReadiness(env);
+  assert.equal(manual.runtime_ready, true);
+  assert.equal(manual.launch_ready, false);
+  assert.deepEqual(
+    manual.external_blockers.map((item) => item.code).sort(),
+    [
+      "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED",
+      "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
+    ].sort(),
+  );
+
+  // An accidental flag value must not silently disable financial/Meta gates.
+  for (const value of ["0", "true", ""]) {
+    const normal = getProductionLaunchReadiness({
+      ...env,
+      FAWRI_V1_MANUAL_COMMERCE: value,
+    });
+    assert.deepEqual(
+      normal.external_blockers.map((item) => item.code).sort(),
+      [
+        "AI_PRODUCTION_INTEGRATION_NOT_ACTIVATED",
+        "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED",
+        "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED",
+        "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE",
+        "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
+      ].sort(),
+    );
+  }
+
+  const invalidAuth = getProductionLaunchReadiness({
+    ...env,
+    FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "",
+  });
+  assert.equal(invalidAuth.runtime_ready, false);
+  assert.equal(invalidAuth.launch_ready, false);
+});
+
 test("Meta OAuth never activates with a Replit or insecure redirect", () => {
   for (const redirect of [
     "https://example.replit.dev/api/meta/callback",
