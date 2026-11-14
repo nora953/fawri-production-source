@@ -1,0 +1,71 @@
+name: V1 full 54-stage PG18 dump restore portability (disposable only)
+
+on:
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-full-schema-pg18-dump-restore.yml"
+      - "lib/db/scripts/v1-portable-full-schema-pg18-restore.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-54-stage-disposable-portability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-held-schema-portability:
+    if: >-
+      github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+      GITHUB_REPOSITORY: nora953/fawri-production-source
+      FAWRI_ALLOW_FT01_INVOKER_CANDIDATE: "1"
+      FAWRI_ALLOW_V1_PORTABLE_SCHEMA_RESTORE: "1"
+      FAWRI_V1_RESTORE_REPORT: v1-portable-restore-report.json
+      NODE_ENV: test
+    steps:
+      - name: Checkout exact review SHA without persisted token
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install locked dependencies with scripts disabled
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Only changed 54-stage PG18 custom-format backup and recovery gate
+        working-directory: lib/db
+        run: |
+          node --check scripts/v1-portable-full-schema-pg18-restore.mjs
+          node scripts/v1-portable-full-schema-pg18-restore.mjs
+      - name: Preserve secret-free backup restore evidence (not the dump)
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v1-54-stage-pg18-disposable-restore-report
+          path: lib/db/v1-portable-restore-report.json
+          if-no-files-found: error
+          retention-days: 14
