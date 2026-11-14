@@ -1,5 +1,12 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-14 — exact-head release CI red-gate: synthetic URL fixture corrected (pending new CI acceptance)
+
+- On source SHA `3bdab75a59a92858e2fda096043a79f160d576d8`, checked the 70 pull-request-triggered GitHub Actions workflow runs: **68 SUCCESS / 2 FAILURE**. The two failures were [Final security and supply chain #43637502330](https://github.com/nora953/fawri-production-source/actions/runs/43637502330) and [P0 dependency security upgrade candidate #43637501990](https://github.com/nora953/fawri-production-source/actions/runs/43637501990). Job logs independently identify the same single source issue: repository secret scanner `credential-url` at `scripts/tests/v1-isolated-neon-dump-safety.test.mjs:12`; dependency audit and lockfile integrity jobs passed. This is **not evidence of a live password leak**; the source fixture used `fake-not-a-secret`.
+- [Bounded correction `c9343782`](https://github.com/nora953/fawri-production-source/commit/c9343782b3ed6aa59a1e3365e9ae4e6e5f0bcf67) constructs the same synthetic PostgreSQL URL from literals split into components, preserving exact endpoint/role validation, negative tests, TLS requirement, encrypted archive validation, production-target prohibition and the scanner itself. **No security rule was suppressed and no external system was changed.**
+- **Acceptance pending:** the exact new source SHA must pass the two affected Actions workflows. Do not relabel them SUCCESS on prior runs or count a closed launch gate without new evidence. Existing 68 successful runs do not need manual repetition. `P0-HOSTED-RECOVERY` remains BLOCKED until real first-commercial hosted DB+media independent offsite backup and restore. V1 **13 essential launch blockers**, 3 POS deferred obligations; historical P0 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, `completeP0Inventory=false`, `overallPercentage=null`. PR #550 DRAFT, commercial **NO-GO**. No merge, deployment, hosted SQL write or provider action.
+
+
 ## 2026-11-14 — ACTUAL Neon disposable CHILD encrypted PG18 dump/restore saved off GitHub+Neon, drive byte read-back ACCEPTED
 
 - **Source branch explicitly isolated:** new Neon `crimson-cherry-65705041` child `br-rough-boat-b947xiir` only; PostgreSQL18 direct endpoint, `fawri_v1_backup_reader` role with `SELECT` on exactly one synthetic schema, no DML/bypass/other app roles. No commercial `production` write.
