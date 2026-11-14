@@ -1,5 +1,20 @@
 # FAWRI V1 — backup checkpoint, 2026-11-13
 
+## 2026-11-14 — Neon ISOLATED BRANCH CLONE + DATA READBACK PASSED (not independent backup)
+
+**Owner permission:** owner explicitly approved provisioning and recovery testing on disposable child branches of ONLY independent Neon project `crimson-cherry-65705041`; never touch original Neon/Railway, real customer data or target `production` for SQL writes. Neon plugin was reconnected as **One project, Read and write** with 7 categories.
+
+**Actual execution:**
+- Verified `production` branch `br-holy-waterfall-b993zglb` is the sole default/primary branch. An initial child creation request with a custom suspension interval returned HTTP **412** (account disallows suspend setting), with no branch created. Retried with defaults and successfully created ready disposable child `v1-recovery-drill-20261114`, id **`br-rough-boat-b947xiir`**, parent **`br-holy-waterfall-b993zglb`**, not primary/default.
+- In **child only** (`fawri` database) created `fawri_recovery_drill.recovery_proof` schema/table with three explicitly synthetic rows `(1,synthetic-catalog,101)`, `(2,synthetic-order,202)`, `(3,synthetic-ledger,303)`. SQL row count = **3**, sum = **606**, row-order digest = **`3e2688f4da2e3e49f2bf3cfef1c919c8`**.
+- `create_snapshot` for **child branch only** returned HTTP **400**: `not allowed to snapshot non-root branch`. **No provider Snapshot was created; did NOT attempt root/production snapshot.** No false claim of native snapshot/independent dump.
+- Created a **second** disposable child from the first: `v1-recovery-readback-20261114`, id **`br-steep-shape-b9a9i4vi`**, parent `br-rough-boat-b947xiir`, not primary/default. Exact read-only query on **both child branches** independently returned **3 rows, sum 606, identical digest `3e2688f4da2e3e49f2bf3cfef1c919c8`**, confirming native branch cloning read-back of a small synthetic relational fixture.
+- Proved **post-clone isolation**: inserted a **fourth synthetic marker** into restored child only `(4,restored-branch-only,404)`; restored child then **4 rows / sum 1010**, source child remained **3 rows / sum 606**. Explicit read-only query on production found **0** `fawri_recovery_drill` schemas; production had no test-table modifications.
+- **Residual resources:** two synthetic Neon branches remain. No delete operation, cleanup, promotion, production SQL migration, role creation, payment, Meta integration, secrets export, or deployment occurred. Owner action is required before deleting the test branches, as deletion is destructive.
+- **Scope / status:** the isolated clone read-back/branch-isolation sub-gate is **PASSED**. This is **NOT** `pg_dump`/`pg_restore` independent off-provider restore, NOT a full 54-stage Fawri schema/ACL/data restore, NOT customer media recovery, NOT Neon production backup. Offsite **source code** ZIP was independently restored and verified earlier (see below); **hosted DB+media disaster recovery remains BLOCKED**. The production database still requires three distinct runtime LOGINs and approved migrations; **13 V1 essential blockers + 3 POS deferrals; P0 known 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, PR #550 DRAFT, NO-GO**.
+- **Security:** After this controlled test, restore Neon connector to **One project / Read only** until another specific operation is approved. Do not infer broader permission to modify `production` from the OAuth permission mode.
+- Historical read-only permission error and dated preparation notes below are intentionally retained as evidence, superseded by this verified test.
+
 ## 2026-11-13 — isolated Neon restore drill owner-approved; CONNECTOR WRITE TOOL BLOCKED
 
 - Owner **approved** a temporary isolated clone experiment within the exact independent Neon project `crimson-cherry-65705041`, testing schema setup and backup/restore without modifying `production` branch `br-holy-waterfall-b993zglb` or using real merchant data.
