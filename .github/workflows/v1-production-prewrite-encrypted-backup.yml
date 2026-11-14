@@ -32,6 +32,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Static syntax of production export entrypoint (no credentials)
+        run: node --check lib/db/scripts/v1-export-production-prewrite-backup.mjs
       - name: Fail-closed exact prewrite branch, role, TLS, zero-schema negative tests
         run: node --test scripts/tests/v1-production-prewrite-backup-safety.test.mjs
 
