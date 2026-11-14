@@ -395,6 +395,39 @@ export function isKnownHistoricalField002AuthConfigFixture(text, finding, object
     FIELD002_HISTORICAL_AUTH_URI_FRAGMENTS[match[2]];
 }
 
+// Two old synthetic fixture revisions contain credential-shaped source strings,
+// and one contains only concatenated JS segments. They were negative tests,
+// never connection values. The history scan remains enabled for every other
+// byte in every blob. Pin immutable blob, path, rule, precise span and bytes.
+const HISTORICAL_ISOLATED_NEON_DUMP_FIXTURES = Object.freeze({
+  "dc69d5c013484983d3d346ea60e1e5f69eea3f7c": {
+    index: 589, length: 68,
+    fragment: ["postgresql://", "'+'fawri_v1_backup_reader'+':'+'fake-not-a-secret'+'@'+"].join(""),
+  },
+  "8c06a8fbd4eadf187c858004744a819f225ea317": {
+    index: 438, length: 56,
+    fragment: ["postgresql://fawri_v1_backup_reader:", "fake-not-a-secret", "@'+"].join(""),
+  },
+  "f5af2b8af7e0ddcc7e49569b33ef04da9bfa4c13": {
+    index: 438, length: 45,
+    fragment: ["postgresql://fawri_owner:", "fake-not-a-secret", "@'+"].join(""),
+  },
+});
+
+export function isKnownHistoricalIsolatedNeonDumpFixture(
+  text, finding, objectPath, objectId,
+) {
+  if (normalizeRepositoryPath(objectPath) !==
+      "scripts/tests/v1-isolated-neon-dump-safety.test.mjs" ||
+      finding.rule !== "credential-url") return false;
+  const fixture = HISTORICAL_ISOLATED_NEON_DUMP_FIXTURES[objectId];
+  return !!fixture &&
+    finding.index === fixture.index &&
+    finding.length === fixture.length &&
+    String(text).slice(finding.index, finding.index + finding.length) ===
+      fixture.fragment;
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -477,7 +510,8 @@ function scanHistory(root) {
         isKnownHistoricalFreshRoleRecoveryFenceFixture(finding, objectPath, objectId) ||
         isKnownHistoricalField002IllustrativeUrl(objectText, finding, objectPath, objectId) ||
         isKnownHistoricalField002SyntheticBuilderFixture(objectText, finding, objectPath, objectId) ||
-        isKnownHistoricalField002AuthConfigFixture(objectText, finding, objectPath, objectId)
+        isKnownHistoricalField002AuthConfigFixture(objectText, finding, objectPath, objectId) ||
+        isKnownHistoricalIsolatedNeonDumpFixture(objectText, finding, objectPath, objectId)
       ) continue;
       findings.push({
         blob: objectId,
