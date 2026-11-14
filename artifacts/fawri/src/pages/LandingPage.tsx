@@ -23,7 +23,35 @@ type LandingChannel = {
 
 const landingTruthCopy = LANDING_PAGE_LANDING_TRUTH_COPY;
 
+function ManualCommerceLanding() {
+  const { lang, dir } = useI18n();
+  const copy = {
+    ar: ['فوري', 'سجّل طلبات متجرك وأدر المنتجات والمخزون والتوصيل من لوحة واحدة.', 'إنشاء حساب', 'تسجيل الدخول'],
+    ku: ['فۆری', 'داواکاری و بەرهەم و کۆگا و گەیاندن لە یەک شوێن بەڕێوە ببە.', 'دروستکردنی هەژمار', 'چوونەژوورەوە'],
+    en: ['Fawri', 'Record store orders and manage products, stock, and delivery in one place.', 'Create account', 'Sign in'],
+  }[lang];
+  return (
+    <div dir={dir} className="min-h-screen bg-background">
+      <Header />
+      <main className="mx-auto max-w-2xl space-y-5 px-6 py-24 text-center">
+        <h1 className="text-5xl font-extrabold">{copy[0]}</h1>
+        <p className="text-lg text-muted-foreground">{copy[1]}</p>
+        <div className="flex justify-center gap-3">
+          <Button asChild><Link href="/signup">{copy[2]}</Link></Button>
+          <Button variant="outline" asChild><Link href="/login">{copy[3]}</Link></Button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function LandingPage() {
+  return import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
+    ? <ManualCommerceLanding />
+    : <FullLandingPage />;
+}
+
+function FullLandingPage() {
   const { t, isRTL, lang } = useI18n();
   const truth = landingTruthCopy[lang];
 

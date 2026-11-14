@@ -30,6 +30,7 @@ async function loadMerchantFeatureEntitlements(): Promise<MerchantFeatureEntitle
   ]);
 
   const botVisible =
+    import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE !== '1' &&
     bot.status === 'ready' &&
     !['expired', 'suspended'].includes(bot.subscription.status);
 

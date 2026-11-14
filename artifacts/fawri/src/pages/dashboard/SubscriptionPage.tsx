@@ -153,7 +153,15 @@ export default function SubscriptionPage() {
             />
           )}
 
-          <SaasBillingPanel subscription={subscription} />
+          {
+            import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
+              ? <p className="rounded-xl border p-4">{{
+                  ar: 'تفعّل إدارة فوري الاشتراك وتجدّده يدويًا.',
+                  ku: 'بەڕێوەبەرایەتی فۆری بە دەستی بەشداریکردن چالاک و نوێ دەکاتەوە.',
+                  en: 'Fawri administrators activate and renew subscriptions manually.',
+                }[lang]}</p>
+              : <SaasBillingPanel subscription={subscription} />
+          }
         </>
       )}
 

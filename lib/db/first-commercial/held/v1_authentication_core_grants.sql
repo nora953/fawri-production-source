@@ -90,6 +90,13 @@ GRANT SELECT, INSERT, UPDATE ON
   public.merchant_settings
 TO fawri_auth_issuer;
 
+-- Manual subscription activation uses the trusted, separate auth LOGIN.
+-- Its route rechecks the administrator and records the actor in audit_events.
+GRANT SELECT, INSERT, UPDATE ON public.subscriptions TO fawri_auth_issuer;
+GRANT SELECT (subscription_id, merchant_id, remaining, expires_at)
+  ON public.subscription_reply_batches TO fawri_auth_issuer;
+GRANT INSERT ON public.audit_events TO fawri_auth_issuer;
+
 DO $v1_auth_postimage$
 DECLARE auth oid;
 BEGIN

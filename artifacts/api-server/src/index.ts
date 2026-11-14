@@ -1,3 +1,4 @@
+import { manualCommercialRelease } from "./services/manualCommercialRelease";
 import { logger } from "./lib/logger";
 import { getFawriDataDir } from "./lib/dataPaths";
 import type { DurableJobWorker } from "./services/durableJobQueue";
@@ -119,7 +120,7 @@ async function main(): Promise<void> {
     }
 
     const workersExplicitlyDisabled = process.env.FAWRI_DISABLE_JOB_WORKERS === "1";
-    const metaCutoverReady = process.env.FAWRI_META_CUTOVER_READY === "1";
+    const metaCutoverReady = !manualCommercialRelease() && process.env.FAWRI_META_CUTOVER_READY === "1";
 
     if (!workersExplicitlyDisabled) {
       try {

@@ -23,6 +23,7 @@ import cashierDiscountPolicyOperationsRouter from "./routes/cashier-discount-pol
 import cashierOperatorCommerceRouter from "./routes/cashier-operator-commerce";
 import cashierSyncOperationsRouter from "./routes/cashier-sync-operations";
 import cashierSubscriptionOperationsRouter from "./routes/cashier-subscription-operations";
+import { enforceManualCommercialCutover } from "./middleware/manualCommercialCutover";
 import { enforceFirstCommercialPosCutover } from "./middleware/firstCommercialPosCutover";
 import merchantSettingsRouter from "./routes/merchant-settings";
 import merchantRegionalRouter from "./routes/merchant-regional";
@@ -291,6 +292,7 @@ app.use(cookieParser());
 // Production V1 deliberately cannot be re-enabled by a cloud env flag.
 // No financial rows, IndexedDB stores or verified receipts are deleted.
 app.use(enforceFirstCommercialPosCutover);
+app.use(enforceManualCommercialCutover);
 app.get("/healthz", (_req, res) => {
   res.status(200).json({ ok: true, service: "fawri" });
 });

@@ -1,3 +1,4 @@
+import { manualCommercialRelease } from "../services/manualCommercialRelease";
 import type { NextFunction, Request, Response } from "express";
 
 /**
@@ -13,7 +14,7 @@ import type { NextFunction, Request, Response } from "express";
 export function firstCommercialPosDisabled(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  return env.NODE_ENV === "production" ||
+  return manualCommercialRelease(env) || env.NODE_ENV === "production" ||
     env.FAWRI_V1_POS_DISABLED === "1";
 }
 

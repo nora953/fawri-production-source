@@ -1,8 +1,11 @@
+import { withAuthenticationTransaction } from "./authenticationPostgresAuthority";
+import { manualCommercialRelease } from "./manualCommercialRelease";
 import { withOperatorDirectoryTransaction } from "./operatorDirectoryPostgresAuthority";
 import { withOperationalTransaction, type OperationalQueryTarget, type OperationalTransactionClient, type OperationalDatabasePool } from "./operationalPostgresAuthority";
 import crypto from "node:crypto";
 import {
   applySubscriptionPlanCyclePostgres,
+  assertManualSubscriptionAdmin,
   SubscriptionPlanCycleError,
 } from "./subscriptionPlanCycleAuthority";
 
@@ -764,7 +767,13 @@ export async function listSubscriptionsPostgres(
   const actor = requiredText(actorAdminId, 180);
   // Only the separately configured directory LOGIN may issue this audit. The
   // SQL issuer rechecks current actor state and permissions on every snapshot.
-  const result = await withOperatorDirectoryTransaction(async client => {
+  const result = manualCommercialRelease()
+    ? await withAuthenticationTransaction(async client => {
+        await assertManualSubscriptionAdmin(client, actor);
+        return (await client.query<{merchant_id:string}>(`SELECT merchant_id FROM subscriptions
+          ORDER BY starts_at DESC, merchant_id ASC`)).rows;
+      })
+    : await withOperatorDirectoryTransaction(async client => {
     const auditId = `database-admin-${crypto.randomUUID()}`;
     await client.query("SELECT public.fawri_issue_admin_directory_audit($1,$2,$3)",
       [actor, auditId, crypto.createHash("sha256").update(auditId).digest("hex")]);

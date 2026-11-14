@@ -163,7 +163,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/conversations">
-          {() => <DashboardRoute Page={ConversationsPage} />}
+          {() => import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1' ? <NotFound /> : <DashboardRoute Page={ConversationsPage} />}
         </Route>
 
         <Route path="/dashboard/products/import">
@@ -211,15 +211,15 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/saved-answers">
-          {() => <DashboardRoute Page={SavedAnswersPage} />}
+          {() => import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1' ? <NotFound /> : <DashboardRoute Page={SavedAnswersPage} />}
         </Route>
 
         <Route path="/dashboard/bot-training">
-          {() => <DashboardRoute Page={TrainingPage} />}
+          {() => import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1' ? <NotFound /> : <DashboardRoute Page={TrainingPage} />}
         </Route>
 
         <Route path="/dashboard/channels">
-          {() => <DashboardRoute Page={ChannelsPage} />}
+          {() => import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1' ? <NotFound /> : <DashboardRoute Page={ChannelsPage} />}
         </Route>
 
         <Route path="/dashboard/subscription">

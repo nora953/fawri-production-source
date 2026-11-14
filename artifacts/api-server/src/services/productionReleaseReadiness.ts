@@ -1,3 +1,4 @@
+import { manualCommercialRelease } from "./manualCommercialRelease";
 import { assertField002FirstCommercialSourcePolicy } from "../../../../scripts/lib/field002-r2-precommercial-source-admission.mjs";
 
 export const PRODUCTION_RELEASE_GATE_ENV = "FAWRI_PRODUCTION_RELEASE_GATE";
@@ -404,11 +405,15 @@ export function metaConnectionActivationConfigured(
   );
 }
 
-export function getProductionExternalLaunchBlockers(): ProductionReleaseIssue[] {
+export function getProductionExternalLaunchBlockers(
+  env: NodeJS.ProcessEnv = process.env,
+): ProductionReleaseIssue[] {
   return [
-    issue("meta", "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED"),
-    issue("knowledge", "AI_PRODUCTION_INTEGRATION_NOT_ACTIVATED"),
-    issue("billing", "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE"),
+    ...(manualCommercialRelease(env) ? [] : [
+      issue("meta", "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED"),
+      issue("knowledge", "AI_PRODUCTION_INTEGRATION_NOT_ACTIVATED"),
+      issue("billing", "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE"),
+    ]),
     issue("backup", "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED"),
     issue("storage", "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED"),
   ];
@@ -419,7 +424,7 @@ export function getProductionLaunchReadiness(
 ): ProductionLaunchReadiness {
   const runtimeIssues = getProductionRuntimeConfigurationIssues(env);
   const externalBlockers = productionReleaseGateRequired(env)
-    ? getProductionExternalLaunchBlockers()
+    ? getProductionExternalLaunchBlockers(env)
     : [];
   return {
     runtime_ready: runtimeIssues.length === 0,

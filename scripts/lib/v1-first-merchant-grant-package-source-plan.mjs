@@ -19,7 +19,7 @@ const rootDefault=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../
 const HELD_GRANTS=Object.freeze({
   authentication:Object.freeze({
     path:'lib/db/first-commercial/held/v1_authentication_core_grants.sql',
-    blob:'fe314f951f3836009a18a505ae1547572a270f28',
+    blob:'7ab8f6d7c4fff1762b0d65a06f7f399694e81a58',
     role:'fawri_auth_issuer',
   }),
   tenant:Object.freeze({

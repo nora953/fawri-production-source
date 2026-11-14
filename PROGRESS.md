@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-14 — V1 limited manual-commerce source and disposable PG18 acceptance
+
+- Owner-selected manual profile adds catalog-backed orders with cash on delivery, idempotent retries, tenant-bound stock fulfillment and audited admin subscription activation. It disables POS, external billing and Meta. Build the web release and run the API with `FAWRI_V1_MANUAL_COMMERCE=1`.
+- Local Node 24 and disposable PostgreSQL 18.6, real 54-stage schema and separate tenant/auth/operator logins. HTTP proved subscription activation, provider/POS refusals, foreign-order isolation, duplicate prevention, confirmation through delivery and one stock deduction. Load sample: 100 create requests at concurrency 25, zero errors, p95 269 ms, batch 866 ms. Synthetic signed sessions were issued directly for this test. Frontend and API compilation passed.
+- Open acceptance: full signup/SMS journey and capacity on the actual host, durable media and production restore. The local app emitted a PostgreSQL privilege error on the support inspection lifecycle startup sweep; the order run still passed, and the support ACL needs resolution before commercial signoff. No external database writes, merge, deployment or historical P0 closure.
+
 ## 2026-11-14 — exact-head release CI red-gate: synthetic URL fixture corrected (pending new CI acceptance)
 
 - On source SHA `3bdab75a59a92858e2fda096043a79f160d576d8`, checked the 70 pull-request-triggered GitHub Actions workflow runs: **68 SUCCESS / 2 FAILURE**. The two failures were [Final security and supply chain #43637502330](https://github.com/nora953/fawri-production-source/actions/runs/43637502330) and [P0 dependency security upgrade candidate #43637501990](https://github.com/nora953/fawri-production-source/actions/runs/43637501990). Job logs independently identify the same single source issue: repository secret scanner `credential-url` at `scripts/tests/v1-isolated-neon-dump-safety.test.mjs:12`; dependency audit and lockfile integrity jobs passed. This is **not evidence of a live password leak**; the source fixture used `fake-not-a-secret`.

@@ -1,4 +1,6 @@
 import { Router, type Request, type Response } from "express";
+import { enforceAuthOrigin } from "../middleware/authSession";
+import { manualCommercialRelease } from "../services/manualCommercialRelease";
 import {
   getMerchantIdFromSession,
   requireMerchantSession,
@@ -9,6 +11,7 @@ import {
 } from "../services/orderOperationsRuntime";
 import {
   confirmServerPaymentAuthoritative,
+  createManualOrder,
   getServerOrderAuthoritative,
   listServerOrdersAuthoritative,
   rejectServerPaymentAuthoritative,
@@ -82,6 +85,22 @@ function sendError(res: Response, error: unknown): void {
     error: "order operation failed",
   });
 }
+
+router.post("/orders", enforceAuthOrigin, requireMerchantSession, async (req, res) => {
+  if (!manualCommercialRelease()) {
+    res.status(404).json({ ok: false, code: "MANUAL_ORDER_NOT_OFFERED" });
+    return;
+  }
+  try {
+    const { order, replayed } = await createManualOrder({
+      merchantId: getMerchantIdFromSession(res),
+      body: req.body,
+    });
+    res.set("Cache-Control", "no-store").status(replayed ? 200 : 201).json({ ok: true, order });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
 
 router.get("/orders", requireMerchantSession, async (_req: Request, res: Response) => {
   try {

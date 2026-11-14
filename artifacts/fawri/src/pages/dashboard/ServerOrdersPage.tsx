@@ -1,3 +1,4 @@
+import ManualOrderForm from './ManualOrderForm';
 import { SERVER_ORDERS_PAGE_STATUS_LABELS, SERVER_ORDERS_PAGE_PAYMENT_LABELS } from '@/lib/translations/features/pages/dashboard/ServerOrdersPage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
@@ -41,6 +42,8 @@ type ServerOrder = Order & {
 
 type LanguageCode = 'ar' | 'ku' | 'en';
 type OrdersAuthorityStatus = 'loading' | 'ready' | 'unavailable';
+
+const manualCommerce = import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1';
 
 const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_confirmation: [
@@ -549,13 +552,13 @@ export default function ServerOrdersPage() {
   const authorityBlocked = authorityStatus !== 'ready';
   const busy = selectedOrder ? pendingOrderId === selectedOrder.id : false;
   const electronicPending =
-    selectedOrder?.payment_method !== 'cash_on_delivery' &&
+    !manualCommerce && selectedOrder?.payment_method !== 'cash_on_delivery' &&
     (selectedOrder?.payment_status === 'electronic_pending' ||
       selectedOrder?.payment_status === 'manual_review');
   const paymentConflictActive =
-    selectedOrder?.payment_reconciliation_status === 'reconciliation_required';
+    !manualCommerce && selectedOrder?.payment_reconciliation_status === 'reconciliation_required';
   const cashCanConfirm =
-    selectedOrder?.payment_method === 'cash_on_delivery' &&
+    !manualCommerce && selectedOrder?.payment_method === 'cash_on_delivery' &&
     selectedOrder.payment_status === 'cash_on_delivery' &&
     selectedOrder.status === 'delivered';
 
@@ -584,6 +587,14 @@ export default function ServerOrdersPage() {
             {labels.refresh}
           </Button>
         </div>
+
+        {manualCommerce && (
+          <ManualOrderForm onSaved={id => {
+            linkedOrderIdRef.current = id;
+            setSearch('');
+            void loadOrders();
+          }} />
+        )}
 
         {loadError ? (
           <div

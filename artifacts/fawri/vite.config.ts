@@ -35,6 +35,7 @@ export default defineConfig(async ({ command, mode }) => {
     // Release artifacts always disable POS even if NODE_ENV was set to
     // development during the build; no override through VITE_* secrets.
     define: {
+      'import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE': JSON.stringify(process.env.FAWRI_V1_MANUAL_COMMERCE === '1' ? '1' : '0'),
       'import.meta.env.VITE_FAWRI_V1_POS_DISABLED': JSON.stringify(!isServe ? '1' : '0'),
     },
     plugins: [
