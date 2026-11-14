@@ -1,5 +1,13 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-15 — first commercial manual UI translation release gate correction (acceptance pending)
+
+- The exact source regression SHA `4919b712` produced [Final quality gates #43646755176](https://github.com/nora953/fawri-production-source/actions/runs/43646755176) with **one evidenced translation-structure audit FAILURE**: localized 3-language objects remained in `artifacts/fawri/src/pages/LandingPage.tsx` and `artifacts/fawri/src/pages/dashboard/ManualOrderForm.tsx`. Other noted jobs (full build/typecheck and quality-tool-tests) were SUCCESS, but the parent workflow is NOT accepted.
+- Bounded source-only fix: moved the existing words for en/ar/ku unchanged into existing `lib/translations/features/pages/LandingPage.ts` and new `lib/translations/features/pages/ManualOrderForm.ts`, switched only the two manual-V1 UI consumers to these dictionaries. Last executable UI SHA [`a8ac3b78`](https://github.com/nora953/fawri-production-source/commit/a8ac3b78cbb363cc43c814ef430f3f69c8075572); [corresponding final quality run #43647069594](https://github.com/nora953/fawri-production-source/actions/runs/43647069594) was **QUEUED** at check; do NOT mark green until completion.
+- This resolves a **specific source defect pending CI evidence**, NOT a historical P0 gate closure. No new real merchant/Neon writes, production deployment, PR merge or change to payment, POS, Meta. Existing 11 provisionally essential V1 gates + 5 owner-approved deferrals still need operational proof; historical 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, launch **NO-GO**.
+
+
+
 ## 2026-11-15 — bounded manual V1 launch-gate correction and source regression check (CI pending)
 
 - Reconciled the ALREADY OWNER-APPROVED manual-only sale scope on the active [16-row launch matrix](LAUNCH_SCOPE_MATRIX.md), without changing any historical P0 status. The formerly 13 V1-applicable rows now have **11 provisionally launch-essential** and **5 approved-scope deferrals requiring isolation proof**: 3 POS/offline, Meta provider, online payment provider. Historical 45 known P0: 29 CLOSED_SOURCE / 7 OPEN / 9 BLOCKED, incomplete inventory and no credible overall percent; **no new P0 gate closure**.
