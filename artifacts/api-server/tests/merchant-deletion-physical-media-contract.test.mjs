@@ -77,12 +77,12 @@ test("irreversible merchant deletion owns durable post-commit physical media ret
 
   assert.match(
     coordinator,
-    /removeCatalogMediaStorageObject\\(\\{\\s*merchantId,/,
+    /removeCatalogMediaStorageObject\(\{\s*merchantId,/,
     "the physical deletion worker must bind every catalog key to its merchant",
   );
   assert.match(
     catalogMedia,
-    /const storageKey = assertMerchantStorageKey\\(params\\.merchantId, params\\.storageKey\\)/,
+    /const storageKey = assertMerchantStorageKey\(params\.merchantId, params\.storageKey\)/,
     "provider object cleanup must reject cross-merchant or forged storage keys",
   );
 
