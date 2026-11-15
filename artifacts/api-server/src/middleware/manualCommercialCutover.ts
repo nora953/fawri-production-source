@@ -26,8 +26,10 @@ export function enforceManualCommercialCutover(
     return;
   }
 
+  // Channel-job administration can requeue Meta provider actions even while
+  // the Meta worker is disabled. Do not permit enqueue/requeue in manual V1.
   const providerExcluded =
-    /^\/api\/(?:auth\/(?:billing|admin\/billing|subscription\/emergency)|meta|channels|order[s]?\/[^/]+\/payment(?:-status)?)(?:\/|$)/.test(path);
+    /^\/api\/(?:auth\/(?:billing|admin\/billing|subscription\/emergency)|meta|channels|admin\/background-jobs|order[s]?\/[^/]+\/payment(?:-status)?)(?:\/|$)/.test(path);
   if (!providerExcluded) {
     next();
     return;

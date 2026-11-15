@@ -60,6 +60,24 @@ test("manual V1 fails closed on EVERY in-app Support HTTP surface", () => {
     ]) {
       assert.equal(invoke(endpoint).next, 1, endpoint);
     }
+    for (const endpoint of [
+      "/api/admin/background-jobs",
+      "/api/admin/background-jobs/queued",
+      "/api/admin/background-jobs/job-123/requeue",
+    ]) {
+      const result = invoke(endpoint);
+      assert.deepEqual(result, {
+        status: 403, code: "FAWRI_V1_PROVIDER_NOT_OFFERED",
+        next: 0, noStore: true,
+      }, endpoint);
+    }
+    for (const endpoint of [
+      "/api/admin/background-jobs-legacy",
+      "/api/orders/manual",
+      "/api/catalog/products",
+    ]) {
+      assert.equal(invoke(endpoint).next, 1, endpoint);
+    }
     assert.equal(invoke("/api/auth/billing/checkout").code,
       "FAWRI_V1_PROVIDER_NOT_OFFERED",
       "existing provider cutover must remain unchanged");
@@ -78,6 +96,7 @@ test("support HTTP paths remain available outside the manual V1 profile", () => 
       "/api/auth/support-images/tickets/x/messages",
       "/api/auth/admin/support-preview/x",
       "/api/auth/billing/checkout",
+      "/api/admin/background-jobs/job-123/requeue",
     ]) {
       assert.equal(invoke(endpoint).next, 1, endpoint);
     }
