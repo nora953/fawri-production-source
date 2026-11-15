@@ -172,7 +172,7 @@ function postgresDatabaseTarget(value: unknown): string | null {
 // separate hosted verification; a safe path alone does NOT prove durability.
 function isSafeProductionMediaDataDirectory(value: unknown): boolean {
   const given = text(value);
-  if (!given || !path.isAbsolute(given) || given.includes("\\0")) return false;
+  if (!given || !path.isAbsolute(given) || given.includes(String.fromCharCode(0))) return false;
   const root = path.resolve(given);
   const project = path.resolve(process.cwd());
   const tmp = path.resolve("/tmp");
