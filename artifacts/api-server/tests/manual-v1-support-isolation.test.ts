@@ -207,3 +207,13 @@ test("manual commercial subscription hides unoffered reply credit quotas and pur
   assert.match(card, /!manualCommercialOnly && \(\s*<>\s*<div className="space-y-2 rounded-xl/);
   assert.match(card, /<\/>\s*\)\}\s*\{canShowEmergency && \(/);
 });
+
+test("manual V1 keeps catalog-media deletion retries but never scans restricted Support attachments", () => {
+  const worker = source("../src/services/merchantPhysicalMediaCleanup.ts");
+  const restrictedSupport = source("../src/services/postgresSupportImageAuthority.ts");
+  assert.match(worker, /const cleanup = await reconcilePendingMerchantPhysicalMediaCleanups\(\)/);
+  assert.match(worker, /if \(!manualCommercialRelease\(\)\) \{\s*await reconcileOrphanSupportImagesPostgres\(\)/);
+  assert.match(restrictedSupport, /const pool = await authenticationDatabasePool\(\)/);
+  assert.match(restrictedSupport, /SELECT storage_key\s+FROM support_attachments/);
+});
+

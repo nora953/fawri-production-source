@@ -25,6 +25,7 @@ import {
   removeSupportTicketImageStoragePrefix,
 } from "./supportImageStorage";
 import { reconcileOrphanSupportImagesPostgres } from "./postgresSupportImageAuthority";
+import { manualCommercialRelease } from "./manualCommercialRelease";
 
 type CleanupState = "prepared" | "pending" | "complete";
 
@@ -466,7 +467,13 @@ export function startMerchantPhysicalMediaCleanupReconciler(input: {
           "Merchant physical media cleanup remains pending",
         );
       }
-      await reconcileOrphanSupportImagesPostgres();
+      // Manual V1 does not offer Support. Its dedicated authentication LOGIN
+      // is intentionally unable to SELECT cross-merchant support_attachments.
+      // Preserve catalog deletion retries while suppressing only this legacy
+      // Support orphan scan until a later explicitly enabled Support release.
+      if (!manualCommercialRelease()) {
+        await reconcileOrphanSupportImagesPostgres();
+      }
     } finally {
       running = false;
     }
