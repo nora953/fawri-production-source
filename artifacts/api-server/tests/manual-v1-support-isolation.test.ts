@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { enforceManualCommercialCutover } from "../src/middleware/manualCommercialCutover";
+import { assertFirstCommercialManualProfile } from "../src/services/manualCommercialRelease";
 
 const current = path.dirname(fileURLToPath(import.meta.url));
 const source = (p: string) => fs.readFileSync(path.resolve(current, p), "utf8");
@@ -131,4 +132,31 @@ test("web and admin Support affordances are absent in manual V1", () => {
     assert.match(nav, /dashboard\/support/);
   }
   assert.match(admin, /VITE_FAWRI_V1_MANUAL_COMMERCE !== "1" &&/);
+});
+
+
+test("first-commercial production never starts without manual-only cutover", () => {
+  for (const value of [undefined, "", "0", "true"]) {
+    assert.throws(
+      () => assertFirstCommercialManualProfile(
+        { FAWRI_V1_MANUAL_COMMERCE: value }, true,
+      ),
+      (error: unknown) =>
+        (error as { code?: string })?.code === "FAWRI_V1_MANUAL_COMMERCE_REQUIRED",
+      String(value),
+    );
+  }
+  assert.doesNotThrow(() => assertFirstCommercialManualProfile(
+    { FAWRI_V1_MANUAL_COMMERCE: "1" }, true,
+  ));
+  // Nonproduction regression profiles deliberately remain available.
+  assert.doesNotThrow(() => assertFirstCommercialManualProfile(
+    { FAWRI_V1_MANUAL_COMMERCE: "0" }, false,
+  ));
+  const startup = source("../src/index.ts");
+  assert.match(startup,
+    /assertFirstCommercialManualProfile\(process\.env, productionReleaseGateRequired\(process\.env\)\)/);
+  assert.ok(startup.indexOf("assertFirstCommercialManualProfile(process.env,") <
+    startup.indexOf("await assertProductionDatabaseRlsReady(process.env);"),
+    "manual-only release must fail closed before any production DB check");
 });

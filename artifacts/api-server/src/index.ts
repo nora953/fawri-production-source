@@ -1,4 +1,4 @@
-import { manualCommercialRelease } from "./services/manualCommercialRelease";
+import { assertFirstCommercialManualProfile, manualCommercialRelease } from "./services/manualCommercialRelease";
 import { logger } from "./lib/logger";
 import { getFawriDataDir } from "./lib/dataPaths";
 import type { DurableJobWorker } from "./services/durableJobQueue";
@@ -51,6 +51,10 @@ type StartupStage = "runtime_configuration" | "database_rls" | "cashier_storage"
 let startupStage: StartupStage = "runtime_configuration";
 
 async function main(): Promise<void> {
+  // The first commercial deployment cannot silently fall back to Meta, paid
+  // provider operations, or Support when its manual-only flag is missing.
+  // Check this before even opening the production database connection.
+  assertFirstCommercialManualProfile(process.env, productionReleaseGateRequired(process.env));
   // Production fails closed before any provider bootstrap, listener, worker,
   // or application traffic. Staging/development must opt out explicitly.
   assertProductionRuntimeConfiguration(process.env);
