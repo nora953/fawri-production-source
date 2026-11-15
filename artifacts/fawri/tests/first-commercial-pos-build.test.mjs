@@ -47,7 +47,9 @@ test('production build hardcodes POS disablement and must not include cashier as
   assert.match(app, /firstCommercialPosDisabled \? <NotFound \/>/);
   assert.match(entry, /if \(cashierV1Disabled\)/);
   assert.match(entry, /if \(!cashierV1Disabled\)/);
-  assert.match(subscriptions, /VITE_FAWRI_V1_POS_DISABLED !== '1'/);
+  // Fail closed in a production build even if the optional Vite flag is absent.
+  assert.match(subscriptions, /const firstCommercialPosDisabled = import\.meta\.env\.PROD \|\|/);
+  assert.match(subscriptions, /!firstCommercialPosDisabled \? <CashierSubscriptionPanel \/>/);
   assert.match(features, /VITE_FAWRI_V1_POS_DISABLED === '1'/);
   assert.match(reports, /VITE_FAWRI_V1_POS_DISABLED === '1'/);
 });
