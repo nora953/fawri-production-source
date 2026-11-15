@@ -205,5 +205,5 @@ test("manual commercial subscription hides unoffered reply credit quotas and pur
   assert.match(card, /const manualCommercialOnly = import\.meta\.env\.PROD \|\|/);
   assert.match(card, /const isBaseBalanceLow =\s*!manualCommercialOnly &&/);
   assert.match(card, /!manualCommercialOnly && \(\s*<>\s*<div className="space-y-2 rounded-xl/);
-  assert.match(card, /<\/ >\s*\)\}\s*\{canShowEmergency && \(/.source ? /<\/>\s*\)\}\s*\{canShowEmergency && \(/ : /not-reachable/);
+  assert.match(card, /<\/>\s*\)\}\s*\{canShowEmergency && \(/);
 });
