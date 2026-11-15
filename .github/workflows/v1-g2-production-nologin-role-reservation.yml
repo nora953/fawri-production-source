@@ -1,0 +1,76 @@
+name: V1 G2 first-commercial NOLOGIN role reservation (OWNER OPT-IN)
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v1-g2-production-nologin-role-reservation.yml"
+      - "scripts/lib/v1-g2-production-role-reservation-safety.mjs"
+      - "scripts/tests/v1-g2-production-role-reservation-safety.test.mjs"
+      - "lib/db/scripts/v1-g2-production-reserve-nologin-roles.mjs"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-g2-production-nologin-role-reservation.yml"
+      - "scripts/lib/v1-g2-production-role-reservation-safety.mjs"
+      - "scripts/tests/v1-g2-production-role-reservation-safety.test.mjs"
+      - "lib/db/scripts/v1-g2-production-reserve-nologin-roles.mjs"
+permissions:
+  contents: read
+concurrency:
+  group: fawri-v1-g2-reserve-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-target-and-least-privilege-tests:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Syntax-only check, never connect to Neon
+        run: |
+          node --check scripts/lib/v1-g2-production-role-reservation-safety.mjs
+          node --check lib/db/scripts/v1-g2-production-reserve-nologin-roles.mjs
+      - name: Negative admission tests for wrong project, login, TLS, role flags and nonempty schema
+        run: node --test scripts/tests/v1-g2-production-role-reservation-safety.test.mjs
+
+  real-one-time-nologin-reservation:
+    needs: offline-target-and-least-privilege-tests
+    if: >-
+      github.event_name == 'push'
+      && github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && github.actor == 'nora953'
+      && github.event.head_commit.message == 'FAWRI_V1_OWNER_AUTHORIZED_G2_NOLOGIN_RESERVATION'
+      && vars.FAWRI_V1_G2_ROLE_RESERVATION_ENABLED == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      FAWRI_V1_G2_ROLE_RESERVATION_ENABLED: ${{ vars.FAWRI_V1_G2_ROLE_RESERVATION_ENABLED }}
+      FAWRI_V1_G2_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+      FAWRI_V1_G2_G1_OFFSITE_RECEIPT: G1-20261115-GDRIVE-READBACK-43712483648
+      FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL: ${{ secrets.FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Require previously owner-saved direct production DB credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL" ]]; then
+            echo "::error::V1_G2_OWNER_SECRET_MISSING"
+            exit 2
+          fi
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install immutable application dependencies (no lifecycle hooks)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Reserve exactly four NOLOGIN roles, zero grants, zero schema migrations
+        working-directory: lib/db
+        run: node scripts/v1-g2-production-reserve-nologin-roles.mjs
