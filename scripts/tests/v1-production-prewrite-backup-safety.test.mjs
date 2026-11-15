@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   FIRST_PREWRITE_TARGET,
   validateProductionPrewriteBackupUrl,
@@ -83,4 +84,15 @@ test("only a real, completely empty PG18 production preimage passes", () => {
       /V1_PREWRITE_EXPORT_NOT_EMPTY_SAFE_PREIMAGE/);
   }
   assert.throws(() => assertProductionPrewriteCatalog(null));
+});
+
+test("encrypted production export needs exact owner push and never runs on PR", () => {
+  const source = readFileSync(new URL(
+    "../../.github/workflows/v1-production-prewrite-encrypted-backup.yml",
+    import.meta.url), "utf8");
+  assert.match(source, /github\.event_name == 'push'/);
+  assert.match(source, /github\.actor == 'nora953'/);
+  assert.match(source, /github\.event\.head_commit\.message == 'FAWRI_V1_OWNER_AUTHORIZED_EMPTY_PREWRITE_EXPORT'/);
+  assert.match(source, /vars\.FAWRI_V1_PREWRITE_EXPORT_ENABLED == '1'/);
+  assert.match(source, /github\.ref == 'refs\/heads\/fix\/p0-provider-receipt-order-discovery-20261015'/);
 });
