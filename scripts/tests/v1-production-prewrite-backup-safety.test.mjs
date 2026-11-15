@@ -27,6 +27,10 @@ test("production prewrite export requires explicit Actions opt-in and exact targ
   assert.equal(actual.database, "fawri");
   assert.equal(actual.user, "fawri_owner");
   assert.equal(actual.password, "synthetic-only-password");
+  const neonDirect = fixture();
+  neonDirect.searchParams.set("channel_binding", "require");
+  assert.equal(validateProductionPrewriteBackupUrl(neonDirect.toString(), allowed).host,
+    FIRST_PREWRITE_TARGET.endpoint_host);
   for (const [field, value] of [
     ["GITHUB_ACTIONS", "false"],
     ["GITHUB_REPOSITORY", "another/repo"],
@@ -55,6 +59,9 @@ test("prewrite URL refuses TLS downgrade or libpq option overrides", () => {
     "", "?sslmode=disable", "?sslmode=require&host=localhost",
     "?sslmode=require&options=-csearch_path%3Dpublic",
     "?sslmode=require&sslmode=require", "?channel_binding=require",
+    "?sslmode=require&channel_binding=disable",
+    "?sslmode=require&channel_binding=prefer",
+    "?sslmode=require&channel_binding=require&channel_binding=require",
   ]) {
     const u = fixture();
     u.search = params;
