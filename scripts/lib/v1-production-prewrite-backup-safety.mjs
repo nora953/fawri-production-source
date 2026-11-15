@@ -39,8 +39,14 @@ export function validateProductionPrewriteBackupUrl(value, env = process.env) {
     fail("V1_PREWRITE_EXPORT_TARGET_NOT_PINNED");
   }
   const params = [...url.searchParams.keys()];
-  if (params.length !== 1 || params[0] !== "sslmode" ||
-      !["require", "verify-full"].includes(url.searchParams.get("sslmode"))) {
+  // Neon may append channel_binding=require to direct (non-pooler) URLs.
+  // Permit only that strict SCRAM channel-binding value, never a downgrade.
+  if (!params.includes("sslmode") ||
+      params.length !== new Set(params).size ||
+      params.some(p => !["sslmode", "channel_binding"].includes(p)) ||
+      !["require", "verify-full"].includes(url.searchParams.get("sslmode")) ||
+      (url.searchParams.has("channel_binding") &&
+        url.searchParams.get("channel_binding") !== "require")) {
     fail("V1_PREWRITE_EXPORT_TLS_OPTIONS_DENIED");
   }
   return Object.freeze({
