@@ -295,6 +295,7 @@ async function removeEntry(
 ): Promise<void> {
   if (entry.kind === "catalog_object") {
     await removeCatalogMediaStorageObject({
+      merchantId,
       storageProvider: entry.storage_provider,
       storageKey: entry.storage_key,
     });

@@ -292,17 +292,13 @@ export async function removeCatalogImage(params: {
 }
 
 export async function removeCatalogMediaStorageObject(params: {
+  merchantId: string;
   storageProvider: unknown;
   storageKey: unknown;
 }): Promise<void> {
-  const storageKey = String(params.storageKey || "").trim();
-  if (!storageKey || storageKey.length > 1024) {
-    throw new CatalogMediaError(
-      "CATALOG_MEDIA_STORAGE_KEY_INVALID",
-      "catalog media storage key is invalid",
-      400,
-    );
-  }
+  // Deletion manifests contain DB-derived keys. A corrupted or forged row
+  // must never physically delete another merchant's media object.
+  const storageKey = assertMerchantStorageKey(params.merchantId, params.storageKey);
   await storageProviderByName(params.storageProvider).remove(storageKey);
 }
 

@@ -13,6 +13,7 @@ import {
   CatalogMediaError,
   detectCatalogImageMime,
   readCatalogImage,
+  removeCatalogMediaStorageObject,
   storeCatalogImage,
 } from "../src/services/catalogMediaStorage";
 
@@ -114,4 +115,49 @@ test("catalog media rejects traversal-like storage keys", async () => {
       return true;
     },
   );
+});
+
+test("physical cleanup rejects a forged foreign image key before unlink", async () => {
+  const left = await storeCatalogImage({
+    merchantId: "merchant-media-delete-left",
+    buffer: PNG,
+    suppliedMime: "image/png",
+  });
+  const right = await storeCatalogImage({
+    merchantId: "merchant-media-delete-right",
+    buffer: JPEG,
+    suppliedMime: "image/jpeg",
+  });
+
+  await assert.rejects(
+    () => removeCatalogMediaStorageObject({
+      merchantId: "merchant-media-delete-left",
+      storageProvider: "filesystem",
+      storageKey: right.storage_key,
+    }),
+    (error: unknown) =>
+      error instanceof CatalogMediaError &&
+      error.code === "CATALOG_MEDIA_ACCESS_FORBIDDEN" &&
+      error.status === 403,
+  );
+  assert.deepEqual((await readCatalogImage({
+    merchantId: "merchant-media-delete-right",
+    storageKey: right.storage_key,
+  })).buffer, JPEG, "foreign merchant image survives forged cleanup reference");
+
+  await removeCatalogMediaStorageObject({
+    merchantId: "merchant-media-delete-left",
+    storageProvider: "filesystem",
+    storageKey: left.storage_key,
+  });
+  await assert.rejects(() => readCatalogImage({
+    merchantId: "merchant-media-delete-left",
+    storageKey: left.storage_key,
+  }), (error: unknown) =>
+    error instanceof CatalogMediaError && error.code === "CATALOG_IMAGE_NOT_FOUND",
+  );
+  assert.deepEqual((await readCatalogImage({
+    merchantId: "merchant-media-delete-right",
+    storageKey: right.storage_key,
+  })).buffer, JPEG);
 });
