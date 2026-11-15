@@ -1,4 +1,6 @@
 name: V1 first-commercial production prewrite encrypted export (OPT-IN ONLY)
+# 2026-11-15 owner opt-in checkpoint: encryption passphrase rotated and independently retained.
+# Production export remains read-only, pinned to exact empty PG18 prewrite; offsite readback is a separate gate.
 
 on:
   pull_request:
