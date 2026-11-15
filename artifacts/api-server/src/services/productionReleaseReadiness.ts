@@ -1,3 +1,4 @@
+import path from "node:path";
 import { manualCommercialRelease } from "./manualCommercialRelease";
 import { assertField002FirstCommercialSourcePolicy } from "../../../../scripts/lib/field002-r2-precommercial-source-admission.mjs";
 
@@ -163,6 +164,22 @@ function postgresDatabaseTarget(value: unknown): string | null {
   } catch {
     return null;
   }
+}
+
+// First-commercial catalog media currently uses filesystem storage only.
+// Never silently fall back to the source tree, container layer, or /tmp.
+// The actual disk's survival across redeploy and offsite restore still need
+// separate hosted verification; a safe path alone does NOT prove durability.
+function isSafeProductionMediaDataDirectory(value: unknown): boolean {
+  const given = text(value);
+  if (!given || !path.isAbsolute(given) || given.includes("\\0")) return false;
+  const root = path.resolve(given);
+  const project = path.resolve(process.cwd());
+  const tmp = path.resolve("/tmp");
+  const volatilePrefixes = [project, tmp, "/var/tmp", "/dev/shm"];
+  if (root === path.parse(root).root) return false;
+  return !volatilePrefixes.some(prefix =>
+    root === prefix || root.startsWith(prefix + path.sep));
 }
 
 function isSafeAllowedOrigins(value: unknown): boolean {
@@ -355,6 +372,12 @@ export function getProductionRuntimeConfigurationIssues(
   if (!isSafeAllowedOrigins(env.FAWRI_ALLOWED_ORIGINS)) {
     issues.push(issue("http", "HTTP_ALLOWED_ORIGINS_REQUIRED"));
   }
+  // Catalog images and media deletion retry manifests must not go into the
+  // ephemeral application layer of the first commercial hosted deployment.
+  if (text(env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER || "filesystem").toLowerCase() !== "filesystem" ||
+      !isSafeProductionMediaDataDirectory(env.FAWRI_DATA_DIR)) {
+    issues.push(issue("storage", "V1_PERSISTENT_CATALOG_MEDIA_ROOT_REQUIRED"));
+  }
 
   const serviceVersion = text(env.FAWRI_SERVICE_VERSION);
   if (!serviceVersion || serviceVersion === "unknown" || !SAFE_SERVICE_VERSION.test(serviceVersion)) {
@@ -415,7 +438,10 @@ export function getProductionExternalLaunchBlockers(
       issue("billing", "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE"),
     ]),
     issue("backup", "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED"),
-    issue("storage", "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED"),
+    issue("storage", "CATALOG_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED"),
+    ...(manualCommercialRelease(env) ? [] : [
+      issue("storage", "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED"),
+    ]),
   ];
 }
 

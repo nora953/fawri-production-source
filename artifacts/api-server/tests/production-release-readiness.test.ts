@@ -48,6 +48,8 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
     FAWRI_AUTH_SECURITY_SECRET: "auth-secret-at-least-thirty-two-characters-long",
     FAWRI_ALLOWED_ORIGINS: "https://app.fawri.example",
+    FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER: "filesystem",
+    FAWRI_DATA_DIR: "/srv/fawri-persistent-media",
     FAWRI_META_CUTOVER_READY: "1",
     FAWRI_META_REPLY_TRANSPORT: "live",
     FAWRI_DISABLE_JOB_WORKERS: "0",
@@ -459,9 +461,31 @@ test("core production runtime is provider-neutral while external launch stays bl
       "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED",
       "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED",
       "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE",
+      "CATALOG_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
       "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
     ].sort(),
   );
+});
+
+test("commercial catalog media requires configured nonvolatile filesystem location", () => {
+  const valid = productionEnv();
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(valid), []);
+  for (const value of [undefined, "", "data", "./data", "/", "/tmp/fawri",
+    "/var/tmp/fawri", "/dev/shm/fawri", process.cwd() + "/data"]) {
+    const issues = getProductionRuntimeConfigurationIssues(productionEnv({
+      FAWRI_DATA_DIR: value,
+    }));
+    assert.ok(issues.some(issue => issue.code === "V1_PERSISTENT_CATALOG_MEDIA_ROOT_REQUIRED"),
+      String(value));
+  }
+  const provider = getProductionRuntimeConfigurationIssues(productionEnv({
+    FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER: "nonexistent",
+  }));
+  assert.ok(provider.some(issue => issue.code === "V1_PERSISTENT_CATALOG_MEDIA_ROOT_REQUIRED"));
+  assert.deepEqual(getProductionRuntimeConfigurationIssues({
+    ...valid, FAWRI_DEPLOYMENT_MODE: "staging", NODE_ENV: "development",
+    FAWRI_DATA_DIR: undefined,
+  }), [], "nonproduction fixture compatibility remains unchanged");
 });
 
 test("V1 manual commerce omits only deferred providers, never backup or durable storage", () => {
@@ -483,7 +507,7 @@ test("V1 manual commerce omits only deferred providers, never backup or durable 
     manual.external_blockers.map((item) => item.code).sort(),
     [
       "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED",
-      "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
+      "CATALOG_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
     ].sort(),
   );
 
@@ -500,7 +524,8 @@ test("V1 manual commerce omits only deferred providers, never backup or durable 
         "META_PRODUCTION_INTEGRATION_NOT_ACTIVATED",
         "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED",
         "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE",
-        "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
+        "CATALOG_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
+      "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
       ].sort(),
     );
   }
