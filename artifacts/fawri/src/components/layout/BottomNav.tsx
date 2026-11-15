@@ -190,7 +190,7 @@ export function BottomNav() {
       label: t.subscription,
       icon: CreditCard,
     },
-    ...(import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
+    ...(import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
       ? []
       : [{
           href: "/dashboard/support",

@@ -152,7 +152,7 @@ export function useAdminPageController() {
   // In-app Support is out of scope for the minimal manual V1 release.
   // Do not poll inaccessible support APIs or expose the admin Support tab.
   const canManageSupport =
-    import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE !== "1" &&
+    !import.meta.env.PROD && import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE !== "1" &&
     !passwordChangeRequired &&
     hasAdminPermission(currentAdmin, "manage_support");
   const canViewMerchantData =

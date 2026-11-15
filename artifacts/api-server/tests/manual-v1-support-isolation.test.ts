@@ -160,3 +160,22 @@ test("first-commercial production never starts without manual-only cutover", () 
     startup.indexOf("await assertProductionDatabaseRlsReady(process.env);"),
     "manual-only release must fail closed before any production DB check");
 });
+
+test("production frontend fails closed on deferred POS, Meta and Support without Vite flags", () => {
+  const app = source("../../fawri/src/App.tsx");
+  const sidebar = source("../../fawri/src/components/layout/Sidebar.tsx");
+  const bottomNav = source("../../fawri/src/components/layout/BottomNav.tsx");
+  const admin = source("../../fawri/src/pages/admin/useAdminPageController.tsx");
+  const features = source("../../fawri/src/hooks/useMerchantFeatureEntitlements.ts");
+  assert.ok(app.includes("const manualCommercialOnly = import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'"));
+  assert.ok(app.includes("const firstCommercialPosDisabled = import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1'"));
+  for (const page of ["ConversationsPage", "SavedAnswersPage", "TrainingPage", "ChannelsPage"]) {
+    assert.ok(app.includes("manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={" + page + "} />"), page);
+  }
+  for (const nav of [sidebar, bottomNav]) {
+    assert.ok(nav.includes("import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'"));
+  }
+  assert.ok(admin.includes('!import.meta.env.PROD && import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE !== "1" &&'));
+  assert.ok(features.includes("(import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1')"));
+  assert.ok(features.includes("!import.meta.env.PROD && import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE !== '1' &&"));
+});

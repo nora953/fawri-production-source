@@ -31,8 +31,10 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const OwnerRecoveryPage = lazy(() => import("@/pages/OwnerRecoveryPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
-const firstCommercialPosDisabled = import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1';
-const manualCommercialOnly = import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1';
+// Production-built V1 never exposes deferred POS, even when a build flag was omitted.
+const firstCommercialPosDisabled = import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1';
+// Production builds are fixed to the approved manual-commerce first release.
+const manualCommercialOnly = import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1';
 const cashierSmokeEnabled = !firstCommercialPosDisabled && import.meta.env.VITE_CASHIER_SMOKE === "1";
 const CashierIndexedDbSmokePage = cashierSmokeEnabled
   ? lazy(() => import("@/pages/CashierIndexedDbSmokePage"))
@@ -164,7 +166,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/conversations">
-          {() => import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1' ? <NotFound /> : <DashboardRoute Page={ConversationsPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={ConversationsPage} />}
         </Route>
 
         <Route path="/dashboard/products/import">
@@ -212,15 +214,15 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/saved-answers">
-          {() => import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1' ? <NotFound /> : <DashboardRoute Page={SavedAnswersPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={SavedAnswersPage} />}
         </Route>
 
         <Route path="/dashboard/bot-training">
-          {() => import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1' ? <NotFound /> : <DashboardRoute Page={TrainingPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={TrainingPage} />}
         </Route>
 
         <Route path="/dashboard/channels">
-          {() => import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1' ? <NotFound /> : <DashboardRoute Page={ChannelsPage} />}
+          {() => manualCommercialOnly ? <NotFound /> : <DashboardRoute Page={ChannelsPage} />}
         </Route>
 
         <Route path="/dashboard/subscription">

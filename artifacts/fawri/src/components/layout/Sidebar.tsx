@@ -166,7 +166,7 @@ export function Sidebar() {
       label: t.subscription,
       icon: CreditCard,
     },
-    ...(import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
+    ...(import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
       ? []
       : [{ href: "/dashboard/support", label: t.support_nav, icon: Headphones }]),
     { href: "/dashboard/settings", label: t.settings, icon: Settings },
