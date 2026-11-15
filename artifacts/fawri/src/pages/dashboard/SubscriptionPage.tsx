@@ -24,6 +24,12 @@ type SubscriptionAuthorityStatus =
 export default function SubscriptionPage() {
   const { t, lang } = useI18n();
   const messages = subscriptionStateMessages[lang];
+  // The first commercial production build offers manual subscriptions only.
+  // A forgotten Vite flag must not re-enable paid provider or POS controls.
+  const manualCommercialOnly = import.meta.env.PROD ||
+    import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1';
+  const firstCommercialPosDisabled = import.meta.env.PROD ||
+    import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1';
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [authorityStatus, setAuthorityStatus] =
@@ -71,6 +77,7 @@ export default function SubscriptionPage() {
   }, [reloadVersion]);
 
   const handleActivateEmergency = async () => {
+    if (manualCommercialOnly) return;
     const canRequestEmergency =
       authorityStatus === 'ready' &&
       (subscription?.status === 'active' ||
@@ -154,7 +161,7 @@ export default function SubscriptionPage() {
           )}
 
           {
-            import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
+            manualCommercialOnly
               ? <p className="rounded-xl border p-4">{{
                   ar: 'تفعّل إدارة فوري الاشتراك وتجدّده يدويًا.',
                   ku: 'بەڕێوەبەرایەتی فۆری بە دەستی بەشداریکردن چالاک و نوێ دەکاتەوە.',
@@ -165,7 +172,7 @@ export default function SubscriptionPage() {
         </>
       )}
 
-      {import.meta.env.VITE_FAWRI_V1_POS_DISABLED !== '1' ? <CashierSubscriptionPanel /> : null}
+      {!firstCommercialPosDisabled ? <CashierSubscriptionPanel /> : null}
     </div>
   );
 }

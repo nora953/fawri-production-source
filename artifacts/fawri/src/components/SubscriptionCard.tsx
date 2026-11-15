@@ -54,8 +54,12 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
     baseReplyLimit > 0 &&
     baseRepliesRemaining > 0 &&
     baseRepliesRemaining <= lowBaseBalanceThreshold;
+  // No emergency AI reply credits in manual-commerce V1, including a build
+  // that omitted the optional Vite flag.
   const canShowEmergency =
-    isActive || subscription.status === 'replies_exhausted';
+    !import.meta.env.PROD &&
+    import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE !== '1' &&
+    (isActive || subscription.status === 'replies_exhausted');
 
   const statusLabel = {
     pending_activation: t.subscription_status_pending_activation,

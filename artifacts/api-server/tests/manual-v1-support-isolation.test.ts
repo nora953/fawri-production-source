@@ -186,3 +186,16 @@ test("public production landing always offers manual commerce, not deferred Meta
   assert.ok(landing.includes("? <ManualCommerceLanding />"));
   assert.ok(landing.includes(": <FullLandingPage />"));
 });
+
+test("subscription frontend hides deferred checkout, POS and emergency reply credits in production", () => {
+  const page = source("../../fawri/src/pages/dashboard/SubscriptionPage.tsx");
+  const card = source("../../fawri/src/components/SubscriptionCard.tsx");
+  assert.match(page, /const manualCommercialOnly = import\.meta\.env\.PROD \|\|/);
+  assert.match(page, /const firstCommercialPosDisabled = import\.meta\.env\.PROD \|\|/);
+  assert.match(page, /if \(manualCommercialOnly\) return;/);
+  assert.match(page, /manualCommercialOnly\s*\? <p className="rounded-xl border p-4">/);
+  assert.match(page, /!firstCommercialPosDisabled \? <CashierSubscriptionPanel \/>/);
+  assert.match(card, /const canShowEmergency =\s*!import\.meta\.env\.PROD &&/);
+  assert.match(card, /import\.meta\.env\.VITE_FAWRI_V1_MANUAL_COMMERCE !== '1'/);
+  assert.match(card, /\{canShowEmergency && \(/);
+});
