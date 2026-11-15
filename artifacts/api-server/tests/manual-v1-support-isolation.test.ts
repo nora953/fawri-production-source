@@ -199,3 +199,11 @@ test("subscription frontend hides deferred checkout, POS and emergency reply cre
   assert.match(card, /import\.meta\.env\.VITE_FAWRI_V1_MANUAL_COMMERCE !== '1'/);
   assert.match(card, /\{canShowEmergency && \(/);
 });
+
+test("manual commercial subscription hides unoffered reply credit quotas and purchase warnings", () => {
+  const card = source("../../fawri/src/components/SubscriptionCard.tsx");
+  assert.match(card, /const manualCommercialOnly = import\.meta\.env\.PROD \|\|/);
+  assert.match(card, /const isBaseBalanceLow =\s*!manualCommercialOnly &&/);
+  assert.match(card, /!manualCommercialOnly && \(\s*<>\s*<div className="space-y-2 rounded-xl/);
+  assert.match(card, /<\/ >\s*\)\}\s*\{canShowEmergency && \(/.source ? /<\/>\s*\)\}\s*\{canShowEmergency && \(/ : /not-reachable/);
+});
