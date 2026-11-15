@@ -41,7 +41,9 @@ function ManualCommerceLanding() {
 }
 
 export default function LandingPage() {
-  return import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
+  // Production first-commercial builds must never advertise deferred Meta/AI
+  // provider features when a Vite build flag was accidentally omitted.
+  return import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'
     ? <ManualCommerceLanding />
     : <FullLandingPage />;
 }

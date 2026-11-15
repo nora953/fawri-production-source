@@ -179,3 +179,10 @@ test("production frontend fails closed on deferred POS, Meta and Support without
   assert.ok(features.includes("(import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_POS_DISABLED === '1')"));
   assert.ok(features.includes("!import.meta.env.PROD && import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE !== '1' &&"));
 });
+
+test("public production landing always offers manual commerce, not deferred Meta integrations", () => {
+  const landing = source("../../fawri/src/pages/LandingPage.tsx");
+  assert.ok(landing.includes("return import.meta.env.PROD || import.meta.env.VITE_FAWRI_V1_MANUAL_COMMERCE === '1'"));
+  assert.ok(landing.includes("? <ManualCommerceLanding />"));
+  assert.ok(landing.includes(": <FullLandingPage />"));
+});
