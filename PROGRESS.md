@@ -1,5 +1,11 @@
 # FAWRI — launch-blocker execution checkpoint
 
+## 2026-11-15 — exact source CI for manual merchant subscription + Support worker
+
+- Exact source SHA [`a998f1c1`](https://github.com/nora953/fawri-production-source/commit/a998f1c1c41fd310d52b08f9c39936d9818070dd) [Final quality #43705377956](https://github.com/nora953/fawri-production-source/actions/runs/43705377956) **SUCCESS 4/4**; verified full-typecheck targeted source assertions PASS (including production manual-only startup, disabled paid checkout/POS, reply-credit removal, and skipped Support orphan scan). The full-typecheck test aggregate reported **932 PASS / 0 FAIL / 1 SKIP** within its relevant suite. [First commercial POS #43705376785](https://github.com/nora953/fawri-production-source/actions/runs/43705376785) **SUCCESS** and [merchant media lifecycle #43705376851](https://github.com/nora953/fawri-production-source/actions/runs/43705376851) **SUCCESS**. [Final security #43705376819](https://github.com/nora953/fawri-production-source/actions/runs/43705376819) had dependency audit/lockfile/dependency review **3/4 SUCCESS**, repository full-history secret scan **IN PROGRESS** as of this checkpoint; do not claim full security workflow accepted until it completes.
+- Scope of acceptance is local source only. No commercial deployment or independent backup recovery, no Neon production SQL DDL/DML, no live merchant E2E, and no changes to existing historical P0 closure decisions. **NO-GO**.
+
+
 
 ## 2026-11-15 — first-merchant subscription UI and manual-Support worker leak corrections (source CI pending)
 
