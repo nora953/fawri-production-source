@@ -1,4 +1,5 @@
 name: V1 G2 first-commercial NOLOGIN role reservation (OWNER OPT-IN)
+# Owner-confirmed one-time G2-A NOLOGIN reservation opt-in 2026-11-15; no LOGIN, GRANT or migration in this workflow.
 on:
   pull_request:
     paths:
