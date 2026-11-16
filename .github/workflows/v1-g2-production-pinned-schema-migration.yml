@@ -1,0 +1,77 @@
+name: V1 G2-B first-commercial 54-stage schema migration (OWNER OPT-IN)
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v1-g2-production-pinned-schema-migration.yml"
+      - "scripts/lib/v1-g2-production-schema-migration-safety.mjs"
+      - "scripts/tests/v1-g2-production-schema-migration-safety.test.mjs"
+      - "lib/db/scripts/v1-g2-production-apply-pinned-schema.mjs"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-g2-production-pinned-schema-migration.yml"
+      - "scripts/lib/v1-g2-production-schema-migration-safety.mjs"
+      - "scripts/tests/v1-g2-production-schema-migration-safety.test.mjs"
+      - "lib/db/scripts/v1-g2-production-apply-pinned-schema.mjs"
+permissions:
+  contents: read
+concurrency:
+  group: fawri-v1-g2-schema-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-exact-source-and-schema-safety:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Syntax-only; no production credentials
+        run: |
+          node --check scripts/lib/v1-g2-production-schema-migration-safety.mjs
+          node --check lib/db/scripts/v1-g2-production-apply-pinned-schema.mjs
+      - name: Targeted fail-closed preflight, exact target and postflight negatives
+        run: node --test scripts/tests/v1-g2-production-schema-migration-safety.test.mjs
+
+  real-production-54-stage-schema-only:
+    needs: offline-exact-source-and-schema-safety
+    if: >-
+      github.event_name == 'push'
+      && github.repository == 'nora953/fawri-production-source'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && github.actor == 'nora953'
+      && github.event.head_commit.message == 'FAWRI_V1_OWNER_AUTHORIZED_G2_PINNED_SCHEMA_54'
+      && vars.FAWRI_V1_G2_SCHEMA_MIGRATION_ENABLED == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      FAWRI_V1_G2_SCHEMA_MIGRATION_ENABLED: ${{ vars.FAWRI_V1_G2_SCHEMA_MIGRATION_ENABLED }}
+      FAWRI_V1_G2_SCHEMA_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+      FAWRI_V1_G2_G1_OFFSITE_RECEIPT: G1-20261115-GDRIVE-READBACK-43712483648
+      FAWRI_V1_G2_RESERVATION_RECEIPT: G2A-20261115-NOLOGIN-43717035419
+      FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL: ${{ secrets.FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Require prior owner-held direct DB credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL" ]]; then
+            echo "::error::V1_G2_SCHEMA_PRODUCTION_DB_SECRET_MISSING"
+            exit 2
+          fi
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install pinned dependencies without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Exact 54-stage fresh V1 schema only (no role LOGIN, no GRANT, no customer import)
+        working-directory: lib/db
+        run: node scripts/v1-g2-production-apply-pinned-schema.mjs
