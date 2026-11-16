@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  G2C_COMMIT, assertG2COptIn, assertG2CCredentials,
+  G2C_COMMIT, assertG2COptIn, assertG2CCredentials, buildG2CLoginSql,
   assertG2CRoles,assertG2CProfiles,
 } from '../lib/v1-g2-production-login-admission-safety.mjs';
 
@@ -64,4 +64,12 @@ test('role profile admission requires all 3 exact successes',()=>{
   assert.equal(assertG2CProfiles(rows),true);
   assert.throws(()=>assertG2CProfiles(rows.slice(1)),/V1_G2C_HELD_ROLE_PROFILE_UNSAFE/);
   assert.throws(()=>assertG2CProfiles(rows.map(r=>({...r,preliminary_role_profile_pass:false}))),/V1_G2C_HELD_ROLE_PROFILE_UNSAFE/);
+});
+
+test('PG18 non-superuser owner changes LOGIN only; no privileged flags',()=>{
+  const sql=buildG2CLoginSql('fawri_auth_issuer',password1);
+  assert.equal(sql,"ALTER ROLE fawri_auth_issuer LOGIN CONNECTION LIMIT 12 PASSWORD '"+password1+"'");
+  assert.doesNotMatch(sql,/NOSUPERUSER|NOBYPASSRLS|NOREPLICATION|NOCREATEDB|NOCREATEROLE|NOINHERIT/i);
+  assert.throws(()=>buildG2CLoginSql('fawri_cashier_retirement_writer',password1),/V1_G2C_LOGIN_ROLE_NOT_ALLOWLISTED/);
+  assert.throws(()=>buildG2CLoginSql('fawri_auth_issuer','weak'),/V1_G2C_INVALID_CREDENTIAL_FORMAT/);
 });

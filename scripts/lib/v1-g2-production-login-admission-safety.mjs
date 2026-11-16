@@ -38,6 +38,18 @@ function validatePassword(value){
   }
   return value;
 }
+/**
+ * PG18 non-superuser CREATEROLE owners must not restate SUPERUSER,
+ * BYPASSRLS, REPLICATION or CREATEDB flags in ALTER ROLE. All four
+ * already-false security flags are asserted before and after the cutover.
+ * Only the actual missing LOGIN property and credential are changed.
+ */
+export function buildG2CLoginSql(role,password){
+  if(!G2C_ROLES.includes(role))fail('V1_G2C_LOGIN_ROLE_NOT_ALLOWLISTED');
+  return "ALTER ROLE "+role+" LOGIN CONNECTION LIMIT 12 PASSWORD '"+
+    validatePassword(password)+"'";
+}
+
 export function assertG2CCredentials(env=process.env){
   const values=[
     validatePassword(env.FAWRI_V1_G2_TENANT_LOGIN_PASSWORD),
