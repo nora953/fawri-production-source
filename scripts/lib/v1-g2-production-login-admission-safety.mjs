@@ -30,10 +30,10 @@ export function assertG2COwnerUrl(value){
   return assertG2SchemaOwnerUrl(value);
 }
 function validatePassword(value){
-  // 32 independently generated random bytes, canonical base64url encoding.
-  if(typeof value!=='string' || !/^[A-Za-z0-9_-]{43}$/.test(value) ||
-     Buffer.from(value,'base64url').length!==32 ||
-     Buffer.from(value,'base64url').toString('base64url')!==value){
+  // Must be separately generated in a password manager. At least 48
+  // mixed-case/digit characters; no punctuation that can affect SQL literals.
+  if(typeof value!=='string' || !/^[A-Za-z0-9_-]{48,96}$/.test(value) ||
+     !/[A-Z]/.test(value) || !/[a-z]/.test(value) || !/[0-9]/.test(value)){
     fail('V1_G2C_INVALID_CREDENTIAL_FORMAT');
   }
   return value;

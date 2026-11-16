@@ -23,15 +23,15 @@ test('owner action and exact historical receipts are all required',()=>{
     assert.throws(()=>assertG2COptIn({...goodEnv,[key]:'invalid'}),/V1_G2C_NOT_OWNER_AUTHORIZED/,key);
   }
 });
-const password1=Buffer.alloc(32,1).toString('base64url');
-const password2=Buffer.alloc(32,2).toString('base64url');
-const password3=Buffer.alloc(32,3).toString('base64url');
+const password1='Aa1'.repeat(16);
+const password2='Bb2'.repeat(16);
+const password3='Cc3'.repeat(16);
 const passwordEnv={
   FAWRI_V1_G2_TENANT_LOGIN_PASSWORD:password1,
   FAWRI_V1_G2_AUTH_LOGIN_PASSWORD:password2,
   FAWRI_V1_G2_OPERATOR_LOGIN_PASSWORD:password3,
 };
-test('three unique canonical 32-byte passwords required; never echo values',()=>{
+test('three unique 48+ character random passwords required; never echo values',()=>{
   assert.equal(Object.keys(assertG2CCredentials(passwordEnv)).length,3);
   for(const key of Object.keys(passwordEnv)){
     assert.throws(()=>assertG2CCredentials({...passwordEnv,[key]:''}),/V1_G2C_INVALID_CREDENTIAL_FORMAT/);
