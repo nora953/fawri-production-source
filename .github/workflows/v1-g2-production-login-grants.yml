@@ -1,0 +1,72 @@
+name: V1 G2-C three production LOGINs and minimal grants (OWNER OPT-IN)
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v1-g2-production-login-grants.yml"
+      - "scripts/lib/v1-g2-production-login-admission-safety.mjs"
+      - "scripts/tests/v1-g2-production-login-admission-safety.test.mjs"
+      - "lib/db/scripts/v1-g2-production-login-grants.mjs"
+  push:
+    branches:
+      - fix/p0-provider-receipt-order-discovery-20261015
+    paths:
+      - ".github/workflows/v1-g2-production-login-grants.yml"
+      - "scripts/lib/v1-g2-production-login-admission-safety.mjs"
+      - "scripts/tests/v1-g2-production-login-admission-safety.test.mjs"
+      - "lib/db/scripts/v1-g2-production-login-grants.mjs"
+permissions:
+  contents: read
+concurrency:
+  group: fawri-v1-g2c-login-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  offline-role-and-credential-guards:
+    if: github.repository == 'nora953/fawri-production-source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Targeted syntax and opt-in/least-privilege negatives (NO Neon)
+        run: |
+          node --check scripts/lib/v1-g2-production-login-admission-safety.mjs
+          node --check lib/db/scripts/v1-g2-production-login-grants.mjs
+          node --test scripts/tests/v1-g2-production-login-admission-safety.test.mjs
+
+  real-production-three-logins:
+    needs: offline-role-and-credential-guards
+    if: >-
+      github.event_name == 'push'
+      && github.repository == 'nora953/fawri-production-source'
+      && github.actor == 'nora953'
+      && github.ref == 'refs/heads/fix/p0-provider-receipt-order-discovery-20261015'
+      && github.event.head_commit.message == 'FAWRI_V1_OWNER_AUTHORIZED_G2_THREE_LOGIN_GRANTS'
+      && vars.FAWRI_V1_G2_ROLE_ADMISSION_ENABLED == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FAWRI_V1_G2_ROLE_ADMISSION_ENABLED: ${{ vars.FAWRI_V1_G2_ROLE_ADMISSION_ENABLED }}
+      FAWRI_V1_G2_ROLE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+      FAWRI_V1_G2_G1_RECEIPT: G1-20261115-GDRIVE-READBACK-43712483648
+      FAWRI_V1_G2_G2A_RECEIPT: G2A-20261115-NOLOGIN-43717035419
+      FAWRI_V1_G2_G2B_RECEIPT: G2B-20261116-SCHEMA54-43852308674
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install source-pinned dependencies without install scripts or credentials
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Execute ONE owner-authorized three-LOGIN cutover (secrets scoped here only)
+        working-directory: lib/db
+        env:
+          FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL: ${{ secrets.FAWRI_V1_PRODUCTION_PREWRITE_DUMP_URL }}
+          FAWRI_V1_G2_TENANT_LOGIN_PASSWORD: ${{ secrets.FAWRI_V1_G2_TENANT_LOGIN_PASSWORD }}
+          FAWRI_V1_G2_AUTH_LOGIN_PASSWORD: ${{ secrets.FAWRI_V1_G2_AUTH_LOGIN_PASSWORD }}
+          FAWRI_V1_G2_OPERATOR_LOGIN_PASSWORD: ${{ secrets.FAWRI_V1_G2_OPERATOR_LOGIN_PASSWORD }}
+        run: node scripts/v1-g2-production-login-grants.mjs
