@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  G2C_COMMIT, assertG2COptIn, assertG2CCredentials, buildG2CLoginSql,
+  G2C_COMMIT, assertG2COptIn, assertG2CCredentials, buildG2CLoginSql, classifyG2CError,
   assertG2CRoles,assertG2CProfiles,
 } from '../lib/v1-g2-production-login-admission-safety.mjs';
 
@@ -72,4 +72,17 @@ test('PG18 non-superuser owner changes LOGIN only; no privileged flags',()=>{
   assert.doesNotMatch(sql,/NOSUPERUSER|NOBYPASSRLS|NOREPLICATION|NOCREATEDB|NOCREATEROLE|NOINHERIT/i);
   assert.throws(()=>buildG2CLoginSql('fawri_cashier_retirement_writer',password1),/V1_G2C_LOGIN_ROLE_NOT_ALLOWLISTED/);
   assert.throws(()=>buildG2CLoginSql('fawri_auth_issuer','weak'),/V1_G2C_INVALID_CREDENTIAL_FORMAT/);
+});
+
+test('known SQLSTATE failures get safe constant codes without leaking secret text',()=>{
+  assert.equal(classifyG2CError({code:'42501',message:'PASSWORD dummy-secret-value'}),
+    'V1_G2C_SQL_INSUFFICIENT_PRIVILEGE');
+  assert.equal(classifyG2CError({code:'42883',message:'sensitive SQL'}),
+    'V1_G2C_SQL_UNDEFINED_FUNCTION');
+  assert.equal(classifyG2CError({code:'V1_G2C_CREDENTIAL_REUSE_DENIED'}),
+    'V1_G2C_CREDENTIAL_REUSE_DENIED');
+  assert.equal(classifyG2CError({code:'P0001',message:'sensitive SQL'}),
+    'V1_G2C_FAIL_CLOSED_MANUAL_REVIEW_REQUIRED');
+  assert.equal(classifyG2CError({message:'PASSWORD leaked?'}), 
+    'V1_G2C_FAIL_CLOSED_MANUAL_REVIEW_REQUIRED');
 });

@@ -11,6 +11,28 @@ export const G2C_DORMANT='fawri_cashier_retirement_writer';
 export const G2C_COMMIT='FAWRI_V1_OWNER_AUTHORIZED_G2_THREE_LOGIN_GRANTS';
 const fail=code=>{const e=new Error(code);e.code=code;throw e;};
 
+/**
+ * SQLSTATE-only, deliberately minimal diagnostic taxonomy: never interpolate
+ * PostgreSQL error.message/detail/query/connection/password into CI logs.
+ */
+export function classifyG2CError(error){
+  if(typeof error?.code==='string' && /^V1_G2C_[A-Z0-9_]+$/.test(error.code))
+    return error.code;
+  const allowed=Object.freeze({
+    '42501':'V1_G2C_SQL_INSUFFICIENT_PRIVILEGE',
+    '42601':'V1_G2C_SQL_SYNTAX_ERROR',
+    '42703':'V1_G2C_SQL_UNDEFINED_COLUMN',
+    '42P01':'V1_G2C_SQL_UNDEFINED_TABLE',
+    '42883':'V1_G2C_SQL_UNDEFINED_FUNCTION',
+    '42704':'V1_G2C_SQL_UNDEFINED_OBJECT',
+    '23505':'V1_G2C_SQL_DUPLICATE_CONSTRAINT',
+    '28000':'V1_G2C_SQL_AUTHORIZATION',
+    '28P01':'V1_G2C_SQL_PASSWORD_REJECTED',
+    '3D000':'V1_G2C_SQL_DATABASE_MISMATCH',
+  });
+  return allowed[error?.code]||'V1_G2C_FAIL_CLOSED_MANUAL_REVIEW_REQUIRED';
+}
+
 export function assertG2COptIn(env=process.env){
   if(env.GITHUB_ACTIONS!=='true' ||
     env.GITHUB_REPOSITORY!=='nora953/fawri-production-source' ||
