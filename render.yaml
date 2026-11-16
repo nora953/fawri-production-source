@@ -1,0 +1,77 @@
+# FAWRI V1 G3 — plan-only gated service proposal.
+# DO NOT approve/apply until all 3 role URLs, manifest, onrender origin,
+# owner admin, POS-off guard and recovery requirements are independently ready.
+# No automatic deploys. No Meta/payment/POS/AI. No plaintext credentials.
+services:
+  - type: web
+    name: fawri-v1-commercial-gated
+    runtime: docker
+    repo: https://github.com/nora953/fawri-production-source
+    branch: fix/p0-provider-receipt-order-discovery-20261015
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./Dockerfile.staging
+    dockerContext: .
+    autoDeployTrigger: off
+    healthCheckPath: /healthz
+    maintenanceMode:
+      enabled: true
+    disk:
+      name: fawri-catalog-media
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FAWRI_DEPLOYMENT_MODE
+        value: production
+      - key: FAWRI_V1_MANUAL_COMMERCE
+        value: "1"
+      - key: PORT
+        value: "8080"
+      - key: FAWRI_WEB_DIST_DIR
+        value: /app/artifacts/fawri/dist/public
+      - key: FAWRI_OPERATIONAL_POSTGRES_AUTHORITY
+        value: required
+      - key: FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY
+        value: required
+      - key: FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY
+        value: required
+      - key: FAWRI_EXPECTED_POSTGRES_RUNTIME_ROLE
+        value: fawri_restricted_runtime
+      - key: FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER
+        value: filesystem
+      - key: FAWRI_DATA_DIR
+        value: /var/data/fawri
+      - key: FAWRI_DISABLE_JOB_WORKERS
+        value: "1"
+      - key: FAWRI_META_CUTOVER_READY
+        value: "0"
+      - key: FAWRI_META_REPLY_TRANSPORT
+        value: disabled
+      - key: FAWRI_META_CREDENTIAL_PROVIDER
+        value: disabled
+      - key: FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER
+        value: disabled
+      - key: FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER
+        value: disabled
+      - key: FAWRI_KNOWLEDGE_AI_PROVIDER
+        value: disabled
+      - key: FAWRI_SERVICE_VERSION
+        value: v1-g3-gated
+      - key: FAWRI_AUTH_SECURITY_SECRET
+        generateValue: true
+      - key: FAWRI_PASSWORD_SALT
+        generateValue: true
+      - key: FAWRI_OBSERVABILITY_BEARER_TOKEN
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: FAWRI_AUTH_DATABASE_URL
+        sync: false
+      - key: FAWRI_OPERATOR_DATABASE_URL
+        sync: false
+      - key: FAWRI_ALLOWED_ORIGINS
+        sync: false
+      - key: FAWRI_FIRST_COMMERCIAL_SOURCE_MANIFEST_JSON
+        sync: false
