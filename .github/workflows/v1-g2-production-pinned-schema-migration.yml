@@ -1,4 +1,5 @@
 name: V1 G2-B first-commercial 54-stage schema migration (OWNER OPT-IN)
+# Owner-confirmed G2-B 54-stage schema opt-in; trigger is restricted by exact actor, commit message and Actions variable.
 on:
   pull_request:
     paths:
